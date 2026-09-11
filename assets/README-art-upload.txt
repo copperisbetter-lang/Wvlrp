@@ -1,0 +1,1 @@
+Photographic art assets are being added to this folder.
