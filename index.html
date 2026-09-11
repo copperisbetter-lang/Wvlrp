@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07110d">
+  <meta name="description" content="West Virginia Live Research Project — real cameras, real wildlife, live from the Mountain State.">
+  <title>WVLRP | We Do It Live</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307110d'/%3E%3Cpath d='M8 45 23 20l9 16 8-12 16 21H8Z' fill='%238fd36a'/%3E%3Ccircle cx='48' cy='15' r='6' fill='%23f0b84b'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="WVLRP home">
+      <span class="brand-mark">WV</span>
+      <span><strong>WVLRP</strong><small>West Virginia Live Research Project</small></span>
+    </a>
+    <button class="menu" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav" aria-label="Main navigation">
+      <a href="#home">Home</a>
+      <a href="#cameras">Live Cameras</a>
+      <a href="#visitors">Look Who's Here</a>
+      <a href="#about">The Project</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-glow"></div>
+      <div class="eyebrow"><span class="live-dot"></span> Wild West Virginia, as it happens</div>
+      <h1>WE DO IT <em>LIVE.</em></h1>
+      <p>Unscripted wildlife, changing seasons, and the everyday life of the Appalachian woods—seen through real cameras in the hills of West Virginia.</p>
+      <div class="actions">
+        <a class="button primary" href="#cameras">Watch the cameras</a>
+        <a class="button ghost" href="#visitors">Meet the wild visitors</a>
+      </div>
+      <div class="ridge ridge-back"></div>
+      <div class="ridge ridge-front"></div>
+    </section>
+
+    <section class="section cameras" id="cameras">
+      <div class="section-heading">
+        <div><span class="kicker">LIVE FROM THE MOUNTAIN STATE</span><h2>Camera feeds</h2></div>
+        <span class="status"><i></i> System setup in progress</span>
+      </div>
+      <div class="camera-grid">
+        <article class="camera-card featured">
+          <div class="feed-placeholder">
+            <div class="scanline"></div>
+            <span class="camera-icon" aria-hidden="true">◉</span>
+            <strong>Driveway &amp; woods</strong>
+            <small>Live stream connection coming next</small>
+          </div>
+          <div class="camera-meta"><span>CAM 01</span><span>West Virginia</span></div>
+        </article>
+        <article class="coming-card">
+          <span>CAM 02</span>
+          <h3>More of the property is coming into view.</h3>
+          <p>Additional cameras will be added as the network grows.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section visitors" id="visitors">
+      <div class="section-heading">
+        <div><span class="kicker">LATEST FROM THE WOODS</span><h2>Look who's here</h2></div>
+      </div>
+      <div class="visitor-grid">
+        <article><span class="track">◆</span><h3>Wild visitors</h3><p>Deer, foxes, raccoons, birds, and whatever else wanders into view.</p></article>
+        <article><span class="track">☾</span><h3>After dark</h3><p>The woods change when the sun goes down. Night sightings will live here.</p></article>
+        <article><span class="track">✦</span><h3>Newest family members</h3><p>Fresh sightings, memorable moments, and returning regulars from the cameras.</p></article>
+      </div>
+    </section>
+
+    <section class="section about" id="about">
+      <div>
+        <span class="kicker">THE PROJECT</span>
+        <h2>Real land. Real weather.<br>Real wildlife.</h2>
+      </div>
+      <div class="about-copy">
+        <p>WVLRP is a live window into the woods and wildlife of West Virginia. No studio, no staged encounters—just cameras, patience, and the chance to see what shows up.</p>
+        <p class="signature">Built in the hills. Watched everywhere.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> WVLRP</span>
+    <button id="roadhouse" title="You found it">Kyre Searcher</button>
+    <span>West Virginia</span>
+  </footer>
+  <div class="toast" role="status" aria-live="polite">ROADHOUSE! 🐊</div>
+  <script src="script.js"></script>
+</body>
+</html>
