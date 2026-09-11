@@ -1,84 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WVLRP - West Virginia Live Research Project</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07111c">
+  <title>WVLRP | West Virginia Live Research Project</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <header class="hero" id="home">
+    <img class="hero-art" src="assets/wvlrp-hero.svg" alt="WVLRP West Virginia mountain and wildlife artwork">
+    <nav class="top-nav" aria-label="Main navigation">
+      <a href="#home">Home</a>
+      <a href="#cameras">Live Cameras</a>
+      <a href="#visitors">Look Who's Here</a>
+      <a href="#about">About</a>
+    </nav>
+    <a class="scroll-cue" href="#cameras">Explore the project ↓</a>
+  </header>
 
-    <!-- Clean, Elegant Header Area -->
-    <header class="main-header">
-        <div class="header-container">
-            <h1 class="site-title">WVLRP</h1>
-            <p class="site-subtitle">West Virginia Live Research Project</p>
-            <p class="tagline">"We Do It Live" — Real Places. Real Wildlife.</p>
-        </div>
-    </header>
+  <main>
+    <section class="intro panel" id="about">
+      <p class="eyebrow">Almost Heaven • West Virginia</p>
+      <h1>Nature doesn't follow a script.</h1>
+      <p>WVLRP is a live window into the woods, wildlife, weather and everyday surprises around our corner of West Virginia. No staged scenes. No reruns. <strong>We do it live.</strong></p>
+    </section>
 
-    <!-- Balanced, Spacious Main Content -->
-    <main class="content-container">
-        
-        <section class="intro-section">
-            <h2>Welcome to the Live Research Portal</h2>
-            <p>A clean, focused environment tracking the natural beauty, wildlife, and everyday life of Almost Heaven. Explore our live feeds below.</p>
-        </section>
+    <section class="section-wrap" id="cameras">
+      <div class="section-heading">
+        <p class="eyebrow">Watch Live</p>
+        <h2>Choose a camera</h2>
+      </div>
+      <div class="camera-grid">
+        <a class="cam-card driveway" href="#" aria-label="Open Driveway Cam">
+          <div class="card-art"><span class="icon">⌂</span><span class="live-badge">● LIVE</span></div>
+          <div class="card-copy"><h3>Driveway Cam</h3><p>Main entrance • wildlife crossings • weather</p></div>
+        </a>
+        <a class="cam-card chicken" href="#" aria-label="Open Chicken Cam">
+          <div class="card-art"><span class="icon">🐔</span><span class="live-badge">● LIVE</span></div>
+          <div class="card-copy"><h3>Chicken Cam</h3><p>The flock • daily life • unexpected visitors</p></div>
+        </a>
+        <a class="cam-card pond" href="#" aria-label="Open Pond Cam">
+          <div class="card-art"><span class="icon">≋</span><span class="live-badge">● LIVE</span></div>
+          <div class="card-copy"><h3>Pond Cam</h3><p>Water • wildlife • quiet moments</p></div>
+        </a>
+        <a class="cam-card night" href="#" aria-label="Open Night Vision Cam">
+          <div class="card-art"><span class="icon">☾</span><span class="live-badge">● LIVE</span></div>
+          <div class="card-copy"><h3>Night Vision</h3><p>After dark • when the woods wake up</p></div>
+        </a>
+      </div>
+    </section>
 
-        <!-- Artwork & Live Camera Grid (Maintains strict aspect ratios, no stretching) -->
-        <section class="gallery-section">
-            <h3 class="section-title">Featured Live Feeds</h3>
-            
-            <div class="camera-grid">
-                <!-- Camera 1 -->
-                <div class="cam-card">
-                    <div class="image-wrapper">
-                        <img src="https://unsplash.com" alt="Driveway Cam View">
-                        <span class="live-badge">LIVE</span>
-                    </div>
-                    <h4>Driveway Cam</h4>
-                    <p>Main Entrance • 24/7 View</p>
-                </div>
+    <section class="visitors" id="visitors">
+      <div class="visitors-overlay">
+        <p class="eyebrow">Caught On Camera</p>
+        <h2>Look Who's Here</h2>
+        <p>Deer, raccoons, foxes, birds and whatever else wanders into frame become the newest members of the WVLRP family.</p>
+        <a class="button" href="#">See the latest visitors</a>
+      </div>
+    </section>
 
-                <!-- Camera 2 -->
-                <div class="cam-card">
-                    <div class="image-wrapper">
-                        <img src="https://unsplash.com" alt="Chicken Cam View">
-                        <span class="live-badge">LIVE</span>
-                    </div>
-                    <h4>Chicken Cam</h4>
-                    <p>The Flock • 24/7</p>
-                </div>
+    <section class="manifesto panel">
+      <div class="quote-mark">“</div>
+      <blockquote>Real places. Real wildlife. Real moments.</blockquote>
+      <p>No studio. No actors. Just West Virginia doing what West Virginia does.</p>
+      <span class="roadhouse">ROADHOUSE.</span>
+    </section>
+  </main>
 
-                <!-- Camera 3 -->
-                <div class="cam-card">
-                    <div class="image-wrapper">
-                        <img src="https://unsplash.com" alt="Pond Cam View">
-                        <span class="live-badge">LIVE</span>
-                    </div>
-                    <h4>Pond Cam</h4>
-                    <p>Wildlife & Nature • 24/7</p>
-                </div>
-
-                <!-- Camera 4 -->
-                <div class="cam-card">
-                    <div class="image-wrapper">
-                        <img src="https://unsplash.com" alt="Night Vision Cam View">
-                        <span class="live-badge">LIVE</span>
-                    </div>
-                    <h4>Night Vision Cam</h4>
-                    <p>After Dark • 24/7</p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Simple, Clean Footer -->
-    <footer class="main-footer">
-        <p>&copy; 2026 WVLRP. Nature Never Stops Showing Up.</p>
-    </footer>
-
-    <script src="script.js"></script>
+  <footer>
+    <strong>WVLRP</strong>
+    <span>West Virginia Live Research Project</span>
+    <span>© 2026 • Nature Never Stops Showing Up.</span>
+  </footer>
 </body>
 </html>
