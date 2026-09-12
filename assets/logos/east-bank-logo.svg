@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="t d">
+<title id="t">East Bank WVLRP</title><desc id="d">Circular East Bank wildlife logo for WVLRP</desc>
+<defs>
+  <radialGradient id="sky" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="#d6ecff"/><stop offset=".55" stop-color="#8bb6d8"/><stop offset="1" stop-color="#284b63"/></radialGradient>
+  <linearGradient id="bank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#436f3a"/><stop offset="1" stop-color="#17351f"/></linearGradient>
+  <linearGradient id="water" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ec5d9"/><stop offset="1" stop-color="#1e607c"/></linearGradient>
+  <clipPath id="circle"><circle cx="500" cy="500" r="470"/></clipPath>
+</defs>
+<circle cx="500" cy="500" r="485" fill="#0a1d14" stroke="#d8b45a" stroke-width="18"/>
+<g clip-path="url(#circle)">
+  <rect width="1000" height="1000" fill="url(#sky)"/>
+  <circle cx="770" cy="205" r="72" fill="#f7df9c" opacity=".95"/>
+  <path d="M0 430 160 290 280 390 410 235 560 385 710 265 1000 470 1000 650 0 650Z" fill="#37584c"/>
+  <path d="M0 520 160 420 305 500 480 390 650 500 810 420 1000 540 1000 680 0 680Z" fill="#274638"/>
+  <path d="M0 610 C170 565 285 595 420 640 C570 690 715 690 1000 615 L1000 1000 0 1000Z" fill="url(#bank)"/>
+  <path d="M-40 725 C190 650 330 690 470 750 C630 820 800 800 1040 700 L1040 910 C800 1000 625 980 460 915 C280 845 130 845 -40 900Z" fill="url(#water)"/>
+  <g fill="#0c2317">
+    <path d="M100 650 l28-120 24 58 20-105 32 77 28-118 35 132 25 76z"/>
+    <path d="M790 650 l22-90 22 40 18-90 28 61 24-106 34 130 24 55z"/>
+  </g>
+  <g fill="#102116" stroke="#102116" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M305 610 c-40-8-68 11-74 39-4 20 9 36 31 39 27 4 49-15 60-38 12-25 10-35-17-40z"/>
+    <path d="M301 612 l-18-41 25 16 21-31 2 47z"/>
+    <path d="M238 644 l-30 8 27 9z"/>
+    <path d="M333 636 l42-28 -8 41 34 18 -45 6z"/>
+    <path d="M386 684 c25-29 66-29 84 2 14 24 3 53-25 61-31 9-62-4-70-27-4-13 0-25 11-36z"/>
+    <circle cx="414" cy="671" r="12"/>
+    <path d="M438 663 q42-54 80-9 q-28 8-47 35z"/>
+    <path d="M512 726 c34-20 75-6 88 26 9 22-4 44-31 50-29 6-62-7-74-30-10-19-2-35 17-46z"/>
+    <circle cx="538" cy="719" r="14"/>
+    <path d="M577 742 q48-51 83-11 q-29 7-49 31z"/>
+    <path d="M655 645 c22-26 55-29 77-11 24 20 27 57 5 79-21 22-57 25-81 5-24-20-25-49-1-73z"/>
+    <circle cx="688" cy="627" r="15"/>
+    <path d="M717 645 q47-65 81-27 q-28 16-52 46z"/>
+    <path d="M704 604 q-14-32 12-53 q20 31 6 55z"/>
+    <path d="M716 604 q12-36 43-42 q-2 39-28 55z"/>
+  </g>
+  <g fill="#152b1a">
+    <path d="M190 250 q18-20 36 0 q-19-5-36 0m44 12q18-20 36 0 q-19-5-36 0m500-50q18-20 36 0 q-19-5-36 0m40 23q18-20 36 0 q-19-5-36 0"/>
+  </g>
+  <rect x="85" y="88" width="830" height="118" rx="58" fill="#07130d" opacity=".88"/>
+  <text x="500" y="165" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="900" letter-spacing="8" fill="#f7e6b4">EAST BANK</text>
+  <rect x="255" y="820" width="490" height="92" rx="46" fill="#07130d" opacity=".9"/>
+  <text x="500" y="880" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="48" font-weight="800" letter-spacing="7" fill="#ffffff">WVLRP</text>
+</g>
+<circle cx="500" cy="500" r="470" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="6"/>
+</svg>
