@@ -11,8 +11,8 @@
 #community .klrp-link:hover{color:#fff}
 .klrp-dot{width:9px;height:9px;border-radius:50%;background:#075083;box-shadow:0 0 0 1px rgba(255,255,255,.06);flex:none}
 #klrp-flash{position:fixed;z-index:99999;left:var(--x,50%);top:var(--y,50%);width:9px;height:9px;border-radius:50%;object-fit:cover;pointer-events:none;opacity:0;transform:translate(-50%,-50%)}
-#klrp-flash.go{animation:klrpGrow .48s cubic-bezier(.18,.82,.23,1) forwards}
-@keyframes klrpGrow{0%{left:var(--x);top:var(--y);width:9px;height:9px;opacity:1}62%{left:50%;top:50%;width:155px;height:155px;opacity:1}80%{left:50%;top:50%;width:155px;height:155px;opacity:1}100%{left:50%;top:50%;width:170px;height:170px;opacity:0}}
+#klrp-flash.go{animation:klrpGrow .24s cubic-bezier(.18,.82,.23,1) forwards}
+@keyframes klrpGrow{0%{left:var(--x);top:var(--y);width:9px;height:9px;opacity:1}55%{left:50%;top:50%;width:155px;height:155px;opacity:1}70%{left:50%;top:50%;width:155px;height:155px;opacity:1}100%{left:50%;top:50%;width:170px;height:170px;opacity:0}}
 </style>
 </head>
 <body>
@@ -123,7 +123,7 @@
           const target=document.querySelector(href);
           if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
         }else if(href){window.location.href=href;}
-      },480);
+      },240);
     });
   });
 })();
