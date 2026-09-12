@@ -23,6 +23,16 @@ jobs:
     steps:
       - name: Check out WVLRP
         uses: actions/checkout@v4
+      - name: Add lifelike Roost behavior
+        run: python3 - <<'PY'
+          from pathlib import Path
+          p=Path('the-roost.html')
+          s=p.read_text()
+          tag='<script src="roost-life.js?v=3"></script>'
+          if tag not in s:
+              s=s.replace('</body>',tag+'</body>')
+              p.write_text(s)
+          PY
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
