@@ -29,10 +29,6 @@ jobs:
           if [ -f assets/roost/red.webp.b64 ]; then
             base64 --decode assets/roost/red.webp.b64 > assets/roost/red.webp
           fi
-      - name: Prepare East Bank high-resolution logo
-        run: |
-          cat assets/logos/east-bank-hires.part1.b64 assets/logos/east-bank-hires.part2.b64 assets/logos/east-bank-hires.part3.b64 assets/logos/east-bank-hires.part4.b64 | base64 --decode > assets/logos/east-bank-hires.jpg
-          file assets/logos/east-bank-hires.jpg
       - name: Add lifelike Roost behavior
         run: |
           python3 - <<'PY'
