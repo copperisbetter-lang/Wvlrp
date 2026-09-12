@@ -1,0 +1,13 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    restart: unless-stopped
+    environment:
+      MTX_PATHS_EASTBANK_SOURCE: ${WVLRP_RTSP_SOURCE}
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    command: ["/mediamtx.yml"]
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
