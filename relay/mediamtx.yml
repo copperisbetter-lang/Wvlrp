@@ -1,0 +1,33 @@
+# WVLRP East Bank RTSP -> HLS relay
+# Camera source is injected at runtime with MTX_PATHS_EASTBANK_SOURCE
+
+logLevel: info
+
+# Keep internal RTSP available to MediaMTX but do not publish this port in Docker.
+rtsp: true
+rtspAddress: :8554
+
+# Browser output used by the WVLRP custom player.
+hls: true
+hlsAddress: :8888
+hlsAllowOrigins: ['*']
+hlsAlwaysRemux: true
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+
+# Not required by the current player yet; left enabled so we can move to WebRTC later.
+webrtc: true
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']
+
+pathDefaults:
+  # TCP is more reliable across the public internet and NAT for this camera.
+  rtspTransport: tcp
+
+paths:
+  eastbank:
+    # Runtime environment variable overrides this placeholder:
+    # MTX_PATHS_EASTBANK_SOURCE=rtsp://.../0/av0
+    source: publisher
