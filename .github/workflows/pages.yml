@@ -26,7 +26,9 @@ jobs:
       - name: Prepare Roost assets
         run: |
           mkdir -p assets/roost
-          if [ -f assets/roost/red.webp.b64 ]; then cp assets/roost/red.webp.b64 assets/roost/red.txt; fi
+          if [ -f assets/roost/red.webp.b64 ]; then
+            base64 --decode assets/roost/red.webp.b64 > assets/roost/red.webp
+          fi
       - name: Add lifelike Roost behavior
         run: |
           python3 - <<'PY'
