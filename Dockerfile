@@ -1,3 +1,4 @@
+# Back4App redeploy trigger: 2026-09-12
 FROM bluenviron/mediamtx:1 AS mediamtx
 
 FROM nginx:alpine
