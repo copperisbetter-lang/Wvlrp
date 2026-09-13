@@ -7,9 +7,9 @@ logLevel: info
 rtsp: true
 rtspAddress: :8554
 
-# Browser output used by the WVLRP custom player.
+# HLS stays internal; nginx exposes Back4App's public port 8888 and proxies here.
 hls: true
-hlsAddress: :8888
+hlsAddress: :8891
 hlsAllowOrigins: ['*']
 hlsAlwaysRemux: true
 hlsVariant: lowLatency
@@ -17,10 +17,8 @@ hlsSegmentCount: 7
 hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 
-# Not required by the current player yet; left enabled so we can move to WebRTC later.
-webrtc: true
-webrtcAddress: :8889
-webrtcAllowOrigins: ['*']
+# Back4App exposes a single HTTP port for this deployment, so keep WebRTC off for now.
+webrtc: false
 
 pathDefaults:
   # TCP is more reliable across the public internet and NAT for this camera.
