@@ -4,11 +4,22 @@ FROM nginx:alpine
 
 COPY --from=mediamtx /mediamtx /mediamtx
 COPY mediamtx.yml /mediamtx.yml
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY start.sh /start.sh
 
-RUN chmod +x /start.sh
+RUN printf '%s\n' \
+'worker_processes 1;' \
+'events { worker_connections 1024; }' \
+'http {' \
+'  server {' \
+'    listen 8888;' \
+'    location = / { return 200 "WVLRP relay online\\n"; }' \
+'    location / {' \
+'      proxy_pass http://127.0.0.1:8891;' \
+'      proxy_buffering off;' \
+'      proxy_read_timeout 3600s;' \
+'    }' \
+'  }' \
+'}' > /etc/nginx/nginx.conf
 
 EXPOSE 8888
 
-CMD ["/start.sh"]
+CMD ["/bin/sh", "-c", "/mediamtx /mediamtx.yml & exec nginx -g 'daemon off;'"]
