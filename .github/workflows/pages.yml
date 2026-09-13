@@ -44,11 +44,6 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Bind custom domain
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" -f cname="wvlrp.com"
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
