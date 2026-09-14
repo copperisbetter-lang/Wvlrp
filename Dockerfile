@@ -19,7 +19,7 @@ RUN mkdir -p /run/nginx && printf '%s\n' \
 '    server_name _;' \
 '    location = / {' \
 '      default_type text/plain;' \
-'      return 200 "WVLRP East Bank relay video-restore-20260914\\n";' \
+'      return 200 "WVLRP multi-camera relay\\n";' \
 '    }' \
 '    location /presence/ {' \
 '      proxy_pass http://127.0.0.1:8892;' \
@@ -47,4 +47,4 @@ RUN mkdir -p /run/nginx && printf '%s\n' \
 
 EXPOSE 8888
 
-CMD ["/bin/sh", "-c", "python3 /viewer_count.py & if [ -n \"$WVLRP_RTSP_SOURCE\" ] && [ -z \"$MTX_PATHS_EASTBANK_SOURCE\" ]; then export MTX_PATHS_EASTBANK_SOURCE=\"$WVLRP_RTSP_SOURCE\"; fi; env -u MTX_PATHS_EASTBANK_SOURCE /mediamtx /mediamtx.yml & sleep 2; ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i \"$MTX_PATHS_EASTBANK_SOURCE\" -map 0:v:0 -an -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -g 30 -keyint_min 30 -sc_threshold 0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/eastbank & exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "EAST_SOURCE=\"${MTX_PATHS_EASTBANK_SOURCE:-$WVLRP_RTSP_SOURCE}\"; ROOST_SOURCE=\"${MTX_PATHS_ROOST_SOURCE:-$WVLRP_ROOST_RTSP_SOURCE}\"; env -u MTX_PATHS_EASTBANK_SOURCE -u MTX_PATHS_ROOST_SOURCE /mediamtx /mediamtx.yml & sleep 2; if [ -n \"$EAST_SOURCE\" ]; then ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i \"$EAST_SOURCE\" -map 0:v:0 -an -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -g 30 -keyint_min 30 -sc_threshold 0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/eastbank & fi; if [ -n \"$ROOST_SOURCE\" ]; then ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i \"$ROOST_SOURCE\" -map 0:v:0 -an -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -g 30 -keyint_min 30 -sc_threshold 0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/roost & fi; exec nginx -g 'daemon off;'"]
