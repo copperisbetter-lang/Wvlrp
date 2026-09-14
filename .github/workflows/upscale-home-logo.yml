@@ -1,0 +1,52 @@
+name: Sharpen homepage time logos
+
+on:
+  push:
+    paths:
+      - '.github/workflows/upscale-home-logo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sharpen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - name: Upscale and sharpen existing WVLRP time logos
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageFilter
+
+          files = [
+              Path('assets/logos/wvlrp-morning.jpg'),
+              Path('assets/logos/wvlrp-late-evening.jpg'),
+              Path('assets/logos/wvlrp-dusk-night.jpg'),
+              Path('assets/logos/wvlrp-night-dawn.jpg'),
+          ]
+
+          for p in files:
+              im = Image.open(p).convert('RGB')
+              w, h = im.size
+              # Preserve the exact artwork; only improve raster sampling for high-density/mobile displays.
+              im = im.resize((w * 4, h * 4), Image.Resampling.LANCZOS)
+              im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=135, threshold=2))
+              im.save(p, 'JPEG', quality=96, subsampling=0, optimize=True)
+              print(f'{p}: {w}x{h} -> {w*4}x{h*4}')
+          PY
+      - name: Commit sharpened logos
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/logos/wvlrp-*.jpg
+          if git diff --cached --quiet; then
+            echo 'No image changes to commit.'
+          else
+            git commit -m 'Sharpen homepage time logos [skip ci]'
+            git push
+          fi
