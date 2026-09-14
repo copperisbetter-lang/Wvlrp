@@ -1,4 +1,4 @@
-FROM bluenviron/mediamtx:1 AS mediamtx
+FROM bluenviron/mediamtx:1.17.0 AS mediamtx
 
 FROM alpine:3.22
 
