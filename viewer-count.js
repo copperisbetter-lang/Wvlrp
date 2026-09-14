@@ -16,9 +16,23 @@
     .viewer-bar .control,.viewer-bar .controls button{height:36px;min-width:38px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18)!important;background:#132d22!important;color:#fff!important;display:grid!important;place-items:center;font-weight:900}
     .viewer-count{display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:#132d22;border:1px solid rgba(255,255,255,.24);color:#fff;font:900 10px/1 Arial,sans-serif;letter-spacing:.08em;white-space:nowrap}
     .viewer-count .eye{font-size:13px;letter-spacing:0}.viewer-count .num{font-size:11px}.viewer-count.offline{opacity:.65}
-    @media(max-width:620px){.viewer-bar{justify-content:center}.viewer-bar .controls{margin-left:0!important}.viewer-bar .corner-brand,.viewer-bar .brandbug{width:100%;justify-content:center}}
+    .wvlrp-support-mini{display:inline-flex;align-items:center;justify-content:center;margin:10px auto 0;padding:7px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#dfe8e3!important;text-decoration:none!important;font:800 10px/1 Arial,sans-serif;letter-spacing:.04em;box-shadow:none!important}
+    .wvlrp-support-mini:hover{background:rgba(255,255,255,.11);color:#fff!important}
+    @media(max-width:620px){.viewer-bar{justify-content:center}.viewer-bar .controls{margin-left:0!important}.viewer-bar .corner-brand,.viewer-bar .brandbug{width:100%;justify-content:center}.wvlrp-support-mini{font-size:9px;padding:7px 10px}}
   `;
   document.head.appendChild(style);
+
+  const sponsor=document.querySelector('.sponsor');
+  if(sponsor&&!sponsor.querySelector('.wvlrp-support-mini')){
+    const support=document.createElement('a');
+    support.className='wvlrp-support-mini';
+    support.href='https://cash.app/$DougHiffman';
+    support.target='_blank';
+    support.rel='noopener';
+    support.textContent='Support WVLRP · Cash App';
+    const firstP=sponsor.querySelector('p');
+    if(firstP)firstP.insertAdjacentElement('afterend',support);else sponsor.appendChild(support);
+  }
 
   let bar=document.querySelector('.viewer-bar');
   if(!bar){
