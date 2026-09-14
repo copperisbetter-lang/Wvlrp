@@ -1,13 +1,13 @@
-# WVLRP East Bank RTSP -> HLS relay
-# Camera source is injected at runtime with MTX_PATHS_EASTBANK_SOURCE
+# WVLRP multi-camera RTSP -> HLS relay
+# Camera sources are ingested by ffmpeg and published locally to MediaMTX.
 
 logLevel: info
 
-# Keep internal RTSP available to MediaMTX but do not publish this port in Docker.
+# Internal RTSP listener used by the ffmpeg publishers.
 rtsp: true
 rtspAddress: :8554
 
-# HLS stays internal; nginx exposes Back4App's public port 8888 and proxies here.
+# HLS stays internal; nginx exposes the public HTTP port and proxies here.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
@@ -17,15 +17,14 @@ hlsSegmentCount: 7
 hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 
-# Back4App exposes a single HTTP port for this deployment, so keep WebRTC off for now.
+# Keep WebRTC off for this deployment.
 webrtc: false
 
 pathDefaults:
-  # TCP is more reliable across the public internet and NAT for this camera.
   rtspTransport: tcp
 
 paths:
   eastbank:
-    # Runtime environment variable overrides this placeholder:
-    # MTX_PATHS_EASTBANK_SOURCE=rtsp://.../0/av0
+    source: publisher
+  roost:
     source: publisher
