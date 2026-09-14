@@ -35,4 +35,4 @@ RUN printf '%s\n' \
 
 EXPOSE 8888
 
-CMD ["/bin/sh", "-c", "/mediamtx /mediamtx.yml & exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "if [ -n \"$WVLRP_RTSP_SOURCE\" ] && [ -z \"$MTX_PATHS_EASTBANK_SOURCE\" ]; then export MTX_PATHS_EASTBANK_SOURCE=\"$WVLRP_RTSP_SOURCE\"; fi; /mediamtx /mediamtx.yml & exec nginx -g 'daemon off;'"]
