@@ -10,18 +10,15 @@
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#06110d;color:#fff}
 body{overflow-x:hidden;position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:-2;background:url('assets/West-Bank-Background.png?v=20260914-1215') center center / cover no-repeat}
-body::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,#00000008 0%,#00000000 45%,#02090738 73%,#020907b8 100%);pointer-events:none}
+.art-bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:-3;display:block;background:#06110d}
+.art-shade{position:fixed;inset:0;z-index:-2;background:linear-gradient(180deg,#0000 0%,#0000 48%,#02090722 65%,#020907a6 100%);pointer-events:none}
 .top{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#03100bd9;border-bottom:1px solid #ffffff24;backdrop-filter:blur(8px);position:fixed;top:0;left:0;right:0;z-index:20}
 .top a{color:#fff;text-decoration:none;font-weight:900}.top strong{font-size:12px;letter-spacing:.17em}
 .hero{position:relative;min-height:100svh;padding:70px 12px 28px;display:flex;flex-direction:column;align-items:center;background:transparent}
-.logo-field{width:100%;text-align:center;margin-top:43vh;text-shadow:0 4px 18px #000}
-.kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:#06110dcc;border:1px solid #ffffff38;color:#ffe2a0;font-size:12px;font-weight:900;letter-spacing:.16em}
-.kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:#64e58d;box-shadow:0 0 12px #64e58d}
-h1{margin:10px 0 0;font-size:clamp(40px,11vw,60px);line-height:.92;letter-spacing:.06em}
-.tagline{margin:8px auto 12px;max-width:700px;font-size:13px;line-height:1.35;font-weight:700}
+.logo-field{width:100%;text-align:center;margin-top:60vh;text-shadow:0 4px 18px #000}
+.tagline{margin:0 auto 14px;max-width:700px;padding:8px 10px;border-radius:14px;background:#03100b91;font-size:13px;line-height:1.35;font-weight:800;backdrop-filter:blur(5px)}
 .content{width:100%;display:flex;justify-content:center}
-.panel{width:100%;max-width:980px;padding:10px;border-radius:20px;background:linear-gradient(180deg,#071713c8,#03100db8);border:1px solid #ffffff32;box-shadow:0 24px 68px #0009;backdrop-filter:blur(10px)}
+.panel{width:100%;max-width:980px;padding:10px;border-radius:20px;background:linear-gradient(180deg,#071713d8,#03100dc9);border:1px solid #ffffff32;box-shadow:0 24px 68px #0009;backdrop-filter:blur(10px)}
 .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 4px 12px}
 .panel-head h2{margin:0;font-size:clamp(21px,4.8vw,32px)}.panel-head small{display:block;margin-top:4px;color:#c3d0c8;font-size:12px}
 .status{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:999px;background:#132d22d8;border:1px solid #ffffff24;font-size:9px;font-weight:900;letter-spacing:.11em;white-space:nowrap}
@@ -38,13 +35,15 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backgr
 .quality{padding:0 11px;width:auto;font-size:11px;font-weight:900;letter-spacing:.07em}
 .meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 3px 2px}.meta div{padding:10px 12px;border-radius:14px;background:#0000002e;border:1px solid #ffffff18}.meta div:last-child{grid-column:1/-1}.meta b{display:block;font-size:11px;letter-spacing:.08em}.meta span{display:block;margin-top:4px;font-size:12px;color:#b4c2b8}
 .home{display:inline-block;margin:12px auto 0;padding:11px 22px;border-radius:999px;background:#06110dcf;border:1px solid #ffffff38;color:#fff;text-decoration:none;font-weight:900;white-space:nowrap}
-@media(min-width:700px){.logo-field{margin-top:36vh}.panel{padding:14px;border-radius:24px}.meta{grid-template-columns:repeat(3,1fr)}.meta div:last-child{grid-column:auto}}
+@media(min-width:700px){.logo-field{margin-top:58vh}.panel{padding:14px;border-radius:24px}.meta{grid-template-columns:repeat(3,1fr)}.meta div:last-child{grid-column:auto}}
 </style>
 </head>
 <body>
+<img id="artBg" class="art-bg" alt="">
+<div class="art-shade"></div>
 <div class="top"><a href="index.html">← WVLRP Home</a><strong>WE DO IT LIVE</strong></div>
 <section class="hero">
-<div class="logo-field"><span class="kicker">WVLRP • LIVE WILDLIFE VIEW</span><h1>WEST BANK</h1><p class="tagline">Still water, wooded shoreline, and a natural crossing used by West Virginia wildlife — live from the West Bank.</p></div>
+<div class="logo-field"><p class="tagline">Still water, wooded shoreline, and a natural crossing used by West Virginia wildlife — live from the West Bank.</p></div>
 <div class="content"><div class="panel">
 <div class="panel-head"><div><h2>West Bank Live</h2><small>WVLRP Camera 02 • West Virginia</small></div><span class="status"><span class="dot"></span><span id="statusText">PLAYER READY</span></span></div>
 <div class="player-shell" id="playerShell"><video id="liveVideo" playsinline muted autoplay></video><div class="empty-state" id="emptyState"><div><div class="camera-mark">◉</div><strong>West Bank Camera</strong><small>The WVLRP player is installed and ready. The live picture will appear here when Camera 02 connects to the WVLRP relay.</small></div></div><div class="live-bug" id="liveBug"><span class="red"></span><span>LIVE</span></div><div class="controls"><button class="control" id="muteBtn">🔇</button><button class="control quality" id="retryBtn">RECONNECT</button><button class="control" id="fullBtn">⛶</button></div></div>
@@ -53,6 +52,13 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backgr
 <a class="home" href="index.html#cameras">← Back to Live Cameras</a>
 </section>
 <script>
+(async()=>{
+  const files=['test1000.txt',...Array.from({length:24},(_,i)=>`c${String(i+1).padStart(2,'0')}.txt`)];
+  try{
+    const parts=await Promise.all(files.map(f=>fetch(`assets/wb-bg/${f}?v=20260914-1235`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(f);return r.text()})));
+    document.getElementById('artBg').src='data:image/jpeg;base64,'+parts.join('').replace(/\s+/g,'');
+  }catch(err){console.error('West Bank art load failed',err)}
+})();
 window.WVLRP_STREAM_URL='https://wvlrp-production.up.railway.app/westbank/index.m3u8';
 (()=>{const v=document.getElementById('liveVideo'),e=document.getElementById('emptyState'),m=document.getElementById('muteBtn'),f=document.getElementById('fullBtn'),r=document.getElementById('retryBtn'),s=document.getElementById('playerShell'),st=document.getElementById('statusText'),ms=document.getElementById('metaStatus'),b=document.getElementById('liveBug');let h=null,last='';function state(a,c,l=false){st.textContent=a;ms.textContent=c;b.style.display=l?'flex':'none';r.style.display=l?'none':'grid'}function destroy(){if(h){h.destroy();h=null}v.removeAttribute('src');v.load()}function attach(u){u=(u||'').trim();if(!u){state('PLAYER READY','Awaiting live bridge');e.classList.remove('hidden');return}last=u;destroy();e.classList.add('hidden');state('CONNECTING','Opening live stream…');if(u.includes('.m3u8')&&window.Hls&&Hls.isSupported()){h=new Hls({liveSyncDurationCount:3,enableWorker:true,lowLatencyMode:true});h.loadSource(u);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));h.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){state('OFFLINE','Stream connection lost');e.classList.remove('hidden')}})}else{v.src=u;v.play().catch(()=>{})}}v.addEventListener('playing',()=>{e.classList.add('hidden');state('LIVE NOW','Live stream connected',true)});v.addEventListener('error',()=>{state('OFFLINE','Stream unavailable');e.classList.remove('hidden')});m.onclick=()=>{v.muted=!v.muted;m.textContent=v.muted?'🔇':'🔊'};f.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else s.requestFullscreen?.()};r.onclick=()=>attach(last||window.WVLRP_STREAM_URL);attach(window.WVLRP_STREAM_URL)})();
 </script>
