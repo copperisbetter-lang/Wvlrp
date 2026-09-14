@@ -18,7 +18,7 @@ RUN mkdir -p /run/nginx && printf '%s\n' \
 '    server_name _;' \
 '    location = / {' \
 '      default_type text/plain;' \
-'      return 200 "WVLRP East Bank relay online\\n";' \
+'      return 200 "WVLRP East Bank relay audio-v2 online\\n";' \
 '    }' \
 '    location / {' \
 '      proxy_pass http://127.0.0.1:8891;' \
