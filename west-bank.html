@@ -9,12 +9,12 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#06110d;color:#fff}
-body{overflow-x:hidden;position:relative}
-.art-bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:-3;display:block;background:#06110d}
-.art-shade{position:fixed;inset:0;z-index:-2;background:linear-gradient(180deg,#0000 0%,#0000 48%,#02090722 65%,#020907a6 100%);pointer-events:none}
+body{overflow-x:hidden;position:relative;isolation:isolate}
+.art-bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:0;display:block;background:#06110d}
+.art-shade{position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,#0000 0%,#0000 48%,#02090722 65%,#020907a6 100%);pointer-events:none}
 .top{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#03100bd9;border-bottom:1px solid #ffffff24;backdrop-filter:blur(8px);position:fixed;top:0;left:0;right:0;z-index:20}
 .top a{color:#fff;text-decoration:none;font-weight:900}.top strong{font-size:12px;letter-spacing:.17em}
-.hero{position:relative;min-height:100svh;padding:70px 12px 28px;display:flex;flex-direction:column;align-items:center;background:transparent}
+.hero{position:relative;z-index:2;min-height:100svh;padding:70px 12px 28px;display:flex;flex-direction:column;align-items:center;background:transparent}
 .logo-field{width:100%;text-align:center;margin-top:60vh;text-shadow:0 4px 18px #000}
 .tagline{margin:0 auto 14px;max-width:700px;padding:8px 10px;border-radius:14px;background:#03100b91;font-size:13px;line-height:1.35;font-weight:800;backdrop-filter:blur(5px)}
 .content{width:100%;display:flex;justify-content:center}
@@ -55,7 +55,7 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backgr
 (async()=>{
   const files=['test1000.txt',...Array.from({length:24},(_,i)=>`c${String(i+1).padStart(2,'0')}.txt`)];
   try{
-    const parts=await Promise.all(files.map(f=>fetch(`assets/wb-bg/${f}?v=20260914-1235`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(f);return r.text()})));
+    const parts=await Promise.all(files.map(f=>fetch(`assets/wb-bg/${f}?v=20260914-1242`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(f);return r.text()})));
     document.getElementById('artBg').src='data:image/jpeg;base64,'+parts.join('').replace(/\s+/g,'');
   }catch(err){console.error('West Bank art load failed',err)}
 })();
