@@ -3,6 +3,13 @@
   const cam=(script?.dataset.camera||'').trim();
   if(!cam)return;
 
+  if(!window.WVLRP_AUTH&&!document.querySelector('script[data-wvlrp-site-auth]')){
+    const auth=document.createElement('script');
+    auth.src='site-auth.js?v=20260915-2';
+    auth.dataset.wvlrpSiteAuth='1';
+    document.body.appendChild(auth);
+  }
+
   const media=document.querySelector('.player-shell,.player,.video-wrap');
   if(!media)return;
 
