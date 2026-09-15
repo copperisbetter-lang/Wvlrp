@@ -45,6 +45,21 @@ jobs:
               s = s[:m.end()] + tag + s[m.end():]
               p.write_text(s)
           PY
+      - name: Add Lounge links to home page
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text()
+          nav_link = '<a href="supporters.html">★ Lounge</a>'
+          if nav_link not in s:
+              s = s.replace('<a href="#mission">ⓘ About</a></nav>', '<a href="#mission">ⓘ About</a>' + nav_link + '</nav>')
+          tile = '<a href="supporters.html">★<b>The Lounge</b><small>Donors & Sponsors</small></a>'
+          if tile not in s:
+              s = s.replace('<a href="#community">👥<b>Community</b><small>Chat & Share</small></a><a href="#mission">⛰<b>Projects</b>', '<a href="#community">👥<b>Community</b><small>Chat & Share</small></a>' + tile + '<a href="#mission">⛰<b>Projects</b>')
+          s = s.replace('Community　|　Projects　|　About　|　Support', 'Community　|　Lounge　|　Projects　|　About　|　Support')
+          p.write_text(s)
+          PY
       - name: Add lifelike Roost behavior
         run: |
           python3 - <<'PY'
