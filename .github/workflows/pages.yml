@@ -65,6 +65,17 @@ jobs:
               s = s[:m.end()] + tag + s[m.end():]
               p.write_text(s)
           PY
+      - name: Refresh viewer counter assets
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for p in Path('.').glob('*.html'):
+              s = p.read_text()
+              updated = re.sub(r'viewer-count\.js(?:\?[^"\']*)?', 'viewer-count.js?v=20260915-4', s)
+              if updated != s:
+                  p.write_text(updated)
+          PY
       - name: Add Lounge links to home page
         run: |
           python3 - <<'PY'
