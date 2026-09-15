@@ -76,4 +76,17 @@
   document.addEventListener('visibilitychange',()=>document.hidden?leave():start());
   window.addEventListener('pagehide',leave);
   start();
+
+  const chatRoom=cam==='east-bank'?'eastbank':cam==='roost'?'roost':'';
+  if(chatRoom){
+    const host=document.createElement('div');
+    host.id='wvlrp-chat-'+chatRoom;
+    bar.insertAdjacentElement('afterend',host);
+    const chat=document.createElement('script');
+    chat.src='chat-widget.js?v=20260915-1';
+    chat.dataset.room=chatRoom;
+    chat.dataset.target='#'+host.id;
+    chat.dataset.api='https://wvlrp-chat-production.up.railway.app';
+    document.body.appendChild(chat);
+  }
 })();
