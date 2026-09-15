@@ -29,6 +29,12 @@ jobs:
           if [ -f assets/roost/red.webp.b64 ]; then
             base64 --decode assets/roost/red.webp.b64 > assets/roost/red.webp
           fi
+      - name: Prepare Lounge wallpaper
+        run: |
+          mkdir -p assets/lounge
+          if compgen -G "assets/lounge/lounge-placeholder-tiny.webp.b64.part*" > /dev/null; then
+            cat assets/lounge/lounge-placeholder-tiny.webp.b64.part* | base64 --decode > assets/lounge/lounge-placeholder.webp
+          fi
       - name: Add shared WVLRP sign in
         run: |
           python3 - <<'PY'
