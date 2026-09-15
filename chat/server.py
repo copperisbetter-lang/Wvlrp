@@ -11,10 +11,10 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 SECRET_KEY = os.environ.get("CHAT_SECRET_KEY", "change-me").encode()
 ADMIN_USERNAME = os.environ.get("CHAT_ADMIN_USERNAME", "")
 ADMIN_PASSWORD = os.environ.get("CHAT_ADMIN_PASSWORD", "")
-ALLOWED_ROOMS = {"eastbank", "roost"}
+ALLOWED_ROOMS = {"eastbank", "roost", "supporters"}
 TOKEN_TTL = 60 * 60 * 24 * 30
 
-app = FastAPI(title="WVLRP Chat")
+app = FastAPI(title="WVLRP Accounts & Chat")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -88,10 +88,44 @@ def token_from_header(authorization: Optional[str]) -> str:
     return authorization.split(" ", 1)[1].strip()
 
 
+def ptz_threshold_cents() -> Optional[int]:
+    with db() as conn, conn.cursor() as cur:
+        cur.execute("SELECT value FROM site_settings WHERE key='ptz_sponsor_min_cents'")
+        row = cur.fetchone()
+    if not row or row["value"] in (None, ""):
+        return None
+    try:
+        return max(0, int(row["value"]))
+    except Exception:
+        return None
+
+
+def access_flags(user: dict) -> dict:
+    level = user.get("support_level") or "none"
+    amount = int(user.get("support_amount_cents") or 0)
+    is_admin = user.get("role") == "admin"
+    lounge = is_admin or level in {"donor", "sponsor"}
+    threshold = ptz_threshold_cents()
+    ptz = is_admin or (level == "sponsor" and threshold is not None and amount >= threshold)
+    return {"lounge_access": lounge, "ptz_access": ptz, "ptz_sponsor_min_cents": threshold}
+
+
+def public_user(user: dict) -> dict:
+    flags = access_flags(user)
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "role": user["role"],
+        "support_level": user.get("support_level") or "none",
+        "support_amount_cents": int(user.get("support_amount_cents") or 0),
+        **flags,
+    }
+
+
 def current_user(authorization: Optional[str]) -> dict:
     payload = parse_token(token_from_header(authorization))
     with db() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id, username, role, disabled FROM chat_users WHERE id=%s", (payload["uid"],))
+        cur.execute("SELECT id,username,role,support_level,support_amount_cents,disabled FROM chat_users WHERE id=%s", (payload["uid"],))
         user = cur.fetchone()
     if not user or user["disabled"]:
         raise HTTPException(401, "Account unavailable")
@@ -101,6 +135,11 @@ def current_user(authorization: Optional[str]) -> dict:
 def require_admin(user: dict):
     if user["role"] != "admin":
         raise HTTPException(403, "Admin access required")
+
+
+def require_lounge(user: dict):
+    if not access_flags(user)["lounge_access"]:
+        raise HTTPException(403, "Donor or sponsor access required")
 
 
 def validate_room(room: str) -> str:
@@ -128,10 +167,14 @@ def init_db():
                 username TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'member',
+                support_level TEXT NOT NULL DEFAULT 'none',
+                support_amount_cents BIGINT NOT NULL DEFAULT 0,
                 disabled BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         """)
+        cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS support_level TEXT NOT NULL DEFAULT 'none'")
+        cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS support_amount_cents BIGINT NOT NULL DEFAULT 0")
         cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS chat_users_username_lower_uq ON chat_users ((lower(username)))")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_messages (
@@ -166,6 +209,13 @@ def init_db():
                 room TEXT,
                 details TEXT NOT NULL DEFAULT '',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS site_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         """)
         if ADMIN_USERNAME and ADMIN_PASSWORD:
@@ -203,10 +253,18 @@ class PasswordIn(BaseModel):
     current_password: str
     new_password: str = Field(min_length=10, max_length=128)
 
+class SupportIn(BaseModel):
+    user_id: int
+    support_level: str = Field(pattern="^(none|donor|sponsor)$")
+    support_amount_cents: int = Field(default=0, ge=0)
+
+class ThresholdIn(BaseModel):
+    ptz_sponsor_min_cents: Optional[int] = Field(default=None, ge=0)
+
 
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "wvlrp-chat"}
+    return {"ok": True, "service": "wvlrp-accounts-chat"}
 
 
 @app.post("/api/register")
@@ -217,29 +275,44 @@ def register(data: RegisterIn):
     with db() as conn, conn.cursor() as cur:
         try:
             cur.execute(
-                "INSERT INTO chat_users(username,password_hash) VALUES(%s,%s) RETURNING id,username,role,disabled",
+                "INSERT INTO chat_users(username,password_hash) VALUES(%s,%s) RETURNING id,username,role,support_level,support_amount_cents,disabled",
                 (username, hash_password(data.password)),
             )
             user = cur.fetchone()
         except psycopg.errors.UniqueViolation:
             raise HTTPException(409, "That username is already taken")
-    return {"token": make_token(user), "user": {"id": user["id"], "username": user["username"], "role": user["role"]}}
+    return {"token": make_token(user), "user": public_user(user)}
 
 
 @app.post("/api/login")
 def login(data: LoginIn):
     with db() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id,username,password_hash,role,disabled FROM chat_users WHERE lower(username)=lower(%s)", (data.username.strip(),))
+        cur.execute("SELECT id,username,password_hash,role,support_level,support_amount_cents,disabled FROM chat_users WHERE lower(username)=lower(%s)", (data.username.strip(),))
         user = cur.fetchone()
     if not user or user["disabled"] or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(401, "Invalid username or password")
-    return {"token": make_token(user), "user": {"id": user["id"], "username": user["username"], "role": user["role"]}}
+    return {"token": make_token(user), "user": public_user(user)}
 
 
 @app.get("/api/me")
 def me(authorization: Optional[str] = Header(default=None)):
+    return public_user(current_user(authorization))
+
+
+@app.get("/api/lounge/access")
+def lounge_access(authorization: Optional[str] = Header(default=None)):
     user = current_user(authorization)
-    return {"id": user["id"], "username": user["username"], "role": user["role"]}
+    require_lounge(user)
+    return public_user(user)
+
+
+@app.get("/api/ptz/access")
+def ptz_access(authorization: Optional[str] = Header(default=None)):
+    user = current_user(authorization)
+    info = public_user(user)
+    if not info["ptz_access"]:
+        raise HTTPException(403, "Sponsor PTZ threshold has not been met")
+    return info
 
 
 @app.post("/api/change-password")
@@ -258,12 +331,14 @@ def change_password(data: PasswordIn, authorization: Optional[str] = Header(defa
 def messages(room: str = Query(...), after: int = Query(default=0, ge=0), authorization: Optional[str] = Header(default=None)):
     room = validate_room(room)
     user = current_user(authorization)
+    if room == "supporters":
+        require_lounge(user)
     if is_banned(user["id"], room):
         raise HTTPException(403, "You are blocked from this chat room")
     with db() as conn, conn.cursor() as cur:
         if after:
             cur.execute("""
-                SELECT m.id,m.body,m.created_at,u.id AS user_id,u.username,u.role
+                SELECT m.id,m.body,m.created_at,u.id AS user_id,u.username,u.role,u.support_level
                 FROM chat_messages m JOIN chat_users u ON u.id=m.user_id
                 WHERE m.room=%s AND m.deleted=FALSE AND m.id>%s
                 ORDER BY m.id ASC LIMIT 100
@@ -271,7 +346,7 @@ def messages(room: str = Query(...), after: int = Query(default=0, ge=0), author
         else:
             cur.execute("""
                 SELECT * FROM (
-                    SELECT m.id,m.body,m.created_at,u.id AS user_id,u.username,u.role
+                    SELECT m.id,m.body,m.created_at,u.id AS user_id,u.username,u.role,u.support_level
                     FROM chat_messages m JOIN chat_users u ON u.id=m.user_id
                     WHERE m.room=%s AND m.deleted=FALSE
                     ORDER BY m.id DESC LIMIT 80
@@ -285,6 +360,8 @@ def messages(room: str = Query(...), after: int = Query(default=0, ge=0), author
 def send_message(data: MessageIn, authorization: Optional[str] = Header(default=None)):
     room = validate_room(data.room)
     user = current_user(authorization)
+    if room == "supporters":
+        require_lounge(user)
     if is_banned(user["id"], room):
         raise HTTPException(403, "You are blocked from this chat room")
     body = " ".join(data.body.strip().split())
@@ -301,7 +378,7 @@ def send_message(data: MessageIn, authorization: Optional[str] = Header(default=
             RETURNING id,body,created_at
         """, (room, user["id"], body))
         msg = cur.fetchone()
-    return {"id": msg["id"], "body": msg["body"], "created_at": msg["created_at"], "user_id": user["id"], "username": user["username"], "role": user["role"]}
+    return {"id": msg["id"], "body": msg["body"], "created_at": msg["created_at"], "user_id": user["id"], "username": user["username"], "role": user["role"], "support_level": user.get("support_level", "none")}
 
 
 @app.get("/api/admin/users")
@@ -310,10 +387,44 @@ def admin_users(q: str = Query(default="", max_length=40), authorization: Option
     require_admin(admin)
     with db() as conn, conn.cursor() as cur:
         if q:
-            cur.execute("SELECT id,username,role,disabled,created_at FROM chat_users WHERE lower(username) LIKE lower(%s) ORDER BY id DESC LIMIT 50", (f"%{q}%",))
+            cur.execute("SELECT id,username,role,support_level,support_amount_cents,disabled,created_at FROM chat_users WHERE lower(username) LIKE lower(%s) ORDER BY id DESC LIMIT 50", (f"%{q}%",))
         else:
-            cur.execute("SELECT id,username,role,disabled,created_at FROM chat_users ORDER BY id DESC LIMIT 50")
-        return {"users": cur.fetchall()}
+            cur.execute("SELECT id,username,role,support_level,support_amount_cents,disabled,created_at FROM chat_users ORDER BY id DESC LIMIT 50")
+        return {"users": cur.fetchall(), "ptz_sponsor_min_cents": ptz_threshold_cents()}
+
+
+@app.post("/api/admin/support")
+def admin_support(data: SupportIn, authorization: Optional[str] = Header(default=None)):
+    admin = current_user(authorization)
+    require_admin(admin)
+    with db() as conn, conn.cursor() as cur:
+        cur.execute("SELECT id FROM chat_users WHERE id=%s", (data.user_id,))
+        if not cur.fetchone():
+            raise HTTPException(404, "User not found")
+        cur.execute("UPDATE chat_users SET support_level=%s,support_amount_cents=%s WHERE id=%s", (data.support_level, data.support_amount_cents, data.user_id))
+        cur.execute("INSERT INTO chat_audit(admin_id,action,target_user_id,details) VALUES(%s,'support_status',%s,%s)", (admin["id"], data.user_id, f"{data.support_level}:{data.support_amount_cents}"))
+    return {"ok": True}
+
+
+@app.get("/api/admin/settings")
+def admin_settings(authorization: Optional[str] = Header(default=None)):
+    admin = current_user(authorization)
+    require_admin(admin)
+    return {"ptz_sponsor_min_cents": ptz_threshold_cents()}
+
+
+@app.post("/api/admin/settings/ptz-threshold")
+def admin_ptz_threshold(data: ThresholdIn, authorization: Optional[str] = Header(default=None)):
+    admin = current_user(authorization)
+    require_admin(admin)
+    value = None if data.ptz_sponsor_min_cents is None else str(data.ptz_sponsor_min_cents)
+    with db() as conn, conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO site_settings(key,value,updated_at) VALUES('ptz_sponsor_min_cents',%s,NOW())
+            ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()
+        """, (value,))
+        cur.execute("INSERT INTO chat_audit(admin_id,action,details) VALUES(%s,'ptz_threshold',%s)", (admin["id"], value or 'disabled'))
+    return {"ok": True, "ptz_sponsor_min_cents": data.ptz_sponsor_min_cents}
 
 
 @app.post("/api/admin/ban")
