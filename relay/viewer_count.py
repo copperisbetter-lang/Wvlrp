@@ -64,9 +64,10 @@ class Handler(BaseHTTPRequestHandler):
             with lock:
                 if cam in viewers:
                     viewers[cam].pop(sid, None)
-                    if not viewers[cam]: viewers.pop(cam, None)
+                    if not viewers[cam]:
+                        viewers.pop(cam, None)
             return self.send_json({'cam': cam, 'viewers': count(cam)})
         return self.send_json({'error': 'not found'}, 404)
 
 if __name__ == '__main__':
-    ThreadingHTTPServer(('127.0.0.1', 8892), Handler).serve_forever()
+    ThreadingHTTPServer(('127.0.0.1', 8894), Handler).serve_forever()
