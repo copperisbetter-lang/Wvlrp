@@ -35,6 +35,20 @@ jobs:
           if compgen -G "assets/lounge/lounge-placeholder-tiny.webp.b64.part*" > /dev/null; then
             cat assets/lounge/lounge-placeholder-tiny.webp.b64.part* | base64 --decode > assets/lounge/lounge-placeholder.webp
           fi
+      - name: Apply Lounge wallpaper placeholder
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('supporters.html')
+          s = p.read_text()
+          tag = '''<style id="lounge-wallpaper-placeholder">
+          body{background-image:linear-gradient(rgba(2,10,7,.68),rgba(2,10,7,.90)),url('assets/lounge/lounge-placeholder.webp');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
+          .gate-card,.cam,.chat{backdrop-filter:blur(5px);background-color:rgba(6,19,14,.88)}
+          </style>'''
+          if 'lounge-wallpaper-placeholder' not in s:
+              s = s.replace('</head>', tag + '</head>')
+              p.write_text(s)
+          PY
       - name: Add shared WVLRP sign in
         run: |
           python3 - <<'PY'
