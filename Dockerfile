@@ -19,7 +19,7 @@ RUN mkdir -p /run/nginx && printf '%s\n' \
 '    server_name _;' \
 '    location = / {' \
 '      default_type text/plain;' \
-'      return 200 "WVLRP multi-camera relay\\n";' \
+'      return 200 "WVLRP multi-camera relay reconnect-v2\\n";' \
 '    }' \
 '    location /presence/ {' \
 '      proxy_pass http://127.0.0.1:8892;' \
