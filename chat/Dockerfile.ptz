@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY chat/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+COPY chat/ptz.py ./ptz.py
+COPY chat/ptz_relay.py ./ptz_relay.py
+ENV PORT=8080
+CMD ["sh","-c","uvicorn ptz_relay:app --host 0.0.0.0 --port ${PORT:-8080}"]
