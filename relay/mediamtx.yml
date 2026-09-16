@@ -8,14 +8,15 @@ rtsp: true
 rtspAddress: :8554
 
 # HLS stays internal; nginx exposes the public HTTP port and proxies here.
+# Keep a very small LL-HLS window so PTZ movement is visible quickly.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
 hlsAlwaysRemux: true
 hlsVariant: lowLatency
-hlsSegmentCount: 7
-hlsSegmentDuration: 1s
-hlsPartDuration: 200ms
+hlsSegmentCount: 3
+hlsSegmentDuration: 500ms
+hlsPartDuration: 100ms
 
 # Keep WebRTC off for this deployment.
 webrtc: false
