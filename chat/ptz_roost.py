@@ -11,9 +11,9 @@ import requests
 
 HOST = (os.environ.get("ROOST_ONVIF_HOST") or "").strip()
 PORT = int(os.environ.get("ROOST_ONVIF_PORT", "80"))
-USERNAME = os.environ.get("ROOST_ONVIF_USERNAME", "admin").strip()
-PASSWORD = os.environ.get("ROOST_ONVIF_PASSWORD", "")
-PROFILE_OVERRIDE = os.environ.get("ROOST_ONVIF_PROFILE", "").strip()
+USERNAME = (os.environ.get("ROOST_ONVIF_USERNAME") or os.environ.get("EASTBANK_ONVIF_USERNAME") or "admin").strip()
+PASSWORD = os.environ.get("ROOST_ONVIF_PASSWORD") if os.environ.get("ROOST_ONVIF_PASSWORD") is not None else os.environ.get("EASTBANK_ONVIF_PASSWORD", "")
+PROFILE_OVERRIDE = (os.environ.get("ROOST_ONVIF_PROFILE") or os.environ.get("EASTBANK_ONVIF_PROFILE") or "").strip()
 PTZ_PATH_OVERRIDE = os.environ.get("ROOST_ONVIF_PTZ_PATH", "").strip()
 
 SOAP = "http://www.w3.org/2003/05/soap-envelope"
