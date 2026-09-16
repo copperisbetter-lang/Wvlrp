@@ -1,4 +1,4 @@
-# WVLRP multi-camera RTSP -> HLS relay
+# WVLRP multi-camera RTSP -> HLS/WebRTC relay
 # Camera sources are ingested by ffmpeg and published locally to MediaMTX.
 
 logLevel: info
@@ -7,8 +7,7 @@ logLevel: info
 rtsp: true
 rtspAddress: :8554
 
-# HLS stays internal; nginx exposes the public HTTP port and proxies here.
-# Keep a very small LL-HLS window so PTZ movement is visible quickly.
+# Public feeds remain LL-HLS.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
@@ -18,8 +17,13 @@ hlsSegmentCount: 3
 hlsSegmentDuration: 500ms
 hlsPartDuration: 100ms
 
-# Keep WebRTC off for this deployment.
-webrtc: false
+# Ultra-low-latency preview for Lounge PTZ.
+# Signaling is proxied by nginx under /webrtc/; TCP fallback keeps it usable
+# through Railway's public HTTP endpoint without disturbing the HLS feeds.
+webrtc: true
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']
+webrtcLocalTCPAddress: :8189
 
 pathDefaults:
   rtspTransport: tcp
