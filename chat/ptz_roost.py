@@ -9,6 +9,8 @@ from threading import Lock
 
 import requests
 
+# Roost PTZ runs beside East Bank while keeping independent camera state.
+
 HOST = (os.environ.get("ROOST_ONVIF_HOST") or "").strip()
 PORT = int(os.environ.get("ROOST_ONVIF_PORT", "80"))
 USERNAME = (os.environ.get("ROOST_ONVIF_USERNAME") or os.environ.get("EASTBANK_ONVIF_USERNAME") or "admin").strip()
