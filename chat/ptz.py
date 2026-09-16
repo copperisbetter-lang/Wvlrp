@@ -3,15 +3,26 @@ import base64
 import hashlib
 import secrets
 from datetime import datetime, timezone
+from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
 import requests
 
 HOST = os.environ.get("EASTBANK_ONVIF_HOST", "").strip()
 PORT = int(os.environ.get("EASTBANK_ONVIF_PORT", "80"))
-USERNAME = os.environ.get("EASTBANK_ONVIF_USERNAME", "admin")
+USERNAME = os.environ.get("EASTBANK_ONVIF_USERNAME", "admin").strip()
 PASSWORD = os.environ.get("EASTBANK_ONVIF_PASSWORD", "")
-PROFILE = os.environ.get("EASTBANK_ONVIF_PROFILE", "Profile_1")
+PROFILE_OVERRIDE = os.environ.get("EASTBANK_ONVIF_PROFILE", "").strip()
+PTZ_PATH_OVERRIDE = os.environ.get("EASTBANK_ONVIF_PTZ_PATH", "").strip()
+
+SOAP = "http://www.w3.org/2003/05/soap-envelope"
+MEDIA = "http://www.onvif.org/ver10/media/wsdl"
+DEVICE = "http://www.onvif.org/ver10/device/wsdl"
+PTZ = "http://www.onvif.org/ver20/ptz/wsdl"
+TT = "http://www.onvif.org/ver10/schema"
+
+_cached_profile = None
+_cached_ptz_url = None
 
 
 def configured():
@@ -25,25 +36,102 @@ def _security():
     return f'''<wsse:Security s:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsse:UsernameToken><wsse:Username>{escape(USERNAME)}</wsse:Username><wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">{base64.b64encode(digest).decode()}</wsse:Password><wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">{base64.b64encode(nonce).decode()}</wsse:Nonce><wsu:Created>{created}</wsu:Created></wsse:UsernameToken></wsse:Security>'''
 
 
-def _soap(body):
+def _post(url, body, timeout=5):
+    envelope = f'''<?xml version="1.0" encoding="UTF-8"?><s:Envelope xmlns:s="{SOAP}" xmlns:tds="{DEVICE}" xmlns:trt="{MEDIA}" xmlns:tptz="{PTZ}" xmlns:tt="{TT}"><s:Header>{_security()}</s:Header><s:Body>{body}</s:Body></s:Envelope>'''
+    r = requests.post(url, data=envelope.encode(), headers={"Content-Type": "application/soap+xml; charset=utf-8"}, timeout=timeout)
+    if r.status_code >= 400:
+        raise RuntimeError(f"Camera rejected ONVIF command ({r.status_code})")
+    return r.text
+
+
+def _device_url():
+    return f"http://{HOST}:{PORT}/onvif/Device"
+
+
+def _media_url():
+    return f"http://{HOST}:{PORT}/onvif/Media"
+
+
+def _discover_ptz_url():
+    global _cached_ptz_url
+    if _cached_ptz_url:
+        return _cached_ptz_url
+    if PTZ_PATH_OVERRIDE:
+        if PTZ_PATH_OVERRIDE.startswith("http://") or PTZ_PATH_OVERRIDE.startswith("https://"):
+            _cached_ptz_url = PTZ_PATH_OVERRIDE
+        else:
+            _cached_ptz_url = f"http://{HOST}:{PORT}/{PTZ_PATH_OVERRIDE.lstrip('/')}"
+        return _cached_ptz_url
+    # Most EYEPLUS cameras use /onvif/PTZ. Try service discovery first, then fall back.
+    try:
+        text = _post(_device_url(), '<tds:GetServices><tds:IncludeCapability>false</tds:IncludeCapability></tds:GetServices>')
+        root = ET.fromstring(text)
+        for service in root.iter():
+            ns = None
+            xaddr = None
+            for child in list(service):
+                tag = child.tag.split('}')[-1]
+                if tag == 'Namespace':
+                    ns = child.text
+                elif tag == 'XAddr':
+                    xaddr = child.text
+            if ns == PTZ and xaddr:
+                # Camera advertises its LAN address; preserve discovered path but route via configured host/port.
+                path = '/' + xaddr.split('/', 3)[3] if '://' in xaddr and xaddr.count('/') >= 3 else '/onvif/PTZ'
+                _cached_ptz_url = f"http://{HOST}:{PORT}{path}"
+                return _cached_ptz_url
+    except Exception:
+        pass
+    _cached_ptz_url = f"http://{HOST}:{PORT}/onvif/PTZ"
+    return _cached_ptz_url
+
+
+def _discover_profile():
+    global _cached_profile
+    if PROFILE_OVERRIDE:
+        return PROFILE_OVERRIDE
+    if _cached_profile:
+        return _cached_profile
+    text = _post(_media_url(), '<trt:GetProfiles/>')
+    root = ET.fromstring(text)
+    # Prefer a profile that actually contains a PTZConfiguration.
+    fallback = None
+    for elem in root.iter():
+        if elem.tag.split('}')[-1] != 'Profiles':
+            continue
+        token = elem.attrib.get('token') or elem.attrib.get('Token')
+        if not token:
+            continue
+        if fallback is None:
+            fallback = token
+        if any(child.tag.split('}')[-1] == 'PTZConfiguration' for child in list(elem)):
+            _cached_profile = token
+            return token
+    if fallback:
+        _cached_profile = fallback
+        return fallback
+    raise RuntimeError("Camera returned no ONVIF media profile")
+
+
+def _ptz(body):
     if not configured():
         raise RuntimeError("East Bank PTZ is not configured")
-    envelope = f'''<?xml version="1.0" encoding="UTF-8"?><s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tptz="http://www.onvif.org/ver20/ptz/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema"><s:Header>{_security()}</s:Header><s:Body>{body}</s:Body></s:Envelope>'''
-    url = f"http://{HOST}:{PORT}/onvif/PTZ"
-    r = requests.post(url, data=envelope.encode(), headers={"Content-Type":"application/soap+xml; charset=utf-8"}, timeout=4)
-    if r.status_code >= 400:
-        raise RuntimeError("Camera rejected PTZ command")
-    return True
+    return _post(_discover_ptz_url(), body)
 
 
 def move(action):
+    profile = _discover_profile()
     speeds = {
         "left": (-0.45, 0, 0), "right": (0.45, 0, 0),
         "up": (0, 0.45, 0), "down": (0, -0.45, 0),
         "zoom_in": (0, 0, 0.45), "zoom_out": (0, 0, -0.45),
     }
     if action == "stop":
-        return _soap(f'<tptz:Stop><tptz:ProfileToken>{escape(PROFILE)}</tptz:ProfileToken><tptz:PanTilt>true</tptz:PanTilt><tptz:Zoom>true</tptz:Zoom></tptz:Stop>')
+        # Standard ONVIF Stop. Some inexpensive cameras ignore Stop; zero-velocity fallback follows.
+        try:
+            return _ptz(f'<tptz:Stop><tptz:ProfileToken>{escape(profile)}</tptz:ProfileToken><tptz:PanTilt>true</tptz:PanTilt><tptz:Zoom>true</tptz:Zoom></tptz:Stop>')
+        except Exception:
+            return _ptz(f'<tptz:ContinuousMove><tptz:ProfileToken>{escape(profile)}</tptz:ProfileToken><tptz:Velocity><tt:PanTilt x="0" y="0"/><tt:Zoom x="0"/></tptz:Velocity></tptz:ContinuousMove>')
     if action not in speeds:
         raise ValueError("Unknown PTZ action")
     x, y, z = speeds[action]
@@ -52,4 +140,4 @@ def move(action):
         velocity += f'<tt:PanTilt x="{x}" y="{y}"/>'
     if z:
         velocity += f'<tt:Zoom x="{z}"/>'
-    return _soap(f'<tptz:ContinuousMove><tptz:ProfileToken>{escape(PROFILE)}</tptz:ProfileToken><tptz:Velocity>{velocity}</tptz:Velocity></tptz:ContinuousMove>')
+    return _ptz(f'<tptz:ContinuousMove><tptz:ProfileToken>{escape(profile)}</tptz:ProfileToken><tptz:Velocity>{velocity}</tptz:Velocity></tptz:ContinuousMove>')
