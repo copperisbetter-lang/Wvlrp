@@ -7,7 +7,8 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from ptz import move, configured\nfrom ptz_roost import move as move_roost, configured as roost_configured
+from ptz import move, configured
+from ptz_roost import move as move_roost, configured as roost_configured
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 SECRET_KEY = os.environ.get("CHAT_SECRET_KEY", "change-me").encode()
