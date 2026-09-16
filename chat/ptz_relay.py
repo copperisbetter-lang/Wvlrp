@@ -7,7 +7,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from ptz import move, configured
+from ptz import move, configured\nfrom ptz_roost import move as move_roost, configured as roost_configured
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 SECRET_KEY = os.environ.get("CHAT_SECRET_KEY", "change-me").encode()
@@ -87,7 +87,7 @@ class PTZCommand(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "east-bank-ptz-relay", "configured": configured()}
+    return {"ok": True, "service": "east-bank-ptz-relay", "configured": configured(), "roost_configured": roost_configured()}
 
 
 @app.get("/api/ptz/east-bank/status")
@@ -108,3 +108,23 @@ def command(data: PTZCommand, authorization: Optional[str] = Header(default=None
     except Exception:
         raise HTTPException(502, "East Bank camera did not accept the PTZ command")
     return {"ok": True, "camera": "east-bank", "action": data.action}
+
+
+@app.get("/api/ptz/roost/status")
+def roost_status(authorization: Optional[str] = Header(default=None)):
+    current_user(authorization)
+    return {"ok": True, "camera": "roost", "configured": roost_configured()}
+
+
+@app.post("/api/ptz/roost/command")
+def roost_command(data: PTZCommand, authorization: Optional[str] = Header(default=None)):
+    current_user(authorization)
+    if not roost_configured():
+        raise HTTPException(503, "Roost PTZ is not configured")
+    try:
+        move_roost(data.action)
+    except ValueError:
+        raise HTTPException(400, "Unknown PTZ action")
+    except Exception:
+        raise HTTPException(502, "Roost camera did not accept the PTZ command")
+    return {"ok": True, "camera": "roost", "action": data.action}
