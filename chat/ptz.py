@@ -7,6 +7,7 @@ from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
 import requests
+from threading import Lock
 
 # Accept both the canonical uppercase name and the original Railway variable name
 # that was provided during setup.
@@ -25,6 +26,9 @@ TT = "http://www.onvif.org/ver10/schema"
 
 _cached_profile = None
 _cached_ptz_url = None
+_http = requests.Session()
+_http.headers.update({"Connection": "keep-alive"})
+_camera_lock = Lock()
 
 
 def configured():
@@ -40,7 +44,7 @@ def _security():
 
 def _post(url, body, timeout=5):
     envelope = f'''<?xml version="1.0" encoding="UTF-8"?><s:Envelope xmlns:s="{SOAP}" xmlns:tds="{DEVICE}" xmlns:trt="{MEDIA}" xmlns:tptz="{PTZ}" xmlns:tt="{TT}"><s:Header>{_security()}</s:Header><s:Body>{body}</s:Body></s:Envelope>'''
-    r = requests.post(url, data=envelope.encode(), headers={"Content-Type":"application/soap+xml; charset=utf-8"}, timeout=timeout)
+    r = _http.post(url, data=envelope.encode(), headers={"Content-Type":"application/soap+xml; charset=utf-8"}, timeout=timeout)
     if r.status_code >= 400:
         raise RuntimeError(f"Camera rejected ONVIF command ({r.status_code})")
     return r.text
@@ -97,6 +101,11 @@ def _ptz(body):
 
 
 def move(action):
+    with _camera_lock:
+        return _move_locked(action)
+
+
+def _move_locked(action):
     profile=_discover_profile()
     speeds={"left":(-0.45,0,0),"right":(0.45,0,0),"up":(0,0.45,0),"down":(0,-0.45,0),"zoom_in":(0,0,0.45),"zoom_out":(0,0,-0.45)}
     if action=='stop':
