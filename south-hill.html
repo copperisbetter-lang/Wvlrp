@@ -25,5 +25,5 @@
 (()=>{const URL='',v=document.getElementById('video'),empty=document.getElementById('empty'),status=document.getElementById('status');let h;function set(s){status.textContent=s}function connect(){if(!URL){set('AWAITING CAMERA');empty.classList.remove('hidden');return}if(h)h.destroy();set('CONNECTING');if(window.Hls&&Hls.isSupported()){h=new Hls({liveSyncDurationCount:3,enableWorker:true});h.loadSource(URL);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));h.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){set('OFFLINE');empty.classList.remove('hidden')}})}else{v.src=URL;v.play().catch(()=>{})}}v.addEventListener('playing',()=>{set('LIVE NOW');empty.classList.add('hidden')});document.getElementById('retry').onclick=connect;document.getElementById('mute').onclick=function(){v.muted=!v.muted;this.textContent=v.muted?'🔇 AUDIO':'🔊 AUDIO'};document.getElementById('full').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.getElementById('player').requestFullscreen?.();connect()})();
 </script>
 <script src="viewer-count.js?v=20260914-1715" data-camera="south-hill"></script>
-</body>
+<script src="site-analytics.js?v=20260916-1"></script></body>
 </html>

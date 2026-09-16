@@ -19,4 +19,4 @@ function start(u){user=u;$('#locked').classList.add('hide');$('#app').classList.
 $('#add').onclick=()=>{const n={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),title:'',body:'',updated:Date.now()};items.unshift(n);save();render();notes.querySelector('.nt')?.focus()};$('#search').oninput=render;
 function check(){const a=window.WVLRP_AUTH,u=a?.getUser();if(u)return start(u);setTimeout(()=>{const u2=window.WVLRP_AUTH?.getUser();if(u2)start(u2);else{$('#locked').classList.remove('hide');$('#app').classList.add('hide')}},800)}
 window.addEventListener('wvlrp-auth-change',e=>e.detail?start(e.detail):location.reload());check()})();
-</script></body></html>
+</script><script src="site-analytics.js?v=20260916-1"></script></body></html>
