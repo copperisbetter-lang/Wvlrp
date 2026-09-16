@@ -30,6 +30,16 @@ RUN mkdir -p /run/nginx && printf '%s\n' \
 '      proxy_set_header X-Forwarded-Proto $scheme;' \
 '      proxy_buffering off;' \
 '    }' \
+'    location /webrtc/ {' \
+'      rewrite ^/webrtc/(.*)$ /$1 break;' \
+'      proxy_pass http://127.0.0.1:8889;' \
+'      proxy_http_version 1.1;' \
+'      proxy_set_header Host $host;' \
+'      proxy_set_header X-Forwarded-Proto $scheme;' \
+'      proxy_buffering off;' \
+'      proxy_request_buffering off;' \
+'      proxy_read_timeout 3600s;' \
+'    }' \
 '    location / {' \
 '      proxy_pass http://127.0.0.1:8891;' \
 '      proxy_http_version 1.1;' \
