@@ -8,13 +8,13 @@ rtsp: true
 rtspAddress: :8554
 
 # HLS stays internal; nginx exposes the public HTTP port and proxies here.
-# Keep a very small LL-HLS window so PTZ movement is visible quickly.
+# MediaMTX requires at least 7 segments for low-latency HLS.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
 hlsAlwaysRemux: true
 hlsVariant: lowLatency
-hlsSegmentCount: 3
+hlsSegmentCount: 7
 hlsSegmentDuration: 500ms
 hlsPartDuration: 100ms
 
