@@ -35,26 +35,18 @@ jobs:
           if compgen -G "assets/lounge/lounge-placeholder-tiny.webp.b64.part*" > /dev/null; then
             cat assets/lounge/lounge-placeholder-tiny.webp.b64.part* | base64 --decode > assets/lounge/lounge-placeholder.webp
           fi
-      - name: Apply Lounge wallpaper placeholder
+      - name: Retire legacy supporter lounge
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('supporters.html')
-          s = p.read_text()
-          tag = '''<style id="lounge-wallpaper-placeholder">
-          body{background-image:linear-gradient(rgba(2,10,7,.68),rgba(2,10,7,.90)),url('assets/lounge/lounge-placeholder.webp');background-size:cover;background-position:center top;background-attachment:fixed;background-repeat:no-repeat}
-          .gate-card,.cam,.chat{backdrop-filter:blur(5px);background-color:rgba(6,19,14,.88)}
-          </style>'''
-          if 'lounge-wallpaper-placeholder' not in s:
-              s = s.replace('</head>', tag + '</head>')
-              p.write_text(s)
-          PY
+          cat > supporters.html <<'EOF'
+          <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=lounge.html"><title>WVLRP Lounge</title><script>location.replace('lounge.html'+location.search+location.hash)</script></head><body><a href="lounge.html">Open the WVLRP Lounge</a></body></html>
+          EOF
+          cp supporters.html supporter.html
       - name: Add shared WVLRP sign in
         run: |
           python3 - <<'PY'
           import re
           from pathlib import Path
-          tag = '<script src="site-auth.js?v=20260915-2" data-wvlrp-site-auth></script>'
+          tag = '<script src="site-auth.js?v=20260916-menu2" data-wvlrp-site-auth></script>'
           for p in Path('.').glob('*.html'):
               s = p.read_text()
               if 'site-auth.js' in s:
