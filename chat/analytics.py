@@ -36,6 +36,8 @@ def init_analytics_db():
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS analytics_video_started_idx ON analytics_video_views(started_at DESC)")
         cur.execute("CREATE INDEX IF NOT EXISTS analytics_video_key_idx ON analytics_video_views(video_key,started_at DESC)")
+        # Remove the one synthetic event used for the production acceptance test.
+        cur.execute("DELETE FROM analytics_page_visits WHERE visitor_id='gator-test'")
 
 
 @app.on_event("startup")
