@@ -8,15 +8,16 @@ rtsp: true
 rtspAddress: :8554
 
 # HLS stays internal; nginx exposes the public HTTP port and proxies here.
-# MediaMTX requires at least 7 segments for low-latency HLS.
+# Use standard MPEG-TS HLS instead of LL-HLS. It adds a little latency but is
+# substantially more tolerant of mobile/browser reconnects and irregular
+# camera timestamps, which is what the Roost feed needs for 24/7 stability.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
 hlsAlwaysRemux: true
-hlsVariant: lowLatency
-hlsSegmentCount: 7
-hlsSegmentDuration: 500ms
-hlsPartDuration: 100ms
+hlsVariant: mpegts
+hlsSegmentCount: 8
+hlsSegmentDuration: 1s
 
 # Keep WebRTC off for this deployment.
 webrtc: false
