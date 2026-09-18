@@ -23,6 +23,7 @@
     .viewer-bar .control,.viewer-bar .controls button{height:36px;min-width:38px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18)!important;background:#132d22!important;color:#fff!important;display:grid!important;place-items:center;font-weight:900}
     .viewer-count{display:flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:#132d22;border:1px solid rgba(255,255,255,.24);color:#fff;font:900 10px/1 Arial,sans-serif;letter-spacing:.08em;white-space:nowrap}
     .viewer-count .eye{font-size:13px;letter-spacing:0}.viewer-count .num{font-size:11px}.viewer-count.offline{opacity:.65}
+    .wvlrp-viewer-welcome{position:absolute;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88%,520px);padding:18px 20px;border-radius:18px;background:#06120eef;border:1px solid rgba(255,255,255,.3);box-shadow:0 18px 55px #000b;color:#fff;text-align:center;font:800 14px/1.45 Arial,sans-serif;opacity:0;pointer-events:none;transition:opacity .65s ease}.wvlrp-viewer-welcome.show{opacity:1}.wvlrp-viewer-welcome b{display:block;font-size:20px;margin-bottom:5px}.wvlrp-viewer-welcome .count{color:#ffe09a}
     .wvlrp-support-mini{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:10px auto 0!important;padding:7px 11px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.22)!important;background:rgba(255,255,255,.06)!important;color:#dfe8e3!important;text-decoration:none!important;font:800 10px/1 Arial,sans-serif!important;letter-spacing:.04em!important;box-shadow:none!important}
     .wvlrp-support-mini:hover{background:rgba(255,255,255,.11)!important;color:#fff!important}
     @media(max-width:620px){.viewer-bar{justify-content:center}.viewer-bar .controls{margin-left:0!important}.viewer-bar .corner-brand,.viewer-bar .brandbug{width:100%;justify-content:center}.wvlrp-support-mini{font-size:9px!important;padding:7px 10px!important}}
@@ -64,6 +65,10 @@
   bar.appendChild(badge);
   const num=badge.querySelector('.num');
 
+  const welcome=document.createElement('div');welcome.className='wvlrp-viewer-welcome';media.appendChild(welcome);let welcomeShown=false,centerTimer=null;
+  function maybeWelcome(viewerToday){if(welcomeShown||!viewerToday)return;const auth=window.WVLRP_AUTH,u=auth&&auth.getUser&&auth.getUser();if(!u?.username)return;const rect=media.getBoundingClientRect(),vh=innerHeight||document.documentElement.clientHeight;const centered=rect.top<vh*.62&&rect.bottom>vh*.38;if(centered){if(!centerTimer)centerTimer=setTimeout(()=>{const current=window.WVLRP_AUTH?.getUser?.();if(!current?.username||welcomeShown)return;welcomeShown=true;welcome.innerHTML='<b>Welcome, '+String(current.username).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))+'!</b>You are viewer <span class="count">#'+viewerToday+'</span> today.<br>Thank you for joining us.';welcome.classList.add('show');setTimeout(()=>welcome.classList.remove('show'),4500)},5000)}else{clearTimeout(centerTimer);centerTimer=null}}
+  addEventListener('scroll',()=>{if(window.__wvlrpViewerToday)maybeWelcome(window.__wvlrpViewerToday)},{passive:true});window.addEventListener('wvlrp-auth-change',()=>{if(window.__wvlrpViewerToday)maybeWelcome(window.__wvlrpViewerToday)});
+
   const endpoint='https://wvlrp-production.up.railway.app/presence';
   const sid=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
   let timer=null;
@@ -76,6 +81,7 @@
       const j=await r.json();
       num.textContent=String(j.viewers??0);
       badge.classList.remove('offline');
+      if(j.viewer_today){window.__wvlrpViewerToday=j.viewer_today;maybeWelcome(j.viewer_today)}
     }catch{badge.classList.add('offline')}
   }
   function start(){clearInterval(timer);beat();timer=setInterval(beat,15000)}
