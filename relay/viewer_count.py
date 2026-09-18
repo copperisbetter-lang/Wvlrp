@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import json, time, threading
+import json, time, threading, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 TTL = 45
 viewers = {}
+daily_viewers = {}
+daily_day = None
 lock = threading.Lock()
 
 def cleanup(now=None):
@@ -14,6 +16,18 @@ def cleanup(now=None):
             viewers[cam] = {sid: ts for sid, ts in viewers[cam].items() if now - ts < TTL}
             if not viewers[cam]:
                 viewers.pop(cam, None)
+
+def daily_number(cam, sid):
+    global daily_day, daily_viewers
+    day = datetime.datetime.now().strftime('%Y-%m-%d')
+    with lock:
+        if daily_day != day:
+            daily_day = day
+            daily_viewers = {}
+        bucket = daily_viewers.setdefault(cam, {})
+        if sid not in bucket:
+            bucket[sid] = len(bucket) + 1
+        return bucket[sid], len(bucket)
 
 def count(cam):
     cleanup()
@@ -59,7 +73,8 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == '/presence/heartbeat':
             with lock:
                 viewers.setdefault(cam, {})[sid] = now
-            return self.send_json({'cam': cam, 'viewers': count(cam)})
+            number, today = daily_number(cam, sid)
+            return self.send_json({'cam': cam, 'viewers': count(cam), 'viewer_today': number, 'today_viewers': today})
         if u.path == '/presence/leave':
             with lock:
                 if cam in viewers:
