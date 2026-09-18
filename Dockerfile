@@ -7,9 +7,8 @@ RUN apk add --no-cache nginx ffmpeg python3
 COPY --from=mediamtx /mediamtx /mediamtx
 COPY relay/mediamtx.yml /mediamtx.yml
 COPY relay/viewer_count.py /viewer_count.py
-COPY relay/stream_watchdog.sh /stream_watchdog.sh
 
-RUN chmod +x /stream_watchdog.sh && mkdir -p /run/nginx && printf '%s\n' \
+RUN mkdir -p /run/nginx && printf '%s\n' \
 'worker_processes 1;' \
 'events { worker_connections 1024; }' \
 'http {' \
@@ -58,4 +57,4 @@ RUN chmod +x /stream_watchdog.sh && mkdir -p /run/nginx && printf '%s\n' \
 
 EXPOSE 8888
 
-CMD ["/bin/sh", "-c", "python3 /viewer_count.py & /stream_watchdog.sh & EAST_SOURCE=\"${MTX_PATHS_EASTBANK_SOURCE:-$WVLRP_RTSP_SOURCE}\"; ROOST_SOURCE=\"${MTX_PATHS_ROOST_SOURCE:-${ROOST_RTSP_URL:-$WVLRP_ROOST_RTSP_SOURCE}}\"; env -i PATH="$PATH" HOME="${HOME:-/root}" /mediamtx /mediamtx.yml & sleep 2; if [ -n \"$EAST_SOURCE\" ]; then (while true; do ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -fflags +discardcorrupt -i \"$EAST_SOURCE\" -map 0:v:0 -an -vf \"setpts=N/(15*TB)\" -r 15 -fps_mode cfr -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -level 4.0 -pix_fmt yuv420p -g 30 -keyint_min 30 -sc_threshold 0 -b:v 1800k -maxrate 2200k -bufsize 3600k -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/eastbank; rc=$?; echo \"[eastbank] ffmpeg exited rc=$rc; retrying in 3s\" >&2; sleep 3; done) & fi; if [ -n \"$ROOST_SOURCE\" ]; then (while true; do ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -fflags +discardcorrupt -i \"$ROOST_SOURCE\" -map 0:v:0 -an -vf \"setpts=N/(15*TB)\" -r 15 -fps_mode cfr -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -level 3.1 -pix_fmt yuv420p -g 30 -keyint_min 30 -sc_threshold 0 -b:v 1800k -maxrate 2200k -bufsize 3600k -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/roost; rc=$?; echo \"[roost] ffmpeg exited rc=$rc; retrying in 3s\" >&2; sleep 3; done) & fi; exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "python3 /viewer_count.py & EAST_SOURCE=\"${MTX_PATHS_EASTBANK_SOURCE:-$WVLRP_RTSP_SOURCE}\"; ROOST_SOURCE=\"${MTX_PATHS_ROOST_SOURCE:-$WVLRP_ROOST_RTSP_SOURCE}\"; env -u MTX_PATHS_EASTBANK_SOURCE -u MTX_PATHS_ROOST_SOURCE /mediamtx /mediamtx.yml & sleep 2; if [ -n \"$EAST_SOURCE\" ]; then (while true; do ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i \"$EAST_SOURCE\" -map 0:v:0 -an -c:v copy -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/eastbank; rc=$?; echo \"[eastbank] ffmpeg exited rc=$rc; retrying in 10s\" >&2; sleep 10; done) & fi; if [ -n \"$ROOST_SOURCE\" ]; then (while true; do ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i \"$ROOST_SOURCE\" -map 0:v:0 -an -c:v copy -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/roost; rc=$?; echo \"[roost] ffmpeg exited rc=$rc; retrying in 10s\" >&2; sleep 10; done) & fi; exec nginx -g 'daemon off;'"]
