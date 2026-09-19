@@ -1,6 +1,6 @@
 import os, re, random
 from typing import Optional
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Query
 from pydantic import BaseModel, Field
 from server import app, db, current_user, validate_room
 
@@ -24,6 +24,7 @@ class SightingIn(BaseModel):
     room:str
     label:str=Field(default="Wildlife sighting",max_length=80)
     note:str=Field(default="",max_length=300)
+    image_data:Optional[str]=Field(default=None,max_length=900000)
 class CameraRequestIn(BaseModel):
     room:str
     request:str=Field(min_length=3,max_length=240)
@@ -34,7 +35,8 @@ def init_hatch_db():
         cur.execute("""CREATE TABLE IF NOT EXISTS hatch_sightings(
           id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES chat_users(id) ON DELETE SET NULL,
           room TEXT NOT NULL,label TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())""")
+          image_data TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())""")
+        cur.execute("ALTER TABLE hatch_sightings ADD COLUMN IF NOT EXISTS image_data TEXT")
         cur.execute("""CREATE TABLE IF NOT EXISTS hatch_camera_requests(
           id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES chat_users(id) ON DELETE CASCADE,
           room TEXT NOT NULL,request TEXT NOT NULL,duration_seconds INT NOT NULL DEFAULT 60,
@@ -67,9 +69,23 @@ def hatch_ask(data:HatchAsk,authorization:Optional[str]=Header(default=None)):
 def hatch_sighting(data:SightingIn,authorization:Optional[str]=Header(default=None)):
     user=current_user(authorization); room=validate_room(data.room)
     with db() as conn, conn.cursor() as cur:
-        cur.execute("INSERT INTO hatch_sightings(user_id,room,label,note) VALUES(%s,%s,%s,%s) RETURNING id,created_at",(user["id"],room,data.label.strip(),data.note.strip()))
+        image=data.image_data
+        if image and not re.match(r"^data:image/jpeg;base64,[A-Za-z0-9+/=]+$",image):
+            raise HTTPException(400,"Screenshot format is not supported")
+        cur.execute("INSERT INTO hatch_sightings(user_id,room,label,note,image_data) VALUES(%s,%s,%s,%s,%s) RETURNING id,created_at",(user["id"],room,data.label.strip(),data.note.strip(),image))
         row=cur.fetchone()
-    return {"ok":True,"id":row["id"],"created_at":row["created_at"],"message":"Sighting saved for Hatch."}
+    return {"ok":True,"id":row["id"],"created_at":row["created_at"],"message":"Hatch shared the sighting with the other live cameras."}
+
+@app.get("/api/hatch/sightings/latest")
+def hatch_latest(after:int=Query(default=0,ge=0),exclude_room:str=Query(default="")):
+    exclude=exclude_room.strip().lower()
+    with db() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT id,room,label,note,image_data,created_at
+          FROM hatch_sightings
+          WHERE id>%s AND created_at>NOW()-INTERVAL '30 minutes' AND room<>%s
+          ORDER BY id ASC LIMIT 10""",(after,exclude))
+        rows=cur.fetchall()
+    return {"sightings":rows}
 
 @app.post("/api/hatch/camera-request")
 def hatch_camera_request(data:CameraRequestIn,authorization:Optional[str]=Header(default=None)):
