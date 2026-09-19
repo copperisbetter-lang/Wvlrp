@@ -2,6 +2,8 @@ FROM bluenviron/mediamtx:1 AS mediamtx
 
 FROM alpine:3.22
 
+# build-refresh: 2026-09-19 roost-audio-v2
+
 RUN apk add --no-cache nginx ffmpeg python3
 
 COPY --from=mediamtx /mediamtx /mediamtx
