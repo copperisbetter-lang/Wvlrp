@@ -11,6 +11,10 @@
 </style>
 <link rel="stylesheet" href="assets/roost/living-wallpaper.css?v=20260918-2">
 
+<style id="roost-logo-visibility-tune">
+/* Preserve the approved Roost camera position; only lift the embedded logo/sign at night. */
+.poster-wrap::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at 50% 16%,rgba(255,246,214,.40) 0%,rgba(255,221,156,.18) 16%,rgba(255,214,144,.06) 27%,transparent 38%);mix-blend-mode:screen}
+</style>
 </head>
 <body>
 <main class="page">
