@@ -7,7 +7,7 @@ import urllib.request
 MASTER = "http://127.0.0.1:8891/roost/index.m3u8"
 CHECK_SECONDS = 20
 FAIL_LIMIT = 3
-STARTUP_GRACE = 45
+STARTUP_GRACE = 90
 
 
 def fetch(url):
@@ -51,11 +51,6 @@ def restart_roost(reason):
         if not name.isdigit():
             continue
         try:
-            # Only terminate the actual ffmpeg executable. The previous
-            # cmdline-only match could also match the background /bin/sh loop
-            # because that shell's command text contains both "ffmpeg" and the
-            # Roost output URL. Killing that shell permanently removed the
-            # supervisor that is supposed to respawn ffmpeg.
             with open(f"/proc/{name}/comm", "r", encoding="utf-8", errors="replace") as handle:
                 comm = handle.read().strip()
             if comm != "ffmpeg":
