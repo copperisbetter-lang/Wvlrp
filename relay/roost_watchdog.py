@@ -51,9 +51,18 @@ def restart_roost(reason):
         if not name.isdigit():
             continue
         try:
+            # Only terminate the actual ffmpeg executable. The previous
+            # cmdline-only match could also match the background /bin/sh loop
+            # because that shell's command text contains both "ffmpeg" and the
+            # Roost output URL. Killing that shell permanently removed the
+            # supervisor that is supposed to respawn ffmpeg.
+            with open(f"/proc/{name}/comm", "r", encoding="utf-8", errors="replace") as handle:
+                comm = handle.read().strip()
+            if comm != "ffmpeg":
+                continue
             with open(f"/proc/{name}/cmdline", "rb") as handle:
                 command = handle.read().replace(b"\x00", b" ").decode("utf-8", "replace")
-            if "ffmpeg" in command and "rtsp://127.0.0.1:8554/roost" in command:
+            if "rtsp://127.0.0.1:8554/roost" in command:
                 os.kill(int(name), signal.SIGTERM)
                 killed += 1
         except (FileNotFoundError, ProcessLookupError, PermissionError):
