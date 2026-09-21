@@ -88,11 +88,13 @@ poll();setInterval(poll,4000);document.addEventListener('visibilitychange',()=>{
   const style=document.createElement('style');
   style.textContent=`
   #hatch-roamer{position:fixed;z-index:2147483000;width:82px;height:82px;object-fit:contain;left:-100px;bottom:74px;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 5px 6px #0008);touch-action:manipulation;transition:none}
-  #hatch-roamer.hatch-run-right{animation:hatchCrossRight 8s linear forwards}
-  #hatch-roamer.hatch-run-left{animation:hatchCrossLeft 8s linear forwards;transform:scaleX(-1)}
+  #hatch-roamer.hatch-run-right{animation:hatchCrossRight 8s linear forwards,hatchScurry .18s steps(2,end) infinite}
+  #hatch-roamer.hatch-run-left{animation:hatchCrossLeft 8s linear forwards,hatchScurryLeft .18s steps(2,end) infinite}
   #hatch-roamer.hatch-laugh{animation:hatchRollLaugh 2.8s ease-in-out forwards!important}
   @keyframes hatchCrossRight{from{left:-95px}to{left:calc(100% + 15px)}}
   @keyframes hatchCrossLeft{from{left:calc(100% + 15px)}to{left:-95px}}
+  @keyframes hatchScurry{0%{transform:translateY(0) rotate(-2deg) scaleY(.92)}25%{transform:translateY(3px) rotate(2deg) scaleY(.88)}50%{transform:translateY(-2px) rotate(-1deg) scaleY(.94)}75%{transform:translateY(2px) rotate(2deg) scaleY(.9)}100%{transform:translateY(0) rotate(-2deg) scaleY(.92)}}
+  @keyframes hatchScurryLeft{0%{transform:scaleX(-1) translateY(0) rotate(-2deg) scaleY(.92)}25%{transform:scaleX(-1) translateY(3px) rotate(2deg) scaleY(.88)}50%{transform:scaleX(-1) translateY(-2px) rotate(-1deg) scaleY(.94)}75%{transform:scaleX(-1) translateY(2px) rotate(2deg) scaleY(.9)}100%{transform:scaleX(-1) translateY(0) rotate(-2deg) scaleY(.92)}}
   @keyframes hatchRollLaugh{0%{transform:rotate(0) scale(1)}20%{transform:rotate(-30deg) scale(1.08)}45%{transform:rotate(-92deg) scale(1.12)}60%{transform:rotate(-78deg) scale(1.12)}75%{transform:rotate(-96deg) scale(1.12)}90%{transform:rotate(-82deg) scale(1.08)}100%{transform:rotate(0) scale(1)}}
   #hatch-giggle{position:fixed;z-index:2147483001;display:none;padding:7px 11px;border-radius:999px;background:#07140fee;border:1px solid #ffffff44;color:#fff;font:900 13px Arial,sans-serif;pointer-events:none}
   @media(max-width:600px){#hatch-roamer{width:70px;height:70px;bottom:66px}}
