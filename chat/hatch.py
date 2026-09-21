@@ -87,6 +87,20 @@ def hatch_latest(after:int=Query(default=0,ge=0),exclude_room:str=Query(default=
         rows=cur.fetchall()
     return {"sightings":rows}
 
+@app.get("/api/hatch/sightings/archive")
+def hatch_archive(limit:int=Query(default=100,ge=1,le=500),room:str=Query(default="")):
+    camera=room.strip().lower()
+    with db() as conn, conn.cursor() as cur:
+        if camera:
+            cur.execute("""SELECT id,room,label,note,image_data,created_at
+              FROM hatch_sightings WHERE room=%s
+              ORDER BY id DESC LIMIT %s""",(camera,limit))
+        else:
+            cur.execute("""SELECT id,room,label,note,image_data,created_at
+              FROM hatch_sightings ORDER BY id DESC LIMIT %s""",(limit,))
+        rows=cur.fetchall()
+    return {"sightings":rows}
+
 @app.post("/api/hatch/camera-request")
 def hatch_camera_request(data:CameraRequestIn,authorization:Optional[str]=Header(default=None)):
     user=current_user(authorization); room=validate_room(data.room)
