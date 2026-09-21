@@ -4,7 +4,10 @@ import signal
 import time
 import urllib.request
 
-CAMERA = os.environ.get("WVLRP_WATCHDOG_CAMERA", "roost").strip().lower()\nif CAMERA not in {"roost", "eastbank"}:\n    CAMERA = "roost"\nMASTER = f"http://127.0.0.1:8891/{CAMERA}/index.m3u8"
+CAMERA = os.environ.get("WVLRP_WATCHDOG_CAMERA", "roost").strip().lower()
+if CAMERA not in {"roost", "eastbank"}:
+    CAMERA = "roost"
+MASTER = f"http://127.0.0.1:8891/{CAMERA}/index.m3u8"
 CHECK_SECONDS = 20
 FAIL_LIMIT = 4
 STARTUP_GRACE = 90
