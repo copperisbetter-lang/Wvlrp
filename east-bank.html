@@ -37,7 +37,7 @@
   mix-blend-mode:screen;
 }
 </style>
-</head>
+<style id="stream-recovery-ui">.stream-recovery{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);z-index:25;background:#06110de8;border:1px solid #ffffff30;color:#fff;border-radius:999px;padding:8px 13px;font:800 11px Arial,sans-serif;letter-spacing:.04em;box-shadow:0 5px 20px #0008;display:none}.stream-recovery.show{display:block}</style></head>
 <body>
 <div class="top"><a href="index.html">← WVLRP Home</a><strong>WE DO IT LIVE</strong></div>
 <section class="hero">
@@ -51,4 +51,4 @@ window.WVLRP_STREAM_URL="https://wvlrp-production.up.railway.app/eastbank/index.
 </script><script src="viewer-count.js?v=20260914-1625" data-camera="east-bank"></script>
 <script src="site-analytics.js?v=20260916-1"></script><script src="hatch-widget.js?v=20260920-2"></script>
 <script src="assets/east-bank-living-wallpaper.js?v=20260920-2"></script>
-</body></html>
+<script>(()=>{const v=document.querySelector('video'),host=v&&(v.closest('.player,.player-shell,.video-wrap,.video-shell,.stream-wrap')||v.parentElement);if(!v||!host)return;if(getComputedStyle(host).position==='static')host.style.position='relative';const n=document.createElement('div');n.className='stream-recovery';n.textContent='Live feed reconnecting — no refresh required';host.appendChild(n);let timer=0;const wait=()=>{clearTimeout(timer);timer=setTimeout(()=>n.classList.add('show'),2500)},live=()=>{clearTimeout(timer);n.textContent='Feed restored';n.classList.add('show');setTimeout(()=>{n.classList.remove('show');n.textContent='Live feed reconnecting — no refresh required'},2200)};v.addEventListener('waiting',wait);v.addEventListener('stalled',wait);v.addEventListener('error',wait);v.addEventListener('playing',live)})();</script></body></html>
