@@ -127,3 +127,5 @@ poll();setInterval(poll,4000);document.addEventListener('visibilitychange',()=>{
   dir=-1;setTimeout(run,450);
 })();
 })();
+/* Legacy roaming mascot disabled */
+try{document.getElementById('hatch-roamer')?.remove();}catch(e){}
