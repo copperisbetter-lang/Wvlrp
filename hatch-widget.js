@@ -81,4 +81,47 @@ function frame(){try{const max=640,scale=Math.min(1,max/(video.videoWidth||max))
 async function postSighting(label,image){const token=localStorage.getItem('wvlrpChatToken')||'';if(!token)throw Error('Sign in to WVLRP chat first so Hatch knows who submitted it.');const r=await fetch(API+'/api/hatch/sighting',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({room,label,note:'Live viewer screenshot',image_data:image})});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.detail||'Hatch could not save that sighting.');return j}
 tools.querySelector('.hatch-capture').onclick=async()=>{if(video.readyState<2){status.textContent='The live picture is not ready yet.';return}status.textContent='Hatch is capturing the live frame…';const image=frame();try{const j=await postSighting('Wildlife sighting',image);status.textContent='Screenshot saved to File Cabinet and Look Who’s Here.';setTimeout(()=>status.textContent='',7000)}catch(e){status.textContent=e.message}};
 poll();setInterval(poll,4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
+
+/* Hatch roaming test — frequent while Doug tunes timing/interaction. */
+(()=>{
+  if(document.getElementById('hatch-roamer'))return;
+  const style=document.createElement('style');
+  style.textContent=`
+  #hatch-roamer{position:fixed;z-index:2147483000;width:82px;height:82px;object-fit:contain;left:-100px;bottom:74px;cursor:pointer;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 5px 6px #0008);touch-action:manipulation;transition:none}
+  #hatch-roamer.hatch-run-right{animation:hatchCrossRight 8s linear forwards}
+  #hatch-roamer.hatch-run-left{animation:hatchCrossLeft 8s linear forwards;transform:scaleX(-1)}
+  #hatch-roamer.hatch-laugh{animation:hatchRollLaugh 2.8s ease-in-out forwards!important}
+  @keyframes hatchCrossRight{from{left:-95px}to{left:calc(100% + 15px)}}
+  @keyframes hatchCrossLeft{from{left:calc(100% + 15px)}to{left:-95px}}
+  @keyframes hatchRollLaugh{0%{transform:rotate(0) scale(1)}20%{transform:rotate(-30deg) scale(1.08)}45%{transform:rotate(-92deg) scale(1.12)}60%{transform:rotate(-78deg) scale(1.12)}75%{transform:rotate(-96deg) scale(1.12)}90%{transform:rotate(-82deg) scale(1.08)}100%{transform:rotate(0) scale(1)}}
+  #hatch-giggle{position:fixed;z-index:2147483001;display:none;padding:7px 11px;border-radius:999px;background:#07140fee;border:1px solid #ffffff44;color:#fff;font:900 13px Arial,sans-serif;pointer-events:none}
+  @media(max-width:600px){#hatch-roamer{width:70px;height:70px;bottom:66px}}
+  @media(prefers-reduced-motion:reduce){#hatch-roamer{animation-duration:14s!important}}
+  `;
+  document.head.appendChild(style);
+  const hatch=document.createElement('img');
+  hatch.id='hatch-roamer'; hatch.src=HATCH_ANIM; hatch.alt='Hatch running across the screen'; hatch.setAttribute('aria-label','Tap Hatch');
+  const giggle=document.createElement('div'); giggle.id='hatch-giggle'; giggle.textContent='HAHAHA! 😄';
+  document.body.append(hatch,giggle);
+  let dir=1,timer=0,laughing=false;
+  function run(){
+    if(laughing)return;
+    hatch.className=dir>0?'hatch-run-right':'hatch-run-left';
+    dir*=-1;
+    clearTimeout(timer);
+    timer=setTimeout(()=>{hatch.className='';timer=setTimeout(run,1800)},8200);
+  }
+  hatch.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();if(laughing)return;
+    laughing=true;clearTimeout(timer);
+    const r=hatch.getBoundingClientRect();
+    hatch.style.left=r.left+'px';hatch.style.bottom=(innerHeight-r.bottom)+'px';
+    hatch.className='hatch-laugh';
+    giggle.style.left=Math.max(8,Math.min(innerWidth-110,r.left+8))+'px';
+    giggle.style.top=Math.max(8,r.top-38)+'px';giggle.style.display='block';
+    if(navigator.vibrate)navigator.vibrate([45,35,45,35,70]);
+    setTimeout(()=>{giggle.style.display='none';hatch.style.left='';hatch.style.bottom='';hatch.className='';laughing=false;timer=setTimeout(run,900)},2850);
+  });
+  setTimeout(run,900);
+})();
 })();
