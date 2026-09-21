@@ -15,7 +15,7 @@
 /* Preserve the approved Roost camera position; only lift the embedded logo/sign at night. */
 .poster-wrap::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at 50% 16%,rgba(255,246,214,.40) 0%,rgba(255,221,156,.18) 16%,rgba(255,214,144,.06) 27%,transparent 38%);mix-blend-mode:screen}
 </style>
-</head>
+<style id="stream-recovery-ui">.stream-recovery{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);z-index:25;background:#06110de8;border:1px solid #ffffff30;color:#fff;border-radius:999px;padding:8px 13px;font:800 11px Arial,sans-serif;letter-spacing:.04em;box-shadow:0 5px 20px #0008;display:none}.stream-recovery.show{display:block}</style></head>
 <body>
 <main class="page">
 <section class="poster-wrap">
@@ -81,5 +81,5 @@
 </script>
 <script src="hatch-widget.js?v=20260920-2"></script>
 <script src="assets/roost/living-wallpaper.js?v=20260920-1"></script>
-</body>
+<script>(()=>{const v=document.querySelector('video'),host=v&&(v.closest('.player,.player-shell,.video-wrap,.video-shell,.stream-wrap')||v.parentElement);if(!v||!host)return;if(getComputedStyle(host).position==='static')host.style.position='relative';const n=document.createElement('div');n.className='stream-recovery';n.textContent='Live feed reconnecting — no refresh required';host.appendChild(n);let timer=0;const wait=()=>{clearTimeout(timer);timer=setTimeout(()=>n.classList.add('show'),2500)},live=()=>{clearTimeout(timer);n.textContent='Feed restored';n.classList.add('show');setTimeout(()=>{n.classList.remove('show');n.textContent='Live feed reconnecting — no refresh required'},2200)};v.addEventListener('waiting',wait);v.addEventListener('stalled',wait);v.addEventListener('error',wait);v.addEventListener('playing',live)})();</script></body>
 </html>
