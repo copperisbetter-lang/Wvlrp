@@ -4,7 +4,7 @@ import signal
 import time
 import urllib.request
 
-MASTER = "http://127.0.0.1:8891/roost/index.m3u8"
+CAMERA = os.environ.get("WVLRP_WATCHDOG_CAMERA", "roost").strip().lower()\nif CAMERA not in {"roost", "eastbank"}:\n    CAMERA = "roost"\nMASTER = f"http://127.0.0.1:8891/{CAMERA}/index.m3u8"
 CHECK_SECONDS = 20
 FAIL_LIMIT = 4
 STARTUP_GRACE = 90
@@ -29,7 +29,7 @@ def media_playlist():
     variant = variants[-1]
     if variant.startswith("http://") or variant.startswith("https://"):
         return fetch(variant)
-    return fetch("http://127.0.0.1:8891/roost/" + variant)
+    return fetch(f"http://127.0.0.1:8891/{CAMERA}/" + variant)
 
 
 def playlist_marker(text):
@@ -46,7 +46,7 @@ def playlist_marker(text):
     return sequence + "|" + "|".join(segments[-2:])
 
 
-def restart_roost(reason):
+def restart_camera(reason):
     killed = 0
     for name in os.listdir("/proc"):
         if not name.isdigit():
@@ -58,12 +58,12 @@ def restart_roost(reason):
                 continue
             with open(f"/proc/{name}/cmdline", "rb") as handle:
                 command = handle.read().replace(b"\x00", b" ").decode("utf-8", "replace")
-            if "rtsp://127.0.0.1:8554/roost" in command:
+            if f"rtsp://127.0.0.1:8554/{CAMERA}" in command:
                 os.kill(int(name), signal.SIGTERM)
                 killed += 1
         except (FileNotFoundError, ProcessLookupError, PermissionError):
             pass
-    print(f"[roost-watchdog] {reason}; terminated {killed} Roost ffmpeg process(es)", flush=True)
+    print(f"[{CAMERA}-watchdog] {reason}; terminated {killed} {CAMERA} ffmpeg process(es)", flush=True)
 
 
 time.sleep(STARTUP_GRACE)
@@ -79,9 +79,9 @@ while True:
         failures = 0
     except Exception as exc:
         failures += 1
-        print(f"[roost-watchdog] failed check {failures}/{FAIL_LIMIT}: {exc}", flush=True)
+        print(f"[{CAMERA}-watchdog] failed check {failures}/{FAIL_LIMIT}: {exc}", flush=True)
         if failures >= FAIL_LIMIT:
-            restart_roost("stream unhealthy for four consecutive checks")
+            restart_camera("stream unhealthy for four consecutive checks")
             failures = 0
             last_marker = None
             time.sleep(RECOVERY_GRACE)
