@@ -6,8 +6,9 @@ import urllib.request
 
 MASTER = "http://127.0.0.1:8891/roost/index.m3u8"
 CHECK_SECONDS = 20
-FAIL_LIMIT = 3
+FAIL_LIMIT = 4
 STARTUP_GRACE = 90
+RECOVERY_GRACE = 120
 
 
 def fetch(url):
@@ -80,8 +81,8 @@ while True:
         failures += 1
         print(f"[roost-watchdog] failed check {failures}/{FAIL_LIMIT}: {exc}", flush=True)
         if failures >= FAIL_LIMIT:
-            restart_roost("stream unhealthy for three consecutive checks")
+            restart_roost("stream unhealthy for four consecutive checks")
             failures = 0
             last_marker = None
-            time.sleep(STARTUP_GRACE)
+            time.sleep(RECOVERY_GRACE)
     time.sleep(CHECK_SECONDS)
