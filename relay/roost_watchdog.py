@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""WVLRP stream watchdog with conservative recovery and restart-loop protection."""
+"""WVLRP stream watchdog with publisher recovery and container escalation."""
 
 import os
 import signal
@@ -19,6 +19,13 @@ RECOVERY_GRACE = int(os.environ.get("WVLRP_WATCHDOG_RECOVERY_GRACE", "180"))
 RESTART_COOLDOWN = int(os.environ.get("WVLRP_WATCHDOG_RESTART_COOLDOWN", "600"))
 STABLE_CHECKS_REQUIRED = int(os.environ.get("WVLRP_WATCHDOG_STABLE_CHECKS", "3"))
 FETCH_TIMEOUT = int(os.environ.get("WVLRP_WATCHDOG_FETCH_TIMEOUT", "8"))
+MAX_PUBLISHER_RESTARTS = int(
+    os.environ.get("WVLRP_WATCHDOG_MAX_PUBLISHER_RESTARTS", "1")
+)
+ESCALATE_CONTAINER = os.environ.get(
+    "WVLRP_WATCHDOG_ESCALATE_CONTAINER",
+    "1" if CAMERA == "roost" else "0",
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def log(message):
@@ -27,7 +34,7 @@ def log(message):
 
 def fetch(url):
     request = urllib.request.Request(
-        url, headers={"User-Agent": "WVLRP-Stream-Watchdog/2.0"}
+        url, headers={"User-Agent": "WVLRP-Stream-Watchdog/3.0"}
     )
     with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT) as response:
         if response.status != 200:
@@ -96,11 +103,23 @@ def terminate_camera(reason):
     return len(pids)
 
 
+def restart_container(reason):
+    log(f"{reason}; publisher recovery exhausted, restarting relay container")
+    try:
+        os.kill(1, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError) as exc:
+        log(f"container restart request failed: {exc}")
+    time.sleep(30)
+    raise SystemExit(1)
+
+
 def main():
     log(
         "started: "
         f"startup={STARTUP_GRACE}s, failures={FAIL_LIMIT}, "
-        f"recovery={RECOVERY_GRACE}s, cooldown={RESTART_COOLDOWN}s"
+        f"recovery={RECOVERY_GRACE}s, cooldown={RESTART_COOLDOWN}s, "
+        f"publisher_restarts={MAX_PUBLISHER_RESTARTS}, "
+        f"container_escalation={ESCALATE_CONTAINER}"
     )
     time.sleep(STARTUP_GRACE)
 
@@ -109,6 +128,7 @@ def main():
     stable_checks = 0
     last_restart = 0.0
     recovering = False
+    publisher_restarts = 0
 
     while True:
         try:
@@ -121,6 +141,7 @@ def main():
             if recovering and stable_checks >= STABLE_CHECKS_REQUIRED:
                 log(f"stream stable for {stable_checks} consecutive checks; recovery confirmed")
                 recovering = False
+                publisher_restarts = 0
         except Exception as exc:
             failures += 1
             stable_checks = 0
@@ -132,10 +153,15 @@ def main():
                 if last_restart and cooldown_left > 0:
                     log(f"restart suppressed for {int(cooldown_left)}s to prevent a restart loop")
                     failures = FAIL_LIMIT - 1
+                elif ESCALATE_CONTAINER and publisher_restarts >= MAX_PUBLISHER_RESTARTS:
+                    restart_container(
+                        f"stream still unhealthy after {publisher_restarts} publisher restart(s)"
+                    )
                 else:
                     terminate_camera(
                         f"stream unhealthy for {FAIL_LIMIT} consecutive checks"
                     )
+                    publisher_restarts += 1
                     last_restart = time.monotonic()
                     recovering = True
                     failures = 0
