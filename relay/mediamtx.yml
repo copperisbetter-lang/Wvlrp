@@ -3,23 +3,19 @@
 
 logLevel: info
 
-# Internal RTSP listener used by the ffmpeg publishers.
 rtsp: true
 rtspAddress: :8554
 
-# HLS stays internal; nginx exposes the public HTTP port and proxies here.
-# Use standard MPEG-TS HLS instead of LL-HLS. It adds a little latency but is
-# substantially more tolerant of mobile/browser reconnects and irregular
-# camera timestamps, which is what the Roost feed needs for 24/7 stability.
+# Low-latency MPEG-TS HLS. Keep MPEG-TS for the mobile/reconnect stability
+# we already proved, but keep only a small live window so PTZ stays near live.
 hls: true
 hlsAddress: :8891
 hlsAllowOrigins: ['*']
 hlsAlwaysRemux: true
 hlsVariant: mpegts
-hlsSegmentCount: 8
+hlsSegmentCount: 3
 hlsSegmentDuration: 1s
 
-# Keep WebRTC off for this deployment.
 webrtc: false
 
 pathDefaults:
