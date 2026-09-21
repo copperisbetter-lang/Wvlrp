@@ -82,47 +82,48 @@ async function postSighting(label,image){const token=localStorage.getItem('wvlrp
 tools.querySelector('.hatch-capture').onclick=async()=>{if(video.readyState<2){status.textContent='The live picture is not ready yet.';return}status.textContent='Hatch is capturing the live frame…';const image=frame();try{const j=await postSighting('Wildlife sighting',image);status.textContent='Screenshot saved to File Cabinet and Look Who’s Here.';setTimeout(()=>status.textContent='',7000)}catch(e){status.textContent=e.message}};
 poll();setInterval(poll,4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
 
-/* Hatch roaming test — articulated four-leg scurry + physical rollover. */
+/* Hatch roaming test — low, top-down four-leg scurry + belly-up tickle. */
 (()=>{
   if(document.getElementById('hatch-roamer'))return;
   const style=document.createElement('style');
   style.textContent=`
-  #hatch-roamer{position:fixed;z-index:2147483000;width:112px;height:64px;left:-130px;bottom:74px;cursor:pointer;user-select:none;touch-action:manipulation;filter:drop-shadow(0 5px 5px #0008);transform-origin:50% 75%}
-  #hatch-roamer .hb{position:absolute;left:20px;top:12px;width:72px;height:35px;border-radius:55% 48% 45% 55%;background:linear-gradient(#668e42,#395d2d);border:2px solid #213b20}
-  #hatch-roamer .head{position:absolute;right:4px;top:4px;width:42px;height:34px;border-radius:55% 60% 50% 45%;background:#6f984a;border:2px solid #213b20}
-  #hatch-roamer .snout{position:absolute;right:-8px;top:17px;width:30px;height:15px;border-radius:45% 65% 55% 45%;background:#86a95a;border:2px solid #213b20}
-  #hatch-roamer .eye{position:absolute;right:20px;top:8px;width:8px;height:10px;border-radius:50%;background:#fff;border:1px solid #222}.eye:after{content:'';position:absolute;width:4px;height:5px;background:#111;border-radius:50%;right:0;top:2px}
-  #hatch-roamer .tail{position:absolute;left:-3px;top:22px;width:39px;height:15px;border-radius:80% 10% 10% 80%;background:#496e34;border:2px solid #213b20;transform-origin:100% 50%}
-  #hatch-roamer .leg{position:absolute;width:9px;height:26px;background:#527b38;border:2px solid #213b20;border-radius:7px;transform-origin:50% 3px}
-  #hatch-roamer .fl{left:68px;top:35px}.fr{left:82px;top:34px}.rl{left:31px;top:35px}.rr{left:47px;top:35px}
-  #hatch-roamer.run{animation:hbBob .22s steps(2,end) infinite}
-  #hatch-roamer.run .fl,#hatch-roamer.run .rr{animation:legA .22s ease-in-out infinite}
-  #hatch-roamer.run .fr,#hatch-roamer.run .rl{animation:legB .22s ease-in-out infinite}
-  #hatch-roamer.run .tail{animation:tailWag .3s ease-in-out infinite}
+  #hatch-roamer{position:fixed;z-index:2147483000;width:126px;height:78px;left:-150px;bottom:72px;cursor:pointer;user-select:none;touch-action:manipulation;filter:drop-shadow(0 5px 5px #0008);transform-origin:50% 50%}
+  #hatch-roamer i{position:absolute;display:block;box-sizing:border-box}
+  #hatch-roamer .hb{left:35px;top:25px;width:64px;height:29px;border-radius:52% 48% 48% 52%;background:linear-gradient(90deg,#466b31,#709449);border:2px solid #213b20}
+  #hatch-roamer .head{left:88px;top:21px;width:31px;height:35px;border-radius:45% 58% 55% 45%;background:#709849;border:2px solid #213b20}
+  #hatch-roamer .snout{left:108px;top:27px;width:24px;height:23px;border-radius:35% 65% 65% 35%;background:#83a858;border:2px solid #213b20}
+  #hatch-roamer .eye{left:103px;top:25px;width:7px;height:7px;border-radius:50%;background:#fff;border:1px solid #222}.eye:after{content:'';position:absolute;width:3px;height:3px;background:#111;border-radius:50%;left:2px;top:1px}
+  #hatch-roamer .tail{left:2px;top:31px;width:42px;height:17px;border-radius:85% 12% 12% 85%;background:#486d33;border:2px solid #213b20;transform-origin:100% 50%}
+  #hatch-roamer .leg{width:30px;height:8px;background:#567d39;border:2px solid #213b20;border-radius:8px;transform-origin:4px 50%}
+  #hatch-roamer .fl{left:78px;top:14px}.fr{left:78px;top:56px}.rl{left:40px;top:14px}.rr{left:40px;top:56px}
+  #hatch-roamer.run{animation:hatchBody .16s steps(2,end) infinite}
+  #hatch-roamer.run .fl,#hatch-roamer.run .rr{animation:hatchLegA .16s ease-in-out infinite}
+  #hatch-roamer.run .fr,#hatch-roamer.run .rl{animation:hatchLegB .16s ease-in-out infinite}
+  #hatch-roamer.run .tail{animation:hatchTail .24s ease-in-out infinite}
   #hatch-roamer.left{transform:scaleX(-1)}
-  #hatch-roamer.laugh{animation:flop .55s ease-out forwards}
-  #hatch-roamer.laugh .leg{animation:kick .18s ease-in-out infinite alternate!important}
-  #hatch-roamer.getup{animation:getup .55s ease-in forwards}
-  @keyframes hbBob{0%,100%{margin-top:0}50%{margin-top:3px}}
-  @keyframes legA{0%,100%{transform:rotate(42deg)}50%{transform:rotate(-48deg)}}
-  @keyframes legB{0%,100%{transform:rotate(-48deg)}50%{transform:rotate(42deg)}}
-  @keyframes tailWag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(9deg)}}
-  @keyframes flop{0%{transform:rotate(0) translateY(0)}65%{transform:rotate(-105deg) translateY(5px)}100%{transform:rotate(-90deg) translateY(8px)}}
-  @keyframes kick{from{transform:rotate(-65deg)}to{transform:rotate(65deg)}}
-  @keyframes getup{from{transform:rotate(-90deg) translateY(8px)}to{transform:rotate(0) translateY(0)}}
+  #hatch-roamer.laugh{animation:hatchRoll .48s ease-out forwards}
+  #hatch-roamer.laugh .leg{animation:hatchKick .14s ease-in-out infinite alternate!important}
+  #hatch-roamer.getup{animation:hatchGetup .48s ease-in forwards}
+  @keyframes hatchBody{0%,100%{margin-top:0}50%{margin-top:2px}}
+  @keyframes hatchLegA{0%,100%{transform:rotate(28deg) translateX(1px)}50%{transform:rotate(-28deg) translateX(-3px)}}
+  @keyframes hatchLegB{0%,100%{transform:rotate(-28deg) translateX(-3px)}50%{transform:rotate(28deg) translateX(1px)}}
+  @keyframes hatchTail{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+  @keyframes hatchRoll{0%{transform:rotateX(0) rotateZ(0)}70%{transform:rotateX(165deg) rotateZ(-7deg)}100%{transform:rotateX(180deg) rotateZ(0)}}
+  @keyframes hatchKick{from{transform:rotate(-45deg)}to{transform:rotate(45deg)}}
+  @keyframes hatchGetup{from{transform:rotateX(180deg)}to{transform:rotateX(360deg)}}
   #hatch-giggle{position:fixed;z-index:2147483001;display:none;padding:7px 11px;border-radius:999px;background:#07140fee;border:1px solid #ffffff44;color:#fff;font:900 13px Arial,sans-serif;pointer-events:none}
-  @media(max-width:600px){#hatch-roamer{width:96px;height:58px;bottom:66px;transform-origin:50% 75%}}
+  @media(max-width:600px){#hatch-roamer{width:110px;height:70px;bottom:64px}}
   `;
   document.head.appendChild(style);
-  const hatch=document.createElement('div'); hatch.id='hatch-roamer'; hatch.setAttribute('role','button'); hatch.tabIndex=0; hatch.setAttribute('aria-label','Tap Hatch');
+  const hatch=document.createElement('div');hatch.id='hatch-roamer';hatch.setAttribute('role','button');hatch.tabIndex=0;hatch.setAttribute('aria-label','Tap Hatch');
   hatch.innerHTML='<i class="tail"></i><i class="hb"></i><i class="head"></i><i class="snout"></i><i class="eye"></i><i class="leg fl"></i><i class="leg fr"></i><i class="leg rl"></i><i class="leg rr"></i>';
   const giggle=document.createElement('div');giggle.id='hatch-giggle';giggle.textContent='HAHAHA! THAT TICKLES! 😄';
   document.body.append(hatch,giggle);
-  let dir=1,timer=0,raf=0,laughing=false,x=-130,last=0;
-  function step(t){if(!last)last=t;const dt=Math.min(40,t-last);last=t;if(!laughing){x+=dir*.075*dt;hatch.style.left=x+'px';const edge=dir>0?innerWidth+20:-140;if((dir>0&&x>edge)||(dir<0&&x<edge)){cancelAnimationFrame(raf);hatch.className='';timer=setTimeout(run,1200);return}raf=requestAnimationFrame(step)}}
-  function run(){if(laughing)return;dir*=-1;x=dir>0?-130:innerWidth+20;hatch.style.left=x+'px';hatch.className='run '+(dir<0?'left':'');last=0;raf=requestAnimationFrame(step)}
-  function tickle(e){if(e){e.preventDefault();e.stopPropagation()}if(laughing)return;laughing=true;clearTimeout(timer);cancelAnimationFrame(raf);const facing=dir<0?' left':'';hatch.className='laugh'+facing;const r=hatch.getBoundingClientRect();giggle.style.left=Math.max(8,Math.min(innerWidth-180,r.left))+'px';giggle.style.top=Math.max(8,r.top-38)+'px';giggle.style.display='block';if(navigator.vibrate)navigator.vibrate([45,35,45,35,70]);setTimeout(()=>{hatch.className='getup'+facing;giggle.textContent='HEHE! 😄';setTimeout(()=>{giggle.style.display='none';giggle.textContent='HAHAHA! THAT TICKLES! 😄';laughing=false;run()},650)},2200)}
+  let dir=1,timer=0,raf=0,laughing=false,x=-150,last=0;
+  function step(t){if(!last)last=t;const dt=Math.min(40,t-last);last=t;if(!laughing){x+=dir*.13*dt;hatch.style.left=x+'px';const edge=dir>0?innerWidth+25:-155;if((dir>0&&x>edge)||(dir<0&&x<edge)){cancelAnimationFrame(raf);hatch.className='';timer=setTimeout(run,650);return}raf=requestAnimationFrame(step)}}
+  function run(){if(laughing)return;dir*=-1;x=dir>0?-150:innerWidth+25;hatch.style.left=x+'px';hatch.className='run '+(dir<0?'left':'');last=0;raf=requestAnimationFrame(step)}
+  function tickle(e){if(e){e.preventDefault();e.stopPropagation()}if(laughing)return;laughing=true;clearTimeout(timer);cancelAnimationFrame(raf);const facing=dir<0?' left':'';hatch.className='laugh'+facing;const r=hatch.getBoundingClientRect();giggle.style.left=Math.max(8,Math.min(innerWidth-190,r.left))+'px';giggle.style.top=Math.max(8,r.top-38)+'px';giggle.style.display='block';if(navigator.vibrate)navigator.vibrate([45,35,45,35,70]);setTimeout(()=>{hatch.className='getup'+facing;giggle.textContent='HEHE! 😄';setTimeout(()=>{giggle.style.display='none';giggle.textContent='HAHAHA! THAT TICKLES! 😄';laughing=false;run()},560)},1900)}
   hatch.addEventListener('click',tickle);hatch.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')tickle(e)});
-  dir=-1;setTimeout(run,700);
-})();;
+  dir=-1;setTimeout(run,450);
+})();
 })();
