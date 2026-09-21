@@ -79,7 +79,7 @@
 </script>
 <script src="site-analytics.js?v=20260916-1">
 </script>
-<script src="hatch-widget.js?v=20260920-2"></script>
+<script src="hatch-widget.js?v=20260920-2"></script><script src="hatch-roamer-approved.js?v=20260921-1"></script>
 <script src="assets/roost/living-wallpaper.js?v=20260920-1"></script>
 <script>(()=>{const v=document.querySelector('video'),host=v&&(v.closest('.player,.player-shell,.video-wrap,.video-shell,.stream-wrap')||v.parentElement);if(!v||!host)return;if(getComputedStyle(host).position==='static')host.style.position='relative';const n=document.createElement('div');n.className='stream-recovery';n.textContent='Live feed reconnecting — no refresh required';host.appendChild(n);let timer=0;const wait=()=>{clearTimeout(timer);timer=setTimeout(()=>n.classList.add('show'),2500)},live=()=>{clearTimeout(timer);n.textContent='Feed restored';n.classList.add('show');setTimeout(()=>{n.classList.remove('show');n.textContent='Live feed reconnecting — no refresh required'},2200)};v.addEventListener('waiting',wait);v.addEventListener('stalled',wait);v.addEventListener('error',wait);v.addEventListener('playing',live)})();</script></body>
 </html>
