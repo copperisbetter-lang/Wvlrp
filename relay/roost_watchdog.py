@@ -22,9 +22,11 @@ FETCH_TIMEOUT = int(os.environ.get("WVLRP_WATCHDOG_FETCH_TIMEOUT", "8"))
 MAX_PUBLISHER_RESTARTS = int(
     os.environ.get("WVLRP_WATCHDOG_MAX_PUBLISHER_RESTARTS", "1")
 )
+# Never let one camera watchdog kill the shared relay container.
+# A failed Roost feed must not take East Bank down with it.
 ESCALATE_CONTAINER = os.environ.get(
     "WVLRP_WATCHDOG_ESCALATE_CONTAINER",
-    "1" if CAMERA == "roost" else "0",
+    "0",
 ).strip().lower() in {"1", "true", "yes", "on"}
 
 
