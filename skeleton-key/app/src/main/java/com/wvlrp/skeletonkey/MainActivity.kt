@@ -18,22 +18,18 @@ class MainActivity:Activity(){
  private val count=AtomicInteger()
  override fun onCreate(b:Bundle?){super.onCreate(b);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,28,28,28)}
  box.addView(TextView(this).apply{text="SKELETON KEY";textSize=28f;gravity=Gravity.CENTER})
- box.addView(TextView(this).apply{text="WVLRP Camera Discovery Probe
-LAN-only • no password guessing";gravity=Gravity.CENTER})
+ box.addView(TextView(this).apply{text="WVLRP Camera Discovery Probe\\nLAN-only • no password guessing";gravity=Gravity.CENTER})
  scan=Button(this).apply{text="SCAN + DEEP PROBE";setOnClickListener{startScan()}};box.addView(scan)
  log=TextView(this).apply{textSize=13f;movementMethod=ScrollingMovementMethod();setTextIsSelectable(true)}
  box.addView(ScrollView(this).apply{addView(log)},LinearLayout.LayoutParams(-1,0,1f));setContentView(box)}
- private fun line(s:String)=main.post{log.append(s+"
-")}
+ private fun line(s:String)=main.post{log.append(s+"\\n")}
  private fun startScan(){scan.isEnabled=false;log.text="";count.set(0);line("Known ICAM35L60 excluded: .35, .118, .237");line("Scanning 192.168.1.0/24 ...");pool.execute{udpDiscovery()};val left=AtomicInteger(254)
-  for(i in 1..254)pool.execute{val ip="192.168.1."+i;if(ip !in excluded)probe(ip);if(left.decrementAndGet()==0)main.post{scan.isEnabled=true;line("
-Done. Candidates: "+count.get())}}}
+  for(i in 1..254)pool.execute{val ip="192.168.1."+i;if(ip !in excluded)probe(ip);if(left.decrementAndGet()==0)main.post{scan.isEnabled=true;line("\\nDone. Candidates: "+count.get())}}}
  private fun probe(ip:String){val open=mutableListOf<Int>();for(p in ports)try{Socket().use{it.connect(InetSocketAddress(ip,p),180);open.add(p)}}catch(_:Exception){}
   if(open.isEmpty())return;val fp=mutableListOf<String>();if(80 in open)http(ip,80)?.let{fp.add(it)};if(8080 in open)http(ip,8080)?.let{fp.add(it)}
   if(554 in open||8554 in open)rtsp(ip,if(554 in open)554 else 8554)?.let{fp.add(it)}
   val joined=fp.joinToString(" ").lowercase();val consumer=listOf("chromecast","google tv","android tv","roku","webos","tizen","airplay","iphone","ipad").any{joined.contains(it)}
-  if(consumer)return;count.incrementAndGet();line("
-"+ip);line("Services: "+open.joinToString(", "));fp.forEach{line(it)}
+  if(consumer)return;count.incrementAndGet();line("\\n"+ip);line("Services: "+open.joinToString(", "));fp.forEach{line(it)}
   if(open.any{it in intArrayOf(8080,8888,9000,34567,37777,49152)})line("★ Priority fingerprint candidate"); if(ip in deepTargets){line("★★ TARGETED DEEP PROBE + SNAPSHOT SEARCH");deepCameraProbe(ip,open)} else if(open.containsAll(listOf(80,443,8000,49152))){line("★★ CAMERA-LIKE 80/443/8000/49152 TARGET");deepCameraProbe(ip,open)} else if(open.any{it in intArrayOf(8000,49152)}){deepCameraProbe(ip,open)}}
  private fun deepCameraProbe(ip:String,open:List<Int>){
   line("DEEP PROBE "+ip+" — read-only fingerprinting")
