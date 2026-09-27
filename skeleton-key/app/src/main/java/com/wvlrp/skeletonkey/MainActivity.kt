@@ -29,7 +29,7 @@ class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
 
     private val excluded = setOf("192.168.1.35", "192.168.1.118", "192.168.1.237")
-    private val targets = setOf("192.168.1.12", "192.168.1.26", "192.168.1.64")
+    private val targets = setOf("192.168.1.12", "192.168.1.26")\n    private val noise = setOf("192.168.1.1", "192.168.1.64", "192.168.1.238")
     private val ports = intArrayOf(80, 443, 554, 8000, 8080, 8554, 8888, 9000, 34567, 37777, 49152)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,12 +70,12 @@ class MainActivity : Activity() {
         log.text = ""
         line("Known cameras excluded: .35, .118, .237")
         line("Scanning 192.168.1.0/24")
-        pool.execute { ssdpDiscovery() }
+        pool.execute { ssdpDiscovery() }\n        pool.execute { onvifDiscovery() }
         val remaining = AtomicInteger(254)
         for (i in 1..254) {
             pool.execute {
                 val ip = "192.168.1." + i
-                if (ip !in excluded) probe(ip)
+                if (ip !in excluded && ip !in noise) probe(ip)
                 if (remaining.decrementAndGet() == 0) {
                     main.post {
                         scan.isEnabled = true
@@ -187,6 +187,38 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun onvifDiscovery() {
+        try {
+            DatagramSocket().use { socket ->
+                socket.soTimeout = 900
+                val id = java.util.UUID.randomUUID().toString()
+                val xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+                    "<e:Envelope xmlns:e=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:w=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:d=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\" xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\">" +
+                    "<e:Header><w:MessageID>urn:uuid:" + id + "</w:MessageID><w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To><w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action></e:Header>" +
+                    "<e:Body><d:Probe><d:Types>tds:Device</d:Types></d:Probe></e:Body></e:Envelope>"
+                val data = xml.toByteArray()
+                socket.send(DatagramPacket(data, data.size, InetAddress.getByName("239.255.255.250"), 3702))
+                val until = System.currentTimeMillis() + 2400
+                while (System.currentTimeMillis() < until) {
+                    try {
+                        val buffer = ByteArray(4096)
+                        val packet = DatagramPacket(buffer, buffer.size)
+                        socket.receive(packet)
+                        val host = packet.address.hostAddress ?: continue
+                        if (host in excluded || host in noise) continue
+                        val response = String(packet.data, 0, packet.length)
+                        val xaddr = Regex("<(?:\\w+:)?XAddrs[^>]*>(.*?)</(?:\\w+:)?XAddrs>", RegexOption.IGNORE_CASE).find(response)?.groupValues?.get(1)
+                        val scopes = Regex("<(?:\\w+:)?Scopes[^>]*>(.*?)</(?:\\w+:)?Scopes>", RegexOption.IGNORE_CASE).find(response)?.groupValues?.get(1)
+                        line("ONVIF " + host + (if (xaddr != null) " XAddr: " + xaddr else "") + (if (scopes != null) " Scopes: " + scopes.take(300) else ""))
+                    } catch (_: SocketTimeoutException) {
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            line("ONVIF discovery unavailable")
+        }
+    }
+
     private fun ssdpDiscovery() {
         try {
             DatagramSocket().use { socket ->
@@ -208,7 +240,7 @@ class MainActivity : Activity() {
                         val packet = DatagramPacket(buffer, buffer.size)
                         socket.receive(packet)
                         val host = packet.address.hostAddress ?: continue
-                        if (host !in excluded) {
+                        if (host !in excluded && host !in noise) {
                             val response = String(packet.data, 0, packet.length)
                                 .replace(System.lineSeparator(), " ")
                                 .take(500)
