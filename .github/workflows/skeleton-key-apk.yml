@@ -1,5 +1,5 @@
 name: Build Skeleton Key APK
-# retrigger after all Kotlin string fixes
+# retrigger clean C31W build after compile fix
 on:
   push:
     branches: [main, master]
