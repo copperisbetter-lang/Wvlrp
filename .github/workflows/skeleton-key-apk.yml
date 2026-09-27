@@ -1,16 +1,14 @@
 name: Build Skeleton Key APK
 on:
-  workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - 'skeleton-key/**'
       - '.github/workflows/skeleton-key-apk.yml'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: skeleton-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -20,7 +18,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - run: gradle :app:assembleDebug
+      - name: Build APK
+        working-directory: skeleton-key
+        run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: Skeleton-Key-APK
