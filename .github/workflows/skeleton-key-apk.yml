@@ -1,6 +1,6 @@
 name: Build Skeleton Key APK
 on:
-  push:
+  pull_request:
     branches: [main]
     paths:
       - 'skeleton-key/**'
