@@ -1,0 +1,7 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="18dp">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WVLRP Camera Probe" android:textSize="25sp" android:textStyle="bold"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Find cameras on your Wi-Fi and deep-probe Huntvision port 8888 plus exposed RTSP / HTTP services." android:paddingTop="8dp" android:paddingBottom="14dp"/>
+<Button android:id="@+id/scanButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DEEP PROBE HUNTVISION + LAN"/>
+<ProgressBar android:id="@+id/progress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:layout_gravity="center_horizontal"/>
+<ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"><TextView android:id="@+id/output" android:layout_width="match_parent" android:layout_height="wrap_content" android:textIsSelectable="true" android:fontFamily="monospace" android:paddingTop="12dp"/></ScrollView>
+</LinearLayout>
