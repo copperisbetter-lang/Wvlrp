@@ -70,7 +70,7 @@ class MainActivity : Activity() {
         log.text = ""
         line("Known cameras excluded: .35, .118, .237")
         line("Scanning 192.168.1.0/24")
-        pool.execute { ssdpDiscovery() }\n        pool.execute { onvifDiscovery() }
+        pool.execute { ssdpDiscovery() }\n        pool.execute { udpCandidateProbe() }
         val remaining = AtomicInteger(254)
         for (i in 1..254) {
             pool.execute {
@@ -187,35 +187,24 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun onvifDiscovery() {
-        try {
-            DatagramSocket().use { socket ->
-                socket.soTimeout = 900
-                val id = java.util.UUID.randomUUID().toString()
-                val xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
-                    "<e:Envelope xmlns:e=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:w=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:d=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\" xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\">" +
-                    "<e:Header><w:MessageID>urn:uuid:" + id + "</w:MessageID><w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To><w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action></e:Header>" +
-                    "<e:Body><d:Probe><d:Types>tds:Device</d:Types></d:Probe></e:Body></e:Envelope>"
-                val data = xml.toByteArray()
-                socket.send(DatagramPacket(data, data.size, InetAddress.getByName("239.255.255.250"), 3702))
-                val until = System.currentTimeMillis() + 2400
-                while (System.currentTimeMillis() < until) {
-                    try {
-                        val buffer = ByteArray(4096)
+    private fun udpCandidateProbe() {
+        val candidates = listOf("192.168.1.12", "192.168.1.26")
+        val udpPorts = listOf(32108, 17700, 17701, 17702, 17703, 17704, 17705, 17706)
+        for (host in candidates) {
+            for (port in udpPorts) {
+                try {
+                    DatagramSocket().use { socket ->
+                        socket.soTimeout = 350
+                        val data = byteArrayOf(0, 0, 0, 0)
+                        socket.send(DatagramPacket(data, data.size, InetAddress.getByName(host), port))
+                        val buffer = ByteArray(2048)
                         val packet = DatagramPacket(buffer, buffer.size)
                         socket.receive(packet)
-                        val host = packet.address.hostAddress ?: continue
-                        if (host in excluded || host in noise) continue
-                        val response = String(packet.data, 0, packet.length)
-                        val xaddr = Regex("<(?:\\w+:)?XAddrs[^>]*>(.*?)</(?:\\w+:)?XAddrs>", RegexOption.IGNORE_CASE).find(response)?.groupValues?.get(1)
-                        val scopes = Regex("<(?:\\w+:)?Scopes[^>]*>(.*?)</(?:\\w+:)?Scopes>", RegexOption.IGNORE_CASE).find(response)?.groupValues?.get(1)
-                        line("ONVIF " + host + (if (xaddr != null) " XAddr: " + xaddr else "") + (if (scopes != null) " Scopes: " + scopes.take(300) else ""))
-                    } catch (_: SocketTimeoutException) {
+                        line("UDP RESPONSE " + host + ":" + port + " bytes=" + packet.length)
                     }
+                } catch (_: Exception) {
                 }
             }
-        } catch (_: Exception) {
-            line("ONVIF discovery unavailable")
         }
     }
 
