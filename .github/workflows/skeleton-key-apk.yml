@@ -1,5 +1,5 @@
 name: Build Skeleton Key APK
-# retrigger clean request-string build
+# retrigger after all Kotlin string fixes
 on:
   push:
     branches: [main, master]
