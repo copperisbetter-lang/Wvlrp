@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : Activity() {
  private lateinit var out:TextView; private lateinit var scan:Button
- private val ports=intArrayOf(80,81,443,554,8000,8080,8081,8899,9000,34567,37777,5000,8554,8888,9527)
+ private val ports=intArrayOf(80,81,443,554,8000,8080,8081,8899,9000,34567,37777,5000,8554,8888,9527,10000,10554,37778,49152)
  private val pool=Executors.newFixedThreadPool(32)
  override fun onCreate(b:Bundle?){super.onCreate(b)
   val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,32,28,24)}
@@ -30,7 +30,13 @@ class MainActivity : Activity() {
    try{val u=URL("http://"+ip+":"+p+"/");val h=(u.openConnection() as HttpURLConnection).apply{connectTimeout=700;readTimeout=700;instanceFollowRedirects=false;requestMethod="GET"};val code=h.responseCode;val server=h.getHeaderField("Server");val realm=h.getHeaderField("WWW-Authenticate");log("  HTTP "+p+": "+code+(if(server!=null)" • Server: "+server else "")+(if(realm!=null)" • Auth: "+realm else ""));h.disconnect()}catch(_:Exception){}
   }
   if(554 in open||8554 in open){val p=if(554 in open)554 else 8554;try{Socket().use{s->s.soTimeout=900;s.connect(InetSocketAddress(ip,p),700);val q="OPTIONS rtsp://"+ip+":"+p+"/ RTSP/1.0\r\nCSeq: 1\r\nUser-Agent: SkeletonKey/0.2\r\n\r\n";s.getOutputStream().write(q.toByteArray());val b=ByteArray(2048);val n=s.getInputStream().read(b);if(n>0){val r=String(b,0,n).replace("\r","").lines().take(6).joinToString(" | ");log("  RTSP fingerprint: "+r)}}}catch(_:Exception){}}
-  if(9000 in open)log("  ★ Port 9000 device — priority fingerprint candidate")
+  if(9000 in open){log("  ★ Port 9000 device — priority fingerprint candidate");rawBanner(ip,9000)}
+  if(8888 in open){log("  ★ Port 8888 device — priority fingerprint candidate");rawBanner(ip,8888)}
+  if(8080 in open){log("  ★ Port 8080 device — priority fingerprint candidate")}
+  for(p in open.filter{it==34567||it==37777||it==37778||it==9527||it==10000})rawBanner(ip,p)
+ }
+ private fun rawBanner(ip:String,p:Int){
+  try{Socket().use{s->s.soTimeout=650;s.connect(InetSocketAddress(ip,p),650);val o=s.getOutputStream();o.write("\r\n".toByteArray());o.flush();val b=ByteArray(512);val n=s.getInputStream().read(b);if(n>0){val hex=b.take(n.coerceAtMost(48)).joinToString(" "){String.format("%02X",it)};val ascii=String(b,0,n.coerceAtMost(120)).replace(Regex("[^\\x20-\\x7E]"),".");log("  Port "+p+" banner HEX: "+hex);log("  Port "+p+" banner TXT: "+ascii)}}}catch(_:Exception){}
  }
  private fun wsDiscovery(){val xml="<?xml version=\"1.0\" encoding=\"UTF-8\"?><e:Envelope xmlns:e=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:w=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:d=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\" xmlns:dn=\"http://www.onvif.org/ver10/network/wsdl\"><e:Header><w:MessageID>uuid:"+java.util.UUID.randomUUID()+"</w:MessageID><w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To><w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action></e:Header><e:Body><d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe></e:Body></e:Envelope>"
   try{DatagramSocket().use{s->s.soTimeout=1800;val d=xml.toByteArray();s.send(DatagramPacket(d,d.size,InetAddress.getByName("239.255.255.250"),3702));val end=System.currentTimeMillis()+1800;while(System.currentTimeMillis()<end)try{val b=ByteArray(8192);val p=DatagramPacket(b,b.size);s.receive(p);val body=String(p.data,0,p.length);val x=Regex("<[^>]*XAddrs[^>]*>(.*?)</[^>]*XAddrs>").find(body)?.groupValues?.get(1);log("ONVIF reply: "+p.address.hostAddress+(if(x!=null)"\n  Endpoint: "+x else ""))}catch(_:SocketTimeoutException){break}}}catch(e:Exception){log("ONVIF discovery: "+e.message)}
