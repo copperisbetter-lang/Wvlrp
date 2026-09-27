@@ -1,7 +1,7 @@
 name: Build Skeleton Key APK
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths:
       - 'skeleton-key/**'
       - '.github/workflows/skeleton-key-apk.yml'
