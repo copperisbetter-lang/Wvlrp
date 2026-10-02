@@ -26,3 +26,5 @@ paths:
     source: publisher
   roost:
     source: publisher
+  mobile:
+    source: publisher
