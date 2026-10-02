@@ -99,7 +99,7 @@
     chat.src='chat-widget.js?v=20260915-1';
     chat.dataset.room=chatRoom;
     chat.dataset.target='#'+host.id;
-    chat.dataset.api='https://wvlrp-chat-production.up.railway.app';
+    chat.dataset.api='https://purchasing-fee-aquarium-crossword.trycloudflare.com';
     document.body.appendChild(chat);
   }
 })();
