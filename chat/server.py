@@ -1,4 +1,5 @@
-import os, json, time, hmac, hashlib, secrets, base64
+import os, json, time, hmac, hashlib, secrets, base64, re
+from datetime import date
 from typing import Optional
 
 import psycopg
@@ -175,6 +176,9 @@ def init_db():
         """)
         cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS support_level TEXT NOT NULL DEFAULT 'none'")
         cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS support_amount_cents BIGINT NOT NULL DEFAULT 0")
+        cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS email TEXT")
+        cur.execute("ALTER TABLE chat_users ADD COLUMN IF NOT EXISTS date_of_birth DATE")
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS chat_users_email_lower_uq ON chat_users ((lower(email))) WHERE email IS NOT NULL")
         cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS chat_users_username_lower_uq ON chat_users ((lower(username)))")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_messages (
@@ -234,6 +238,8 @@ def startup():
 
 class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=24)
+    email: str = Field(min_length=5, max_length=254)
+    date_of_birth: date
     password: str = Field(min_length=8, max_length=128)
 
 class LoginIn(BaseModel):
@@ -270,16 +276,27 @@ def health():
 @app.post("/api/register")
 def register(data: RegisterIn):
     username = data.username.strip()
+    email = data.email.strip().lower()
     if not username.replace("_", "").replace("-", "").isalnum():
         raise HTTPException(400, "Username may contain letters, numbers, hyphens, and underscores")
+    if not re.fullmatch(r"[^@\\s]+@[^@\\s]+\\.[^@\\s]+", email):
+        raise HTTPException(400, "Enter a valid email address")
+    today = date.today()
+    age = today.year - data.date_of_birth.year - ((today.month, today.day) < (data.date_of_birth.month, data.date_of_birth.day))
+    if age < 13:
+        raise HTTPException(400, "WVLRP accounts require age 13 or older")
+    if age > 120:
+        raise HTTPException(400, "Enter a valid date of birth")
     with db() as conn, conn.cursor() as cur:
         try:
             cur.execute(
-                "INSERT INTO chat_users(username,password_hash) VALUES(%s,%s) RETURNING id,username,role,support_level,support_amount_cents,disabled",
-                (username, hash_password(data.password)),
+                "INSERT INTO chat_users(username,email,date_of_birth,password_hash) VALUES(%s,%s,%s,%s) RETURNING id,username,role,support_level,support_amount_cents,disabled",
+                (username, email, data.date_of_birth, hash_password(data.password)),
             )
             user = cur.fetchone()
-        except psycopg.errors.UniqueViolation:
+        except psycopg.errors.UniqueViolation as e:
+            if "email" in str(e).lower():
+                raise HTTPException(409, "That email address already has an account")
             raise HTTPException(409, "That username is already taken")
     return {"token": make_token(user), "user": public_user(user)}
 
