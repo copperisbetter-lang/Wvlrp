@@ -7,12 +7,29 @@
 <main class="wrap"><section class="intro"><h1>Mobile Live</h1><p>Turn this phone into a WVLRP field camera. Your browser can use the front or rear camera and microphone without installing another app.</p></section>
 <section class="panel"><div class="stage"><video id="preview" playsinline autoplay muted></video><div id="placeholder" class="placeholder"><div><b>📱 Ready for the field</b><small>Tap Start Camera and allow camera + microphone access. Nothing starts until you give permission.</small></div></div><div id="liveBadge" class="live">PREVIEW OFF</div></div>
 <div class="controls"><button id="start" class="btn primary">START CAMERA + MIC</button><button id="flip" class="btn" disabled>↻ FLIP CAMERA</button><button id="mic" class="btn" disabled>🎙 MIC ON</button><button id="publish" class="btn primary" disabled>GO LIVE</button><button id="stop" class="btn stop hidden">STOP MOBILE LIVE</button></div>
-<div id="status" class="status">Camera is off. Start the preview when you're ready.</div><div class="note">Mobile Live keeps the WVLRP site available in this browser while the camera is active. Keep this page open while broadcasting. The live publishing button connects to WVLRP's Mobile Live ingest endpoint when that Oracle endpoint is enabled.</div></section></main>
+<div id="status" class="status">Camera is off. Start the preview when you're ready.</div><div class="note">Mobile Live keeps the WVLRP site available in this browser while the camera is active. Keep this page open while broadcasting. GO LIVE publishes this phone's camera and microphone directly to WVLRP's Oracle Mobile Live relay.</div></section></main>
 <script>
 (()=>{let stream=null,facing='environment',micOn=true,publishing=false;const v=document.getElementById('preview'),ph=document.getElementById('placeholder'),badge=document.getElementById('liveBadge'),status=document.getElementById('status'),start=document.getElementById('start'),flip=document.getElementById('flip'),mic=document.getElementById('mic'),publish=document.getElementById('publish'),stop=document.getElementById('stop');
 const setStatus=t=>status.textContent=t;async function camera(){if(stream)stream.getTracks().forEach(t=>t.stop());try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1080},height:{ideal:1920}},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});v.srcObject=stream;ph.classList.add('hide');badge.textContent='PREVIEW READY';badge.classList.add('ready');flip.disabled=false;mic.disabled=false;publish.disabled=false;start.textContent='RESTART CAMERA';setStatus('Camera and microphone are ready. Preview stays on this phone until you tap GO LIVE.');}catch(e){setStatus('Camera/microphone permission was not granted or is unavailable: '+(e.message||e.name));}}
 start.onclick=camera;flip.onclick=async()=>{facing=facing==='environment'?'user':'environment';await camera()};mic.onclick=()=>{if(!stream)return;micOn=!micOn;stream.getAudioTracks().forEach(t=>t.enabled=micOn);mic.textContent=micOn?'🎙 MIC ON':'🔇 MIC OFF'};
-publish.onclick=async()=>{if(!stream)return;publishing=true;badge.textContent='MOBILE LIVE';stop.classList.remove('hidden');publish.disabled=true;setStatus('Mobile Live preview is armed. Oracle publishing requires the WVLRP Mobile Live ingest service; this page will use it automatically once enabled.');};
-stop.onclick=()=>{publishing=false;badge.textContent='PREVIEW READY';stop.classList.add('hidden');publish.disabled=false;setStatus('Broadcast stopped. Camera preview is still running.');};
+let pc=null;
+async function goLive(){
+  if(!stream)return;
+  try{
+    pc=new RTCPeerConnection();
+    stream.getTracks().forEach(track=>pc.addTrack(track,stream));
+    await pc.setLocalDescription(await pc.createOffer());
+    await new Promise(resolve=>{if(pc.iceGatheringState==='complete')return resolve();const done=()=>{if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',done);resolve()}};pc.addEventListener('icegatheringstatechange',done);setTimeout(resolve,2500)});
+    const endpoint=new URL('/webrtc/mobile/whip',location.origin).toString();
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/sdp'},body:pc.localDescription.sdp});
+    if(!res.ok)throw new Error('Oracle ingest returned '+res.status);
+    const answer=await res.text();
+    await pc.setRemoteDescription({type:'answer',sdp:answer});
+    publishing=true;badge.textContent='MOBILE LIVE';stop.classList.remove('hidden');publish.disabled=true;
+    setStatus('YOU ARE LIVE — camera and microphone are publishing to the WVLRP Mobile Live stream.');
+  }catch(e){if(pc){pc.close();pc=null}publishing=false;badge.textContent='PREVIEW READY';publish.disabled=false;setStatus('Could not start Mobile Live: '+(e.message||e));}
+}
+publish.onclick=goLive;
+stop.onclick=()=>{publishing=false;if(pc){pc.close();pc=null}badge.textContent='PREVIEW READY';stop.classList.add('hidden');publish.disabled=false;setStatus('Broadcast stopped. Camera preview is still running.');};
 window.addEventListener('pagehide',()=>{if(stream)stream.getTracks().forEach(t=>t.stop())});})();
 </script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script></body></html>
