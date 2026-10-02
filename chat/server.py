@@ -279,7 +279,7 @@ def register(data: RegisterIn):
     email = data.email.strip().lower()
     if not username.replace("_", "").replace("-", "").isalnum():
         raise HTTPException(400, "Username may contain letters, numbers, hyphens, and underscores")
-    if not re.fullmatch(r"[^@\\s]+@[^@\\s]+\\.[^@\\s]+", email):
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Enter a valid email address")
     today = date.today()
     age = today.year - data.date_of_birth.year - ((today.month, today.day) < (data.date_of_birth.month, data.date_of_birth.day))
