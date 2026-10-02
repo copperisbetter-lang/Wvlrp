@@ -20,7 +20,7 @@ async function goLive(){
     stream.getTracks().forEach(track=>pc.addTrack(track,stream));
     await pc.setLocalDescription(await pc.createOffer());
     await new Promise(resolve=>{if(pc.iceGatheringState==='complete')return resolve();const done=()=>{if(pc.iceGatheringState==='complete'){pc.removeEventListener('icegatheringstatechange',done);resolve()}};pc.addEventListener('icegatheringstatechange',done);setTimeout(resolve,2500)});
-    const endpoint='http://158.101.120.6/webrtc/mobile/whip';
+    const endpoint=new URL('/webrtc/mobile/whip',location.origin).toString();
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/sdp'},body:pc.localDescription.sdp});
     if(!res.ok)throw new Error('Oracle ingest returned '+res.status);
     const answer=await res.text();
