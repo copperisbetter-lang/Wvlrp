@@ -52,7 +52,7 @@ class LiveService : Service(), ConnectChecker {
             val w = WhipStream(applicationContext, this)
             stream = w
             val video = w.prepareVideo(720, 1280, 30, 2_000_000, 90)
-            val audio = w.prepareAudio(64_000, 48_000, false, true, true)
+            val audio = w.prepareAudio(64_000, false, 48_000, true, true)
             if (!video || !audio) {
                 fail("Phone encoder could not be prepared")
                 return
