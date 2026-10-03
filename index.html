@@ -3,6 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#020b12">
+<title>WVLRP | West Virginia Live Research Project</title>
+<style>
+html,body{margin:0;min-height:100%;background:#020b12}
+#wvlrp-clean-slate{min-height:100vh}
+</style>
+</head>
+<body>
+<div id="wvlrp-clean-slate" aria-label="WVLRP homepage"></div>
+<!-- WVLRP HOMEPAGE ARCHIVED IN PLACE 2026-10-02. Remove the hidden attribute to restore the previous homepage. -->
+<div id="wvlrp-homepage-closet" hidden>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#03111c">
 <title>WVLRP | West Virginia Live Research Project</title>
 <link rel="stylesheet" href="styles.css">
@@ -21,3 +37,8 @@
 (()=>{const badges=[...document.querySelectorAll('.cam-status')];const sleep=ms=>new Promise(r=>setTimeout(r,ms));function paint(el,state){el.dataset.state=state;el.textContent=state==='live'?'● LIVE':state==='checking'?'● CHECKING':'● OFFLINE'}async function snapshot(url){const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),6500);try{const r=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store',signal:ctl.signal});if(!r.ok)return null;const t=await r.text();if(!t.includes('#EXTM3U'))return null;const seq=(t.match(/#EXT-X-MEDIA-SEQUENCE:(\d+)/)||[])[1]||'';const lines=t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);const last=[...lines].reverse().find(s=>!s.startsWith('#'))||'';return seq+'|'+last}catch{return null}finally{clearTimeout(timer)}}async function check(el){const url=el.dataset.stream;if(!url){paint(el,'offline');return}paint(el,'checking');const a=await snapshot(url);if(!a){paint(el,'offline');return}await sleep(5000);const b=await snapshot(url);paint(el,b&&a!==b?'live':'offline')}async function run(){await Promise.all(badges.map(check))}run();setInterval(run,25000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)run()})})();
 </script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script><script>(()=>{const API='https://wvlrp-chat-production.up.railway.app',names={eastbank:'East Bank',roost:'The Roost',westbank:'West Bank',southhill:'South Hill',infrared:'Infrared'};fetch(API+'/api/hatch/sightings/archive?limit=20',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{const s=(j.sightings||[]).find(x=>x.image_data);if(!s)return;const p=document.getElementById('latest-visitor-photo'),n=document.getElementById('latest-visitor-name'),m=document.getElementById('latest-visitor-meta');p.style.backgroundImage='url("'+s.image_data+'")';p.textContent='';n.textContent=s.label||'Wildlife sighting';const d=new Date(s.created_at);m.innerHTML=(names[s.room]||s.room||'WVLRP camera')+'<br>'+(!isNaN(d)?d.toLocaleString():String(s.created_at||''))}).catch(()=>{})})();</script><script>try{document.getElementById('hatch-roamer')?.remove();new MutationObserver(()=>document.getElementById('hatch-roamer')?.remove()).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}</script>
 </body></html>
+
+</div>
+
+</body>
+</html>
