@@ -3,17 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WVLRP | Maintenance</title>
+<title>WVLRP | West Virginia Live Research Project</title>
 <style>
-html,body{height:100%;margin:0;background:#07100b}
-body{font-family:Arial,sans-serif}
-.master{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
-.notice{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-.notice span{background:rgba(0,0,0,.62);color:white;padding:14px 22px;border-radius:10px;font-size:clamp(24px,5vw,46px);font-weight:800}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Arial,sans-serif;background:#07100b;color:#fff;overflow:hidden}
+.master{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.menu-wrap{position:fixed;top:18px;left:18px;z-index:5;width:min(270px,calc(100vw - 36px))}
+.menu-toggle{width:44px;height:42px;border:0;border-radius:7px;background:rgba(7,16,11,.78);color:#fff;font-size:25px;line-height:1;cursor:pointer;backdrop-filter:blur(8px)}
+.nav{display:none;margin-top:8px;background:rgba(7,16,11,.88);backdrop-filter:blur(10px);border-radius:8px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.3)}
+.nav.open{display:block}
+.nav a,.camera-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:45px;padding:0 16px;border:0;border-bottom:1px solid rgba(255,255,255,.11);background:transparent;color:#fff;text-decoration:none;font:600 15px Arial,sans-serif;text-align:left;cursor:pointer}
+.nav a:last-child{border-bottom:0}
+.nav a:hover,.camera-toggle:hover{background:rgba(255,255,255,.08)}
+.chev{font-size:13px;transition:transform .2s ease}
+.camera-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.cameras{display:none;background:rgba(0,0,0,.18)}
+.cameras.open{display:block}
+.cameras a{padding-left:29px;font-weight:400;font-size:14px;min-height:41px}
+.notice{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2;background:rgba(0,0,0,.58);padding:9px 15px;border-radius:7px;font-weight:700;text-align:center;white-space:nowrap}
+@media(max-width:480px){.menu-wrap{top:12px;left:12px;width:calc(100vw - 24px)}.notice{font-size:14px;bottom:14px}}
 </style>
 </head>
 <body>
 <img class="master" src="assets/file_000000002b0881f5b33768ae96574f9d.png" alt="">
-<div class="notice"><span>Maintenance underway</span></div>
+<div class="menu-wrap">
+  <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">☰</button>
+  <nav class="nav" id="mainNav" aria-label="Main navigation">
+    <a href="index.html">Home</a>
+    <button class="camera-toggle" id="cameraToggle" aria-expanded="false">Live Cameras <span class="chev">▾</span></button>
+    <div class="cameras" id="cameraList">
+      <a href="east-bank.html">East Bank</a>
+      <a href="west-bank-live.html">West Bank</a>
+      <a href="the-roost.html">The Roost</a>
+      <a href="south-hill.html">South Hill</a>
+      <a href="infrared-camera.html">Infrared / Night Vision</a>
+    </div>
+    <a href="lounge.html">Lounge</a>
+    <a href="coffee-room.html">Coffee Room</a>
+    <a href="game-room.html">Game Room</a>
+    <a href="visitors.html">Look Who's Here</a>
+    <a href="sponsors.html">Sponsors &amp; Partnerships</a>
+    <a href="gift-shop.html">Gift Shop</a>
+    <a href="mobile-live.html">Mobile Live</a>
+  </nav>
+</div>
+<div class="notice">Maintenance underway</div>
+<script>
+const menuToggle=document.getElementById('menuToggle');
+const mainNav=document.getElementById('mainNav');
+const cameraToggle=document.getElementById('cameraToggle');
+const cameraList=document.getElementById('cameraList');
+menuToggle.addEventListener('click',()=>{
+ const open=mainNav.classList.toggle('open');
+ menuToggle.setAttribute('aria-expanded',open);
+});
+cameraToggle.addEventListener('click',()=>{
+ const open=cameraList.classList.toggle('open');
+ cameraToggle.setAttribute('aria-expanded',open);
+});
+</script>
 </body>
 </html>
