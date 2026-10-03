@@ -237,13 +237,12 @@ def startup():
 
 
 class RegisterIn(BaseModel):
-    username: str = Field(min_length=3, max_length=24)
     email: str = Field(min_length=5, max_length=254)
     date_of_birth: date
     password: str = Field(min_length=8, max_length=128)
 
 class LoginIn(BaseModel):
-    username: str
+    email: str = Field(min_length=5, max_length=254)
     password: str
 
 class MessageIn(BaseModel):
@@ -275,10 +274,7 @@ def health():
 
 @app.post("/api/register")
 def register(data: RegisterIn):
-    username = data.username.strip()
     email = data.email.strip().lower()
-    if not username.replace("_", "").replace("-", "").isalnum():
-        raise HTTPException(400, "Username may contain letters, numbers, hyphens, and underscores")
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise HTTPException(400, "Enter a valid email address")
     today = date.today()
@@ -291,23 +287,23 @@ def register(data: RegisterIn):
         try:
             cur.execute(
                 "INSERT INTO chat_users(username,email,date_of_birth,password_hash) VALUES(%s,%s,%s,%s) RETURNING id,username,role,support_level,support_amount_cents,disabled",
-                (username, email, data.date_of_birth, hash_password(data.password)),
+                (email, email, data.date_of_birth, hash_password(data.password)),
             )
             user = cur.fetchone()
         except psycopg.errors.UniqueViolation as e:
             if "email" in str(e).lower():
                 raise HTTPException(409, "That email address already has an account")
-            raise HTTPException(409, "That username is already taken")
+            raise HTTPException(409, "That email address already has an account")
     return {"token": make_token(user), "user": public_user(user)}
 
 
 @app.post("/api/login")
 def login(data: LoginIn):
     with db() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id,username,password_hash,role,support_level,support_amount_cents,disabled FROM chat_users WHERE lower(username)=lower(%s)", (data.username.strip(),))
+        cur.execute("SELECT id,username,password_hash,role,support_level,support_amount_cents,disabled FROM chat_users WHERE lower(email)=lower(%s) OR (email IS NULL AND lower(username)=lower(%s))", (data.email.strip(), data.email.strip()))
         user = cur.fetchone()
     if not user or user["disabled"] or not verify_password(data.password, user["password_hash"]):
-        raise HTTPException(401, "Invalid username or password")
+        raise HTTPException(401, "Invalid email address or password")
     return {"token": make_token(user), "user": public_user(user)}
 
 
