@@ -1,4 +1,4 @@
-name: Build Skeleton Key APK
+name: Build WVLRP Mobile Live APK
 # retrigger clean C31W build after compile fix
 on:
   push:
@@ -24,5 +24,5 @@ jobs:
         run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: Skeleton-Key-APK
+          name: WVLRP-Mobile-Live-APK
           path: skeleton-key/app/build/outputs/apk/debug/app-debug.apk
