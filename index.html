@@ -2,110 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07100b">
-<title>WVLRP | Living Forest</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#020706;overflow-x:hidden}
-#living-forest{position:relative;min-height:100vh;overflow:hidden;background:#07100b;isolation:isolate}
-.forest-base,.forest-wind,.lightwash,.nightwash,.mist,.stars,.fireflies,.wildlife{position:absolute;inset:-3%;pointer-events:none}
-.forest-base,.forest-wind{background:url('assets/a_vertical_ultra_detailed_photoreal_illustrati.png') center 42%/cover no-repeat;will-change:transform,filter}
-.forest-base{inset:0;filter:var(--forest-filter,brightness(1) saturate(1))}
-.forest-wind{opacity:.22;mix-blend-mode:soft-light;clip-path:polygon(0 0,100% 0,100% 62%,0 50%);animation:canopy 8s ease-in-out infinite alternate}
-@keyframes canopy{0%{transform:translate3d(-.45%,0,0) scale(1.012) rotate(-.08deg)}35%{transform:translate3d(.2%,.12%,0) scale(1.014) rotate(.04deg)}70%{transform:translate3d(-.12%,-.08%,0) scale(1.013) rotate(-.03deg)}100%{transform:translate3d(.5%,.08%,0) scale(1.015) rotate(.09deg)}}
-.lightwash{inset:0;background:radial-gradient(circle at var(--sun-x,82%) var(--sun-y,22%),rgba(255,225,145,var(--sun-a,.42)) 0 4%,rgba(255,185,78,calc(var(--sun-a,.42)*.55)) 8%,transparent 33%),linear-gradient(var(--ray-angle,118deg),transparent 20%,rgba(255,205,110,.18) 42%,transparent 61%);mix-blend-mode:screen;transition:background 8s linear,opacity 8s linear;opacity:var(--light-opacity,1)}
-.nightwash{inset:0;background:linear-gradient(180deg,rgba(2,7,18,var(--night,.0)),rgba(0,8,14,calc(var(--night,.0)*.94))),radial-gradient(circle at 75% 12%,rgba(165,198,230,calc(var(--moon,.0)*.28)),transparent 31%);mix-blend-mode:multiply;transition:background 8s linear}
-.mist{inset:18% -20% 0;background:radial-gradient(ellipse at 65% 35%,rgba(235,244,225,.12),transparent 45%);animation:mist 28s ease-in-out infinite alternate;opacity:var(--mist,.35)}
-@keyframes mist{from{transform:translateX(-3%) scale(1.02)}to{transform:translateX(4%) scale(1.06)}}
-.stars{inset:0 0 62%;opacity:var(--stars,0);transition:opacity 10s linear;background-image:radial-gradient(circle,rgba(255,255,235,.8) 0 1px,transparent 1.4px),radial-gradient(circle,rgba(210,230,255,.65) 0 1px,transparent 1.3px);background-size:79px 83px,113px 127px;background-position:9px 13px,31px 47px}
-.fireflies{inset:35% 0 0;opacity:var(--fireflies,0);transition:opacity 10s linear}
-.fireflies i{position:absolute;width:3px;height:3px;border-radius:50%;background:#dfff83;box-shadow:0 0 9px 3px rgba(210,255,100,.55);animation:fly var(--d) ease-in-out infinite alternate,blink 2.8s ease-in-out infinite}
-@keyframes fly{from{transform:translate(-14px,18px)}to{transform:translate(28px,-26px)}}@keyframes blink{0%,100%{opacity:.08}45%{opacity:1}70%{opacity:.25}}
-#wildlife-layer{inset:0;overflow:hidden}
-.critter{position:absolute;left:-22%;bottom:var(--bottom,16%);font-size:clamp(28px,7vw,70px);filter:drop-shadow(0 4px 5px rgba(0,0,0,.55));opacity:0;transform:translateX(0) scale(var(--scale,1));will-change:transform,opacity}
-.critter.go{animation:cross var(--duration,18s) linear forwards}
-@keyframes cross{0%{left:-22%;opacity:0}5%{opacity:.96}45%{transform:translateX(0) scale(var(--scale,1))}55%{transform:translateX(0) scale(var(--scale,1))}95%{opacity:.96}100%{left:112%;opacity:0}}
-#forest-hud{position:absolute;z-index:5;left:18px;bottom:18px;color:#f6f1df;text-shadow:0 2px 8px #000;font-family:system-ui,sans-serif;letter-spacing:.03em}
-#forest-hud b{display:block;font-size:clamp(18px,4vw,28px)}#forest-hud small{font-size:12px;opacity:.78}
-@media (min-width:800px){#living-forest{min-height:100vh}.forest-base,.forest-wind{background-position:center center}}
-@media (prefers-reduced-motion:reduce){.forest-wind,.mist,.fireflies i{animation:none!important}}
-</style>
-</head>
-<body>
-<main id="living-forest" aria-label="WVLRP 24-hour living forest">
-  <div class="forest-base"></div><div class="forest-wind"></div><div class="lightwash"></div><div class="nightwash"></div><div class="mist"></div><div class="stars"></div>
-  <div class="fireflies"><i style="left:2%;top:8%;--d:7s;animation-delay:-0s"></i><i style="left:39%;top:61%;--d:9s;animation-delay:-0.7s"></i><i style="left:76%;top:34%;--d:11s;animation-delay:-1.4s"></i><i style="left:19%;top:87%;--d:13s;animation-delay:-2.0999999999999996s"></i><i style="left:56%;top:60%;--d:15s;animation-delay:-2.8s"></i><i style="left:93%;top:33%;--d:17s;animation-delay:-3.5s"></i><i style="left:36%;top:86%;--d:7s;animation-delay:-4.199999999999999s"></i><i style="left:73%;top:59%;--d:9s;animation-delay:-4.8999999999999995s"></i><i style="left:16%;top:32%;--d:11s;animation-delay:-5.6s"></i><i style="left:53%;top:85%;--d:13s;animation-delay:-6.3s"></i><i style="left:90%;top:58%;--d:15s;animation-delay:-7s"></i><i style="left:33%;top:31%;--d:17s;animation-delay:-7.699999999999999s"></i><i style="left:70%;top:84%;--d:7s;animation-delay:-8.399999999999999s"></i><i style="left:13%;top:57%;--d:9s;animation-delay:-9.1s"></i><i style="left:50%;top:30%;--d:11s;animation-delay:-9.799999999999999s"></i><i style="left:87%;top:83%;--d:13s;animation-delay:-10.5s"></i><i style="left:30%;top:56%;--d:15s;animation-delay:-11.2s"></i><i style="left:67%;top:29%;--d:17s;animation-delay:-11.899999999999999s"></i></div>
-  <div class="wildlife" id="wildlife-layer" aria-hidden="true"></div>
-  <div id="forest-hud"><b>WVLRP</b><small id="forest-time">Living Forest • Eastern Time</small></div>
-</main>
-<div id="wvlrp-homepage-closet" hidden>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#03111c">
-<title>WVLRP | West Virginia Live Research Project</title>
-<link rel="stylesheet" href="styles.css">
+<title>WVLRP</title>
 <style>
-#community .klrp-link{display:inline-flex;align-items:center;gap:7px;color:#cad5db;border:0;padding:0;text-align:left}#community .klrp-link:hover{color:#fff}.klrp-dot{width:9px;height:9px;border-radius:50%;background:#075083;box-shadow:0 0 0 1px rgba(255,255,255,.06);flex:none}#klrp-flash{position:fixed;z-index:99999;left:var(--x,50%);top:var(--y,50%);width:9px;height:9px;border-radius:50%;object-fit:cover;pointer-events:none;opacity:0;transform:translate(-50%,-50%)}#klrp-flash.go{animation:klrpGrow .24s cubic-bezier(.18,.82,.23,1) forwards}@keyframes klrpGrow{0%{left:var(--x);top:var(--y);width:9px;height:9px;opacity:1}55%{left:50%;top:50%;width:103px;height:103px;opacity:1}70%{left:50%;top:50%;width:103px;height:103px;opacity:1}100%{left:50%;top:50%;width:113px;height:113px;opacity:0}}.coming{color:#ffd166!important;font-weight:900!important;letter-spacing:.08em}.photo.pond{background:linear-gradient(180deg,rgba(2,13,12,.02),rgba(2,13,12,.38)),url('west-bank-card.jpg') center center/cover no-repeat}.photo.driveway{background:linear-gradient(180deg,rgba(2,13,12,.02),rgba(2,13,12,.30)),url('east-bank-camera-preview.jpg?v=20260914-1307') center center/cover no-repeat}.photo.chicken{background:linear-gradient(180deg,rgba(2,13,12,.02),rgba(2,13,12,.18)),url('wide_high_resolution_countryside_farm_themed_scen.png') center center/cover no-repeat}.photo.night{background:linear-gradient(180deg,rgba(2,13,12,.02),rgba(2,13,12,.25)),url('BBB1.jpg?v=20260914-1741') center center/cover no-repeat}.cam-status[data-state="checking"]{color:#ffd166}.cam-status[data-state="offline"]{color:#ff8585}.photo.driveway .cam-status[data-state="live"]{color:#35e06f}.photo.chicken .cam-status[data-state="live"]{color:#35e06f}.cam-status[data-state="live"]{color:#fff}.squatch-dot{display:inline-block;width:.18em;height:.32em;margin-left:.03em;vertical-align:-.01em;background:#b6c4cd;clip-path:polygon(55% 0,65% 4%,70% 12%,68% 20%,75% 24%,82% 31%,90% 46%,95% 57%,89% 61%,80% 49%,74% 38%,69% 35%,68% 58%,77% 69%,91% 87%,83% 95%,65% 78%,58% 68%,49% 99%,37% 100%,43% 76%,47% 62%,42% 44%,34% 54%,24% 60%,17% 55%,29% 39%,36% 28%,42% 22%,43% 12%,48% 4%)}
+html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;background:#fff;color:#000;font-family:Arial,sans-serif;padding:28px;box-sizing:border-box}.message{max-width:850px;font-size:clamp(22px,4vw,38px);line-height:1.45}
 </style>
 </head>
 <body>
-<main id="home"><section class="hero"><div class="hero-copy"><h1>Welcome to<br><span>WVLRP</span></h1><h4>WEST VIRGINIA LIVE RESEARCH PROJECT</h4><p>Live cameras. Real nature. A growing community.<br>Join us as we explore and share the beauty, wildlife, and everyday life of Almost Heaven.</p><div><a class="btn" href="#cameras">▶ Watch Live Cameras</a><a class="btn outline" href="visitors.html">🐾 Look Who's Here! →</a></div></div><div class="sign">EXPLORE<br>WATCH<br>LEARN<br>BELONG</div><em>Nature<br>Never Stops<br>Showing Up</em></section>
-<section class="tiles"><a href="#cameras">📷<b>Live Cameras</b><small>24/7 Views</small></a><a href="mobile-live.html">📱<b>Mobile Live</b><small>Broadcast From Your Phone</small></a><a href="coffee-room.html">☕<b>Coffee Room</b><small>Adults-Only Live Conversation</small></a><a href="game-room.html">🎲<b>Game Room</b><small>Play Together Live</small></a><a class="active" href="visitors.html">🐾<b>Look Who's Here!</b><small>Our Wild Visitors</small></a><a href="lounge.html">📺<b>The Lounge</b><small>Four-Camera Monitor</small></a><a href="gift-shop.html">🎁<b>Gift Shop</b><small>WVLRP Goods & Gifts</small></a></section>
-<section id="cameras" class="wrap"><div class="heading"><h2>Featured Live Cameras</h2><p>Real places. Real wildlife. Real life right now at WVLRP<span class="squatch-dot" aria-label="."></span></p></div><div class="cams"><article onclick="location.href='east-bank.html'" style="cursor:pointer"><div class="photo driveway"><i class="cam-status" data-state="checking" data-stream="https://sacred-showtimes-volvo-foods.trycloudflare.com/eastbank/index.m3u8">● CHECKING</i></div><b>East Bank</b><small>Main Entrance • 24/7</small></article><article onclick="location.href='the-roost.html'" style="cursor:pointer"><div class="photo chicken"><i class="cam-status" data-state="checking" data-stream="https://sacred-showtimes-volvo-foods.trycloudflare.com/roost/index.m3u8">● CHECKING</i></div><b>The Roost</b><small>Chicken Coop • 24/7</small></article><article onclick="location.href='west-bank.html'" style="cursor:pointer"><div class="photo pond"><i class="cam-status" data-state="checking" data-stream="https://sacred-showtimes-volvo-foods.trycloudflare.com/westbank/index.m3u8">● CHECKING</i></div><b>West Bank</b><small class="coming">CAMERA 02 • NEXT UP</small></article><article onclick="location.href='south-hill.html'" style="cursor:pointer"><div class="photo night"><i class="cam-status" data-state="offline" data-stream="">● OFFLINE</i></div><b>South Hill</b><small>Camera 03 • Player Ready</small></article><article onclick="location.href='infrared-camera.html'" style="cursor:pointer"><div class="photo infrared"><i class="cam-status" data-state="offline" data-stream="">● OFFLINE</i></div><b>Infrared Camera</b><small>Camera 04 • Player Ready</small></article></div></section>
-<section id="visitors" class="wrap visitors"><div class="bear"><div><h2>🐾 LOOK WHO'S HERE!</h2><h3>Meet our latest wild visitors,<br>caught on camera!</h3><p>From deer and bears to turkeys, foxes, and more — see who's been stopping by lately.</p><a class="btn" href="visitors.html">See the Latest Visitors →</a></div><strong>Same<br>Hills<br>New<br>Friends</strong></div><div class="latest" id="latest-visitor"><span>🌿 Latest Visitor</span><div class="deer" id="latest-visitor-photo" style="background-image:url(\'assets/visitors/doe-001-clean.svg\')">🦌</div><b id="latest-visitor-name">White-tailed Deer</b><small id="latest-visitor-meta">Adult doe • East Bank<br>Sept 14, 2026 • 11:33 PM</small><a class="btn outline" href="visitors.html">VIEW MORE →</a></div></section>
-<section class="wrap info" id="mission"><article><h3>⛰ Our Mission</h3><p>To share the natural beauty, wildlife, and everyday life of West Virginia through live cameras, education, and community — inspiring a deeper connection to the outdoors.</p><a href="#">About WVLRP →</a></article><article id="community"><h3>👥 Join the Community</h3><p style="line-height:1.75"><a class="klrp-link" href="#cameras"><span class="klrp-dot"></span>Watch live cameras</a><br><a class="klrp-link" href="visitors.html"><span class="klrp-dot"></span>Share sightings and stories</a><br><a class="klrp-link" href="#wildlife"><span class="klrp-dot"></span>Learn about local wildlife</a><br><a class="klrp-link" href="#community"><span class="klrp-dot"></span>Be part of something real</a><br><a class="klrp-link" href="#mission"><span class="klrp-dot"></span>Help the project grow</a></p><a href="#">Get Involved →</a></article><article id="wildlife" class="quote">“In every walk<br>with nature, one<br>receives far more<br>than he seeks.”<small>— JOHN MUIR</small></article></section></main>
-<footer><div><b>⛰ WVLRP</b><small>WEST VIRGINIA LIVE RESEARCH PROJECT</small></div><p>Live Cameras　|　<a href="mobile-live.html" style="color:inherit">Mobile Live</a>　|　<a href="coffee-room.html" style="color:inherit">Coffee Room</a>　|　<a href="game-room.html" style="color:inherit">Game Room</a>　|　Look Who's Here!　|　Gift Shop　|　The Lounge　|　<a href="maintenance.html" style="color:inherit">Maintenance</a></p><strong>ROADHOUSE!</strong><small>© 2026 WVLRP. All rights reserved.　　REAL PLACES • REAL WILDLIFE • REAL PEOPLE • WE DO IT LIVE</small></footer>
-<img id="klrp-flash" src="assets/logos/klrp-bullet.svg" alt="" aria-hidden="true"><script>(()=>{const flash=document.getElementById('klrp-flash');document.querySelectorAll('#community .klrp-link').forEach(link=>{link.addEventListener('click',e=>{if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();const dot=link.querySelector('.klrp-dot');const r=dot.getBoundingClientRect();flash.style.setProperty('--x',(r.left+r.width/2)+'px');flash.style.setProperty('--y',(r.top+r.height/2)+'px');flash.classList.remove('go');void flash.offsetWidth;flash.classList.add('go');const href=link.getAttribute('href');setTimeout(()=>{flash.classList.remove('go');if(href&&href.startsWith('#')){const target=document.querySelector(href);if(target)target.scrollIntoView({behavior:'smooth',block:'start'})}else if(href){window.location.href=href}},240)})})})();
-(()=>{const badges=[...document.querySelectorAll('.cam-status')];const sleep=ms=>new Promise(r=>setTimeout(r,ms));function paint(el,state){el.dataset.state=state;el.textContent=state==='live'?'● LIVE':state==='checking'?'● CHECKING':'● OFFLINE'}async function snapshot(url){const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),6500);try{const r=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store',signal:ctl.signal});if(!r.ok)return null;const t=await r.text();if(!t.includes('#EXTM3U'))return null;const seq=(t.match(/#EXT-X-MEDIA-SEQUENCE:(\d+)/)||[])[1]||'';const lines=t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);const last=[...lines].reverse().find(s=>!s.startsWith('#'))||'';return seq+'|'+last}catch{return null}finally{clearTimeout(timer)}}async function check(el){const url=el.dataset.stream;if(!url){paint(el,'offline');return}paint(el,'checking');const a=await snapshot(url);if(!a){paint(el,'offline');return}await sleep(5000);const b=await snapshot(url);paint(el,b&&a!==b?'live':'offline')}async function run(){await Promise.all(badges.map(check))}run();setInterval(run,25000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)run()})})();
-</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script><script>(()=>{const API='https://wvlrp-chat-production.up.railway.app',names={eastbank:'East Bank',roost:'The Roost',westbank:'West Bank',southhill:'South Hill',infrared:'Infrared'};fetch(API+'/api/hatch/sightings/archive?limit=20',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{const s=(j.sightings||[]).find(x=>x.image_data);if(!s)return;const p=document.getElementById('latest-visitor-photo'),n=document.getElementById('latest-visitor-name'),m=document.getElementById('latest-visitor-meta');p.style.backgroundImage='url("'+s.image_data+'")';p.textContent='';n.textContent=s.label||'Wildlife sighting';const d=new Date(s.created_at);m.innerHTML=(names[s.room]||s.room||'WVLRP camera')+'<br>'+(!isNaN(d)?d.toLocaleString():String(s.created_at||''))}).catch(()=>{})})();</script><script>try{document.getElementById('hatch-roamer')?.remove();new MutationObserver(()=>document.getElementById('hatch-roamer')?.remove()).observe(document.documentElement,{childList:true,subtree:true});}catch(e){}</script>
-</body></html>
-
-</div>
-
+<div class="message">This homepage was going to be awesome tonight, but.. Gater, the tech guy really choked and left us another day behind..<br><br>We will try again tomorrow</div>
 </body>
 </html>
-<script>
-(()=>{
-const root=document.getElementById('living-forest'), layer=document.getElementById('wildlife-layer'), label=document.getElementById('forest-time');
-const fmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true});
-const partsFmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
-function easternParts(){const p=Object.fromEntries(partsFmt.formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,+x.value]));return p}
-function smooth(a,b,t){t=t*t*(3-2*t);return a+(b-a)*t}
-function updateSky(){
- const p=easternParts(), h=p.hour+p.minute/60+p.second/3600;
- const daylight=Math.max(0,Math.sin(Math.PI*Math.min(1,Math.max(0,(h-6.25)/13))));
- const dawn=Math.max(0,1-Math.abs(h-6.5)/1.25), dusk=Math.max(0,1-Math.abs(h-19.25)/1.4);
- const night=1-Math.min(1,daylight*1.35), warm=Math.max(dawn,dusk);
- const sunT=Math.min(1,Math.max(0,(h-6.25)/13));
- const x=smooth(92,8,sunT), y=58-45*Math.sin(Math.PI*sunT);
- root.style.setProperty('--sun-x',x+'%');root.style.setProperty('--sun-y',y+'%');
- root.style.setProperty('--sun-a',(0.10+daylight*.42+warm*.2).toFixed(3));
- root.style.setProperty('--light-opacity',(daylight*.92+warm*.45).toFixed(3));
- root.style.setProperty('--night',night.toFixed(3));root.style.setProperty('--moon',(night*.9).toFixed(3));
- root.style.setProperty('--stars',Math.max(0,(night-.38)*1.55).toFixed(3));
- root.style.setProperty('--fireflies',(h>=20||h<5)?Math.min(.9,night):0);
- root.style.setProperty('--mist',(0.18+dawn*.28+night*.08).toFixed(3));
- root.style.setProperty('--ray-angle',(105+sunT*42)+'deg');
- const bright=.30+daylight*.82+warm*.12, sat=.68+daylight*.38;
- root.style.setProperty('--forest-filter',`brightness(${bright.toFixed(2)}) saturate(${sat.toFixed(2)}) contrast(${(1.02+night*.12).toFixed(2)}) sepia(${(warm*.10).toFixed(2)})`);
- label.textContent=fmt.format(new Date())+' • Living Forest • Eastern Time';
-}
-const day=[['🐿️','squirrel'],['🐦','bird'],['🦌','deer'],['🐇','rabbit']];
-const night=[['🦝','raccoon'],['🦨','skunk'],['🦉','owl'],['🐇','rabbit']];
-let last=0,next=Date.now()+12000;
-function wildlifeTick(){
- const now=Date.now(); if(now<next)return;
- const h=easternParts().hour, pool=(h>=20||h<6)?night:day;
- const pick=pool[Math.floor(Math.random()*pool.length)];
- const el=document.createElement('span');el.className='critter';el.textContent=pick[0];
- el.style.setProperty('--bottom',(8+Math.random()*28)+'%');el.style.setProperty('--scale',(0.7+Math.random()*.65).toFixed(2));el.style.setProperty('--duration',(14+Math.random()*16)+'s');
- layer.appendChild(el);requestAnimationFrame(()=>el.classList.add('go'));setTimeout(()=>el.remove(),33000);
- next=now+35000+Math.random()*85000;
-}
-updateSky();setInterval(updateSky,10000);setInterval(wildlifeTick,1000);
-})();
-</script>
-</body></html>
