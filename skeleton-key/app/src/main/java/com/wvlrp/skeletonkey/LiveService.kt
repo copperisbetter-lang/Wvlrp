@@ -45,7 +45,7 @@ class LiveService : Service(), ConnectChecker {
         const val ACTION_SAVE_LAST_HOUR = "com.wvlrp.mobilelive.SAVE_LAST_HOUR"
         const val EXTRA_PROJECTION_RESULT_CODE = "projectionResultCode"
         const val EXTRA_PROJECTION_DATA = "projectionData"
-        const val ENDPOINT = "https://wvlrp.com/webrtc/mobile/whip"
+        const val ENDPOINT = "https://158-101-120-6.sslip.io/webrtc/mobile/whip"
         private const val SEGMENT_MS = 5L * 60L * 1000L
         private const val MAX_SEGMENTS = 12
     }

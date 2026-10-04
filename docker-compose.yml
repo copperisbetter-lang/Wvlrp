@@ -11,7 +11,7 @@ services:
       MTX_PATHS_EASTBANK_SOURCE: ${MTX_PATHS_EASTBANK_SOURCE:-}
       MTX_PATHS_ROOST_SOURCE: ${MTX_PATHS_ROOST_SOURCE:-}
     ports:
-      - "80:8888"
+      - "127.0.0.1:8888:8888"
       - "8189:8189/udp"
       - "8189:8189/tcp"
     healthcheck:
