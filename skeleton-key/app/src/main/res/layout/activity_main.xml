@@ -1,8 +1,61 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_horizontal" android:padding="24dp">
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WVLRP Mobile Live" android:textSize="28sp" android:textStyle="bold"/>
-<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap GO LIVE while this app is open. Once the status says LIVE, switch to DoorDash or another app — WVLRP keeps broadcasting through the Android foreground service." android:textSize="16sp" android:gravity="center" android:paddingTop="14dp" android:paddingBottom="28dp"/>
-<Button android:id="@+id/liveButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="GO LIVE"/>
-<Button android:id="@+id/stopButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="STOP LIVE" android:layout_marginTop="12dp"/>
-<TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="OFFLINE" android:textStyle="bold" android:textSize="18sp" android:gravity="center" android:paddingTop="24dp"/>
-<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Android will show an ongoing WVLRP notification while the camera and microphone are live." android:gravity="center" android:paddingTop="18dp"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WVLRP Mobile Live"
+        android:textSize="28sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="GO LIVE starts the rear camera + microphone in the Android foreground service. You can switch to DoorDash while WVLRP stays live. The phone also keeps a rolling local recording of the most recent 60 minutes."
+        android:textSize="16sp"
+        android:gravity="center"
+        android:paddingTop="14dp"
+        android:paddingBottom="28dp"/>
+
+    <Button
+        android:id="@+id/liveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="GO LIVE"/>
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SAVE LAST HOUR"
+        android:enabled="false"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="STOP LIVE"
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OFFLINE"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:paddingTop="24dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SAVE LAST HOUR finalizes the current clip, protects the available rolling segments, then immediately starts a fresh segment. The same save action is also available from the ongoing WVLRP notification."
+        android:gravity="center"
+        android:paddingTop="18dp"/>
 </LinearLayout>
