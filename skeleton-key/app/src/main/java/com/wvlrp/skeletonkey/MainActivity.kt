@@ -20,16 +20,34 @@ class MainActivity : Activity() {
     }
 
     private lateinit var status: TextView
+    private lateinit var mileage: TextView
     private lateinit var saveButton: Button
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val s = intent?.getStringExtra("status") ?: return
-            status.text = s
-            saveButton.isEnabled =
-                !s.startsWith("OFFLINE") &&
-                !s.startsWith("ERROR") &&
-                !s.startsWith("NOT LIVE")
+            if (intent == null) return
+
+            if (intent.action == LiveService.ACTION_STATUS) {
+                val s = intent.getStringExtra("status") ?: ""
+                if (s.isNotEmpty()) {
+                    status.text = s
+                    saveButton.isEnabled =
+                        !s.startsWith("OFFLINE") &&
+                        !s.startsWith("ERROR") &&
+                        !s.startsWith("NOT LIVE")
+                }
+            }
+
+            if (intent.action == LiveService.ACTION_MILEAGE) {
+                val shift = intent.getDoubleExtra("shiftMiles", 0.0)
+                val week = intent.getDoubleExtra("weekMiles", 0.0)
+                mileage.text = String.format(
+                    java.util.Locale.US,
+                    "SHIFT %.2f mi   •   WEEK %.2f mi",
+                    shift,
+                    week
+                )
+            }
         }
     }
 
@@ -38,6 +56,7 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         status = findViewById(R.id.status)
+        mileage = findViewById(R.id.mileage)
         saveButton = findViewById(R.id.saveButton)
 
         findViewById<Button>(R.id.liveButton).setOnClickListener { requestAndStart() }
@@ -59,7 +78,9 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        val f = IntentFilter(LiveService.ACTION_STATUS)
+        val f = IntentFilter(LiveService.ACTION_STATUS).apply {
+            addAction(LiveService.ACTION_MILEAGE)
+        }
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(receiver, f, RECEIVER_NOT_EXPORTED)
         } else {
@@ -74,7 +95,12 @@ class MainActivity : Activity() {
     }
 
     private fun requestAndStart() {
-        val p = mutableListOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+        val p = mutableListOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
         if (Build.VERSION.SDK_INT >= 33) p.add(Manifest.permission.POST_NOTIFICATIONS)
 
         val missing = p.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
@@ -98,7 +124,7 @@ class MainActivity : Activity() {
         ) {
             requestOverlayThenProjection()
         } else {
-            status.text = "Camera + microphone permission required"
+            status.text = "Camera, microphone, and precise location permission are required for this beta."
         }
     }
 

@@ -41,6 +41,7 @@ class LiveService : Service(), ConnectChecker {
         const val CHANNEL = "wvlrp_mobile_live"
         const val ID = 987
         const val ACTION_STATUS = "com.wvlrp.mobilelive.STATUS"
+        const val ACTION_MILEAGE = "com.wvlrp.mobilelive.MILEAGE"
         const val ACTION_SAVE_LAST_HOUR = "com.wvlrp.mobilelive.SAVE_LAST_HOUR"
         const val EXTRA_PROJECTION_RESULT_CODE = "projectionResultCode"
         const val EXTRA_PROJECTION_DATA = "projectionData"
@@ -54,6 +55,11 @@ class LiveService : Service(), ConnectChecker {
     private var connected = false
     private var currentSegment: File? = null
     private var currentSegmentStartMs = 0L
+    private var mileageTracker: MileageTracker? = null
+    private var impactDetector: ImpactDetector? = null
+    private var currentShiftMiles = 0.0
+    private var currentWeekMiles = 0.0
+    private var protecting = false
 
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
@@ -84,7 +90,7 @@ class LiveService : Service(), ConnectChecker {
                 "WVLRP Mobile Live",
                 NotificationManager.IMPORTANCE_LOW
             )
-            c.description = "WVLRP camera, microphone, rolling recording, and SNAP capture"
+            c.description = "WVLRP camera, microphone, rolling recording, SNAP, mileage, and impact protection"
             getSystemService(NotificationManager::class.java).createNotificationChannel(c)
         }
     }
@@ -114,7 +120,10 @@ class LiveService : Service(), ConnectChecker {
             setupScreenCapture(projectionResultCode, projectionData!!)
         }
 
-        if (stream == null) startBroadcast()
+        if (stream == null) {
+            startSessionTrackers()
+            startBroadcast()
+        }
         return START_STICKY
     }
 
@@ -140,13 +149,18 @@ class LiveService : Service(), ConnectChecker {
         if (Build.VERSION.SDK_INT >= 30) {
             var types =
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA or
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
             if (includeProjection) {
                 types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             }
             startForeground(ID, n, types)
-        } else if (Build.VERSION.SDK_INT >= 29 && includeProjection) {
-            startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            var types = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            if (includeProjection) {
+                types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            startForeground(ID, n, types)
         } else {
             startForeground(ID, n)
         }
@@ -254,51 +268,143 @@ class LiveService : Service(), ConnectChecker {
         }
     }
 
-    private fun protectLastHour() {
+    private fun protectLastHour(reason: String = "manual") {
+        if (protecting) return
         val w = stream ?: return
+        protecting = true
         handler.removeCallbacks(rotateRunnable)
 
         try {
-            if (w.isRecording) w.stopRecord()
-        } catch (e: Exception) {
-            Log.e("WVLRP-MobileLive", "Could not finalize segment before save", e)
-        }
+            try {
+                if (w.isRecording) w.stopRecord()
+            } catch (e: Exception) {
+                Log.e("WVLRP-MobileLive", "Could not finalize segment before save", e)
+            }
 
-        currentSegment = null
-        currentSegmentStartMs = 0L
+            currentSegment = null
+            currentSegmentStartMs = 0L
 
-        val clips = ringFiles().takeLast(MAX_SEGMENTS)
-        if (clips.isEmpty()) {
-            status("LIVE • nothing recorded yet")
-            startNewSegment()
-            return
-        }
+            val clips = ringFiles().takeLast(MAX_SEGMENTS)
+            if (clips.isEmpty()) {
+                status("LIVE • nothing recorded yet")
+                startNewSegment()
+                return
+            }
 
-        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val eventDir = File(savedDir(), "saved_" + stamp).apply { mkdirs() }
-        var saved = 0
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val prefix = if (reason.startsWith("impact")) "impact_" else "saved_"
+            val eventDir = File(savedDir(), prefix + stamp).apply { mkdirs() }
 
-        clips.forEachIndexed { index, source ->
-            val target = File(
-                eventDir,
-                String.format(Locale.US, "%02d_%s", index + 1, source.name)
-            )
-            val moved = source.renameTo(target)
-            if (moved) {
-                saved++
-            } else {
-                try {
-                    source.copyTo(target, overwrite = true)
-                    if (source.delete()) saved++
-                } catch (e: Exception) {
-                    Log.e("WVLRP-MobileLive", "Could not preserve " + source.name, e)
+            copySnapshotsToEvent(eventDir, clips)
+
+            var saved = 0
+            clips.forEachIndexed { index, source ->
+                val target = File(
+                    eventDir,
+                    String.format(Locale.US, "%02d_%s", index + 1, source.name)
+                )
+                val moved = source.renameTo(target)
+                if (moved) {
+                    saved++
+                } else {
+                    try {
+                        source.copyTo(target, overwrite = true)
+                        if (source.delete()) saved++
+                    } catch (e: Exception) {
+                        Log.e("WVLRP-MobileLive", "Could not preserve " + source.name, e)
+                    }
                 }
             }
+
+            if (reason.startsWith("impact")) {
+                status("IMPACT DETECTED • SAVED LAST HOUR • " + saved + " clips")
+                promote("IMPACT SAVE complete • live + rolling recorder restarted")
+            } else {
+                status("SAVED LAST HOUR • " + saved + " clip" + if (saved == 1) "" else "s")
+                promote("LIVE — last hour protected • rolling recorder restarted")
+            }
+
+            startNewSegment()
+        } finally {
+            protecting = false
+        }
+    }
+
+    private fun copySnapshotsToEvent(eventDir: File, clips: List<File>) {
+        val oldestStart = clips.firstOrNull()
+            ?.nameWithoutExtension
+            ?.removePrefix("wvlrp_")
+            ?.toLongOrNull()
+            ?: (System.currentTimeMillis() - 60L * 60L * 1000L)
+
+        val now = System.currentTimeMillis()
+        val targetDir = File(eventDir, "Screenshots").apply { mkdirs() }
+
+        screenshotDir().listFiles()
+            ?.filter { it.isFile && it.extension.equals("png", ignoreCase = true) }
+            ?.forEach { png ->
+                val ts = png.nameWithoutExtension.removePrefix("snap_").toLongOrNull()
+                    ?: return@forEach
+                if (ts in oldestStart..now) {
+                    try {
+                        png.copyTo(File(targetDir, png.name), overwrite = true)
+                        val sidecar = File(png.parentFile, png.nameWithoutExtension + ".txt")
+                        if (sidecar.exists()) {
+                            sidecar.copyTo(File(targetDir, sidecar.name), overwrite = true)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("WVLRP-MobileLive", "Could not copy SNAP into event", e)
+                    }
+                }
+            }
+
+        val timeline = File(recordingRoot(), "timeline.csv")
+        if (timeline.exists()) {
+            try { timeline.copyTo(File(eventDir, "timeline.csv"), overwrite = true) } catch (_: Exception) {}
+        }
+    }
+
+    private fun startSessionTrackers() {
+        if (mileageTracker == null) {
+            val tracker = MileageTracker(this) { shiftMiles, weekMiles ->
+                currentShiftMiles = shiftMiles
+                currentWeekMiles = weekMiles
+                broadcastMileage()
+            }
+            mileageTracker = tracker
+            tracker.startNewShift()
         }
 
-        status("SAVED LAST HOUR • " + saved + " clip" + if (saved == 1) "" else "s")
-        promote("LIVE — last hour protected • rolling recorder restarted")
-        startNewSegment()
+        if (impactDetector == null) {
+            val detector = ImpactDetector(this) { gForce ->
+                handler.post {
+                    status(
+                        "IMPACT " +
+                            String.format(Locale.US, "%.1f", gForce) +
+                            "g • PROTECTING LAST HOUR"
+                    )
+                    protectLastHour("impact")
+                }
+            }
+            impactDetector = detector
+            detector.start()
+        }
+    }
+
+    private fun stopSessionTrackers() {
+        mileageTracker?.finalizeShift(recordingRoot())
+        mileageTracker = null
+        impactDetector?.stop()
+        impactDetector = null
+    }
+
+    private fun broadcastMileage() {
+        sendBroadcast(
+            Intent(ACTION_MILEAGE)
+                .setPackage(packageName)
+                .putExtra("shiftMiles", currentShiftMiles)
+                .putExtra("weekMiles", currentWeekMiles)
+        )
     }
 
     private fun setupScreenCapture(resultCode: Int, data: Intent) {
@@ -566,6 +672,7 @@ class LiveService : Service(), ConnectChecker {
     fun stopBroadcast() {
         stopping = true
         handler.removeCallbacks(rotateRunnable)
+        stopSessionTrackers()
         shutdownProjection()
         try { stream?.release() } catch (_: Exception) {}
         stream = null
@@ -580,6 +687,7 @@ class LiveService : Service(), ConnectChecker {
     override fun onDestroy() {
         stopping = true
         handler.removeCallbacks(rotateRunnable)
+        stopSessionTrackers()
         shutdownProjection()
         try { stream?.release() } catch (_: Exception) {}
         stream = null

@@ -15,7 +15,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="GO LIVE starts the rear camera + microphone in the Android foreground service. You can switch to DoorDash while WVLRP stays live. The phone keeps a rolling local recording of the most recent 60 minutes."
+        android:text="GO LIVE starts the rear camera + microphone in the Android foreground service. You can switch to DoorDash while WVLRP stays live. The phone keeps a rolling local recording of the most recent 60 minutes, tracks shift mileage, and arms impact protection."
         android:textSize="16sp"
         android:gravity="center"
         android:paddingTop="14dp"
@@ -53,9 +53,19 @@
         android:paddingTop="24dp"/>
 
     <TextView
+        android:id="@+id/mileage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="GO LIVE asks once per session for screen-capture permission so the floating SNAP button can save a still from DoorDash or Maps. SNAP never switches the WVLRP live feed away from the rear camera. Each still is tagged to the exact rolling-video segment and time."
+        android:text="SHIFT 0.00 mi   •   WEEK 0.00 mi"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:paddingTop="12dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="GO LIVE asks once per session for screen-capture permission so the floating SNAP button can save a still from DoorDash or Maps. SNAP never switches the live feed away from the rear camera. Mileage runs only during the active live session. A strong impact automatically protects the available last-hour buffer."
         android:gravity="center"
         android:paddingTop="18dp"/>
 </LinearLayout>
