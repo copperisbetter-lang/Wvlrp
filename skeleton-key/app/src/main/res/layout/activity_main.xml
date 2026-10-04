@@ -15,7 +15,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="GO LIVE starts the rear camera + microphone in the Android foreground service. You can switch to DoorDash while WVLRP stays live. The phone also keeps a rolling local recording of the most recent 60 minutes."
+        android:text="GO LIVE starts the rear camera + microphone in the Android foreground service. You can switch to DoorDash while WVLRP stays live. The phone keeps a rolling local recording of the most recent 60 minutes."
         android:textSize="16sp"
         android:gravity="center"
         android:paddingTop="14dp"
@@ -55,7 +55,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="SAVE LAST HOUR finalizes the current clip, protects the available rolling segments, then immediately starts a fresh segment. The same save action is also available from the ongoing WVLRP notification."
+        android:text="GO LIVE asks once per session for screen-capture permission so the floating SNAP button can save a still from DoorDash or Maps. SNAP never switches the WVLRP live feed away from the rear camera. Each still is tagged to the exact rolling-video segment and time."
         android:gravity="center"
         android:paddingTop="18dp"/>
 </LinearLayout>
