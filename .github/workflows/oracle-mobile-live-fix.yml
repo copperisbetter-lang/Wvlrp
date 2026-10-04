@@ -1,0 +1,109 @@
+name: Deploy Oracle Mobile Live HTTPS relay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-live.html'
+      - 'docker-compose.yml'
+      - 'relay/mediamtx.yml'
+      - 'skeleton-key/**'
+      - '.github/workflows/oracle-mobile-live-fix.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-oracle:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Oracle host
+        shell: bash
+        run: |
+          set -euxo pipefail
+          hostname
+          test -d /home/opc/Wvlrp
+          test -f /home/opc/Wvlrp/.env
+          sudo docker version
+          sudo docker compose version
+
+      - name: Deploy MediaMTX public WebRTC config
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo cp "$GITHUB_WORKSPACE/relay/mediamtx.yml" /home/opc/Wvlrp/relay/mediamtx.yml
+          sudo cp "$GITHUB_WORKSPACE/docker-compose.yml" /home/opc/Wvlrp/docker-compose.yml
+          cd /home/opc/Wvlrp
+          sudo docker compose --env-file .env up -d --build wvlrp-relay
+          sleep 10
+          curl -fsS http://127.0.0.1:8888/
+          sudo docker logs --tail 120 wvlrp-relay
+
+      - name: Open host firewall for HTTPS
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if command -v firewall-cmd >/dev/null 2>&1; then
+            sudo firewall-cmd --permanent --add-service=http || true
+            sudo firewall-cmd --permanent --add-service=https || true
+            sudo firewall-cmd --reload || true
+          fi
+          if command -v ufw >/dev/null 2>&1; then
+            sudo ufw allow 80/tcp || true
+            sudo ufw allow 443/tcp || true
+          fi
+          sudo iptables -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT || true
+          sudo iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT || true
+
+      - name: Install Oracle HTTPS front door
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/wvlrp-caddy/data /opt/wvlrp-caddy/config
+          cat > /tmp/WVLRP-Caddyfile <<'EOF'
+          158-101-120-6.sslip.io {
+              reverse_proxy 127.0.0.1:8888
+          }
+          EOF
+          sudo cp /tmp/WVLRP-Caddyfile /opt/wvlrp-caddy/Caddyfile
+          sudo docker pull caddy:2-alpine
+          sudo docker rm -f wvlrp-caddy 2>/dev/null || true
+          sudo docker run -d \
+            --name wvlrp-caddy \
+            --restart unless-stopped \
+            --network host \
+            -v /opt/wvlrp-caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+            -v /opt/wvlrp-caddy/data:/data \
+            -v /opt/wvlrp-caddy/config:/config \
+            caddy:2-alpine
+          sleep 15
+          sudo docker logs --tail 160 wvlrp-caddy
+          sudo ss -ltnup | grep -E ':(80|443|8189)\\b' || true
+
+      - name: Verify local WHIP and WHEP front door
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -kfsS --resolve 158-101-120-6.sslip.io:443:127.0.0.1 https://158-101-120-6.sslip.io/
+          curl -k -sS -o /dev/null -w 'WHIP OPTIONS %{http_code}\n' \
+            --resolve 158-101-120-6.sslip.io:443:127.0.0.1 \
+            -X OPTIONS https://158-101-120-6.sslip.io/webrtc/mobile/whip
+          curl -k -sS -o /dev/null -w 'WHEP OPTIONS %{http_code}\n' \
+            --resolve 158-101-120-6.sslip.io:443:127.0.0.1 \
+            -X OPTIONS https://158-101-120-6.sslip.io/webrtc/mobile/whep
+
+  verify-public:
+    needs: deploy-oracle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify Oracle HTTPS is reachable from the public internet
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sleep 15
+          curl -fsS --retry 8 --retry-delay 3 --connect-timeout 8 https://158-101-120-6.sslip.io/
+          curl -sS -o /dev/null -w 'WHIP OPTIONS %{http_code}\n' -X OPTIONS https://158-101-120-6.sslip.io/webrtc/mobile/whip
+          curl -sS -o /dev/null -w 'WHEP OPTIONS %{http_code}\n' -X OPTIONS https://158-101-120-6.sslip.io/webrtc/mobile/whep
