@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'mobile-live.html'
+      - 'mobile-live-publisher.html'
       - 'docker-compose.yml'
       - 'relay/mediamtx.yml'
       - 'skeleton-key/**'
@@ -48,14 +49,20 @@ jobs:
           if command -v firewall-cmd >/dev/null 2>&1; then
             sudo firewall-cmd --permanent --add-service=http || true
             sudo firewall-cmd --permanent --add-service=https || true
+            sudo firewall-cmd --permanent --add-port=8189/tcp || true
+            sudo firewall-cmd --permanent --add-port=8189/udp || true
             sudo firewall-cmd --reload || true
           fi
           if command -v ufw >/dev/null 2>&1; then
             sudo ufw allow 80/tcp || true
             sudo ufw allow 443/tcp || true
+            sudo ufw allow 8189/tcp || true
+            sudo ufw allow 8189/udp || true
           fi
           sudo iptables -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT || true
           sudo iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT || true
+          sudo iptables -C INPUT -p tcp --dport 8189 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p tcp --dport 8189 -j ACCEPT || true
+          sudo iptables -C INPUT -p udp --dport 8189 -j ACCEPT 2>/dev/null || sudo iptables -I INPUT 1 -p udp --dport 8189 -j ACCEPT || true
 
       - name: Install Oracle HTTPS front door
         shell: bash
