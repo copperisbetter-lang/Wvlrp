@@ -104,7 +104,7 @@
       };
       await next.setLocalDescription(await next.createOffer());
       await waitIce(next);
-      const endpoint=new URL('/webrtc/mobile/whep',location.origin).toString();
+      const endpoint='https://158-101-120-6.sslip.io/webrtc/mobile/whep';
       const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/sdp'},body:next.localDescription.sdp});
       if(!res.ok) throw new Error('stream unavailable ('+res.status+')');
       const loc=res.headers.get('Location');
