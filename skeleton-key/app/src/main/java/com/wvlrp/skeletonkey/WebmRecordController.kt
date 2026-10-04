@@ -94,7 +94,7 @@ class WebmRecordController : AsyncBaseRecordController() {
         listener?.onStatusChange(recordStatus)
     }
 
-    private fun write(track: Int, frame: MediaFrame) {
+    private suspend fun write(track: Int, frame: MediaFrame) {
         if (track == -1) return
         try {
             mediaMuxer?.writeSampleData(track, frame.data, frame.info.toMediaCodecBufferInfo())
