@@ -1,0 +1,58 @@
+name: Build borderless homepage panorama
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-borderless-home.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build borderless derived panorama
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          src='assets/wvlrp-360-master.webp'
+          dst='assets/wvlrp-360-master-borderless.webp'
+          im=Image.open(src).convert('RGB')
+          px=im.load()
+          # East Bank embedded preview outer border in the 2048x768 master.
+          # Replace only the pale border pixels with adjacent pixels from inside
+          # the camera image. The approved source master remains untouched.
+          for x in range(428, 750):
+              px[x,435] = px[x,436]
+              px[x,590] = px[x,589]
+              px[x,591] = px[x,589]
+          for y in range(435, 592):
+              px[428,y] = px[429,y]
+              px[748,y] = px[747,y]
+              px[749,y] = px[747,y]
+          im.save(dst, 'WEBP', lossless=True, method=6)
+          PY
+
+      - name: Commit derived homepage asset
+        run: |
+          git config user.name "WVLRP Site Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/wvlrp-360-master-borderless.webp
+          if git diff --cached --quiet; then
+            echo "No asset change needed."
+            exit 0
+          fi
+          git commit -m "Add borderless East Bank homepage panorama"
+          git push origin main
