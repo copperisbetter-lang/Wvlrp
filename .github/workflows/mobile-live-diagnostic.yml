@@ -1,0 +1,38 @@
+name: Mobile Live diagnostic
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile-live-diagnostic.yml'
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: self-hosted
+    timeout-minutes: 8
+    steps:
+      - name: Check Oracle Mobile Live stack
+        shell: bash
+        run: |
+          set +e
+          echo "=== HOST ==="
+          hostname
+          date
+          uptime
+          echo "=== CONTAINERS ==="
+          sudo docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+          echo "=== PORTS ==="
+          sudo ss -ltnup | grep -E ':(80|443|8888|8189)\\b' || true
+          echo "=== LOCAL MEDIAMTX ==="
+          curl -sS -m 6 -o /dev/null -w 'mediamtx root %{http_code}\n' http://127.0.0.1:8888/
+          echo "=== LOCAL HTTPS FRONT DOOR ==="
+          curl -k -sS -m 8 -o /dev/null -w 'https root %{http_code}\n' \
+            --resolve 158-101-120-6.sslip.io:443:127.0.0.1 \
+            https://158-101-120-6.sslip.io/
+          curl -k -sS -m 8 -o /dev/null -w 'WHIP OPTIONS %{http_code}\n' \
+            --resolve 158-101-120-6.sslip.io:443:127.0.0.1 \
+            -X OPTIONS https://158-101-120-6.sslip.io/webrtc/mobile/whip
+          echo "=== RELAY LOG ==="
+          sudo docker logs --tail 80 wvlrp-relay 2>&1 || true
+          echo "=== CADDY LOG ==="
+          sudo docker logs --tail 80 wvlrp-caddy 2>&1 || true
