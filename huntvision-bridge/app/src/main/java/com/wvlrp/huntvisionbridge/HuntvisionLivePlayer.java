@@ -102,6 +102,7 @@ final class HuntvisionLivePlayer {
 
             FrameData first = null;
             int selectedStream = -1;
+            int selectedDataChannel = -1;
             int[][] attempts = {
                     {0, 0},
                     {0, 1},
@@ -122,9 +123,11 @@ final class HuntvisionLivePlayer {
                 if (open < 0) continue;
 
                 openedMode = mode;
-                first = waitForVideoFrame(handle, stop, 4500L);
+                int[] dataChannel = new int[] {-1};
+                first = waitForVideoFrame(handle, stop, 5500L, dataChannel);
                 if (first != null) {
                     selectedStream = streamType;
+                    selectedDataChannel = dataChannel[0];
                     break;
                 }
 
@@ -147,7 +150,8 @@ final class HuntvisionLivePlayer {
 
             progress.onProgress(
                     "LIVE • " + codecName + " • " + width + "×" + height +
-                    " • stream " + selectedStream + " • mode " + openedMode);
+                    " • stream " + selectedStream + " • mode " + openedMode +
+                    " • data channel " + selectedDataChannel);
 
             if (fmt == 0 || fmt == 1) {
                 String mime = fmt == 0 ? MediaFormat.MIMETYPE_VIDEO_AVC : MediaFormat.MIMETYPE_VIDEO_HEVC;
@@ -195,7 +199,7 @@ final class HuntvisionLivePlayer {
                         }
                     }
 
-                    frame = readFrame(handle);
+                    frame = readFrame(handle, selectedDataChannel);
                     if (frame == null) {
                         try {
                             Thread.sleep(5);
@@ -232,7 +236,7 @@ final class HuntvisionLivePlayer {
                             rendered++;
                         }
                     }
-                    frame = readFrame(handle);
+                    frame = readFrame(handle, selectedDataChannel);
                     if (frame == null) {
                         try {
                             Thread.sleep(5);
@@ -270,11 +274,20 @@ final class HuntvisionLivePlayer {
     private static FrameData waitForVideoFrame(
             int handle,
             StopCheck stop,
-            long timeoutMs) {
+            long timeoutMs,
+            int[] selectedChannel) {
         long deadline = System.currentTimeMillis() + timeoutMs;
+        // Huntvision 2.1.22's VideoSurfaceView calls GetVideoData2 using
+        // channel 4, then 5, then the normal IPC channel 0.
+        final int[] channels = {4, 5, 0};
         while (!stop.shouldStop() && System.currentTimeMillis() < deadline) {
-            FrameData frame = readFrame(handle);
-            if (frame != null && isVideo(frame) && frameLength(frame) > 0) return frame;
+            for (int channel : channels) {
+                FrameData frame = readFrame(handle, channel);
+                if (frame != null && isVideo(frame) && frameLength(frame) > 0) {
+                    selectedChannel[0] = channel;
+                    return frame;
+                }
+            }
             try {
                 Thread.sleep(8);
             } catch (InterruptedException e) {
@@ -285,12 +298,14 @@ final class HuntvisionLivePlayer {
         return null;
     }
 
-    private static FrameData readFrame(int handle) {
+    private static FrameData readFrame(int handle, int channel) {
         try {
             FrameData frame = new FrameData();
             IvyIoInteger out = new IvyIoInteger(0);
-            int rc = IvyIoSdkJni.getRawStreamData(handle, 0, frame, out, 0);
-            if (rc < 0 || frame.data == null) return null;
+            // Exact path recovered from Huntvision 2.1.22:
+            // FosSdkJNI.GetVideoData2 -> getStreamData(handle, channel, frame, out, 2, 0).
+            int rc = IvyIoSdkJni.getStreamData(handle, channel, frame, out, 2, 0);
+            if (rc < 0 || frame.data == null || frameLength(frame) <= 0) return null;
             return frame;
         } catch (Throwable t) {
             return null;
@@ -298,7 +313,7 @@ final class HuntvisionLivePlayer {
     }
 
     private static boolean isVideo(FrameData frame) {
-        return frame.type == 0 && frame.fmt >= 0 && frame.fmt < 1000;
+        return frame != null && frame.fmt >= 0 && frame.fmt < 1000;
     }
 
     private static int frameLength(FrameData frame) {
