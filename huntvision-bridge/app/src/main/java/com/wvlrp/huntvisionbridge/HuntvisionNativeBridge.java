@@ -121,45 +121,50 @@ final class HuntvisionNativeBridge {
             }
             opened = true;
 
-            progress.onProgress("Waiting for the first decrypted video frame…");
+            progress.onProgress("Waiting on Huntvision's exact GetVideoData2 path…");
             long deadline = System.currentTimeMillis() + 12000L;
             int attempts = 0;
+            final int[] channels = {4, 5, 0};
             while (System.currentTimeMillis() < deadline && attempts++ < 700) {
-                FrameData frame = new FrameData();
-                IvyIoInteger out = new IvyIoInteger(0);
-                int rc = IvyIoSdkJni.getRawStreamData(handle, 0, frame, out, 0);
-                int len = frame.dataLen > 0
-                        ? frame.dataLen
-                        : (frame.data == null ? 0 : frame.data.length);
+                for (int channel : channels) {
+                    FrameData frame = new FrameData();
+                    IvyIoInteger out = new IvyIoInteger(0);
+                    int rc = IvyIoSdkJni.getStreamData(handle, channel, frame, out, 2, 0);
+                    int len = frame.dataLen > 0
+                            ? frame.dataLen
+                            : (frame.data == null ? 0 : frame.data.length);
 
-                if (rc >= 0 && frame.type == 0 && frame.data != null && len > 0) {
-                    int usable = Math.min(len, frame.data.length);
-                    boolean annexB = containsAnnexB(frame.data, Math.min(usable, 256));
-                    String codec = codec(frame.fmt);
-                    String summary =
-                            "LIVE IVY STREAM VERIFIED\n" +
-                            "Codec: " + codec + " (fmt " + frame.fmt + ")\n" +
-                            "Video: " + frame.video_w + "×" + frame.video_h +
-                            (frame.video_frameRate > 0 ? " @ " + frame.video_frameRate + " fps" : "") + "\n" +
-                            "First frame: " + usable + " bytes" +
-                            (frame.key != 0 ? " • key frame" : "") + "\n" +
-                            "Annex-B NAL: " + (annexB ? "yes" : "not in first 256 bytes") + "\n" +
-                            "Permission level: " + permission.intValue() +
-                            (sdkVersion == null || sdkVersion.isEmpty()
-                                    ? ""
-                                    : "\nIvy SDK: " + sdkVersion);
-                    return new Result(
-                            true,
-                            summary,
-                            sdkVersion == null ? "" : sdkVersion,
-                            codec,
-                            frame.video_w,
-                            frame.video_h,
-                            frame.video_frameRate,
-                            usable,
-                            frame.key,
-                            frame.pts,
-                            annexB);
+                    if (rc >= 0 && frame.fmt >= 0 && frame.fmt < 1000 &&
+                            frame.data != null && len > 0) {
+                        int usable = Math.min(len, frame.data.length);
+                        boolean annexB = containsAnnexB(frame.data, Math.min(usable, 256));
+                        String codec = codec(frame.fmt);
+                        String summary =
+                                "LIVE IVY STREAM VERIFIED\n" +
+                                "GetVideoData2 channel: " + channel + "\n" +
+                                "Codec: " + codec + " (fmt " + frame.fmt + ")\n" +
+                                "Video: " + frame.video_w + "×" + frame.video_h +
+                                (frame.video_frameRate > 0 ? " @ " + frame.video_frameRate + " fps" : "") + "\n" +
+                                "First frame: " + usable + " bytes" +
+                                (frame.key != 0 ? " • key frame" : "") + "\n" +
+                                "Annex-B NAL: " + (annexB ? "yes" : "not in first 256 bytes") + "\n" +
+                                "Permission level: " + permission.intValue() +
+                                (sdkVersion == null || sdkVersion.isEmpty()
+                                        ? ""
+                                        : "\nIvy SDK: " + sdkVersion);
+                        return new Result(
+                                true,
+                                summary,
+                                sdkVersion == null ? "" : sdkVersion,
+                                codec,
+                                frame.video_w,
+                                frame.video_h,
+                                frame.video_frameRate,
+                                usable,
+                                frame.key,
+                                frame.pts,
+                                annexB);
+                    }
                 }
 
                 try {
@@ -171,7 +176,7 @@ final class HuntvisionNativeBridge {
             }
 
             return Result.fail(
-                    "Ivy login/openVideo succeeded, but no decrypted video frame arrived within 12 seconds.");
+                    "Ivy login/openVideo succeeded, but Huntvision GetVideoData2 returned no video frame on channels 4, 5, or 0.");
         } catch (PackageManagerNameNotFoundCompat e) {
             return Result.fail(e.getMessage());
         } catch (Throwable t) {
