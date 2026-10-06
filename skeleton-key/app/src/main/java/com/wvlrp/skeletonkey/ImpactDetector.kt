@@ -20,6 +20,7 @@ class ImpactDetector(
     private var running = false
     private var armedAfterMs = 0L
     private var lastTriggerMs = 0L
+    private var candidateImpactMs = 0L
 
     fun start() {
         if (running || accelerometer == null) return
@@ -48,15 +49,25 @@ class ImpactDetector(
 
         val now = SystemClock.elapsedRealtime()
         if (g >= IMPACT_THRESHOLD_G && now - lastTriggerMs >= IMPACT_COOLDOWN_MS) {
-            lastTriggerMs = now
-            onImpact(g)
+            // Require two strong readings close together. A single phone bump/pickup was
+            // producing false crash saves during beta testing.
+            if (candidateImpactMs > 0L && now - candidateImpactMs <= IMPACT_CONFIRM_WINDOW_MS) {
+                lastTriggerMs = now
+                candidateImpactMs = 0L
+                onImpact(g)
+            } else {
+                candidateImpactMs = now
+            }
+        } else if (candidateImpactMs > 0L && now - candidateImpactMs > IMPACT_CONFIRM_WINDOW_MS) {
+            candidateImpactMs = 0L
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     companion object {
-        private const val IMPACT_THRESHOLD_G = 3.5
+        private const val IMPACT_THRESHOLD_G = 4.5
         private const val IMPACT_COOLDOWN_MS = 60_000L
+        private const val IMPACT_CONFIRM_WINDOW_MS = 350L
     }
 }
