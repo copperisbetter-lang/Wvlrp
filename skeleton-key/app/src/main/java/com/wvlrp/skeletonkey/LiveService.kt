@@ -377,14 +377,16 @@ class LiveService : Service(), ConnectChecker {
 
         if (impactDetector == null) {
             val detector = ImpactDetector(this) { gForce ->
-                handler.post {
-                    status(
-                        "IMPACT " +
-                            String.format(Locale.US, "%.1f", gForce) +
-                            "g • PROTECTING LAST HOUR"
-                    )
+                // Impact callbacks arrive on the main sensor thread. The save operation can
+                // finalize/move up to an hour of video, so never do that file work on the UI thread.
+                status(
+                    "IMPACT " +
+                        String.format(Locale.US, "%.1f", gForce) +
+                        "g • PROTECTING LAST HOUR"
+                )
+                Thread({
                     protectLastHour("impact")
-                }
+                }, "WVLRP-impact-save").start()
             }
             impactDetector = detector
             detector.start()
