@@ -7,6 +7,8 @@ import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.Surface;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,8 +35,12 @@ public class MainActivity extends Activity {
     private EditText uid;
     private EditText mac;
     private Button scan;
-    private Button liveTest;
+    private Button liveStart;
+    private Button liveStop;
     private ProgressBar spinner;
+    private SurfaceView liveSurface;
+    private volatile boolean stopLiveRequested = false;
+    private volatile boolean liveRunning = false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -42,6 +48,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        stopLiveRequested = true;
         worker.shutdownNow();
         super.onDestroy();
     }
@@ -54,10 +61,11 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         root.addView(label("WVLRP", 30, true));
-        root.addView(label("HUNTVISION CAMERA ID + IVY LIVE TEST", 14, true));
+        root.addView(label("HUNTVISION C31W LIVE BRIDGE", 14, true));
         root.addView(label(
-                "This build recognizes Huntvision's direct Ivy TCP service on port 8888. " +
-                "It does not invent an RTSP address when the camera does not expose RTSP.",
+                "Direct LAN viewer for the Huntvision/Ivy TCP camera service on port 8888. " +
+                "The app uses the native Ivy SDK from the Huntvision app already installed on this phone, " +
+                "then continuously decodes the camera video locally. It does not invent an RTSP address.",
                 14, false));
 
         root.addView(section("Known C31W target"));
@@ -86,10 +94,30 @@ public class MainActivity extends Activity {
         password.setText("");
         root.addView(password);
 
-        liveTest = new Button(this);
-        liveTest.setText("TEST HUNTVISION IVY LIVE VIDEO");
-        liveTest.setOnClickListener(v -> startLiveTest());
-        root.addView(liveTest);
+        root.addView(section("Direct Ivy live view"));
+        liveSurface = new SurfaceView(this);
+        liveSurface.setBackgroundColor(Color.BLACK);
+        LinearLayout.LayoutParams videoLp =
+                new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(220));
+        videoLp.setMargins(0, dp(6), 0, dp(8));
+        liveSurface.setLayoutParams(videoLp);
+        root.addView(liveSurface);
+
+        liveStart = new Button(this);
+        liveStart.setText("START LIVE C31W VIDEO");
+        liveStart.setOnClickListener(v -> startLiveView());
+        root.addView(liveStart);
+
+        liveStop = new Button(this);
+        liveStop.setText("STOP LIVE VIDEO");
+        liveStop.setEnabled(false);
+        liveStop.setOnClickListener(v -> stopLiveView());
+        root.addView(liveStop);
+
+        Button oneFrame = new Button(this);
+        oneFrame.setText("DIAGNOSTIC: VERIFY ONE DECRYPTED FRAME");
+        oneFrame.setOnClickListener(v -> startOneFrameTest());
+        root.addView(oneFrame);
 
         Button copyTarget = new Button(this);
         copyTarget.setText("COPY C31W WVLRP CONNECTION BLOCK");
@@ -97,7 +125,7 @@ public class MainActivity extends Activity {
         root.addView(copyTarget);
 
         liveResult = label(
-                "Ready for direct .26:8888 test. Huntvision must remain installed on this phone.",
+                "Ready for direct 192.168.1.26:8888 live view. Huntvision must remain installed on this phone.",
                 13, false);
         liveResult.setPadding(0, dp(10), 0, dp(10));
         root.addView(liveResult);
@@ -120,7 +148,92 @@ public class MainActivity extends Activity {
         return scroll;
     }
 
-    private void startLiveTest() {
+    private void startLiveView() {
+        if (liveRunning) {
+            toast("Live view is already running");
+            return;
+        }
+
+        final String h = host.getText().toString().trim();
+        final String pText = ivyPort.getText().toString().trim();
+        final String id = uid.getText().toString().trim();
+        final String u = username.getText().toString().trim();
+        final String p = password.getText().toString();
+        final String m = mac.getText().toString().trim();
+
+        if (h.isEmpty()) {
+            toast("Enter the camera IP");
+            return;
+        }
+
+        final int port;
+        try {
+            port = Integer.parseInt(pText);
+        } catch (Exception e) {
+            toast("Ivy port must be a number");
+            return;
+        }
+
+        Surface surface = liveSurface.getHolder().getSurface();
+        if (surface == null || !surface.isValid()) {
+            toast("Video window is not ready yet");
+            return;
+        }
+
+        stopLiveRequested = false;
+        liveRunning = true;
+        setBusy(true);
+        liveStop.setEnabled(true);
+        spinner.setVisibility(View.VISIBLE);
+        liveResult.setText("Starting continuous Ivy live view…");
+        status.setText("Connecting to the C31W over direct LAN TCP 8888…");
+
+        worker.submit(() -> {
+            HuntvisionLivePlayer.Outcome outcome = HuntvisionLivePlayer.play(
+                    this,
+                    h,
+                    port,
+                    id,
+                    u,
+                    p,
+                    m,
+                    surface,
+                    () -> stopLiveRequested || Thread.currentThread().isInterrupted(),
+                    msg -> runOnUiThread(() -> {
+                        liveResult.setText(msg);
+                        if (msg.startsWith("LIVE")) {
+                            spinner.setVisibility(View.GONE);
+                            status.setText("C31W live video is running through the direct Huntvision/Ivy transport.");
+                        }
+                    }));
+
+            runOnUiThread(() -> {
+                liveRunning = false;
+                stopLiveRequested = false;
+                setBusy(false);
+                liveStop.setEnabled(false);
+                spinner.setVisibility(View.GONE);
+                liveResult.setText(outcome.summary);
+                status.setText(outcome.ok
+                        ? "Live viewer stopped cleanly."
+                        : "Live viewer did not complete. The exact failure is shown above.");
+            });
+        });
+    }
+
+    private void stopLiveView() {
+        if (!liveRunning) return;
+        stopLiveRequested = true;
+        liveStop.setEnabled(false);
+        status.setText("Stopping live video…");
+    }
+
+    private void startOneFrameTest() {
+        if (liveRunning) {
+            toast("Stop live video before running the diagnostic");
+            return;
+        }
+
         final String h = host.getText().toString().trim();
         final String pText = ivyPort.getText().toString().trim();
         final String u = username.getText().toString().trim();
@@ -141,7 +254,7 @@ public class MainActivity extends Activity {
         }
 
         setBusy(true);
-        liveResult.setText("Starting direct Ivy test…");
+        liveResult.setText("Starting one-frame Ivy diagnostic…");
 
         worker.submit(() -> {
             HuntvisionNativeBridge.Result r = HuntvisionNativeBridge.test(
@@ -156,16 +269,19 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 setBusy(false);
                 liveResult.setText(r.summary);
-                if (r.ok) {
-                    status.setText("Success — Huntvision's encrypted Ivy transport was decoded by its installed native SDK.");
-                } else {
-                    status.setText("Ivy test did not complete. The exact failure is shown above.");
-                }
+                status.setText(r.ok
+                        ? "Decrypted Ivy frame verified."
+                        : "One-frame Ivy diagnostic failed. The exact failure is shown above.");
             });
         });
     }
 
     private void startScan() {
+        if (liveRunning) {
+            toast("Stop live video before scanning");
+            return;
+        }
+
         final String u = username.getText().toString().trim();
         final String p = password.getText().toString();
 
@@ -191,8 +307,9 @@ public class MainActivity extends Activity {
 
     private void setBusy(boolean busy) {
         scan.setEnabled(!busy);
-        liveTest.setEnabled(!busy);
-        spinner.setVisibility(busy ? View.VISIBLE : View.GONE);
+        liveStart.setEnabled(!busy);
+        if (!liveRunning) liveStop.setEnabled(false);
+        spinner.setVisibility(busy && !liveRunning ? View.VISIBLE : View.GONE);
     }
 
     private View card(CameraInfo c, String user, String pass) {
