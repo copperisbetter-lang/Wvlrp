@@ -49,9 +49,18 @@ final class CameraScanner {
         for (CameraInfo c : candidates) {
             i++;
             progress.onProgress("Checking " + c.ip + " (" + i + "/" + candidates.size() + ")…");
+            boolean ivy = c.openPorts.contains(8888);
+            if (ivy) {
+                c.ivyPort = 8888;
+                c.transport = "HUNTVISION_IVY_TCP";
+                if (c.discovery == null || c.discovery.isEmpty()) c.discovery = "LAN scan";
+                c.note = "Huntvision Ivy TCP service answered on port 8888. RTSP/ONVIF may be absent.";
+            }
+
             boolean cgi = HttpCameraProbe.probe(c, user, pass);
             boolean onvif = OnvifProbe.probe(c, user, pass);
-            if (!cgi && !onvif && !c.discovery.contains("WS-Discovery")) continue;
+            if (!cgi && !onvif && !ivy && !c.discovery.contains("WS-Discovery")) continue;
+
             verifyRtsp(c, user, pass);
             cameras.add(c);
         }
@@ -64,7 +73,7 @@ final class CameraScanner {
             final String ip = prefix + n;
             if (ip.equals(local)) continue;
             pool.submit(() -> {
-                int[] ports = {80, 88, 443, 554, 888, 8080};
+                int[] ports = {80, 88, 443, 554, 888, 8080, 8888};
                 CameraInfo c = null;
                 for (int p : ports) {
                     if (open(ip, p, 180)) {
