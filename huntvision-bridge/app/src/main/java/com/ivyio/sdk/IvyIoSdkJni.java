@@ -24,6 +24,13 @@ public final class IvyIoSdkJni {
             FrameData frame,
             IvyIoInteger out,
             int flags);
+    public static native int getStreamData(
+            int handle,
+            int channel,
+            FrameData frame,
+            IvyIoInteger out,
+            int decodeMode,
+            int flags);
     public static native int closeVideo(int handle, int channel, int mode);
     public static native void logout(int handle);
     public static native void destroy(int handle);
