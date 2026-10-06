@@ -1,125 +1,16 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#020906"><title>West Virginia Live Research Project</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020906">
+<title>West Virginia Live Research Project</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020906;color:#fff;font-family:Arial,sans-serif;overscroll-behavior:none}button,a{font:inherit}
-#scene{position:fixed;inset:0;overflow:hidden;cursor:grab;touch-action:none;background:#06100b;user-select:none;-webkit-user-select:none}#scene.dragging{cursor:grabbing}
-#pano{position:absolute;inset:0;background-image:url('assets/wvlrp-360-master-borderless.webp?v=20261005-borderless1');background-size:auto 100%;background-repeat:repeat-x;background-position:center center;will-change:background-position}
-header{position:fixed;z-index:40;left:0;right:0;top:0;display:flex;align-items:flex-start;justify-content:space-between;padding:13px 16px;background:linear-gradient(180deg,rgba(0,10,7,.88),rgba(0,10,7,.28),transparent);pointer-events:none}
-.brand{font-weight:900;letter-spacing:.09em;text-shadow:0 2px 8px #000;pointer-events:auto}.brand small{display:block;font-size:8px;letter-spacing:.15em;color:#d9e6dd;margin-top:3px}
-.menu-wrap{position:relative;pointer-events:auto}
-.menu{border:1px solid rgba(255,255,255,.32);border-radius:999px;background:rgba(1,15,10,.62);color:#fff;padding:8px 12px;font-weight:900;font-size:10px;letter-spacing:.08em;cursor:pointer;backdrop-filter:blur(8px)}
-.site-menu{position:absolute;right:0;top:42px;width:min(78vw,250px);padding:7px;border:1px solid rgba(255,255,255,.22);border-radius:14px;background:rgba(3,16,11,.96);box-shadow:0 14px 34px rgba(0,0,0,.55);backdrop-filter:blur(12px);display:none}
-.site-menu.open{display:block}
-.site-menu details{border-bottom:1px solid rgba(255,255,255,.09)}.site-menu details:last-of-type{border-bottom:0}
-.site-menu summary{list-style:none;cursor:pointer;padding:9px 10px;font-size:10px;font-weight:900;letter-spacing:.08em;color:#fff}.site-menu summary::-webkit-details-marker{display:none}.site-menu summary:after{content:'▾';float:right;color:#9db2a6}
-.site-menu details[open] summary:after{content:'▴'}
-.submenu{display:grid;gap:3px;padding:0 6px 7px}.submenu a,.submenu button{display:block;width:100%;border:0;border-radius:8px;background:rgba(255,255,255,.05);color:#dce7e0;text-decoration:none;text-align:left;padding:8px 9px;font-size:10px;cursor:pointer}.submenu a:active,.submenu button:active{background:rgba(255,255,255,.12)}
-#wvHomeAccount{font-family:inherit}
-.wv-auth-pill{display:none!important}
-.hint{position:fixed;z-index:15;top:76px;left:50%;transform:translateX(-50%);padding:8px 12px;border-radius:999px;background:rgba(0,10,7,.58);border:1px solid rgba(255,255,255,.18);font-size:11px;letter-spacing:.08em;white-space:nowrap;transition:opacity .8s;pointer-events:none}
-.hotspot{position:absolute;z-index:8;left:0;top:67%;width:min(28vw,300px);aspect-ratio:16/9;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none;text-decoration:none;color:transparent;transform:translate(-50%,-50%);touch-action:none}
-.hotspot:hover,.hotspot:active{border:0;box-shadow:none;background:transparent}.hotspot .glass{display:none!important}
-.hotspot strong,.hotspot small,.live{display:none!important}
-@media(max-width:650px){.hotspot{width:min(62vw,260px);aspect-ratio:4/3}.brand{font-size:13px}.hint{top:68px}.site-menu{right:0;top:39px;width:min(82vw,240px)}}
-</style></head><body>
-<div id="scene" aria-label="Interactive WVLRP property view">
-  <div id="pano" aria-hidden="true"></div>
-  <a class="hotspot" id="east" href="east-bank.html" aria-label="Open East Bank live camera"><div class="glass"></div><span class="live">LIVE</span><strong>East Bank</strong><small>OPEN CAMERA →</small></a>
-</div>
-<header>
-  <div class="brand">WVLRP<small>WEST VIRGINIA LIVE RESEARCH PROJECT</small></div>
-  <div class="menu-wrap">
-    <button class="menu" id="siteMenuButton" type="button" aria-expanded="false">☰ MENU</button>
-    <nav class="site-menu" id="siteMenu" aria-label="WVLRP menu">
-      <details>
-        <summary>LIVE CAMERAS</summary>
-        <div class="submenu">
-          <a href="east-bank.html">East Bank</a>
-          <a href="the-roost.html">The Roost</a>
-          <a href="west-bank.html">West Bank</a>
-          <a href="south-hill.html">South Hill</a>
-          <a href="infrared-camera.html">Infrared / Night Vision</a>
-        </div>
-      </details>
-      <details>
-        <summary>COMMUNITY</summary>
-        <div class="submenu">
-          <a href="lounge.html">Lounge</a>
-          <a href="visitors.html">Look Who’s Here</a>
-        </div>
-      </details>
-      <details>
-        <summary>PROJECT</summary>
-        <div class="submenu">
-          <a href="sponsors.html">Sponsors</a>
-          <a href="supporters.html">Supporters</a>
-          <a href="gift-shop.html">Gift Shop</a>
-          <a href="member-guide.html">Explore WVLRP</a>
-        </div>
-      </details>
-      <details>
-        <summary>ACCOUNT</summary>
-        <div class="submenu">
-          <button type="button" id="wvHomeAccount">Sign In / Account</button>
-        </div>
-      </details>
-    </nav>
-  </div>
-</header>
-<div class="hint" id="hint">DRAG TO LOOK AROUND • TAP EAST BANK TO GO LIVE</div>
-<script>
-(()=>{
-  const scene=document.getElementById('scene'),pano=document.getElementById('pano'),east=document.getElementById('east'),hint=document.getElementById('hint');
-  const MASTER_ASPECT=2048/768,EAST_ANCHOR=.281,DRAG_GAIN=1.18;
-  let offset=0,startX=0,startOffset=0,down=false,moved=false;
-
-  function tileWidth(){return scene.clientHeight*MASTER_ASPECT}
-  function wrap(v,w){return ((v+w/2)%w+w)%w-w/2}
-  function draw(){
-    const w=tileWidth();
-    offset=wrap(offset,w);
-    const tileLeft=scene.clientWidth/2-w/2+offset;
-    pano.style.backgroundPosition=tileLeft+'px center';
-
-    let x=tileLeft+w*EAST_ANCHOR;
-    const margin=east.offsetWidth/2+8;
-    while(x<-margin)x+=w;
-    while(x>scene.clientWidth+margin)x-=w;
-    east.style.left=x+'px';
-  }
-  function begin(e){
-    if(e.button!==undefined&&e.button!==0)return;
-    down=true;moved=false;startX=e.clientX;startOffset=offset;
-    scene.classList.add('dragging');scene.setPointerCapture?.(e.pointerId);
-  }
-  function move(e){
-    if(!down)return;
-    const d=e.clientX-startX;
-    if(Math.abs(d)>6)moved=true;
-    offset=startOffset+d*DRAG_GAIN;
-    draw();
-  }
-  function end(){down=false;scene.classList.remove('dragging')}
-  scene.addEventListener('pointerdown',begin);
-  scene.addEventListener('pointermove',move);
-  scene.addEventListener('pointerup',end);
-  scene.addEventListener('pointercancel',end);
-  east.addEventListener('click',e=>{if(moved)e.preventDefault()});
-  addEventListener('resize',draw);
-  setTimeout(()=>hint.style.opacity='0',4500);
-  draw();
-})();
-</script>
-<script>
-(()=>{
-  const btn=document.getElementById('siteMenuButton'),menu=document.getElementById('siteMenu'),account=document.getElementById('wvHomeAccount');
-  if(!btn||!menu)return;
-  btn.addEventListener('click',e=>{e.stopPropagation();const open=menu.classList.toggle('open');btn.setAttribute('aria-expanded',String(open))});
-  menu.addEventListener('click',e=>e.stopPropagation());
-  document.addEventListener('click',()=>{menu.classList.remove('open');btn.setAttribute('aria-expanded','false')});
-  account?.addEventListener('click',()=>{
-    menu.classList.remove('open');btn.setAttribute('aria-expanded','false');
-    const auth=document.querySelector('.wv-auth-pill'); if(auth) auth.click();
-  });
-})();
-</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script></body></html>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#020906}
+</style>
+</head>
+<body>
+<!-- WVLRP homepage clean slate. Base Camp will be built here. -->
+</body>
+</html>
