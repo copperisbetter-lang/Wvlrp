@@ -52,9 +52,9 @@ else {
 const vs='attribute vec2 a;varying vec2 p;void main(){p=a;gl_Position=vec4(a,0.,1.);}';
 const fs=`precision highp float;varying vec2 p;uniform sampler2D tex,hen;uniform float yaw,pitch,fov,aspect,henReady,frameA,frameB,frameMix;vec4 henFrame(vec2 q,float n){vec2 cell=vec2(mod(n,4.),floor(n/4.));return texture2D(hen,(cell+clamp(q,vec2(.002),vec2(.998)))/4.);}void main(){float t=tan(fov*.5);vec3 d=normalize(vec3(p.x*t*aspect,p.y*t,1.));float yy=d.y*cos(pitch)+d.z*sin(pitch);float zz=d.z*cos(pitch)-d.y*sin(pitch);float xx=d.x*cos(yaw)+zz*sin(yaw);float z=zz*cos(yaw)-d.x*sin(yaw);float u=fract(atan(xx,z)/6.28318530718+1.);float v=.5-atan(yy,length(vec2(xx,z)))/3.14159265359;vec4 forest=texture2D(tex,vec2(u,v));
 // The animal lives at a fixed bearing on the forest floor, not on the screen.
-float delta=mod(u-0.716+1.5,1.)-.5;
-vec2 q=vec2(delta/.0184+.5,(v-.5861)/.0322);
-vec2 shade=vec2(delta/.00782,(v-.615)/.00207);
+float delta=mod(u-0.7228+1.5,1.)-.5;
+vec2 q=vec2(delta/.02944+.5,(v-.51371)/.05152);
+vec2 shade=vec2(delta/.012512,(v-.55995)/.003312);
 float shadow=exp(-dot(shade,shade)*2.)*.24*henReady;
 forest.rgb*=1.-shadow;
 if(henReady>.5&&q.x>=0.&&q.x<=1.&&q.y>=0.&&q.y<=1.){
