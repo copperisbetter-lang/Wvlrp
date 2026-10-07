@@ -167,6 +167,7 @@ g.uniform1f(loc.henReady,henReady?1:0);g.uniform1f(loc.deerReady,deerReady?1:0);
 const pose=window.WVLRPHen.pose(performance.now()/1000);
 g.uniform1f(loc.frameA,pose[0]);g.uniform1f(loc.frameB,pose[1]);g.uniform1f(loc.frameMix,pose[2]);const dp=deerPose(performance.now()/1000-deerStart);g.uniform1f(loc.deerA,dp[0]);g.uniform1f(loc.deerB,dp[1]);g.uniform1f(loc.deerMix,dp[2]);g.drawArrays(g.TRIANGLES,0,6);}
 function zoom(d){if(window.WVLRPTravel?.busy)return;fov=Math.max(.52,Math.min(1.65,fov+d));draw();}
+window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});
 function scenePoint(x,y){
   const rect=c.getBoundingClientRect(),t=Math.tan(fov/2);
   const dx=((x-rect.left)/rect.width*2-1)*t*rect.width/rect.height;
@@ -216,4 +217,4 @@ function animateHen(){if(!document.hidden&&ready&&(henReady||deerReady||birdRead
     const auth=document.querySelector('.wv-auth-pill'); if(auth) auth.click();
   });
 })();
-</script><script src="site-auth.js?v=20260916-menu2"></script><script>setTimeout(()=>document.querySelector("#hint").style.opacity=0,5000);</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script></body></html>
+</script><script src="site-auth.js?v=20260916-menu2"></script><script>setTimeout(()=>document.querySelector("#hint").style.opacity=0,5000);</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script><script src="ranger-cases.js?v=2"></script></body></html>
