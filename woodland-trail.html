@@ -74,8 +74,8 @@ forest.rgb=forest.rgb*(1.-bird.a)+bird.rgb*vec3(.93,.86,.72);
 // A distant deer, sized to stay recognizable against the dense foliage.
 // The distant gap is beside the foreground trunk in the opening view's left quadrant.
 float deerBearing=.358;float dd=mod(u-deerBearing+1.5,1.)-.5;
-vec2 dq=vec2(dd/.0177+.5,(v-.533)/.0354);
-vec2 ds=vec2(dd/.0074,(v-.564)/.0015);
+vec2 dq=vec2(dd/.0531+.5,(v-.4693)/.1062);
+vec2 ds=vec2(dd/.0222,(v-.564)/.0045);
 forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.16*deerReady;
 if(deerReady>.5&&dq.x>=0.&&dq.x<=1.&&dq.y>=0.&&dq.y<=1.){
 vec4 da=deerFrame(dq,deerA),db=deerFrame(dq,deerB);
