@@ -18,12 +18,12 @@ const cases=[
 const byId=Object.fromEntries(cases.map(c=>[c.id,c]));
 const piles=[
 {title:'Woodland reports',ids:['nuts','honey','knife','ranger']},
-{title:'After dark',ids:['puppy']},
+{title:'Visitor requests',ids:['puppy']},
 {title:'The old telephone file',ids:['bear']},
 {title:'Maintenance reports',ids:['marker']},
 {title:'Visitor letters',ids:[],text:'Letters and photographs are being archived for future cases.',notes:['A postcard with no return address','A note about a strange light on the hill','A request to help identify a bird','An unsigned thank-you from a visitor']},
 {title:'Field specimens',ids:[],text:'The specimens will open more investigations when the field notes are ready.',notes:['Pressed pawpaw leaf','Molted feather envelope','Unidentified acorn cap','Old antler shed record','Dried mud sample']},
-{title:'Surveys & maps',ids:[],text:'New trail surveys and places will add more papers to this pile.',notes:['The hollow oak','South slope trail extension','A spring not yet mapped','Notes on a nighttime hoot','Creek-crossing survey','Unmarked survey stake','Ranger’s sealed map']}
+{title:'Surveys & maps',ids:[],text:'New trail surveys and places will add more papers to this pile.',notes:['The hollow oak','South slope trail extension','A spring not yet mapped','An illegible nighttime field entry','Creek-crossing survey','Unmarked survey stake','Ranger’s sealed map']}
 ];
 const done=id=>has('done',id);
 const eligible=id=>{const p=piles.find(x=>x.ids.includes(id));if(!p)return false;let n=p.ids.indexOf(id);return p.ids.slice(0,n).every(done)};
@@ -51,9 +51,9 @@ if(id==='daytrail'&&s.daySearch===0){s.daySearch=1;save();show('Searching in day
 if(has('clues',id)){show('Field log','<p>That observation has already been entered in your notebook.</p>');return}
 add('clues',id);if(id==='owl'){s.nightDate=t.date;save()}show('Field observation · '+labels[id],'<p>'+descriptions[id]+'</p><p>Recorded privately in your field log.</p><p><a href="ranger-station.html">Return to the Ranger Station</a></p>')}
 function hotspots(){let page=location.pathname.split('/').pop(),data={
-'woodland-trail.html':[['shavings',.60,.72]],
+'woodland-trail.html':[['shavings',.60,.72],['toy',.18,.68],['owl',.11,.38],['daytrail',.11,.73]],
 'squirrel.html':[['shells',.61,.77]],
-'woodland-fork.html':[['wax',.55,.64],['tag',.20,.73],['toy',.73,.66],['owl',.84,.38],['daytrail',.84,.68],['print',.29,.71],['markerfind',.06,.60]]
+'woodland-fork.html':[['wax',.55,.64],['tag',.20,.73],['print',.29,.71],['markerfind',.06,.60]]
 }[page]||[];if(!data.length)return;const nodes=data.map(([id,u,v])=>{let b=document.createElement('button');b.type='button';b.className='ranger-field-find';b.setAttribute('aria-label','Inspect something unusual nearby');b.title='Inspect the area';b.onclick=()=>inspect(id);document.body.append(b);return{id,u,v,b}});
 const update=()=>{let q=window.WVLRP_QUEST_VIEW?.();if(!q||document.hidden)return;let t=stamp();for(let o of nodes){let available=!has('clues',o.id);if(o.id==='owl')available=available&&t.night&&has('clues','toy');if(o.id==='daytrail')available=available&&!t.night&&!!s.nightDate&&t.date>s.nightDate;o.b.hidden=!available;if(!available)continue;const lat=(.5-o.v)*Math.PI,d=o.u*2*Math.PI-q.yaw,x=Math.cos(lat)*Math.sin(d),wy=Math.sin(lat),z0=Math.cos(lat)*Math.cos(d),y=wy*Math.cos(q.pitch)-z0*Math.sin(q.pitch),z=wy*Math.sin(q.pitch)+z0*Math.cos(q.pitch),f=innerHeight/(2*Math.tan(q.fov/2)),sx=innerWidth/2+f*x/z,sy=innerHeight/2-f*y/z;let visible=z>.25&&sx>20&&sx<innerWidth-20&&sy>35&&sy<innerHeight-20;o.b.style.visibility=visible?'visible':'hidden';if(visible){o.b.style.left=sx+'px';o.b.style.top=sy+'px'}}};update();setInterval(update,250);document.addEventListener('visibilitychange',update)}
 function trackWatch(){let v=[...document.querySelectorAll('#eastFeed,#roostFeed,#eastVideo,#roostVideo')];if(!v.length)return;let old=new Map(),then=Date.now();setInterval(()=>{let now=Date.now(),dt=(now-then)/1000;then=now;if(document.hidden||dt>20)return;let played=false;for(let video of v){let a=old.get(video),b=video.currentTime;old.set(video,b);if(!video.paused&&video.readyState>=2&&a!==undefined&&b>a)played=true}if(played){s.watch+=Math.min(10,dt);save()}},10000)}
