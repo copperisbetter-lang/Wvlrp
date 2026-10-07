@@ -47,7 +47,7 @@
   <g stroke="#655f32" stroke-width="3" fill="none"><path d="M114 378q-11-18-17-22m24 20q2-25 9-32m-1 33q13-17 19-19M420 378q-10-19-16-23m27 21q-2-25 6-35m-3 36q12-18 21-23"/></g></svg>`;
   document.body.appendChild(trailSign);
   function positionTrailSign(){
-    const latitude=-.23,delta=-yaw,wy=Math.sin(latitude),wz=Math.cos(latitude)*Math.cos(delta),x=Math.cos(latitude)*Math.sin(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch);
+    const latitude=-.23,delta=.85-yaw,wy=Math.sin(latitude),wz=Math.cos(latitude)*Math.cos(delta),x=Math.cos(latitude)*Math.sin(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch);
     const focal=innerHeight/(2*Math.tan(fov/2)),size=focal*.65/Math.max(z,.001),sx=innerWidth/2+focal*x/Math.max(z,.001),sy=innerHeight/2-focal*y/Math.max(z,.001);
     const visible=ready&&z>.3&&Math.abs(sx-innerWidth/2)<innerWidth/2+size/2&&Math.abs(sy-innerHeight/2)<innerHeight/2+size/2;
     trailSign.style.visibility=visible?'visible':'hidden';trailSign.style.left=sx+'px';trailSign.style.top=sy+'px';trailSign.style.width=size+'px';
