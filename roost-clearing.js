@@ -50,7 +50,39 @@
     trailSign.style.visibility=visible?'visible':'hidden';trailSign.style.left=sx+'px';trailSign.style.top=sy+'px';trailSign.style.width=size+'px';trailSign.style.height=(size*.27)+'px';
   }
 
-  function draw(){if(ready)renderPano();positionVideo();positionTrailSign()}
+
+  // Small timber barrier across the Natural Springs entrance, projected in world space.
+  const gate=document.createElement('div');
+  gate.id='naturalSpringsGate';gate.setAttribute('role','img');gate.setAttribute('aria-label','Natural Springs trail under construction');
+  gate.style.cssText='position:fixed;left:0;top:0;width:400px;height:230px;transform-origin:0 0;z-index:11;pointer-events:none;visibility:hidden';
+  gate.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 230" width="400" height="230">
+  <defs><linearGradient id="gateWood" x2=".25" y2="1"><stop stop-color="#a28a60"/><stop offset=".32" stop-color="#796342"/><stop offset=".65" stop-color="#948059"/><stop offset="1" stop-color="#4f422d"/></linearGradient><linearGradient id="gateMetal" x2="0" y2="1"><stop stop-color="#928b79"/><stop offset=".5" stop-color="#4e4d43"/><stop offset="1" stop-color="#777365"/></linearGradient><filter id="gateGrain"><feTurbulence type="fractalNoise" baseFrequency=".018 .35" numOctaves="3" seed="12"/><feColorMatrix type="saturate" values="0"/><feComposite in2="SourceGraphic" operator="in"/><feBlend in2="SourceGraphic" mode="multiply"/></filter><filter id="gateShadow"><feGaussianBlur stdDeviation="4"/></filter></defs>
+  <ellipse cx="206" cy="214" rx="181" ry="10" fill="#241f13" opacity=".38" filter="url(#gateShadow)"/>
+  <g stroke="#4c3e29" stroke-width="1.5" fill="url(#gateWood)">
+  <path d="M22 12L42 10L43 208L23 214Z"/><path d="M356 18L376 21L374 215L355 209Z"/>
+  <path d="M43 51L355 57L354 79L43 74Z"/><path d="M43 139L354 145L354 166L43 162Z"/>
+  <path d="M47 146L342 63L350 80L56 164Z"/></g>
+  <g opacity=".2" filter="url(#gateGrain)" fill="#a8966a"><path d="M23 12H41V207H23Z"/><path d="M357 20H374V208H357Z"/><path d="M44 53L353 59V77L44 72Z"/><path d="M44 141L353 147V164L44 160Z"/></g>
+  <g fill="url(#gateMetal)" stroke="#39392f"><path d="M28 56H81V67H28Z"/><path d="M28 145H81V156H28Z"/><path d="M339 62H369V70H339Z"/></g>
+  <g fill="#35362d"><circle cx="35" cy="61" r="2.4"/><circle cx="73" cy="61" r="2.4"/><circle cx="35" cy="150" r="2.4"/><circle cx="73" cy="150" r="2.4"/><circle cx="363" cy="66" r="2"/></g>
+  <path d="M332 65Q350 84 369 66" fill="none" stroke="#aaa18a" stroke-width="3" stroke-dasharray="3 2"/>
+  <path d="M175 69V88M236 70V88" stroke="#554f40" stroke-width="2"/>
+  <path d="M122 88L287 90L286 132L121 130Z" fill="#2e281b" opacity=".3" transform="translate(2 3)"/>
+  <path d="M122 86L287 88L286 130L121 128Z" fill="#c7b37a" stroke="#5f573b" stroke-width="2"/>
+  <g text-anchor="middle" fill="#342d20" font-family="Arial,sans-serif" font-weight="bold"><text x="204" y="104" font-size="12" letter-spacing="1">UNDER CONSTRUCTION</text><text x="204" y="119" font-size="8.5" letter-spacing=".8">NATURAL SPRINGS</text></g>
+  <path d="M20 210L30 203L36 212L44 207M350 207L360 202L366 214L376 208" fill="none" stroke="#746848" stroke-width="3"/>
+  </svg>`;
+  document.body.appendChild(gate);
+  function positionGate(){
+    // Plane x=.25.. .61, y=-.10..-.307, z=1; all points share the panorama camera.
+    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),k=.0009,f=innerHeight/(2*Math.tan(fov/2)),cx=innerWidth/2,hy=innerHeight/2;
+    const X0=.25*cy-sy,Z0=.25*sy+cy,Y0=-.10*cp-Z0*sp,D0=-.10*sp+Z0*cp;
+    const Xu=k*cy,Zu=k*sy,Yu=-Zu*sp,Du=Zu*cp,Yv=-k*cp,Dv=-k*sp;
+    gate.style.visibility=ready&&D0>.2?'visible':'hidden';
+    gate.style.transform='matrix3d('+[f*Xu+cx*Du,-f*Yu+hy*Du,0,Du,cx*Dv,-f*Yv+hy*Dv,0,Dv,0,0,1,0,f*X0+cx*D0,-f*Y0+hy*D0,0,D0].join(',')+')';
+  }
+
+  function draw(){if(ready)renderPano();positionVideo();positionTrailSign();positionGate()}
   // Sample the original sign texture per screen pixel, independently of the panorama.
   // This preserves detail while keeping its posts fixed to the same world plane.
   const image=new Image(),signImage=new Image();
