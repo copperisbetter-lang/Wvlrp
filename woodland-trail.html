@@ -61,6 +61,13 @@ if(henReady>.5&&q.x>=0.&&q.x<=1.&&q.y>=0.&&q.y<=1.){
 vec4 a=henFrame(q,frameA),b=henFrame(q,frameB);
 // Blend premultiplied colors so transparent feather edges stay clean.
 vec4 bird=mix(vec4(a.rgb*a.a,a.a),vec4(b.rgb*b.a,b.a),frameMix);
+// Let the clearing's actual grass and leaf texture overlap the toes.
+// Texture-driven coverage follows the existing vegetation instead of a straight cut.
+vec3 ground=texture2D(tex,vec2(u,v)).rgb;
+float vegetation=smoothstep(.015,.105,ground.g-ground.b);
+float leafDetail=smoothstep(.19,.47,dot(ground,vec3(.24,.58,.18)));
+float cover=smoothstep(.80,.94,q.y)*mix(.32,.94,vegetation*leafDetail);
+bird*=1.-cover;
 forest.rgb=forest.rgb*(1.-bird.a)+bird.rgb*vec3(.93,.86,.72);
 }
 gl_FragColor=forest;}`;
