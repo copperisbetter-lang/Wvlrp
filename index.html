@@ -9,7 +9,7 @@
 #wvHomeAccount{font-family:inherit}
 .wv-auth-pill{display:none!important}
 
-header{left:0;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}</style></head><body><canvas id="scene" aria-label="Drag to explore campsite; pinch or scroll to zoom" tabindex="0"></canvas><header><strong>WVLRP</strong><small>West Virginia Live Research Project</small>  <div class="menu-wrap">
+header{left:0;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}</style></head><body><canvas id="scene" aria-label="Drag to explore campsite; tap the woodland sign to open Woodland Trail; pinch or scroll to zoom" tabindex="0"></canvas><header><strong>WVLRP</strong><small>West Virginia Live Research Project</small>  <div class="menu-wrap">
     <button class="menu" id="siteMenuButton" type="button" aria-expanded="false">☰ MENU</button>
     <nav class="site-menu" id="siteMenu" aria-label="WVLRP menu">
       <details>
@@ -59,9 +59,27 @@ let yaw=1.69,pitch=-.12,fov=1.35,ready=false;const texture=g.createTexture();g.b
 const img=new Image();img.onload=()=>{g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGB,g.RGB,g.UNSIGNED_BYTE,img);ready=true;draw();};img.onerror=()=>document.querySelector('#error').textContent='The campsite image could not load. Please refresh.';img.src='assets/base-camp-4k.webp?v=20261006-cleared-stump';
 function draw(){const ratio=Math.min(devicePixelRatio||1,2);c.width=Math.round(innerWidth*ratio);c.height=Math.round(innerHeight*ratio);g.viewport(0,0,c.width,c.height);if(!ready)return;g.uniform1f(loc.yaw,yaw);g.uniform1f(loc.pitch,pitch);g.uniform1f(loc.fov,fov);g.uniform1f(loc.aspect,c.width/c.height);g.drawArrays(g.TRIANGLES,0,6);}
 function zoom(d){fov=Math.max(.52,Math.min(1.65,fov+d));draw();}
-const pointers=new Map();let distance=0;c.addEventListener('pointerdown',e=>{c.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0;});
-c.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.004*fov;pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-prev[1])*.004*fov));}else{const ps=[...pointers.values()];const d=Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]);if(distance)fov=Math.max(.52,Math.min(1.65,fov*distance/d));distance=d;}draw();});
-['pointerup','pointercancel'].forEach(n=>c.addEventListener(n,e=>{pointers.delete(e.pointerId);distance=0;}));c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.001);},{passive:false});
+// Match taps to the painted sign after turning or zooming.
+function onWoodlandSign(x,y){
+  const rect=c.getBoundingClientRect(),t=Math.tan(fov/2);
+  const dx=((x-rect.left)/rect.width*2-1)*t*rect.width/rect.height;
+  const dy=(1-(y-rect.top)/rect.height*2)*t;
+  const yy=dy*Math.cos(pitch)+Math.sin(pitch);
+  const zz=Math.cos(pitch)-dy*Math.sin(pitch);
+  const xx=dx*Math.cos(yaw)+zz*Math.sin(yaw);
+  const z=zz*Math.cos(yaw)-dx*Math.sin(yaw);
+  const u=((Math.atan2(xx,z)/(2*Math.PI))%1+1)%1;
+  const v=.5-Math.atan2(yy,Math.hypot(xx,z))/Math.PI;
+  return ready&&u>=.09&&u<=.166&&v>=.417&&v<=.465;
+}
+const pointers=new Map();let distance=0,tapStart=null,tapMoved=false;c.addEventListener('pointerdown',e=>{if(pointers.size===0){tapStart=[e.clientX,e.clientY];tapMoved=false;}else tapMoved=true;c.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0;});
+c.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId)){c.style.cursor=onWoodlandSign(e.clientX,e.clientY)?'pointer':'grab';return;}if(tapStart&&Math.hypot(e.clientX-tapStart[0],e.clientY-tapStart[1])>6)tapMoved=true;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.004*fov;pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-prev[1])*.004*fov));}else{const ps=[...pointers.values()];const d=Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]);if(distance)fov=Math.max(.52,Math.min(1.65,fov*distance/d));distance=d;}draw();});
+c.addEventListener('pointerup',e=>{
+  const open=pointers.has(e.pointerId)&&pointers.size===1&&!tapMoved&&onWoodlandSign(e.clientX,e.clientY);
+  pointers.delete(e.pointerId);distance=0;
+  if(open)location.href='woodland-trail.html';
+});
+c.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);distance=0;tapMoved=true;});c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.001);},{passive:false});
 document.querySelector('#camp').onclick=()=>{yaw=1.69;pitch=-.12;fov=1.35;draw();};document.querySelector('#valley').onclick=()=>{yaw=4.63;pitch=0;fov=1.35;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
 c.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.45,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.45,pitch-.1);if(e.key==='+')zoom(-.1);if(e.key==='-')zoom(.1);draw();});addEventListener('resize',draw);
 }
