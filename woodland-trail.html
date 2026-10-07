@@ -50,7 +50,7 @@ const c=document.querySelector('canvas'),g=c.getContext('webgl');
 if(!g)document.querySelector('#error').textContent='This viewer needs WebGL. Open it in Chrome or another modern browser.';
 else {
 const vs='attribute vec2 a;varying vec2 p;void main(){p=a;gl_Position=vec4(a,0.,1.);}';
-const fs=`precision highp float;varying vec2 p;uniform sampler2D tex,hen,deerGraze,deerAlert,deerTail;uniform float yaw,pitch,fov,aspect,henReady,deerReady,frameA,frameB,frameMix,deerTime;vec4 henFrame(vec2 q,float n){vec2 cell=vec2(mod(n,4.),floor(n/4.));return texture2D(hen,(cell+clamp(q,vec2(.002),vec2(.998)))/4.);}void main(){float t=tan(fov*.5);vec3 d=normalize(vec3(p.x*t*aspect,p.y*t,1.));float yy=d.y*cos(pitch)+d.z*sin(pitch);float zz=d.z*cos(pitch)-d.y*sin(pitch);float xx=d.x*cos(yaw)+zz*sin(yaw);float z=zz*cos(yaw)-d.x*sin(yaw);float u=fract(atan(xx,z)/6.28318530718+1.);float v=.5-atan(yy,length(vec2(xx,z)))/3.14159265359;vec4 forest=texture2D(tex,vec2(u,v));
+const fs=`precision highp float;varying vec2 p;uniform sampler2D tex,hen,deerAtlas;uniform float yaw,pitch,fov,aspect,henReady,deerReady,frameA,frameB,frameMix,deerA,deerB,deerMix;vec4 henFrame(vec2 q,float n){vec2 cell=vec2(mod(n,4.),floor(n/4.));return texture2D(hen,(cell+clamp(q,vec2(.002),vec2(.998)))/4.);}vec4 deerFrame(vec2 q,float n){vec2 cell=vec2(mod(n,4.),floor(n/4.));return texture2D(deerAtlas,(cell+clamp(q,vec2(.003),vec2(.997)))/4.);}void main(){float t=tan(fov*.5);vec3 d=normalize(vec3(p.x*t*aspect,p.y*t,1.));float yy=d.y*cos(pitch)+d.z*sin(pitch);float zz=d.z*cos(pitch)-d.y*sin(pitch);float xx=d.x*cos(yaw)+zz*sin(yaw);float z=zz*cos(yaw)-d.x*sin(yaw);float u=fract(atan(xx,z)/6.28318530718+1.);float v=.5-atan(yy,length(vec2(xx,z)))/3.14159265359;vec4 forest=texture2D(tex,vec2(u,v));
 // The animal lives at a fixed bearing on the forest floor, not on the screen.
 float delta=mod(u-0.72334+1.5,1.)-.5;
 vec2 q=vec2(delta/.02944+.5,(v-.55282)/.05152);
@@ -71,24 +71,45 @@ float cover=smoothstep(foliageEdge,foliageEdge+.045,q.y)*.98;
 bird*=1.-cover;
 forest.rgb=forest.rgb*(1.-bird.a)+bird.rgb*vec3(.93,.86,.72);
 }
-// Adult deer stays 90 degrees left; its hooves are below the tree roots on the forest floor.
-// Match the sprite aspect ratio in equirectangular coordinates (longitude spans twice latitude).
-float deerBearing=0.30570;float dd=mod(u-deerBearing+1.5,1.)-.5;vec2 dq=vec2(dd/.1182+.5,(v-.635)/.170);
+// A roughly 85-foot viewing distance: a 6.3-foot square sprite envelope
+// subtends 0.0118 turns horizontally and 0.0236 half-turns vertically.
+// The distant gap is beside the foreground trunk in the opening view's left quadrant.
+float deerBearing=.340;float dd=mod(u-deerBearing+1.5,1.)-.5;
+vec2 dq=vec2(dd/.0118+.5,(v-.535)/.0236);
+vec2 ds=vec2(dd/.0049,(v-.556)/.0011);
+forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.16*deerReady;
 if(deerReady>.5&&dq.x>=0.&&dq.x<=1.&&dq.y>=0.&&dq.y<=1.){
-float cycle=mod(deerTime,12.5);vec4 d0=texture2D(deerGraze,dq),d1=texture2D(deerAlert,dq),d2=texture2D(deerTail,dq),deer=d0;
-if(cycle>6.0&&cycle<=6.55)deer=mix(d0,d1,smoothstep(6.0,6.55,cycle));else if(cycle>6.55&&cycle<=7.8)deer=d1;else if(cycle>7.8&&cycle<=8.02)deer=mix(d1,d2,smoothstep(7.8,8.02,cycle));else if(cycle>8.02&&cycle<=8.42)deer=d2;else if(cycle>8.42&&cycle<=8.65)deer=mix(d2,d1,smoothstep(8.42,8.65,cycle));else if(cycle>8.65&&cycle<=9.15)deer=d1;else if(cycle>9.15&&cycle<=9.75)deer=mix(d1,d0,smoothstep(9.15,9.75,cycle));
-vec2 ds=vec2(dd/.052,(v-.797)/.008);forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.18*deerReady;deer.rgb*=deer.a;forest.rgb=forest.rgb*(1.-deer.a)+deer.rgb*vec3(.94,.88,.78);}
+vec4 da=deerFrame(dq,deerA),db=deerFrame(dq,deerB);
+vec4 deer=mix(vec4(da.rgb*da.a,da.a),vec4(db.rgb*db.a,db.a),deerMix);
+vec3 leaves=texture2D(tex,vec2(u,v)).rgb;
+float vegetation=smoothstep(.01,.09,leaves.g-leaves.b);
+float cover=smoothstep(mix(.89,.84,vegetation),.98,dq.y)*.80;
+deer*=1.-cover;
+forest.rgb=forest.rgb*(1.-deer.a)+deer.rgb*vec3(.94,.88,.78);
+}
 gl_FragColor=forest;}`;
 function shader(type,s){let q=g.createShader(type);g.shaderSource(q,s);g.compileShader(q);if(!g.getShaderParameter(q,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(q));return q;}
 const program=g.createProgram();g.attachShader(program,shader(g.VERTEX_SHADER,vs));g.attachShader(program,shader(g.FRAGMENT_SHADER,fs));g.linkProgram(program);if(!g.getProgramParameter(program,g.LINK_STATUS))throw Error(g.getProgramInfoLog(program));g.useProgram(program);
 const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),g.STATIC_DRAW);const a=g.getAttribLocation(program,'a');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);
-const loc={};['yaw','pitch','fov','aspect','henReady','deerReady','frameA','frameB','frameMix','deerTime'].forEach(k=>loc[k]=g.getUniformLocation(program,k));
+const loc={};['yaw','pitch','fov','aspect','henReady','deerReady','frameA','frameB','frameMix','deerA','deerB','deerMix'].forEach(k=>loc[k]=g.getUniformLocation(program,k));
 let yaw=Math.PI+.35,pitch=-.06,fov=1.35,ready=false;const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
 const henTexture=g.createTexture();g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,henTexture);
 g.texImage2D(g.TEXTURE_2D,0,g.RGBA,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
 g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
 g.uniform1i(g.getUniformLocation(program,'hen'),1);g.uniform1i(g.getUniformLocation(program,'tex'),0);
-const deerTextures=[g.createTexture(),g.createTexture(),g.createTexture()],deerImages=[new Image(),new Image(),new Image()];['deerGraze','deerAlert','deerTail'].forEach((name,i)=>{g.activeTexture(g.TEXTURE2+i);g.bindTexture(g.TEXTURE_2D,deerTextures[i]);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.uniform1i(g.getUniformLocation(program,name),2+i);});let deerLoaded=0,deerReady=false;['assets/woodland-deer-graze.b64?v=3','assets/woodland-deer-alert.b64?v=3','assets/woodland-deer-tail.b64?v=3'].forEach((url,i)=>{deerImages[i].onload=()=>{g.activeTexture(g.TEXTURE2+i);g.bindTexture(g.TEXTURE_2D,deerTextures[i]);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,deerImages[i]);if(++deerLoaded===3)deerReady=true;draw();};fetch(url).then(r=>r.text()).then(data=>deerImages[i].src='data:image/webp;base64,'+data.trim()).catch(()=>{});});
+const deerTexture=g.createTexture();let deerReady=false;
+g.activeTexture(g.TEXTURE2);g.bindTexture(g.TEXTURE_2D,deerTexture);
+g.texImage2D(g.TEXTURE_2D,0,g.RGBA,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
+g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
+g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+g.uniform1i(g.getUniformLocation(program,'deerAtlas'),2);
+const deerImage=new Image();deerImage.onload=()=>{g.activeTexture(g.TEXTURE2);g.bindTexture(g.TEXTURE_2D,deerTexture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,deerImage);deerReady=true;draw();};
+fetch('assets/woodland-deer-fluid-v1.b64?v=20261007-1').then(r=>{if(!r.ok)throw Error('Deer unavailable');return r.text();}).then(data=>deerImage.src='data:image/webp;base64,'+data.trim()).catch(console.error);
+const deerReduced=matchMedia('(prefers-reduced-motion: reduce)');
+const deerBeats=[[0,.7],[1,.32],[2,.33],[3,.38],[2,.28],[1,.30],[0,.65],[1,.31],[2,.32],[3,.45],[2,.29],[1,.34],[0,1.2],[4,.18],[5,.18],[6,.22],[7,.8],[8,1.0],[9,.8],[10,.13],[11,.18],[9,.65],[8,.65],[12,.2],[13,.22],[14,.24],[15,.7]];
+const deerLength=deerBeats.reduce((a,b)=>a+b[1],0);
+function deerPose(seconds){if(deerReduced.matches)return[8,8,0];let phase=seconds%deerLength;for(let i=0;i<deerBeats.length;i++){const [frame,duration]=deerBeats[i];if(phase<duration){const t=phase/duration;return[frame,deerBeats[(i+1)%deerBeats.length][0],t*t*(3-2*t)];}phase-=duration;}return[0,0,0];}
+
 let henReady=false;const henImage=new Image();henImage.onload=()=>{g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,henTexture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,henImage);henReady=true;draw();};
 fetch('assets/woodland-hen.b64?v=20261006-1').then(r=>{if(!r.ok)throw Error('Hen unavailable');return r.text();}).then(data=>henImage.src='data:image/webp;base64,'+data.trim()).catch(()=>{});
 g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,texture);
@@ -97,7 +118,7 @@ const img=new Image();img.onload=()=>{g.activeTexture(g.TEXTURE0);g.bindTexture(
 function draw(){const ratio=Math.min(devicePixelRatio||1,2);const width=Math.round(innerWidth*ratio),height=Math.round(innerHeight*ratio);if(c.width!==width||c.height!==height){c.width=width;c.height=height;}g.viewport(0,0,c.width,c.height);if(!ready)return;g.uniform1f(loc.yaw,yaw);g.uniform1f(loc.pitch,pitch);g.uniform1f(loc.fov,fov);g.uniform1f(loc.aspect,c.width/c.height);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,texture);
 g.uniform1f(loc.henReady,henReady?1:0);g.uniform1f(loc.deerReady,deerReady?1:0);
 const pose=window.WVLRPHen.pose(performance.now()/1000);
-g.uniform1f(loc.frameA,pose[0]);g.uniform1f(loc.frameB,pose[1]);g.uniform1f(loc.frameMix,pose[2]);g.uniform1f(loc.deerTime,performance.now()/1000-deerStart);g.drawArrays(g.TRIANGLES,0,6);}
+g.uniform1f(loc.frameA,pose[0]);g.uniform1f(loc.frameB,pose[1]);g.uniform1f(loc.frameMix,pose[2]);const dp=deerPose(performance.now()/1000-deerStart);g.uniform1f(loc.deerA,dp[0]);g.uniform1f(loc.deerB,dp[1]);g.uniform1f(loc.deerMix,dp[2]);g.drawArrays(g.TRIANGLES,0,6);}
 function zoom(d){if(window.WVLRPTravel?.busy)return;fov=Math.max(.52,Math.min(1.65,fov+d));draw();}
 function scenePoint(x,y){
   const rect=c.getBoundingClientRect(),t=Math.tan(fov/2);
