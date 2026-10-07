@@ -116,13 +116,40 @@
     <circle cx="34" cy="63" r="2"/><circle cx="66" cy="63" r="2"/><circle cx="36" cy="149" r="2"/><circle cx="67" cy="148" r="2"/><circle cx="360" cy="71" r="1.7"/>
   </g>
 
-  <!-- Small weathered plank, hung a little crooked and stained to match the woods. -->
-  <path d="M145 93L266 95L263 126L143 123Z" fill="#1f190f" opacity=".35" filter="url(#tinyShadow)" transform="translate(3 4) rotate(1 205 110)"/>
-  <path d="M143 90L266 93L263 124L141 121Z" fill="url(#gateSign)" stroke="#34281a" stroke-width="1.4" filter="url(#woodNoise)" transform="rotate(1 204 107)"/>
-  <path d="M151 97C181 95 224 98 257 99M149 115C181 113 220 116 256 116" fill="none" stroke="#b69861" stroke-width=".8" opacity=".22"/>
-  <g text-anchor="middle" fill="#d7c7a0" font-family="Georgia,serif" font-weight="bold" transform="rotate(1 204 107)">
-    <text x="203" y="105" font-size="10.2" letter-spacing=".7">NATURAL SPRINGS</text>
-    <text x="203" y="118" font-size="8.8" letter-spacing=".6">TRAIL CLOSED</text>
+  <!-- Rustic trail-style construction marker, deliberately matched to the directional sign language. -->
+  <g transform="rotate(-1.4 204 112)">
+    <!-- Soft offset shadow so the sign feels attached to the gate, not pasted over it. -->
+    <path d="M121 84L258 87L279 101L258 115L123 112L114 105L119 97L113 91Z"
+          fill="#17120d" opacity=".38" filter="url(#tinyShadow)" transform="translate(4 5)"/>
+    <path d="M137 113L270 112L280 121L271 130L141 135L122 126Z"
+          fill="#17120d" opacity=".34" filter="url(#tinyShadow)" transform="translate(3 4)"/>
+
+    <!-- Upper hand-cut arrow board. -->
+    <path d="M118 80L258 83L282 99L258 115L120 111L111 105L117 97L110 91Z"
+          fill="#6a452a" stroke="#2d1f14" stroke-width="2.1" filter="url(#woodNoise)"/>
+    <path d="M124 86C162 83 213 87 256 89M122 103C160 100 210 104 258 107"
+          fill="none" stroke="#c49b67" stroke-width="1.15" opacity=".24"/>
+    <path d="M151 85l-10 9m61-7l-8 8m53-5l-8 8" fill="none" stroke="#2c1d12" stroke-width="1.3" opacity=".55"/>
+    <ellipse cx="176" cy="96" rx="8" ry="3.4" transform="rotate(4 176 96)" fill="#2e2117" opacity=".62"/>
+    <ellipse cx="232" cy="101" rx="5.5" ry="2.4" transform="rotate(-7 232 101)" fill="#2e2117" opacity=".52"/>
+    <circle cx="128" cy="95" r="2.2" fill="#24221d"/><circle cx="259" cy="99" r="2.2" fill="#24221d"/>
+
+    <!-- Lower hand-cut board, offset just like a stacked trail marker. -->
+    <path d="M138 109L269 108L281 119L271 132L143 137L120 126Z"
+          fill="#5d3d26" stroke="#2b1d13" stroke-width="2" filter="url(#woodNoise)"/>
+    <path d="M143 116C179 114 226 115 266 115M142 129C184 127 227 126 267 125"
+          fill="none" stroke="#bd9461" stroke-width="1.05" opacity=".22"/>
+    <path d="M165 113l-7 8m55-8l-9 9m43-8l-7 8" fill="none" stroke="#2b1d13" stroke-width="1.25" opacity=".5"/>
+    <ellipse cx="192" cy="124" rx="7" ry="3" transform="rotate(-3 192 124)" fill="#2d2016" opacity=".58"/>
+    <circle cx="140" cy="124" r="2.1" fill="#24221d"/><circle cx="266" cy="120" r="2.1" fill="#24221d"/>
+
+    <!-- Cream, carved-looking lettering with a faint dark cut shadow. -->
+    <g text-anchor="middle" font-family="Georgia,serif" font-weight="bold" letter-spacing=".8">
+      <text x="198.5" y="102.2" font-size="11.6" fill="#271b12" opacity=".78">NATURAL SPRINGS</text>
+      <text x="197" y="100.8" font-size="11.6" fill="#e0c99b">NATURAL SPRINGS</text>
+      <text x="204.5" y="127.7" font-size="9.2" fill="#271b12" opacity=".78">UNDER CONSTRUCTION</text>
+      <text x="203" y="126.3" font-size="9.2" fill="#dec392">UNDER CONSTRUCTION</text>
+    </g>
   </g>
 
   <!-- Forest-floor overlap to visually bury the posts in dirt/leaves instead of floating. -->
