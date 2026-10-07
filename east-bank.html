@@ -34,7 +34,7 @@
         </div>
       </details>
     </nav>
-  </div></header><div id="sceneMessage">Opening East Bank…</div><div id="hint">Drag to look around · Pinch or scroll to zoom</div><section class="video-wrap" id="videoWrap" aria-label="East Bank live camera"><video id="eastVideo" autoplay muted playsinline crossorigin="anonymous"></video><div class="camera-state" id="cameraState">Connecting to East Bank live view…</div><div class="live-badge" id="liveBadge"><span class="live-dot"></span>LIVE</div><div class="video-controls"><button id="audioBtn" type="button" aria-label="Turn on live audio" aria-pressed="false">🔇</button><label class="volume-control" id="volumeControl"><input id="volumeSlider" type="range" min="0" max="100" value="65" aria-label="East Bank volume"><span id="volumeValue">65%</span></label><button id="fullBtn" type="button" aria-label="Fullscreen">⛶</button></div><div id="eastStatus">Connecting to East Bank</div></section><nav class="scene-controls" aria-label="Clearing navigation"><a href="woodland-trail.html">Woodland Trail</a><button id="trailView" type="button">Face the trail</button><button id="centerView" type="button">Face East Bank</button></nav><script>(()=>{
+  </div></header><div id="sceneMessage">Opening East Bank…</div><div id="hint">Drag to look around · Pinch or scroll to zoom</div><section class="video-wrap" id="videoWrap" aria-label="East Bank live camera"><video id="eastVideo" autoplay muted playsinline crossorigin="anonymous"></video><div class="camera-state" id="cameraState">Connecting to East Bank live view…</div><div class="live-badge" id="liveBadge"><span class="live-dot"></span>LIVE</div><div class="video-controls"><button id="audioBtn" type="button" aria-label="Turn on live audio" aria-pressed="false">🔇</button><label class="volume-control" id="volumeControl"><input id="volumeSlider" type="range" min="0" max="100" value="65" aria-label="East Bank volume"><span id="volumeValue">65%</span></label><button id="fullBtn" type="button" aria-label="Fullscreen">⛶</button></div><div id="eastStatus">Connecting to East Bank</div></section><nav class="scene-controls" aria-label="Clearing navigation"><a href="woodland-trail.html">Woodland Trail</a><button id="trailView" type="button">Face the trail</button><button id="centerView" type="button">Face East Bank</button></nav><script src="trail-transitions.js?v=20261006-1"></script><script>(()=>{
   const canvas=document.getElementById('scene'),fallback=document.getElementById('panoFallback'),wrap=document.getElementById('videoWrap');
   const error=document.getElementById('sceneMessage');
   let yaw=Math.PI,pitch=-.075,fov=1.25,ready=false,raf=0,renderPano=null;
@@ -80,6 +80,20 @@
   trailSign.setAttribute('aria-label','Return to Woodland Trail');
   trailSign.style.cssText='position:fixed;z-index:12;transform-origin:0 0;visibility:hidden;background:transparent;';
   document.body.appendChild(trailSign);
+  function returnToWoodland(e){
+    if(e.button!==undefined&&e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+    if(!ready||!window.WVLRPTravel?.go)return;
+    e.preventDefault();
+    window.WVLRPTravel.go({
+      url:'woodland-trail.html',
+      from:{yaw,pitch,fov},
+      to:{yaw:0,pitch:-.12,fov:Math.max(.65,fov*.78)},
+      render:state=>{yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw();}
+    });
+  }
+  trailSign.addEventListener('click',returnToWoodland);
+  document.querySelector('.scene-controls a[href="woodland-trail.html"]').addEventListener('click',returnToWoodland);
+
   function positionTrailSign(){
     const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
     const f=innerHeight/(2*Math.tan(fov/2)),cx=innerWidth/2,hy=innerHeight/2;
