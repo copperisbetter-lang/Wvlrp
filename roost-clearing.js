@@ -55,22 +55,88 @@
   const gate=document.createElement('div');
   gate.id='naturalSpringsGate';gate.setAttribute('role','img');gate.setAttribute('aria-label','Natural Springs trail under construction');
   gate.style.cssText='position:fixed;left:0;top:0;width:400px;height:230px;transform-origin:0 0;z-index:11;pointer-events:none;visibility:hidden';
-  gate.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 230" width="400" height="230">
-  <defs><linearGradient id="gateWood" x2=".25" y2="1"><stop stop-color="#a28a60"/><stop offset=".32" stop-color="#796342"/><stop offset=".65" stop-color="#948059"/><stop offset="1" stop-color="#4f422d"/></linearGradient><linearGradient id="gateMetal" x2="0" y2="1"><stop stop-color="#928b79"/><stop offset=".5" stop-color="#4e4d43"/><stop offset="1" stop-color="#777365"/></linearGradient><filter id="gateGrain"><feTurbulence type="fractalNoise" baseFrequency=".018 .35" numOctaves="3" seed="12"/><feColorMatrix type="saturate" values="0"/><feComposite in2="SourceGraphic" operator="in"/><feBlend in2="SourceGraphic" mode="multiply"/></filter><filter id="gateShadow"><feGaussianBlur stdDeviation="4"/></filter></defs>
-  <ellipse cx="206" cy="214" rx="181" ry="10" fill="#241f13" opacity=".38" filter="url(#gateShadow)"/>
-  <g stroke="#4c3e29" stroke-width="1.5" fill="url(#gateWood)">
-  <path d="M22 12L42 10L43 208L23 214Z"/><path d="M356 18L376 21L374 215L355 209Z"/>
-  <path d="M43 51L355 57L354 79L43 74Z"/><path d="M43 139L354 145L354 166L43 162Z"/>
-  <path d="M47 146L342 63L350 80L56 164Z"/></g>
-  <g opacity=".2" filter="url(#gateGrain)" fill="#a8966a"><path d="M23 12H41V207H23Z"/><path d="M357 20H374V208H357Z"/><path d="M44 53L353 59V77L44 72Z"/><path d="M44 141L353 147V164L44 160Z"/></g>
-  <g fill="url(#gateMetal)" stroke="#39392f"><path d="M28 56H81V67H28Z"/><path d="M28 145H81V156H28Z"/><path d="M339 62H369V70H339Z"/></g>
-  <g fill="#35362d"><circle cx="35" cy="61" r="2.4"/><circle cx="73" cy="61" r="2.4"/><circle cx="35" cy="150" r="2.4"/><circle cx="73" cy="150" r="2.4"/><circle cx="363" cy="66" r="2"/></g>
-  <path d="M332 65Q350 84 369 66" fill="none" stroke="#aaa18a" stroke-width="3" stroke-dasharray="3 2"/>
-  <path d="M175 69V88M236 70V88" stroke="#554f40" stroke-width="2"/>
-  <path d="M122 88L287 90L286 132L121 130Z" fill="#2e281b" opacity=".3" transform="translate(2 3)"/>
-  <path d="M122 86L287 88L286 130L121 128Z" fill="#c7b37a" stroke="#5f573b" stroke-width="2"/>
-  <g text-anchor="middle" fill="#342d20" font-family="Arial,sans-serif" font-weight="bold"><text x="204" y="104" font-size="12" letter-spacing="1">UNDER CONSTRUCTION</text><text x="204" y="119" font-size="8.5" letter-spacing=".8">NATURAL SPRINGS</text></g>
-  <path d="M20 210L30 203L36 212L44 207M350 207L360 202L366 214L376 208" fill="none" stroke="#746848" stroke-width="3"/>
+  gate.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 230" width="400" height="230" aria-hidden="true">
+  <defs>
+    <linearGradient id="gatePost" x1="0" y1="0" x2=".85" y2="1">
+      <stop stop-color="#8a7049"/><stop offset=".28" stop-color="#665235"/><stop offset=".58" stop-color="#7d6540"/><stop offset="1" stop-color="#3f3425"/>
+    </linearGradient>
+    <linearGradient id="gateRail" x1="0" y1="0" x2="1" y2=".7">
+      <stop stop-color="#9c8052"/><stop offset=".22" stop-color="#715a39"/><stop offset=".52" stop-color="#826945"/><stop offset=".82" stop-color="#5b472e"/><stop offset="1" stop-color="#443421"/>
+    </linearGradient>
+    <linearGradient id="gateSign" x1="0" y1="0" x2=".2" y2="1">
+      <stop stop-color="#8b7147"/><stop offset=".5" stop-color="#6f5938"/><stop offset="1" stop-color="#4f3e28"/>
+    </linearGradient>
+    <filter id="woodNoise" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".018 .18" numOctaves="4" seed="21" result="n"/>
+      <feColorMatrix in="n" type="matrix" values=".45 0 0 0 .2  0 .35 0 0 .16  0 0 .22 0 .1  0 0 0 .34 0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="multiply"/>
+    </filter>
+    <filter id="softShadow" x="-30%" y="-40%" width="170%" height="190%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="tinyShadow" x="-30%" y="-40%" width="170%" height="190%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  </defs>
+
+  <!-- Long, soft shadow thrown back into the trail instead of a perfect oval. -->
+  <path d="M37 204C104 198 169 191 241 181C292 174 337 174 379 181C315 194 260 203 204 213C137 224 83 224 35 218Z"
+        fill="#211a11" opacity=".23" filter="url(#softShadow)"/>
+
+  <!-- Uneven hand-set posts, intentionally not parallel. -->
+  <path d="M26 18L45 14L48 194L43 216L25 222L20 204Z" fill="url(#gatePost)" stroke="#352a1d" stroke-width="1.5" filter="url(#woodNoise)"/>
+  <path d="M354 25L374 29L369 207L365 219L349 212L351 190Z" fill="url(#gatePost)" stroke="#352a1d" stroke-width="1.5" filter="url(#woodNoise)"/>
+
+  <!-- Rough rails with bowed / chipped edges. -->
+  <path d="M42 55C118 56 204 58 356 63L354 82C247 78 147 75 43 75Z"
+        fill="url(#gateRail)" stroke="#3e3020" stroke-width="1.7" filter="url(#woodNoise)"/>
+  <path d="M43 140C132 138 239 141 352 148L352 166C250 162 145 159 44 161Z"
+        fill="url(#gateRail)" stroke="#3e3020" stroke-width="1.7" filter="url(#woodNoise)"/>
+  <path d="M54 157L330 72L341 87L64 172Z"
+        fill="url(#gateRail)" stroke="#3b2d1d" stroke-width="1.7" filter="url(#woodNoise)"/>
+
+  <!-- Sun-faded streaks, knots, splits, and darkened bottom ends. -->
+  <g fill="none" stroke="#c1a06a" stroke-linecap="round" opacity=".16">
+    <path d="M55 62C118 63 218 67 328 70"/><path d="M76 147C159 146 240 150 331 155"/><path d="M77 159L294 93"/>
+    <path d="M31 47L35 187"/><path d="M362 53L359 179"/>
+  </g>
+  <g fill="#2f2519" opacity=".55">
+    <ellipse cx="119" cy="67" rx="8" ry="3.8" transform="rotate(4 119 67)"/>
+    <ellipse cx="280" cy="154" rx="7" ry="3.2" transform="rotate(4 280 154)"/>
+    <ellipse cx="199" cy="119" rx="6" ry="2.8" transform="rotate(-17 199 119)"/>
+  </g>
+  <g stroke="#32271a" stroke-width="1.4" opacity=".55">
+    <path d="M170 63l-10 8m14-7-6 8"/><path d="M248 149l-9 10m14-9-7 8"/><path d="M98 151l8 7"/>
+  </g>
+  <g fill="#33281b" opacity=".8">
+    <path d="M21 191L47 190L43 216L25 222Z"/><path d="M351 189L370 190L369 207L365 219L349 212Z"/>
+  </g>
+
+  <!-- Old dark hardware: small and subdued rather than shiny new brackets. -->
+  <g fill="#4f4a3e" stroke="#28261f" opacity=".85">
+    <path d="M27 59L73 59L73 67L27 67Z"/><path d="M29 145L74 144L74 152L29 153Z"/><path d="M338 67L366 68L365 75L338 74Z"/>
+  </g>
+  <g fill="#24231d">
+    <circle cx="34" cy="63" r="2"/><circle cx="66" cy="63" r="2"/><circle cx="36" cy="149" r="2"/><circle cx="67" cy="148" r="2"/><circle cx="360" cy="71" r="1.7"/>
+  </g>
+
+  <!-- Small weathered plank, hung a little crooked and stained to match the woods. -->
+  <path d="M145 93L266 95L263 126L143 123Z" fill="#1f190f" opacity=".35" filter="url(#tinyShadow)" transform="translate(3 4) rotate(1 205 110)"/>
+  <path d="M143 90L266 93L263 124L141 121Z" fill="url(#gateSign)" stroke="#34281a" stroke-width="1.4" filter="url(#woodNoise)" transform="rotate(1 204 107)"/>
+  <path d="M151 97C181 95 224 98 257 99M149 115C181 113 220 116 256 116" fill="none" stroke="#b69861" stroke-width=".8" opacity=".22"/>
+  <g text-anchor="middle" fill="#d7c7a0" font-family="Georgia,serif" font-weight="bold" transform="rotate(1 204 107)">
+    <text x="203" y="105" font-size="10.2" letter-spacing=".7">NATURAL SPRINGS</text>
+    <text x="203" y="118" font-size="8.8" letter-spacing=".6">TRAIL CLOSED</text>
+  </g>
+
+  <!-- Forest-floor overlap to visually bury the posts in dirt/leaves instead of floating. -->
+  <g opacity=".95">
+    <path d="M7 219C17 209 24 208 31 216C37 207 45 207 54 218C46 222 33 225 18 224Z" fill="#514126"/>
+    <path d="M337 216C348 208 355 207 363 214C371 205 381 209 390 219C376 223 357 224 340 222Z" fill="#4b3b24"/>
+    <path d="M12 215l11-8 7 10 9-13 7 14m298-6 8-13 7 13 12-12 6 13" fill="none" stroke="#77623a" stroke-width="3" stroke-linecap="round"/>
+    <g fill="#86683a">
+      <ellipse cx="24" cy="218" rx="9" ry="3" transform="rotate(-28 24 218)"/>
+      <ellipse cx="45" cy="220" rx="8" ry="2.8" transform="rotate(19 45 220)"/>
+      <ellipse cx="354" cy="219" rx="9" ry="3" transform="rotate(-13 354 219)"/>
+      <ellipse cx="378" cy="219" rx="8" ry="2.8" transform="rotate(25 378 219)"/>
+    </g>
+  </g>
   </svg>`;
   document.body.appendChild(gate);
   function positionGate(){
