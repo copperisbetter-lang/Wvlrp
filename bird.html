@@ -74,16 +74,44 @@
   }
 
 
+  // Reuse the approved photographic Woodland Trail board and posts.
+  const trailSign=document.createElement('a');
+  trailSign.id='birdTrailSign';trailSign.href='woodland-trail.html';
+  trailSign.setAttribute('aria-label','Return to Woodland Trail');
+  trailSign.style.cssText='position:fixed;z-index:12;transform-origin:0 0;visibility:hidden;background:transparent;';
+  document.body.appendChild(trailSign);
   function returnToWoodland(e){
     if(e.button!==undefined&&e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
     if(!ready||!window.WVLRPTravel?.go)return;
     e.preventDefault();
-    window.WVLRPTravel.go({url:'woodland-trail.html',from:{yaw,pitch,fov},to:{yaw:0,pitch:-.12,fov:Math.max(.65,fov*.78)},render:state=>{yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw();}});
+    window.WVLRPTravel.go({
+      url:'woodland-trail.html',
+      from:{yaw,pitch,fov},
+      to:{yaw:0,pitch:-.12,fov:Math.max(.65,fov*.78)},
+      render:state=>{yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw();}
+    });
   }
+  trailSign.addEventListener('click',returnToWoodland);
   document.querySelector('.scene-controls a[href="woodland-trail.html"]').addEventListener('click',returnToWoodland);
-  function draw(){if(ready)renderPano();positionVideo()}
+
+  function positionTrailSign(){
+    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    const f=innerHeight/(2*Math.tan(fov/2)),cx=innerWidth/2,hy=innerHeight/2;
+    const x0=.11,y0=-.061,k=.66/800;
+    const X0=x0*cy-sy,Z0=x0*sy+cy,Y0=y0*cp-Z0*sp,D0=y0*sp+Z0*cp;
+    const Xu=k*cy,Zu=k*sy,Yu=-Zu*sp,Du=Zu*cp,Yv=-k*cp,Dv=-k*sp;
+    trailSign.style.visibility=ready&&signWidth>0&&D0>.2?'visible':'hidden';
+    trailSign.style.width='800px';trailSign.style.height='440px';
+    trailSign.style.transform='matrix3d('+[f*Xu+cx*Du,-f*Yu+hy*Du,0,Du,cx*Dv,-f*Yv+hy*Dv,0,Dv,0,0,1,0,f*X0+cx*D0,-f*Y0+hy*D0,0,D0].join(',')+')';
+  }
+
+  function draw(){if(ready)renderPano();positionVideo();positionTrailSign()}
   const image=new Image();
-  image.onload=()=>{window.roostUploadImage(image);delete window.roostUploadImage;ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-ready'))};
+  const signImage=new Image();
+  signImage.src='assets/roost/trail-sign-realistic-v4.webp';
+  image.onload=async()=>{window.roostUploadImage(image);delete window.roostUploadImage;
+    try{await signImage.decode();window.roostUploadSign(signImage);signWidth=signImage.width;signHeight=signImage.height;}catch{trailSign.remove()}
+    delete window.roostUploadSign;ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-ready'))};
   image.onerror=()=>{error.hidden=false;error.textContent='The forest could not load. Please refresh.'};
   fetch('assets/bird-clearing-hd-v1.b64?v=20261007-1').then(r=>{if(!r.ok)throw Error('Clearing unavailable');return r.text()}).then(data=>image.src='data:image/webp;base64,'+data.trim()).catch(()=>{error.hidden=false;error.textContent='The bird clearing could not load. Please refresh.'});
   const surface=gl?canvas:fallback,pointers=new Map();let distance=0;
