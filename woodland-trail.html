@@ -87,8 +87,8 @@ deer*=1.-cover;
 forest.rgb=forest.rgb*(1.-deer.a)+deer.rgb*vec3(.94,.88,.78);
 }
 // The singing perch grows leftward from the near oak, in its own part of the trail.
-float bd=mod(u-.24+1.5,1.)-.5;
-vec2 bq=vec2(.5-bd/.12,(v-.265)/.24);
+float bd=mod(u-.256+1.5,1.)-.5;
+vec2 bq=vec2(.5-bd/.042,(v-.38532)/.084);
 if(birdReady>.5&&bq.x>=0.&&bq.x<=1.&&bq.y>=0.&&bq.y<=1.){
 vec4 ba=songbirdFrame(bq,birdA),bb=songbirdFrame(bq,birdB);
 // Keep the tree branch completely stationary; only the head and upper body use the singing poses.
@@ -98,6 +98,9 @@ ba=mix(still,ba,moving);bb=mix(still,bb,moving);
 // Very low-alpha extraction residue is invisible, including outside feather edges.
 ba.a*=smoothstep(.03,.12,ba.a);bb.a*=smoothstep(.03,.12,bb.a);
 vec4 perched=mix(vec4(ba.rgb*ba.a,ba.a),vec4(bb.rgb*bb.a,bb.a),birdMix);
+// The oak's foreground bark overlaps the branch root, hiding the cut end.
+float trunkEdge=.268-.04*(v-.35);
+perched*=1.-smoothstep(trunkEdge-.002,trunkEdge+.003,u);
 forest.rgb=forest.rgb*(1.-perched.a)+perched.rgb;
 }
 gl_FragColor=forest;}`;
@@ -106,7 +109,7 @@ const program=g.createProgram();g.attachShader(program,shader(g.VERTEX_SHADER,vs
 const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),g.STATIC_DRAW);const a=g.getAttribLocation(program,'a');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);
 const loc={};['yaw','pitch','fov','aspect','henReady','deerReady','frameA','frameB','frameMix','deerA','deerB','deerMix','birdReady','birdA','birdB','birdMix'].forEach(k=>loc[k]=g.getUniformLocation(program,k));
 const view=new URLSearchParams(location.search).get('view'),showDeer=view==='deer',showBird=view==='bird';
-let yaw=showBird?Math.PI*2*.225:showDeer?Math.PI*2*.515:Math.PI+.35,pitch=showBird?.40:showDeer?-.045:-.06,fov=1.65,ready=false;const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+let yaw=showBird?Math.PI*2*.253:showDeer?Math.PI*2*.515:Math.PI+.35,pitch=showBird?.18:showDeer?-.045:-.06,fov=1.65,ready=false;const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
 const henTexture=g.createTexture();g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,henTexture);
 g.texImage2D(g.TEXTURE_2D,0,g.RGBA,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
 g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
