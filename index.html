@@ -73,13 +73,13 @@ function onWoodlandSign(x,y){
   return ready&&u>=.09&&u<=.166&&v>=.417&&v<=.465;
 }
 const pointers=new Map();let distance=0,tapStart=null,tapMoved=false;c.addEventListener('pointerdown',e=>{if(window.WVLRPTravel?.busy)return;if(pointers.size===0){tapStart=[e.clientX,e.clientY];tapMoved=false;}else tapMoved=true;c.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0;});
-c.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId)){c.style.cursor=onWoodlandSign(e.clientX,e.clientY)?'pointer':'grab';return;}if(tapStart&&Math.hypot(e.clientX-tapStart[0],e.clientY-tapStart[1])>6)tapMoved=true;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.004*fov;pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-prev[1])*.004*fov));}else{const ps=[...pointers.values()];const d=Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]);if(distance)fov=Math.max(.52,Math.min(1.65,fov*distance/d));distance=d;}draw();});
+c.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId)){c.style.cursor=onWoodlandSign(e.clientX,e.clientY)?'pointer':'grab';return;}if(tapStart&&Math.hypot(e.clientX-tapStart[0],e.clientY-tapStart[1])>6)tapMoved=true;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.00045*fov;pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-prev[1])*.00045*fov));}else{const ps=[...pointers.values()];const d=Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]);if(distance)fov=Math.max(.52,Math.min(1.65,fov*distance/d));distance=d;}draw();});
 c.addEventListener('pointerup',e=>{
   const open=pointers.has(e.pointerId)&&pointers.size===1&&!tapMoved&&onWoodlandSign(e.clientX,e.clientY);
   pointers.delete(e.pointerId);distance=0;
   if(open){pointers.clear();window.WVLRPTravel.go({url:'woodland-trail.html',from:{yaw,pitch,fov},to:{yaw:1.02,pitch:-0.1,fov:Math.max(.52,fov*.78)},render:state=>{yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw();}});}
 });
-c.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);distance=0;tapMoved=true;});c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.001);},{passive:false});
+c.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);distance=0;tapMoved=true;});c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.0003);},{passive:false});
 document.querySelector('#camp').onclick=()=>{yaw=1.69;pitch=-.12;fov=1.65;draw();};document.querySelector('#valley').onclick=()=>{yaw=4.63;pitch=0;fov=1.65;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
 c.addEventListener('keydown',e=>{if(window.WVLRPTravel?.busy)return;if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.45,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.45,pitch-.1);if(e.key==='+')zoom(-.1);if(e.key==='-')zoom(.1);draw();});addEventListener('resize',draw);
 }
