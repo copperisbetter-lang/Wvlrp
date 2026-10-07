@@ -26,11 +26,75 @@ for(const s of spots){const b=document.createElement('button');b.className='obje
 function activate(s){if(s.url)travel(s.url,s.u,s.v);else window.rangerOpen?.(s.id)}
 function travel(url,u=.5,v=.5){if(window.WVLRPTravel)WVLRPTravel.go({url,from:{yaw,pitch,fov},to:{yaw:u*2*Math.PI,pitch:(.5-v)*Math.PI,fov:Math.max(.65,fov*.78)},render:s=>{yaw=s.yaw;pitch=s.pitch;fov=s.fov;draw()}});else location.assign(url)}
 function draw(){if(!ready)return;drawImage();for(const s of spots){const p=project(s.u,s.v),w=Math.max(44,p.f*(s.width||.08)*2*Math.PI/Math.max(p.z,.2)),h=Math.max(44,p.f*(s.height||.08)*Math.PI/Math.max(p.z,.2)),visible=p.z>.25&&p.x>-w&&p.x<innerWidth+w&&p.y>-h&&p.y<innerHeight+h;Object.assign(s.element.style,{visibility:visible?'visible':'hidden',left:p.x+'px',top:p.y+'px',width:w+'px',height:h+'px'})}window.rangerPosition?.(project)}
-surface.addEventListener('pointerdown',e=>{if(e.button&&e.button!==0||window.WVLRPTravel?.busy)return;surface.setPointerCapture(e.pointerId);if(!pointers.size){start=[e.clientX,e.clientY];moved=false}else moved=true;pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0});
-surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);if(Math.hypot(e.clientX-start[0],e.clientY-start[1])>6)moved=true;pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.00045*fov;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.00045*fov))}else{const ps=[...pointers.values()],d=Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]);if(distance&&d)fov=Math.max(.65,Math.min(1.6,fov*distance/d));distance=d}schedule()});
-for(const type of ['pointerup','pointercancel'])surface.addEventListener(type,e=>{pointers.delete(e.pointerId);distance=0});
-surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(.65,Math.min(1.6,fov+e.deltaY*.0003));schedule()},{passive:false});
-surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(.65,fov-.1);if(e.key==='-')fov=Math.min(1.6,fov+.1);schedule()});
-window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});window.rangerFace=(u,v=.5)=>{yaw=u*2*Math.PI;pitch=(.5-v)*Math.PI;fov=1.6;schedule()};window.rangerTravel=travel;
+// The desk monitor and the object hotspots sit ABOVE the panorama canvas.
+// Share gesture handling with those overlays so zooming in never traps the
+// pointer over a giant camera button, preventing a reverse pinch or scroll.
+const MIN_FOV=.65,MAX_FOV=1.6;
+const clampZoom=v=>Math.max(MIN_FOV,Math.min(MAX_FOV,v));
+function zoomBy(delta){if(window.WVLRPTravel?.busy)return;fov=clampZoom(fov+delta);schedule()}
+window.rangerZoom=zoomBy;
+window.rangerResetZoom=()=>{if(window.WVLRPTravel?.busy)return;fov=MAX_FOV;schedule()};
+window.rangerGetZoom=()=>fov;
+const touchSurfaces=[surface,...spots.map(s=>s.element),document.querySelector('#monitor')].filter(Boolean);
+let suppressClickUntil=0;
+function pinchDistance(){const ps=[...pointers.values()];return ps.length>1?Math.hypot(ps[0][0]-ps[1][0],ps[0][1]-ps[1][1]):0}
+function pointerDown(e){
+ if((e.pointerType==='mouse'&&e.button!==0)||window.WVLRPTravel?.busy)return;
+ try{e.currentTarget.setPointerCapture(e.pointerId)}catch{}
+ if(!pointers.size){start=[e.clientX,e.clientY];moved=false}else moved=true;
+ pointers.set(e.pointerId,[e.clientX,e.clientY]);
+ distance=pinchDistance();
+}
+function pointerMove(e){
+ if(!pointers.has(e.pointerId))return;
+ const prev=pointers.get(e.pointerId);
+ if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>6)moved=true;
+ pointers.set(e.pointerId,[e.clientX,e.clientY]);
+ if(pointers.size===1){
+  yaw-=(e.clientX-prev[0])*.00045*fov;
+  pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.00045*fov));
+ }else{
+  moved=true;
+  const d=pinchDistance();
+  if(distance>0&&d>0)fov=clampZoom(fov*distance/d);
+  distance=d;
+ }
+ schedule();
+}
+function pointerEnd(e){
+ if(!pointers.has(e.pointerId))return;
+ if(moved)suppressClickUntil=Date.now()+250;
+ pointers.delete(e.pointerId);
+ distance=pinchDistance();
+ if(pointers.size===1){
+  const remaining=[...pointers.values()][0];
+  start=[...remaining];
+ }
+ if(!pointers.size)start=null;
+}
+for(const layer of touchSurfaces){
+ layer.style.touchAction='none';
+ layer.addEventListener('pointerdown',pointerDown);
+ layer.addEventListener('pointermove',pointerMove);
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])layer.addEventListener(type,pointerEnd);
+ layer.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY*.0003)},{passive:false});
+ // Dragging a hotspot or pinching the monitor must not open a modal on release.
+ if(layer!==surface)layer.addEventListener('click',e=>{if(Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();suppressClickUntil=0}},true);
+}
+surface.addEventListener('keydown',e=>{
+ if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','0'].includes(e.key))return;
+ e.preventDefault();
+ if(e.key==='ArrowLeft')yaw-=.1;
+ if(e.key==='ArrowRight')yaw+=.1;
+ if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);
+ if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);
+ if(e.key==='+')zoomBy(-.14);
+ if(e.key==='-')zoomBy(.14);
+ if(e.key==='0')window.rangerResetZoom();
+ schedule();
+});
+window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});
+window.rangerFace=(u,v=.5)=>{yaw=u*2*Math.PI;pitch=(.5-v)*Math.PI;fov=MAX_FOV;schedule()};
+window.rangerTravel=travel;
 const img=new Image();img.onload=()=>{config.upload(img);ready=true;message.hidden=true;draw();dispatchEvent(new Event('wvlrp-scene-ready'))};img.onerror=()=>{message.textContent='The scene could not load. Please refresh.'};img.src=config.image;addEventListener('resize',schedule);
 })();
