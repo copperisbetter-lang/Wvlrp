@@ -9,11 +9,11 @@
 #wvHomeAccount{font-family:inherit}
 .wv-auth-pill{display:none!important}
 
-header{left:20px;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}</style></head><body><canvas id="scene" aria-label="Drag to explore the woodland trail; tap the bird to visit the bird clearing, the deer to visit East Bank, the chicken to visit The Roost or distant Base Camp to return home; pinch or scroll to zoom" tabindex="0"></canvas><header><div><strong>WVLRP</strong><small>West Virginia Live Research Project</small></div>  <div class="menu-wrap">
+header{left:20px;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}#previewControls{max-width:calc(100vw - 20px);flex-wrap:wrap;justify-content:center}#previewControls button{min-height:44px}@media(max-width:600px){#previewControls{gap:5px;width:calc(100vw - 20px)}#previewControls button{padding:8px 10px;font-size:13px}#hint{bottom:125px}}</style></head><body><canvas id="scene" aria-label="Drag to explore the woodland trail; tap the bird to visit the bird clearing, the deer to visit East Bank, the chicken to visit The Roost or distant Base Camp to return home; pinch or scroll to zoom" tabindex="0"></canvas><header><div><strong>WVLRP</strong><small>West Virginia Live Research Project</small></div>  <div class="menu-wrap">
     <button class="menu" id="siteMenuButton" type="button" aria-expanded="false">☰ MENU</button>
     <nav class="site-menu" id="siteMenu" aria-label="WVLRP menu">
       <details>
-        <summary>EXPLORE</summary><div class="submenu"><a href="index.html">Base Camp</a><a href="woodland-trail.html">Woodland Trail</a><a href="bird.html">Bird</a><a href="squirrel.html">Squirrel</a></div></details><details><summary>LIVE CAMERAS</summary>
+        <summary>EXPLORE</summary><div class="submenu"><a href="index.html">Base Camp</a><a href="woodland-trail.html">Woodland Trail</a><a href="bird.html">Bird</a><a href="squirrel.html">Squirrel</a><a href="woodland-fork.html">Continue Woodland Trail</a><a href="ranger-station.html">Ranger Station</a></div></details><details><summary>LIVE CAMERAS</summary>
         <div class="submenu">
           <a href="east-bank.html">East Bank</a>
           <a href="the-roost.html">The Roost</a>
@@ -45,7 +45,7 @@ header{left:20px;right:0;z-index:40;display:flex;justify-content:space-between;p
         </div>
       </details>
     </nav>
-  </div></header><div id="hint">Drag to look around · Pinch or scroll to zoom</div><nav id="previewControls"><button id="camp">Trail ahead</button><button id="valley">Look back</button><button id="deerView">Look left</button><button id="minus" aria-label="Zoom out">−</button><button id="plus" aria-label="Zoom in">+</button></nav><div id="error"></div><script src="woodland-hen.js?v=20261006-1"></script><script src="trail-transitions.js?v=20261006-1"></script><script>
+  </div></header><div id="hint">Drag to look around · Pinch or scroll to zoom</div><nav id="previewControls"><button id="continueTrail">Continue trail</button><button id="camp">Trail ahead</button><button id="valley">Look back</button><button id="deerView">Look left</button><button id="minus" aria-label="Zoom out">−</button><button id="plus" aria-label="Zoom in">+</button></nav><div id="error"></div><script src="woodland-hen.js?v=20261006-1"></script><script src="trail-transitions.js?v=20261006-1"></script><script>
 const c=document.querySelector('canvas'),g=c.getContext('webgl');
 if(!g)document.querySelector('#error').textContent='This viewer needs WebGL. Open it in Chrome or another modern browser.';
 else {
@@ -200,7 +200,7 @@ c.addEventListener('pointerup',e=>{
   }
 });
 c.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);distance=0;tapMoved=true;});c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.0003);},{passive:false});
-document.querySelector('#camp').onclick=()=>{yaw=Math.PI+.35;pitch=-.06;fov=1.65;draw();};document.querySelector('#valley').onclick=()=>{yaw=.35;pitch=-.06;fov=1.65;draw();};document.querySelector('#deerView').onclick=()=>{yaw=Math.PI*2*.515;pitch=-.045;fov=1.65;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
+document.querySelector('#continueTrail').onclick=()=>{if(window.WVLRPTravel?.go)WVLRPTravel.go({url:'woodland-fork.html',from:{yaw,pitch,fov},to:{yaw:Math.PI+.35,pitch:-.06,fov:Math.max(.65,fov*.78)},render:s=>{yaw=s.yaw;pitch=s.pitch;fov=s.fov;draw()}});else location.assign('woodland-fork.html')};document.querySelector('#camp').onclick=()=>{yaw=Math.PI+.35;pitch=-.06;fov=1.65;draw();};document.querySelector('#valley').onclick=()=>{yaw=.35;pitch=-.06;fov=1.65;draw();};document.querySelector('#deerView').onclick=()=>{yaw=Math.PI*2*.515;pitch=-.045;fov=1.65;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
 c.addEventListener('keydown',e=>{if(window.WVLRPTravel?.busy)return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.45,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.45,pitch-.1);if(e.key==='+')zoom(-.1);if(e.key==='-')zoom(.1);draw();});addEventListener('resize',draw);
 function animateHen(){if(!document.hidden&&ready&&(henReady||deerReady||birdReady||squirrelReady))draw();requestAnimationFrame(animateHen);}requestAnimationFrame(animateHen);
 }
