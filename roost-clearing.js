@@ -37,17 +37,52 @@
   const trailSign=document.createElement('div');
   trailSign.id='roostTrailSign';
   trailSign.style.cssText='position:fixed;z-index:12;transform:translate(-50%,-50%);visibility:hidden;pointer-events:none;';
-  trailSign.innerHTML=`<img src="assets/roost/trail-sign-realistic-v4.webp" alt="Woodland Trail left; Natural Springs right" draggable="false" style="display:block;width:100%;height:auto"><a href="woodland-trail.html" aria-label="Back to Woodland Trail" style="position:absolute;left:5%;top:12%;width:90%;height:25%;pointer-events:auto"></a>`;
+  trailSign.innerHTML=`<a href="woodland-trail.html" aria-label="Back to Woodland Trail" style="position:absolute;left:5%;top:0;width:90%;height:100%;pointer-events:auto"></a>`;
   document.body.appendChild(trailSign);
   function positionTrailSign(){
-    const latitude=.035,delta=0-yaw,wy=Math.sin(latitude),wz=Math.cos(latitude)*Math.cos(delta),x=Math.cos(latitude)*Math.sin(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch);
+    const latitude=-.025,delta=0-yaw,wy=Math.sin(latitude),wz=Math.cos(latitude)*Math.cos(delta),x=Math.cos(latitude)*Math.sin(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch);
     const focal=innerHeight/(2*Math.tan(fov/2)),size=focal*.23/Math.max(z,.001),sx=innerWidth/2+focal*x/Math.max(z,.001),sy=innerHeight/2-focal*y/Math.max(z,.001);
     const visible=ready&&z>.3&&Math.abs(sx-innerWidth/2)<innerWidth/2+size/2&&Math.abs(sy-innerHeight/2)<innerHeight/2+size/2;
-    trailSign.style.visibility=visible?'visible':'hidden';trailSign.style.left=sx+'px';trailSign.style.top=sy+'px';trailSign.style.width=size+'px';
+    trailSign.style.visibility=visible?'visible':'hidden';trailSign.style.left=sx+'px';trailSign.style.top=sy+'px';trailSign.style.width=size+'px';trailSign.style.height=(size*.27)+'px';
   }
 
   function draw(){if(ready)renderPano();positionVideo();positionTrailSign()}
-  const image=new Image();image.onload=()=>{window.roostUploadImage(image);delete window.roostUploadImage;ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-ready'))};image.onerror=()=>{error.hidden=false;error.textContent='The clearing could not load. Please refresh.'};
+  // Composite the upright sign into the spherical scene once, so its feet
+  // and the forest ground share exactly the same projection during every pan.
+  const image=new Image(),signImage=new Image();
+  signImage.src='assets/roost/trail-sign-realistic-v4.webp';
+  image.onload=async()=>{
+    try{await signImage.decode();
+      const scene=document.createElement('canvas');scene.width=image.width;scene.height=image.height;
+      const context=scene.getContext('2d');context.drawImage(image,0,0);
+      const sprite=document.createElement('canvas');sprite.width=signImage.width;sprite.height=signImage.height;
+      const sc=sprite.getContext('2d');sc.drawImage(signImage,0,0);
+      const rgba=sc.getImageData(0,0,sprite.width,sprite.height).data;
+      const halfWidth=.115,bottom=-.15,top=.0225;
+      const span=Math.ceil(Math.atan(halfWidth)*scene.width/(2*Math.PI));
+      const y0=Math.floor((.5-Math.atan(top)/Math.PI)*scene.height)-2;
+      const y1=Math.ceil((.5-Math.atan(bottom)/Math.PI)*scene.height)+2;
+      // The fork crosses the panorama seam; draw both sides with wrapped x.
+      for(let ix=-span;ix<=span;ix++){
+        const longitude=ix/scene.width*2*Math.PI,wx=Math.tan(longitude);
+        const sx=Math.floor((wx+halfWidth)/(2*halfWidth)*sprite.width);
+        if(sx<0||sx>=sprite.width)continue;
+        const column=context.getImageData((ix+scene.width)%scene.width,y0,1,y1-y0);
+        for(let iy=y0;iy<y1;iy++){
+          const latitude=(.5-(iy+.5)/scene.height)*Math.PI;
+          const wy=Math.tan(latitude)/Math.cos(longitude);
+          const sy=Math.floor((top-wy)/(top-bottom)*sprite.height);
+          if(sy<0||sy>=sprite.height)continue;
+          const src=(sy*sprite.width+sx)*4,dst=(iy-y0)*4,alpha=rgba[src+3]/255;
+          for(let c=0;c<3;c++)column.data[dst+c]=rgba[src+c]*alpha+column.data[dst+c]*(1-alpha);
+        }
+        context.putImageData(column,(ix+scene.width)%scene.width,y0);
+      }
+      window.roostUploadImage(scene);
+    }catch{window.roostUploadImage(image);trailSign.remove()}
+    delete window.roostUploadImage;ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-ready'));
+  };
+  image.onerror=()=>{error.hidden=false;error.textContent='The clearing could not load. Please refresh.'};
   image.src='assets/roost/clearing-360-hd.webp?v=20261006-1';
   const surface=gl?canvas:fallback,pointers=new Map();let distance=0;
   surface.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0});
