@@ -38,6 +38,7 @@
   const canvas=document.getElementById('scene'),fallback=document.getElementById('panoFallback'),wrap=document.getElementById('videoWrap');
   const error=document.getElementById('sceneMessage');
   let yaw=Math.PI,pitch=-.075,fov=1.6,ready=false,raf=0,renderPano=null;
+  window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});
   let pixels=null,sourceWidth=0,sourceHeight=0,signPixels=null,signWidth=0,signHeight=0;
   const gl=canvas.getContext('webgl',{alpha:false,antialias:false});
   function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})}
@@ -115,4 +116,4 @@ ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-rea
     const auth=document.querySelector('.wv-auth-pill'); if(auth) auth.click();
   });
 })();
-</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script></body></html>
+</script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script><script src="ranger-cases.js?v=2"></script></body></html>
