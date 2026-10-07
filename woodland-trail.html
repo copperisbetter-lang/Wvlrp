@@ -45,7 +45,7 @@ header{left:20px;right:0;z-index:40;display:flex;justify-content:space-between;p
         </div>
       </details>
     </nav>
-  </div></header><div id="hint">Drag to look around · Pinch or scroll to zoom</div><nav id="previewControls"><button id="camp">Trail ahead</button><button id="valley">Look back</button><button id="minus" aria-label="Zoom out">−</button><button id="plus" aria-label="Zoom in">+</button></nav><div id="error"></div><script src="woodland-hen.js?v=20261006-1"></script><script src="trail-transitions.js?v=20261006-1"></script><script>
+  </div></header><div id="hint">Drag to look around · Pinch or scroll to zoom</div><nav id="previewControls"><button id="camp">Trail ahead</button><button id="valley">Look back</button><button id="deerView">Look left</button><button id="minus" aria-label="Zoom out">−</button><button id="plus" aria-label="Zoom in">+</button></nav><div id="error"></div><script src="woodland-hen.js?v=20261006-1"></script><script src="trail-transitions.js?v=20261006-1"></script><script>
 const c=document.querySelector('canvas'),g=c.getContext('webgl');
 if(!g)document.querySelector('#error').textContent='This viewer needs WebGL. Open it in Chrome or another modern browser.';
 else {
@@ -71,12 +71,11 @@ float cover=smoothstep(foliageEdge,foliageEdge+.045,q.y)*.98;
 bird*=1.-cover;
 forest.rgb=forest.rgb*(1.-bird.a)+bird.rgb*vec3(.93,.86,.72);
 }
-// A roughly 85-foot viewing distance: a 6.3-foot square sprite envelope
-// subtends 0.0118 turns horizontally and 0.0236 half-turns vertically.
+// A distant deer, sized to stay recognizable against the dense foliage.
 // The distant gap is beside the foreground trunk in the opening view's left quadrant.
 float deerBearing=.340;float dd=mod(u-deerBearing+1.5,1.)-.5;
-vec2 dq=vec2(dd/.0118+.5,(v-.535)/.0236);
-vec2 ds=vec2(dd/.0049,(v-.556)/.0011);
+vec2 dq=vec2(dd/.0177+.5,(v-.527)/.0354);
+vec2 ds=vec2(dd/.0074,(v-.558)/.0015);
 forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.16*deerReady;
 if(deerReady>.5&&dq.x>=0.&&dq.x<=1.&&dq.y>=0.&&dq.y<=1.){
 vec4 da=deerFrame(dq,deerA),db=deerFrame(dq,deerB);
@@ -92,7 +91,8 @@ function shader(type,s){let q=g.createShader(type);g.shaderSource(q,s);g.compile
 const program=g.createProgram();g.attachShader(program,shader(g.VERTEX_SHADER,vs));g.attachShader(program,shader(g.FRAGMENT_SHADER,fs));g.linkProgram(program);if(!g.getProgramParameter(program,g.LINK_STATUS))throw Error(g.getProgramInfoLog(program));g.useProgram(program);
 const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),g.STATIC_DRAW);const a=g.getAttribLocation(program,'a');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);
 const loc={};['yaw','pitch','fov','aspect','henReady','deerReady','frameA','frameB','frameMix','deerA','deerB','deerMix'].forEach(k=>loc[k]=g.getUniformLocation(program,k));
-let yaw=Math.PI+.35,pitch=-.06,fov=1.35,ready=false;const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+const showDeer=new URLSearchParams(location.search).get('view')==='deer';
+let yaw=showDeer?Math.PI*2*.340:Math.PI+.35,pitch=showDeer?-.18:-.06,fov=showDeer?.85:1.35,ready=false;const texture=g.createTexture();g.bindTexture(g.TEXTURE_2D,texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
 const henTexture=g.createTexture();g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,henTexture);
 g.texImage2D(g.TEXTURE_2D,0,g.RGBA,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
 g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
@@ -147,7 +147,7 @@ c.addEventListener('pointerup',e=>{
   }
 });
 c.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);distance=0;tapMoved=true;});c.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY*.001);},{passive:false});
-document.querySelector('#camp').onclick=()=>{yaw=Math.PI+.35;pitch=-.06;fov=1.35;draw();};document.querySelector('#valley').onclick=()=>{yaw=.35;pitch=-.06;fov=1.35;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
+document.querySelector('#camp').onclick=()=>{yaw=Math.PI+.35;pitch=-.06;fov=1.35;draw();};document.querySelector('#valley').onclick=()=>{yaw=.35;pitch=-.06;fov=1.35;draw();};document.querySelector('#deerView').onclick=()=>{yaw=Math.PI*2*.340;pitch=-.18;fov=.85;draw();};document.querySelector('#plus').onclick=()=>zoom(-.12);document.querySelector('#minus').onclick=()=>zoom(.12);
 c.addEventListener('keydown',e=>{if(window.WVLRPTravel?.busy)return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.45,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.45,pitch-.1);if(e.key==='+')zoom(-.1);if(e.key==='-')zoom(.1);draw();});addEventListener('resize',draw);
 function animateHen(){if(!document.hidden&&ready&&(henReady||deerReady))draw();requestAnimationFrame(animateHen);}requestAnimationFrame(animateHen);
 }
