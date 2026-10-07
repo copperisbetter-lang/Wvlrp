@@ -62,7 +62,7 @@
   function positionGate(){
     // Plane x=.25.. .61, y=-.10..-.307, z=1; all points share the panorama camera.
     const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),k=.00062,f=innerHeight/(2*Math.tan(fov/2)),cx=innerWidth/2,hy=innerHeight/2;
-    const X0=.40*cy-sy,Z0=.40*sy+cy,Y0=-.075*cp-Z0*sp,D0=-.075*sp+Z0*cp;
+    const X0=.375*cy-sy,Z0=.375*sy+cy,Y0=-.075*cp-Z0*sp,D0=-.075*sp+Z0*cp;
     const Xu=k*cy,Zu=k*sy,Yu=-Zu*sp,Du=Zu*cp,Yv=-k*cp,Dv=-k*sp;
     gate.style.visibility=ready&&D0>.2?'visible':'hidden';
     gate.style.transform='matrix3d('+[f*Xu+cx*Du,-f*Yu+hy*Du,0,Du,cx*Dv,-f*Yv+hy*Dv,0,Dv,0,0,1,0,f*X0+cx*D0,-f*Y0+hy*D0,0,D0].join(',')+')';
