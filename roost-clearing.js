@@ -32,7 +32,28 @@
     const visible=z>.24&&Math.abs(sx-innerWidth/2)<innerWidth/2+size/2&&Math.abs(sy-innerHeight/2)<innerHeight/2+size/2;
     wrap.style.visibility=visible?'visible':'hidden';wrap.style.pointerEvents=visible?'auto':'none';wrap.style.left=sx+'px';wrap.style.top=sy+'px';wrap.style.width=size+'px';
   }
-  function draw(){if(ready)renderPano();positionVideo()}
+
+  // A world-anchored trail sign at the fork opposite the live camera.
+  const trailSign=document.createElement('div');
+  trailSign.id='roostTrailSign';
+  trailSign.style.cssText='position:fixed;z-index:12;transform:translate(-50%,-50%);visibility:hidden;pointer-events:none;filter:drop-shadow(3px 5px 4px #0005)';
+  trailSign.innerHTML=`<svg viewBox="0 0 560 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trail fork sign: Woodland Trail to the left; Natural Springs to the right">
+  <defs><linearGradient id="roostWood" x2="0" y2="1"><stop stop-color="#877047"/><stop offset=".45" stop-color="#665033"/><stop offset="1" stop-color="#453823"/></linearGradient><linearGradient id="roostPost"><stop stop-color="#3a3021"/><stop offset=".4" stop-color="#786044"/><stop offset="1" stop-color="#493b28"/></linearGradient></defs>
+  <ellipse cx="280" cy="375" rx="194" ry="12" fill="#15180d" opacity=".23"/>
+  <path d="M111 69 L132 66 L138 377 L114 377Z M426 69 L446 71 L441 377 L418 377Z" fill="url(#roostPost)" stroke="#392f21" stroke-width="2"/>
+  <a href="woodland-trail.html" aria-label="Back to Woodland Trail" style="pointer-events:auto;cursor:pointer"><path d="M25 112 L69 74 L525 79 L526 143 L70 149Z" fill="url(#roostWood)" stroke="#3d3020" stroke-width="3"/><path d="M77 91 L510 94 M74 132 L507 129" stroke="#b79a6a" opacity=".25"/><text x="280" y="125" text-anchor="middle" fill="#f2e3bd" font-family="Georgia,serif" font-size="32" font-weight="bold" style="text-shadow:1px 2px 2px #241c12">← Woodland Trail</text></a>
+  <path d="M33 161 L489 158 L535 193 L493 229 L34 227Z" fill="url(#roostWood)" stroke="#3d3020" stroke-width="3"/><path d="M50 174 L482 172 M52 215 L480 213" stroke="#b79a6a" opacity=".25"/><text x="280" y="207" text-anchor="middle" fill="#f2e3bd" font-family="Georgia,serif" font-size="32" font-weight="bold" style="text-shadow:1px 2px 2px #241c12">Natural Springs →</text>
+  <g fill="#352e24" stroke="#ad946b" stroke-width="1"><circle cx="124" cy="85" r="3"/><circle cx="435" cy="89" r="3"/><circle cx="126" cy="136" r="3"/><circle cx="433" cy="133" r="3"/><circle cx="126" cy="173" r="3"/><circle cx="432" cy="171" r="3"/><circle cx="127" cy="216" r="3"/><circle cx="430" cy="215" r="3"/></g>
+  <g stroke="#655f32" stroke-width="3" fill="none"><path d="M114 378q-11-18-17-22m24 20q2-25 9-32m-1 33q13-17 19-19M420 378q-10-19-16-23m27 21q-2-25 6-35m-3 36q12-18 21-23"/></g></svg>`;
+  document.body.appendChild(trailSign);
+  function positionTrailSign(){
+    const latitude=-.23,delta=-yaw,wy=Math.sin(latitude),wz=Math.cos(latitude)*Math.cos(delta),x=Math.cos(latitude)*Math.sin(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch);
+    const focal=innerHeight/(2*Math.tan(fov/2)),size=focal*.65/Math.max(z,.001),sx=innerWidth/2+focal*x/Math.max(z,.001),sy=innerHeight/2-focal*y/Math.max(z,.001);
+    const visible=ready&&z>.3&&Math.abs(sx-innerWidth/2)<innerWidth/2+size/2&&Math.abs(sy-innerHeight/2)<innerHeight/2+size/2;
+    trailSign.style.visibility=visible?'visible':'hidden';trailSign.style.left=sx+'px';trailSign.style.top=sy+'px';trailSign.style.width=size+'px';
+  }
+
+  function draw(){if(ready)renderPano();positionVideo();positionTrailSign()}
   const image=new Image();image.onload=()=>{window.roostUploadImage(image);delete window.roostUploadImage;ready=true;error.hidden=true;schedule();dispatchEvent(new Event('wvlrp-scene-ready'))};image.onerror=()=>{error.hidden=false;error.textContent='The clearing could not load. Please refresh.'};
   image.src='assets/roost/clearing-360-hd.webp?v=20261006-1';
   const surface=gl?canvas:fallback,pointers=new Map();let distance=0;
