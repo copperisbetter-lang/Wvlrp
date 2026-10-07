@@ -1,7 +1,7 @@
 (()=>{
   const canvas=document.getElementById('scene'),fallback=document.getElementById('panoFallback'),wrap=document.getElementById('videoWrap');
   const error=document.getElementById('sceneMessage');
-  let yaw=Math.PI,pitch=-.075,fov=1.25,ready=false,raf=0,renderPano=null;
+  let yaw=Math.PI,pitch=-.075,fov=1.6,ready=false,raf=0,renderPano=null;
   let pixels=null,sourceWidth=0,sourceHeight=0,signPixels=null,signWidth=0,signHeight=0;
   const gl=canvas.getContext('webgl',{alpha:false,antialias:false});
   function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})}
@@ -87,7 +87,7 @@
   for(const event of ['pointerup','pointercancel'])surface.addEventListener(event,e=>{pointers.delete(e.pointerId);distance=0});
   surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(.65,Math.min(1.6,fov+e.deltaY*.001));schedule()},{passive:false});
   surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(.65,fov-.1);if(e.key==='-')fov=Math.min(1.6,fov+.1);schedule()});
-  document.getElementById('centerView').onclick=()=>{yaw=Math.PI;pitch=-.075;fov=1.25;schedule()};
+  document.getElementById('centerView').onclick=()=>{yaw=Math.PI;pitch=-.075;fov=1.6;schedule()};
   addEventListener('resize',schedule);draw();
   setTimeout(()=>document.getElementById('hint').style.opacity=0,4500);
 })();
