@@ -31,6 +31,6 @@ surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;
 for(const type of ['pointerup','pointercancel'])surface.addEventListener(type,e=>{pointers.delete(e.pointerId);distance=0});
 surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(.65,Math.min(1.6,fov+e.deltaY*.0003));schedule()},{passive:false});
 surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(.65,fov-.1);if(e.key==='-')fov=Math.min(1.6,fov+.1);schedule()});
-window.rangerFace=(u,v=.5)=>{yaw=u*2*Math.PI;pitch=(.5-v)*Math.PI;fov=1.6;schedule()};window.rangerTravel=travel;
+window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});window.rangerFace=(u,v=.5)=>{yaw=u*2*Math.PI;pitch=(.5-v)*Math.PI;fov=1.6;schedule()};window.rangerTravel=travel;
 const img=new Image();img.onload=()=>{config.upload(img);ready=true;message.hidden=true;draw();dispatchEvent(new Event('wvlrp-scene-ready'))};img.onerror=()=>{message.textContent='The scene could not load. Please refresh.'};img.src=config.image;addEventListener('resize',schedule);
 })();
