@@ -71,11 +71,13 @@ float cover=smoothstep(foliageEdge,foliageEdge+.045,q.y)*.98;
 bird*=1.-cover;
 forest.rgb=forest.rgb*(1.-bird.a)+bird.rgb*vec3(.93,.86,.72);
 }
-float deerBearing=0.30570;float dd=mod(u-deerBearing+1.5,1.)-.5;vec2 dq=vec2(dd/.048+.5,(v-.535)/.105);
+// Adult deer stays 90 degrees left; its hooves are below the tree roots on the forest floor.
+// Match the sprite aspect ratio in equirectangular coordinates (longitude spans twice latitude).
+float deerBearing=0.30570;float dd=mod(u-deerBearing+1.5,1.)-.5;vec2 dq=vec2(dd/.1182+.5,(v-.635)/.170);
 if(deerReady>.5&&dq.x>=0.&&dq.x<=1.&&dq.y>=0.&&dq.y<=1.){
 float cycle=mod(deerTime,12.5);vec4 d0=texture2D(deerGraze,dq),d1=texture2D(deerAlert,dq),d2=texture2D(deerTail,dq),deer=d0;
 if(cycle>6.0&&cycle<=6.55)deer=mix(d0,d1,smoothstep(6.0,6.55,cycle));else if(cycle>6.55&&cycle<=7.8)deer=d1;else if(cycle>7.8&&cycle<=8.02)deer=mix(d1,d2,smoothstep(7.8,8.02,cycle));else if(cycle>8.02&&cycle<=8.42)deer=d2;else if(cycle>8.42&&cycle<=8.65)deer=mix(d2,d1,smoothstep(8.42,8.65,cycle));else if(cycle>8.65&&cycle<=9.15)deer=d1;else if(cycle>9.15&&cycle<=9.75)deer=mix(d1,d0,smoothstep(9.15,9.75,cycle));
-vec2 ds=vec2(dd/.023,(v-.637)/.007);forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.18*deerReady;deer.rgb*=deer.a;forest.rgb=forest.rgb*(1.-deer.a)+deer.rgb*vec3(.94,.88,.78);}
+vec2 ds=vec2(dd/.052,(v-.797)/.008);forest.rgb*=1.-exp(-dot(ds,ds)*2.)*.18*deerReady;deer.rgb*=deer.a;forest.rgb=forest.rgb*(1.-deer.a)+deer.rgb*vec3(.94,.88,.78);}
 gl_FragColor=forest;}`;
 function shader(type,s){let q=g.createShader(type);g.shaderSource(q,s);g.compileShader(q);if(!g.getShaderParameter(q,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(q));return q;}
 const program=g.createProgram();g.attachShader(program,shader(g.VERTEX_SHADER,vs));g.attachShader(program,shader(g.FRAGMENT_SHADER,fs));g.linkProgram(program);if(!g.getProgramParameter(program,g.LINK_STATUS))throw Error(g.getProgramInfoLog(program));g.useProgram(program);
