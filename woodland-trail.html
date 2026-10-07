@@ -103,7 +103,7 @@ float trunkEdge=.268-.04*(v-.35);
 perched*=1.-smoothstep(trunkEdge-.002,trunkEdge+.003,u);
 forest.rgb=forest.rgb*(1.-perched.a)+perched.rgb;
 }
-float sd=mod(u-.95+1.5,1.)-.5;vec2 sq=vec2(sd/.030+.5,(v-.690)/.060);vec2 ss=vec2(sd/.012,(v-.745)/.0025);forest.rgb*=1.-exp(-dot(ss,ss)*2.)*.18*squirrelReady;
+float sd=mod(u-.95+1.5,1.)-.5;vec2 sq=vec2(sd/.030+.5,(v-.705)/.060);vec2 ss=vec2(sd/.012,(v-.760)/.0025);forest.rgb*=1.-exp(-dot(ss,ss)*2.)*.18*squirrelReady;
 if(squirrelReady>.5&&sq.x>=0.&&sq.x<=1.&&sq.y>=0.&&sq.y<=1.){vec4 sa=squirrelFrame(sq,squirrelA),sb=squirrelFrame(sq,squirrelB);vec4 animal=mix(vec4(sa.rgb*sa.a,sa.a),vec4(sb.rgb*sb.a,sb.a),squirrelMix);vec3 floorLeaves=texture2D(tex,vec2(u,v)).rgb;float leafCover=smoothstep(.16,.46,dot(floorLeaves,vec3(.24,.58,.18)));animal*=1.-smoothstep(mix(.94,.91,leafCover),.995,sq.y)*.85;forest.rgb=forest.rgb*(1.-animal.a)+animal.rgb*vec3(.96,.87,.72);}gl_FragColor=forest;}`;
 function shader(type,s){let q=g.createShader(type);g.shaderSource(q,s);g.compileShader(q);if(!g.getShaderParameter(q,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(q));return q;}
 const program=g.createProgram();g.attachShader(program,shader(g.VERTEX_SHADER,vs));g.attachShader(program,shader(g.FRAGMENT_SHADER,fs));g.linkProgram(program);if(!g.getProgramParameter(program,g.LINK_STATUS))throw Error(g.getProgramInfoLog(program));g.useProgram(program);
