@@ -42,7 +42,7 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 
 ## NEW Tier 4 — exclusive sitewide discovery partner (one sponsor ONLY)
 
-- **Topmost tier: Tier 4 is a single, exclusive sitewide sponsorship slot. Only ONE brand can hold Tier 4 at any time.**
+- **Topmost tier: Tier 4 is a single, exclusive sitewide sponsorship slot. Only ONE brand can hold Tier 4 at any time. Tier 4 can ONLY be held on a TWO-YEAR (24-month) sponsorship payment plan and commitment, not month-to-month or for just one year.** Exact price, payment cadence, deposits and other terms are not yet established.
 - **Discoverable on every WVLRP page**, even pages branded/presented by another sponsor. The Tier 4 partner appears in some shape, form, or context: an in-world object or logo, trail sign, equipment, clue, note, shop discovery, or tasteful visible mark. A viewer looking around sufficiently should be able to find the partner.
 - **Tier 4 does not displace existing main sponsors:** East Bank can still spotlight Moses and The Roost can still prominently feature 98.7. The Tier 4 sponsor is a distinct, secondary sitewide discovery presence on those pages, without taking over their contracted page sponsorship.
 - **Tier 4 includes Tier 2+ eligibility for relevant quest/game appearances**, plus sitewide discoverability. Tier 2+ may still appear in appropriate quests; Tier 1 does not automatically receive game integration.
@@ -83,7 +83,7 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 
 1. Update **every prospective-sponsor presentation** with prominent **soft-launch / not-publicly-launched language** AND a convincing, accurately staged introduction to the **large evolving interactive 3D game**.
 2. Revise the **98.7 proposal** to retain exciting branding while explicitly keeping the Roost open to major additional sponsors.
-3. Design a scalable, tasteful hierarchy and rights language for **radio partner + large investors + supporting sponsors**, PLUS the **one exclusive Tier 4 sitewide discovery partner** without obscuring existing page sponsors.
+3. Design a scalable, tasteful hierarchy and rights language for **radio partner + large investors + supporting sponsors**, PLUS the **one exclusive Tier 4 sitewide discovery partner with a mandatory two-year payment plan**, without obscuring existing page sponsors.
 4. Continue polishing and testing the **Moses East Bank** example so the dealership's name, message, and buttons cannot be overlooked.
 5. Keep separate measured outcomes from plans/projections; prepare sponsor-ready analytics and honest prelaunch messaging.
 6. Treat these as **agreed planning decisions**, not sponsor contracts, verified deployments, or rights already granted.
