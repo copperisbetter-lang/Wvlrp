@@ -40,6 +40,18 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 
 > WVLRP is more than live wildlife viewing. We're building a large, continuously evolving interactive 3D online adventure game connected to our real-world wildlife experiences. Visitors can explore immersive environments and, as development progresses, take part in quests, discover hidden clues and new destinations, and return as the world grows. That opens the door for sponsor logos, products, and brand tie-ins to appear in fitting games, quests, clues, and activities — creating memorable encounters rather than relying only on banner ads. **WVLRP is currently in soft launch, ahead of its full public debut.**
 
+## Global sponsorship availability and tier-based promotion (October 8 decision)
+
+- **Every WVLRP page and destination is sponsorable at ANY standard tier, regardless of what tier or featured sponsor is already associated with that page.** This includes Base Camp, Roost, East Bank, West Hills, Stacey Lake, Ranger Station, game/community locations, shops, and new pages as they launch. No page is reserved only for high-paying tiers.
+- **The sponsor's TIER determines the CLASS, PROMINENCE, REACH, AND CREATIVE BENEFITS of promotion, NOT which pages the business is permitted to sponsor.** Example: a Tier 1 neighborhood restaurant could sponsor a modest placement on The Roost; a Tier 3 company there could receive premium prominence, media, interactions and approved broader promotional features.
+- **Multiple compatible sponsors can be represented on a page** while retaining a clear, attractive hierarchy. A page's featured/presenting sponsor retains the primary spotlight promised by its agreement, but that does not close the page to additional lower-tier or higher-tier participation. Any negotiated category exclusivity must be explicit and limited, and must respect Tier 4's promised sitewide presence.
+- **Tier 1:** accessible local/basic placement with appropriate branding and approved links, including on high-profile pages; no automatic quest involvement.
+- **Tier 2:** more prominent promotion and eligibility for appropriate branded game and quest appearances, as individually agreed.
+- **Tier 3:** higher-class premium presentation, stronger placement and promotional features; individually negotiated story/game integration. It does NOT automatically reserve an entire page against other sponsors.
+- **Tier 4:** ONE exclusive sitewide sponsor on a mandatory two-year contract, proposed $80K–$120K per year, guaranteed identifiable brand/logo presentation on ALL pages (including other-sponsored pages and new pages) and in ALL relevant games and quests. This guarantee is in addition to, not a replacement for, page-specific sponsor inventory.
+- Maintain attractive layouts and consistent separation between primary sponsor, supporting sponsors, and the global Tier 4 identity; no billboard clutter, deceptive exclusivity, or sponsorship that obstructs wildlife views or gameplay.
+- This is a **sales and design rule**, not an assertion that placements have already been sold or implemented. WVLRP remains in soft launch, prior to its full public launch.
+
 ## NEW Tier 4 — exclusive sitewide logo + relevant game/quest presentation (one sponsor ONLY)
 
 - **Topmost tier: Tier 4 is a single, exclusive sitewide sponsorship slot. Only ONE brand can hold Tier 4 at any time. Tier 4 can ONLY be held on a TWO-YEAR (24-month) sponsorship payment plan and commitment, not month-to-month or for just one year.** **Proposed investment: $80,000–$120,000 per year, or $160,000–$240,000 over the mandatory 24-month agreement.** Final price and payment cadence, deposits and other financial terms remain subject to agreement.
