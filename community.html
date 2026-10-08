@@ -9,16 +9,16 @@ window.RANGER_SCENE={image:'assets/community-clearing-v1.webp?v=1',startU:.5,pit
 {label:'Enter the Ranger Station',u:.502,v:.477,width:.047,height:.085,url:'ranger-station.html'},
 {label:'Laurel’s Kitchen',u:.129,v:.468,width:.085,height:.09,url:'laurels-kitchen.html'},
 {label:'Mercantile and Giftshop',u:.868,v:.485,width:.075,height:.09,url:'mercantile.html'},
-{label:'West Hills — return along the arrival path',sign:'West Hills ↑',u:.002,v:.54,width:.045,height:.025,url:'west-hills.html'}]};
+{label:'West Hills — return along the arrival path',sign:'West Hills',u:.002,v:.54,width:.045,height:.025,url:'west-hills.html?v=20261007-community-route'}]};
 window.rangerOpen=id=>{const laurel=id==='laurel';document.getElementById('placeTitle').textContent=laurel?'Laurel’s Kitchen':'Mercantile and Giftshop';document.getElementById('placeText').textContent=laurel?'The coffee shop and bakery is here. Its interior will open later.':'The mercantile and gift shop is here. Its interior will open later.';document.getElementById('placeNotice').showModal()};
 const menu=document.getElementById('menu'),menuButton=document.getElementById('menuButton');menuButton.onclick=()=>{menu.hidden=!menu.hidden;menuButton.setAttribute('aria-expanded',String(!menu.hidden))};
 for(const b of document.querySelectorAll('[data-place]'))b.onclick=()=>{menu.hidden=true;menuButton.setAttribute('aria-expanded','false');window.rangerOpen(b.dataset.place)};
 for(const b of document.querySelectorAll('#placeNotice button'))b.onclick=()=>document.getElementById('placeNotice').close();
-document.getElementById('back').onclick=()=>{if(window.rangerTravel)window.rangerTravel('west-hills.html',.002,.55);else location.assign('west-hills.html')};
+document.getElementById('back').onclick=()=>{if(window.rangerTravel)window.rangerTravel('west-hills.html?v=20261007-community-route',.002,.55);else location.assign('west-hills.html?v=20261007-community-route')};
 document.getElementById('faceExit').onclick=()=>window.rangerFace?.(.002,.54);
 document.getElementById('faceStation').onclick=()=>window.rangerFace(.5,.5);
 document.getElementById('zoomIn').onclick=()=>window.rangerZoom(-.13);
 document.getElementById('zoomOut').onclick=()=>window.rangerZoom(.13);
 document.getElementById('zoomReset').onclick=()=>window.rangerResetZoom();
 setTimeout(()=>document.getElementById('hint').style.opacity=0,8500);
-</script><script src="ranger-scene.js?v=20261007-approved-speed"></script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script></body></html>
+</script><script src="ranger-scene.js?v=20261007-approved-speed"></script><script src="site-auth.js?v=20260916-menu2"></script><script src="site-analytics.js?v=20260916-1"></script><script src="trail-signs.js?v=20261007-real-wood"></script></body></html>
