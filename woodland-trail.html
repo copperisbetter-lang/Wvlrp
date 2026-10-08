@@ -168,6 +168,7 @@ const pose=window.WVLRPHen.pose(performance.now()/1000);
 g.uniform1f(loc.frameA,pose[0]);g.uniform1f(loc.frameB,pose[1]);g.uniform1f(loc.frameMix,pose[2]);const dp=deerPose(performance.now()/1000-deerStart);g.uniform1f(loc.deerA,dp[0]);g.uniform1f(loc.deerB,dp[1]);g.uniform1f(loc.deerMix,dp[2]);g.drawArrays(g.TRIANGLES,0,6);}
 function zoom(d){if(window.WVLRPTravel?.busy)return;fov=Math.max(.52,Math.min(1.65,fov+d));draw();}
 window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});
+window.WVLRP_SET_VIEW=state=>{if(!state||!ready)return;yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw()};
 function scenePoint(x,y){
   const rect=c.getBoundingClientRect(),t=Math.tan(fov/2);
   const dx=((x-rect.left)/rect.width*2-1)*t*rect.width/rect.height;
