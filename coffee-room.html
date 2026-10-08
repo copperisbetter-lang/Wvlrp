@@ -10,7 +10,7 @@
 @media(max-width:850px){.stage{grid-template-columns:1fr 1fr}.roost{grid-column:1/-1;grid-row:1;min-height:330px}.side{display:contents}.seat{aspect-ratio:4/3}.invites{grid-template-columns:1fr 1fr}}@media(max-width:520px){.room{padding:10px}.stage{gap:8px}.seat{border-radius:11px}.roost{min-height:285px}.invite{aspect-ratio:4/3}.top{font-size:.78rem}.age{display:none}}
 </style></head>
 <body>
-<header class="top"><a href="index.html">← Home</a><a href="ranger-station.html">Ranger Station</a><div class="brand">☕ WVLRP Coffee Room</div><span class="age">ADULTS 18+</span></header>
+<header class="top"><a href="adventures.html">← Home</a><a href="ranger-station.html">Ranger Station</a><div class="brand">☕ WVLRP Coffee Room</div><span class="age">ADULTS 18+</span></header>
 <section class="hero"><div class="eyebrow">REAL PEOPLE • REAL CONVERSATION • WE DO IT LIVE</div><h1>The Coffee Room</h1><p>Grab a cup, watch The Roost, and pull up a chair.</p></section>
 <main class="room" id="room">
 <section class="stage">
@@ -19,7 +19,7 @@
 <div class="seat" data-seat="2"><span class="num">SEAT 2</span><span class="empty">☕<br>Open seat</span><button class="remove">✕</button></div>
 <div class="seat" data-seat="3"><span class="num">SEAT 3</span><span class="empty">☕<br>Open seat</span><button class="remove">✕</button></div>
 </div>
-<div class="roost"><div class="roost-head"><b>🐓 The Roost</b><span class="live">● LIVE</span></div><iframe src="the-roost.html" title="The Roost live camera" loading="eager"></iframe><div class="coffee"><button class="btn gold" id="coffeeBtn">☕ Buy the Host a Coffee</button><button class="btn" id="scheduleBtn">Coffee Hour Schedule</button></div></div>
+<div class="roost"><div class="roost-head"><b>🐓 The Roost</b><span class="live">FIELD NOTES</span></div><div class="roost-adventure-info" style="min-height:180px;display:grid;place-content:center;text-align:center;padding:24px;background:#132b23;color:#e9e0c7"><p>Explore The Roost inside Adventures.</p><a href="adventure-roost.html" style="color:#f4d995">Visit the clearing →</a></div><div class="coffee"><button class="btn gold" id="coffeeBtn">☕ Buy the Host a Coffee</button><button class="btn" id="scheduleBtn">Coffee Hour Schedule</button></div></div>
 <div class="side">
 <div class="seat" data-seat="4"><span class="num">SEAT 4</span><span class="empty">☕<br>Open seat</span><button class="remove">✕</button></div>
 <div class="seat" data-seat="5"><span class="num">SEAT 5</span><span class="empty">☕<br>Open seat</span><button class="remove">✕</button></div>
@@ -29,7 +29,7 @@
 <section class="controls"><button class="btn green" id="joinBtn">🎥 Join Live Conversation</button><button class="btn" id="inviteBtn">＋ Invite Someone</button><button class="btn red" id="comfortBtn">⚑ Conversation's Getting Uncomfortable</button><button class="btn" id="hostBtn">Host Controls</button></section>
 <div class="notice"><strong>Adults-only room.</strong> Adults are free to have normal adult conversations. WVLRP steps in when another participant flags that the conversation is becoming uncomfortable. The host can close a participant feed when needed.</div>
 </main>
-<div class="gate" id="gate"><div class="gate-card"><div style="font-size:2.5rem">☕</div><h2>Welcome to the Coffee Room</h2><p>This is a live, adults-only conversation space. You must be 18 or older to enter. Camera and microphone access are requested only when you choose to join the live conversation.</p><button class="btn gold" id="enterBtn">I am 18 or older — Enter</button><a href="index.html" style="display:block;margin-top:14px;color:#cbb89e">Return to WVLRP</a></div></div>
+<div class="gate" id="gate"><div class="gate-card"><div style="font-size:2.5rem">☕</div><h2>Welcome to the Coffee Room</h2><p>This is a live, adults-only conversation space. You must be 18 or older to enter. Camera and microphone access are requested only when you choose to join the live conversation.</p><button class="btn gold" id="enterBtn">I am 18 or older — Enter</button><a href="adventures.html" style="display:block;margin-top:14px;color:#cbb89e">Return to WVLRP</a></div></div>
 <div class="toast" id="toast"></div>
 <script>
 const gate=document.getElementById('gate'),room=document.getElementById('room'),toast=document.getElementById('toast');let localStream=null,host=false;

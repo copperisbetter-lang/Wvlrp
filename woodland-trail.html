@@ -13,10 +13,10 @@ header{left:20px;right:0;z-index:40;display:flex;justify-content:space-between;p
     <button class="menu" id="siteMenuButton" type="button" aria-expanded="false">☰ MENU</button>
     <nav class="site-menu" id="siteMenu" aria-label="WVLRP menu">
       <details>
-        <summary>EXPLORE</summary><div class="submenu"><a href="index.html">Base Camp</a><a href="woodland-trail.html">Woodland Trail</a><a href="bird.html">Bird</a><a href="squirrel.html">Squirrel</a><a href="woodland-fork.html">Continue Woodland Trail</a><a href="ranger-station.html">Ranger Station</a></div></details><details><summary>LIVE CAMERAS</summary>
+        <summary>EXPLORE</summary><div class="submenu"><a href="adventures.html">Base Camp</a><a href="woodland-trail.html">Woodland Trail</a><a href="bird.html">Bird</a><a href="squirrel.html">Squirrel</a><a href="woodland-fork.html">Continue Woodland Trail</a><a href="ranger-station.html">Ranger Station</a></div></details><details><summary>LIVE CAMERAS</summary>
         <div class="submenu">
-          <a href="east-bank.html">East Bank</a>
-          <a href="the-roost.html">The Roost</a>
+          <a href="adventure-east-bank.html">East Bank</a>
+          <a href="adventure-roost.html">The Roost</a>
           <a href="west-bank.html">West Bank</a>
           <a href="south-hill.html">South Hill</a>
           <a href="infrared-camera.html">Infrared / Night Vision</a>
@@ -196,7 +196,7 @@ c.addEventListener('pointerup',e=>{
   const deer=tap&&!bird&&!hen&&onEastBankDeer(e.clientX,e.clientY);
   const camp=tap&&!bird&&!hen&&!deer&&onBaseCamp(e.clientX,e.clientY);
   pointers.delete(e.pointerId);distance=0;
-  if(squirrel||bird||hen||deer||camp){pointers.clear();const url=squirrel?'squirrel.html':bird?'bird.html':hen?'the-roost.html':deer?'east-bank.html':'index.html';
+  if(squirrel||bird||hen||deer||camp){pointers.clear();const url=squirrel?'squirrel.html':bird?'bird.html':hen?'adventure-roost.html':deer?'adventure-east-bank.html':'adventures.html';
     if(window.WVLRPTravel?.go)window.WVLRPTravel.go({url,from:{yaw,pitch,fov},to:squirrel?{yaw:Math.PI*2*.95,pitch:-.55,fov:Math.max(.52,fov*.78)}:bird?{yaw:Math.PI*2*.253,pitch:.18,fov:Math.max(.52,fov*.78)}:hen?{yaw:Math.PI*2*.72334,pitch:Math.PI*(.5-.57858),fov:Math.max(.52,fov*.78)}:deer?{yaw:Math.PI*2*.46,pitch:Math.PI*(.5-.507),fov:Math.max(.52,fov*.78)}:{yaw:0.44,pitch:0.09,fov:Math.max(.52,fov*.78)},render:state=>{yaw=state.yaw;pitch=state.pitch;fov=state.fov;draw();}});
     else location.href=url;
   }

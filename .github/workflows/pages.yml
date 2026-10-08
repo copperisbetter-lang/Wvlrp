@@ -75,7 +75,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
+          p = Path('adventures.html')
           s = p.read_text()
           nav_link = '<a href="lounge.html">★ Lounge</a>'
           if nav_link not in s:
@@ -90,7 +90,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('the-roost.html')
+          p = Path('adventure-roost.html')
           s = p.read_text()
           tag = '<script src="roost-life.js?v=3"></script>'
           if tag not in s:
