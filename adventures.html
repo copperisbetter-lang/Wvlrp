@@ -9,7 +9,16 @@
 #wvHomeAccount{font-family:inherit}
 .wv-auth-pill{display:none!important}
 
-header{left:0;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}</style></head><body><canvas id="scene" aria-label="Drag to explore campsite; tap the woodland sign to open Woodland Trail; pinch or scroll to zoom" tabindex="0"></canvas><header><strong>WVLRP</strong><small>West Virginia Live Research Project · Adventures</small>  <div class="menu-wrap">
+header{left:0;right:0;z-index:40;display:flex;justify-content:space-between;pointer-events:none;padding-right:20px}.site-menu{left:auto;bottom:auto;transform:none;max-height:80vh;overflow:auto}.menu{min-height:44px}.submenu a,.submenu button{min-height:44px}header small{max-width:65vw}@media(max-width:600px){header strong{font-size:24px}header small{font-size:10px}}#hint{transition:opacity .5s}
+header{align-items:flex-start;gap:12px;padding-left:20px}
+.site-brand{min-width:0;flex:1}
+.site-brand strong,.site-brand small{display:block}
+.menu-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.back-home{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid rgba(255,255,255,.48);border-radius:999px;background:rgba(1,15,10,.78);color:#fff;text-decoration:none;text-shadow:0 1px 3px #000;font:800 14px/1 sans-serif;letter-spacing:.025em;white-space:nowrap;backdrop-filter:blur(8px)}
+.back-home:hover,.back-home:focus-visible{background:rgba(26,68,48,.95);outline:2px solid #c9f2d2;outline-offset:2px}
+@media(max-width:600px){header{gap:6px;padding-left:12px;padding-right:12px}.menu-wrap{gap:6px}.back-home{padding:9px 11px;font-size:13px}.menu{padding:8px 10px;font-size:12px}.site-brand small{font-size:10px;line-height:1.2}}
+</style></head><body><canvas id="scene" aria-label="Drag to explore campsite; tap the woodland sign to open Woodland Trail; pinch or scroll to zoom" tabindex="0"></canvas><header><div class="site-brand"><strong>WVLRP</strong><small>West Virginia Live Research Project · Adventures</small></div><div class="menu-wrap">
+    <a class="back-home" href="index.html" aria-label="Return to WVLRP homepage">← Home</a>
     <button class="menu" id="siteMenuButton" type="button" aria-expanded="false">☰ MENU</button>
     <nav class="site-menu" id="siteMenu" aria-label="WVLRP menu">
       <details>
