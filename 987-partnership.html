@@ -39,6 +39,24 @@ body{background:#081914}header{position:relative}.label,.eyebrow,.number{font-si
 @media(max-width:700px){.hero{padding-top:28px}.hero h1{font-size:48px}.hero-lead{font-size:18px}.label{font-size:12px;letter-spacing:.03em}.contest-feature{grid-template-columns:1fr;gap:28px}.contest-feature h2{font-size:64px}.contest{padding:24px}.crew-grid{grid-template-columns:1fr 1fr}.crew-card strong{font-size:22px}.hero .primary{width:100%}.preview-bottom h3{font-size:27px}.preview img{height:220px}.package{gap:32px}#radioControls{bottom:166px}#radioControls a{font-size:12px}}
 @media(max-width:380px){.crew-grid{grid-template-columns:1fr}.preview-bottom .partner-logo{height:90px}.preview-bottom .roost-emblem{width:113px}.preview-bottom .mountain-emblem{width:128px}}
 @media(max-height:550px){#experienceDialog .partner-logo{height:90px}#experienceDialog .roost-emblem{width:113px}#experienceDialog .mountain-emblem{width:128px}#radioControls{bottom:94px}#experienceDialog .demo-bottom #demoContest{width:auto;min-height:44px;font-size:14px}}
+
+/* Readable partner branding and bottom copy on phones and desktops. */
+.label,.eyebrow,.number,.caption,.note,.station-kicker{font-size:16px;color:#f0d69b;letter-spacing:.035em}
+footer{font-size:18px;line-height:1.7;color:#e6eee8;padding:28px 22px;background:#10271f;border-top:1px solid #e1c17a66}
+.crew-card .number,.crew-card span,.prize-strip small{font-size:16px}
+#experienceDialog .demo-disclaimer{position:absolute;left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));padding:10px 14px;margin:0;background:#071b14f5;border:1px solid #e0c17a88;border-radius:8px;font-size:18px;line-height:1.4;color:#fff;text-align:center;text-shadow:none}
+#experienceDialog .demo-bottom{bottom:calc(76px + env(safe-area-inset-bottom))}
+#radioControls{bottom:calc(155px + env(safe-area-inset-bottom));font-size:16px}
+#radioControls a{font-size:16px}
+@media(max-width:700px){
+.label{font-size:14px}
+#experienceDialog .demo-disclaimer{left:8px;right:8px;font-size:16px;line-height:1.4;padding:9px 10px}
+#experienceDialog .demo-bottom{bottom:calc(82px + env(safe-area-inset-bottom))}
+#experienceDialog .demo-bottom a,#experienceDialog .demo-bottom button{font-size:16px}
+#radioControls{bottom:calc(224px + env(safe-area-inset-bottom));font-size:16px}
+#radioControls a{font-size:16px}
+}
+@media(max-height:550px){#experienceDialog .demo-disclaimer{font-size:16px;padding:6px 10px}#experienceDialog .demo-bottom{bottom:58px}#radioControls{bottom:115px;padding:6px 10px}}
 </style><script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script></head><body>
 <header><a class="brand" href="index.html">WVLRP</a><span class="label">98.7 partnership proposal</span></header>
 <main>
