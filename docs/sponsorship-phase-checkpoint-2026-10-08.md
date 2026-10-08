@@ -40,6 +40,18 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 
 > WVLRP is more than live wildlife viewing. We're building a large, continuously evolving interactive 3D online adventure game connected to our real-world wildlife experiences. Visitors can explore immersive environments and, as development progresses, take part in quests, discover hidden clues and new destinations, and return as the world grows. That opens the door for sponsor logos, products, and brand tie-ins to appear in fitting games, quests, clues, and activities — creating memorable encounters rather than relying only on banner ads. **WVLRP is currently in soft launch, ahead of its full public debut.**
 
+## NEW Tier 4 — exclusive sitewide discovery partner (one sponsor ONLY)
+
+- **Topmost tier: Tier 4 is a single, exclusive sitewide sponsorship slot. Only ONE brand can hold Tier 4 at any time.**
+- **Discoverable on every WVLRP page**, even pages branded/presented by another sponsor. The Tier 4 partner appears in some shape, form, or context: an in-world object or logo, trail sign, equipment, clue, note, shop discovery, or tasteful visible mark. A viewer looking around sufficiently should be able to find the partner.
+- **Tier 4 does not displace existing main sponsors:** East Bank can still spotlight Moses and The Roost can still prominently feature 98.7. The Tier 4 sponsor is a distinct, secondary sitewide discovery presence on those pages, without taking over their contracted page sponsorship.
+- **Tier 4 includes Tier 2+ eligibility for relevant quest/game appearances**, plus sitewide discoverability. Tier 2+ may still appear in appropriate quests; Tier 1 does not automatically receive game integration.
+- Visitors should encounter sponsor clues **naturally through exploration**, not through annoying popups or a blanket overlaid logo. Both web page content and the 3D/360° world count toward full-site coverage.
+- **New pages must also include a Tier 4 placement by default** once the tier is actually sold; maintain a page checklist and central sponsor configuration. Do not place a real brand without a signed agreement and appropriate creative permissions.
+- Exclusivity is specific to the **one Tier 4 slot**, not blanket control of WVLRP, The Roost, East Bank, every quest, or all ad inventory. Pricing, contract term, measurable deliverables and creative approvals remain to be determined.
+- **No Tier 4 sponsor has been awarded. WVLRP is still soft-launched, not publicly launched.** Do not imply an active sitewide sponsor in live pages or pitches.
+- Detailed implementation and sales definition: [Tier 4 sitewide sponsorship specification](sponsorship-tier-4-sitewide-2026-10-08.md).
+
 ## The Roost — strategic sponsorship rules (agreed)
 
 - The Roost is expected to be one of WVLRP's most frequently visited destinations because the chickens provide recurring activity throughout the day. This is a **hypothesis**, not a measured traffic claim yet.
@@ -71,7 +83,7 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 
 1. Update **every prospective-sponsor presentation** with prominent **soft-launch / not-publicly-launched language** AND a convincing, accurately staged introduction to the **large evolving interactive 3D game**.
 2. Revise the **98.7 proposal** to retain exciting branding while explicitly keeping the Roost open to major additional sponsors.
-3. Design a scalable, tasteful hierarchy and rights language for **radio partner + large investors + supporting sponsors** on the Roost.
+3. Design a scalable, tasteful hierarchy and rights language for **radio partner + large investors + supporting sponsors**, PLUS the **one exclusive Tier 4 sitewide discovery partner** without obscuring existing page sponsors.
 4. Continue polishing and testing the **Moses East Bank** example so the dealership's name, message, and buttons cannot be overlooked.
 5. Keep separate measured outcomes from plans/projections; prepare sponsor-ready analytics and honest prelaunch messaging.
 6. Treat these as **agreed planning decisions**, not sponsor contracts, verified deployments, or rights already granted.
