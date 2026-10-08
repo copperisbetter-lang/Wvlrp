@@ -22,7 +22,16 @@
     if(this.busy)return;this.busy=true;veil.style.pointerEvents='auto';veil.style.transition='none';
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,duration=reduced?180:1400,start=performance.now();
     const delta=Math.atan2(Math.sin(to.yaw-from.yaw),Math.cos(to.yaw-from.yaw));
-    const nextImage=new Image();nextImage.src=url==='index.html'?'assets/base-camp-4k.webp?v=20261006-cleared-stump':'assets/woodland-trail-hd.webp?v=20261006-1';
+    const nextImage=new Image();
+    const destination=url.split('?')[0].split('#')[0];
+    const preloads={
+      'index.html':'assets/base-camp-4k.webp?v=20261006-cleared-stump',
+      'woodland-trail.html':'assets/woodland-trail-hd.webp?v=20261006-1',
+      'west-hills.html':'assets/west-hills-360-approved.webp?v=20261007-approved',
+      'west-hills-v2.html':'assets/west-hills-360-approved.webp?v=20261007-approved',
+      'woodland-fork.html':'assets/woodland-fork-v1.webp'
+    };
+    if(preloads[destination])nextImage.src=preloads[destination];
     fetch(url,{cache:'force-cache'}).catch(()=>{});if(!reduced)ambience(duration/1000+.2);
     function tick(now){
       const t=Math.min(1,(now-start)/duration),ease=t*t*(3-2*t);
