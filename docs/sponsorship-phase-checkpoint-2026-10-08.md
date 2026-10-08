@@ -22,6 +22,19 @@ Keep this prominent and readable in each proposed-sponsor experience, not hidden
 - The long-term value proposition is repeat visits, cross-traffic between the game world and wildlife pages, deeper engagement, and more potential sponsor touchpoints. These are **future opportunities**, not promises or measured results.
 - Present the combination clearly: **real live West Virginia wildlife + immersive exploration + a large evolving 3D online game + sponsor-integrated experiences**. **Full public launch has not occurred.**
 
+### Moses AutoMall — original lost-keys quest sponsorship concept (October 7)
+
+**Use this specific previously discussed idea instead of inventing generic Moses vehicles as the lead sponsor example.** The ranger's missing keys include a **Moses AutoMall-branded key fob**. Players encounter and recognize the Moses logo while genuinely solving the mystery, so the branding is part of a meaningful discovery, not a banner ad.
+
+There were related **but distinct** game ideas discussed; preserve their distinctions until implementation decisions are final:
+
+- **Lost gate keys / longer clue-chain concept:** A locked woodland trail tells visitors the ranger lost the keys. A ranger note describes routes through the camera stops, Base Camp, and woodlands. Reading it starts a sequential footprint/clue trail; following the evidence leads to the hidden keys beneath a particular leaf. Random clicking cannot bypass the clues. Recovering keys opens access to new terrain for that individual player's account; onlookers can see a gate open, but do not inherit access.
+- **The Ranger's Missing Keys — accepted short quest:** The ranger lost keys while fixing a trail sign. Search clues around the picnic table, a trail fork and creek; return the key ring, then learn a spare key on the ring opens a previously blocked path. This quest was described as around **15 minutes**; progress persists as designed.
+- **Moses key-fob integration:** The user explicitly wants the lost keys to display a **Moses AutoMall key fob** as a sponsorship tie-in. An earlier proposed sponsor Easter egg separately showed realistic **car keys with a Moses key fob on the Base Camp campsite stump**; do not silently combine this stump placement with the sequential clue-chain's leaf hiding spot. Decide the final placement and which key quest to integrate when designing implementation.
+- **Fairness:** Base key-finding quests should remain solvable without paying; the earlier subscription idea proposed extra *helpful hints* (e.g. eight vs five), not exclusive required evidence or locked progress.
+
+**Suggested sponsor-facing example:** “Picture a visitor helping the ranger find his lost keys. As players follow clues through our immersive world, they discover the missing key ring — complete with a Moses AutoMall key fob. The branded object becomes part of the adventure, and recovering the keys helps open a previously locked trail.” Label this an **illustrative proposed in-game placement**, not an implemented sponsor agreement.
+
 ### Standard sponsor-facing game message
 
 > WVLRP is more than live wildlife viewing. We're building a large, continuously evolving interactive 3D online adventure game connected to our real-world wildlife experiences. Visitors can explore immersive environments and, as development progresses, take part in quests, discover hidden clues and new destinations, and return as the world grows. That opens the door for sponsor logos, products, and brand tie-ins to appear in fitting games, quests, clues, and activities — creating memorable encounters rather than relying only on banner ads. **WVLRP is currently in soft launch, ahead of its full public debut.**
