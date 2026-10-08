@@ -51,8 +51,8 @@ function pointerMove(e){
  if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>6)moved=true;
  pointers.set(e.pointerId,[e.clientX,e.clientY]);
  if(pointers.size===1){
-  yaw-=(e.clientX-prev[0])*.00045*fov;
-  pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.00045*fov));
+  yaw-=(e.clientX-prev[0])*.000675*fov;
+  pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.000675*fov));
  }else{
   moved=true;
   const d=pinchDistance();
