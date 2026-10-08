@@ -21,6 +21,7 @@ body{background:#16251b}
 <header><div><strong>WVLRP</strong><small>West Virginia Live Research Project</small></div>
 <button id="menuButton" aria-expanded="false" aria-controls="menu" type="button">☰ MENU</button>
 <nav id="menu" class="menu" hidden aria-label="West Hills menu">
+<a href="community.html?v=20261007-community-arrival">Community clearing</a>
 <a href="woodland-trail.html">Woodland Trail</a>
 <a href="index.html">Base Camp</a>
 </nav></header>
@@ -40,12 +41,12 @@ body{background:#16251b}
 <script src="trail-transitions.js?v=20261006-1"></script>
 <script>
 // The natural wooden signs are ALREADY PART OF the approved panorama.
-// These spots are invisible hit areas over the two future destinations.
-// Ranger Station on the left is intentionally an unlinked, photographed sign.
+// Invisible hit areas follow the photographed signs and preserve trail transitions.
 window.RANGER_SCENE={
   image:'assets/west-hills-woodland-return.webp?v=20261007-return-fixed',
   startU:.507,pitch:.1,
   spots:[
+    {label:'Ranger Station — follow the left trail',u:.246,v:.434,width:.100,height:.060,url:'community.html?v=20261007-community-arrival'},
     {label:'Woodland — return along the trail',u:.054,v:.449,width:.076,height:.053,url:'woodland-trail.html'},
     {label:'West Hills — follow the center trail',u:.510,v:.387,width:.077,height:.088,id:'west-hills-ahead'},
     {label:'Stacey Lake — follow the right trail',u:.743,v:.427,width:.083,height:.080,url:'stacey-lake.html'}
