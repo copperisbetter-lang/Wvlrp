@@ -51,7 +51,7 @@
     e.preventDefault();let state=window.WVLRP_QUEST_VIEW();
     window.WVLRPTravel.go({url:'west-hills.html',from:state,
       to:{yaw:u*2*Math.PI,pitch:(.5-v)*Math.PI,fov:Math.max(.65,state.fov*.78)},
-      render:()=>{}});
+      render:next=>window.WVLRP_SET_VIEW?.(next)});
   });
   requestAnimationFrame(place);
 })();
