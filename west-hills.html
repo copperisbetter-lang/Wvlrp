@@ -14,10 +14,10 @@ body{background:#132218}
   background:repeating-linear-gradient(174deg,transparent 0 4px,#160e0830 5px 6px,transparent 7px 14px),
     linear-gradient(180deg,#795b3b 0%,#705031 39%,#4d3521 100%)!important;
   text-shadow:0 1px 2px #000,1px 0 #24190f;white-space:normal;cursor:pointer;
-  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%);
+  clip-path:none;
 }
-.wooden-wayfinding[data-arrow="←"]{clip-path:polygon(10px 0,100% 0,100% 100%,10px 100%,0 50%);padding-right:9px!important;padding-left:19px!important}
-.wooden-wayfinding[data-arrow="↑"]{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.wooden-wayfinding[data-arrow="←"]{clip-path:none;padding-right:9px!important;padding-left:19px!important}
+.wooden-wayfinding[data-arrow="↑"]{clip-path:none}
 .wooden-wayfinding:before{content:"";position:absolute;z-index:-1;left:47%;top:91%;height:80px;width:12px;transform:rotate(1deg);border:1px solid #291d11;background:repeating-linear-gradient(90deg,#49311c 0 2px,#785432 4px 7px,#3d2b19 11px);box-shadow:3px 5px 6px #0008}
 .wooden-wayfinding:after{content:attr(data-arrow);position:absolute;right:5px;top:50%;transform:translateY(-55%);font:bold 22px Georgia,serif;color:#e2c68d;text-shadow:0 1px 2px #161009}
 .wooden-wayfinding[data-arrow="←"]:after{left:4px;right:auto}
@@ -52,9 +52,9 @@ window.RANGER_SCENE={
  prepareImage:window.WVLRPBuildWestHills,
  startU:.5,pitch:-.045,
  spots:[
-  {label:'Ranger Station — sign only, not an active trail link',sign:'RANGER STATION',arrow:'←',u:.415,v:.493,width:.057,height:.043},
+  {label:'Ranger Station — sign only, not an active trail link',sign:'RANGER STATION',arrow:'←',u:.435,v:.493,width:.057,height:.043},
   {label:'West Hills — path ahead',sign:'WEST HILLS',arrow:'↑',u:.5,v:.47,width:.056,height:.043,id:'west-hills-ahead'},
-  {label:'Stacey Lake — right fork',sign:'STACEY LAKE',arrow:'→',u:.585,v:.495,width:.055,height:.043,id:'stacey-lake'}
+  {label:'Stacey Lake — right fork',sign:'STACEY LAKE',arrow:'→',u:.565,v:.495,width:.055,height:.043,id:'stacey-lake'}
  ]};
 window.rangerOpen=function(id){
  const dlg=document.getElementById('trailNotice');
@@ -65,7 +65,7 @@ window.rangerOpen=function(id){
  if(typeof dlg.showModal==='function')dlg.showModal();
 };
 document.getElementById('menuButton').onclick=()=>{const m=document.getElementById('menu');m.hidden=!m.hidden;document.getElementById('menuButton').setAttribute('aria-expanded',String(!m.hidden))};
-document.getElementById('back').onclick=()=>window.rangerTravel?.('woodland-trail.html?view=deer',.46,.5);
+document.getElementById('back').onclick=()=>window.rangerTravel?.('woodland-trail.html',.46,.5);
 document.getElementById('faceFork').onclick=()=>window.rangerFace?.(.5,.5);
 setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0'},8500);
 </script>
