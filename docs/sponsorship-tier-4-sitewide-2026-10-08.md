@@ -43,6 +43,12 @@
 - Protect the user experience: don't block gameplay, camera feeds, interactive controls, accessibility or natural imagery. Provide accessible descriptions and mobile-friendly interaction for meaningful clickable placements.
 - Treat external sponsor logos, trademarks, products, promotions, prizes and links as requiring relevant permissions, negotiated creative approval and commercial disclosure.
 
+### Every page remains sponsorable at any tier
+
+**The tier controls promotional class and benefits, not access to page inventory.** Every WVLRP page — including destinations with a high-tier presenting sponsor — can host eligible Tier 1, Tier 2, Tier 3 and the single Tier 4 sponsor simultaneously, subject to fit, placement capacity, and written commitments. For instance, the Roost may feature 98.7 prominently while also offering smaller local sponsorship slots and carrying the Tier 4 sponsor's discoverable brand; East Bank can highlight Moses without excluding other approved sponsors.
+
+Higher tiers get larger/more premium visual presentation, more extensive exposure, richer promotions and eligible quest/game tie-ins. An individually negotiated presenting position does not automatically grant blanket page exclusivity. **Tier 4 alone retains its separate one-holder exclusivity and its guaranteed brand/logo representation on every page and in all relevant games and quests.** Avoid crowding the scene or diminishing a sponsor's specifically contracted featured presentation.
+
 ## Delivery and accountability
 
 - **Maintain a page-by-page GUARANTEED Tier 4 logo/brand-presentation checklist** for all existing pages, including pages led by another sponsor. Every newly published page must carry an approved, discoverable Tier 4 treatment. No page may be omitted without a separately negotiated written exception.
