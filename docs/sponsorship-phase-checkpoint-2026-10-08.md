@@ -52,6 +52,14 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 - **No Tier 4 sponsor has been awarded. WVLRP is still soft-launched, not publicly launched.** Do not imply an active sitewide sponsor in live pages or pitches.
 - Detailed implementation and sales definition: [Tier 4 sitewide sponsorship specification](sponsorship-tier-4-sitewide-2026-10-08.md).
 
+## Sponsorship pitch targeting: Tier 4 for large proposals, NOT mom-and-pops (October 8 decision)
+
+- **Present the exclusive Tier 4 option in EVERY proposal for a major prospective sponsor** (national brands, large regional companies, sizeable dealerships and major media/strategic partners). Examples: Moses AutoMall, the extensive 98.7 The Mountain proposal, and future Cabela's / Bass Pro-type pitches.
+- Lead with each company's relevant page/partnership package, then make the **optional Tier 4 upgrade** unmistakably available. It has a mandatory two-year commitment, one-holder exclusivity, **proposed $80K–$120K annually**, guaranteed logos and branding on every page, and guaranteed integration into all relevant games/quests.
+- **Do not include the high-cost Tier 4 pitch in standard mom-and-pop, local restaurant, or other small-business sponsorship proposals**; focus on practical lower tiers. The aim is to avoid discouraging those potential partners.
+- Keep pricing, rights, coverage, and soft-launch disclosure honest and distinct; Tier 4 is neither bundled automatically with Tier 3 nor signed or active yet. Once someone holds Tier 4, stop pitching it as available.
+- This is a **sales/proposal targeting decision**. It does not add a real Tier 4 sponsor to the public site; do not implement uncontracted branding.
+ 
 ## The Roost — strategic sponsorship rules (agreed)
 
 - The Roost is expected to be one of WVLRP's most frequently visited destinations because the chickens provide recurring activity throughout the day. This is a **hypothesis**, not a measured traffic claim yet.
