@@ -1,73 +1,70 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#132218"><title>West Hills — WVLRP</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15251b">
+<title>West Hills — WVLRP</title>
 <link rel="stylesheet" href="ranger-station.css?v=5">
 <style>
-body{background:#132218}
-.wooden-wayfinding{
-  overflow:visible!important;color:#eee3c6!important;
-  font:700 clamp(12px,1.55vw,20px)/1.15 Georgia,serif!important;
-  text-align:center;letter-spacing:.025em;
-  padding:6px 20px 8px 13px!important;
-  border:2px solid #342516!important;border-radius:2px!important;
-  box-shadow:inset 0 1px 1px #d0ac7466,inset 0 -5px 7px #23140788,0 4px 9px #000b!important;
-  background:repeating-linear-gradient(174deg,transparent 0 4px,#160e0830 5px 6px,transparent 7px 14px),
-    linear-gradient(180deg,#795b3b 0%,#705031 39%,#4d3521 100%)!important;
-  text-shadow:0 1px 2px #000,1px 0 #24190f;white-space:normal;cursor:pointer;
-  clip-path:none;
-}
-.wooden-wayfinding[data-arrow="←"]{clip-path:none;padding-right:9px!important;padding-left:19px!important}
-.wooden-wayfinding[data-arrow="↑"]{clip-path:none}
-.wooden-wayfinding:before{content:"";position:absolute;z-index:-1;left:47%;top:91%;height:80px;width:12px;transform:rotate(1deg);border:1px solid #291d11;background:repeating-linear-gradient(90deg,#49311c 0 2px,#785432 4px 7px,#3d2b19 11px);box-shadow:3px 5px 6px #0008}
-.wooden-wayfinding:after{content:attr(data-arrow);position:absolute;right:5px;top:50%;transform:translateY(-55%);font:bold 22px Georgia,serif;color:#e2c68d;text-shadow:0 1px 2px #161009}
-.wooden-wayfinding[data-arrow="←"]:after{left:4px;right:auto}
-.wooden-wayfinding[data-arrow="↑"]:after{left:calc(50% - 10px);right:auto;top:-17px;text-shadow:0 1px 5px #000}
-.wooden-wayfinding:disabled{opacity:1!important;cursor:default}
-.wooden-wayfinding:not(:disabled):hover,.wooden-wayfinding:not(:disabled):focus-visible{filter:brightness(1.2)}
-#hint{bottom:68px}
+body{background:#16251b}
+#hint{bottom:76px}
 .tools{bottom:max(14px,env(safe-area-inset-bottom))}
 #trailNotice{max-width:420px}
 #trailNotice::backdrop{background:#07120ac9}
 #trailNotice p{font-size:17px}
-@media(max-width:600px){.wooden-wayfinding{font-size:11px!important;padding-left:11px!important;padding-right:12px!important}.wooden-wayfinding:after{font-size:15px}}
-</style></head><body>
-<canvas id="scene" tabindex="0" aria-label="Explore the West Hills 360-degree woodland junction. There are three paths: Ranger Station on the left, West Hills ahead, and Stacey Lake on the right."></canvas>
+@media(max-width:600px){header small{font-size:10px}}
+</style>
+</head>
+<body>
+<canvas id="scene" tabindex="0" aria-label="Explore the West Hills forest in 360 degrees. There are three separate paths in the woods, with natural wooden signs for Ranger Station to the left, West Hills straight ahead, and Stacey Lake to the right. Drag to look around or pinch to zoom."></canvas>
 <header><div><strong>WVLRP</strong><small>West Virginia Live Research Project</small></div>
-<button id="menuButton" aria-expanded="false" aria-controls="menu">☰ MENU</button>
-<nav class="menu" id="menu" hidden aria-label="Woodland destinations">
-<a href="woodland-trail.html?view=deer">Woodland Trail</a><a href="woodland-fork.html">Ranger Station approach</a><a href="index.html">Base Camp</a>
+<button id="menuButton" aria-expanded="false" aria-controls="menu" type="button">☰ MENU</button>
+<nav id="menu" class="menu" hidden aria-label="West Hills menu">
+<a href="woodland-trail.html">Woodland Trail</a>
+<a href="index.html">Base Camp</a>
 </nav></header>
 <div id="sceneMessage">Opening West Hills…</div>
-<div id="hint">Drag to explore the three paths · Pinch or scroll to zoom</div>
-<div class="tools"><button id="back" type="button">Back to Woodland Trail</button>
-<button id="faceFork" type="button">Face the crossroads</button></div>
-<dialog id="trailNotice"><button class="close" aria-label="Close notice" onclick="this.closest('dialog').close()">×</button>
+<div id="hint">Drag to look around · Discover the three forest paths</div>
+<div class="tools" aria-label="West Hills controls">
+<button id="back" type="button">Back to Woodland Trail</button>
+<button id="faceFork" type="button">Face the crossroads</button>
+<button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+<button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+</div>
+<dialog id="trailNotice">
+<button type="button" class="close" aria-label="Close notice" onclick="this.closest('dialog').close()">×</button>
 <h2 id="noticeTitle">Trail ahead</h2><p id="noticeText"></p>
-<button type="button" onclick="this.closest('dialog').close()">Continue exploring</button></dialog>
+<button type="button" onclick="this.closest('dialog').close()">Continue exploring</button>
+</dialog>
 <script src="trail-transitions.js?v=20261006-1"></script>
-<script src="west-hills-panorama.js?v=1"></script>
 <script>
+// The natural wooden signs are ALREADY PART OF the approved panorama.
+// These spots are invisible hit areas over the two future destinations.
+// Ranger Station on the left is intentionally an unlinked, photographed sign.
 window.RANGER_SCENE={
- image:'assets/woodland-trail-hd.webp?v=20261006-1',
- prepareImage:window.WVLRPBuildWestHills,
- startU:.5,pitch:-.045,
- spots:[
-  {label:'Ranger Station — sign only, not an active trail link',sign:'RANGER STATION',arrow:'←',u:.435,v:.493,width:.057,height:.043},
-  {label:'West Hills — path ahead',sign:'WEST HILLS',arrow:'↑',u:.5,v:.47,width:.056,height:.043,id:'west-hills-ahead'},
-  {label:'Stacey Lake — right fork',sign:'STACEY LAKE',arrow:'→',u:.565,v:.495,width:.055,height:.043,id:'stacey-lake'}
- ]};
-window.rangerOpen=function(id){
- const dlg=document.getElementById('trailNotice');
- document.getElementById('noticeTitle').textContent=id==='stacey-lake'?'Stacey Lake':'West Hills trail';
- document.getElementById('noticeText').textContent=id==='stacey-lake'
- ?'The trail toward Stacey Lake is marked. Its next scene has not opened yet.'
- :'The West Hills trail continues straight ahead. The next section is still being prepared.';
- if(typeof dlg.showModal==='function')dlg.showModal();
+  image:'assets/west-hills-360-approved.webp?v=20261007-approved',
+  startU:.507,pitch:.1,
+  spots:[
+    {label:'West Hills — follow the center trail',u:.510,v:.387,width:.077,height:.088,id:'west-hills-ahead'},
+    {label:'Stacey Lake — follow the right trail',u:.743,v:.427,width:.083,height:.080,id:'stacey-lake'}
+  ]
 };
-document.getElementById('menuButton').onclick=()=>{const m=document.getElementById('menu');m.hidden=!m.hidden;document.getElementById('menuButton').setAttribute('aria-expanded',String(!m.hidden))};
-document.getElementById('back').onclick=()=>window.rangerTravel?.('woodland-trail.html',.46,.5);
-document.getElementById('faceFork').onclick=()=>window.rangerFace?.(.5,.5);
-setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0'},8500);
+window.rangerOpen=id=>{
+  const dlg=document.getElementById('trailNotice');
+  document.getElementById('noticeTitle').textContent=id==='stacey-lake'?'Stacey Lake':'West Hills trail';
+  document.getElementById('noticeText').textContent=id==='stacey-lake'
+    ?'The right-hand trail toward Stacey Lake has been marked. The next scene is coming later.'
+    :'The West Hills path continues into the woods ahead. The next scene is coming later.';
+  dlg.showModal?.();
+};
+const menuButton=document.getElementById('menuButton'),menu=document.getElementById('menu');
+menuButton.onclick=()=>{menu.hidden=!menu.hidden;menuButton.setAttribute('aria-expanded',String(!menu.hidden))};
+document.getElementById('back').onclick=()=>{if(window.rangerTravel)window.rangerTravel('woodland-trail.html',.46,.5);else location.assign('woodland-trail.html')};
+document.getElementById('faceFork').onclick=()=>window.rangerFace?.(.507,.42);
+document.getElementById('zoomOut').onclick=()=>window.rangerZoom?.(.13);
+document.getElementById('zoomIn').onclick=()=>window.rangerZoom?.(-.13);
+setTimeout(()=>{document.getElementById('hint').style.opacity='0'},8500);
 </script>
 <script src="ranger-scene.js?v=3"></script>
 <script src="site-auth.js?v=20260916-menu2"></script>
