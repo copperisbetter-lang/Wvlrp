@@ -19,11 +19,18 @@
 - **Ranger Station / quests:** items, clues, correspondence, sponsor-themed discoveries, badges, and appropriate quest interactions.
 - **Community, game, sponsor and information pages:** intentional visual or contextual sponsor footprint designed for the page rather than copied generic floating ad.
 
+## Proposed Tier 4 investment range (October 8, 2026)
+
+- **Tier 4 target price range: $80,000–$120,000 per year**, for the sole exclusive sitewide sponsor. This is a **proposed rate range**, not a final quote or a signed agreement.
+- **Required 24-month term: $160,000–$240,000 total** at those annual rates over two years, before any separate negotiated extras. Do not present that as a one-year price.
+- **The price range is proposed; the final annual rate, payment cadence, deposits, due dates, and any other financial conditions remain to be negotiated.** The two-year commitment itself is mandatory.
+- Position this tier as an exclusive, high-value package with guaranteed logo/brand presentation on all WVLRP pages and in all relevant quests and games. As WVLRP has only soft-launched, do not claim a verified audience size, traffic forecast, or return on investment to justify the rate.
+
 ## Mandatory two-year payment plan (approved October 8, 2026)
 
 - **Tier 4 is available only on a two-year (24-month) sponsorship payment plan and commitment.** It cannot be held on month-to-month terms, a one-year agreement, or any shorter sponsorship plan.
 - The single exclusive Tier 4 sitewide position is reserved for that sponsor during the agreed two-year term, subject to the signed agreement and compliance with payment obligations.
-- **Do not invent a price, deposit, installments, due dates, financing terms, renewal terms, or cancellation policy.** These remain to be negotiated and written into the sponsor agreement before sale.
+- **The proposed annual price range is $80,000–$120,000; do not invent an agreed final price**, deposit, installments, due dates, financing terms, renewal terms, or cancellation policy. Those details must be negotiated and written into the sponsor agreement before sale.
 - A two-year plan describes the required duration and payment-plan structure; whether installments are monthly, quarterly, or otherwise is **not decided yet**.
 - This restriction applies to **Tier 4 only**, not the standard payment options for Tiers 1–3. No Tier 4 sponsor has yet been awarded.
 
@@ -43,10 +50,10 @@
 - **Maintain a game-and-quest integration checklist** documenting every relevant game/quest and its promised Tier 4 logo/brand appearance. Relevance and creative format are agreed with the sponsor; all relevant games and quests must be covered as a contractual guarantee. Placements can vary (including context-driven puzzles), but cannot silently disappear.
 - For measurable promises, define how sponsor impressions, interactions, clicks and game engagements are counted, subject to privacy and platform limitations. Do not guarantee unmeasured audiences or outcomes.
 - A single configuration for the current Tier 4 sponsor and agreement dates should drive all integrated marks so a sponsor change can be managed systematically; no Tier 4 brand should be hardcoded before a deal is approved.
-- Pricing, payment installment cadence, exact creative and activation milestones remain to be documented, not invented. **The non-negotiable Tier 4 base deliverables are logo/brand presentation on EVERY page and in ALL relevant quests and games, one Tier 4 holder, and a two-year payment plan**; any written exception must be made explicit before signing.
+- Final price within the proposed $80,000–$120,000 yearly range, payment installment cadence, exact creative and activation milestones remain to be documented, not invented. **The non-negotiable Tier 4 base deliverables are logo/brand presentation on EVERY page and in ALL relevant quests and games, one Tier 4 holder, and a two-year payment plan**; any written exception must be made explicit before signing.
 
 ## Sample sponsor-facing offer
 
-> **Tier 4 — Exclusive Sitewide & Interactive Adventure Partner (one available).** Your company receives **guaranteed logo and brand presentation on every WVLRP page and in all relevant games and quests**. Visitors can discover your identity across live wildlife destinations, immersive trails, mysteries, community buildings and even locations led by other sponsors. Other page sponsors keep their featured positions, while your recognizable brand is woven throughout the larger adventure. **Only one Tier 4 sponsor may hold this package, and it requires a two-year payment plan.** WVLRP remains in soft launch; this is a proposed future contractual offer, not an active endorsement or already-deployed sponsorship.
+> **Tier 4 — Exclusive Sitewide & Interactive Adventure Partner (one available).** Your company receives **guaranteed logo and brand presentation on every WVLRP page and in all relevant games and quests**. Visitors can discover your identity across live wildlife destinations, immersive trails, mysteries, community buildings and even locations led by other sponsors. Other page sponsors keep their featured positions, while your recognizable brand is woven throughout the larger adventure. **Only one Tier 4 sponsor may hold this package, with proposed pricing of $80,000–$120,000 per year ($160,000–$240,000 over the required two-year payment plan).** WVLRP remains in soft launch; this is a proposed future contractual offer, not an active endorsement or already-deployed sponsorship.
 
 **Core principle:** exclusive Tier 4 access is enormously valuable precisely because it is scarce; do not give away blanket Tier 4 coverage as an incidental benefit to lower tiers.
