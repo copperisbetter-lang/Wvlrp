@@ -93,6 +93,20 @@ There were related **but distinct** game ideas discussed; preserve their distinc
 - **Do not confuse illustrative high-value sponsor tiers (e.g., $60K/year discussed as a possibility) with an agreed contract or the East Bank preview's existing illustrative rate.** Terms, rights, audience claims, and deliverables are negotiable and cannot be represented as signed.
 - Mobile and desktop presentation both matter; test typography, visibility, controls, immersive navigation, and zoom behavior.
 
+## Corporate proposal voice and presentation rule (owner instruction, October 8)
+
+**The major-sponsor proposal information page MUST be impressive but unmistakably human.** It must NOT read like a generic AI-written email, a robotic sales funnel, a stiff template, or an inflated corporate press release.
+
+- Write conversational, confident, warm, and direct—like a real West Virginian founder personally showing a serious business prospect something he has built. Professional enough for a dealership executive or marketing director, but grounded and genuine.
+- Lead with the **actual, visually compelling tailored experience** and **why this particular sponsor belongs in it**. Show concrete, believable specifics: live East Bank wildlife, what a visitor sees, Moses on the page, the natural branded key-fob mystery, and how their company could participate as WVLRP grows.
+- Use short, clear sentences; avoid walls of text, repetitive taglines, exaggerated adjectives and breathless copy. A single memorable line is better than five empty claims.
+- Avoid generic AI/corporate clichés: “unlock unparalleled opportunities,” “synergy,” “revolutionary ecosystem,” “elevate your brand,” “game-changing partnership,” vague superlatives, and manufactured excitement. No overuse of em dashes or decorative exclamation marks.
+- Be candid that WVLRP is in **soft launch** and that future game features/advertising returns are proposed or being developed. Do not invent sponsors, audience numbers, endorsements, or results.
+- Give sponsors a clear, inviting action: **see a short private preview and discuss whether the fit is right**. Avoid desperate hard-sell language or a price-first barrage. Keep optional Tier 4 visible for major sponsors but secondary to their bespoke page proposal.
+- **Check the mobile presentation and desktop presentation** for legible branding, high-quality imagery, clear hierarchy, intuitive exploration, and meaningful content. A beautiful page that a decision-maker can't read or navigate is not sponsor-ready.
+- Read the entire finished page out loud: if it sounds like something a marketing bot would say, rewrite it until it sounds like the founder speaking naturally.
+- No externally delivered outreach, signed sponsorship, or polished deployment should be claimed unless actually verified.
+
 ## Existing 98.7 pitch concept
 
 - A generously branded Roost proposal with meaningful on-screen station presence, readable logos and buttons, proposed radio sound, contest and download links, Meet the Crew, and unique interactive appeal.
