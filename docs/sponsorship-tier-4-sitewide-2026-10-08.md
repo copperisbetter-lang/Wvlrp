@@ -4,7 +4,7 @@
 
 ## Defining promise
 
-**Tier 4 is WVLRP's single highest sponsorship tier. Only ONE sponsor at a time may hold Tier 4.**
+**Tier 4 is WVLRP's single highest sponsorship tier. Only ONE sponsor at a time may hold Tier 4. It can ONLY be held under a TWO-YEAR (24-month) sponsorship payment plan.**
 
 The Tier 4 sponsor is represented, **in some shape or form, on EVERY WVLRP page**, including the wildlife pages, 3D/360° game world, community/shops, quests, and **pages primarily sponsored by other businesses**. The visitor should be able to discover that sponsor **if they look around enough**; the impression should be integrated into the scene or page, not a repetitive intrusive pop-up.
 
@@ -16,6 +16,14 @@ The Tier 4 sponsor is represented, **in some shape or form, on EVERY WVLRP page*
 - **East Bank:** a naturally placed branded item in the 360° environment, while **Moses AutoMall remains visually dominant when demonstrating its page-specific presenting sponsorship**.
 - **Ranger Station / quests:** items, clues, correspondence, sponsor-themed discoveries, badges, and appropriate quest interactions.
 - **Community, game, sponsor and information pages:** intentional visual or contextual sponsor footprint designed for the page rather than copied generic floating ad.
+
+## Mandatory two-year payment plan (approved October 8, 2026)
+
+- **Tier 4 is available only on a two-year (24-month) sponsorship payment plan and commitment.** It cannot be held on month-to-month terms, a one-year agreement, or any shorter sponsorship plan.
+- The single exclusive Tier 4 sitewide position is reserved for that sponsor during the agreed two-year term, subject to the signed agreement and compliance with payment obligations.
+- **Do not invent a price, deposit, installments, due dates, financing terms, renewal terms, or cancellation policy.** These remain to be negotiated and written into the sponsor agreement before sale.
+- A two-year plan describes the required duration and payment-plan structure; whether installments are monthly, quarterly, or otherwise is **not decided yet**.
+- This restriction applies to **Tier 4 only**, not the standard payment options for Tiers 1–3. No Tier 4 sponsor has yet been awarded.
 
 ## How Tier 4 coexists with other sponsors
 
@@ -33,10 +41,10 @@ The Tier 4 sponsor is represented, **in some shape or form, on EVERY WVLRP page*
 - Allow individual placements to vary, including occasional context-driven puzzles, as long as there is **some discoverable presence on every page**.
 - For measurable promises, define how sponsor impressions, interactions, clicks and game engagements are counted, subject to privacy and platform limitations. Do not guarantee unmeasured audiences or outcomes.
 - A single configuration for the current Tier 4 sponsor and agreement dates should drive all integrated marks so a sponsor change can be managed systematically; no Tier 4 brand should be hardcoded before a deal is approved.
-- Price, campaign duration, exact creative, page coverage, exceptions (if any), and guaranteed deliverables must be negotiated and documented, not invented.
+- Pricing, payment installment cadence, exact creative, page coverage, exceptions (if any), and guaranteed deliverables must be negotiated and documented, not invented. **The Tier 4 two-year payment-plan requirement is fixed.**
 
 ## Sample sponsor-facing offer
 
-> **Tier 4 — Exclusive Sitewide Discovery Partner (one available).** Become the one brand woven throughout the entire evolving WVLRP world. From live wildlife destinations to trails, ranger mysteries, games, community buildings and even locations presented by other sponsors, your company will have a discoverable presence on every page. Explore and you'll find it. Page-specific partners retain their own headline positions while your sitewide identity remains part of the bigger adventure. **WVLRP is in soft launch; these expanded placements form part of a proposed future agreement, not a currently active sponsorship.**
+> **Tier 4 — Exclusive Sitewide Discovery Partner (one available).** Become the one brand woven throughout the entire evolving WVLRP world. From live wildlife destinations to trails, ranger mysteries, games, community buildings and even locations presented by other sponsors, your company will have a discoverable presence on every page. Explore and you'll find it. Page-specific partners retain their own headline positions while your sitewide identity remains part of the bigger adventure. **Tier 4 is offered only on a two-year payment plan.** WVLRP is in soft launch; these expanded placements form part of a proposed future agreement, not a currently active sponsorship.
 
 **Core principle:** exclusive Tier 4 access is enormously valuable precisely because it is scarce; do not give away blanket Tier 4 coverage as an incidental benefit to lower tiers.
