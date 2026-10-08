@@ -29,6 +29,9 @@ jobs:
           if [ -f assets/roost/red.webp.b64 ]; then
             base64 --decode assets/roost/red.webp.b64 > assets/roost/red.webp
           fi
+          if [ -f assets/roost/roost-360-4k-v7.webp.b64 ]; then
+            base64 --decode assets/roost/roost-360-4k-v7.webp.b64 > assets/roost/roost-360-4k-v7.webp
+          fi
       - name: Prepare Lounge wallpaper
         run: |
           mkdir -p assets/lounge
@@ -105,3 +108,4 @@ jobs:
       - name: Publish website
         id: deployment
         uses: actions/deploy-pages@v4
+
