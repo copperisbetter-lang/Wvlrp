@@ -16,6 +16,20 @@
 - If a major sponsor requests contact, proposal delivery, or signing, use an authorized connected channel only after appropriate user direction/approval; **don't claim to have sent emails, reached decision-makers, signed agreements, or collected money without confirmed results**.
 - Have a fallback second major prospect and adjust the approach if Moses cannot be contacted or does not show interest.
 
+## Corporate proposal voice and presentation rule (owner instruction, October 8)
+
+**The major-sponsor proposal information page MUST be impressive but unmistakably human.** It must NOT read like a generic AI-written email, a robotic sales funnel, a stiff template, or an inflated corporate press release.
+
+- Write conversational, confident, warm, and direct—like a real West Virginian founder personally showing a serious business prospect something he has built. Professional enough for a dealership executive or marketing director, but grounded and genuine.
+- Lead with the **actual, visually compelling tailored experience** and **why this particular sponsor belongs in it**. Show concrete, believable specifics: live East Bank wildlife, what a visitor sees, Moses on the page, the natural branded key-fob mystery, and how their company could participate as WVLRP grows.
+- Use short, clear sentences; avoid walls of text, repetitive taglines, exaggerated adjectives and breathless copy. A single memorable line is better than five empty claims.
+- Avoid generic AI/corporate clichés: “unlock unparalleled opportunities,” “synergy,” “revolutionary ecosystem,” “elevate your brand,” “game-changing partnership,” vague superlatives, and manufactured excitement. No overuse of em dashes or decorative exclamation marks.
+- Be candid that WVLRP is in **soft launch** and that future game features/advertising returns are proposed or being developed. Do not invent sponsors, audience numbers, endorsements, or results.
+- Give sponsors a clear, inviting action: **see a short private preview and discuss whether the fit is right**. Avoid desperate hard-sell language or a price-first barrage. Keep optional Tier 4 visible for major sponsors but secondary to their bespoke page proposal.
+- **Check the mobile presentation and desktop presentation** for legible branding, high-quality imagery, clear hierarchy, intuitive exploration, and meaningful content. A beautiful page that a decision-maker can't read or navigate is not sponsor-ready.
+- Read the entire finished page out loud: if it sounds like something a marketing bot would say, rewrite it until it sounds like the founder speaking naturally.
+- No externally delivered outreach, signed sponsorship, or polished deployment should be claimed unless actually verified.
+
 ## Working high-sponsor pitch: an experience worth associating a brand with
 
 WVLRP is a **soft-launched** West Virginia wildlife research and live-viewing project with immersive explorations and a growing interactive adventure world, not yet fully publicly launched. Sponsorship would connect a company to real wildlife moments, exploratory quests, and increasing opportunities to engage visitors. With Moses, show a branded East Bank destination and the **lost-keys quest containing a Moses AutoMall key fob**—an organic discovery rather than a banner. Sponsor outcomes and audience numbers must be measured and reported, not invented. Proposed game integrations are subject to development, brand approval, and written agreement.
