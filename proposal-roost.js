@@ -83,12 +83,37 @@
   image.onerror=()=>{error.hidden=false;error.textContent='The clearing could not load. Please refresh.'};
   image.src='assets/roost/roost-360-4k-v7.webp?v=20261008-4k1';
   const surface=gl?canvas:fallback,pointers=new Map();let distance=0;
-  surface.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0});
-  surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.000675*fov;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.000675*fov))}else{const a=[...pointers.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(distance&&d>0)fov=Math.max(.7,Math.min(1.8,fov*distance/d));distance=d}schedule()});
-  for(const event of ['pointerup','pointercancel'])surface.addEventListener(event,e=>{pointers.delete(e.pointerId);distance=0});
-  surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(.7,Math.min(1.8,fov+e.deltaY*.0003));schedule()},{passive:false});
+  const clampFov=value=>Math.max(.7,Math.min(1.8,value));
+  const pinchDistance=()=>{const points=[...pointers.values()];return points.length===2?Math.hypot(points[0][0]-points[1][0],points[0][1]-points[1][1]):0};
+  const cameraVideo=document.getElementById('roostVideo');
+  function releasePointer(e){pointers.delete(e.pointerId);distance=pinchDistance()}
+  for(const target of [surface,cameraVideo].filter(Boolean)){
+    target.style.touchAction='none';
+    target.addEventListener('pointerdown',e=>{
+      if(e.button!==undefined&&e.button!==0)return;
+      if(pointers.size>=2)return;
+      e.preventDefault();pointers.set(e.pointerId,[e.clientX,e.clientY]);
+      target.setPointerCapture(e.pointerId);distance=pinchDistance();
+    });
+    target.addEventListener('pointermove',e=>{
+      if(!pointers.has(e.pointerId))return;
+      e.preventDefault();
+      const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pointers.size===1){yaw-=(e.clientX-prev[0])*.000675*fov;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.000675*fov))}
+      else {const nextDistance=pinchDistance();if(distance>0&&nextDistance>0)fov=clampFov(fov*distance/nextDistance);distance=nextDistance}
+      schedule();
+    });
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])target.addEventListener(event,releasePointer);
+    target.addEventListener('wheel',e=>{e.preventDefault();fov=clampFov(fov+e.deltaY*.0003);schedule()},{passive:false});
+  }
+  function clearGesture(){pointers.clear();distance=0}
+  addEventListener('blur',clearGesture);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearGesture()});
   surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(.7,fov-.1);if(e.key==='-')fov=Math.min(1.8,fov+.1);schedule()});
-  document.getElementById('centerView').onclick=()=>{yaw=Math.PI;pitch=-.075;fov=openingFov();schedule()};
+  const center=document.getElementById('centerView');
+  center.textContent='Reset view / zoom';
+  center.onclick=()=>{clearGesture();yaw=Math.PI;pitch=-.075;fov=openingFov();schedule()};
+  addEventListener('message',e=>{if(e.source===parent&&e.data==='wvlrp-reset-roost-zoom')center.onclick()});
   addEventListener('resize',()=>{fov=openingFov();schedule()});draw();
   setTimeout(()=>document.getElementById('hint').style.opacity=0,4500);
 })();
