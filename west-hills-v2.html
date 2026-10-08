@@ -17,7 +17,7 @@ body{background:#16251b}
 </style>
 </head>
 <body>
-<canvas id="scene" tabindex="0" aria-label="Explore the West Hills forest in 360 degrees. There are three separate paths in the woods, with natural wooden signs for Ranger Station to the left, West Hills straight ahead, and Stacey Lake to the right. Drag to look around or pinch to zoom."></canvas>
+<canvas id="scene" tabindex="0" aria-label="Explore the West Hills forest in 360 degrees. There are four separate paths in the woods, with natural wooden signs for Ranger Station to the left, West Hills straight ahead, and Stacey Lake to the right. Drag to look around or pinch to zoom."></canvas>
 <header><div><strong>WVLRP</strong><small>West Virginia Live Research Project</small></div>
 <button id="menuButton" aria-expanded="false" aria-controls="menu" type="button">☰ MENU</button>
 <nav id="menu" class="menu" hidden aria-label="West Hills menu">
@@ -25,7 +25,7 @@ body{background:#16251b}
 <a href="index.html">Base Camp</a>
 </nav></header>
 <div id="sceneMessage">Opening West Hills…</div>
-<div id="hint">Drag to look around · Discover the three forest paths</div>
+<div id="hint">Drag to look around · Find the Woodland sign to return</div>
 <div class="tools" aria-label="West Hills controls">
 <button id="back" type="button">Back to Woodland Trail</button>
 <button id="faceFork" type="button">Face the crossroads</button>
@@ -43,9 +43,10 @@ body{background:#16251b}
 // These spots are invisible hit areas over the two future destinations.
 // Ranger Station on the left is intentionally an unlinked, photographed sign.
 window.RANGER_SCENE={
-  image:'assets/west-hills-360-approved.webp?v=20261007-approved',
+  image:'assets/west-hills-woodland-return.webp?v=20261007-return',
   startU:.507,pitch:.1,
   spots:[
+    {label:'Woodland — return along the trail',u:.054,v:.449,width:.076,height:.053,url:'woodland-trail.html'},
     {label:'West Hills — follow the center trail',u:.510,v:.387,width:.077,height:.088,id:'west-hills-ahead'},
     {label:'Stacey Lake — follow the right trail',u:.743,v:.427,width:.083,height:.080,id:'stacey-lake'}
   ]
