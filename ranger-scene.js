@@ -22,7 +22,7 @@ if(g){
 }
 const surface=window.rangerFallback||c;
 function project(u,v){const lat=(.5-v)*Math.PI,delta=u*2*Math.PI-yaw,x=Math.cos(lat)*Math.sin(delta),wy=Math.sin(lat),wz=Math.cos(lat)*Math.cos(delta),y=wy*Math.cos(pitch)-wz*Math.sin(pitch),z=wy*Math.sin(pitch)+wz*Math.cos(pitch),f=innerHeight/(2*Math.tan(fov/2));return{x:innerWidth/2+f*x/z,y:innerHeight/2-f*y/z,z,f}}
-for(const s of spots){const b=document.createElement('button');b.className='object-target';b.setAttribute('aria-label',s.label);b.title=s.label;b.onclick=()=>activate(s);s.element=b;document.body.append(b)}
+for(const s of spots){const b=document.createElement('button');b.className='object-target';b.setAttribute('aria-label',s.label);b.title=s.label;if(s.sign){b.classList.add('wooden-wayfinding');b.textContent=s.sign;b.dataset.arrow=s.arrow||'';}if(s.url||s.id)b.onclick=()=>activate(s);else{b.disabled=true;b.setAttribute('aria-disabled','true');b.style.pointerEvents='none';}s.element=b;document.body.append(b)}
 function activate(s){if(s.url)travel(s.url,s.u,s.v);else window.rangerOpen?.(s.id)}
 function travel(url,u=.5,v=.5){if(window.WVLRPTravel)WVLRPTravel.go({url,from:{yaw,pitch,fov},to:{yaw:u*2*Math.PI,pitch:(.5-v)*Math.PI,fov:Math.max(.65,fov*.78)},render:s=>{yaw=s.yaw;pitch=s.pitch;fov=s.fov;draw()}});else location.assign(url)}
 function draw(){if(!ready)return;drawImage();for(const s of spots){const p=project(s.u,s.v),w=Math.max(44,p.f*(s.width||.08)*2*Math.PI/Math.max(p.z,.2)),h=Math.max(44,p.f*(s.height||.08)*Math.PI/Math.max(p.z,.2)),visible=p.z>.25&&p.x>-w&&p.x<innerWidth+w&&p.y>-h&&p.y<innerHeight+h;Object.assign(s.element.style,{visibility:visible?'visible':'hidden',left:p.x+'px',top:p.y+'px',width:w+'px',height:h+'px'})}window.rangerPosition?.(project)}
@@ -96,5 +96,5 @@ surface.addEventListener('keydown',e=>{
 window.WVLRP_QUEST_VIEW=()=>({yaw,pitch,fov});
 window.rangerFace=(u,v=.5)=>{yaw=u*2*Math.PI;pitch=(.5-v)*Math.PI;fov=MAX_FOV;schedule()};
 window.rangerTravel=travel;
-const img=new Image();img.onload=()=>{config.upload(img);ready=true;message.hidden=true;draw();dispatchEvent(new Event('wvlrp-scene-ready'))};img.onerror=()=>{message.textContent='The scene could not load. Please refresh.'};img.src=config.image;addEventListener('resize',schedule);
+const img=new Image();img.onload=()=>{try{config.upload(typeof config.prepareImage==='function'?config.prepareImage(img):img);ready=true;message.hidden=true;draw();dispatchEvent(new Event('wvlrp-scene-ready'))}catch(err){console.error(err);message.textContent='The forest could not finish loading. Please refresh.'}};img.onerror=()=>{message.textContent='The scene could not load. Please refresh.'};img.src=config.image;addEventListener('resize',schedule);
 })();
