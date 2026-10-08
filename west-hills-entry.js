@@ -25,7 +25,7 @@
   @media(max-width:600px){#westHillsEntry{font-size:13px}}
   `;
   document.head.appendChild(style);
-  const a=document.createElement('a');a.id='westHillsEntry';a.href='west-hills.html';
+  const a=document.createElement('a');a.id='westHillsEntry';a.href='west-hills.html?v=20261007-community-route';
   a.setAttribute('aria-label','Follow the West Hills sign to the three-way forest junction');
   a.textContent='WEST HILLS';a.title='Follow the West Hills trail';
   document.body.appendChild(a);
@@ -49,7 +49,7 @@
     if(window.WVLRPTravel?.busy){e.preventDefault();return}
     if(!window.WVLRPTravel?.go||!window.WVLRP_QUEST_VIEW)return;
     e.preventDefault();let state=window.WVLRP_QUEST_VIEW();
-    window.WVLRPTravel.go({url:'west-hills.html',from:state,
+    window.WVLRPTravel.go({url:'west-hills.html?v=20261007-community-route',from:state,
       to:{yaw:u*2*Math.PI,pitch:(.5-v)*Math.PI,fov:Math.max(.65,state.fov*.78)},
       render:next=>window.WVLRP_SET_VIEW?.(next)});
   });
