@@ -1,7 +1,7 @@
 (()=>{
   const canvas=document.getElementById('scene'),fallback=document.getElementById('panoFallback'),wrap=document.getElementById('videoWrap');
   const error=document.getElementById('sceneMessage');
-  const openingFov=()=>Math.min(2.2,Math.max(1.35,2*Math.atan(Math.tan(Math.PI*100/360)/(innerWidth/innerHeight))));
+  const openingFov=()=>Math.min(1.65,2*Math.atan(Math.tan(Math.PI*80/360)/(innerWidth/innerHeight)));
   let yaw=Math.PI,pitch=-.075,fov=openingFov(),ready=false,raf=0,renderPano=null;
   let pixels=null,sourceWidth=0,sourceHeight=0,signPixels=null,signWidth=0,signHeight=0;
   const gl=canvas.getContext('webgl',{alpha:false,antialias:false});
@@ -32,7 +32,7 @@
   }
   function positionVideo(){
     const delta=Math.PI-yaw,worldY=Math.sin(-.075),worldZ=Math.cos(-.075)*Math.cos(delta),x=Math.cos(-.075)*Math.sin(delta),y=worldY*Math.cos(pitch)-worldZ*Math.sin(pitch),z=worldY*Math.sin(pitch)+worldZ*Math.cos(pitch);
-    const focal=innerHeight/(2*Math.tan(fov/2)),baseFocal=innerHeight/(2*Math.tan(1.25/2)),width=Math.min(innerWidth*.91,820)*focal/baseFocal;
+    const focal=innerHeight/(2*Math.tan(fov/2)),baseFocal=innerHeight/(2*Math.tan(openingFov()/2)),width=Math.min(innerWidth*.68,620)*focal/baseFocal;
     const sx=innerWidth/2+focal*x/Math.max(z,.001),sy=innerHeight/2-focal*y/Math.max(z,.001),size=width/Math.max(z,.001);
     const visible=z>.24&&Math.abs(sx-innerWidth/2)<innerWidth/2+size/2&&Math.abs(sy-innerHeight/2)<innerHeight/2+size/2;
     wrap.style.visibility=visible?'visible':'hidden';wrap.style.pointerEvents=visible?'auto':'none';wrap.style.left=sx+'px';wrap.style.top=sy+'px';wrap.style.width=size+'px';
@@ -84,10 +84,10 @@
   image.src='assets/roost/roost-360-4k-v7.webp?v=20261008-4k1';
   const surface=gl?canvas:fallback,pointers=new Map();let distance=0;
   surface.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);distance=0});
-  surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.000675*fov;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.000675*fov))}else{const a=[...pointers.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(distance&&d>0)fov=Math.max(1.3,Math.min(2.55,fov*distance/d));distance=d}schedule()});
+  surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){yaw-=(e.clientX-prev[0])*.000675*fov;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-prev[1])*.000675*fov))}else{const a=[...pointers.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(distance&&d>0)fov=Math.max(.7,Math.min(1.8,fov*distance/d));distance=d}schedule()});
   for(const event of ['pointerup','pointercancel'])surface.addEventListener(event,e=>{pointers.delete(e.pointerId);distance=0});
-  surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(1.3,Math.min(2.55,fov+e.deltaY*.0003));schedule()},{passive:false});
-  surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(1.3,fov-.1);if(e.key==='-')fov=Math.min(2.55,fov+.1);schedule()});
+  surface.addEventListener('wheel',e=>{e.preventDefault();fov=Math.max(.7,Math.min(1.8,fov+e.deltaY*.0003));schedule()},{passive:false});
+  surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')pitch=Math.min(1.4,pitch+.1);if(e.key==='ArrowDown')pitch=Math.max(-1.4,pitch-.1);if(e.key==='+')fov=Math.max(.7,fov-.1);if(e.key==='-')fov=Math.min(1.8,fov+.1);schedule()});
   document.getElementById('centerView').onclick=()=>{yaw=Math.PI;pitch=-.075;fov=openingFov();schedule()};
   addEventListener('resize',()=>{fov=openingFov();schedule()});draw();
   setTimeout(()=>document.getElementById('hint').style.opacity=0,4500);
