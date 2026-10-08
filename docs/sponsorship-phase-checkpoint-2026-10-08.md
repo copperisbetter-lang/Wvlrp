@@ -8,6 +8,20 @@
 
 Keep this prominent and readable in each proposed-sponsor experience, not hidden in tiny footer text. Refer to real audience metrics only when measured, and label projections as projections. Private proposal examples must remain clearly identified as proposals, not active endorsements.
 
+## The evolving 3D online game — essential in EVERY sponsor pitch
+
+- **WVLRP is more than a wildlife-streaming website.** It is connected to an ambitious, **large-scale, continually evolving interactive 3D online adventure game** being built around the live nature project.
+- Make this a **prominent part of every sponsor conversation** alongside the soft-launch disclosure. Explain that the site will keep expanding, with new worlds, trails, activities, games, visitor facilities, and quests added over time.
+- Concrete developing game concepts include the **Base Camp/community hub**, **Woodland Trail**, **West Hills**, **Stacey Lake**, **Ranger Station**, **Laurel's Kitchen**, **mercantile and gift shop**, wildlife quests, evidence trails, hidden objects, and day/night-dependent mysteries.
+- Sponsors may eventually be integrated **naturally into the game world**, e.g. approved in-world objects, locations, signs, special events, contests, virtual shops, quests, and other discoveries that visitors intentionally interact with. These placements are **possibilities**, not automatically included in every package.
+- Distinguish **already working immersive 360° scenes and early interactive quest elements** from **future game features**. We are building toward a deeper evolving 3D experience; do not falsely suggest a fully completed 3D game engine or that all future areas, transactions, and quests are already operational.
+- The long-term value proposition is repeat visits, cross-traffic between the game world and wildlife pages, deeper engagement, and more potential sponsor touchpoints. These are **future opportunities**, not promises or measured results.
+- Present the combination clearly: **real live West Virginia wildlife + immersive exploration + a large evolving 3D online game + sponsor-integrated experiences**. **Full public launch has not occurred.**
+
+### Standard sponsor-facing game message
+
+> WVLRP is more than live wildlife viewing. We're building a large, continuously evolving interactive 3D online adventure game connected to our real-world wildlife experiences. Visitors can explore immersive environments and, as development progresses, take part in quests, discover hidden clues and new destinations, and return as the world grows. That opens the door to creative, natural sponsorship opportunities throughout the experience. **WVLRP is currently in soft launch, ahead of its full public debut.**
+
 ## The Roost — strategic sponsorship rules (agreed)
 
 - The Roost is expected to be one of WVLRP's most frequently visited destinations because the chickens provide recurring activity throughout the day. This is a **hypothesis**, not a measured traffic claim yet.
@@ -37,7 +51,7 @@ Keep this prominent and readable in each proposed-sponsor experience, not hidden
 
 ## Next work session — sponsorship phase
 
-1. Update **every prospective-sponsor presentation** with clear, prominent soft-launch / not-publicly-launched language.
+1. Update **every prospective-sponsor presentation** with prominent **soft-launch / not-publicly-launched language** AND a convincing, accurately staged introduction to the **large evolving interactive 3D game**.
 2. Revise the **98.7 proposal** to retain exciting branding while explicitly keeping the Roost open to major additional sponsors.
 3. Design a scalable, tasteful hierarchy and rights language for **radio partner + large investors + supporting sponsors** on the Roost.
 4. Continue polishing and testing the **Moses East Bank** example so the dealership's name, message, and buttons cannot be overlooked.
