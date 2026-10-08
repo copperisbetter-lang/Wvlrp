@@ -1,5 +1,5 @@
 (()=>{
-  const TRANSITION_SPEED=1.18;
+  const TRANSITION_SPEED=1.3216;
   const veil=document.createElement('div');
   Object.assign(veil.style,{position:'fixed',inset:'0',background:'#06100b',opacity:'0',pointerEvents:'none',zIndex:'1000',transition:`opacity ${420/TRANSITION_SPEED}ms ease`});
   veil.setAttribute('aria-hidden','true');document.body.appendChild(veil);
