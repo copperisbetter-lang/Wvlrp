@@ -1,0 +1,50 @@
+name: Produce Eight WVLRP Adventure Shots
+on:
+  push:
+    branches: [production/adventure-eight-shots]
+    paths: ['.github/workflows/adventure-eight-shots.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+
+jobs:
+  moving-storyboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare open video production tools
+        run: python -m pip install -q pillow numpy opencv-python-headless
+      - name: Render eight numbered five-second WVLRP scene clips
+        run: python tools/build_adventure_reel.py render
+      - name: Upload eight-shot preview and individual clips
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-ADVENTURE-EIGHT-SHOT-MOVING-STORYBOARD
+          path: video-production/
+          retention-days: 5
+          compression-level: 1
+
+  ai-upgrade:
+    needs: moving-storyboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load existing 8-shot storyboard
+        uses: actions/download-artifact@v4
+        with:
+          name: WVLRP-ADVENTURE-EIGHT-SHOT-MOVING-STORYBOARD
+          path: video-production/
+      - name: Install publicly available free AI video client
+        run: python -m pip install -q pillow numpy opencv-python-headless gradio_client
+      - name: Attempt AI motion generation, keep storyboard versions on quota errors
+        run: python tools/build_adventure_reel.py upgrade
+      - name: Upload mixed-source review reel, eight shot assets and status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-ADVENTURE-EIGHT-SHOT-REVIEW-REEL
+          path: video-production/
+          if-no-files-found: ignore
+          retention-days: 5
+          compression-level: 1
