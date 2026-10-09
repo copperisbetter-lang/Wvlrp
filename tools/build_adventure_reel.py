@@ -85,7 +85,12 @@ def render():
         still=make_image(src,u)
         f=FRAME/(key+"-source.jpg");still.resize((W,H)).save(f,quality=93)
         dest=CLIPS/(key+"-MOTION-STORYBOARD.mp4")
-        fallback_motion(still,dest,i)
+        tmp=CLIPS/(key+"-intermediate.mp4")
+        fallback_motion(still,tmp,i)
+        call(["ffmpeg","-y","-hide_banner","-loglevel","error","-i",str(tmp),
+          "-c:v","libx264","-preset","veryfast","-crf","22","-pix_fmt","yuv420p",
+          "-r",str(FPS),"-an",str(dest)])
+        tmp.unlink()
         thumb=still.resize((W,H));x=(i%2)*W;y=(i//2)*(H+44)+34
         sheet.paste(thumb,(x,y));draw.text((x+10,y-26),key+" "+label,fill="white")
         meta.append({"id":key,"name":label,"source":src,"duration_seconds":5,"render":"moving storyboard from existing owned WVLRP art","ai_enhanced":False,"file":str(dest),"narrative_prompt":prompt})
