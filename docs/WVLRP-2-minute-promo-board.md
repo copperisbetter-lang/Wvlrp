@@ -21,7 +21,7 @@
 | 00:18–00:28 | Verified real Roost feed and an East Bank/Roost side-by-side | “From East Bank to the Roost, real observation points connect viewers with the outdoors.” |
 | 00:28–00:39 | Record a real phone and desktop walkthrough of the current clean public site and camera pages | “We're building the foundation for a wildlife experience that's easy to visit, explore, and learn from.” |
 | 00:39–00:49 | Real device footage, cameras, field setting; on-screen text: ‘Live observation • Education • Community’ | “Today, we're a growing project: strengthening the live systems and shaping what comes next.” |
-| 00:49–01:00 | Natural transition from genuine camera footage toward a forest path; on-screen text ‘Our vision for the next year’ | “Over the next year, our aim is stronger coverage, more places to discover, and more ways to connect families with nature. But that's only the beginning.” |
+| 00:49–01:00 | Natural transition from genuine camera footage toward a forest path; on-screen text ‘Our vision for the next year’ | “Over the next year, our aim is stronger coverage, more places to discover, and more ways to connect families with nature. Yet there is still a world beyond what our cameras can show.” |
 
 ## 01:00–02:00 — Adventure preview (illustrative, in development)
 
@@ -46,10 +46,11 @@ Use **fifteen ~4-second clips** for the 60-second concept portion, mixing AI-gen
 | 01:56–02:00 | WVLRP title appears; “We do it live.” and `wvlrp.com` | Authentic brand motion graphic |
 
 ### Adventure narration (01:00–02:00)
-“Now, imagine stepping inside the world you've been watching. Following woodland paths. Discovering wildlife in its own habitat. Walking into a ranger station, where clues lead to mysteries worth solving. Visiting a welcoming community—Laurels Kitchen, the Mercantile, and places still waiting to be explored. Learning about the animals, the landscape, and the little details most people walk right past. This is our vision for the WVLRP Adventure experience, now in development. A place where real observation can inspire discovery, education, and play. The West Virginia Live Research Project. We do it live.”
+“A world waiting to be explored. Now, imagine stepping inside the world you've been watching. Following woodland paths. Discovering wildlife in its own habitat. Walking into a ranger station, where clues lead to mysteries worth solving. Visiting a welcoming community—Laurels Kitchen, the Mercantile, and places still waiting to be explored. Learning about the animals, the landscape, and the little details most people walk right past. This is our vision for the WVLRP Adventure experience, now in development. A place where real observation can inspire discovery, education, and play. The West Virginia Live Research Project. We do it live.”
 
 ### Audio/editor notes
 - First minute: natural ambience from genuine footage at a low level; restrained music and confident warm human narration.
+- At 01:00: take tonal inspiration from classic mysterious-TV opening narration (such as Tales from the Darkside) ONLY in pacing and atmosphere—never imitate copyrighted script, soundtrack, or voice. Real camera dissolves into dark, glowing tree silhouettes, foliage opens to our colorful real Adventure artwork; keep the film intriguing, welcoming and sponsor-appropriate rather than scary.
 - At 01:00: nature ambience briefly deepens, music lifts, camera crosses through foliage into the concept experience.
 - Avoid making AI narration sound like a corporate email; use conversational, unhurried delivery.
 - A 60-second concept reel may require 10–15 generated clips; static shots and close-ups can reduce the number.
