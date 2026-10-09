@@ -1,0 +1,90 @@
+name: Free Video Generator Proof
+
+on:
+  push:
+    branches:
+      - research/free-video-workflow
+    paths:
+      - .github/workflows/free-video-proof.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wan-zero-gpu-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install free Gradio client
+        run: python -m pip install --disable-pip-version-check -q gradio_client pillow
+
+      - name: Create a simple wildlife reference frame
+        run: |
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          im=Image.new("RGB",(832,480))
+          p=im.load()
+          for y in range(480):
+              t=y/479
+              color=(int(20+45*t),int(40+50*t),int(59+20*t))
+              for x in range(832): p[x,y]=color
+          d=ImageDraw.Draw(im)
+          d.ellipse((625,35,676,86),fill=(234,233,204))
+          d.polygon([(0,340),(130,270),(250,330),(390,245),(515,330),(685,260),(832,330),(832,480),(0,480)],fill=(21,53,45))
+          for x,base,h in [(35,400,235),(120,390,225),(225,410,175),(390,415,215),(510,395,220),(660,412,245),(775,400,205)]:
+              d.rectangle((x-8,base-h//3,x+8,base),fill=(22,35,31))
+              d.polygon([(x-59,base-45),(x,base-h),(x+59,base-45)],fill=(13,41,35))
+          d.ellipse((0,425,832,590),fill=(17,40,32))
+          im.save("input.jpg",quality=92)
+          print("INPUT_CREATED input.jpg")
+          PY
+
+      - name: Call public free Wan2.2 image-to-video Gradio API
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          from gradio_client import Client, handle_file
+          space="zerogpu-aoti/wan2-2-fp8da-aoti-faster"
+          client=Client(space)
+          print("CONNECTED",space,flush=True)
+          client.view_api()
+          print("GENERATING_FREE_TEST",flush=True)
+          result=client.predict(
+              handle_file("input.jpg"),
+              "A calm cinematic West Virginia woodland at dusk. A light breeze gently sways tree branches while subtle moonlight glows. Slow, steady push-in camera movement; preserve the forest, no text.",
+              4,
+              "blurry, distorted trees, text, logos, watermarks",
+              2.0,
+              1.0,
+              1.0,
+              42,
+              False,
+              api_name="/generate_video",
+          )
+          print("RESULT",repr(result)[:800],flush=True)
+          obj=result[0] if isinstance(result,(list,tuple)) else result
+          if isinstance(obj,dict):
+              obj=obj.get("video") or obj.get("path") or obj.get("name")
+          if isinstance(obj,dict):
+              obj=obj.get("path") or obj.get("name")
+          source=Path(str(obj))
+          if not source.is_file():
+              raise RuntimeError(f"Generated output not an accessible local file: {source}")
+          shutil.copyfile(source,"free-video-test.mp4")
+          print("SUCCESS_MP4",Path("free-video-test.mp4").stat().st_size,flush=True)
+          PY
+
+      - name: Upload sample MP4 if generated
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wvlrp-wan-free-video-test
+          path: |
+            input.jpg
+            free-video-test.mp4
+          if-no-files-found: ignore
+          retention-days: 3
