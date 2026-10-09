@@ -1,0 +1,60 @@
+name: Restore WVLRP camera relay
+
+on:
+  push:
+    paths:
+      - '.github/workflows/restore-wvlrp-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: self-hosted
+    timeout-minutes: 12
+    steps:
+      - name: Restart Oracle camera relay and verify local HLS
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo '=== host and relay health ==='
+          hostname
+          date -u
+          sudo docker ps --filter name=wvlrp-relay --format 'table {{.Names}}\t{{.Status}}'
+          for cam in eastbank roost; do
+            curl --max-time 5 -s -o /dev/null -w "before $cam HTTP %{http_code}\n" "http://127.0.0.1:8888/$cam/index.m3u8" || true
+          done
+          echo '=== restarting existing streaming relay ==='
+          if sudo docker container inspect wvlrp-relay >/dev/null 2>&1; then
+            sudo docker restart wvlrp-relay
+          elif [ -f /home/opc/Wvlrp/docker-compose.yml ] && [ -f /home/opc/Wvlrp/.env ]; then
+            cd /home/opc/Wvlrp
+            sudo docker compose --env-file .env up -d wvlrp-relay
+          else
+            echo 'NO_RELAY_CONTAINER_OR_COMPOSE_CONFIG'
+            exit 1
+          fi
+          echo '=== waiting for cameras to publish ==='
+          east=0; roost=0
+          for attempt in $(seq 1 9); do
+            sleep 8
+            east=$(curl --max-time 6 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8888/eastbank/index.m3u8 || true)
+            roost=$(curl --max-time 6 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8888/roost/index.m3u8 || true)
+            echo "attempt $attempt: eastbank=$east roost=$roost"
+            if [ "$east" = "200" ] && [ "$roost" = "200" ]; then echo 'BOTH_CAMERAS_RESTORED'; exit 0; fi
+          done
+          echo 'RELAY_RESTARTED_BUT_STREAMS_NOT_PUBLISHED'
+          exit 1
+
+  public-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check public relay reachability
+        shell: bash
+        run: |
+          set +e
+          for cam in eastbank roost; do
+            curl -sS -L --connect-timeout 8 --max-time 15 -o /dev/null -w "public $cam HTTP %{http_code}\n" "https://158-101-120-6.sslip.io/$cam/index.m3u8"
+          done
