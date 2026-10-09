@@ -1,0 +1,64 @@
+name: WVLRP Adventure Intro Motion Test
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/adventure-intro-proof.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  animate-adventure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -q gradio_client pillow opencv-python-headless
+      - name: Prepare existing woodland artwork
+        run: |
+          python - <<'PY'
+          from PIL import Image,ImageOps
+          path='assets/woodland-trail-hd.webp'
+          im=Image.open(path).convert('RGB')
+          print('ORIGINAL_SIZE',im.size,flush=True)
+          im=ImageOps.fit(im,(832,480),method=Image.Resampling.LANCZOS,centering=(0.52,0.5))
+          im.save('adventure-input.jpg',quality=96)
+          print('ADVENTURE_INPUT_READY',im.size,flush=True)
+          PY
+      - name: Animate first-person forest exploration
+        run: |
+          python - <<'PY'
+          import cv2,shutil
+          from pathlib import Path
+          from gradio_client import Client,handle_file
+          client=Client('zerogpu-aoti/wan2-2-fp8da-aoti-faster')
+          print('WAN_CONNECTED',flush=True)
+          response=client.predict(
+              handle_file('adventure-input.jpg'),
+              'Cinematic high-fidelity first-person exploration of a beautiful autumn Appalachian woodland footpath in the WVLRP Adventure world. The viewer floats slowly and smoothly FORWARD on the center dirt trail, one deliberate continuous dolly-in, creating natural foreground parallax from fallen orange leaves and tree trunks. Dappled warm sunlight flickers gently between yellow and amber leaves, a quiet breeze moves a few leaves, rich lifelike forest detail. Retain the exact path, tree trunks and palette of the original supplied artwork. Slight intriguing sense of discovery as the forest opens ahead, welcoming and adventurous not horror. Clean stable camera, physically believable perspective, cinematic natural light, no cuts.',
+              8,
+              'text, subtitles, cartoon, low-poly, game UI, watermarks, distorted tree trunks, sideways movement, warped forest, surreal, fake foliage, smears, blurry, dissolving leaves, flickering background, human figure, close up animal',
+              4.0,1.0,1.0,42,False,
+              api_name='/generate_video'
+          )
+          p=response[0] if isinstance(response,(tuple,list)) else response
+          if isinstance(p,dict): p=p.get('video') or p.get('path') or p.get('name')
+          if isinstance(p,dict): p=p.get('path') or p.get('name')
+          src=Path(str(p))
+          if not src.is_file(): raise RuntimeError(f'No output video: {response}')
+          shutil.copyfile(src,'adventure-intro-take1.mp4')
+          cap=cv2.VideoCapture(str(src))
+          n=cap.get(cv2.CAP_PROP_FRAME_COUNT);fps=cap.get(cv2.CAP_PROP_FPS)
+          print('SUCCESS_MP4',src.stat().st_size,n,fps,flush=True)
+          cap.release()
+          PY
+      - name: Upload review files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wvlrp-adventure-intro-take1
+          path: |
+            adventure-input.jpg
+            adventure-intro-take1.mp4
+          if-no-files-found: ignore
+          retention-days: 5
