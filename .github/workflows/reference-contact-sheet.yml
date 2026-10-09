@@ -1,0 +1,44 @@
+name: Choose a Realistic WVLRP Forest Frame
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/reference-contact-sheet.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make reference photo contact sheet
+        run: |
+          python -m pip -q install pillow
+          python - <<'PY'
+          from PIL import Image, ImageDraw, ImageFont, ImageOps
+          from pathlib import Path
+          paths=["east-bank-camera-preview.jpg","image-1789421423005.jpg","assets/East-Bank-Background.png","assets/east-bank-daytime-360-4k.webp","assets/east-bank-living-base-v2.png","assets/east-bank-sunrise-stage-3.jpg","assets/wvlrp-360-master-borderless.webp","assets/stacey-lake-360.webp","assets/woodland-trail-hd.webp","assets/west-hills-360-approved.webp"]
+          w,h=500,350
+          out=Image.new("RGB",(w*2,h*5),(28,28,28))
+          d=ImageDraw.Draw(out)
+          for i,p in enumerate(paths):
+              try:
+                  im=Image.open(p).convert("RGB")
+                  orig=im.size
+                  if im.width/im.height>2.2:
+                      cropw=int(im.height*16/9)
+                      x=(im.width-cropw)//2
+                      im=im.crop((x,0,x+cropw,im.height))
+                  im=ImageOps.fit(im,(w-16,h-60),method=Image.Resampling.LANCZOS)
+                  x=(i%2)*w+8;y=(i//2)*h+36
+                  out.paste(im,(x,y))
+                  d.text((x,y-28),f"{i+1}. {p} ({orig[0]}x{orig[1]})",fill=(255,255,255))
+              except Exception as e: d.text(((i%2)*w+15,(i//2)*h+60),str(e)[:65],fill=(255,70,70))
+          out.save("reference-contact.jpg",quality=90)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wvlrp-reference-contact-sheet
+          path: reference-contact.jpg
+          retention-days: 3
