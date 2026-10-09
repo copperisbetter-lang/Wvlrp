@@ -1,0 +1,64 @@
+name: WVLRP Realistic River Video Test
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/realistic-video-proof.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install video client
+        run: python -m pip install --disable-pip-version-check -q gradio_client pillow opencv-python-headless
+      - name: Prepare real WVLRP reference photo
+        run: |
+          python - <<'PY'
+          from PIL import Image, ImageOps
+          im=Image.open("assets/east-bank-sunrise-stage-3.jpg").convert("RGB")
+          im=ImageOps.fit(im,(832,480),method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
+          im.save("wvlrp-river-input.jpg",quality=96)
+          print("PHOTOREAL_REFERENCE_READY",im.size,flush=True)
+          PY
+      - name: Generate cinematic river motion with Wan 2.2
+        run: |
+          python - <<'PY'
+          import shutil,cv2
+          from pathlib import Path
+          from gradio_client import Client, handle_file
+          client=Client("zerogpu-aoti/wan2-2-fp8da-aoti-faster")
+          print("CONNECTED",flush=True)
+          result=client.predict(
+              handle_file("wvlrp-river-input.jpg"),
+              "Authentic photorealistic wildlife documentary establishing shot of an Appalachian river in West Virginia at sunset. A steady camera very slowly floats forward above the riverbank. Visible gentle flowing river currents and natural small ripples, warm golden sunlight glittering and shifting on the water. Subtle soft breeze moves distant tree leaves, delicate haze over distant hills. Preserve the exact tree line, mountains, shore rocks, sunset and composition of the source photograph. Beautiful natural cinematic live action, stable realistic motion, no scene cuts, no changes of season.",
+              8,
+              "cartoon, illustration, painting, fake trees, stylized, surreal, distortion, warped rocks, flicker, shaky camera, bad water, lettering, logos, watermark, text overlay",
+              4.0,
+              1.0,1.0,42,False,
+              api_name="/generate_video"
+          )
+          p=result[0] if isinstance(result,(tuple,list)) else result
+          if isinstance(p,dict): p=p.get("video") or p.get("path") or p.get("name")
+          if isinstance(p,dict): p=p.get("path") or p.get("name")
+          source=Path(str(p))
+          if not source.is_file(): raise RuntimeError(f"No file returned: {p}")
+          shutil.copyfile(source,"wvlrp-river-cinematic.mp4")
+          cap=cv2.VideoCapture("wvlrp-river-cinematic.mp4")
+          count=cap.get(cv2.CAP_PROP_FRAME_COUNT); fps=cap.get(cv2.CAP_PROP_FPS)
+          width=cap.get(cv2.CAP_PROP_FRAME_WIDTH); height=cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+          print(f"MP4_DONE frames={count} fps={fps} width={width} height={height} bytes={source.stat().st_size}",flush=True)
+          cap.release()
+          PY
+      - name: Package real video test
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wvlrp-river-cinematic-test
+          path: |
+            wvlrp-river-input.jpg
+            wvlrp-river-cinematic.mp4
+          if-no-files-found: ignore
+          retention-days: 3
