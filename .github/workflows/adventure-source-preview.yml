@@ -1,0 +1,54 @@
+name: Inspect Adventure source art
+on:
+  push:
+    branches: [production/adventure-eight-shots]
+    paths: ['.github/workflows/adventure-source-preview.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip -q install pillow
+      - name: Crop scene backgrounds and sign destinations
+        run: |
+          python - <<'PY'
+          from PIL import Image,ImageOps,ImageDraw
+          from pathlib import Path
+          items=[
+            ('01 Woodland fork','assets/woodland-fork-v1.webp',.50),
+            ('02 Trail straight','assets/woodland-trail-hd.webp',.50),
+            ('03 West hills path','assets/west-hills-360-approved.webp',.50),
+            ('04 Community front','assets/community-clearing-v1.webp',.50),
+            ('05 Community bakery','assets/community-clearing-v1.webp',.13),
+            ('06 Community store','assets/community-clearing-v1.webp',.87),
+            ('07 Ranger office','assets/ranger-station-v1.webp',.50),
+            ('08 Laurels inside','assets/laurels-kitchen-v1.webp',.50),
+            ('09 Mercantile inside','assets/mercantile-v1.webp',.50),
+            ('10 Trail alternate','assets/west-hills-woodland-return.webp',.50),
+            ('11 Base camp','assets/base-camp-4k.webp',.50),
+            ('12 woodland deer','assets/woodland-trail-hd.webp',.28)
+          ]
+          sw,sh=600,400; out=Image.new('RGB',(sw*3,sh*4),(20,30,22));d=ImageDraw.Draw(out)
+          for i,(label,path,u) in enumerate(items):
+            try:
+              im=Image.open(path).convert('RGB')
+              w,h=im.size; aspect=w/h
+              if aspect>2.5:
+                cropw=min(w,int(h*.89))
+                xc=int(u*w); x0=max(0,min(w-cropw,xc-cropw//2))
+                im=im.crop((x0,max(0,int(h*.18)),x0+cropw,min(h,int(h*.82))))
+              else:
+                im=ImageOps.fit(im,(550,335),centering=(u,0.5))
+              im=ImageOps.fit(im,(580,343))
+              x=(i%3)*sw+10; y=(i//3)*sh+45
+              out.paste(im,(x,y));d.text((x,y-28),label,fill='white')
+            except Exception as e:
+              d.text(((i%3)*sw+10,(i//3)*sh+90),f'{label} ERROR {str(e)[:60]}',fill='red')
+          out.save('adventure-source-sheet.jpg',quality=88)
+          print('PREVIEW_READY',out.size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with: {name: adventure-source-sheet, path: adventure-source-sheet.jpg, retention-days: 2}
