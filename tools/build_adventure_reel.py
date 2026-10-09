@@ -34,7 +34,11 @@ SHOTS=[
 ]
 
 def call(cmd):
-    subprocess.run(cmd,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if cmd[0]=='ffmpeg':
+        from imageio_ffmpeg import get_ffmpeg_exe
+        cmd=[get_ffmpeg_exe()]+cmd[1:]
+    p=subprocess.run(cmd,check=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if p.returncode!=0: raise RuntimeError('Video command failed: '+p.stderr.decode('utf-8','replace')[-1500:])
 
 def make_image(path,u):
     im=Image.open(path).convert("RGB")
