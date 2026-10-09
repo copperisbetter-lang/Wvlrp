@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Prepare open video production tools
-        run: python -m pip install -q pillow numpy opencv-python-headless
+        run: python -m pip install -q pillow numpy opencv-python-headless imageio-ffmpeg
       - name: Render eight numbered five-second WVLRP scene clips
         run: python tools/build_adventure_reel.py render
       - name: Upload eight-shot preview and individual clips
@@ -36,7 +36,7 @@ jobs:
           name: WVLRP-ADVENTURE-EIGHT-SHOT-MOVING-STORYBOARD
           path: video-production/
       - name: Install publicly available free AI video client
-        run: python -m pip install -q pillow numpy opencv-python-headless gradio_client
+        run: python -m pip install -q pillow numpy opencv-python-headless gradio_client imageio-ffmpeg
       - name: Attempt AI motion generation, keep storyboard versions on quota errors
         run: python tools/build_adventure_reel.py upgrade
       - name: Upload mixed-source review reel, eight shot assets and status
