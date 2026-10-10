@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 :root{color-scheme:dark;--bg:#08120f;--card:#10231d;--border:#34493f;--text:#f1f0e4;--muted:#aec0b2;--gold:#e2bb72;--green:#256e53}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
 body{background:radial-gradient(ellipse at top,#18352b 0,#08120f 56%) fixed}
