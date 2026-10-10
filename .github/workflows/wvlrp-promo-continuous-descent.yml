@@ -19,7 +19,7 @@ jobs:
           mkdir -p input
           gh run download 38008059307 --repo ${{ github.repository }} --name WVLRP-09A-REAL-AERIAL --dir input
           test -s input/09A.mp4
-          ffprobe -v error -show_entries format=duration -of default=nw=1 input/09A.mp4
+          echo "Downloaded existing 09A video"
       - name: Install public open-source video client
         run: |
           sudo apt-get update -qq
