@@ -1,0 +1,14 @@
+{
+  "name": "wvlrp-world-creator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "WVLRP world creator prototype, independent of live camera pages.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "serve": "npx --yes serve ."
+  },
+  "dependencies": {
+    "babylonjs": "9.27.0"
+  }
+}
