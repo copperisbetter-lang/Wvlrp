@@ -2,6 +2,7 @@ import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
   creekY, trailHorizontal, trailVertical, spawnDeer
 } from "./world-core.js";
+import { makeFigureBuilder } from "./character-models.js";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -259,7 +260,8 @@ function refresh3d() {
   if(!scene||!dirty3d)return;
   dirty3d=false;clear3d();
   const forest=material("forest","#52784b"),trunk=material("trunk","#6f5239"),leaves=material("leaves","#315f35");
-  const deerMat=material("deer","#c69b72"),npcMat=material("npc","#deb5c0"),otherMat=material("object","#d8ba72");
+  const otherMat=material("object","#d8ba72");
+  const figures=makeFigureBuilder(BABYLON,scene,track);
   const blue=material("creek","#519db9");
   ground=track(BABYLON.MeshBuilder.CreateGround("procedural terrain",{width:180,height:180,subdivisions:38,updatable:true},scene));
   const positions=ground.getVerticesData(BABYLON.VertexBuffer.PositionKind);
@@ -291,11 +293,9 @@ function refresh3d() {
     const x=o.x-view.x,z=o.y-view.y;if(Math.abs(x)>86||Math.abs(z)>86)continue;
     const h=heightAt(o.x,o.y,seed)*26;
     if(o.type==="deer"||o.type==="animal"){
-      const m=track(BABYLON.MeshBuilder.CreateCapsule(o.name,{height:3,radius:.7},scene));
-      m.position.set(x,h+1.7,z);m.material=deerMat;
+      figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      const m=track(BABYLON.MeshBuilder.CreateCapsule(o.name,{height:4,radius:.8},scene));
-      m.position.set(x,h+2,z);m.material=npcMat;
+      figures.person(o,x,h,z);
     }else{
       const m=track(BABYLON.MeshBuilder.CreateBox(o.name,{size:o.type==="cabin"?6:2},scene));
       m.position.set(x,h+(o.type==="cabin"?3:1.5),z);m.material=otherMat;
@@ -327,12 +327,25 @@ function init3D(){
     engine=new BABYLON.Engine($("scene"),true,{antialias:true,preserveDrawingBuffer:false});
     scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.65,.79,.86,1);
     camera=new BABYLON.ArcRotateCamera("orbit",-Math.PI/2.5,1.02,165,new BABYLON.Vector3(0,8,0),scene);
-    camera.attachControl($("scene"),true);camera.lowerRadiusLimit=35;camera.upperRadiusLimit=290;
+    camera.attachControl($("scene"),true);camera.lowerRadiusLimit=6;camera.upperRadiusLimit=290;
     new BABYLON.HemisphericLight("daylight",new BABYLON.Vector3(.5,1,.2),scene);
     refresh3d();engine.runRenderLoop(()=>scene.render());
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
 $("refresh3d").onclick=()=>{dirty3d=true;refresh3d();status("3D preview refreshed near map center");};
+$("inspect3d").onclick=()=>{
+  const o=selected();
+  if(!o){status("Choose a deer or person on the map first");return;}
+  view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
+  if(camera){
+    const h=heightAt(o.x,o.y,seed)*26;
+    camera.setTarget(new BABYLON.Vector3(0,h+1.6,0));
+    camera.radius=14;
+    camera.alpha=-Math.PI/2.7;
+    camera.beta=1.2;
+  }
+  status("Close-up 3D view: "+o.name+" (drag to orbit, pinch to zoom)");
+};
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
