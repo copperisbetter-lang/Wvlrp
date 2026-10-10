@@ -14,6 +14,8 @@ const view={x:0,y:0,scale:.40};
 let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
 const pointers=new Map();
 let gesture=null,photoUrl=null;
+const localCharacterFiles = new Map();
+let previewBuildId = 0;
 const colors={anchor:"#fbd182",deer:"#efc08c",npc:"#e7abd0",animal:"#dbceb4",cabin:"#f3d16b",marker:"#ff9e6f"};
 
 function save() {
@@ -53,6 +55,8 @@ function setSelection(o) {
   $("commitObject").disabled=!!o.locked;
   if(photoUrl){URL.revokeObjectURL(photoUrl);photoUrl=null;}
   $("photoPreview").hidden=true;$("photo").value="";
+  $("modelFile").value="";
+  $("clearModel").disabled=!localCharacterFiles.has(o.id);
   invalidate();
 }
 function rect(){return canvas.getBoundingClientRect();}
@@ -260,6 +264,23 @@ $("photo").onchange=e=>{
   photoUrl=URL.createObjectURL(file);$("photoPreview").src=photoUrl;$("photoPreview").hidden=false;
   status("Photo shown as local reference only; no character conversion yet");
 };
+$("modelFile").addEventListener("change",e=>{
+  const o=selected(),file=e.target.files?.[0];
+  if(!o||o.type!=="npc"||!file){status("Select a person and a GLB character model");return;}
+  if(!file.name.toLowerCase().endsWith(".glb")||file.size>45_000_000){
+    status("Choose a .glb file under 45 MB");e.target.value="";return;
+  }
+  localCharacterFiles.set(o.id,file);
+  $("clearModel").disabled=false;
+  dirty3d=true;refresh3d();
+  status("Loading detailed 3D character. This model stays in this browser session only.");
+});
+$("clearModel").onclick=()=>{
+  const o=selected();if(!o)return;
+  localCharacterFiles.delete(o.id);$("modelFile").value="";
+  $("clearModel").disabled=true;dirty3d=true;refresh3d();
+  status("Using built-in preview for "+o.name);
+};
 window.addEventListener("resize",()=>{invalidate();engine?.resize();});
 
 // Babylon.js renders a lightweight editable-scene preview, not final player graphics.
@@ -273,9 +294,53 @@ function material(name,color){
   mat.diffuseColor=BABYLON.Color3.FromHexString(color);
   mat.specularColor=new BABYLON.Color3(.05,.05,.05);return mat;
 }
+function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
+  // A complete GLB can contain textured meshes, hair, clothes and skeletons.
+  // Import is browser-local; no server uploads, no file bytes in world JSON.
+  if(!BABYLON.SceneLoader?.ImportMeshAsync) {
+    status("Babylon GLB loader is unavailable; using built-in preview.");
+    return;
+  }
+  BABYLON.SceneLoader.ImportMeshAsync(null,"",file,scene,undefined,".glb").then(result=>{
+    const meshes=result.meshes||[];
+    if(buildId!==previewBuildId) {
+      for(const root of meshes.filter(m=>!m.parent||!meshes.includes(m.parent)))root.dispose(false,true);
+      (result.animationGroups||[]).forEach(v=>v.dispose());
+      (result.skeletons||[]).forEach(v=>v.dispose());
+      return;
+    }
+    for(const group of (result.animationGroups||[])){group.stop();track(group);}
+    (result.skeletons||[]).forEach(track);
+    (result.materials||[]).forEach(track);
+    // World-space AABB gives a stable standing scale for differently authored GLBs.
+    let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+    for(const m of meshes){
+      if(!m.getBoundingInfo||!m.getTotalVertices||!m.getTotalVertices())continue;
+      m.computeWorldMatrix(true);
+      const bounds=m.getBoundingInfo().boundingBox;
+      const lo=bounds.minimumWorld,hi=bounds.maximumWorld;
+      minX=Math.min(minX,lo.x);minY=Math.min(minY,lo.y);minZ=Math.min(minZ,lo.z);
+      maxX=Math.max(maxX,hi.x);maxY=Math.max(maxY,hi.y);maxZ=Math.max(maxZ,hi.z);
+    }
+    if(!Number.isFinite(maxY)||maxY-minY<.01)throw Error("GLB has no usable 3D mesh");
+    const node=track(new BABYLON.TransformNode("custom model "+o.id,scene));
+    const roots=meshes.filter(m=>!m.parent || !meshes.includes(m.parent));
+    roots.forEach(m=>m.parent=node);
+    const scale=Math.min(100,2.35/(maxY-minY));
+    node.scaling.setAll(scale);
+    node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
+    for(const mesh of meshes)track(mesh);
+    fallback.dispose(false,true);
+    status("Detailed GLB preview loaded for "+o.name);
+  }).catch(err=>{
+    status("Unable to load this GLB; showing built-in figure. "+String(err.message||err).slice(0,130));
+  });
+}
 function refresh3d() {
   if(!scene||!dirty3d)return;
-  dirty3d=false;clear3d();
+  dirty3d=false;
+  const thisBuild=++previewBuildId;
+  clear3d();
   const forest=material("forest","#52784b"),trunk=material("trunk","#6f5239"),leaves=material("leaves","#315f35");
   const otherMat=material("object","#d8ba72");
   const figures=makeFigureBuilder(BABYLON,scene,track);
@@ -312,7 +377,9 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      figures.person(o,x,h,z);
+      const fallback=figures.person(o,x,h,z);
+      const characterFile=localCharacterFiles.get(o.id);
+      if(characterFile) importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
     }else{
       const m=track(BABYLON.MeshBuilder.CreateBox(o.name,{size:o.type==="cabin"?6:2},scene));
       m.position.set(x,h+(o.type==="cabin"?3:1.5),z);m.material=otherMat;
