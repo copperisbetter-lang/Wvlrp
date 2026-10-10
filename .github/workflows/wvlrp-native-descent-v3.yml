@@ -1,0 +1,52 @@
+name: WVLRP Actual FPV Footage Descent Candidates
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-native-descent-v3.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Download real forest descent footage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import requests
+          Path('clips').mkdir(exist_ok=True)
+          data={
+            'fpv_treetop_to_low':'https://cdn.pixabay.com/video/2025/06/22/287292_large.mp4',
+            'fpv_mountain_forest':'https://cdn.pixabay.com/video/2025/06/22/287291_large.mp4',
+            'forest_trail_aerial':'https://cdn.pixabay.com/video/2024/09/23/232829_large.mp4',
+          }
+          for k,u in data.items():
+            try:
+              r=requests.get(u,timeout=90,headers={'User-Agent':'Mozilla/5.0','Referer':'https://pixabay.com/'})
+              print('FETCH',k,r.status_code,len(r.content),r.headers.get('content-type'),flush=True)
+              r.raise_for_status()
+              if len(r.content)>100000:Path('clips/'+k+'.mp4').write_bytes(r.content)
+            except Exception as e:print('ERROR',k,str(e)[:250],flush=True)
+          PY
+      - name: Produce review frames and 960p timeline samples
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          mkdir -p thumbs previews
+          for f in clips/*.mp4; do
+            [ -f "$f" ] || continue
+            stem=$(basename "$f" .mp4)
+            ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 "$f" || true
+            ffmpeg -hide_banner -loglevel error -y -i "$f" -t 24 -vf 'fps=24,scale=960:-2:flags=lanczos' -an -c:v libx264 -preset fast -crf 22 "previews/$stem.mp4" || true
+            ffmpeg -hide_banner -loglevel error -y -i "previews/$stem.mp4" -vf 'fps=1/2,scale=384:-2' -frames:v 12 "thumbs/$stem-%02d.jpg" || true
+          done
+      - name: Upload review footage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-FPV-TRUE-DESCENT-AUDITION
+          path: |
+            previews/
+            thumbs/
+          if-no-files-found: ignore
+          retention-days: 4
