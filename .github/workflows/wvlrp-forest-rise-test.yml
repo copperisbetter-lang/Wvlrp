@@ -1,0 +1,45 @@
+name: WVLRP Reverse Forest Rise Test
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-forest-rise-test.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  get-motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Obtain sharp genuine rising camera and woodland source videos
+        run: |
+          python - <<'PY'
+          from urllib.request import urlopen,Request
+          from pathlib import Path
+          import json
+          root='https://huggingface.co/api/datasets/FastVideo/Mixkit-Src/tree/main/forest?limit=1000'
+          with urlopen(root,timeout=45) as f: data=json.load(f)
+          paths=[x['path'] for x in data if x.get('path','').endswith('.mp4')]
+          terms=['camera-elevates-in-a-tranquil','forest-ground-519','shot-rising-through-a-sunny-forest','camera-slides-into-the-tranquil','flying-over-hills-covered-in-autumn','forest-with-the-sky-full','aerial-view-of-the-forest-trees','flying-through-a-park-path','flying-over-a-temperate-forest','path-in-the-middle-of-a-forest','flying-low-through-a-forest','the-camera-slowly-slides']
+          Path('forest').mkdir(exist_ok=True)
+          selected=[]
+          for term in terms:
+            matches=[p for p in paths if term in p]
+            print('MATCH',term,len(matches),matches[:3],flush=True)
+            if matches and term not in ['flying-low-through-a-forest','path-in-the-middle-of-a-forest']:selected.append(matches[0])
+          for p in selected[:9]:
+            try:
+              u='https://huggingface.co/datasets/FastVideo/Mixkit-Src/resolve/main/'+p+'?download=true'
+              with urlopen(Request(u,headers={'User-Agent':'Mozilla/5.0'}),timeout=90) as r:b=r.read()
+              if len(b)<100000:continue
+              Path('forest/'+p.split('/')[-1]).write_bytes(b)
+              print('DOWNLOADED',p,len(b),flush=True)
+            except Exception as e:print('ERROR',p,str(e),flush=True)
+          PY
+      - name: Preserve video sources
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-FOREST-REVERSE-SOURCES
+          path: forest/*.mp4
+          if-no-files-found: ignore
+          retention-days: 4
