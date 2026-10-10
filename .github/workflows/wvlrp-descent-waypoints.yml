@@ -1,0 +1,69 @@
+name: WVLRP Cinematic Descent Two Waypoints (No Skip)
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-descent-waypoints.yml']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - name: Source original HD frames
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38012370349 --repo ${{ github.repository }} --name WVLRP-SHARP-FIRST-LAST-DIVE --dir ./
+          test -s WVLRP_SHARP_FIRST_LAST_DIVE.mp4
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install --disable-pip-version-check -q gradio_client
+          mkdir -p clips
+          ffmpeg -hide_banner -loglevel error -y -ss 0.35 -i WVLRP_SHARP_FIRST_LAST_DIVE.mp4 -frames:v 1 sky.png
+          ffmpeg -hide_banner -loglevel error -y -ss 1.20 -i WVLRP_SHARP_FIRST_LAST_DIVE.mp4 -frames:v 1 canopy.png
+          ffmpeg -hide_banner -loglevel error -y -ss 2.70 -i WVLRP_SHARP_FIRST_LAST_DIVE.mp4 -frames:v 1 ground.png
+      - name: Force two physically observable phases of dive using fixed keyframe waypoints
+        run: |
+          cat > render.py <<'PY'
+          from gradio_client import Client,handle_file
+          from pathlib import Path
+          import subprocess,shutil
+          c=Client('dream2589632147/Dream-wan2-2-fp8da-aoti-preview-2')
+          negative='abrupt location change, teleport, hard cut, crossfade, morph, sky stillness, camera zooming on a flat photo, rapid speed ramp, blurred view, smeared colors, CGI, cartoon, impossible trees, generic changing forest, text'
+          takes=[
+          ('01_sky_to_canopy','sky.png','canopy.png',
+          'Single continuous real drone first person flight, immediately pitch downward from high above the Appalachian wooded hill toward a particular grouping of golden and green hardwood crowns directly ahead. The mountain moves vertically upward in the image as the drone visibly descends several tree heights, actively flies between approaching leafy crowns, the forest becomes large through true changing spatial parallax. The trunks and large leaves of the exact trees at the end image approach steadily throughout the shot. Maintain a consistent unbroken forward downward camera trajectory, no hovering, no speed change, no jump, no scene cut. Final composition must match the provided end frame.'),
+          ('02_canopy_to_dirt_trail','canopy.png','ground.png',
+          'One single continuous overhead-to-eye-height camera DIVE INSIDE THIS SAME AUTUMN FOREST. Begin camera above the dense leaves shown in first frame, camera passes a large foreground leafy branch as its branches physically rise and exit out the TOP of the screen. Camera tilts directly DOWN showing a leaf-covered narrow dirt path emerging BELOW THROUGH GAPS BETWEEN TALL HARDWOOD TRUNKS. Camera descends visibly while the trunks grow taller on screen and the trail progressively expands into view. When low enough it gently levels out at human eye height on the same path as supplied last frame. Autumn sunlight and bark markings are consistent; uninterrupted true spatial movement. Absolutely no cuts, no teleport onto trail, no static drift, no speeding footage.')]
+          for name,first,last,prompt in takes:
+            print('RENDER_START',name,flush=True)
+            try:
+              out=c.predict(handle_file(first),handle_file(last),'First + Last Frame',prompt,
+                'Cinematic','Slow Push In','High',True,False,'Landscape 16:9',5.0,32,
+                'High Quality',10,negative,10,47391,False,1.0,1.0,
+                'UniPCMultistep',3.0,True,False,api_name='/generate_video')
+              print('RAW_RESPONSE',name,str(out)[:400],flush=True)
+              choices=[v for v in out[:2] if v] if isinstance(out,(list,tuple)) else [out]
+              p=choices[0]
+              if isinstance(p,dict):p=p.get('path') or p.get('name')
+              if not Path(str(p)).is_file():raise RuntimeError('No video file created '+str(p))
+              shutil.copyfile(str(p),'clips/'+name+'.mp4')
+              print('TAKE_SUCCESS',name,Path('clips/'+name+'.mp4').stat().st_size,flush=True)
+            except Exception as e:
+              print('TAKE_FAILED',name,str(e)[:1100],flush=True)
+              raise
+          PY
+          python render.py
+      - name: Export independently verifiable true motion clip takes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-WAYPOINT-THROUGH-CANOPY
+          path: |
+            clips/*.mp4
+            sky.png
+            canopy.png
+            ground.png
+          if-no-files-found: ignore
+          retention-days: 5
