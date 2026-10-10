@@ -1,0 +1,30 @@
+name: World Creator Checks
+
+on:
+  push:
+    paths:
+      - "world-creator/**"
+      - ".github/workflows/world-creator-tests.yml"
+  pull_request:
+    paths:
+      - "world-creator/**"
+      - ".github/workflows/world-creator-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test deterministic terrain and trails
+        run: npm test
+        working-directory: world-creator
+      - name: Check studio module syntax
+        run: node --check studio.js
+        working-directory: world-creator
