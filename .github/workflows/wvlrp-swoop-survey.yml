@@ -1,0 +1,47 @@
+name: WVLRP Forest Descent Source Survey
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-swoop-survey.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  gather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Find matched royalty-free real forest footage
+        run: |
+          python - <<'PY'
+          from urllib.request import urlopen,Request
+          from pathlib import Path
+          import json
+          root='https://huggingface.co/api/datasets/FastVideo/Mixkit-Src/tree/main/forest?limit=1000'
+          with urlopen(root,timeout=40) as f: records=json.load(f)
+          paths=[x['path'] for x in records if x.get('path','').endswith('.mp4')]
+          terms=['flying-low-through-a-forest','camera-glides-along-the-tall','camera-slowly-slides-into','path-in-the-middle-of-a-forest','flying-above-the-green-canopy','flying-through-a-park-path','reverse-shot-of-a-little-dirt-road','drone-flying-over-the-tops','flying-over-a-field-in-a-large-forest','aerial-view-of-the-forest-trees','aerial-view-of-a-lush-forest','flying-over-a-green-forest','camera-slides-into-the-tranquil','walking-a-path-in-a-forest']
+          print('PATH_TOTAL',len(paths),flush=True)
+          matches=[]
+          for term in terms:
+            pair=[p for p in paths if term in p]
+            print('MATCH',term,'COUNT',len(pair),pair[:4],flush=True)
+            if pair:matches.append(pair[0])
+          Path('stock').mkdir(exist_ok=True)
+          for p in matches[:12]:
+            try:
+              u='https://huggingface.co/datasets/FastVideo/Mixkit-Src/resolve/main/'+p+'?download=true'
+              r=urlopen(Request(u,headers={'User-Agent':'Mozilla/5.0'}),timeout=90)
+              data=r.read()
+              if len(data)<200000:continue
+              Path('stock/'+p.split('/')[-1]).write_bytes(data)
+              print('OK',p,len(data),flush=True)
+            except Exception as e:print('FETCH_ERR',p,str(e)[:400],flush=True)
+          PY
+      - name: Save video samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-SWOOP-FOREST-SOURCE-CLIPS
+          path: stock/*.mp4
+          if-no-files-found: ignore
+          retention-days: 5
