@@ -1,0 +1,102 @@
+name: WVLRP Promo 09B-10B - Continuous Forest Descent
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-promo-continuous-descent.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  render-continuous-descent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Download already-produced real aerial video 09A
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input
+          gh run download 38008059307 --repo ${{ github.repository }} --name WVLRP-09A-REAL-AERIAL --dir input
+          test -s input/09A.mp4
+          ffprobe -v error -show_entries format=duration -of default=nw=1 input/09A.mp4
+      - name: Install public open-source video client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install --disable-pip-version-check -q gradio_client opencv-python-headless
+      - name: Generate 09B, 10A, 10B as independent temporal VIDEO using last frame continuation
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+        run: |
+          cat > produce.py <<'PY'
+          import subprocess,shutil,time,cv2,os
+          from pathlib import Path
+          from gradio_client import Client,handle_file
+          def run(c):
+            print("COMMAND",c,flush=True)
+            subprocess.run(c,check=True)
+          def trim(src,dest):
+            run(['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(src),'-t','3','-vf','fps=24,scale=1280:720:flags=lanczos,setsar=1','-an','-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart',str(dest)])
+          def frame_at_end(p,image):
+            run(['ffmpeg','-hide_banner','-loglevel','error','-y','-ss','2.91','-i',str(p),'-frames:v','1',str(image)])
+          os.makedirs('clips',exist_ok=True)
+          trim('input/09A.mp4','clips/09A.mp4')
+          frame_at_end('clips/09A.mp4','key_09A.jpg')
+          print('STARTING_PUBLIC_WAN22_IMAGE_TO_VIDEO',flush=True)
+          client=Client('zerogpu-aoti/wan2-2-fp8da-aoti-faster')
+          takes=[
+            ('09B','key_09A.jpg',''),
+            ('10A','key_09B.jpg',''),
+            ('10B','key_10A.jpg',''),
+          ]
+          prompts={
+           '09B':"CINEMATIC LIVE ACTION FPV DRONE CONTINUATION OF THE EXACT PROVIDED FRAME. Camera physically flies FORWARD over mountains into a deep West Virginia Appalachian valley, picking up speed, steadily descending toward the distant forest canopy. Forest treetops and individual hills move with distinct perspective and correct 3D parallax; small smooth bank into a valley and natural golden evening light, clear sky. One unbroken smooth spatial move, not a zoom, no cut. Camera ends just above nearest treetops. Not a slideshow.",
+           '10A':"LIVE ACTION ONE UNBROKEN FIRST PERSON FPV DRONE DESCENT continuing exactly from this provided Appalachian mountain forest view. Swoop dramatically but smoothly DOWN through a natural opening in the tall deciduous hardwood tree canopy, camera pitches down toward a narrow leaf-strewn woodland footpath, fast realistic foreground branches sweep past both sides at different speeds, physically travel forward in three dimensions. Natural golden evening sunlight, authentic WV autumn woodland, highly cinematic realistic photography. End about 15 feet above footpath.",
+           '10B':"LIVE ACTION SINGLE TAKE CONTINUOUS FPV DESCENT. Begin precisely from provided image, fly forward between real tall hardwood trees, gradually level out from flying 15 feet above the forest to human first-person eye height on a golden October leaf-covered Appalachian footpath. Warm late afternoon low sun glints through thin branches, golden and orange leaves, ferns, mossy tree trunks, small stones. Exact direction of movement continues; camera reaches walking speed and stops swooping at trail height, centered on a dirt woodland trail leading forward into distance. True organic 3D physical camera motion; no cuts, no static background.",
+          }
+          neg="static picture, Ken Burns, zoom pan, artificial slideshow, repeated photographs, teleportation, unreal morphing, tilted tree trunks, sudden cuts, text, watermarks, logos, cartoon, fantasy, fake CGI buildings, wildlife, human faces, jerky jitter, unnatural jumps, fog clouds entering foreground"
+          for take,still,_ in takes:
+            print('RENDER_START',take,'source=',still,flush=True)
+            for attempt in range(2):
+              try:
+                result=client.predict(handle_file(still),prompts[take],8,neg,4.0,1.0,1.0,9,False,api_name='/generate_video')
+                p=result[0] if isinstance(result,(tuple,list)) else result
+                if isinstance(p,dict):p=p.get('video') or p.get('path') or p.get('name')
+                if isinstance(p,dict):p=p.get('path') or p.get('name')
+                raw=Path(str(p))
+                if not raw.is_file():raise RuntimeError('No MP4 in model output: '+str(result)[:700])
+                trim(raw,'clips/'+take+'.mp4')
+                frame_at_end('clips/'+take+'.mp4','key_'+take+'.jpg')
+                if raw.stat().st_size<100000:raise RuntimeError('Video appears empty')
+                print('RENDER_SUCCESS',take,raw.stat().st_size,flush=True)
+                break
+              except Exception as e:
+                print('RENDER_ERROR',take,attempt,str(e)[:1000],flush=True)
+                if attempt==1:raise
+                time.sleep(10)
+          concat=''.join("file '"+str(Path('clips',x+'.mp4').resolve())+"'\n" for x in ['09A','09B','10A','10B'])
+          Path('clips/list.txt').write_text(concat)
+          run(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i','clips/list.txt','-c','copy','WVLRP_12s_TRUE_MOTION_SILENT.mp4'])
+          cap=cv2.VideoCapture('WVLRP_12s_TRUE_MOTION_SILENT.mp4')
+          print('FINISHED',cap.get(cv2.CAP_PROP_FPS),cap.get(cv2.CAP_PROP_FRAME_COUNT),Path('WVLRP_12s_TRUE_MOTION_SILENT.mp4').stat().st_size,flush=True)
+          cap.release()
+          PY
+          python produce.py
+      - name: Save real motion MP4 and independently generated takes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-12s-CONTINUOUS-REAL-MOTION
+          path: |
+            WVLRP_12s_TRUE_MOTION_SILENT.mp4
+            clips/09A.mp4
+            clips/09B.mp4
+            clips/10A.mp4
+            clips/10B.mp4
+            key_09A.jpg
+            key_09B.jpg
+            key_10A.jpg
+            key_10B.jpg
+          if-no-files-found: ignore
+          retention-days: 10
