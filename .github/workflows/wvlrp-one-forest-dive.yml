@@ -1,4 +1,4 @@
-name: WVLRP One Forest Continuous Dive Bridge
+name: WVLRP One Forest Continuous Dive Bridge HD
 on:
   push:
     branches: [research/free-video-workflow]
@@ -64,7 +64,7 @@ jobs:
               out=c.predict(
                 handle_file('aerial_start.png'),handle_file('trail_end.png'),
                 'First + Last Frame',prompt,'Cinematic','Slow Push In','High',
-                True,False,'Landscape 16:9',4.5,'32','High Quality',10,negative,
+                True,False,'Landscape 16:9',4.5,32,'High Quality',10,negative,
                 10,12345,False,1.0,1.0,'UniPCMultistep',3.0,True,False,
                 api_name='/generate_video')
             else:
@@ -76,7 +76,7 @@ jobs:
             if isinstance(v,dict):v=v.get('path') or v.get('name')
             p=Path(str(v))
             if not p.is_file():raise RuntimeError('Not local mp4 '+str(v))
-            shutil.copyfile(p,'one_forest_true_dive.mp4')
+            shutil.copyfile(p,'one_forest_true_dive_v2.mp4')
             print('SUCCESS_REAL_MOVING_VIDEO',kind,p.stat().st_size,flush=True)
             break
            except Exception as e:
@@ -85,13 +85,13 @@ jobs:
           else:raise RuntimeError('All free first+last frame providers unavailable. Review logs and do not substitute a fake jump.')
           PY
           python bridge.py
-          ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 one_forest_true_dive.mp4
+          ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 one_forest_true_dive_v2.mp4
           ffmpeg -loglevel error -y -i one_forest_true_dive.mp4 -vf "select=eq(n\,0)+eq(n\,24)+eq(n\,48)+eq(n\,72),scale=720:-2" -vsync vfr -frames:v 4 inspect-%02d.jpg
       - name: Upload original forest matching AI dive result for approval
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: WVLRP-ORIGINAL-TRAIL-CONTINUOUS-DIVE
+          name: WVLRP-ORIGINAL-TRAIL-CONTINUOUS-DIVE-HD
           path: |
             one_forest_true_dive.mp4
             aerial_start.png
