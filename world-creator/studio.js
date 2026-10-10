@@ -39,6 +39,9 @@ function setSelection(o) {
   $("objectY").value=Number(o.y).toFixed(1);
   $("behavior").value=o.behavior||"home-range";
   $("radius").value=o.radius??160;
+  $("gender").value=o.gender||"woman";
+  $("skin").value=o.skin||"light";
+  $("hairStyle").value=o.hairStyle||"wavy";
   $("body").value=o.body||"average";
   $("face").value=o.face||"oval";
   $("hair").value=o.hair||"brown";
@@ -75,7 +78,7 @@ function createAt(type,p){
   const o={id:type+"-"+Date.now().toString(36)+"-"+(++serial),type,
     name:(typeNames[type]||"Object"),x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10,
     behavior:type==="deer"?"home-range":"stationary",radius:type==="deer"?180:100,
-    body:"average",face:"oval",hair:"brown",outfit:"ranger",animal:"fox"};
+    body:"average",face:"oval",hair:"red",hairStyle:"wavy",gender:"woman",skin:"light",outfit:"ranger",animal:"fox"};
   world.objects.push(o);setSelection(o);setTool("select");save();dirty3d=true;invalidate();return o;
 }
 function invalidate(){if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;drawMap();});}
@@ -149,7 +152,7 @@ function commitSelection(){
   o.name=$("objectName").value.trim().slice(0,100)||o.type;
   o.x=x;o.y=y;
   if(o.type==="deer"||o.type==="animal"){o.behavior=$("behavior").value;o.radius=Math.max(0,Math.min(5000,Number($("radius").value)||0));}
-  if(o.type==="npc"){for(const field of ["body","face","hair","outfit"])o[field]=$(field).value;}
+  if(o.type==="npc"){for(const field of ["gender","skin","body","face","hair","hairStyle","outfit"])o[field]=$(field).value;}
   save();setSelection(o);dirty3d=true;refresh3d();invalidate();
 }
 function pointerXY(e){const r=rect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
@@ -203,6 +206,20 @@ canvas.addEventListener("keydown",e=>{
 document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>setTool(b.dataset.tool)));
 $("save").onclick=save;
 $("commitObject").onclick=commitSelection;
+$("applyPreset").onclick=()=>{
+  const o=selected();
+  if(!o||o.type!=="npc"||o.locked){status("Select a person first");return;}
+  const looks={
+    "ranger-redhead":{gender:"woman",skin:"light",body:"average",face:"heart",hair:"red",hairStyle:"wavy",outfit:"ranger"},
+    mercantile:{gender:"woman",skin:"tan",body:"average",face:"oval",hair:"brown",hairStyle:"long",outfit:"mercantile"},
+    lifeguard:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"lifeguard"}
+  };
+  const look=looks[$("characterPreset").value];
+  if(!look){status("Choose a character style first");return;}
+  for(const [key,value] of Object.entries(look))$(key).value=value;
+  commitSelection();
+  status("Applied "+$("characterPreset").selectedOptions[0].text+" style");
+};
 $("deleteObject").onclick=()=>{const o=selected();if(!o||o.locked)return;world.objects=world.objects.filter(x=>x.id!==o.id);setSelection(null);save();dirty3d=true;refresh3d();};
 $("applySeed").onclick=()=>{world.seed=$("seed").value.trim().slice(0,100)||"WVLRP-Appalachia-01";seed=seedNumber(world.seed);save();dirty3d=true;invalidate();refresh3d();};
 $("scatter").onclick=()=>{
