@@ -69,16 +69,20 @@
         <label for="radius">Home range (metres)</label><input id="radius" type="number" min="0" max="5000" step="5">
       </div>
       <div id="npcFields">
+        <label for="gender">Character</label><select id="gender"><option value="woman">Adult woman</option><option value="man">Adult man</option></select>
+        <label for="skin">Complexion</label><select id="skin"><option value="fair">Fair</option><option value="light">Light</option><option value="tan">Tan</option><option value="brown">Brown</option><option value="deep">Deep</option></select>
         <label for="body">Body shape</label><select id="body"><option>average</option><option>slim</option><option>athletic</option><option>stocky</option><option>tall</option><option>short</option></select>
         <label for="face">Face shape</label><select id="face"><option>oval</option><option>round</option><option>square</option><option>heart</option><option>long</option></select>
         <label for="hair">Hair</label><select id="hair"><option>brown</option><option>red</option><option>blonde</option><option>black</option><option>gray</option><option>white</option></select>
+        <label for="hairStyle">Hairstyle</label><select id="hairStyle"><option value="wavy">Long wavy</option><option value="long">Long straight</option><option value="ponytail">Ponytail</option><option value="bob">Bob</option><option value="short">Short</option></select>
         <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option></select>
+        <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option></select><button id="applyPreset" type="button">Use this look</button>
         <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
         <p class="subtle">Photo-to-3D conversion is not active yet. Photo stays in this browser session and is not saved or uploaded.</p>
       </div>
       <div class="form-actions"><button id="commitObject" class="primary" type="button">Apply changes</button><button id="deleteObject" class="danger" type="button">Remove object</button></div>
     </div>
-    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">The 3D preview now shows stylized deer and human figures, not finished characters. Rigged animation, realistic faces, fitted outfits, photo-assisted creation, Oracle sync, and authenticated publishing are still future work.</p></section>
+    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">The studio now makes more detailed adult women and men with selectable hair, complexion, outfits and facial details. These are still procedural previews, not photorealistic/rigger-ready character scans. High-detail imported meshes, rigged animation, photo-to-3D, Oracle sync, and authenticated publishing remain future work.</p></section>
   </aside>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
