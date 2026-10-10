@@ -77,7 +77,10 @@ export function sanitizedWorld(value) {
     animal:String(o.animal||"fox").slice(0,40)
   }));
   // Preserve the original fixed landmarks if an import omitted them.
-  for(const anchor of STARTER_ANCHORS) if(!objects.some(o=>o.id===anchor.id)) objects.unshift({...anchor});
+  for(const anchor of STARTER_ANCHORS) {
+    const i=objects.findIndex(o=>o.id===anchor.id);
+    if(i>=0)objects[i]={...anchor};else objects.unshift({...anchor});
+  }
   return {version:1,seed,objects,updatedAt:typeof value.updatedAt==="string"?value.updatedAt:null};
 }
 export function makeRng(seed) {
