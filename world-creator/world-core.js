@@ -73,6 +73,9 @@ export function sanitizedWorld(value) {
     radius:Math.min(5000,Math.max(0,Number(o.radius)||150)),
     herd:String(o.herd||"").slice(0,100),
     hair:String(o.hair||"brown").slice(0,40),outfit:String(o.outfit||"ranger").slice(0,40),
+    gender:["woman","man"].includes(o.gender)?o.gender:"woman",
+    skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
+    hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
     animal:String(o.animal||"fox").slice(0,40)
   }));
