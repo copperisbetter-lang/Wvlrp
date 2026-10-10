@@ -1,0 +1,43 @@
+name: WVLRP Forest Interior Motion Final Survey
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-final-interior-survey.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download authentic forest interior motion for downward flight
+        run: |
+          python - <<'PY'
+          from urllib.request import urlopen,Request
+          from pathlib import Path
+          names=[
+          'mixkit-through-a-forest-among-the-trees-43127_clip_1.mp4',
+          'mixkit-forest-of-abundant-trees-traveled-from-above-39721_clip_1.mp4',
+          'mixkit-types-of-trees-in-a-forest-43128_clip_1.mp4',
+          'mixkit-green-treetops-535_clip_1.mp4',
+          'mixkit-sunlight-through-tall-trees-in-a-forest-520_clip_1.mp4',
+          'mixkit-aerial-tour-above-a-forest-on-a-sunny-day-39717_clip_1.mp4',
+          'mixkit-forest-in-the-sunlight-3007_clip_1.mp4',
+          'mixkit-aerial-view-of-the-lush-forest-on-a-sunny-day-50584_clip_1.mp4'
+          ]
+          Path('stock').mkdir(exist_ok=True)
+          for fn in names:
+            url='https://huggingface.co/datasets/FastVideo/Mixkit-Src/resolve/main/forest/'+fn+'?download=true'
+            try:
+              with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=90) as r:data=r.read()
+              if len(data)>100000:Path('stock/'+fn).write_bytes(data);print('OK',fn,len(data),flush=True)
+            except Exception as e:print('ERROR',fn,str(e),flush=True)
+          PY
+      - name: Preserve options for editor
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-FOREST-INTERIOR-CLIPS
+          path: stock/*.mp4
+          if-no-files-found: ignore
+          retention-days: 5
