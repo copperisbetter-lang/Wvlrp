@@ -17,6 +17,17 @@ Source: https://github.com/copperisbetter-lang/Wvlrp/tree/main/world-creator
 - Unit tests for deterministic terrain, creeks, path junctions, 100-deer herd creation and import validation, in GitHub Actions workflow `World Creator Checks`. The workflow was reported successful during creation.
 - GitHub Pages deployment and the public world-creator page were verified reachable.
 
+## October 10 evening — feedback and character-model improvement
+
+- User tested creator and placed **101 deer and 2 people** in their own browser. Both appeared as pills/capsules. Their existing browser-local placements remain independent of the repository edits; no reset/migration was performed.
+- Removed `CreateCapsule` preview rendering and added procedurally composed deer (body, legs, hooves, face, ears, tail, variation/antlers) and adult people (distinct limbs, face with eyes/nose/mouth, hair styles and ranger clothing).
+- User specifically wants realistic adult women like the redheaded Ranger Station image. Added an adult woman/person selector, complexion, hair style, face/body/outfit options, and a **Redheaded Ranger Station woman** one-click preset. New people default to adult women; existing NPC records without a gender render as women without losing their coordinates/names.
+- Added `Inspect selected` close-up orbit/zoom button to examine the figures at short range.
+- Added optional local `.glb` loader for **already modeled 3D characters** (under 45 MB) and link to a free CC0 realistic woman example. A GLB file works as a browser-session preview, is **not saved/published** with world JSON, and has a procedural fallback. Reference photograph remains visual only, **not photo-to-3D**.
+- No professionally modeled photorealistic Ranger Station NPC is bundled yet; photo-real level requires licensed/sculpted mesh, textures, hairstyle/clothes and ultimately rigging. Current built-in model is a recognizably human stylized interim representation. Do not claim realism equivalent to the Ranger Station portrait.
+- Committed changes in `world-creator/character-models.js`, `studio.js`, `index.html`, `world-core.js`, and `README.md`. Static JS syntax of all three JS files checked; browser visual rendering and complete GLB import were not end-to-end verified.
+- Avoid modifying cameras/approved Ranger Station page or resetting user's locally saved world objects.
+
 ## User-approved design direction to preserve
 
 1. The **world generator** extends wilderness in chunks before a player approaches the visible boundary; players should never run into an abrupt edge. Generated locations should re-create identically upon return.
