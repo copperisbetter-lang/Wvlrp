@@ -1,0 +1,48 @@
+name: WVLRP Finish Canopy-to-Ground Descent
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-canopy-to-ground-flf.yml']
+  workflow_dispatch:
+permissions: {contents: read,actions: read}
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Retrieve identical canopy and landing waypoints
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38013971642 --repo ${{ github.repository }} --name WVLRP-WAYPOINT-THROUGH-CANOPY --dir inputs
+          test -s inputs/canopy.png && test -s inputs/ground.png
+          python -m pip install --disable-pip-version-check -q gradio_client
+      - name: Render visibly descending below branches to actual ground
+        run: |
+          python - <<'PY'
+          from gradio_client import Client,handle_file
+          from pathlib import Path
+          import shutil
+          c=Client('multimodalart/wan-2-2-first-last-frame')
+          prompt=('Continuity locked FPV drone camera dives in ONE direction DOWN from the first golden Appalachian leaf canopy view toward forest soil and an actual narrow dirt trail beneath. '
+          'Trees are the same every frame, their trunks extend toward viewer while the drone drops past leaves and branches. Camera LOOKS DOWN for the first half and forest floor gets closer and closer each half-second. '
+          'Autumn leaves rise past camera and exit the TOP of image as drone continues downward through them; approaching the ground the camera tilts upward to human eye height and aligns with a narrow trail in exact end frame. '
+          'Camera physically descends through a coherent 3-D environment, not speed ramp, not straight forward flying, not sky drifting, no scene cut, not a slideshow. '
+          'Realistic sharp autumn hardwoods, sun-dappled dirt trail, consistent forest.')
+          neg='cut, teleport, morphing, dissolve, photos crossfade, generic new scene, abrupt jump to ground, static photo, zoom, speedup, blurry, flat trees, cartoon, scene change'
+          out=c.predict(handle_file('inputs/canopy.png'),handle_file('inputs/ground.png'),prompt,neg,2.1,7,1.0,1.0,3927,False,api_name='/generate_video_1')
+          p=out[0] if isinstance(out,(list,tuple)) else out
+          if isinstance(p,dict):p=p.get('path') or p.get('name')
+          f=Path(str(p));print('OUTPUT',f,'exists',f.is_file(),flush=True)
+          if not f.is_file():raise RuntimeError(str(out)[:600])
+          shutil.copyfile(f,'WVLRP_canopy_to_ground_short.mp4')
+          print('SUCCESS',f.stat().st_size,flush=True)
+          PY
+      - name: Save matching continuous landing footage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-CANOPY-TO-GROUND-TAKE
+          path: WVLRP_canopy_to_ground_short.mp4
+          if-no-files-found: ignore
+          retention-days: 4
