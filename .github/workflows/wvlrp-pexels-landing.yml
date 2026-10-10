@@ -1,0 +1,52 @@
+name: WVLRP Free Forest Drone Landing Shot
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-pexels-landing.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch actual native drone landing test
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          python - <<'PY'
+          import requests
+          from pathlib import Path
+          refs={
+            'drone_land_ground_4496358':'4496358',
+            'autumn_ground_level_10775502':'10775502',
+            'forest_path_fpv_30051727':'30051727'
+          }
+          Path('previews').mkdir(exist_ok=True)
+          for key,id in refs.items():
+            paths=[f'https://videos.pexels.com/video-files/{id}/{id}-hd_1920_1080_25fps.mp4',
+              f'https://videos.pexels.com/video-files/{id}/{id}-hd_1920_1080_30fps.mp4',
+              f'https://videos.pexels.com/video-files/{id}/{id}-hd_1280_720_25fps.mp4',
+              f'https://videos.pexels.com/video-files/{id}/{id}-hd_1920_1080_24fps.mp4']
+            for u in paths:
+              try:
+                r=requests.get(u,timeout=30,headers={'User-Agent':'Mozilla/5.0'},stream=True)
+                print('GET',key,u,r.status_code,r.headers.get('content-length'),flush=True)
+                if r.status_code!=200:continue
+                with open('previews/'+key+'.mp4','wb') as f:
+                  for ck in r.iter_content(1048576):f.write(ck)
+                if Path('previews/'+key+'.mp4').stat().st_size>250000:break
+              except Exception as e:print('DOWNLOADERROR',str(e)[:200],flush=True)
+          PY
+          for f in previews/*.mp4; do
+            [ -f "$f" ] || continue
+            ffprobe -v error -show_entries stream=width,height -show_entries format=duration -of default=nw=1 "$f"
+            ffmpeg -y -loglevel error -i "$f" -t 18 -vf 'fps=24,scale=960:-2' -an -c:v libx264 -crf 22 -preset faster "${f%.mp4}.small.mp4" || true
+          done
+      - name: Export sample footage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-REAL-DRONE-LANDING-REVIEW
+          path: previews/*.small.mp4
+          if-no-files-found: ignore
+          retention-days: 3
