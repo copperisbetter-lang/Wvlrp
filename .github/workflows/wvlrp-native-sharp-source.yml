@@ -1,0 +1,64 @@
+name: WVLRP Native Footage High Clarity Test
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-native-sharp-source.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  download-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Inspect available original moving footage and fetch matching forest takes
+        run: |
+          mkdir -p stock thumbs
+          python - <<'PY'
+          import requests
+          from pathlib import Path
+          base='https://huggingface.co/api/datasets/FastVideo/Mixkit-Src/tree/main/forest'
+          r=requests.get(base,params={'recursive':'true','limit':1000},timeout=40);print('LIST_HTTP',r.status_code,'BYTES',len(r.content),flush=True)
+          r.raise_for_status()
+          items=r.json()
+          found=[x['path'] for x in items if x.get('path','').lower().endswith('.mp4')]
+          print('AVAILABLE_FOREST_ITEMS',len(found),flush=True)
+          for p in found:
+            if any(t in p for t in ('through-the-trees','above-the-mountains','colorful-trees','mountainous-forest','drone-flights','camera-glides','forest-canopy','fly-over','flying-')):
+              print('POSSIBLE',p,flush=True)
+          targets=['mixkit-a-drone-flights-above-the-mountains-in-the-forest-50585_clip_1.mp4','mixkit-a-drone-flies-over-the-colorful-trees-in-the-forest-50577_clip_1.mp4','mixkit-aerial-view-of-a-mountainous-forest-43121_clip_1.mp4']
+          look=[p for p in found if 'flying-through-the-trees' in p or 'camera-glides-along-the-tall' in p]
+          targets+= [p.split('/')[-1] for p in look[:2]]
+          print('SELECTED',targets,flush=True)
+          for p in targets:
+            path='forest/'+p
+            url='https://huggingface.co/datasets/FastVideo/Mixkit-Src/resolve/main/'+path+'?download=true'
+            try:
+              q=requests.get(url,timeout=90)
+              print('FETCH',p,q.status_code,len(q.content),q.headers.get('content-type'),flush=True)
+              q.raise_for_status()
+              if len(q.content)<150000:continue
+              Path('stock/'+p).write_bytes(q.content)
+            except Exception as e:print('DOWNLOAD_ERROR',p,str(e)[:200],flush=True)
+          PY
+      - name: Make side-by-side representative frames and analyze dimensions
+        run: |
+          for v in stock/*.mp4; do
+            if [ -f "$v" ]; then
+              echo VIDEO "$v"
+              ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 "$v"
+              for t in 0 2 4; do
+                ffmpeg -hide_banner -loglevel error -y -ss "$t" -i "$v" -frames:v 1 "thumbs/$(basename "$v" .mp4)-$t.jpg" || true
+              done
+            fi
+          done
+      - name: Export footage and frames for shot selection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-NATIVE-FOOTAGE-TEST
+          path: |
+            stock/*.mp4
+            thumbs/*.jpg
+          if-no-files-found: ignore
+          retention-days: 4
