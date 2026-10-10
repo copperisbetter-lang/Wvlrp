@@ -1,0 +1,70 @@
+name: WVLRP Promo 10B - Finish At Trail
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-promo-10b-finish.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  finish-trail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Fetch three previously-rendered real-motion takes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input
+          gh run download 38009385703 --repo ${{ github.repository }} --name WVLRP-12s-CONTINUOUS-REAL-MOTION --dir input
+          test -s input/key_10A.jpg
+          test -s input/clips/09A.mp4
+          test -s input/clips/09B.mp4
+          test -s input/clips/10A.mp4
+      - name: Install video tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install --disable-pip-version-check -q gradio_client
+      - name: Generate real moving descent 10B and combine exact twelve seconds
+        env:
+          HF_HUB_DISABLE_TELEMETRY: '1'
+        run: |
+          python - <<'PY'
+          from gradio_client import Client,handle_file
+          from pathlib import Path
+          import subprocess
+          client=Client('zerogpu-aoti/wan2-2-fp8da-aoti-faster')
+          prompt='Photorealistic LIVE ACTION continuation exactly from supplied last frame. CAMERA SPATIAL MOVEMENT: fast FPV flight smoothly forward between nearby West Virginia hardwood trunks, pitching up slightly to level out directly above autumn forest dirt trail at human eye height. Real foreground branches and yellow-gold foliage streak past both sides. Natural golden late-afternoon sunlight glints through brown and orange leaf canopy. A dark forest opening resolves into a winding dry leaf-covered footpath. Camera gradually slows to smooth first-person walking speed with trail centered by end. True continuous physical movement, no cut, no zoom, no slideshow, no still image. End at eye-level on leaf-strewn Appalachian woodland footpath.'
+          neg='slideshow, Ken Burns, 2d zoom, static still, camera stationary, loops, text, logos, split images, distorted trees, blurred end frame, jarring scene changes, hallucinated vehicles, people, buildings, objects'
+          print('GENERATE_10B_START_2_POINT_5_SECONDS',flush=True)
+          result=client.predict(handle_file('input/key_10A.jpg'),prompt,8,neg,2.5,1.0,1.0,9,False,api_name='/generate_video')
+          p=result[0] if isinstance(result,(tuple,list)) else result
+          if isinstance(p,dict): p=p.get('video') or p.get('path') or p.get('name')
+          if isinstance(p,dict): p=p.get('path') or p.get('name')
+          src=Path(str(p))
+          if not src.is_file():raise RuntimeError('No finished video: '+str(result)[:500])
+          print('GENERATED_VIDEO',src,src.stat().st_size,flush=True)
+          Path('clips').mkdir(exist_ok=True)
+          cmd=['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(src),'-vf','setpts=1.2*PTS,fps=24,scale=1280:720:flags=lanczos,setsar=1','-t','3','-an','-c:v','libx264','-preset','fast','-crf','19','-pix_fmt','yuv420p','clips/10B.mp4']
+          subprocess.run(cmd,check=True)
+          for take in ['09A','09B','10A']:
+            p=Path('input/clips/'+take+'.mp4')
+            assert p.is_file(),p
+          text=''.join('file '+chr(39)+str(Path('input/clips/'+take+'.mp4').resolve())+chr(39)+'\n' for take in ['09A','09B','10A'])
+          text+='file '+chr(39)+str(Path('clips/10B.mp4').resolve())+chr(39)+'\n'
+          Path('list.txt').write_text(text)
+          subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i','list.txt','-c','copy','WVLRP_12s_CONTINUOUS_MOTION_SILENT.mp4'],check=True)
+          print('12S_RENDER_DONE',Path('WVLRP_12s_CONTINUOUS_MOTION_SILENT.mp4').stat().st_size,flush=True)
+          PY
+      - name: Save full 12-second video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-12s-FINAL-VIDEO
+          path: |
+            WVLRP_12s_CONTINUOUS_MOTION_SILENT.mp4
+            clips/10B.mp4
+          if-no-files-found: ignore
+          retention-days: 10
