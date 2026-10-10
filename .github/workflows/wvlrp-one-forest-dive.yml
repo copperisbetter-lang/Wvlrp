@@ -1,0 +1,101 @@
+name: WVLRP One Forest Continuous Dive Bridge
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-one-forest-dive.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  render-real-dive-to-original-trail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - name: Install media tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          python -m pip install --disable-pip-version-check -q gradio_client pillow requests
+      - name: Load matching source frame from original WVLRP Trail
+        run: |
+          python - <<'PY'
+          import requests
+          from io import BytesIO
+          from PIL import Image,ImageOps
+          from pathlib import Path
+          base='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/assets/woodland-trail-hd.webp'
+          r=requests.get(base,timeout=45);r.raise_for_status()
+          im=Image.open(BytesIO(r.content)).convert('RGB')
+          print('ORIGINAL_MATCHING_WVLRP_WOODLAND_TRAIL',im.size,flush=True)
+          ImageOps.fit(im,(832,480),method=Image.Resampling.LANCZOS).save('trail_end.png')
+          url='https://huggingface.co/datasets/FastVideo/Mixkit-Src/resolve/main/forest/mixkit-a-drone-flights-above-the-mountains-in-the-forest-50585_clip_1.mp4?download=true'
+          r=requests.get(url,timeout=80);r.raise_for_status()
+          Path('aerial.mp4').write_bytes(r.content)
+          PY
+          ffmpeg -hide_banner -loglevel error -y -ss 3.6 -i aerial.mp4 -frames:v 1 -vf scale=832:480 aerial_start.png
+          echo 'Source frames ready'
+      - name: Render uninterrupted live action descent ending on ACTUAL woodland trail
+        run: |
+          cat > bridge.py <<'PY'
+          from pathlib import Path
+          from gradio_client import Client,handle_file
+          import shutil,time,traceback
+          prompt=("One uninterrupted FIRST-PERSON DRONE FLIGHT with exact START and END camera frames. "
+           "Begin above the West Virginia mountain forest in the supplied first image. "
+           "Camera sharply pitches down and smoothly DIVE-FLIES toward one specific patch of golden hardwood forest. "
+           "Forest canopy grows nearer rapidly with authentic depth, tree crowns, trunks and branches passing the lens in 3D. "
+           "Without any cut the same camera squeezes DOWN BETWEEN THE GOLDEN DECIDUOUS TREE TOPS, "
+           "passes beneath the branches, and physically keeps descending to a leaf-covered narrow dirt trail, "
+           "LEVELS OFF smoothly at HUMAN EYE HEIGHT on the EXACT ORIGINAL WOODLAND PATH shown in supplied END frame. "
+           "A single real physical environment, real spatial parallax, changing perspective, warm golden sunlight and autumn foliage. "
+           "No hard cuts, no jumps between different locations, no dissolve transitions, no changes in forest layout. "
+           "This is a single continuous high-definition natural documentary FPV shot; final frame should look EXACTLY like supplied woodland image.")
+          negative=("static image, slide show, freeze, cutting from mountain to another forest, skipping the dive, dissolve transition, sudden scene change, "
+            "fake miniature trees, blurred smears, fantasy valley, inconsistent trees, warped trunks, flicker, jitter, fuzzy watercolors, artifacts, "
+            "cartoon, CGI look, text, logo, watermark, time lapse, erratic camera shake")
+          trials=[
+            ('dream2589632147/Dream-wan2-2-fp8da-aoti-preview-2','dream'),
+            ('multimodalart/wan-2-2-first-last-frame','multimodal'),
+          ]
+          for space,kind in trials:
+           try:
+            print('TEST_BEGIN',space,flush=True)
+            c=Client(space)
+            if kind=='dream':
+              out=c.predict(
+                handle_file('aerial_start.png'),handle_file('trail_end.png'),
+                'First + Last Frame',prompt,'Cinematic','Slow Push In','High',
+                True,False,'Landscape 16:9',4.5,'32','High Quality',10,negative,
+                10,12345,False,1.0,1.0,'UniPCMultistep',3.0,True,False,
+                api_name='/generate_video')
+            else:
+              out=c.predict(handle_file('aerial_start.png'),handle_file('trail_end.png'),
+                prompt,negative,4.5,10,1.0,1.0,12345,False,api_name='/generate_video_1')
+            print('GENERATED',str(out)[:1100],flush=True)
+            v=out[0] if isinstance(out,(list,tuple)) else out
+            if isinstance(v,dict):v=v.get('video') or v.get('path') or v.get('name')
+            if isinstance(v,dict):v=v.get('path') or v.get('name')
+            p=Path(str(v))
+            if not p.is_file():raise RuntimeError('Not local mp4 '+str(v))
+            shutil.copyfile(p,'one_forest_true_dive.mp4')
+            print('SUCCESS_REAL_MOVING_VIDEO',kind,p.stat().st_size,flush=True)
+            break
+           except Exception as e:
+            print('SERVICE_FAILURE',kind,str(e)[:1100],flush=True)
+            traceback.print_exc()
+          else:raise RuntimeError('All free first+last frame providers unavailable. Review logs and do not substitute a fake jump.')
+          PY
+          python bridge.py
+          ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 one_forest_true_dive.mp4
+          ffmpeg -loglevel error -y -i one_forest_true_dive.mp4 -vf "select=eq(n\,0)+eq(n\,24)+eq(n\,48)+eq(n\,72),scale=720:-2" -vsync vfr -frames:v 4 inspect-%02d.jpg
+      - name: Upload original forest matching AI dive result for approval
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-ORIGINAL-TRAIL-CONTINUOUS-DIVE
+          path: |
+            one_forest_true_dive.mp4
+            aerial_start.png
+            trail_end.png
+            inspect-*.jpg
+          if-no-files-found: ignore
+          retention-days: 5
