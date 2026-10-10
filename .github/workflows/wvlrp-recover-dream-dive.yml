@@ -1,0 +1,58 @@
+name: WVLRP Recover Sharp First Last Dive
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-recover-dream-dive.yml']
+  workflow_dispatch:
+permissions: {contents: read,actions: read}
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - name: Download approved source alignment frames
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir input
+          gh run download 38012155659 --repo ${{ github.repository }} --name WVLRP-ORIGINAL-TRAIL-CONTINUOUS-DIVE-HD --dir input
+          test -s input/aerial_start.png && test -s input/trail_end.png
+      - name: Recover completed high quality render or regenerate
+        run: |
+          python -m pip install --disable-pip-version-check -q gradio_client requests
+          python - <<'PY'
+          import requests,shutil,traceback
+          from pathlib import Path
+          from gradio_client import Client,handle_file
+          root='https://dream2589632147-dream-wan2-2-fp8da-aoti-preview-2.hf.space'
+          location='/tmp/gradio/39c9be4f6fb7c1b207342744deefb1450156b1c10ee4178f3aef99ee67a6d1ee/tmpnil1zkje.mp4'
+          for url in [root+'/gradio_api/file='+location,root+'/file='+location]:
+           try:
+             r=requests.get(url,timeout=50)
+             print('RECOVERY',r.status_code,len(r.content),url,flush=True)
+             if r.status_code==200 and len(r.content)>150000:
+               Path('WVLRP_SHARP_FIRST_LAST_DIVE.mp4').write_bytes(r.content)
+               print('RESTORED_COMPLETED_GENERATION_WITHOUT_USING_CREDITS',flush=True)
+               break
+           except Exception as e:print('RECOVER_FAIL',str(e)[:200],flush=True)
+          else:
+           c=Client('dream2589632147/Dream-wan2-2-fp8da-aoti-preview-2')
+           prompt=('First person cinematic FPV DRONE smooth uninterrupted dive through SAME West Virginia forest. Starting from the aerial mountain camera view, the lens pitches steeply down, descends rapidly through one canopy of thick yellow-gold oak and maple leaves, flies BETWEEN actual trees to ground level, and levels to a gentle eye-height walk. Match the EXACT forest trail with large distinctive tree trunks on either side and golden sun at end image. Distinct trunks, leaves and foreground branches move in realistic 3D parallax, ground gets closer, same scene. No cut or dissolve. Photorealistic crisp 4K documentary detail. Camera reaches the SAME LEAF-STREWN TRAIL at the last frame.')
+           neg=('blurry image, haze, motion smear, painterly, watercolor, cheap CGI, low detail, cut, transition, change in location, warp, zoom on static photo, generic woods, unnatural blur')
+           o=c.predict(handle_file('input/aerial_start.png'),handle_file('input/trail_end.png'),'First + Last Frame',prompt,'Cinematic','Slow Push In','High',True,False,'Landscape 16:9',4.5,32,'High Quality',10,neg,10,37594,False,1.0,1.0,'UniPCMultistep',3.0,True,False,api_name='/generate_video')
+           print('DREAM_OUTPUT',str(o)[:850],flush=True)
+           paths=[item for item in o[:2] if item]
+           if not paths:raise RuntimeError('No file returned by Dream provider')
+           file=paths[0]
+           if isinstance(file,dict):file=file.get('path') or file.get('name')
+           shutil.copyfile(str(file),'WVLRP_SHARP_FIRST_LAST_DIVE.mp4')
+           print('REGENERATED_SUCCESS',Path('WVLRP_SHARP_FIRST_LAST_DIVE.mp4').stat().st_size,flush=True)
+          PY
+      - name: Save high quality descent MP4
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-SHARP-FIRST-LAST-DIVE
+          path: WVLRP_SHARP_FIRST_LAST_DIVE.mp4
+          if-no-files-found: ignore
+          retention-days: 5
