@@ -1,0 +1,67 @@
+name: WVLRP Sharp Flight Source Tests
+on:
+  push:
+    branches: [research/free-video-workflow]
+    paths: ['.github/workflows/wvlrp-sharp-source-tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-full-res-footage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install video tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+      - name: Download freely licensed original motion stock clips
+        run: |
+          mkdir -p stock stills
+          python - <<'PY'
+          from urllib.request import Request,urlopen
+          from pathlib import Path
+          candidates={
+           'aerial':[
+             'https://assets.mixkit.co/videos/preview/mixkit-a-drone-flights-above-the-mountains-in-the-forest-50585-large.mp4',
+             'https://assets.mixkit.co/videos/preview/mixkit-a-drone-flights-above-a-lush-forest-in-the-mountains-50586-large.mp4',
+           ],
+           'descending':[
+             'https://assets.mixkit.co/videos/preview/mixkit-flying-through-the-trees-of-a-forest-43126-large.mp4',
+             'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-the-hill-and-the-forest-trees-50880-large.mp4'
+           ],
+           'canopy':[
+             'https://assets.mixkit.co/videos/preview/mixkit-a-drone-flies-over-the-colorful-trees-in-the-forest-on-a-sunny-day-50577-large.mp4',
+             'https://assets.mixkit.co/videos/preview/mixkit-a-drone-flies-over-the-colorful-trees-in-the-forest-50577-large.mp4',
+           ]
+          }
+          for label,urls in candidates.items():
+           for u in urls:
+            try:
+             print('TRY_SOURCE',label,u,flush=True)
+             r=urlopen(Request(u,headers={'User-Agent':'Mozilla/5.0 (compatible; WVLRP/1.0)'}),timeout=35)
+             h=r.headers.get('Content-Type','')
+             data=r.read()
+             print('STATUS',r.status,'TYPE',h,'BYTES',len(data),flush=True)
+             if len(data)>100000 and ('video' in h or data[:16].find(b'ftyp')>=0):
+              Path('stock/'+label+'.mp4').write_bytes(data)
+              break
+            except Exception as e:
+             print('FAILED',str(e)[:200],flush=True)
+          PY
+          for v in stock/*.mp4; do
+            if [ -f "$v" ]; then
+              ffprobe -v error -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=nw=1 "$v"
+              ffmpeg -hide_banner -loglevel error -y -ss 3 -i "$v" -frames:v 1 "stills/$(basename "$v" .mp4).jpg"
+            fi
+          done
+      - name: Save authorized source samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WVLRP-SHARP-LICENSED-SOURCE-SAMPLES
+          path: |
+            stock/
+            stills/
+          if-no-files-found: ignore
+          retention-days: 5
