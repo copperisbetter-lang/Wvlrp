@@ -77,6 +77,9 @@
         <label for="hairStyle">Hairstyle</label><select id="hairStyle"><option value="wavy">Long wavy</option><option value="long">Long straight</option><option value="ponytail">Ponytail</option><option value="bob">Bob</option><option value="short">Short</option></select>
         <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option></select>
         <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option></select><button id="applyPreset" type="button">Use this look</button>
+        <label for="modelFile">Use a detailed 3D person model (.glb)</label>
+        <input id="modelFile" type="file" accept=".glb,model/gltf-binary">
+        <p class="subtle">Loads into the 3D preview on this device only; the file itself is not uploaded, published, or saved to your world JSON. For an example of a detailed free woman model, see <a href="https://www.innerscene.com/tools/library/3d-parts/riley-3d-person-woman-standing-8d40398f" target="_blank" rel="noopener noreferrer">this CC0 woman GLB</a>.</p>
         <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
         <p class="subtle">Photo-to-3D conversion is not active yet. Photo stays in this browser session and is not saved or uploaded.</p>
       </div>
@@ -86,6 +89,7 @@
   </aside>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
 <script type="module" src="./studio.js"></script>
 </body>
 </html>
