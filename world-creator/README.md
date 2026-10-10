@@ -15,9 +15,9 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 - Generate an effectively unbounded deterministic terrain map from a world seed using Appalachian-style ridges, wooded slopes, and a creek cut into a valley.
 - Generate connected procedural trails. Prototype graph is a four-direction interconnected trail lattice with every edge part of a loop and junctions joining across chunk boundaries. **This demonstrates reconnection logic, not final organic trail layout or guaranteed short travel time back to home base.**
 - Scatter up to 500 deer in a batch, including a 100-deer default and user-selectable herd sizes, with local home-range / wide-roamer / stationary *settings*. Movement simulation is not running yet.
-- Place people, animals, cabins and quest markers. Edit names, X/Y world coordinates, chosen outfits, hair, body and face presets. These are metadata and prototype markers; detailed 3D character meshes are not built yet.
-- Upload a reference photo locally to view beside the NPC editor; **does not** convert photos into 3D likenesses and **does not** upload or save photo bytes.
-- Preview a small 3D terrain area and object proxies using Babylon.js.
+- Place people, animals, cabins and quest markers. Edit names, X/Y world coordinates, outfits, hair color/style, complexion, adult character type, body and face presets. The viewer now renders procedurally assembled, recognizable deer and people with simple facial features, clothing and limbs rather than capsule markers. These are still stylized preview meshes, **not realistic rigged 3D game assets**.
+- Upload a reference photo locally to view beside the NPC editor; **does not** convert photos into 3D likenesses and **does not** upload or save photo bytes. A separate GLB import uses an already built 3D mesh, does **not** build 3D from the reference photo, and is session-only: the model file is not embedded into exports or synced.
+- Preview a small 3D terrain area and 3D figures using Babylon.js. Select a character and choose **Inspect selected** for a close view. Use the ranger redhead preset for an adult woman with long wavy red hair and Ranger Station clothing. You may optionally load a legally obtained, textured `.glb` person model for the selected character in your current browser session (under 45 MB) to achieve significantly greater realism.
 - Save metadata to *this browser's* localStorage and import/export a portable JSON blueprint.
 
 ## Critical safety and security boundaries
@@ -32,7 +32,7 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 ## Next build steps
 
 1. Refine the path generator to produce believable branching and reconnection loops using graph constraints, with preplanned endpoints joining established trails.
-2. Create reusable character models, clothing/hair parts, body customization, and deer animations. Add photo-assisted modeling only with appropriate consent/rights and an image-processing service.
+2. Replace current procedural preview figures with licensed, textured, rigged production-grade characters (adult women and men), including hair/outfit customization, animation and deer behavior. Add photo-assisted modeling only with appropriate consent/rights and an image-processing service.
 3. Implement streamed terrain chunks with true world-coordinate persistence, collision and tap-to-walk navigation; use a distance-to-home/fast-return option so a player never needs an eight-hour hike back.
 4. Put the private studio behind secure admin authentication and connect the versioned world blueprint to Oracle. Add staging, preview, rollback and controlled publishing.
 5. Integrate the approved Woodland Trail, Base Camp, Ranger Station and future statewide game map while leaving existing live camera pages functional.
