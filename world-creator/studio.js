@@ -261,7 +261,7 @@ function refresh3d() {
   const forest=material("forest","#52784b"),trunk=material("trunk","#6f5239"),leaves=material("leaves","#315f35");
   const deerMat=material("deer","#c69b72"),npcMat=material("npc","#deb5c0"),otherMat=material("object","#d8ba72");
   const blue=material("creek","#519db9");
-  ground=track(BABYLON.MeshBuilder.CreateGround("procedural terrain",{width:180,height:180,subdivisions:38},scene));
+  ground=track(BABYLON.MeshBuilder.CreateGround("procedural terrain",{width:180,height:180,subdivisions:38,updatable:true},scene));
   const positions=ground.getVerticesData(BABYLON.VertexBuffer.PositionKind);
   for(let i=0;i<positions.length;i+=3)positions[i+1]=heightAt(view.x+positions[i],view.y+positions[i+2],seed)*26;
   const normals=[];BABYLON.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
@@ -270,10 +270,17 @@ function refresh3d() {
   ground.material=forest;
   // Preview trees have stable locations in the current world tile.
   const treeSeed=seedNumber(world.seed);
-  for(let i=0;i<48;i++){
-    const px=(hash(i,14,treeSeed)-.5)*170,pz=(hash(39,i,treeSeed)-.5)*170;
-    const wy=view.y+pz,wx=view.x+px;
-    if(Math.abs(wy-creekY(wx,seed))<13)continue;
+  // Generate trees from absolute world-grid coordinates so returning to a spot
+  // gives the same vegetation rather than repositioning trees with the camera.
+  const treeStep=25;
+  const minCol=Math.floor((view.x-86)/treeStep),maxCol=Math.ceil((view.x+86)/treeStep);
+  const minRow=Math.floor((view.y-86)/treeStep),maxRow=Math.ceil((view.y+86)/treeStep);
+  for(let col=minCol;col<=maxCol;col++)for(let row=minRow;row<=maxRow;row++){
+    if(hash(col,row,treeSeed)<.28)continue;
+    const wx=col*treeStep+(hash(col,row,treeSeed+17)-.5)*12;
+    const wy=row*treeStep+(hash(col,row,treeSeed+18)-.5)*12;
+    const px=wx-view.x,pz=wy-view.y;
+    if(Math.abs(px)>86||Math.abs(pz)>86||Math.abs(wy-creekY(wx,seed))<13)continue;
     const h=heightAt(wx,wy,seed)*26;
     const stem=track(BABYLON.MeshBuilder.CreateCylinder("tree",{height:5,diameter:.75,tessellation:5},scene));
     stem.position.set(px,h+2.5,pz);stem.material=trunk;
