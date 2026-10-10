@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c1714">
+<title>WVLRP World Creator — Studio Prototype</title>
+<link rel="stylesheet" href="./studio.css">
+</head>
+<body>
+<header class="top">
+  <div class="branding"><div class="eyebrow">WEST VIRGINIA LIVE RESEARCH PROJECT</div><h1>World Creator <small>Studio v0.1</small></h1></div>
+  <div class="actions">
+    <button id="save" type="button">Save on this device</button>
+    <button id="export" type="button">Export JSON</button>
+    <label class="button" for="import">Import JSON</label><input id="import" type="file" accept=".json,application/json" hidden>
+  </div>
+</header>
+<div class="notice" role="note"><strong>Builder preview:</strong> Your changes stay on this device. This is not connected to Oracle, public gameplay, or the existing quests. This link is not an authenticated admin panel; don't store sensitive material in it.</div>
+<main class="layout">
+  <aside class="panel tools">
+    <h2>Build the world</h2>
+    <p class="subtle">Choose a tool, then tap anywhere on the map.</p>
+    <div class="tool-grid" id="tools">
+      <button class="active" data-tool="select" type="button">↖ Select / move</button>
+      <button data-tool="pan" type="button">✥ Pan map</button>
+      <button data-tool="deer" type="button">🦌 Place deer</button>
+      <button data-tool="npc" type="button">👤 Create person</button>
+      <button data-tool="animal" type="button">🐾 Other animal</button>
+      <button data-tool="cabin" type="button">⌂ Add cabin</button>
+      <button data-tool="marker" type="button">⌖ Quest marker</button>
+    </div>
+    <section class="section">
+      <h3>Deer herds</h3>
+      <label for="deerCount">Total deer to scatter</label><input id="deerCount" type="number" min="1" max="500" value="100">
+      <label for="herdSize">Deer per herd</label><input id="herdSize" type="number" min="2" max="8" value="4">
+      <button id="scatter" class="primary" type="button">Scatter around map center</button>
+      <p class="subtle">Default is small herds, with some deer roaming widely. You can adjust each deer afterward.</p>
+    </section>
+    <section class="section">
+      <h3>Terrain generation</h3>
+      <label for="seed">World seed</label><input id="seed" maxlength="100">
+      <button id="applySeed" type="button">Regenerate terrain preview</button>
+      <p class="subtle">Hills, wooded ridges and valley-bottom creeks are reproducible from the seed. Generated trails reconnect at intersections to form loops.</p>
+    </section>
+    <section class="section">
+      <h3>Find your way</h3>
+      <button id="home" type="button">Center Base Camp</button>
+      <button id="ranger" type="button">Center Ranger Station</button>
+      <button id="resetDemo" type="button">Reset studio data</button>
+    </section>
+  </aside>
+  <section class="workspace">
+    <div class="work-head"><div><h2>Explore and place</h2><p id="coords">Map coordinates</p></div><div class="zoom-controls"><button id="zoomOut" aria-label="Zoom out" type="button">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in" type="button">+</button></div></div>
+    <div class="map-frame"><canvas id="worldMap" tabindex="0" aria-label="Zoomable West Virginia procedural game map. Tap to place or select, drag to pan, pinch or scroll to zoom."></canvas><div class="map-key"><span>● Your objects</span><span class="trail-key">━ Connected trails</span><span class="creek-key">〰 Valley creek</span></div></div>
+    <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><button id="refresh3d" type="button">Refresh 3D</button></div>
+    <div class="preview-frame"><canvas id="scene" aria-label="Interactive Babylon.js woodland terrain preview"></canvas><p id="threeStatus">Loading Babylon.js preview…</p></div>
+    <div class="stats"><span id="count">0 placed items</span><span id="status" role="status">Ready</span></div>
+  </section>
+  <aside class="panel inspector">
+    <h2>Object details</h2>
+    <p id="selectionInfo" class="subtle">Select an object on the map to edit it, or place something new.</p>
+    <div id="objectForm" hidden>
+      <label for="objectName">Name</label><input id="objectName" maxlength="100">
+      <div class="two"><div><label for="objectX">X metres</label><input id="objectX" type="number" step="0.1"></div><div><label for="objectY">Y metres</label><input id="objectY" type="number" step="0.1"></div></div>
+      <div id="wildlifeFields">
+        <label for="behavior">Movement behaviour</label>
+        <select id="behavior"><option value="home-range">Local home range</option><option value="wide-roamer">Wide roaming</option><option value="stationary">Stay exactly here</option></select>
+        <label for="radius">Home range (metres)</label><input id="radius" type="number" min="0" max="5000" step="5">
+      </div>
+      <div id="npcFields">
+        <label for="body">Body shape</label><select id="body"><option>average</option><option>slim</option><option>athletic</option><option>stocky</option><option>tall</option><option>short</option></select>
+        <label for="face">Face shape</label><select id="face"><option>oval</option><option>round</option><option>square</option><option>heart</option><option>long</option></select>
+        <label for="hair">Hair</label><select id="hair"><option>brown</option><option>red</option><option>blonde</option><option>black</option><option>gray</option><option>white</option></select>
+        <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option></select>
+        <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
+        <p class="subtle">Photo-to-3D conversion is not active yet. Photo stays in this browser session and is not saved or uploaded.</p>
+      </div>
+      <div class="form-actions"><button id="commitObject" class="primary" type="button">Apply changes</button><button id="deleteObject" class="danger" type="button">Remove object</button></div>
+    </div>
+    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">Editable models, character faces and clothing meshes, photo-assisted creation, animated deer, walking NPCs, camera movement, Oracle sync, and authenticated publishing.</p></section>
+  </aside>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script type="module" src="./studio.js"></script>
+</body>
+</html>
