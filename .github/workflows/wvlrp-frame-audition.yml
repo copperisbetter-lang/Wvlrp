@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Prepare matched first and final film frames
         run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
           python -m pip install --disable-pip-version-check -q pillow requests
           python - <<'PY'
           from PIL import Image,ImageOps,ImageDraw
