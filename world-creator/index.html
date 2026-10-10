@@ -53,7 +53,7 @@
   <section class="workspace">
     <div class="work-head"><div><h2>Explore and place</h2><p id="coords">Map coordinates</p></div><div class="zoom-controls"><button id="zoomOut" aria-label="Zoom out" type="button">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in" type="button">+</button></div></div>
     <div class="map-frame"><canvas id="worldMap" tabindex="0" aria-label="Zoomable West Virginia procedural game map. Tap to place or select, drag to pan, pinch or scroll to zoom."></canvas><div class="map-key"><span>● Your objects</span><span class="trail-key">━ Connected trails</span><span class="creek-key">〰 Valley creek</span></div></div>
-    <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><button id="refresh3d" type="button">Refresh 3D</button></div>
+    <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><div class="preview-actions"><button id="inspect3d" type="button">Inspect selected</button><button id="refresh3d" type="button">Refresh 3D</button></div></div>
     <div class="preview-frame"><canvas id="scene" aria-label="Interactive Babylon.js woodland terrain preview"></canvas><p id="threeStatus">Loading Babylon.js preview…</p></div>
     <div class="stats"><span id="count">0 placed items</span><span id="status" role="status">Ready</span></div>
   </section>
@@ -78,7 +78,7 @@
       </div>
       <div class="form-actions"><button id="commitObject" class="primary" type="button">Apply changes</button><button id="deleteObject" class="danger" type="button">Remove object</button></div>
     </div>
-    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">Editable models, character faces and clothing meshes, photo-assisted creation, animated deer, walking NPCs, camera movement, Oracle sync, and authenticated publishing.</p></section>
+    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">The 3D preview now shows stylized deer and human figures, not finished characters. Rigged animation, realistic faces, fitted outfits, photo-assisted creation, Oracle sync, and authenticated publishing are still future work.</p></section>
   </aside>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
