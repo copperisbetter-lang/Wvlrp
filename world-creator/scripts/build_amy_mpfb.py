@@ -62,6 +62,12 @@ def tint(mesh, color, roughness=.78):
         mat.use_nodes=True
         for n in mat.node_tree.nodes:
             if n.type=="BSDF_PRINCIPLED":
+                # Many MakeHuman hair materials have an image connected to
+                # Base Color, which would override the requested red swatch.
+                # Keep hair-card opacity/alpha links; detach ONLY Base Color.
+                for link in list(mat.node_tree.links):
+                    if link.to_node==n and link.to_socket.name=="Base Color":
+                        mat.node_tree.links.remove(link)
                 n.inputs["Base Color"].default_value=(*color,1)
                 n.inputs["Roughness"].default_value=roughness
                 n.inputs["Metallic"].default_value=0
@@ -145,6 +151,7 @@ def main():
         ("teeth",["teeth_base.mhclo"],"Teeth")]:
         add_asset(h,sub,names,kind)
     hair=add_asset(h,"hair",["long01.mhclo"],"Hair")
+    if hair is None: raise RuntimeError('MPFB long red hair asset is unavailable')
     tint(hair,(.60,.225,.115),.78)
 
     export_root=ExportService.create_character_copy(h,name_suffix="_wvrlp_ref")
