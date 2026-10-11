@@ -33,15 +33,27 @@ scene.collection.objects.link(camera)
 scene.camera=camera
 camdata.type="ORTHO";camdata.ortho_scale=2.05
 target=Vector((0,0,.85))
-views={"front":(0,-4,.85),"right":(4,0,.85),"back":(0,4,.85)}
+views={"front":(0,-4,.85),"right":(4,0,.85),"back":(0,4,.85),
+       "upper-back-overhead":(0,3.2,3.1)}
 for label,pos in views.items():
     camera.location=pos
-    direction=target-camera.location
+    aim=Vector((0,0,1.36)) if label=="upper-back-overhead" else target
+    direction=aim-camera.location
     camera.rotation_euler=direction.to_track_quat("-Z","Y").to_euler()
     scene.render.filepath=str(out/("riley-"+label+".png"))
     bpy.ops.render.render(write_still=True)
     assert Path(scene.render.filepath).stat().st_size>4000
     print("RILEY_QA_RENDER",label,scene.render.filepath)
+
+# Tight chest material/surface QA: see contour seams that a whole-body view hides.
+camera.location=(0,-3.5,1.29)
+close_target=Vector((0,0,1.275))
+camera.rotation_euler=(close_target-camera.location).to_track_quat("-Z","Y").to_euler()
+camdata.ortho_scale=.78
+scene.render.filepath=str(out/"riley-chest-detail.png")
+bpy.ops.render.render(write_still=True)
+print("RILEY_QA_RENDER","chest-detail",scene.render.filepath)
+camdata.ortho_scale=2.05
 
 # Render the untouched CC0 donor independently. This lets a reviewer tell an
 # unhealthy anatomical source apart from damage caused by Riley's shape edits.
