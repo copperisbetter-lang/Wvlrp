@@ -45,13 +45,21 @@ for ob in original:
     if name.startswith("bob01") or name.startswith("shoes05"):
         bpy.data.objects.remove(ob, do_unlink=True)
 
-# Remove the entire legacy shirt/trouser outfit.
-# The original base figure is converted to a featureless doll mannequin.
-old_outfits=[o for o in bpy.context.scene.objects if o.type=="MESH"
-             and o.name.startswith("female_casualsuit")]
-for ob in old_outfits:
-    bpy.data.objects.remove(ob,do_unlink=True)
-print("RILEY_REMOVED_OLD_CLOTHING",len(old_outfits))
+# CRITICAL: the stock GLB's casualsuit is not just optional clothing:
+# its actual mesh supplies the torso, hips and most of the legs. Deleting it
+# leaves only a floating head, arms, and hair in all three poses.
+# Preserve the complete suit geometry, but resurface it below as the same
+# matte, featureless display-mannequin material as the exposed base skin.
+body_shells=[ob for ob in bpy.context.scene.objects if ob.type=="MESH"
+             and ob.name.lower().startswith("female_casualsuit")]
+if not body_shells:
+    raise RuntimeError("Riley source is missing the torso/legs body shell")
+for ob in body_shells:
+    points=[ob.matrix_world @ Vector(v) for v in ob.bound_box]
+    print("RILEY_RETAIN_FULL_BODY",MODE,ob.name,"vertices",len(ob.data.vertices),
+          "height_min",round(min(p.z for p in points),3),
+          "height_max",round(max(p.z for p in points),3))
+
 
 # Work in proportional coordinates so all three static poses match.
 def z(frac):
@@ -261,7 +269,8 @@ print("RILEY_SOFT_HAIR_AND_SMIRK",MODE,
 # uniform non-photographic doll finish. This is deliberately NON-anatomical.
 doll_skin=mat("Riley | smooth matte featureless doll skin",(.79,.61,.50),.83)
 body_parts=[ob for ob in bpy.context.scene.objects if ob.type=="MESH" and
-            ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly")]
+            ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly"
+             or ob.name.lower().startswith("female_casualsuit"))]
 if not body_parts:
     raise RuntimeError("Cannot find Riley's base mannequin body")
 # Strip any separate anatomically detailed add-ons if they exist.
@@ -305,7 +314,10 @@ for ob in body_parts:
     ob.data.materials.append(doll_skin)
     for poly in ob.data.polygons:
         center=world @ poly.center
-        if center.z<eye_z-H*.115:
+        # The stock clothing shell is the only continuous source torso/leg
+        # surface. Give ALL its polygons the plain skin-matte mannequin finish;
+        # preserve head and facial materials on the separate original meshes.
+        if ob.name.lower().startswith("female_casualsuit") or center.z<eye_z-H*.115:
             poly.material_index=skin_slot
         poly.use_smooth=True
     ob.data.update()
@@ -316,7 +328,7 @@ print("RILEY_FEATURELESS_MANNEQUIN",MODE,
 # separate explicit-anatomy meshes from the original assets.
 for obj in bpy.context.scene.objects:
     if obj.type=="MESH" and any(w in obj.name.lower() for w in
-        ("bikini","shorts","sneaker","female_casualsuit","genital","nipple","vulva")):
+        ("bikini","shorts","sneaker","genital","nipple","vulva")):
         raise AssertionError("Non-mannequin geometry remains: "+obj.name)
 
 
