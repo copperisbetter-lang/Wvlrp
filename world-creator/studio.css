@@ -25,7 +25,7 @@ input[type=file]{max-width:100%;color:var(--muted);font-size:11px}
 #worldMap{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .map-key{position:absolute;left:8px;bottom:8px;display:flex;gap:11px;flex-wrap:wrap;background:#09140edb;color:#fff;padding:7px 9px;font-size:11px;border-radius:8px;pointer-events:none}
 .trail-key{color:#e0bd83}.creek-key{color:#88c9f3}
-.preview-head{margin-top:10px;padding-bottom:6px}.preview-head button{font-size:12px;min-height:36px}
+.preview-head{margin-top:10px;padding-bottom:6px;flex-wrap:wrap}.preview-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.preview-head button{font-size:12px;min-height:36px}
 .preview-frame{height:260px;background:linear-gradient(#9ab1bd,#4b6851);position:relative;border:1px solid #527268;border-radius:10px;overflow:hidden}
 #scene{width:100%;height:100%;display:block;touch-action:none}
 #threeStatus{position:absolute;bottom:8px;left:8px;right:8px;background:#06140ac9;padding:7px;border-radius:7px;color:#f9efc5;font-size:12px;pointer-events:none}
@@ -35,3 +35,5 @@ input[type=file]{max-width:100%;color:var(--muted);font-size:11px}
 @media(max-width:1190px){.layout{grid-template-columns:minmax(220px,260px) minmax(320px,1fr)}.inspector{grid-column:1/-1}.inspector #objectForm{display:grid;grid-template-columns:repeat(3, minmax(120px,1fr));gap:5px 14px}.inspector #objectForm[hidden]{display:none}.inspector #wildlifeFields,.inspector #npcFields{grid-column:1/-1}.inspector .form-actions{grid-column:1/-1}.inspector #npcFields{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));column-gap:12px}}
 @media(max-width:740px){.top{padding:12px;align-items:flex-start;flex-direction:column}h1{font-size:24px}.actions{width:100%}.actions button,.actions .button{font-size:12px;padding:7px;flex:1}.notice{text-align:left}.layout{display:flex;flex-direction:column;padding:8px;gap:8px}.workspace{order:0}.tools{order:1}.inspector{order:2}.tools .tool-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.map-frame{height:48vh;min-height:310px}.preview-frame{height:220px}.inspector #objectForm{display:block}.inspector #npcFields{display:block}.inspector .form-actions{display:grid}.stats{flex-wrap:wrap}.panel h2{font-size:21px}}
 @media(max-width:370px){.tools .tool-grid{grid-template-columns:1fr 1fr}.work-head h2{font-size:18px}.zoom-controls{gap:2px}}
+
+@media(max-width:740px){.preview-head h2{flex:1 0 100%}.preview-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.preview-actions #findDeer3d{grid-column:1/-1}.preview-actions button{min-height:40px;padding:7px 6px}}
