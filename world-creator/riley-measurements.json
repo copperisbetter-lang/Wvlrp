@@ -1,0 +1,29 @@
+{
+  "version": "riley-rigged-v1",
+  "status": "Character design dimensions estimated from 2026-10-10 front, side and rear studio turnarounds, NOT measurements derived from a calibrated body scan.",
+  "height_cm": 170,
+  "bust_circumference_cm": 94,
+  "underbust_circumference_cm": 80,
+  "waist_circumference_cm": 70,
+  "high_hip_circumference_cm": 87,
+  "full_hip_circumference_cm": 99,
+  "shoulder_width_cm": 40,
+  "back_shoulder_to_waist_cm": 42,
+  "sleeve_length_cm": 58,
+  "inseam_cm": 78,
+  "outseam_cm": 101,
+  "neck_circumference_cm": 33,
+  "upper_arm_circumference_cm": 27,
+  "thigh_circumference_cm": 56,
+  "calf_circumference_cm": 35,
+  "foot_length_cm": 25,
+  "front_profile": "Natural athletic adult female; wavy blonde hair; seamless neutral base-layer; barefoot",
+  "unit_scale": "1 Blender unit = 1 metre",
+  "construction": "Single body and skeleton. Outfit dimensions are baseline body measurements, NOT finished garment dimensions. Add ease per garment type.",
+  "source_views": [
+    "front",
+    "left profile",
+    "rear"
+  ],
+  "reference_note": "Use original front, side, back rendered images from conversation for manual proportion and texture matching; views are AI generated rather than calibrated identical camera photographs."
+}
