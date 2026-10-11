@@ -1,14 +1,14 @@
-"""WVLRP Riley MPFB trial (reference-guided, NOT automatic photo reconstruction).
+"""WVLRP Chrissy MPFB trial (reference-guided, NOT automatic photo reconstruction).
 Uses free MPFB body morph system, CC0 stock skin + hair, Mixamo compatible rig.
-Does not replace the existing Riley test assets. Generated result requires human QA.
+Does not replace the existing Riley character or world data. Generated result requires human QA.
 """
 import bpy, os, sys, zipfile, json, math, traceback
 from pathlib import Path
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "assets" / "riley-mpfb-trial.glb"
-PNG = ROOT / "assets" / "riley-mpfb-trial-preview.png"
+OUT = ROOT / "assets" / "chrissy-mpfb-trial.glb"
+PNG = ROOT / "assets" / "chrissy-mpfb-trial-preview.png"
 
 # MPFB is installed as a Blender extension into the workflow's local repository.
 from bl_ext.wvlrp_local.mpfb.services.humanservice import HumanService
@@ -109,7 +109,7 @@ def main():
     bpy.ops.object.delete(use_global=False)
     load_system_pack()
     h=HumanService.create_human()
-    h.name="Riley - MPFB original body mesh"
+    h.name="Chrissy - MPFB original body mesh"
     # The render sheet is the target (front/profile/rear). This is an approximate
     # parametric first pass, NOT a reconstruction of facial pixels or calibrated bust.
     for key,val in [("gender",1.0),("age",.34),("weight",.42),("muscle",.48),("height",.55)]:
@@ -139,8 +139,8 @@ def main():
     if not exp: raise RuntimeError("MPFB export body copy missing")
     ExportService.bake_modifiers_remove_helpers(exp,
         bake_masks=True,bake_subdiv=False,remove_helpers=True,also_proxy=True)
-    top=garment(exp,"Riley taupe fitted tank - reference trial",.575,.835,.129,(.55,.51,.47))
-    shorts=garment(exp,"Riley taupe short drawstring shorts - reference trial",.435,.575,.163,(.51,.47,.43),.011)
+    top=garment(exp,"Chrissy taupe fitted tank - reference trial",.575,.835,.129,(.55,.51,.47))
+    shorts=garment(exp,"Chrissy taupe short drawstring shorts - reference trial",.435,.575,.163,(.51,.47,.43),.011)
     top.parent=export_root
     shorts.parent=export_root
 
@@ -157,7 +157,7 @@ def main():
         actionbone.rotation_euler.x=angle
         actionbone.keyframe_insert(data_path="rotation_euler",frame=frame,group="Idle")
     if rig.animation_data and rig.animation_data.action:
-        rig.animation_data.action.name="Riley Idle - MPFB test"
+        rig.animation_data.action.name="Chrissy Idle - MPFB test"
     bpy.context.scene.frame_set(1)
 
     bpy.ops.object.select_all(action="DESELECT")
