@@ -39,7 +39,7 @@ try {
  camera.inertia=.7;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=1.28;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.7;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','chrissy-mpfb-trial.glb?v=3',scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','chrissy-mpfb-trial.glb?v=cc0-face-texture-20261011-v1',scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   let low=new BABYLON.Vector3(Infinity,Infinity,Infinity),high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
   for(const m of res.meshes){
@@ -60,7 +60,9 @@ try {
   if(!Number.isFinite(low.y))throw Error('Model contains no visible meshes');
   if(groups.length) groups[0].start(true,1,groups[0].from,groups[0].to,false);
   canvas.style.visibility='visible';poster.hidden=true;
-  status.textContent='3D loaded · '+(res.skeletons?.[0]?.bones?.length||0)+' bones · '+groups.length+' animation';
+     const faceIsTextured=scene.materials.some(m=>m.name.includes('Chrissy real CC0 face and body skin UV') && m.albedoTexture);
+   status.textContent='3D loaded · '+(res.skeletons?.[0]?.bones?.length||0)+' bones · '+groups.length+' animation';
+   if(!faceIsTextured){status.textContent='Older model loaded — photographic face texture has not been published yet';status.style.background='#563325e8';}
  }).catch(e=>{canvas.style.visibility='hidden';poster.hidden=false;status.id='err';status.textContent='3D model failed to load. Showing preview instead. '+String(e.message||e).slice(0,140)});
  engine.runRenderLoop(()=>scene.render());
  window.addEventListener('resize',()=>engine.resize());
