@@ -5,6 +5,7 @@ No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requir
 import bpy, os, sys, zipfile, json, math, traceback
 from pathlib import Path
 from mathutils import Vector
+from face_materials import preserve_photo_skin, verify_photo_skin_glb
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "caitlyn-mpfb-trial.glb"
@@ -93,49 +94,9 @@ def add_soft_waves(hair):
 
 
 def clean_skin_material(body):
-    """UV-independent skin with subtle, reproducible variation in 3D vertex color.
+    """Use the original licensed UV skin detail, not a flat color swatch."""
+    return preserve_photo_skin(body, "Caitlyn")
 
-    Amy's old export used one uniform flat skin swatch. Here mild spatial
-    variation and natural blush are encoded as glTF-supported vertex colors
-    without risking a mismatched/incorrectly mapped MakeHuman UV texture.
-    Do not touch unrelated characters or modify their materials.
-    """
-    import math
-    verts=body.data.vertices
-    zlo=min(v.co.z for v in verts); zhi=max(v.co.z for v in verts)
-    height=max(zhi-zlo,.001)
-    col=body.data.color_attributes.get("CaitlynSkinColor")
-    if col is None:
-        col=body.data.color_attributes.new(name="CaitlynSkinColor",type="FLOAT_COLOR",domain="CORNER")
-    def clamp(x): return max(0.,min(1.,x))
-    def skin_for_vertex(v):
-        p=v.co
-        # One consistent complexion on face, neck, ears, torso and limbs.
-        # The old high-face blush mask created visible face/body color seams.
-        grain=math.sin(p.x*57+p.y*31+p.z*83)*math.sin(p.x*41-p.y*43+p.z*67)
-        tone=.0035*grain
-        return (clamp(.840+tone),clamp(.710+tone*.8),clamp(.665+tone*.68),1.0)
-    shades=[skin_for_vertex(v) for v in verts]
-    for poly in body.data.polygons:
-        poly.use_smooth=True
-        for idx in poly.loop_indices:
-            col.data[idx].color=shades[body.data.loops[idx].vertex_index]
-    skin=bpy.data.materials.new("Caitlyn unified fair face and body skin PBR")
-    skin.diffuse_color=(.840,.710,.665,1)
-    skin.use_nodes=True
-    nodes=skin.node_tree.nodes
-    p=nodes.get("Principled BSDF")
-    p.inputs["Base Color"].default_value=(.840,.710,.665,1)
-    p.inputs["Roughness"].default_value=.68
-    p.inputs["Metallic"].default_value=0
-    if "Subsurface Weight" in p.inputs: p.inputs["Subsurface Weight"].default_value=.085
-    c=nodes.new("ShaderNodeVertexColor")
-    c.layer_name="CaitlynSkinColor"
-    skin.node_tree.links.new(c.outputs["Color"],p.inputs["Base Color"])
-    if not body.data.materials: body.data.materials.append(skin)
-    else:
-        for i in range(len(body.data.materials)): body.data.materials[i]=skin
-    print("WVLRP_CAITLYN_TEXTURED_SKIN",body.name,len(verts),len(body.data.polygons))
 
 def add_natural_smile(body):
     """Use official CC0 ARKit face morphs instead of altering face colors."""
@@ -664,6 +625,7 @@ def main():
     bs=OUT.read_bytes()
     n,kind=struct.unpack_from("<II",bs,12)
     meta=json.loads(bs[20:20+n].decode("utf-8"))
+    verify_photo_skin_glb(meta, "Caitlyn")
     print("WVLRP_CAITLYN_EXPORTED_MATERIALS",[(m.get("name","")) for m in meta.get("materials",[])])
     print("WVLRP_RESULT_GLB",OUT,OUT.stat().st_size,"skins",len(meta.get("skins",[])),
         "joint_count",len(meta.get("skins",[{}])[0].get("joints",[])),
