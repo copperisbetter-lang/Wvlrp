@@ -38,7 +38,7 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
-const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=full-scalp-blonde-v8";
+const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-v1";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
@@ -344,11 +344,18 @@ function material(name,color){
   mat.diffuseColor=BABYLON.Color3.FromHexString(color);
   mat.specularColor=new BABYLON.Color3(.05,.05,.05);return mat;
 }
-// The Blender source may bake a washed-out grey onto the otherwise correct
-// sculpt. Give ONLY the rigged Riley body + collar a warm, matte complexion;
-// never overwrite her photographed face, eyes, blonde hair, or other NPCs.
-// "Complexion" in Object details controls the same material on re-apply.
+// Riley's game GLB samples the actual face-skin material on export.
+// Respect that material to prevent a separate flat/pink body from fighting
+// her natural warm textured face. Only older fallback assets need an override.
+// Do not recolor a body independently of its preserved face.
 function applyRileyFleshTone(result, complexion="fair") {
+  const sampledSkin=(result.materials||[]).find(mat=>
+    (mat.name||"").toLowerCase().includes("riley complexion matched continuous mannequin skin"));
+  if(sampledSkin){
+    if("metallic" in sampledSkin)sampledSkin.metallic=0;
+    if("roughness" in sampledSkin)sampledSkin.roughness=.78;
+    return; // Keep exported body and neck hue matched to original face texture.
+  }
   const skinColors={
     fair:"#D3A188", light:"#C6977D", tan:"#B97E62",
     brown:"#8D5B43", deep:"#593D31"
