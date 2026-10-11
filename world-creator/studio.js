@@ -2,7 +2,7 @@ import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
   creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER
 } from "./world-core.js";
-import { makeFigureBuilder } from "./character-models.js";
+import { makeFigureBuilder } from "./character-models.js?v=mason-fallback-v1";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -559,7 +559,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     fallback.dispose(false,true);
     if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
-    fallback.setEnabled(!Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey));
+    fallback.setEnabled(o.modelKey==="mason" || !Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey));
     status("Unable to load 3D character: "+String(err.message||err).slice(0,160));
   });
 }
@@ -722,6 +722,20 @@ function setCaitlynPose(pose){
 }
 document.querySelectorAll("[data-caitlyn-pose]").forEach(button=>{
   button.onclick=()=>setCaitlynPose(button.dataset.caitlynPose);
+});
+function setMasonPose(pose){
+  const o=selected();
+  if(!o||o.type!=="npc"||o.modelKey!=="mason"){
+    status("Select Mason first with Find Mason");return;
+  }
+  if(!["standing","bend","crouch","allfours","elbows"].includes(pose))return;
+  o.pose=pose;$("pose").value=pose;
+  save();dirty3d=true;focusObjectIn3D(o,3.0);
+  status("Mason: "+({standing:"standing",bend:"bending",crouch:"kneeling",
+    allfours:"hands and knees",elbows:"elbows and knees"})[pose]+". Drag to orbit and pinch to zoom.");
+}
+document.querySelectorAll("[data-mason-pose]").forEach(button=>{
+  button.onclick=()=>setMasonPose(button.dataset.masonPose);
 });
 
 // Pressing Add again selects the original Riley instead of duplicating her.
