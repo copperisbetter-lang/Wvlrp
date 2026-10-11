@@ -28,5 +28,17 @@ Saved 2026-10-11. This document captures the **working source configuration** us
 ## Future girls / variation
 This is **Caitlyn's exact reproducible complexion starting point**, not the only skin tone permitted for future women. Future avatars may use different MakeHuman licensed skin definitions and complexions, but must follow the **same UV photo texture/PBR/continuity checks**. The approved Caitlyn body, specific character likeness, platinum hair and eye color are separate character presets; do **not** impose those on every new female avatar.
 
+## Expanded inclusive complexion palette — October 11, 2026
+The user wants future women/girls in The Wild to include a wide variety of **medium, tan, golden, olive, brown and deep-brown complexions**, including characters who are Indigenous/Native American, Indian/South Asian and from East/Southeast Asian backgrounds. The full spectrum of complexions and undertones is applicable to characters of **any** background: do not reduce ancestry, culture or facial features to a single skin color or use ethnic labels as complexion presets.
+
+The new `world-creator/skin-tone-presets.json` defines 14 selectable **preview swatches** from very light to very deep, including warm, neutral, cool, olive and golden undertones. It is a **design/preview palette**, not validated photoreal textures and not yet a working control in the 3D avatar creator.
+
+For a production-ready avatar:
+1. Choose a matching **properly licensed, UV-compatible photo diffuse skin** with real complexion detail (not simply multiplying Caitlyn's light skin image by a dark flat RGB).
+2. Apply the same texture/material workflow to all exposed face, neck, ears, hands, legs and torso. Preserve realistic local pigmentation and detail.
+3. Keep the existing PBR pipeline and verify actual glTF texture + UV; visually inspect in consistent lighting, including deep shades and different undertones, for gray/chalky washed-out faces or bright seams.
+4. Make complexion, hairstyle, eye color, face shape, cultural identity, clothing and other traits **independent editable choices**; avoid stereotypes.
+5. Do not change Caitlyn's approved body, or automatically restyle Amy/Chrissy/Riley/Mason to fit these new presets.
+
 ## Status
 This document records the source material and shared helper already committed. Final live GLB/model QA is separate; don't claim an updated published model until the relevant build completes and the visual result is inspected.
