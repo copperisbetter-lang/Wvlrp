@@ -24,7 +24,7 @@
 <button id="idle">Play movement</button>
 <button id="smile" aria-pressed="true">Smile: on</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=cc0-face-texture-20261011-v1" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -46,7 +46,7 @@ try {
  camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=cc0-face-texture-20261011-v1&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
@@ -91,10 +91,12 @@ try {
   const stand=groups.find(g=>/Caitlyn Stand/i.test(g.name));
   if(stand){stand.start(true,1,stand.from,stand.to,false);currentGroup=stand;}
   else status.textContent='3D loaded but stand animation missing';
+  const faceIsTextured=scene.materials.some(m=>m.name.includes('Caitlyn real CC0 face and body skin UV') && m.albedoTexture);
   if(!missing.length && smileCount===2){
     status.textContent='Updated Caitlyn loaded · '+(res.skeletons?.[0]?.bones?.length||0)+
        ' bones · '+groups.length+' motions · '+smileCount+' smile shapes · select a floor pose';
   }
+  if(!faceIsTextured){status.textContent='Older Caitlyn 3D file — photographic face texture not published yet';status.style.background='#563325e8';}
  }).catch(e=>{status.id='err';status.textContent='Unable to load GLB: '+(e.message||e)});
  engine.runRenderLoop(()=>scene.render());
  window.addEventListener('resize',()=>engine.resize());
