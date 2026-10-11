@@ -38,9 +38,9 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
 // This is NOT yet a seamless skeletal transition or a fully rigged character.
-const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=riley-new-reference-updo-v4";
-const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=riley-new-reference-updo-v4";
-const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=riley-new-reference-updo-v4";
+const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=riley-attached-long-wavy-v5";
+const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=riley-attached-long-wavy-v5";
+const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=riley-attached-long-wavy-v5";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
