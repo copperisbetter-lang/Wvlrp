@@ -42,3 +42,19 @@ for label,pos in views.items():
     bpy.ops.render.render(write_still=True)
     assert Path(scene.render.filepath).stat().st_size>4000
     print("RILEY_QA_RENDER",label,scene.render.filepath)
+
+# Render the untouched CC0 donor independently. This lets a reviewer tell an
+# unhealthy anatomical source apart from damage caused by Riley's shape edits.
+bpy.ops.object.select_all(action="DESELECT")
+for ob in list(scene.objects):
+    if ob.type in ("MESH","ARMATURE"): ob.select_set(True)
+bpy.ops.object.delete(use_global=False)
+donor=root/"assets"/"riley-sculpted-donor.glb"
+if donor.is_file():
+    bpy.ops.import_scene.gltf(filepath=str(donor))
+    for label,pos in {"donor-front":(0,-4,.85),"donor-right":(4,0,.85)}.items():
+        camera.location=pos
+        camera.rotation_euler=(target-camera.location).to_track_quat("-Z","Y").to_euler()
+        scene.render.filepath=str(out/(label+".png"))
+        bpy.ops.render.render(write_still=True)
+        print("RILEY_DONOR_BASELINE_RENDER",label,scene.render.filepath)
