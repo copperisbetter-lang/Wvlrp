@@ -70,7 +70,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-knee-neck-v2"
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-skin-ground-support-v5"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -511,7 +511,8 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
       if(o.modelKey==="caitlyn"){
         const clipName=({
           standing:"Caitlyn Stand",bend:"Caitlyn Bend",
-          crouch:"Caitlyn Kneel",allfours:"Caitlyn HandsAndKnees"
+          crouch:"Caitlyn Kneel",allfours:"Caitlyn HandsAndKnees",
+          elbows:"Caitlyn ElbowsAndKnees"
         })[o.pose]||"Caitlyn Stand";
         const clip=animations.find(a=>a.name===clipName);
         if(!clip)throw Error("Caitlyn missing pose "+clipName);
@@ -648,7 +649,7 @@ function focusObjectIn3D(o,radius=4.4){
   if(camera){
     const h=heightAt(o.x,o.y,seed)*26;
     // Centre on the entire mannequin instead of its face.
-    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours" ? .46 : o.pose==="crouch" ? .66 : o.pose==="bend" ? .74 : .88),0));
+    camera.setTarget(new BABYLON.Vector3(0,h+(["allfours","elbows"].includes(o.pose) ? .46 : o.pose==="crouch" ? .66 : o.pose==="bend" ? .74 : .88),0));
     camera.radius=Math.max(radius,o.pose==="standing"?3.3:2.9);
     camera.alpha=o.modelKey==="riley"?Math.PI/2.25:-Math.PI/2.7;
     camera.beta=1.2;
@@ -681,12 +682,12 @@ function setCaitlynPose(pose){
   if(!o||o.type!=="npc"||o.modelKey!=="caitlyn"){
     status("Select Caitlyn first with Find Caitlyn");return;
   }
-  if(!["standing","bend","crouch","allfours"].includes(pose))return;
+  if(!["standing","bend","crouch","allfours","elbows"].includes(pose))return;
   o.pose=pose;
   $("pose").value=pose;
   save();dirty3d=true;focusObjectIn3D(o,3.0);
   status("Caitlyn: "+({standing:"standing",bend:"bending",crouch:"kneeling",
-    allfours:"hands and knees"})[pose]+". Drag to orbit, pinch to zoom.");
+    allfours:"hands and knees",elbows:"elbows and knees"})[pose]+". Drag to orbit, pinch to zoom.");
 }
 document.querySelectorAll("[data-caitlyn-pose]").forEach(button=>{
   button.onclick=()=>setCaitlynPose(button.dataset.caitlynPose);
