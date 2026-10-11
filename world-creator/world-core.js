@@ -92,11 +92,11 @@ export function sanitizedWorld(value) {
  */
 export const TEST_CHARACTER_STARTERS = Object.freeze([
   Object.freeze({id:"npc-amy-wild",type:"npc",name:"Amy (test)",modelKey:"amy",
-    x:-28,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
+    x:-70,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
     skin:"light",body:"slim",face:"oval",hair:"red",hairStyle:"long",
     outfit:"mannequin",pose:"standing"}),
   Object.freeze({id:"npc-christy-wild",type:"npc",name:"Christy (test)",modelKey:"chrissy",
-    x:28,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
+    x:70,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
     skin:"light",body:"slim",face:"oval",hair:"blonde",hairStyle:"long",
     outfit:"mannequin",pose:"standing"})
 ]);
