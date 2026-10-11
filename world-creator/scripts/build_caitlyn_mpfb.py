@@ -797,8 +797,16 @@ def main():
                     elbow_forward=mean([shoulder[i].y-elbow[i].y for i in (0,1)])
                     grounded_difference=abs(kz-cz)
                     loss=1200*grounded_difference**2
-                    loss+=9*(hip.z-kz-.46)**2
-                    loss+=7*(knee_back-.15)**2
+                    # Elbow support previously solved by stretching the
+                    # knees 38 cm behind Caitlyn and collapsing her hips to
+                    # 14 cm over the floor. That is NOT elbows-and-knees.
+                    # Reward raised hips and tucked-under knees strongly,
+                    # while preserving the much better hands/knees fit.
+                    target_hip=.34 if use_elbows else .46
+                    loss+=(300 if use_elbows else 9)*(hip.z-kz-target_hip)**2
+                    loss+=(190 if use_elbows else 7)*(knee_back-.15)**2
+                    if use_elbows:
+                        loss+=650*max(0,.25-(hip.z-kz))**2
                     loss+=15*max(0,.035-ankle_back)**2
                     loss+=10*max(0,.28-chest_forward)**2
                     loss+=5*max(0,torso_level-.20)**2
