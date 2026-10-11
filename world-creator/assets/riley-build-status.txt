@@ -1,13 +1,40 @@
 Riley sculpted-body build report
-source_commit: e8fa4b1d65e183bd1818fe0d31db7fa643b9212f
-result: failure
-checked_utc: 2026-10-11T04:06:51Z
+source_commit: 52f82a837c08c67b8e2b744587e25a8b29bfa6a7
+result: success
+checked_utc: 2026-10-11T04:08:03Z
 last_blender_log_lines:
+/usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:25: SyntaxWarning: invalid escape sequence '\.'
+  regex_dot = re.compile("\.")
+/usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:27: SyntaxWarning: invalid escape sequence '\]'
+  new_name = "".join([char for char in adjusted_name if char not in "!#$&'()*+,/:;<>?@[\]^`{|}~"])
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.12s
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.40s
+RILEY_SCULPT_DONOR [('Avery | anatomical body', 70985, 'Avery | anatomical body.rig'), ('Icosphere', 42, '')]
+RILEY_REAL_SCULPT_INTEGRATED verts 46826 sculpt_height 1.68 preserved_face_parts 5 head_transition_cm 140.0
+04:07:55 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+04:07:55 | INFO: Starting glTF 2.0 export
+04:07:55 | INFO: Extracting primitive: eyebrow006
+04:07:55 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+04:07:55 | INFO: Primitives created: 1
+04:07:55 | INFO: Extracting primitive: eyelashes01
+04:07:55 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+04:07:55 | INFO: Primitives created: 1
+04:07:55 | INFO: Extracting primitive: low-poly
+04:07:55 | INFO: Primitives created: 1
+04:07:55 | INFO: Extracting primitive: Sphere
+04:07:55 | INFO: Primitives created: 4
+04:07:55 | INFO: Extracting primitive: base.002
+04:07:56 | INFO: Primitives created: 2
+04:07:56 | INFO: Extracting primitive: base
+04:07:56 | INFO: Primitives created: 1
+04:07:56 | INFO: Extracting primitive: teeth_base
+04:07:56 | INFO: Primitives created: 1
+04:07:59 | INFO: Finished glTF 2.0 export in 3.9540786743164062 s
+
+RILEY_RIG_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-rigged-v1.glb 10859004 bones 29 body_vertices 46826 facial_parts 5 height_cm 170 bust_cm 94 waist_cm 70 hip_cm 99
 Blender 4.0.2
-  File "/home/runner/work/Wvlrp/Wvlrp/world-creator/scripts/build_riley_rigged.py", line 13
-    SOURCE=ROOT/"assets"/"riley-real.glb"\nDONOR=ROOT/"assets"/"riley-sculpted-donor.glb"
-                                          ^
-SyntaxError: unexpected character after line continuation character
 
 Blender quit
-rigged_glb_bytes: 11990976
+rigged_glb_bytes: 10859004
