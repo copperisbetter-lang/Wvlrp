@@ -355,8 +355,8 @@ def action(name,keys):
     for frame,angles in keys:
         for p in arm.pose.bones:
             p.rotation_mode="XYZ";p.rotation_euler=(0,0,0)
-        for name,axis,val in angles:
-            if name in arm.pose.bones:arm.pose.bones[name].rotation_euler[axis]=math.radians(val)
+        for bone_name,axis,val in angles:
+            if bone_name in arm.pose.bones:arm.pose.bones[bone_name].rotation_euler[axis]=math.radians(val)
         for p in arm.pose.bones:p.keyframe_insert(data_path="rotation_euler",frame=frame,group=p.name)
     tr=arm.animation_data.nla_tracks.new();tr.name=name
     st=tr.strips.new(name,int(keys[0][0]),ac)
