@@ -156,7 +156,7 @@ for obj in parts:obj.select_set(True)
 bpy.context.view_layer.objects.active=parts[0]
 bpy.ops.object.join()
 body=bpy.context.object;body.name="Riley continuous body | rigged"
-body.data.voxel_remesh_mode="VOXEL";body.data.remesh_voxel_size=.012
+body.data.remesh_voxel_size=.012
 bpy.ops.object.voxel_remesh()
 # Subtle smoothing, avoid damaging stable silhouette at hips and joints.
 mod=body.modifiers.new("Smooth joined body surface","SMOOTH");mod.factor=1.18;mod.iterations=6
