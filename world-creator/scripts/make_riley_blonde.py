@@ -1,4 +1,4 @@
-"""Make a long-blonde-haired Riley prototype from the repository's CC0 textured models.
+"""Make an adult beach-test Riley prototype from the repository's CC0 textured models.
 This modifies visible meshes for in-game Babylon previews without changing the world save.
 All new geometry is original, generated here; the underlying model remains licensed CC0.
 Run: blender -b --factory-startup --python make_riley_blonde.py -- standing
@@ -46,21 +46,13 @@ for ob in original:
     if name.startswith("bob01") or name.startswith("shoes05"):
         bpy.data.objects.remove(ob, do_unlink=True)
 
-# The stock outfit contains long trousers. Remove only its old lower section,
-# retaining the original textured T-shirt and the anatomical face/body.
-# Work in object-local mesh coordinates converted to world space.
-import bmesh
-for ob in [v for v in bpy.context.scene.objects if v.type=="MESH" and v.name.startswith("female_casualsuit")]:
-    bm=bmesh.new()
-    bm.from_mesh(ob.data)
-    bm.faces.ensure_lookup_table()
-    old_faces=[f for f in bm.faces if (ob.matrix_world @ f.calc_center_median()).z < zmin + (zmax-zmin)*(.565 if MODE!="kneeling" else .52)]
-    if old_faces:
-        bmesh.ops.delete(bm, geom=old_faces, context="FACES")
-        bm.to_mesh(ob.data)
-        ob.data.update()
-        print("REMOVED_STOCK_TROUSER_POLYGONS",len(old_faces),ob.name)
-    bm.free()
+# Remove the entire legacy shirt/trouser outfit, not just the trouser faces.
+# The anatomical body underneath is used as the skin-colored swimsuit mannequin.
+old_outfits=[o for o in bpy.context.scene.objects if o.type=="MESH"
+             and o.name.startswith("female_casualsuit")]
+for ob in old_outfits:
+    bpy.data.objects.remove(ob,do_unlink=True)
+print("RILEY_REMOVED_OLD_CLOTHING",len(old_outfits))
 
 # Work in proportional coordinates so both source poses receive consistent wardrobe.
 def z(frac):
@@ -78,12 +70,6 @@ hair = [mat("Riley | honey blonde", (.73,.54,.31),.72),
         mat("Riley | soft champagne highlights", (.90,.74,.49),.67),
         mat("Riley | sandy blonde", (.78,.61,.39),.73),
         mat("Riley | soft ash-gold lowlights", (.58,.43,.27),.76)]
-skin = mat("Riley | warm natural skin - legs", (.79,.56,.43))
-shorts = mat("Riley | loose beige cotton shorts",(.55,.49,.34))
-seam = mat("Riley | shorts stitching",(.75,.69,.50))
-sneakers = mat("Riley | ivory sneakers",(.84,.82,.76),.59)
-soles = mat("Riley | rubber sneaker sole",(.49,.47,.42))
-laces = mat("Riley | sneaker laces",(.97,.96,.91))
 
 def mesh(name, vertices, faces, material):
     me=bpy.data.meshes.new(name)
@@ -122,43 +108,8 @@ def sphere(name, pos, scale, material, segments=16):
     for face in ob.data.polygons:face.use_smooth=True
     return ob
 
-# Cover the source jeans with anatomical skin-colored legs, then add short loose fabric shorts.
-# Original meshes are retained intact, and no other NPC is changed.
-hipz=.60 if MODE!="kneeling" else .59
-hemz=.455 if MODE!="kneeling" else .47
-loft("Riley shorts waistband",[(cx,cy,z(hipz+.025),H*.153,H*.105),
-                               (cx,cy,z(hipz+.010),H*.153,H*.105)],
-     seam,24)
-loft("Riley shorts body",[(cx,cy,z(hipz+.01),H*.152,H*.108),
-                         (cx,cy,z(.545),H*.169,H*.114)],
-     shorts,32)
-for side in (-1,1):
-    legx = cx+side*H*.081
-    loft("Riley loose short leg "+str(side),[
-        (legx,cy,z(.565),H*.084,H*.103),
-        (legx,cy,z(.520),H*.095,H*.110),
-        (legx,cy,z(hemz),H*.093,H*.107)],
-         shorts,22)
-    loft("Riley short hem stitching "+str(side), [
-        (legx,cy,z(hemz+.006),H*.0938,H*.108),
-        (legx,cy,z(hemz-.002),H*.094,H*.108)], seam,24)
-    # Full-length body-colored lower legs conceal denim below the short hem.
-    loft("Riley exposed leg "+str(side),[
-        (legx,cy,z(hemz+.026),H*.081,H*.080),
-        (legx,cy,z(.405),H*.084,H*.081),
-        (legx,cy,z(.350),H*.075,H*.072),
-        (legx,cy,z(.29),H*.064,H*.063),
-        (legx,cy,z(.23),H*.067,H*.065),
-        (legx,cy,z(.15),H*.063,H*.061),
-        (legx,cy,z(.080),H*.050,H*.050)],skin,24)
-    # Low-top sneaker construction: body, toe, outsole, laces.
-    sphere("Riley sneaker "+str(side), (legx,cy-H*.018,z(.061)),
-           (H*.063,H*.106,H*.045),sneakers)
-    sphere("Riley sneaker sole "+str(side),(legx,cy-H*.019,z(.029)),
-           (H*.064,H*.107,H*.021),soles)
-    for i in range(3):
-        sphere("Riley lace "+str(side)+" "+str(i),
-               (legx,cy-H*(.035+i*.020),z(.096)), (H*.021,H*.004,H*.003),laces,12)
+# Keep the anatomical legs and feet rather than layering tube legs or shoes over
+# the source mesh. The bikini is fitted to that body after head and face discovery.
 
 # Find the actual head on each source pose from its visible face and scalp.
 # Overall character bounds cannot position hair reliably: kneeling / stock asset
@@ -306,6 +257,133 @@ if front_candidates:
         ob.data.update()
 print("RILEY_SOFT_HAIR_AND_SMIRK",MODE,
       "layers",88,"fringe",26,"face_vertices",face_sculpted)
+
+# Beach test outfit: a non-nude, adult triangle-string bikini.
+# Fit fabric and straps directly over the anatomical torso. No stock shirt,
+# blocky shorts or separate artificial legs should remain in the final GLBs.
+fabric=mat("Riley | deep ocean teal bikini fabric",(.055,.31,.34),.54)
+trim=mat("Riley | cream bikini piping",(.89,.86,.73),.60)
+cordmat=mat("Riley | teal string ties",(.035,.20,.22),.58)
+for m in (fabric,trim,cordmat):
+    m.use_backface_culling=False
+
+body_cloud=[ob.matrix_world @ v.co
+            for ob in bpy.context.scene.objects if ob.type=="MESH"
+            and ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly")
+            for v in ob.data.vertices]
+if not body_cloud:
+    raise RuntimeError("Body mesh missing: cannot safely dress Riley in a bikini")
+
+def skin_surface_y(xv,zv,front=True):
+    close=[p.y for p in body_cloud if abs(p.x-xv)<H*.030 and abs(p.z-zv)<H*.025]
+    if not close:
+        close=[p.y for p in body_cloud if abs(p.x-xv)<H*.065 and abs(p.z-zv)<H*.055]
+    if not close:
+        # Conservative placement on the near/far torso, not a pasted-on plane.
+        return cy+(-1 if front else 1)*H*.105
+    return (min(close)-H*.0035) if front else (max(close)+H*.0035)
+
+def swim_panel(name, points, material):
+    # Double-sided 3D fabric patch: front and reverse triangles.
+    center=sum((Vector(p) for p in points),Vector((0,0,0)))/len(points)
+    pts=[tuple(p) for p in points]+[tuple(center)]
+    mid=len(points)
+    faces=[]
+    for i in range(mid):
+        n=(i+1)%mid
+        faces.extend(((i,n,mid),(mid,n,i)))
+    return mesh(name,pts,faces,material)
+
+def swimsuit_cord(name,points,material=cordmat,radius=None):
+    radius=H*.0024 if radius is None else radius
+    poly=[Vector(p) for p in points]
+    if len(poly)<2:return
+    verts=[];faces=[]
+    for k,p in enumerate(poly):
+        tangent=(poly[min(k+1,len(poly)-1)]-poly[max(0,k-1)]).normalized()
+        ref=Vector((0,0,1)) if abs(tangent.z)<.88 else Vector((0,1,0))
+        a=tangent.cross(ref).normalized()
+        b=tangent.cross(a).normalized()
+        for j in range(7):
+            theta=2*pi*j/7
+            v=p+radius*(cos(theta)*a+sin(theta)*b)
+            verts.append(tuple(v))
+        if k:
+            for j in range(7):
+                n=(j+1)%7
+                faces.extend((((k-1)*7+j,(k-1)*7+n,k*7+n,k*7+j),))
+    return mesh(name,verts,faces,material)
+
+bust_z=eye_z-H*.197
+bust_bottom=bust_z-H*.051
+bust_top=bust_z+H*.080
+shoulder_z=eye_z-H*.102
+waist_z=eye_z-H*.362
+bottom_z=waist_z-H*.108
+
+for side in (-1,1):
+    center_x=head_x+side*H*.073
+    cup_inner=center_x-side*H*.059
+    cup_outer=center_x+side*H*.060
+    top_front=skin_surface_y(center_x,bust_top)
+    bottom_front=skin_surface_y(center_x,bust_bottom)
+    toppt=(center_x,top_front-H*.007,bust_top)
+    innerpt=(cup_inner,bottom_front-H*.008,bust_bottom)
+    outerpt=(cup_outer,bottom_front-H*.008,bust_bottom)
+    lower_mid=((cup_inner+cup_outer)/2,
+               bottom_front-H*.014,bust_bottom+H*.018)
+    swim_panel("Riley | bikini triangle top "+str(side),
+               [innerpt,outerpt,toppt,lower_mid],fabric)
+    swimsuit_cord("Riley | triangle top hem "+str(side),
+                 [innerpt,lower_mid,outerpt],trim,H*.0030)
+    strap_up=(head_x+side*H*.073,
+              skin_surface_y(center_x,shoulder_z)-H*.010,
+              shoulder_z)
+    strap_back=(head_x+side*H*.066,
+                skin_surface_y(center_x,shoulder_z,False)+H*.010,
+                shoulder_z-H*.028)
+    swimsuit_cord("Riley | neck strap "+str(side),
+                 [toppt,strap_up,strap_back],cordmat,H*.0030)
+    tie_x=head_x+side*H*.17
+    tie_front=(tie_x,skin_surface_y(tie_x,bust_bottom)-H*.009,bust_bottom)
+    tie_back=(tie_x,skin_surface_y(tie_x,bust_bottom,False)+H*.009,bust_bottom)
+    swimsuit_cord("Riley | back band "+str(side),
+                 [outerpt,tie_front,tie_back],cordmat)
+    # Bikini bottom curves across the hip; two slim side ties and a tiny bow.
+    hipx=head_x+side*H*.142
+    front_hip=(hipx,skin_surface_y(hipx,waist_z)-H*.012,waist_z)
+    back_hip=(hipx,skin_surface_y(hipx,waist_z,False)+H*.012,waist_z)
+    swimsuit_cord("Riley | bikini side string "+str(side),
+                 [front_hip,(hipx+side*H*.015,cy,waist_z+H*.003),back_hip])
+    knot=Vector((hipx+side*H*.018,cy,waist_z+H*.006))
+    swimsuit_cord("Riley | bikini bow loop upper "+str(side),
+                 [tuple(knot),tuple(knot+Vector((side*H*.017,0,H*.016))),
+                  tuple(knot+Vector((side*H*.021,0,H*.001))),tuple(knot)])
+    swimsuit_cord("Riley | bikini bow tail "+str(side),
+                 [tuple(knot),tuple(knot+Vector((side*H*.006,0,-H*.026)))])
+
+front_belt_y=skin_surface_y(head_x,waist_z)-H*.010
+front_low_y=skin_surface_y(head_x,bottom_z)-H*.012
+front_points=[(head_x-H*.114,front_belt_y,waist_z),
+              (head_x+H*.114,front_belt_y,waist_z),
+              (head_x+H*.042,front_low_y,bottom_z),
+              (head_x-H*.042,front_low_y,bottom_z)]
+swim_panel("Riley | bikini bottom front",front_points,fabric)
+swimsuit_cord("Riley | bikini front waistband",
+              front_points[:2],trim,H*.0028)
+back_belt_y=skin_surface_y(head_x,waist_z,False)+H*.010
+back_low_y=skin_surface_y(head_x,bottom_z,False)+H*.010
+swim_panel("Riley | bikini bottom back",
+           [(head_x-H*.12,back_belt_y,waist_z),
+            (head_x+H*.12,back_belt_y,waist_z),
+            (head_x+H*.054,back_low_y,bottom_z),
+            (head_x-H*.054,back_low_y,bottom_z)],fabric)
+swimsuit_cord("Riley | bikini back waistband",
+              [(head_x-H*.12,back_belt_y,waist_z),
+               (head_x+H*.12,back_belt_y,waist_z)],trim,H*.0028)
+print("RILEY_SWIMSUIT_FITTED",MODE,"bust",round(bust_z,3),
+      "waist",round(waist_z,3),"body_points",len(body_cloud))
+
 
 # The old build only dressed the stock broad torso, so shorts did not change
 # her underlying silhouette. Sculpt ALL skin and clothes together into a
