@@ -1,8 +1,8 @@
-"""WVLRP Riley v1: replacement mesh + true skeleton + basic pose animations.
+"""WVLRP Riley sculpted body: CC0 human sculpt + preserved Riley face + pose rig.
 Reference intent: approved front/left-profile/back turnarounds, neutral base outfit.
 Images guide proportions, not automatic 3D reconstruction. Do NOT reuse the
-previous recoloured casual-suit shell or destructive vertex pose warping.
-Target: Blender 3.x/4.x; exports rigged GLB for Babylon.js.
+previous recoloured casual-suit shell, primitive torso rings or ball-shaped limbs.
+Target: Blender 3.x/4.x; exports rigged GLB for Babylon.js.\nThe underlying full-body sculpt is the CC0 Innerscene/MakeHuman/MPFB neutral\nbase rig, downloaded by .github/workflows/build-riley-rigged.yml.\nhttps://www.innerscene.com/tools/library/3d-parts/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1
 """
 import bpy, bmesh, math, random, json
 from mathutils import Vector, Matrix
@@ -10,7 +10,7 @@ from math import sin, cos, pi
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-SOURCE=ROOT/"assets"/"riley-real.glb"
+SOURCE=ROOT/"assets"/"riley-real.glb"\nDONOR=ROOT/"assets"/"riley-sculpted-donor.glb"
 OUT=ROOT/"assets"/"riley-rigged-v1.glb"
 M=json.loads((ROOT/"riley-measurements.json").read_text())
 H=M["height_cm"]/100.0
@@ -34,7 +34,7 @@ eye_pts=[o.matrix_world @ v.co for o in source_meshes
          for v in o.data.vertices]
 eye_source=sum(p.z for p in eye_pts)/len(eye_pts) if eye_pts else mins[2]+height*.88
 eye_z=(eye_source-mins[2])*scale
-head_cut=eye_z-.13*H
+head_cut=max(1.40,eye_z-.096*H) # Preserve Riley face through neck, replace old body
 original_head=[]
 for obj in list(source_meshes):
     name=obj.name.lower()
@@ -79,140 +79,151 @@ hair_colors=[
  skinmat("Riley ash-gold shadows",(.61,.47,.30),.79)
 ]
 
+# Retain a smooth, CC0 sculpted HUMAN body instead of hand-stacking ellipsoids
+# and cylinder rings. It has real hip/thigh/waist/shoulder topology and feet.
+if not DONOR.is_file() or DONOR.stat().st_size<100_000:
+    raise RuntimeError("Missing complete CC0 anatomical donor; workflow must download GLB")
+existing=set(bpy.context.scene.objects)
+bpy.ops.import_scene.gltf(filepath=str(DONOR))
+donor_objects=[o for o in bpy.context.scene.objects if o not in existing]
+donor_meshes=[o for o in donor_objects if o.type=="MESH"]
+print("RILEY_SCULPT_DONOR",[(o.name,len(o.data.vertices),o.parent.name if o.parent else "") for o in donor_meshes])
+# The base has one full, undeleted human skin, unlike the original suited Riley.
+# Drop secondary eyeballs/details: Riley's own face provides those.
+body_candidates=[]
+for o in donor_meshes:
+    lo=min((o.matrix_world @ Vector(c)).z for c in o.bound_box)
+    hi=max((o.matrix_world @ Vector(c)).z for c in o.bound_box)
+    if len(o.data.vertices)>=2000 and hi-lo>=1.10:
+        body_candidates.append(o)
+if not body_candidates:
+    raise RuntimeError("Donor contains no full-length high-resolution anatomical mesh")
+dbounds=[o.matrix_world @ Vector(c) for o in body_candidates for c in o.bound_box]
+dlo=[min(p[i] for p in dbounds) for i in range(3)]
+dhi=[max(p[i] for p in dbounds) for i in range(3)]
+dheight=dhi[2]-dlo[2]
+assert 1.2<dheight<3.0, ("Unexpected CC0 body scale",dheight)
+ds=H/dheight
+dcx=(dlo[0]+dhi[0])/2
+dcy=(dlo[1]+dhi[1])/2
+
+# Rebuild the donor into the same local, meter-based coordinates as the
+# preserved face. Never use meshes shaped like a trouser shell.
+for o in body_candidates:
+    o.data=o.data.copy()
+    mx=o.matrix_world.copy()
+    o.parent=None
+    o.matrix_world=Matrix.Identity(4)
+    for v in o.data.vertices:
+        p=mx @ v.co
+        v.co=((p.x-dcx)*ds,(p.y-dcy)*ds,(p.z-dlo[2])*ds)
+    o.data.update()
+    bm=bmesh.new();bm.from_mesh(o.data)
+    # Remove donor head completely, but leave its anatomical neck and chest.
+    # The original detailed Riley head replaces it; both meet around collar.
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if v.co.z>head_cut+.018],
+                     context="VERTS")
+    bm.to_mesh(o.data);bm.free()
+
+for o in donor_objects:
+    if o not in body_candidates and o.name in bpy.data.objects:
+        bpy.data.objects.remove(o,do_unlink=True)
+for o in body_candidates:
+    assert len(o.data.vertices)>3000,"Full-body donor lost too much geometry"
+bpy.ops.object.select_all(action="DESELECT")
+for o in body_candidates:o.select_set(True)
+bpy.context.view_layer.objects.active=body_candidates[0]
+if len(body_candidates)>1:bpy.ops.object.join()
+body=bpy.context.object
+body.name="Riley sculpted anatomical body | skinned"
+
+def clamp(t):return max(0.0,min(1.0,t))
+def smooth(t):
+    t=clamp(t);return t*t*(3-2*t)
+def gauss(v,s):return math.exp(-(v/s)**2)
+
+# Convert the donor's relaxed A pose into a near-standing arm position. It is
+# a continuous vertex-space adjustment, not intersecting cylinder replacements.
+# Keep the shoulders anchored as the forearms move gently inward.
+for v in body.data.vertices:
+    p=v.co
+    z,x,y=p.z,p.x,p.y
+    ax=abs(x)
+    arm=smooth((ax-.205)/.15)*smooth((1.48-z)/.32)
+    if arm>.001 and z>.67:
+        u=max(0,ax-.18);down=1.40-z
+        theta=.39*arm
+        u2=u*math.cos(theta)-down*math.sin(theta)
+        d2=u*math.sin(theta)+down*math.cos(theta)
+        p.x=math.copysign(.18+u2,x)
+        p.z=1.40-d2
+        x,y,z=p.x,p.y,p.z
+
+    # Gentle, broad morphological shaping of the EXISTING anatomical surface.
+    # No sphere-based breasts, raised clothing shells or blocky waistband.
+    torso=(1-smooth((abs(x)-.14)/.16))*smooth((z-.77)/.18)
+    waist=gauss(z-1.11,.105)*torso
+    hip=gauss(z-.955,.125)*torso
+    bust=gauss(z-1.30,.115)*torso
+    shoulder=gauss(z-1.405,.065)*torso
+    p.x*=1-.105*waist+.115*hip+.024*bust+.012*shoulder
+    p.y*=1-.065*waist+.065*hip+.03*bust
+    # Soft upper glute and lower-back curve, tapering to the hamstring.
+    if y>.005:
+        p.y+=.014*hip*gauss(abs(x)-.105,.125)
+    # An existing body contour is subtly enriched, not supplemented with
+    # separate breast hemispheres that break the silhouette.
+    if y<-.035 and z>1.19 and abs(x)<.18:
+        p.y-=.006*bust*gauss(abs(x)-.078,.065)
+body.data.update()
+
+skin=bpy.data.materials.new("Riley smooth warm matte mannequin skin")
+skin.use_nodes=True
+bs=skin.node_tree.nodes.get("Principled BSDF")
+bs.inputs["Base Color"].default_value=(.81,.655,.585,1)
+bs.inputs["Roughness"].default_value=.78
+skin.diffuse_color=(.81,.655,.585,1)
+base=bpy.data.materials.new("Riley seamless neutral outfit guides")
+base.use_nodes=True
+bp=base.node_tree.nodes.get("Principled BSDF")
+bp.inputs["Base Color"].default_value=(.77,.615,.55,1)
+bp.inputs["Roughness"].default_value=.86
+base.diffuse_color=(.77,.615,.55,1)
+body.data.materials.clear()
+body.data.materials.append(skin);body.data.materials.append(base)
+for face in body.data.polygons:
+    face.use_smooth=True
+    p=face.center
+    # Only colored regions on the surface, not modeled cups or underwear pieces.
+    tank=(1.14<=p.z<=1.42 and abs(p.x)<.18)
+    shorts=(.84<=p.z<=1.02 and abs(p.x)<.21)
+    face.material_index=1 if (tank or shorts) else 0
+assert len(body.data.vertices)>8000,"Riley is still using a primitive replacement, not the anatomical sculpt"
+print("RILEY_REAL_SCULPT_INTEGRATED","verts",len(body.data.vertices),
+      "sculpt_height",round(dheight,3),"preserved_face_parts",len(original_head),
+      "head_transition_cm",round(100*head_cut,1))
+
+# Spherical primitives are permitted for the HAIR SCALP ONLY; not the body.
 parts=[]
-def sphere(name,xyz,radii,mat,segments=24):
+hair_colors=[
+    bpy.data.materials.new("Riley sandy blonde roots"),
+    bpy.data.materials.new("Riley honey-blonde"),
+    bpy.data.materials.new("Riley champagne strands"),
+    bpy.data.materials.new("Riley ash-gold shadows")]
+for mat,shade in zip(hair_colors,[(.46,.32,.19),(.75,.57,.35),(.88,.73,.52),(.61,.47,.30)]):
+    mat.use_nodes=True
+    b=mat.node_tree.nodes.get("Principled BSDF")
+    b.inputs["Base Color"].default_value=(*shade,1)
+    b.inputs["Roughness"].default_value=.74
+    mat.diffuse_color=(*shade,1)
+def sphere(name,xyz,radii,mat,segments=32):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=segments,ring_count=16,location=xyz)
-    o=bpy.context.object;o.name=name
-    o.scale=radii
+    o=bpy.context.object;o.name=name;o.scale=radii
     bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
     o.data.materials.append(mat)
     for f in o.data.polygons:f.use_smooth=True
     parts.append(o)
     return o
-def tube(name, rings, material, steps=36):
-    # Ordered ascending height; ellipse cross sections in XY.
-    verts=[];faces=[]
-    for z,rx,ry,yshift in rings:
-        for j in range(steps):
-            t=2*pi*j/steps
-            verts.append((rx*cos(t), yshift+ry*sin(t),z))
-    for r in range(len(rings)-1):
-        for j in range(steps):
-            a=r*steps+j;b=r*steps+(j+1)%steps
-            c=(r+1)*steps+(j+1)%steps;d=(r+1)*steps+j
-            faces.append((a,b,c,d))
-    faces.extend([tuple(reversed(tuple(range(steps)))),
-                  tuple((len(rings)-1)*steps+j for j in range(steps))])
-    mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
-    ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob)
-    mesh.materials.append(material)
-    for f in mesh.polygons:f.use_smooth=True
-    parts.append(ob)
-    return ob
-def limb_loft(name,rings,material,steps=40):
-    """Continuous tapered limb mesh: no ball-shaped elbows, knees or disconnected segments.
-    Each cross section contains x,y,z,rx,ry in game units (meters).
-    """
-    verts=[];faces=[]
-    for x,y,z,rx,ry in rings:
-        for j in range(steps):
-            a=2*pi*j/steps
-            verts.append((x+rx*cos(a),y+ry*sin(a),z))
-    for k in range(len(rings)-1):
-        for j in range(steps):
-            n=(j+1)%steps
-            faces.append((k*steps+j,k*steps+n,(k+1)*steps+n,(k+1)*steps+j))
-    faces.extend((tuple(reversed(tuple(range(steps)))),
-                  tuple((len(rings)-1)*steps+j for j in range(steps))))
-    me=bpy.data.meshes.new(name)
-    me.from_pydata(verts,[],faces);me.update()
-    ob=bpy.data.objects.new(name,me)
-    bpy.context.collection.objects.link(ob)
-    me.materials.append(material)
-    for poly in me.polygons:poly.use_smooth=True
-    parts.append(ob)
-    return ob
-
-# The main torso is a smoothly varying, continuous ring surface, with a
-# gently curved waist and natural rib/hip proportions for this 170 cm mannequin.
-tube("Riley fitted body silhouette",[
- (.830,.110,.087,.012),(.878,.145,.121,.020),(.943,.172,.139,.018),
- (.995,.177,.127,.015),(1.054,.146,.108,.012),
- (1.116,.134,.097,.011),(1.192,.151,.111,.011),
- (1.276,.172,.117,.010),(1.336,.181,.116,.008),
- (1.383,.181,.113,.007),(1.412,.148,.094,.005),
- (1.463,.073,.065,.003),(1.513,.056,.055,.002)
-],skin)
-for side in (-1,1):
-    # Gentle chest curvature, recessed into the torso rather than two
-    # prominent spherical prostheses. The voxel union is one connected skin.
-    sphere("Riley softly blended chest",(.081*side,-.078,1.306),
-           (.082,.074,.076),skin,32)
-
-    # One continuously tapered limb each side replaces four disconnected
-    # capsule / knee / ankle objects. The thigh intersects the hip shell.
-    limb_loft("Riley continuous leg "+str(side),[
-      (.114*side,.012,.901,.078,.091),
-      (.116*side,.012,.855,.090,.102),
-      (.117*side,.008,.770,.090,.102),
-      (.119*side,.004,.680,.081,.090),
-      (.120*side,-.011,.576,.067,.075),
-      (.121*side,-.017,.513,.060,.064),
-      (.121*side,-.007,.462,.058,.067),
-      (.120*side,.016,.389,.064,.075),
-      (.120*side,.020,.291,.057,.070),
-      (.119*side,.017,.199,.042,.050),
-      (.119*side,.012,.119,.033,.037)
-    ],skin)
-    # A smooth flattened foot blends into the ankle; no separate bulb toes.
-    sphere("Riley natural foot",(.119*side,-.074,.052),
-           (.059,.116,.035),skin,32)
-
-    # Continuous shoulders, biceps, elbows, forearms and hand in one taper,
-    # instead of capsules that look like plastic action-figure joints.
-    limb_loft("Riley continuous arm "+str(side),[
-      (.175*side,.003,1.405,.071,.072),
-      (.210*side,.002,1.382,.068,.068),
-      (.234*side,-.004,1.313,.059,.062),
-      (.246*side,-.013,1.233,.050,.054),
-      (.264*side,-.014,1.145,.043,.047),
-      (.267*side,-.018,1.112,.043,.045),
-      (.270*side,-.025,1.050,.047,.045),
-      (.278*side,-.039,.980,.043,.041),
-      (.282*side,-.052,.916,.033,.033),
-      (.284*side,-.062,.854,.033,.026),
-      (.283*side,-.069,.791,.036,.026),
-      (.282*side,-.071,.764,.025,.020)
-    ],skin)
-    # A subtle opposable thumb, following the hand rather than floating.
-    sphere("Riley thumb",(.246*side,-.085,.806),(.020,.021,.048),skin,20)
-sphere("Riley neck",(0,.002,1.493),(.059,.057,.082),skin,28)
-
-# Fuse overlapping geometry into one smooth skin mesh. No separately recolored
-# trouser crotch, rear pocket, jacket hem, or leggings seams can remain.
-bpy.ops.object.select_all(action="DESELECT")
-for obj in parts:obj.select_set(True)
-bpy.context.view_layer.objects.active=parts[0]
-bpy.ops.object.join()
-body=bpy.context.object;body.name="Riley continuous body | rigged"
-body.data.remesh_voxel_size=.006
-bpy.ops.object.voxel_remesh()
-# Smooth only after union: no exposed primitive intersections at joints.
-mod=body.modifiers.new("Smooth unified body surface","SMOOTH");mod.factor=1.23;mod.iterations=10
-bpy.context.view_layer.objects.active=body
-bpy.ops.object.modifier_apply(modifier=mod.name)
-for f in body.data.polygons:f.use_smooth=True
-
-# Keep base garment a flat, opaque MATERIAL, NOT a separate protruding mesh.
-# The underlying skin surface remains usable for jeans/dresses and outfit swaps.
-# Zone by heights: tank, high-waisted seamless boyshorts.
-body.data.materials.clear()
-body.data.materials.append(skin);body.data.materials.append(base)
-for poly in body.data.polygons:
-    p=poly.center
-    tank=1.14<=p.z<=1.422 and abs(p.x)<(.178 if p.z<1.37 else .15)
-    shorts=(.855<=p.z<=1.006 and abs(p.x)<.23)
-    poly.material_index=1 if (tank or shorts) else 0
 
 # Real wavy layered blonde scalp + transparent-free curved lock strips.
 # Hair is scalp-rooted (not floating bun or static pasted photograph).
