@@ -24,7 +24,7 @@
 <button id="idle">Play movement</button>
 <button id="smile" aria-pressed="true">Smile: gentle</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v2" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v3" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -47,7 +47,7 @@ try {
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
  const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v2&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v3&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
@@ -171,7 +171,7 @@ function pickPose(pose,animate=false){
      clip.goToFrame(loop?clip.from:clip.to);
      scene.render();
    }
-   clip.pause();
+   if(!floor)clip.pause();
    if(floor){
      // A ground-level SIDE view shows the whole character, not the old
      // cropped face zoom. This is important for checking palms and elbows.
@@ -184,17 +184,40 @@ function pickPose(pose,animate=false){
      }
    }
  }
+ if(floor&&!animate){
+   // First verify both limb clips actually alter joint transforms. Then
+   // run the full transition, rather than silently teleporting to a frame.
+   if(!Number.isFinite(delta)||delta<.05){
+     clip.pause();playing=false;
+     status.textContent='POSE ERROR: '+pose+' has no actual joint movement (Δ='+delta.toFixed(3)+').';
+     status.style.background='#7c302fe8';
+     return;
+   }
+   status.style.background='#14211ddf';
+   clip.goToFrame(clip.from);
+   playing=true;
+   progress.value='0';frameLabel.textContent='0%';
+   document.getElementById('idle').textContent='Pause movement';
+   status.textContent='Caitlyn lowering into '+(pose==='HandsAndKnees'?'hands and knees':'elbows and knees')+
+     ' · '+tracks.length+' skeletal tracks';
+   clip.onAnimationGroupEndObservable.addOnce(()=>{
+     if(currentGroup!==clip)return;
+     clip.goToFrame(clip.to);
+     clip.pause();
+     playing=false;
+     progress.value='100';frameLabel.textContent='100%';
+     document.getElementById('idle').textContent='Play movement';
+     status.textContent='Caitlyn: '+(pose==='HandsAndKnees'?'hands and knees':'elbows and knees')+
+       ' · holding final pose · joint Δ '+delta.toFixed(2);
+   });
+   return;
+ }
  progress.value=animate?'0':(loop?'0':'100');
  frameLabel.textContent=progress.value+'%';
  document.getElementById('idle').textContent=animate?'Pause movement':'Play movement';
- if(floor&&(!Number.isFinite(delta)||delta<.05)&&!animate){
-   status.textContent='POSE ERROR: '+pose+' exists but did not move skeleton joints (Δ='+delta.toFixed(3)+').';
-   status.style.background='#7c302fe8';
- }else{
-   status.style.background='#14211ddf';
-   status.textContent='Caitlyn: '+(pose==='HandsAndKnees'?'hands and knees':pose==='ElbowsAndKnees'?'elbows and knees':pose.toLowerCase())+
-    (animate?' · playing transition':floor?' · joint motion Δ '+delta.toFixed(2)+' · holding':' · holding');
- }
+ status.style.background='#14211ddf';
+ status.textContent='Caitlyn: '+(pose.toLowerCase())+
+   (animate?' · playing transition':' · holding');
 }
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
 document.getElementById('smile').onclick=()=>{
