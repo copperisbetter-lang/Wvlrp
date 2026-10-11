@@ -1,9 +1,13 @@
 Riley sculpted-body build report
-source_commit: a83ad3ac598a147cb92c9b8c6d6019e67fd489f6
+source_commit: e8fa4b1d65e183bd1818fe0d31db7fa643b9212f
 result: failure
-checked_utc: 2026-10-11T04:05:37Z
+checked_utc: 2026-10-11T04:06:51Z
 last_blender_log_lines:
 Blender 4.0.2
+  File "/home/runner/work/Wvlrp/Wvlrp/world-creator/scripts/build_riley_rigged.py", line 13
+    SOURCE=ROOT/"assets"/"riley-real.glb"\nDONOR=ROOT/"assets"/"riley-sculpted-donor.glb"
+                                          ^
+SyntaxError: unexpected character after line continuation character
 
 Blender quit
 rigged_glb_bytes: 11990976
