@@ -1,17 +1,16 @@
 Riley sculpted-body build report
-source_commit: de890c49f2b4a56ee6766ecdd4b017831899819b
-result: failure
-checked_utc: 2026-10-11T05:18:40Z
+source_commit: f7071169d1c8dfeef9150fba65d3c074389c04dd
+result: success
+checked_utc: 2026-10-11T05:20:49Z
 last_blender_log_lines:
-Blender 4.0.2
-Traceback (most recent call last):
-  File "/home/runner/work/Wvlrp/Wvlrp/world-creator/scripts/build_riley_rigged.py", line 416, in <module>
-    raise RuntimeError("Cannot identify the two physical neck contours for Riley")
-RuntimeError: Cannot identify the two physical neck contours for Riley
+/usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:25: SyntaxWarning: invalid escape sequence '\.'
+  regex_dot = re.compile("\.")
+/usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:27: SyntaxWarning: invalid escape sequence '\]'
+  new_name = "".join([char for char in adjusted_name if char not in "!#$&'()*+,/:;<>?@[\]^`{|}~"])
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.09s
+glTF import finished in 0.12s
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.26s
+glTF import finished in 0.40s
 RILEY_SCULPT_DONOR [('Avery | anatomical body', 70985, 'Avery | anatomical body.rig'), ('Icosphere', 42, '')]
 RILEY_CHEST_SURFACE_POLISH 2201 passes 0
 RILEY_ABDOMEN_POLISH smoothed_vertices 2280
@@ -19,6 +18,58 @@ RILEY_WATERTIGHT_SCULPT 101184 faces 102386
 RILEY_FACE_SKIN_REFERENCE (0.8784, 0.702, 0.5725)
 RILEY_REAL_SCULPT_INTEGRATED verts 101184 sculpt_height 1.68 preserved_face_parts 6 head_transition_cm 144.0
 RILEY_FITTED_HAIR 2929 head_top 1.676 source original CC0 bob extended into blonde wavy locks
+RILEY_WATERTIGHT_NECK_SECTION 1746
+RILEY_NECK_JOIN_DIAGNOSTIC body_z 1.4225 face_z 1.4403 gap 0.0179 body_outline (0.0, 0.0815, 0.12, 0.035) face_outline (0.0179, 0.0147, 0.048, 0.055)
+RILEY_NECK_BRIDGE 576 512
+05:20:09 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+05:20:09 | INFO: Starting glTF 2.0 export
+05:20:09 | INFO: Extracting primitive: eyebrow006
+05:20:09 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:20:09 | INFO: Primitives created: 1
+05:20:09 | INFO: Extracting primitive: eyelashes01
+05:20:09 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:20:09 | INFO: Primitives created: 1
+05:20:09 | INFO: Extracting primitive: low-poly
+05:20:09 | INFO: Primitives created: 1
+05:20:09 | INFO: Extracting primitive: bob01
+05:20:09 | INFO: Primitives created: 1
+05:20:09 | INFO: Extracting primitive: base.002
+05:20:10 | INFO: Primitives created: 1
+05:20:10 | INFO: Extracting primitive: Riley neck skin bridge geometry
+05:20:10 | INFO: Primitives created: 1
+05:20:10 | INFO: Extracting primitive: base
+05:20:11 | INFO: Primitives created: 1
+05:20:11 | INFO: Extracting primitive: teeth_base
+05:20:11 | INFO: Primitives created: 1
+05:20:17 | INFO: Finished glTF 2.0 export in 7.4722020626068115 s
+
+RILEY_RIG_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-rigged-v1.glb 16400392 bones 29 body_vertices 101184 facial_parts 5 height_cm 170 bust_cm 112 waist_cm 70 hip_cm 99
+Blender 4.0.2
 
 Blender quit
-rigged_glb_bytes: 11529044
+last_preview_render_lines:
+glTF import finished in 1.08s
+RILEY_QA_RENDER front /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-front.png
+RILEY_QA_RENDER right /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-right.png
+RILEY_QA_RENDER back /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-back.png
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.39s
+RILEY_DONOR_BASELINE_RENDER donor-front /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/donor-front.png
+RILEY_DONOR_BASELINE_RENDER donor-right /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/donor-right.png
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.11s
+RILEY_ORIGINAL_SOURCE_MESH bob01 vertices 2929 height 0.25
+RILEY_ORIGINAL_SOURCE_MESH eyebrow006 vertices 124 height 0.012
+RILEY_ORIGINAL_SOURCE_MESH eyelashes01 vertices 250 height 0.016
+RILEY_ORIGINAL_SOURCE_MESH female_casualsuit01 vertices 1302 height 1.306
+RILEY_ORIGINAL_SOURCE_MESH low-poly vertices 96 height 0.031
+RILEY_ORIGINAL_SOURCE_MESH Riley | anatomical body vertices 16731 height 0.955
+RILEY_ORIGINAL_SOURCE_MESH shoes05 vertices 800 height 0.109
+RILEY_ORIGINAL_SOURCE_MESH teeth_base vertices 4494 height 0.051
+RILEY_ORIGINAL_SOURCE_MESH Icosphere vertices 42 height 2.0
+RILEY_ORIGINAL_SOURCE_MESH Icosphere.001 vertices 42 height 2.0
+RILEY_SOURCE_SKIN_QA source-skin-front /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-front.png
+RILEY_SOURCE_SKIN_QA source-skin-right /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-right.png
+
+Blender quit
+rigged_glb_bytes: 16400392
