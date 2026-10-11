@@ -113,6 +113,81 @@ def polish_anatomical_shape(body):
     body.data.update()
     print("WVLRP_AMY_CONTINUOUS_BODY_POLISHED",len(verts))
 
+
+def check_and_repair_pelvic_surface(body):
+    """Check original unclothed topology at the pelvis, not just polygon total.
+
+    A closed, solid-looking body must have no stray open crotch border.
+    Only fill a small, fully enclosed boundary loop in the pelvic midline.
+    Never run a generic 'fill all holes' (mouth/eyelids/fingers can be open).
+    Reuse existing skin/rigged rim vertices to preserve bone weights.
+    """
+    import bmesh
+    from collections import defaultdict
+    bm=bmesh.new()
+    bm.from_mesh(body.data)
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+    coords=[v.co for v in bm.verts]
+    lo=min(v.z for v in coords); hi=max(v.z for v in coords)
+    tall=hi-lo
+    cx=(min(v.x for v in coords)+max(v.x for v in coords))*.5
+    if tall<=0: raise RuntimeError("Amy body has invalid bounds")
+    def in_pelvis(v):
+        z=(v.co.z-lo)/tall
+        return .35 <= z <= .65 and abs(v.co.x-cx) <= .19*tall
+    boundaries=[e for e in bm.edges if e.is_boundary]
+    candidates=[e for e in boundaries if all(in_pelvis(v) for v in e.verts)]
+    print("WVLRP_AMY_TOPOLOGY_BEFORE","boundary_edges",len(boundaries),
+          "pelvis_boundary_edges",len(candidates))
+    # Gather WHOLE boundary components so we never close a huge hole by
+    # selecting only its few edges that happen to pass near the crotch.
+    near=set(candidates)
+    incident=defaultdict(set)
+    for e in boundaries:
+        for v in e.verts: incident[v].add(e)
+    visited=set(); filled=0
+    for start in candidates:
+        if start in visited: continue
+        stack=[start]; component=set()
+        while stack:
+            edge=stack.pop()
+            if edge in component: continue
+            component.add(edge)
+            for v in edge.verts: stack.extend(incident[v]-component)
+        visited.update(component)
+        rim={v for edge in component for v in edge.verts}
+        perimeter=sum(e.calc_length() for e in component)
+        if not all(in_pelvis(v) for v in rim): continue
+        # A small local opening (not waist, leg cuff, or a body-sized cut).
+        if perimeter > .42*tall or len(component)>500: continue
+        if len(component)<3: continue
+        try:
+            result=bmesh.ops.holes_fill(bm,edges=list(component),sides=0)
+            patches=result.get("faces",[])
+            for face in patches: face.smooth=True
+            filled+=len(patches)
+            print("WVLRP_AMY_PELVIS_PATCH","rim",len(component),
+                  "perimeter_m",round(perimeter,4),"faces",len(patches))
+        except Exception as exc:
+            bm.free()
+            raise RuntimeError("Unable to close Amy's small pelvic hole") from exc
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm.to_mesh(body.data)
+    bm.free()
+    body.data.update()
+    # Fresh mesh after repair verifies there is no unresolved pelvic edge.
+    audit=bmesh.new();audit.from_mesh(body.data)
+    remaining=[e for e in audit.edges if e.is_boundary and
+              all(.35 <= (v.co.z-lo)/tall <= .65 and
+                  abs(v.co.x-cx)<=.19*tall for v in e.verts)]
+    print("WVLRP_AMY_PELVIS_QA","patched_faces",filled,
+          "remaining_open_edges",len(remaining))
+    audit.free()
+    if remaining:
+        raise RuntimeError("Pelvic mesh still has %d exposed hole edges" % len(remaining))
+
+
 def main():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
@@ -157,10 +232,23 @@ def main():
     export_root=ExportService.create_character_copy(h,name_suffix="_wvrlp_ref")
     exp=ObjectService.find_object_of_type_amongst_nearest_relatives(export_root,"Basemesh")
     if not exp: raise RuntimeError("MPFB export body copy missing")
+    # An unclothed base must retain EVERY body-surface polygon.
+    # MPFB clothing "delete" MASK modifiers hide skin under clothes; baking
+    # those modifiers permanently cut away body faces (pelvic opening seen
+    # by the user). Bake the shape/clean helpers, NOT the clothing masks.
     ExportService.bake_modifiers_remove_helpers(exp,
-        bake_masks=True,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+        bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+    # Remove residual masks (rather than applying them) so the glTF exporter
+    # cannot silently evaluate and omit skin from the crotch or torso.
+    mask_names=[m.name for m in exp.modifiers if m.type=="MASK"]
+    for modifier in list(exp.modifiers):
+        if modifier.type=="MASK": exp.modifiers.remove(modifier)
+    print("WVLRP_AMY_DELETE_MASKS_REMOVED_NOT_BAKED",mask_names)
+    if any(m.type=="MASK" for m in exp.modifiers):
+        raise RuntimeError("Residual skin masking can create a pelvic hole")
     clean_skin_material(exp)
     polish_anatomical_shape(exp)
+    check_and_repair_pelvic_surface(exp)
     # Keep the complete unclothed basemesh: no garments, body masking, or
     # mesh subtraction. The whole back/torso stays present during zoom.
     assert len(exp.data.vertices)>10000, "Incomplete human body"
