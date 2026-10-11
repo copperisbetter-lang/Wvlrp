@@ -1,0 +1,50 @@
+name: Build blonde Riley 3D preview
+on:
+  push:
+    paths:
+      - 'world-creator/scripts/make_riley_blonde.py'
+      - '.github/workflows/build-riley-blonde.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender for real GLB mesh editing
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender
+      - name: Generate blonde long-haired Riley 3D mesh and casual wardrobe
+        run: |
+          set -euo pipefail
+          blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- standing
+          blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- kneeling
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['riley-blonde-standing.glb', 'riley-blonde-kneeling.glb']:
+              path=Path('world-creator/assets')/name
+              data=path.read_bytes()
+              assert data[:4]==b'glTF'
+              assert len(data)==int.from_bytes(data[8:12],'little')
+              assert len(data)>1_000_000
+              print('VALIDATED',path,len(data))
+          PY
+      - name: Commit the actual 3D assets, not just editor metadata
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-blonde-standing.glb world-creator/assets/riley-blonde-kneeling.glb
+          if git diff --cached --quiet; then
+            echo 'Assets already built'
+          else
+            git commit -m "Build custom blonde Riley GLBs with hair, shorts and sneakers"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
