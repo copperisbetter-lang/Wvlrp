@@ -3,7 +3,6 @@ import {
   creekY, trailHorizontal, trailVertical, spawnDeer
 } from "./world-core.js";
 import { makeFigureBuilder } from "./character-models.js";
-import { makeRiley } from "./riley-model.js";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -16,20 +15,22 @@ let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
 const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
-// This is a genuine textured CC0 GLB, not a picture mapped to a primitive.
-// The temporary procedural figure remains only as the load/error and crouch fallback.
+// Two CC0 static meshes of the same Riley source character: not rigged animation.
 const RILEY_REAL_GLB = "./assets/riley-real.glb";
-let builtInRileyFilePromise = null;
-function builtInRileyFile() {
-  if (!builtInRileyFilePromise) {
-    builtInRileyFilePromise = fetch(RILEY_REAL_GLB).then(async response => {
-      if (!response.ok) throw Error("Character asset unavailable (" + response.status + ")");
-      const bytes = await response.arrayBuffer();
-      if (bytes.byteLength < 1_000_000) throw Error("Character asset is incomplete");
-      return new File([bytes], "riley-real.glb", {type:"model/gltf-binary"});
-    });
+const RILEY_KNEELING_GLB = "./assets/riley-kneeling.glb";
+const rileyAssetFiles=new Map();
+function builtInRileyFile(pose="standing"){
+  const url=pose==="crouch" ? RILEY_KNEELING_GLB : RILEY_REAL_GLB;
+  if(!rileyAssetFiles.has(url)){
+    const request=fetch(url).then(async response=>{
+      if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
+      const bytes=await response.arrayBuffer();
+      if(bytes.byteLength<1_000_000)throw Error("Character asset is incomplete");
+      return new File([bytes],url.split("/").at(-1),{type:"model/gltf-binary"});
+    }).catch(err=>{rileyAssetFiles.delete(url);throw err;});
+    rileyAssetFiles.set(url,request);
   }
-  return builtInRileyFilePromise;
+  return rileyAssetFiles.get(url);
 }
 let previewBuildId = 0;
 let herdFocusCursor = -1;
@@ -400,19 +401,25 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      let fallback;
-      try{fallback=o.modelKey==="riley" ? makeRiley(BABYLON,scene,track,o,x,h,z) : figures.person(o,x,h,z);}
-      catch(err){console.warn("Experimental Riley mesh unavailable, using normal person preview",err);fallback=figures.person(o,x,h,z);}
+      // The old balloon figure must never appear when Riley changes pose.
+      const fallback=figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
       if(characterFile) {
         importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
-      } else if(o.modelKey==="riley" && o.pose!=="crouch") {
-        // Professional textured base figure is the default for Riley's standing pose.
-        // Load once and reuse the bytes on rerenders; never discard browser-local objects.
-        builtInRileyFile().then(file=>{
-          if(thisBuild===previewBuildId) importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
+      } else if(o.modelKey==="riley") {
+        builtInRileyFile(o.pose).then(file=>{
+          if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
-          if(thisBuild===previewBuildId)status("Riley real model did not load: "+err.message+"; showing temporary figure");
+          if(thisBuild!==previewBuildId)return;
+          if(o.pose==="crouch"){
+            // The matching kneeling mesh may deploy later than this JS release.
+            // Fall back to the textured standing woman, NEVER the ball-joint doll.
+            builtInRileyFile("standing").then(file=>{
+              if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
+            }).catch(error=>{
+              if(thisBuild===previewBuildId)status("Riley asset unavailable: "+error.message);
+            });
+          } else status("Riley asset unavailable: "+err.message);
         });
       }
     }else{
@@ -484,12 +491,18 @@ $("inspect3d").onclick=()=>{
   focusObjectIn3D(o,o.modelKey==="riley"?2.8:4.4);
   status("Close-up 3D view: "+o.name+" (use 3D +/− or pinch to zoom closer; drag to orbit)");
 };
-// One tap creates just one opt-in Riley test object without disturbing existing deer.
+// Pressing Add again selects the original Riley instead of duplicating her.
 $("addRiley").onclick=()=>{
+  const previous=world.objects.find(item=>item.type==="npc"&&item.modelKey==="riley");
+  if(previous){
+    setSelection(previous);focusObjectIn3D(previous,2.9);
+    status("Existing Riley selected. Drag to orbit or change her pose.");
+    return;
+  }
   const o=createAt("npc",{x:view.x+3,y:view.y+3});
   Object.assign(o,{name:"Riley (test)",modelKey:"riley",pose:"standing",gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",face:"heart",body:"athletic",outfit:"casual"});
   setSelection(o);save();dirty3d=true;focusObjectIn3D(o,2.9);
-  status("Riley test figure created. Drag to orbit, pinch to zoom; change pose in Object details.");
+  status("Riley test figure created. Tap Add Riley again to find her.");
 };
 $("toggleRileyPose").onclick=()=>{
   const o=selected();
@@ -497,7 +510,7 @@ $("toggleRileyPose").onclick=()=>{
   o.pose=o.pose==="crouch"?"standing":"crouch";
   $("pose").value=o.pose;
   save();dirty3d=true;focusObjectIn3D(o,3.0);
-  status(o.pose==="crouch"?"Riley: hands and knees test pose. Drag to inspect.":"Riley: standing test pose.");
+  status(o.pose==="crouch"?"Riley: static kneeling pose, not yet a hands-and-knees animation.":"Riley: standing pose.");
 };
 $("expand3d").onclick=()=>{
   const frame=document.querySelector(".preview-frame");
