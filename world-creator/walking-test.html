@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v6</title>
+<title>The Wild — Caitlyn Walking Test v7</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -76,6 +76,8 @@ const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
 // Keep the world, working joystick and collision boundary intact.
 // Load Caitlyn's ACTUAL rigged GLB, not a blob/mannequin stand-in.
 let caitlynReady=false, caitlynFailure='', gaitBones={}, gaitReady=false, gaitWeight=0, kneeBendSources=0;
+const hipStance={leftThigh:0,rightThigh:0};
+let stanceCalibration=null;
 const gaitAliases={
   leftThigh:['leftupleg','leftthigh','lthigh'],
   rightThigh:['rightupleg','rightthigh','rthigh'],
@@ -89,7 +91,12 @@ const gaitAliases={
 function normalizedBone(n){return String(n||'').toLowerCase().replace(/mixamorig/g,'').replace(/[^a-z0-9]/g,'');}
 function setGait(part,angle){
  const entry=gaitBones[part]; if(!entry)return;
- const quat=entry.base.multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
+ // Bring the legs in toward a natural track WITHOUT altering body mesh or knee hinges.
+ // Use local-Z thigh adduction before the existing forward/back hip swing.
+ const adduction=hipStance[part]||0;
+ const quat=entry.base
+   .multiply(B.Quaternion.RotationAxis(B.Axis.Z,adduction))
+   .multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
  if(entry.node)entry.node.rotationQuaternion=quat;
  else entry.bone.setRotationQuaternion(quat,B.Space.LOCAL);
 }
@@ -152,8 +159,64 @@ function bindWalkingRig(result){
  console.info('Caitlyn gait bound:',found.join(', '),'legs ready',gaitReady);
  return found;
 }
+// The MPFB rest skeleton can be noticeably splay-footed. Calibrate Caitlyn's
+// thigh adduction from ACTUAL hip and foot joint positions, not a guessed sign:
+// imported rigs can have left/right local joint axes reversed after glTF export.
+// A normal gait places feet roughly under the hips instead of in a wide V.
+function jointPosition(part){
+ const joint=gaitBones[part];
+ const node=joint?.node||joint?.bone?.getTransformNode?.();
+ if(!node)return null;
+ node.computeWorldMatrix(true);
+ return node.getAbsolutePosition().clone();
+}
+function calibrateNaturalStance(){
+ const leftHip=jointPosition('leftThigh'),rightHip=jointPosition('rightThigh');
+ const leftFoot=jointPosition('leftFoot'),rightFoot=jointPosition('rightFoot');
+ if(!leftHip||!rightHip||!leftFoot||!rightFoot)return null;
+ const middle=(leftHip.x+rightHip.x)*.5;
+ const hipWidth=Math.abs(leftHip.x-rightHip.x);
+ // Use real-world meters after scaling Caitlyn to 1.72 m.
+ const footWidth=Math.max(.22,Math.min(.30,hipWidth*.96));
+ const before=Math.abs(leftFoot.x-rightFoot.x);
+ for(const [thigh,foot] of [['leftThigh','leftFoot'],['rightThigh','rightFoot']]){
+   const start=jointPosition(foot);
+   const socket=jointPosition(thigh);
+   const side=Math.sign(start.x-middle)||Math.sign(socket.x-middle);
+   if(!side)continue;
+   const goal=middle+side*footWidth*.5;
+   // Never widen an already close/natural stance.
+   if((start.x-middle)*side<=footWidth*.5+.025)continue;
+   let best=0,bestScore=Infinity;
+   for(let n=-12;n<=12;n++){
+     const candidate=n*.025; // maximum 17 degrees of inward hip adjustment
+     hipStance[thigh]=candidate;
+     setGait(thigh,0);
+     const probe=jointPosition(foot);
+     if(!probe)continue;
+     const lateral=side*(probe.x-goal);
+     // Penalize crossed feet, unnecessary joint rotation, and fore/aft drift.
+     const score=Math.abs(lateral)+(lateral<0?Math.abs(lateral)*1.5:0)
+       +Math.abs(candidate)*.025+Math.abs(probe.z-start.z)*.16;
+     if(score<bestScore){bestScore=score;best=candidate;}
+   }
+   hipStance[thigh]=best;
+   setGait(thigh,0);
+ }
+ const afterLeft=jointPosition('leftFoot'),afterRight=jointPosition('rightFoot');
+ const after=afterLeft&&afterRight?Math.abs(afterLeft.x-afterRight.x):before;
+ // A failed calibration must not leave the legs more widely spread.
+ if(after>before+.01){
+   hipStance.leftThigh=0;hipStance.rightThigh=0;
+   setGait('leftThigh',0);setGait('rightThigh',0);
+   return {before,after:before,target:footWidth,corrected:false};
+ }
+ const data={before,after,target:footWidth,corrected:after<before-.018};
+ console.info('Caitlyn stance calibration (meters)',data,'thigh adduction',hipStance);
+ return data;
+}
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=6',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=7',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
@@ -186,6 +249,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    idle.stop();
  }
  const bound=bindWalkingRig(result);
+ stanceCalibration=gaitReady?calibrateNaturalStance():null;
  for(const mesh of realMeshes){
    const manager=mesh.morphTargetManager;
    if(!manager)continue;
@@ -246,15 +310,16 @@ engine.runRenderLoop(()=>{
  // A hip swings the leg forward; the corresponding shin folds BACK,
  // following the actual anatomical hinge orientation from Caitlyn's rig.
  // Each knee has slight stance flex and deeper swing-phase clearance.
- setGait('leftThigh',phase*.43*stride);
- setGait('rightThigh',-phase*.43*stride);
+ // Natural-length steps: less exaggerated marching and less bowlegged swing.
+ setGait('leftThigh',phase*.30*stride);
+ setGait('rightThigh',-phase*.30*stride);
  setKneeFlex('leftKnee',gaitWeight*(.10+leftLift*.64));
  setKneeFlex('rightKnee',gaitWeight*(.10+rightLift*.64));
  // Limit ankle motion until fully foot-planted IK is available.
  setGait('leftFoot',(-phase*.07-leftLift*.08)*stride);
  setGait('rightFoot',(phase*.07-rightLift*.08)*stride);
- setGait('leftArm',-phase*.32*stride);
- setGait('rightArm',phase*.32*stride);
+ setGait('leftArm',-phase*.24*stride);
+ setGait('rightArm',phase*.24*stride);
  walkBody.position.y=walking?Math.abs(Math.sin(clock))*.013:0;
  walkBody.rotation.x=0;
  walkBody.rotation.z=0;
