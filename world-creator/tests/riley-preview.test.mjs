@@ -41,7 +41,7 @@ test("Approved design has stable size baseline for outfits",()=>{
   assert.equal(measurements.shoulder_width_cm,40);
   assert.match(page,/id="rileyOutfitMeasurements"/);
   assert.match(page,/Bust 112 cm/);
-  assert.match(modelBuilder,/fullness=max\(\.080,min\(\.205/);
+  assert.match(modelBuilder,/fullness=max\(\.075,min\(\.135/);
   assert.match(modelBuilder,/Riley flowing layered honey-blonde hair/);
   assert.match(modelBuilder,/boundary_points\(/);
 });
