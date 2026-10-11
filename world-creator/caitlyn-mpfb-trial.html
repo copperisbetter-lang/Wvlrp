@@ -23,7 +23,7 @@
 <button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
 <button id="idle">Play movement</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-smile-skin-ground-v6" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-ground-contact-v7" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -45,8 +45,30 @@ try {
  camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-smile-skin-ground-v6',scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-ground-contact-v7',scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
+  // A new viewer page is not proof that the GitHub Actions model rebuild
+  // succeeded. Inspect the imported GLB itself before reporting a new pose.
+  const expected=['Caitlyn HandsAndKnees','Caitlyn ElbowsAndKnees'];
+  const missing=expected.filter(n=>!groups.some(g=>g.name===n));
+  let smileCount=0, morphCount=0;
+  for(const mesh of res.meshes) {
+    const manager=mesh.morphTargetManager;
+    if(!manager)continue;
+    for(let i=0;i<manager.numTargets;i++){
+      const morph=manager.getTarget(i);
+      morphCount++;
+      if(/Caitlyn Natural Smile/i.test(morph.name)){
+        morph.influence=Math.max(.52,morph.influence||0);
+        smileCount++;
+      }
+    }
+  }
+  if(missing.length || !morphCount){
+    status.textContent='Old Caitlyn 3D file: updated poses/smile not built yet ('+
+      (missing.length?missing.map(s=>s.replace('Caitlyn ','')).join(', '):'smile morph')+').';
+    status.style.background='#563325e8';
+  }
   let low=new BABYLON.Vector3(Infinity,Infinity,Infinity),high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
   for(const m of res.meshes){
    if(typeof m.getTotalVertices!=='function'||m.getTotalVertices()===0) continue;
@@ -67,7 +89,10 @@ try {
   const stand=groups.find(g=>/Caitlyn Stand/i.test(g.name));
   if(stand){stand.start(true,1,stand.from,stand.to,false);currentGroup=stand;}
   else status.textContent='3D loaded but stand animation missing';
-  status.textContent='3D loaded · '+(res.skeletons?.[0]?.bones?.length||0)+' bones · '+groups.length+' animation';
+  if(!missing.length && morphCount){
+    status.textContent='Updated Caitlyn loaded · '+(res.skeletons?.[0]?.bones?.length||0)+
+       ' bones · '+groups.length+' motions · '+smileCount+' smile shapes';
+  }
  }).catch(e=>{status.id='err';status.textContent='Unable to load GLB: '+(e.message||e)});
  engine.runRenderLoop(()=>scene.render());
  window.addEventListener('resize',()=>engine.resize());
