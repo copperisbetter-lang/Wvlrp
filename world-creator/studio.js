@@ -38,7 +38,7 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
-const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=natural-bust112-rebuild-v7";
+const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=full-scalp-blonde-v8";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
@@ -48,7 +48,7 @@ function builtInRileyFile(pose="standing"){
   // All poses are animations on one skeleton, not warped duplicate GLBs.
   const url=RILEY_RIGGED_GLB;
   if(!rileyAssetFiles.has(url)){
-    const request=fetch(url).then(async response=>{
+    const request=fetch(url,{cache:"no-store"}).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
       const bytes=await response.arrayBuffer();
       if(bytes.byteLength<100_000)throw Error("Rigged character asset is incomplete");
@@ -350,7 +350,7 @@ function material(name,color){
 // "Complexion" in Object details controls the same material on re-apply.
 function applyRileyFleshTone(result, complexion="fair") {
   const skinColors={
-    fair:"#E2AF9B", light:"#CE987F", tan:"#B97E62",
+    fair:"#D3A188", light:"#C6977D", tan:"#B97E62",
     brown:"#8D5B43", deep:"#593D31"
   };
   const tone=BABYLON.Color3.FromHexString(skinColors[complexion]||skinColors.fair);
@@ -572,7 +572,7 @@ function init3D(){
     refresh3d();engine.runRenderLoop(()=>{animateRiley(Date.now());scene.render();});
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
-$("refresh3d").onclick=()=>{dirty3d=true;refresh3d();status("3D preview refreshed near map center");};
+$("refresh3d").onclick=()=>{rileyAssetFiles.clear();dirty3d=true;refresh3d();status("3D preview refreshed with a fresh Riley model file");};
 function zoom3d(factor){
   if(!camera){status("3D preview is not ready yet");return;}
   camera.inertialRadiusOffset=0;
