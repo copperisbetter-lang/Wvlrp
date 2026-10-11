@@ -348,7 +348,10 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const node=track(new BABYLON.TransformNode("custom model "+o.id,scene));
     const roots=meshes.filter(m=>!m.parent || !meshes.includes(m.parent));
     roots.forEach(m=>m.parent=node);
-    const scale=Math.min(100,1.70/(maxY-minY));
+    // A kneeling person should stay shorter than her standing height.
+    const realKneeling=o.modelKey==="riley"&&o.pose==="crouch"&&file.name==="riley-kneeling.glb";
+    const naturalHeight=realKneeling?1.29:1.70;
+    const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
     node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
     for(const mesh of meshes)track(mesh);
