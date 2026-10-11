@@ -70,7 +70,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-ground-contact-v7"
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -81,7 +81,7 @@ function builtInCharacterFile(key){
   const url=BUILTIN_CHARACTER_GLB[key];
   if(!url)return Promise.reject(Error("Unknown character "+key));
   if(!characterAssetFiles.has(url)){
-    const request=fetch(url,{cache:"no-store"}).then(async response=>{
+    const request=fetch(url+(url.includes('?')?'&':'?')+'fresh='+Date.now(),{cache:"no-store"}).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
       const bytes=await response.arrayBuffer();
       if(bytes.byteLength<100_000)throw Error("Rigged character asset is incomplete");
@@ -509,6 +509,20 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
       if(!rigs.some(sk=>(sk.bones?.length||0)>=25))throw Error(o.name+" GLB rig is incomplete");
       const animations=result.animationGroups||[];
       if(o.modelKey==="caitlyn"){
+        // Apply the actual imported mouth-corner shape keys in the 3D world
+        // instead of relying on a static smile painted onto the texture.
+        let smileShapes=0;
+        for(const mesh of meshes){
+          const manager=mesh.morphTargetManager;
+          if(!manager)continue;
+          for(let i=0;i<manager.numTargets;i++){
+            const morph=manager.getTarget(i);
+            if(/Caitlyn Natural Smile (Left|Right)/i.test(morph.name)){
+              morph.influence=.78;smileShapes++;
+            }
+          }
+        }
+        if(smileShapes!==2)status("Caitlyn loaded without both working smile morphs ("+smileShapes+"/2)");
         const clipName=({
           standing:"Caitlyn Stand",bend:"Caitlyn Bend",
           crouch:"Caitlyn Kneel",allfours:"Caitlyn HandsAndKnees",
