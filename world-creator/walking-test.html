@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v8</title>
+<title>The Wild — Caitlyn Walking Test v9</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,7 +23,7 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v8</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v9</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
@@ -272,7 +272,7 @@ function calibrateRelaxedArms(){
  return {corrected,details};
 }
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=8',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=9',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
@@ -366,19 +366,20 @@ engine.runRenderLoop(()=>{
        leftLift=Math.max(0,-phase),rightLift=Math.max(0,phase),stride=gaitWeight*direction;
  // A hip swings the leg forward; the corresponding shin folds BACK,
  // following the actual anatomical hinge orientation from Caitlyn's rig.
- // Each knee has slight stance flex and deeper swing-phase clearance.
+ // Each knee keeps its natural bending but uses shallower swing-phase clearance,
+ // so the toes lift only slightly off the ground instead of high-stepping.
  // Natural-length steps: less exaggerated marching and less bowlegged swing.
  setGait('leftThigh',phase*.30*stride);
  setGait('rightThigh',-phase*.30*stride);
- setKneeFlex('leftKnee',gaitWeight*(.10+leftLift*.64));
- setKneeFlex('rightKnee',gaitWeight*(.10+rightLift*.64));
+ setKneeFlex('leftKnee',gaitWeight*(.10+leftLift*.50));
+ setKneeFlex('rightKnee',gaitWeight*(.10+rightLift*.50));
  // Limit ankle motion until fully foot-planted IK is available.
  setGait('leftFoot',(-phase*.07-leftLift*.08)*stride);
  setGait('rightFoot',(phase*.07-rightLift*.08)*stride);
  // Arms rest naturally alongside the body, with a modest opposing swing.
  setGait('leftArm',-phase*.11*stride);
  setGait('rightArm',phase*.11*stride);
- walkBody.position.y=walking?Math.abs(Math.sin(clock))*.013:0;
+ walkBody.position.y=walking?Math.abs(Math.sin(clock))*.009:0;
  walkBody.rotation.x=0;
  walkBody.rotation.z=0;
  let target=new B.Vector3(root.position.x,1.45,root.position.z);
