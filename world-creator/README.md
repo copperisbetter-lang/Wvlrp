@@ -30,6 +30,12 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 - **Appearance honesty:** The existing CC0 Riley source has dark short hair, teal top, and denim trousers; it is **not** the desired long-haired blonde tomboy character in a fitted top, very short baggy beige shorts and tennis shoes. Hair/clothing geometry, correct proportions, textures and skeletal animation are still necessary. Do not claim the finished game character exists.
 - Keep using `Inspect selected`, `＋ Zoom closer`, drag-to-orbit, and `Expand 3D`. Riley's position, identity and pose stay in local browser saves/exports; the shared mesh is part of the site source and need not be copied into world JSON.
 
+### Riley temporary beach-model test (October 10, later revision)
+
+- Current source script removes the old shirt, trousers, bob hair and shoes and builds a teal string bikini on the existing adult anatomical model, with modeled triangle cups, straps, tied sides, and coordinated briefs. It also substitutes broad soft layered blonde hair geometry for the original straw-like cylinders and attempts a very subtle asymmetric smile.
+- GitHub Actions rebuilds three `.glb` files after `world-creator/scripts/make_riley_blonde.py` changes. **The code commit alone does not prove the finished assets or their on-phone appearance:** inspect Actions success, changed GLB commits and close-up screenshots before calling this a visual fix.
+- These are static mesh poses, not a rigged animated body. Photo-to-model generation and true cloth/hair simulation are not implemented. Existing deer positions and user-local world saves are not changed by the model build.
+
 ## Critical safety and security boundaries
 
 - **Not an authenticated administrator console.** This repository is public, so the static editor page is also publicly viewable by anyone with the URL. The prototype never publishes changes to live gameplay; all edits are local to the visitor's browser.
