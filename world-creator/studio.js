@@ -38,7 +38,7 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
-const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=sculpted-anatomical-female-bust-v5";
+const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=warm-flesh-preview-v6";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
@@ -344,6 +344,46 @@ function material(name,color){
   mat.diffuseColor=BABYLON.Color3.FromHexString(color);
   mat.specularColor=new BABYLON.Color3(.05,.05,.05);return mat;
 }
+// The Blender source may bake a washed-out grey onto the otherwise correct
+// sculpt. Give ONLY the rigged Riley body + collar a warm, matte complexion;
+// never overwrite her photographed face, eyes, blonde hair, or other NPCs.
+// "Complexion" in Object details controls the same material on re-apply.
+function applyRileyFleshTone(result, complexion="fair") {
+  const skinColors={
+    fair:"#E2AF9B", light:"#CE987F", tan:"#B97E62",
+    brown:"#8D5B43", deep:"#593D31"
+  };
+  const tone=BABYLON.Color3.FromHexString(skinColors[complexion]||skinColors.fair);
+  function tint(mat) {
+    if(!mat)return;
+    if("albedoColor" in mat)mat.albedoColor=tone.clone();
+    if("diffuseColor" in mat)mat.diffuseColor=tone.clone();
+    if("metallic" in mat)mat.metallic=0;
+    if("roughness" in mat)mat.roughness=.9;
+    if("specularColor" in mat)mat.specularColor=new BABYLON.Color3(.045,.035,.03);
+    if("emissiveColor" in mat)mat.emissiveColor=tone.scale(.025);
+    mat.markAsDirty?.(BABYLON.Material.AllDirtyFlag);
+  }
+  let skinMaterialFound=false;
+  for(const mat of result.materials||[]) {
+    const name=(mat.name||"").toLowerCase();
+    if(name.includes("riley complexion matched continuous mannequin skin")||
+       name.includes("riley natural warm skin tone")) {
+      tint(mat);skinMaterialFound=true;
+    }
+  }
+  // Compatibility with previous GLBs where the skin shader had a generic name.
+  // Clone first so an unexpectedly shared source material cannot recolor her face.
+  if(!skinMaterialFound)for(const mesh of result.meshes||[]) {
+    const name=(mesh.name||"").toLowerCase();
+    if(name.includes("riley sculpted anatomical body")||
+       name.includes("riley seamless neck transition")) {
+      if(!mesh.material)continue;
+      const own=mesh.material.clone("Riley body flesh override");
+      mesh.material=own;track(own);tint(own);
+    }
+  }
+}
 function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
   // A complete GLB can contain textured meshes, hair, clothes and skeletons.
   // Import is browser-local; no server uploads, no file bytes in world JSON.
@@ -400,6 +440,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     if(!Number.isFinite(fMinY))throw Error("Imported 3D body has no valid ground bounds");
     node.position.set(x-(fMinX+fMaxX)/2,h+.035-fMinY,z-(fMinZ+fMaxZ)/2);
     if(isRiley){
+      if(file.name==="riley-rigged-v1.glb")applyRileyFleshTone(result,o.skin);
       const state=rileyMotionFor(o.id);
       node.rotation.y=state.heading;
       const skeletons=result.skeletons||[];
