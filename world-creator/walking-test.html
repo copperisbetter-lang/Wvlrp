@@ -40,7 +40,7 @@ const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.68,.81,.85,1);sce
 const hemi=new B.HemisphericLight('skylight',new B.Vector3(0,1,0),scene);hemi.intensity=.9;
 const sun=new B.DirectionalLight('sun',new B.Vector3(-.3,-1,.6),scene);sun.position=new B.Vector3(20,25,-10);sun.intensity=1.15;
 function material(name,c){let m=new B.StandardMaterial(name,scene);m.diffuseColor=B.Color3.FromHexString(c);m.specularColor=new B.Color3(.06,.06,.06);return m;}
-const grass=material('lawn','#466f3d'),ground=new B.MeshBuilder.CreateGround('ground',{width:75,height:75},scene);ground.material=grass;
+const grass=material('lawn','#466f3d'),ground=B.MeshBuilder.CreateGround('ground',{width:75,height:75},scene);ground.material=grass;
 const earth=material('earth','#8a6950'),treeBark=material('tree bark','#69533d'),leaf=material('canopy','#285a38'),leaf2=material('canopy2','#487542'),wood=material('siding','#775c3d'),roofMat=material('roof','#43514c'),stone=material('foundation','#85857b'),glass=material('windows','#6597a2'),gold=material('signs','#dfbf7a');
 const path=B.MeshBuilder.CreateGround('trail',{width:3,height:26},scene);path.position.set(0,.014,8);path.material=earth;
 function box(name,w,h,d,x,y,z,mat,parent){let o=B.MeshBuilder.CreateBox(name,{width:w,height:h,depth:d},scene);o.position.set(x,y,z);o.material=mat;if(parent)o.parent=parent;return o;}
@@ -90,7 +90,7 @@ if(!root.metadata)root.metadata={legs:[],arms:[],knees:[]};
 root.metadata.legs.push(leg);root.metadata.knees.push(knee);root.metadata.arms.push(arm);
 }
 root.rotation.y=0;
-const camera=new B.ArcRotateCamera('follow',-Math.PI/2,1.30,7,new B.Vector3(0,1.5,0),scene);
+const camera=new B.ArcRotateCamera('follow',Math.PI/2,1.30,7,new B.Vector3(0,1.5,0),scene);
 camera.lowerRadiusLimit=3;camera.upperRadiusLimit=16;camera.lowerBetaLimit=.45;camera.upperBetaLimit=1.55;camera.wheelPrecision=35;
 camera.attachControl(cvs,true);camera.panningSensibility=0;camera.angularSensibilityX=750;camera.angularSensibilityY=850;
 let yaw=0,clock=0,axisX=0,axisY=0,follow=true;
@@ -129,7 +129,7 @@ engine.runRenderLoop(()=>{
  walkBody.position.y=walking?Math.abs(Math.sin(clock))*.035:0;
  let target=new B.Vector3(root.position.x,1.45,root.position.z);
  camera.setTarget(target);
- if(follow){camera.alpha=-Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
+ if(follow){camera.alpha=Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
  status.textContent=(walking?'Walking':'Standing')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
  scene.render();
 });
