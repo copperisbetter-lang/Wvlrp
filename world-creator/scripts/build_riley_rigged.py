@@ -304,48 +304,98 @@ def sphere(name,xyz,radii,mat,segments=32):
     parts.append(o)
     return o
 
-# Real wavy layered blonde scalp + transparent-free curved lock strips.
-# Hair is scalp-rooted (not floating bun or static pasted photograph).
-random.seed(4141)
+# Shoulder-length, loose blonde hair built from a fitted scalp dome and
+# long, light wavy strands. Roots follow the actual head, not fixed scene 0.
+# Bare scalp ring faces are hidden beneath the flowing layers.
+rng=random.Random(4141)
 hair_meshes=[]
 def hmesh(name,verts,faces,mat):
-    me=bpy.data.meshes.new(name);me.from_pydata(verts,[],faces);me.update()
-    ob=bpy.data.objects.new(name,me);bpy.context.collection.objects.link(ob)
+    me=bpy.data.meshes.new(name)
+    me.from_pydata(verts,[],faces);me.update()
+    ob=bpy.data.objects.new(name,me)
+    bpy.context.collection.objects.link(ob)
     me.materials.append(mat)
     for f in me.polygons:f.use_smooth=True
     hair_meshes.append(ob)
     return ob
-head_top=max((v.co.z for o in original_head for v in o.data.vertices
-              if (o.name.lower()=="low-poly" or "anatomical body" in o.name.lower())),default=1.70)
-cap_z=min(H*.973,head_top-.037)
-sphere_cap=sphere("Riley blonde scalp cap",(0,.012,cap_z),(.088,.081,.050),hair_colors[1],32)
-hair_meshes.append(sphere_cap)
+head_core=[v.co for o in original_head
+           if (o.name.lower()=="low-poly" or "anatomical body" in o.name.lower())
+           for v in o.data.vertices]
+if len(head_core)<100:raise RuntimeError("Missing head vertices for fitted Riley hair")
+head_top=max(v.z for v in head_core)
+cap_center=(sum(p.x for p in head_core if p.z>head_top-.105)/
+            max(1,sum(1 for p in head_core if p.z>head_top-.105)),
+            sum(p.y for p in head_core if p.z>head_top-.105)/
+            max(1,sum(1 for p in head_core if p.z>head_top-.105)))
+hx,hy=cap_center
+print("RILEY_HAIR_HEAD_ANCHOR",tuple(round(t,4) for t in (hx,hy,head_top)))
+cap_base=head_top-.083
+# Dome only, NOT a whole sphere sitting on Riley's head like a helmet.
+cap_verts=[(hx,hy,head_top+.004)]
+cap_faces=[]
+nsteps=48;nrings=9
+for i in range(1,nrings+1):
+    theta=.5*pi*i/nrings
+    for k in range(nsteps):
+        a=2*pi*k/nsteps
+        cap_verts.append((hx+.086*sin(theta)*cos(a),
+                          hy+.074*sin(theta)*sin(a),
+                          cap_base+.087*cos(theta)))
+for k in range(nsteps):
+    cap_faces.append((0,1+k,1+(k+1)%nsteps))
+for j in range(nrings-1):
+    lo=1+j*nsteps
+    for k in range(nsteps):
+        n=(k+1)%nsteps
+        cap_faces.append((lo+k,lo+n,lo+nsteps+n,lo+nsteps+k))
+hmesh("Riley scalp fitted blonde crown",cap_verts,cap_faces,hair_colors[1])
+# Strands have curved outer surface and tapered tips, cascading behind the
+# shoulders with varying lengths. Each lock starts UNDER the crown dome.
+def strand(root,length,spread,phase,width,color):
+    verts=[];faces=[];N=28;S=6
+    for j in range(N):
+        t=j/(N-1)
+        w=(1-t)**.60
+        center=Vector((root.x+spread[0]*t+
+                      .012*sin(3.3*pi*t+phase)*t,
+                      root.y+spread[1]*t+
+                      .009*cos(3.0*pi*t+phase)*t,
+                      root.z-length*t))
+        radius=width*max(.045,w)
+        for k in range(S):
+            th=2*pi*k/S
+            verts.append(tuple(center+Vector((radius*cos(th),radius*.56*sin(th),0))))
+        if j:
+            for k in range(S):
+                q=(k+1)%S
+                faces.append(((j-1)*S+k,(j-1)*S+q,j*S+q,j*S+k))
+    hmesh("Riley flowing layered honey-blonde hair",verts,faces,hair_colors[color])
+# Back and lateral hair, several staggered rows, with no curtain hiding eyes.
 for layer in range(4):
-    for i in range(26):
-        angle=2*pi*(i+.3*layer)/26
-        # Root is along outer scalp circumference with realistic radial spread.
-        x=.080*cos(angle);y=.013+.067*sin(angle)
-        is_front=y<-.027
-        if is_front and abs(x)<.043:continue
-        root=Vector((x,y,cap_z+.018))
-        length=random.uniform(.25,.39) if not is_front else random.uniform(.20,.33)
-        verts=[];faces=[];sides=5;n=20
-        for j in range(n):
-            t=j/(n-1)
-            center=root+Vector((.016*math.cos(angle)*t+.011*sin(t*pi*2+angle)*t,
-                                .033*math.sin(angle)*t+.009*cos(t*pi*3+angle)*t,
-                                -length*t))
-            radius=(.0055+layer*.0008)*max(.08,(1-t)**.8)
-            for k in range(sides):
-                v=2*pi*k/sides
-                verts.append(tuple(center+Vector((radius*cos(v),radius*.44*sin(v),0))))
-            if j:
-                a=(j-1)*sides;b=j*sides
-                for k in range(sides):
-                    kn=(k+1)%sides
-                    faces.append((a+k,a+kn,b+kn,b+k))
-        hmesh("Riley rooted soft blonde hair",verts,faces,hair_colors[(i+layer)%4])
-
+    for k in range(39):
+        a=2*pi*(k+.21*(layer%2))/39
+        ux,uy=cos(a),sin(a)
+        if uy<-.18 and abs(ux)<.50:continue
+        root=Vector((hx+(.076+.003*layer)*ux,
+                     hy+(.066+.003*layer)*uy,
+                     cap_base+.014-.015*layer))
+        length=rng.uniform(.37,.49)+layer*.036 if uy>=0 else rng.uniform(.27,.40)
+        side=math.copysign(1,ux)
+        spread=(side*(.028+.015*layer),
+                (.085+.017*layer) if uy>.15 else (.030 if uy<-.2 else .053))
+        strand(root,length,spread,rng.uniform(0,2*pi),
+               rng.uniform(.0038,.0063),(k+layer)%4)
+# Side-swept framing strands, starting at the temples, leaving face open.
+for side in (-1,1):
+    for k in range(14):
+        t=k/13
+        root=Vector((hx+side*(.064+.015*t),
+                     hy-.035+.023*t,
+                     head_top-.095-.044*t))
+        strand(root,.29+.15*t, (side*(.040+.025*t),.024+.045*t),
+               rng.uniform(0,2*pi),rng.uniform(.0025,.0045),(k+1)%4)
+print("RILEY_HAIR_LOCKS",len(hair_meshes)-1,
+      "longest_ends_below_shoulder",True)
 # Join hair into single mesh; it is parented to head bone, not torso or rig root.
 bpy.ops.object.select_all(action="DESELECT")
 for o in hair_meshes:o.select_set(True)
