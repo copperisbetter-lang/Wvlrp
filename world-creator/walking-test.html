@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v5</title>
+<title>The Wild — Caitlyn Walking Test v6</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,7 +23,7 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v5</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v6</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
@@ -75,7 +75,7 @@ const root=new B.TransformNode('player-position',scene);root.position.set(0,0,4)
 const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
 // Keep the world, working joystick and collision boundary intact.
 // Load Caitlyn's ACTUAL rigged GLB, not a blob/mannequin stand-in.
-let caitlynReady=false, caitlynFailure='', gaitBones={}, gaitReady=false, gaitWeight=0;
+let caitlynReady=false, caitlynFailure='', gaitBones={}, gaitReady=false, gaitWeight=0, kneeBendSources=0;
 const gaitAliases={
   leftThigh:['leftupleg','leftthigh','lthigh'],
   rightThigh:['rightupleg','rightthigh','rthigh'],
@@ -92,6 +92,41 @@ function setGait(part,angle){
  const quat=entry.base.multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
  if(entry.node)entry.node.rotationQuaternion=quat;
  else entry.bone.setRotationQuaternion(quat,B.Space.LOCAL);
+}
+// Do not guess the anatomical knee hinge. Read its exact bent orientation from
+// Caitlyn's built-in rigged kneeling clip, where the shin's backward fold was
+// already established. No kneel animation is played during normal walking.
+function bindKneeFlexFromClip(groups){
+ const kneel=(groups||[]).find(group=>group.name==='Caitlyn Kneel');
+ if(!kneel)return 0;
+ let matched=0;
+ for(const side of ['leftKnee','rightKnee']){
+   const joint=gaitBones[side];
+   if(!joint)continue;
+   const names=gaitAliases[side];
+   const track=(kneel.targetedAnimations||[]).find(item=>
+     names.includes(normalizedBone(item.target?.name)) &&
+     item.animation?.targetProperty==='rotationQuaternion'
+   );
+   const keys=track?.animation?.getKeys?.()||[];
+   const bent=keys.length?keys[keys.length-1].value:null;
+   if(!bent||![bent.x,bent.y,bent.z,bent.w].every(Number.isFinite))continue;
+   const q=new B.Quaternion(bent.x,bent.y,bent.z,bent.w).normalize();
+   const difference=2*Math.acos(Math.min(1,Math.abs(B.Quaternion.Dot(joint.base,q))));
+   // The end of Caitlyn's kneeling clip must actually flex the shin.
+   if(difference<.25 || difference>2.9)continue;
+   joint.flexed=q;
+   joint.flexRange=difference;
+   matched++;
+ }
+ console.info('Caitlyn anatomical knee flex from kneel clip:',matched,'/2');
+ return matched;
+}
+function setKneeFlex(part,amount){
+ const joint=gaitBones[part];if(!joint?.flexed)return;
+ const q=B.Quaternion.Slerp(joint.base,joint.flexed,Math.max(0,Math.min(.76,amount)));
+ if(joint.node)joint.node.rotationQuaternion=q;
+ else joint.bone.setRotationQuaternion(q,B.Space.LOCAL);
 }
 function bindWalkingRig(result){
  // Mixamo glTF joints can be linked skeleton nodes and not listed in result.transformNodes.
@@ -111,13 +146,14 @@ function bindWalkingRig(result){
    const bone=bones.find(b=>aliases.includes(normalizedBone(b.name)));
    if(bone)gaitBones[part]={bone,base:bone.getRotationQuaternion(B.Space.LOCAL).clone()};
  }
- gaitReady=!!(gaitBones.leftThigh&&gaitBones.rightThigh&&gaitBones.leftKnee&&gaitBones.rightKnee);
+ kneeBendSources=bindKneeFlexFromClip(result.animationGroups);
+ gaitReady=!!(gaitBones.leftThigh&&gaitBones.rightThigh&&gaitBones.leftKnee&&gaitBones.rightKnee&&kneeBendSources===2);
  const found=Object.keys(gaitBones);
  console.info('Caitlyn gait bound:',found.join(', '),'legs ready',gaitReady);
  return found;
 }
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=5',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=6',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
@@ -159,8 +195,8 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    }
  }
  caitlynReady=true;
- status.textContent=gaitReady?'Caitlyn loaded · skeletal walk ready ('+bound.length+' joints)'
-    :'Caitlyn loaded, but leg joints were NOT found';
+ status.textContent=gaitReady?'Caitlyn loaded · both knees calibrated ('+bound.length+' joints)'
+    :'Caitlyn loaded · knee clip unavailable ('+kneeBendSources+'/2)';
 }).catch(e=>{
  caitlynFailure=e?.message||String(e);
  status.textContent='Caitlyn model failed to load: '+caitlynFailure;
@@ -207,13 +243,16 @@ engine.runRenderLoop(()=>{
  if(walking)clock+=dt*9.1*(moved/1.55);
  const direction=f<0?-1:1,phase=Math.sin(clock),
        leftLift=Math.max(0,-phase),rightLift=Math.max(0,phase),stride=gaitWeight*direction;
- // Real skin joints: alternating thigh swing, knee lifts, ankle compensation, arm counter-swing.
- setGait('leftThigh',phase*.58*stride);
- setGait('rightThigh',-phase*.58*stride);
- setGait('leftKnee',leftLift*.43*gaitWeight);
- setGait('rightKnee',rightLift*.43*gaitWeight);
- setGait('leftFoot',(-phase*.18-leftLift*.24)*stride);
- setGait('rightFoot',(phase*.18-rightLift*.24)*stride);
+ // A hip swings the leg forward; the corresponding shin folds BACK,
+ // following the actual anatomical hinge orientation from Caitlyn's rig.
+ // Each knee has slight stance flex and deeper swing-phase clearance.
+ setGait('leftThigh',phase*.43*stride);
+ setGait('rightThigh',-phase*.43*stride);
+ setKneeFlex('leftKnee',gaitWeight*(.10+leftLift*.64));
+ setKneeFlex('rightKnee',gaitWeight*(.10+rightLift*.64));
+ // Limit ankle motion until fully foot-planted IK is available.
+ setGait('leftFoot',(-phase*.07-leftLift*.08)*stride);
+ setGait('rightFoot',(phase*.07-rightLift*.08)*stride);
  setGait('leftArm',-phase*.32*stride);
  setGait('rightArm',phase*.32*stride);
  walkBody.position.y=walking?Math.abs(Math.sin(clock))*.013:0;
@@ -222,7 +261,7 @@ engine.runRenderLoop(()=>{
  let target=new B.Vector3(root.position.x,1.45,root.position.z);
  camera.setTarget(target);
  if(follow){camera.alpha=Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
- if(caitlynReady)status.textContent='Caitlyn '+(!gaitReady?'leg rig missing — no sliding':walking?'walking (alternating legs)':'standing STILL')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
+ if(caitlynReady)status.textContent='Caitlyn '+(!gaitReady?'knee calibration missing ('+kneeBendSources+'/2) — stopped':walking?'walking · knees bending':'standing STILL')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
  scene.render();
 });
 window.addEventListener('resize',()=>engine.resize());
