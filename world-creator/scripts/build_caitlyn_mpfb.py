@@ -120,20 +120,20 @@ def clean_skin_material(body):
             facey=math.exp(-((norm-.918)/.033)**2)
             blush=.035*math.exp(-(cheekx/.065)**2)*facey
         warm=math.exp(-((norm-.53)/.08)**2)*.008
-        return (clamp(.82+tone+warm-blush*.6),
-                clamp(.655+tone*.7+warm-blush*.95),
-                clamp(.585+tone*.6+warm-blush),1.0)
+        return (clamp(.840+tone+warm-blush*.45),
+                clamp(.710+tone*.7+warm-blush*.65),
+                clamp(.665+tone*.6+warm-blush*.65),1.0)
     shades=[skin_for_vertex(v) for v in verts]
     for poly in body.data.polygons:
         poly.use_smooth=True
         for idx in poly.loop_indices:
             col.data[idx].color=shades[body.data.loops[idx].vertex_index]
-    skin=bpy.data.materials.new("Caitlyn natural fair skin · vertex PBR")
-    skin.diffuse_color=(.82,.655,.585,1)
+    skin=bpy.data.materials.new("Caitlyn unified fair face and body skin PBR")
+    skin.diffuse_color=(.840,.710,.665,1)
     skin.use_nodes=True
     nodes=skin.node_tree.nodes
     p=nodes.get("Principled BSDF")
-    p.inputs["Base Color"].default_value=(.82,.655,.585,1)
+    p.inputs["Base Color"].default_value=(.840,.710,.665,1)
     p.inputs["Roughness"].default_value=.68
     p.inputs["Metallic"].default_value=0
     if "Subsurface Weight" in p.inputs: p.inputs["Subsurface Weight"].default_value=.085
@@ -371,6 +371,10 @@ def main():
         "rarm":named("rightarm","rightupperarm","rupperarm"),
         "lforearm":named("leftforearm","lforearm"),
         "rforearm":named("rightforearm","rforearm"),
+        "lhand":named("lefthand","lhand"),
+        "rhand":named("righthand","rhand"),
+        "lfoot":named("leftfoot","lfoot"),
+        "rfoot":named("rightfoot","rfoot"),
     }
     print("WVLRP_CAITLYN_BONE_MAP",{k:v.name if v else None for k,v in bones.items()})
     required=("hips","spine","lthigh","rthigh","lshin","rshin","larm","rarm")
@@ -378,6 +382,15 @@ def main():
     if missing: raise RuntimeError("Caitlyn cannot pose missing body bones: "+str(missing))
     if len(rig.data.bones)<25: raise RuntimeError("Insufficient joint count for Caitlyn")
 
+    # All poses use the ORIGINAL standing ground plane, rather than positioning
+    # each avatar by an arbitrary center-of-mesh origin.
+    bpy.context.view_layer.update()
+    def rest_joint(key):
+        pb=bones[key]
+        return (rig.matrix_world @ pb.matrix.translation).z if pb else None
+    rig_ground_z=min(v for v in (rest_joint("lfoot"),rest_joint("rfoot"),
+                    rest_joint("lshin"),rest_joint("rshin")) if v is not None)
+    print("WVLRP_CAITLYN_RIG_REST_GROUND",round(rig_ground_z,4))
     def build_pose(name,keys):
         if not rig.animation_data: rig.animation_data_create()
         action=bpy.data.actions.new(name)
@@ -400,7 +413,7 @@ def main():
             # Select knee bend from the *evaluated joint positions*, not from
             # an assumed sign. In Caitlyn's Blender coordinates the back of
             # the body is +Y; knees should flex with the ankles behind them.
-            if name in ("Caitlyn Kneel", "Caitlyn HandsAndKnees") and frame > 1:
+            if name in ("Caitlyn Kneel", "Caitlyn HandsAndKnees", "Caitlyn ElbowsAndKnees") and frame > 1:
                 back_world=Vector((0,1,0))
                 for part in ("lshin","rshin"):
                     shin=bones[part]
@@ -425,7 +438,7 @@ def main():
                 # Pick small pitch-only rotations that keep the head upright
                 # and facing the same direction as in the rest pose; no
                 # 180-degree yaw or roll is permitted.
-                if name=="Caitlyn HandsAndKnees" and bones["neck"] and bones["head"]:
+                if name in ("Caitlyn HandsAndKnees","Caitlyn ElbowsAndKnees") and bones["neck"] and bones["head"]:
                     neck=bones["neck"];head=bones["head"]
                     rw=rig.matrix_world.to_3x3()
                     rest_to_head=head.bone.matrix_local.to_3x3().inverted()
@@ -456,6 +469,111 @@ def main():
                           "forward",round(forward,3))
                     if upright<0.25 or forward<-.35:
                         raise RuntimeError("Caitlyn head still twists outside safe forward/up pose")
+            if name in ("Caitlyn HandsAndKnees", "Caitlyn ElbowsAndKnees") and frame>1:
+                # The older pose was a collection of hand-authored Euler angles.
+                # It rotated the torso but left palms, elbows and knees in free air.
+                # Fit the articulated limb angles against anatomical ground-support
+                # targets in armature world coordinates, then move the skeleton
+                # vertically so both support pairs meet the original standing floor.
+                use_elbows=name.endswith("ElbowsAndKnees")
+                def joint(which, end=False):
+                    pb=bones[which]
+                    if pb is None: return None
+                    local=Vector((0,pb.bone.length,0)) if end else Vector((0,0,0))
+                    return rig.matrix_world @ (pb.matrix @ local)
+                def limb_set(keys, deg):
+                    for b in keys:
+                        if bones[b]: bones[b].rotation_euler.x=math.radians(deg)
+                def metrics():
+                    bpy.context.view_layer.update()
+                    hip=joint("hips")
+                    chest=joint("chest") or joint("spine",True)
+                    knee=[joint("lshin"),joint("rshin")]
+                    shoulder=[joint("larm"),joint("rarm")]
+                    elbow=[joint("lforearm"),joint("rforearm")]
+                    wrists=[joint("lhand") or joint("lforearm",True),
+                            joint("rhand") or joint("rforearm",True)]
+                    ankles=[joint("lfoot") or joint("lshin",True),
+                            joint("rfoot") or joint("rshin",True)]
+                    contacts=elbow if use_elbows else wrists
+                    if any(v is None for v in [hip,chest]+knee+shoulder+elbow+wrists+ankles):
+                        raise RuntimeError("Caitlyn floor pose missing supported limb joints")
+                    mean=lambda v: sum(v)/len(v)
+                    kz=mean([v.z for v in knee]); cz=mean([v.z for v in contacts])
+                    knee_back=mean([v.y-hip.y for v in knee])
+                    ankle_back=mean([ankles[i].y-knee[i].y for i in (0,1)])
+                    elbow_drop=mean([shoulder[i].z-elbow[i].z for i in (0,1)])
+                    wrist_drop=mean([shoulder[i].z-wrists[i].z for i in (0,1)])
+                    chest_forward=hip.y-chest.y
+                    torso_level=abs(chest.z-hip.z)
+                    # Keep shoulders forward of wrists and forearms supported.
+                    hands_forward=mean([shoulder[i].y-wrists[i].y for i in (0,1)])
+                    elbow_forward=mean([shoulder[i].y-elbow[i].y for i in (0,1)])
+                    grounded_difference=abs(kz-cz)
+                    loss=26*grounded_difference**2
+                    loss+=9*(hip.z-kz-.46)**2
+                    loss+=7*(knee_back-.15)**2
+                    loss+=15*max(0,.035-ankle_back)**2
+                    loss+=10*max(0,.28-chest_forward)**2
+                    loss+=5*max(0,torso_level-.20)**2
+                    loss+=9*(elbow_drop-(.39 if use_elbows else .27))**2
+                    loss+=6*(wrist_drop-(.39 if use_elbows else .46))**2
+                    loss+=3*(hands_forward-(.30 if use_elbows else .07))**2
+                    loss+=3*(elbow_forward-(.12 if use_elbows else .04))**2
+                    loss+=7*sum((v.z-kz)**2 for v in knee)/2
+                    loss+=7*sum((v.z-cz)**2 for v in contacts)/2
+                    return loss,grounded_difference,hip,knee,contacts,wrists
+                # All angular adjustments act symmetrically; no snapped or
+                # backward-facing knee, no broken asymmetrical shoulders.
+                choices=[
+                    (("hips",),[55,65,75,85,95]),
+                    (("lthigh","rthigh"),[-115,-100,-85,-70,-55,-40,-25,25,40,55,70]),
+                    (("lshin","rshin"),[-120,-105,-90,-75,75,90,105,120]),
+                    (("larm","rarm"),[-140,-115,-90,-70,-50,-30,0,30,50,70,90]),
+                    (("lforearm","rforearm"),[-130,-100,-75,-50,-25,0,25,50,75,100,130])
+                ]
+                # Use two deliberate passes, then finer joint adjustments.
+                for iteration in range(3):
+                    for limbs,candidates in choices:
+                        old=math.degrees(bones[limbs[0]].rotation_euler.x)
+                        if iteration==2:
+                            candidates=[old-12,old-6,old,old+6,old+12]
+                        best=(float("inf"),old)
+                        for angle in candidates:
+                            limb_set(limbs,angle)
+                            score=metrics()[0]+.0001*(angle-old)**2
+                            if score<best[0]: best=(score,angle)
+                        limb_set(limbs,best[1])
+                _,error,hip,knee,contacts,wrists=metrics()
+                # Anchor the same ground elevation used by the standing pose.
+                # Measure the response of root/hips local Z rather than assuming
+                # it coincides with world Z on every MPFB armature.
+                contact_z=sum(v.z for v in knee+contacts)/len(knee+contacts)
+                shoes=[joint("lfoot"),joint("rfoot")]
+                # Rest ground is recorded from rigged feet in neutral standing.
+                # It may differ slightly from the mesh soles on individual rigs.
+                rest_ground=rig_ground_z
+                original=bones["hips"].location.z
+                bones["hips"].location.z=original+.10
+                bpy.context.view_layer.update()
+                sample_knee=[joint("lshin"),joint("rshin")]
+                sample_contact=([joint("lforearm"),joint("rforearm")] if use_elbows
+                    else [joint("lhand") or joint("lforearm",True),
+                          joint("rhand") or joint("rforearm",True)])
+                sample_z=sum(v.z for v in sample_knee+sample_contact)/4
+                slope=(sample_z-contact_z)/.10
+                if abs(slope)<.03: raise RuntimeError("Caitlyn hip vertical control cannot reach floor")
+                corrected=original+(rest_ground-contact_z)/slope
+                bones["hips"].location.z=corrected
+                _,error,hip,knee,contacts,wrists=metrics()
+                print("WVLRP_CAITLYN_GROUNDED_POSE",name,
+                      "contacts_height",[round(v.z,3) for v in knee+contacts],
+                      "ground",round(rest_ground,3),
+                      "contact_mismatch_m",round(error,3),
+                      "root_hip_offset",round(corrected,3),
+                      "knee_behind_hip",[round(v.y-hip.y,3) for v in knee])
+                if error>.14:
+                    raise RuntimeError(name+" contacts still miss ground by "+str(round(error,3))+" meters")
             for pb in rig.pose.bones:
                 pb.keyframe_insert(data_path="rotation_euler",frame=frame,group=pb.name)
             bones["hips"].keyframe_insert(data_path="location",frame=frame,group=bones["hips"].name)
@@ -484,6 +602,13 @@ def main():
                   ("larm",0,-75),("rarm",0,-75),
                   ("lforearm",0,6),("rforearm",0,6),
                   ("neck",0,-12),("head",0,7)],-.34)])
+    build_pose("Caitlyn ElbowsAndKnees",[
+        rest,(42,[("hips",0,75),("spine",0,12),("chest",0,4),
+                  ("lthigh",0,-75),("rthigh",0,-75),
+                  ("lshin",0,100),("rshin",0,100),
+                  ("larm",0,-90),("rarm",0,-90),
+                  ("lforearm",0,90),("rforearm",0,90),
+                  ("neck",0,-8),("head",0,5)],-.34)])
     rig.animation_data.action=None
     for pb in rig.pose.bones:
         pb.rotation_mode="XYZ";pb.rotation_euler=(0,0,0);pb.location=(0,0,0)
@@ -513,7 +638,8 @@ def main():
         "animations",len(meta.get("animations",[])),"meshes",len(meta.get("meshes",[])))
     assert any("platinum ash blonde" in m.get("name","") for m in meta.get("materials",[])), "Caitlyn platinum hair material missing"
     assert len(meta.get("skins",[]))>=1, "No rigged skin in output"
-    assert len(meta.get("animations",[]))>=4, "Caitlyn must include stand/bend/kneel/hands-and-knees clips"
+    assert len(meta.get("animations",[]))>=5, "Caitlyn must include five skeletal pose clips"
+    assert any("ElbowsAndKnees" in a.get("name","") for a in meta.get("animations",[])), "Missing elbows-and-knees clip"
     assert len(meta["skins"][0].get("joints",[]))>=25, "Skeleton too small"
     names=[n.get("name","") for n in meta.get("nodes",[])]
     assert any("Caitlyn" in n for n in names), "Caitlyn body naming missing"
