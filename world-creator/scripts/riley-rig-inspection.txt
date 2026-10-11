@@ -1,0 +1,1 @@
+RILEY_SCENE_OBJECTS [('Riley - 3D Person, Woman Standing', 'EMPTY', ''), ('Riley | authored anatomical figure', 'EMPTY', ''), ('bob01', 'MESH', ''), ('eyebrow006', 'MESH', ''), ('eyelashes01', 'MESH', ''), ('female_casualsuit01', 'MESH', ''), ('low-poly', 'MESH', ''), ('Riley | anatomical body', 'MESH', ''), ('shoes05', 'MESH', ''), ('teeth_base', 'MESH', '')]
