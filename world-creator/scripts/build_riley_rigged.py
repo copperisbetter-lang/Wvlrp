@@ -335,6 +335,38 @@ for idx,weight in abdomen_mask.items():
 body.data.update()
 print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
 
+# Correct the original donor's hard-edged bodice-shaped recesses without
+# adding a second skin shell. Project ONLY the front ribcage, bust and belly
+# onto a continuously curved human torso surface using the EXISTING welded
+# vertex topology. Blend out smoothly at the sides, pelvis, and neck; arms,
+# back, head and the full hip silhouette are never projected.
+projected=0
+for v in body.data.vertices:
+    p=v.co
+    if not (.88 < p.z < 1.47 and abs(p.x)<.24 and p.y<.082):
+        continue
+    chest_env=gauss(p.z-1.285,.165)
+    waist_env=gauss(p.z-1.060,.135)
+    horizontal=1-smooth((abs(p.x)-.136)/.101)
+    vertical=smooth((p.z-.88)/.115)*(1-smooth((p.z-1.395)/.080))
+    front_envelope=1-smooth((p.y+.030)/.112)
+    w=.94*horizontal*vertical*front_envelope
+    if w<.005:continue
+    rx=.187+.020*chest_env-.013*waist_env
+    ribdepth=.108+.019*chest_env-.012*waist_env
+    ellipse=math.sqrt(max(.012,1-(p.x/rx)**2))
+    full_bust=max(.066,min(.114,.075+.002*(M["bust_circumference_cm"]-94)))
+    soft_lower=gauss(p.z-1.248,.105)*gauss(abs(p.x)-.088,.079)
+    top_slope=.19*gauss(p.z-1.343,.11)*gauss(abs(p.x)-.087,.087)
+    breast_volume=full_bust*(soft_lower+top_slope)
+    ideal_front=-ribdepth*ellipse-breast_volume
+    p.y=(1-w)*p.y+w*ideal_front
+    projected+=1
+body.data.update()
+print("RILEY_FRONT_TORSO_CONTINUOUS_SCULPT",projected,
+      "bust_target_cm",M["bust_circumference_cm"],
+      "hip_target_cm",M["full_hip_circumference_cm"])
+
 # Extract the real face appearance from its skin material where possible.
 # A single opaque body shader gets the sampled complexion, not a second
 # artificial shirt/shorts patch with a heart-shaped material boundary.
