@@ -1,17 +1,17 @@
-name: Build Riley MPFB reference trial
+name: Build Chrissy MPFB reference trial
 
 on:
   push:
     paths:
       - world-creator/scripts/build_riley_mpfb_trial.py
-      - .github/workflows/build-riley-mpfb-trial.yml
+      - .github/workflows/build-chrissy-mpfb-trial.yml
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: riley-mpfb-trial
+  group: chrissy-mpfb-trial
   cancel-in-progress: false
 
 jobs:
@@ -53,14 +53,14 @@ jobs:
           set -euo pipefail
           xvfb-run -a -s "-screen 0 1280x1024x24" \
             /tmp/blender-4.2.0-linux-x64/blender --background --python \
-            world-creator/scripts/build_riley_mpfb_trial.py 2>&1 | tee /tmp/riley-mpfb-build.log
-          grep WVLRP_MPFB_SUCCESS /tmp/riley-mpfb-build.log
+            world-creator/scripts/build_riley_mpfb_trial.py 2>&1 | tee /tmp/chrissy-mpfb-build.log
+          grep WVLRP_MPFB_SUCCESS /tmp/chrissy-mpfb-build.log
       - name: Check GLB structure (bones, glTF skin)
         run: |
           python3 - <<'PY'
           import struct,json
           from pathlib import Path
-          p=Path('world-creator/assets/riley-mpfb-trial.glb')
+          p=Path('world-creator/assets/chrissy-mpfb-trial.glb')
           data=p.read_bytes()
           assert data[:4]==b'glTF' and len(data)==struct.unpack_from('<I',data,8)[0]
           length,kind=struct.unpack_from('<II',data,12)
@@ -69,20 +69,20 @@ jobs:
           assert len(doc.get('skins',[]))>=1
           assert len(doc['skins'][0]['joints'])>=25
           assert len(doc.get('meshes',[]))>=2
-          print('WVLRP_RILEY_MPFB_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
+          print('WVLRP_CHRISSY_MPFB_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
           print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
           PY
-      - name: Publish isolated trial file without touching current Riley
+      - name: Publish isolated trial file without touching current Chrissy
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/riley-mpfb-trial.glb
-          if [ -f world-creator/assets/riley-mpfb-trial-preview.png ]; then
-            git add world-creator/assets/riley-mpfb-trial-preview.png
+          git add world-creator/assets/chrissy-mpfb-trial.glb
+          if [ -f world-creator/assets/chrissy-mpfb-trial-preview.png ]; then
+            git add world-creator/assets/chrissy-mpfb-trial-preview.png
           fi
           if ! git diff --cached --quiet; then
-            git commit -m "Publish isolated CC0 MPFB Riley reference trial and preview"
+            git commit -m "Publish isolated CC0 MPFB Chrissy reference trial and preview"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -90,10 +90,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: riley-mpfb-trial-report
+          name: chrissy-mpfb-trial-report
           path: |
-            /tmp/riley-mpfb-build.log
-            world-creator/assets/riley-mpfb-trial.glb
-            world-creator/assets/riley-mpfb-trial-preview.png
+            /tmp/chrissy-mpfb-build.log
+            world-creator/assets/chrissy-mpfb-trial.glb
+            world-creator/assets/chrissy-mpfb-trial-preview.png
           if-no-files-found: ignore
           retention-days: 7
