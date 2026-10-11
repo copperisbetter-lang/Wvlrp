@@ -16,8 +16,8 @@ const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Two CC0 static meshes of the same Riley source character: not rigged animation.
-const RILEY_REAL_GLB = "./assets/riley-real.glb";
-const RILEY_KNEELING_GLB = "./assets/riley-kneeling.glb";
+const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=blonde1";
+const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=blonde1";
 const rileyAssetFiles=new Map();
 function builtInRileyFile(pose="standing"){
   const url=pose==="crouch" ? RILEY_KNEELING_GLB : RILEY_REAL_GLB;
@@ -26,7 +26,7 @@ function builtInRileyFile(pose="standing"){
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
       const bytes=await response.arrayBuffer();
       if(bytes.byteLength<1_000_000)throw Error("Character asset is incomplete");
-      return new File([bytes],url.split("/").at(-1),{type:"model/gltf-binary"});
+      return new File([bytes],url.split("?")[0].split("/").at(-1),{type:"model/gltf-binary"});
     }).catch(err=>{rileyAssetFiles.delete(url);throw err;});
     rileyAssetFiles.set(url,request);
   }
@@ -349,7 +349,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const roots=meshes.filter(m=>!m.parent || !meshes.includes(m.parent));
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
-    const realKneeling=o.modelKey==="riley"&&o.pose==="crouch"&&file.name==="riley-kneeling.glb";
+    const realKneeling=o.modelKey==="riley"&&o.pose==="crouch"&&file.name==="riley-blonde-kneeling.glb";
     const naturalHeight=realKneeling?1.29:1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
