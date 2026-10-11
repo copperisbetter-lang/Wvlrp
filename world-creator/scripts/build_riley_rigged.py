@@ -156,6 +156,23 @@ bpy.context.view_layer.objects.active=body_candidates[0]
 if len(body_candidates)>1:bpy.ops.object.join()
 body=bpy.context.object
 body.name="Riley sculpted anatomical body | skinned"
+# The MakeHuman donor glTF splits skin at UV/material boundaries. Once a
+# unified skin material is used, merge only *coincident* split vertices.
+# Leaving identical-position vertices separated creates visible sharp
+# chest/abdomen cracks when shaped, while global smoothing opens them.
+# This is NOT voxel remeshing: it preserves every body surface and fingers.
+repair=bmesh.new()
+repair.from_mesh(body.data)
+before_verts=len(repair.verts)
+before_open=sum(e.is_boundary for e in repair.edges)
+bmesh.ops.remove_doubles(repair,verts=list(repair.verts),dist=.00008)
+bmesh.ops.recalc_face_normals(repair,faces=list(repair.faces))
+after_verts=len(repair.verts)
+after_open=sum(e.is_boundary for e in repair.edges)
+repair.to_mesh(body.data);repair.free()
+body.data.update()
+print("RILEY_COINCIDENT_SKIN_WELD","vertices",before_verts,"to",after_verts,
+      "open_edges",before_open,"to",after_open)
 # Diagnose disconnected skin surfaces; stray islands overlying the chest
 # can z-fight when morphed. Do not remove geometry until bounds are inspected.
 adjacency=[[] for _ in body.data.vertices]
