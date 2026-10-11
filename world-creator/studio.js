@@ -851,7 +851,13 @@ $("findDeer3d").onclick=()=>{
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
-if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
+// Direct inspection link for a specific existing test avatar. This navigates
+// to the character's map tile and frames the camera without resetting the map.
+const focusCharacter=new URLSearchParams(window.location.search).get("focus");
+if(["mason","caitlyn","amy","chrissy"].includes(focusCharacter)) {
+  findOrAddBuiltInCharacter(focusCharacter);
+}
+else if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
 else if(installedCaitlyn)status("Caitlyn added to your saved world map near Woodland Trail.");
 else if(installedTestCharacters)status("Amy and Christy added to your saved world map.");
 else if(freshWorldStarted)status("Fresh world ready.");
