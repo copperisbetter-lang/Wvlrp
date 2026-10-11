@@ -385,7 +385,9 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      const fallback=o.modelKey==="riley" ? makeRiley(BABYLON,scene,track,o,x,h,z) : figures.person(o,x,h,z);
+      let fallback;
+      try{fallback=o.modelKey==="riley" ? makeRiley(BABYLON,scene,track,o,x,h,z) : figures.person(o,x,h,z);}
+      catch(err){console.warn("Experimental Riley mesh unavailable, using normal person preview",err);fallback=figures.person(o,x,h,z);}
       const characterFile=localCharacterFiles.get(o.id);
       if(characterFile) importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
     }else{
@@ -447,7 +449,7 @@ function focusObjectIn3D(o,radius=4.4){
     const h=heightAt(o.x,o.y,seed)*26;
     camera.setTarget(new BABYLON.Vector3(0,h+1.6,0));
     camera.radius=radius;
-    camera.alpha=-Math.PI/2.7;
+    camera.alpha=o.modelKey==="riley"?Math.PI/2.25:-Math.PI/2.7;
     camera.beta=1.2;
   }
 }
