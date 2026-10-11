@@ -23,7 +23,7 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v6</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v7</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
@@ -259,7 +259,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    }
  }
  caitlynReady=true;
- status.textContent=gaitReady?'Caitlyn loaded · both knees calibrated ('+bound.length+' joints)'
+ status.textContent=gaitReady?'Caitlyn loaded · knees calibrated'+(stanceCalibration?.corrected?' · feet closer':'')+' ('+bound.length+' joints)'
     :'Caitlyn loaded · knee clip unavailable ('+kneeBendSources+'/2)';
 }).catch(e=>{
  caitlynFailure=e?.message||String(e);
