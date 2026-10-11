@@ -4,6 +4,12 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # The character builder commits its GLB using GITHUB_TOKEN; that push does
+  # not trigger a new push workflow. Redeploy after the GLB build finishes.
+  workflow_run:
+    workflows: ["Build Riley rigged game character"]
+    types: [completed]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -16,6 +22,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
