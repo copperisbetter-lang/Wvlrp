@@ -59,7 +59,7 @@ function setSelection(o) {
   selectedId=o?o.id:null;
   $("objectForm").hidden=!o;
   $("selectionInfo").textContent=o?("Selected "+o.type+" — "+o.id):"Choose an object on the map to edit it, or place something new.";
-  if(!o){invalidate();return;}
+  if(!o){updateSpinButton();invalidate();return;}
   $("objectName").value=o.name||"";
   $("objectX").value=Number(o.x).toFixed(1);
   $("objectY").value=Number(o.y).toFixed(1);
@@ -83,7 +83,7 @@ function setSelection(o) {
   $("photoPreview").hidden=true;$("photo").value="";
   $("modelFile").value="";
   $("clearModel").disabled=!localCharacterFiles.has(o.id);
-  invalidate();
+  updateSpinButton();invalidate();
 }
 function rect(){return canvas.getBoundingClientRect();}
 function screen(x,y){const r=rect();return {x:r.width/2+(x-view.x)*view.scale,y:r.height/2-(y-view.y)*view.scale};}
@@ -358,7 +358,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const isRiley=o.modelKey==="riley";
     const realKneeling=isRiley&&o.pose==="crouch"&&file.name==="riley-blonde-kneeling.glb";
     const realAllFours=isRiley&&o.pose==="allfours"&&file.name==="riley-blonde-allfours.glb";
-    const naturalHeight=realAllFours?.93:realKneeling?1.29:1.70;
+    const naturalHeight=realAllFours ? 0.93 : realKneeling ? 1.29 : 1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
     node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
@@ -498,7 +498,7 @@ function focusObjectIn3D(o,radius=4.4){
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
   if(camera){
     const h=heightAt(o.x,o.y,seed)*26;
-    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours"?.76:o.pose==="crouch"?1.06:1.6),0));
+    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours" ? .76 : o.pose==="crouch" ? 1.06 : 1.6),0));
     camera.radius=radius;
     camera.alpha=o.modelKey==="riley"?Math.PI/2.25:-Math.PI/2.7;
     camera.beta=1.2;
