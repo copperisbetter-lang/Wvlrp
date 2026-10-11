@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - world-creator/scripts/build_riley_mpfb_trial.py
+      - world-creator/scripts/face_materials.py
       - .github/workflows/build-riley-mpfb-trial.yml
   workflow_dispatch:
 
@@ -69,6 +70,7 @@ jobs:
           assert len(doc.get('skins',[]))>=1
           assert len(doc['skins'][0]['joints'])>=25
           assert len(doc.get('meshes',[]))>=2
+          assert any('Chrissy real CC0 face and body skin UV' in m.get('name','') and m.get('pbrMetallicRoughness',{}).get('baseColorTexture') for m in doc.get('materials',[])), 'Female face image texture was not exported'
           print('WVLRP_CHRISSY_MPFB_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
           print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
           PY
