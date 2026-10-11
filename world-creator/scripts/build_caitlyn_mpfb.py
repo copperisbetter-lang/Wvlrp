@@ -1,5 +1,5 @@
 """WVLRP Caitlyn MPFB nude anatomical trial. Separate new adult game avatar.
-Uses free MPFB body morph system, CC0 stock skin + long red hair, Mixamo rig.
+Uses MPFB CC0 anatomy/skin, real ash-platinum wavy hair, and Mixamo skeleton.
 No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requires visual QA.
 """
 import bpy, os, sys, zipfile, json, math, traceback
@@ -280,11 +280,41 @@ def main():
         ("teeth",["teeth_base.mhclo"],"Teeth")]:
         add_asset(h,sub,names,kind)
     hair=add_asset(h,"hair",["long01.mhclo"],"Hair")
-    if hair is None: raise RuntimeError('MPFB long red hair asset is unavailable')
+    if hair is None: raise RuntimeError('MPFB long hairstyle asset is unavailable')
     tint(hair,(.85,.78,.67),.70)
     add_soft_waves(hair)
 
     export_root=ExportService.create_character_copy(h,name_suffix="_wvrlp_ref")
+    # The copied MakeHuman long01 mesh used its stock brown shader even after
+    # tinting the original source hair. Set materials on the EXPORTED mesh.
+    # Only Caitlyn's export copy is affected; Amy/Christy/Riley are untouched.
+    def pbr_solid(name,rgba,roughness=.67):
+        m=bpy.data.materials.new(name)
+        m.diffuse_color=(*rgba,1)
+        m.use_nodes=True
+        bsdf=m.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value=(*rgba,1)
+        bsdf.inputs["Metallic"].default_value=0.0
+        bsdf.inputs["Roughness"].default_value=roughness
+        if "Coat Weight" in bsdf.inputs: bsdf.inputs["Coat Weight"].default_value=.10
+        return m
+    all_export_objects=[export_root]+list(ObjectService.get_list_of_children(export_root))
+    for obj in all_export_objects:
+        if obj.type!="MESH":continue
+        low=obj.name.lower()
+        if "long01" in low:
+            mat=pbr_solid("Caitlyn platinum ash blonde · real exported hair",
+                          (.91,.86,.75),.65)
+            obj.data.materials.clear();obj.data.materials.append(mat)
+            print("WVLRP_CAITLYN_PLATINUM_HAIR",obj.name,mat.name)
+        elif "eyebrow" in low:
+            mat=pbr_solid("Caitlyn cool blonde brows",(.43,.36,.30),.87)
+            obj.data.materials.clear();obj.data.materials.append(mat)
+            print("WVLRP_CAITLYN_BROWS",obj.name)
+        elif "eyelash" in low:
+            mat=pbr_solid("Caitlyn natural brown lashes",(.21,.16,.145),.82)
+            obj.data.materials.clear();obj.data.materials.append(mat)
+            print("WVLRP_CAITLYN_LASHES",obj.name)
     exp=ObjectService.find_object_of_type_amongst_nearest_relatives(export_root,"Basemesh")
     if not exp: raise RuntimeError("MPFB export body copy missing")
     # An unclothed base must retain EVERY body-surface polygon.
@@ -407,13 +437,17 @@ def main():
     if not OUT.exists() or OUT.stat().st_size<100000:
         raise RuntimeError("GLB missing or unexpectedly small")
     # Structural verification: GLB includes body mesh, hair, skin + rig.
+    # Print the actual exported material list (not just the source mesh)
+    # so a future brown-hair shader regression is visible in build logs.
     import struct
     bs=OUT.read_bytes()
     n,kind=struct.unpack_from("<II",bs,12)
     meta=json.loads(bs[20:20+n].decode("utf-8"))
+    print("WVLRP_CAITLYN_EXPORTED_MATERIALS",[(m.get("name","")) for m in meta.get("materials",[])])
     print("WVLRP_RESULT_GLB",OUT,OUT.stat().st_size,"skins",len(meta.get("skins",[])),
         "joint_count",len(meta.get("skins",[{}])[0].get("joints",[])),
         "animations",len(meta.get("animations",[])),"meshes",len(meta.get("meshes",[])))
+    assert any("platinum ash blonde" in m.get("name","") for m in meta.get("materials",[])), "Caitlyn platinum hair material missing"
     assert len(meta.get("skins",[]))>=1, "No rigged skin in output"
     assert len(meta.get("animations",[]))>=4, "Caitlyn must include stand/bend/kneel/hands-and-knees clips"
     assert len(meta["skins"][0].get("joints",[]))>=25, "Skeleton too small"
@@ -432,17 +466,20 @@ def main():
             d=bpy.data.lights.new("Studio",type="AREA");d.energy=energy;d.shape="DISK";d.size=size
             o=bpy.data.objects.new("Studio light",d);bpy.context.collection.objects.link(o);o.location=pos
             o.rotation_euler=(Vector((0,0,1))-o.location).to_track_quat("-Z","Y").to_euler()
-        light((2,-3,4),850,4);light((-2,1,3),650,3)
+        light((2,-3,4),610,4);light((-2,1,3),390,3)
         camdata=bpy.data.cameras.new("Preview ortho");cam=bpy.data.objects.new("Preview camera",camdata)
         bpy.context.collection.objects.link(cam)
         cam.location=(0,-4,1.35);cam.rotation_euler=(Vector((0,0,.85))-cam.location).to_track_quat("-Z","Y").to_euler()
         camdata.type="ORTHO";camdata.ortho_scale=2.35;bpy.context.scene.camera=cam
         world=bpy.data.worlds.new("Preview lighting");bpy.context.scene.world=world
         world.use_nodes=True;world.node_tree.nodes["Background"].inputs["Color"].default_value=(.7,.73,.75,1)
-        world.node_tree.nodes["Background"].inputs["Strength"].default_value=.8
+        world.node_tree.nodes["Background"].inputs["Strength"].default_value=.52
         scene=bpy.context.scene
-        scene.render.engine="CYCLES";scene.cycles.samples=16
+        scene.render.engine="CYCLES";scene.cycles.samples=48
         scene.render.resolution_x=700;scene.render.resolution_y=950;scene.render.resolution_percentage=100
+        scene.view_settings.view_transform="AgX"
+        scene.view_settings.look="Medium High Contrast"
+        scene.view_settings.exposure=-.18
         scene.render.image_settings.file_format="PNG";scene.render.filepath=str(PNG)
         bpy.ops.render.render(write_still=True)
         print("WVLRP_PREVIEW_SAVED",PNG,PNG.stat().st_size)
