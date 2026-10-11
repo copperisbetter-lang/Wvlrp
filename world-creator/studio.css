@@ -37,3 +37,8 @@ input[type=file]{max-width:100%;color:var(--muted);font-size:11px}
 @media(max-width:370px){.tools .tool-grid{grid-template-columns:1fr 1fr}.work-head h2{font-size:18px}.zoom-controls{gap:2px}}
 
 @media(max-width:740px){.preview-head h2{flex:1 0 100%}.preview-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.preview-actions #findDeer3d{grid-column:1/-1}.preview-actions button{min-height:40px;padding:7px 6px}}
+
+/* Close inspection controls for mobile and desktop 3D preview. */
+.preview-zoom{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.preview-zoom button{flex:1 1 140px;min-height:48px;touch-action:manipulation}
+#scene{touch-action:none}
