@@ -37,3 +37,13 @@ Source checkpoint:
 - Test source commits (Oct 11): `6e48e05` pose+skin builder, `f9eb18a` viewer, `9dccd3f` world renderer, `f27c27a` workflow. Preserve previous avatar geometry, styles, hair, and map coordinates.
 
 Remaining: confirm automated build and published GLB, then inspect standing, bending, hands-and-knees and elbows-and-knees from two angles including face zoom; retarget the approved poses to the other rigged characters after Caitlyn verification. 
+
+
+## October 11 continuation — facial color and smile
+- User specifically requested Caitlyn's **face color match her neck and all body skin**, with a **subtle natural smile**. Do not change her established physique, hair, or other characters.
+- Builder now removes face-only blush color displacement and applies one low-variation skin tone across the continuous MPFB base mesh.
+- Builder requests official MakeHuman **CC0 Faceunits 01** mouthSmileLeft and mouthSmileRight expression morph targets (gentle 0.52 weight) so her lips/cheeks move naturally rather than painting a grin.
+- Build workflow downloads `faceunits01.zip` and requires a morph target in the exported rigged GLB.
+- Both independently selectable floor poses are represented in the Caitlyn builder/viewer/map: **hands and knees** and **elbows/forearms and knees**. Existing neck/knee and ground-contact diagnostics remain.
+- Viewer and 3D World Creator URLs use the new Caitlyn model cache version `caitlyn-smile-skin-ground-v6`.
+- **Verification still required:** a successful GitHub Actions rebuild must commit the new `caitlyn-mpfb-trial.glb`; inspect the face zoom for real smile, matched complexion, both floor poses, correct knees, supported palms/elbows, neck facing forward, and overhead body closure. Source changes do **not** establish a visibly corrected avatar until GLB/review passes.
