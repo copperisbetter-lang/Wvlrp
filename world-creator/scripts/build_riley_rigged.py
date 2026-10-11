@@ -71,7 +71,7 @@ def skinmat(name, rgba, rough=.71, metallic=0):
     mat.diffuse_color=(*rgba,1)
     return mat
 skin=skinmat("Riley natural warm skin tone",(.79,.58,.48),.79)
-base=skinmat("Riley seamless opaque taupe base layer",(.56,.49,.46),.89)
+base=skinmat("Riley seamless soft neutral outfit underlayer",(.755,.590,.518),.88)
 hair_colors=[
  skinmat("Riley sandy blonde roots",(.46,.32,.19),.87),
  skinmat("Riley honey-blonde",(.75,.57,.35),.73),
@@ -109,45 +109,84 @@ def tube(name, rings, material, steps=36):
     for f in mesh.polygons:f.use_smooth=True
     parts.append(ob)
     return ob
-def link_ellipsoid(name, a, b, radius_xy, mat):
-    mid=(Vector(a)+Vector(b))/2
-    vec=Vector(b)-Vector(a)
-    length=vec.length
-    ob=sphere(name,mid,(radius_xy[0],radius_xy[1],length*.68),mat)
-    # align elongated local Z to a->b
-    ob.rotation_mode="QUATERNION"
-    ob.rotation_quaternion=Vector((0,0,1)).rotation_difference(vec.normalized())
+def limb_loft(name,rings,material,steps=40):
+    """Continuous tapered limb mesh: no ball-shaped elbows, knees or disconnected segments.
+    Each cross section contains x,y,z,rx,ry in game units (meters).
+    """
+    verts=[];faces=[]
+    for x,y,z,rx,ry in rings:
+        for j in range(steps):
+            a=2*pi*j/steps
+            verts.append((x+rx*cos(a),y+ry*sin(a),z))
+    for k in range(len(rings)-1):
+        for j in range(steps):
+            n=(j+1)%steps
+            faces.append((k*steps+j,k*steps+n,(k+1)*steps+n,(k+1)*steps+j))
+    faces.extend((tuple(reversed(tuple(range(steps)))),
+                  tuple((len(rings)-1)*steps+j for j in range(steps))))
+    me=bpy.data.meshes.new(name)
+    me.from_pydata(verts,[],faces);me.update()
+    ob=bpy.data.objects.new(name,me)
+    bpy.context.collection.objects.link(ob)
+    me.materials.append(material)
+    for poly in me.polygons:poly.use_smooth=True
+    parts.append(ob)
     return ob
 
-# Shape is a fresh continuous anatomical surface, not skinned trousers.
+# The main torso is a smoothly varying, continuous ring surface, with a
+# gently curved waist and natural rib/hip proportions for this 170 cm mannequin.
 tube("Riley fitted body silhouette",[
- (.83,.106,.090,.000),(.89,.165,.112,.006),(.97,.187,.128,.005),
- (1.045,.157,.111,.008),(1.11,.139,.088,.011),
- (1.18,.160,.110,.013),(1.28,.183,.119,.014),
- (1.35,.192,.120,.009),(1.405,.175,.098,.005),
- (1.47,.065,.059,.001),(1.525,.058,.055,.000)
+ (.830,.110,.087,.012),(.878,.145,.121,.020),(.943,.172,.139,.018),
+ (.995,.177,.127,.015),(1.054,.146,.108,.012),
+ (1.116,.134,.097,.011),(1.192,.151,.111,.011),
+ (1.276,.172,.117,.010),(1.336,.181,.116,.008),
+ (1.383,.181,.113,.007),(1.412,.148,.094,.005),
+ (1.463,.073,.065,.003),(1.513,.056,.055,.002)
 ],skin)
 for side in (-1,1):
-    sphere("Riley natural chest contour",(.094*side,-.095,1.308),(.112,.098,.116),skin)
-    sphere("Riley rounded hip",(.116*side,.016,.938),(.103,.126,.140),skin)
-    # Anatomically continuous knees/thighs/calf surface after union-remesh.
-    link_ellipsoid("Riley upper leg",(.114*side,.010,.870),(.120*side,.002,.505),(.102,.108),skin)
-    sphere("Riley knee",(.122*side,-.018,.515),(.071,.070,.075),skin)
-    link_ellipsoid("Riley calf",(.123*side,.029,.476),(.119*side,.018,.155),(.073,.082),skin)
-    sphere("Riley ankle",(.119*side,.014,.137),(.046,.047,.080),skin)
-    sphere("Riley natural foot",(.118*side,-.074,.064),(.066,.144,.047),skin)
-    for f in range(5):
-        sphere("Riley toes",(.118*side+side*(f-2)*.019,-.184+.009*abs(f-1),.035),
-               (.012,.037-.003*abs(f-1),.017),skin,16)
-    link_ellipsoid("Riley upper arm",(.225*side,-.001,1.401),(.264*side,-.012,1.139),(.068,.069),skin)
-    sphere("Riley elbow",(.267*side,-.018,1.132),(.050,.051,.054),skin)
-    link_ellipsoid("Riley forearm",(.266*side,-.021,1.114),(.285*side,-.058,.904),(.051,.051),skin)
-    sphere("Riley palm",(.284*side,-.063,.861),(.052,.026,.086),skin,20)
-    for f in range(4):
-        sphere("Riley fingers",((.258+.017*f)*side,-.071,.771+.007*abs(f-1)),
-               (.010,.012,.064-.007*abs(f-1)),skin,16)
-    sphere("Riley thumb",(.238*side,-.088,.833),(.021,.024,.052),skin,16)
-sphere("Riley neck", (0,0,1.493),(.062,.060,.099),skin)
+    # Gentle chest curvature, recessed into the torso rather than two
+    # prominent spherical prostheses. The voxel union is one connected skin.
+    sphere("Riley softly blended chest",(.081*side,-.078,1.306),
+           (.082,.074,.076),skin,32)
+
+    # One continuously tapered limb each side replaces four disconnected
+    # capsule / knee / ankle objects. The thigh intersects the hip shell.
+    limb_loft("Riley continuous leg "+str(side),[
+      (.114*side,.012,.901,.078,.091),
+      (.116*side,.012,.855,.090,.102),
+      (.117*side,.008,.770,.090,.102),
+      (.119*side,.004,.680,.081,.090),
+      (.120*side,-.011,.576,.067,.075),
+      (.121*side,-.017,.513,.060,.064),
+      (.121*side,-.007,.462,.058,.067),
+      (.120*side,.016,.389,.064,.075),
+      (.120*side,.020,.291,.057,.070),
+      (.119*side,.017,.199,.042,.050),
+      (.119*side,.012,.119,.033,.037)
+    ],skin)
+    # A smooth flattened foot blends into the ankle; no separate bulb toes.
+    sphere("Riley natural foot",(.119*side,-.074,.052),
+           (.059,.116,.035),skin,32)
+
+    # Continuous shoulders, biceps, elbows, forearms and hand in one taper,
+    # instead of capsules that look like plastic action-figure joints.
+    limb_loft("Riley continuous arm "+str(side),[
+      (.175*side,.003,1.405,.071,.072),
+      (.210*side,.002,1.382,.068,.068),
+      (.234*side,-.004,1.313,.059,.062),
+      (.246*side,-.013,1.233,.050,.054),
+      (.264*side,-.014,1.145,.043,.047),
+      (.267*side,-.018,1.112,.043,.045),
+      (.270*side,-.025,1.050,.047,.045),
+      (.278*side,-.039,.980,.043,.041),
+      (.282*side,-.052,.916,.033,.033),
+      (.284*side,-.062,.854,.033,.026),
+      (.283*side,-.069,.791,.036,.026),
+      (.282*side,-.071,.764,.025,.020)
+    ],skin)
+    # A subtle opposable thumb, following the hand rather than floating.
+    sphere("Riley thumb",(.246*side,-.085,.806),(.020,.021,.048),skin,20)
+sphere("Riley neck",(0,.002,1.493),(.059,.057,.082),skin,28)
 
 # Fuse overlapping geometry into one smooth skin mesh. No separately recolored
 # trouser crotch, rear pocket, jacket hem, or leggings seams can remain.
@@ -156,10 +195,10 @@ for obj in parts:obj.select_set(True)
 bpy.context.view_layer.objects.active=parts[0]
 bpy.ops.object.join()
 body=bpy.context.object;body.name="Riley continuous body | rigged"
-body.data.remesh_voxel_size=.012
+body.data.remesh_voxel_size=.006
 bpy.ops.object.voxel_remesh()
-# Subtle smoothing, avoid damaging stable silhouette at hips and joints.
-mod=body.modifiers.new("Smooth joined body surface","SMOOTH");mod.factor=1.18;mod.iterations=6
+# Smooth only after union: no exposed primitive intersections at joints.
+mod=body.modifiers.new("Smooth unified body surface","SMOOTH");mod.factor=1.23;mod.iterations=10
 bpy.context.view_layer.objects.active=body
 bpy.ops.object.modifier_apply(modifier=mod.name)
 for f in body.data.polygons:f.use_smooth=True
@@ -188,8 +227,8 @@ def hmesh(name,verts,faces,mat):
     return ob
 head_top=max((v.co.z for o in original_head for v in o.data.vertices
               if (o.name.lower()=="low-poly" or "anatomical body" in o.name.lower())),default=1.70)
-cap_z=min(H*.985,head_top-.047)
-sphere_cap=sphere("Riley blonde scalp cap",(0,.012,cap_z),(.099,.093,.081),hair_colors[0],32)
+cap_z=min(H*.973,head_top-.037)
+sphere_cap=sphere("Riley blonde scalp cap",(0,.012,cap_z),(.088,.081,.050),hair_colors[1],32)
 hair_meshes.append(sphere_cap)
 for layer in range(4):
     for i in range(26):
