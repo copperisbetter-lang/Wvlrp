@@ -142,6 +142,11 @@ export function makeFigureBuilder(B, scene, track) {
     })[o.skin] || "#bd7f70";
     const eye = "#453729", iris = "#578271", lip = blush;
     const shoes="#302e2c", shadow="#382a24";
+    // Only Mason's temporary fallback is an unclothed, non-explicit anatomy
+    // preview. Existing character appearances and source models stay unchanged.
+    const bareMason=o.modelKey==="mason";
+    const torsoColor=bareMason?skin:shirt, legColor=bareMason?skin:pants;
+    const footColor=bareMason?skin:shoes;
     const hips = woman ? .74 : .71, shoulders = woman ? .69 : .90;
     const hairStyle=o.hairStyle || "wavy";
     const pale="#f3eae0";
@@ -149,29 +154,31 @@ export function makeFigureBuilder(B, scene, track) {
     for (const side of [-1, 1]) {
       const sx=side;
       // Long legs, separate knees, ankles, trouser creases and shoes.
-      limb(r.node,"thigh",[sx*.19,.99,0],[sx*.20,.59,.006],.245,pants,.224);
-      oval(r.node,"knee",[sx*.20,.56,.009],[.245,.29,.25],pants);
-      limb(r.node,"calf",[sx*.20,.53,0],[sx*.19,.14,.025],.21,pants,.175);
-      oval(r.node,"ankle",[sx*.19,.15,.032],[.205,.23,.22],pants);
-      oval(r.node,"boot",[sx*.19,.10,.114],[.30,.21,.43],shoes);
+      limb(r.node,"thigh",[sx*.19,.99,0],[sx*.20,.59,.006],.245,legColor,.224);
+      oval(r.node,"knee",[sx*.20,.56,.009],[.245,.29,.25],legColor);
+      limb(r.node,"calf",[sx*.20,.53,0],[sx*.19,.14,.025],.21,legColor,.175);
+      oval(r.node,"ankle",[sx*.19,.15,.032],[.205,.23,.22],legColor);
+      oval(r.node,"boot",[sx*.19,.10,.114],[.30,.21,.43],footColor);
 
       // Shoulders follow the selected body silhouette; arms are relaxed.
-      oval(r.node,"shoulder",[sx*shoulders*.48,1.62,-.005],[.30,.30,.36],shirt);
-      limb(r.node,"upper sleeve",[sx*shoulders*.48,1.55,0],[sx*(shoulders*.50+.16),1.29,.015],.25,shirt,.195);
+      oval(r.node,"shoulder",[sx*shoulders*.48,1.62,-.005],[.30,.30,.36],torsoColor);
+      limb(r.node,"upper sleeve",[sx*shoulders*.48,1.55,0],[sx*(shoulders*.50+.16),1.29,.015],.25,torsoColor,.195);
       limb(r.node,"forearm",[sx*(shoulders*.50+.16),1.28,.018],[sx*(shoulders*.50+.16),.95,.07],.165,skin,.135);
       oval(r.node,"hand",[sx*(shoulders*.50+.16),.886,.092],[.168,.237,.143],skin,12);
     }
 
     // Layered torso gives a defined waist, chest, jacket/shirt collar and belt.
-    oval(r.node,"hips",[0,1.015,-.015],[hips,.43,.47],pants,14);
-    oval(r.node,"waist",[0,1.205,-.015],[woman?.60:.71,.43,.39],shirt,14);
-    oval(r.node,"chest",[0,1.495,-.015],[shoulders+.08,.63,.46],shirt,16);
+    oval(r.node,"hips",[0,1.015,-.015],[hips,.43,.47],legColor,14);
+    oval(r.node,"waist",[0,1.205,-.015],[woman?.60:.71,.43,.39],torsoColor,14);
+    oval(r.node,"chest",[0,1.495,-.015],[shoulders+.08,.63,.46],torsoColor,16);
     if (woman) {
       // Clothing silhouette only; no uncovered anatomy.
       oval(r.node,"tailored shirt",[0,1.45,.09],[.74,.42,.37],shirt,14);
     }
-    box(r.node,"belt",[0,1.068,.215],[hips*.96,.075,.1],"#39362c");
-    box(r.node,"belt buckle",[0,1.068,.274],[.13,.075,.045],"#b9a36b");
+    if(!bareMason){
+      box(r.node,"belt",[0,1.068,.215],[hips*.96,.075,.1],"#39362c");
+      box(r.node,"belt buckle",[0,1.068,.274],[.13,.075,.045],"#b9a36b");
+    }
 
     // Neck, ears, jaw/cheeks, eye sockets and chin.
     limb(r.node,"neck",[0,1.68,0],[0,1.93,0],.23,skin,.195);
