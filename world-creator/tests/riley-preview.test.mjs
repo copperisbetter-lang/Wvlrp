@@ -14,7 +14,11 @@ test("Riley uses exactly one rigged GLB instead of disfigured pose models",()=>{
   assert.ok(!studio.includes('riley-blonde-kneeling.glb'));
   assert.ok(!studio.includes('riley-blonde-allfours.glb'));
   assert.ok(!studio.includes('makeRiley('));
-  assert.match(studio,/builtInRileyFile\(o\.pose\)/);
+  // Riley and other rigs now share the keyed GLB loader; pose is selected
+  // from the loaded animation clips rather than being part of a file name.
+  assert.match(studio,/riley:RILEY_RIGGED_GLB/);
+  assert.match(studio,/builtInCharacterFile\(o\.modelKey\)/);
+  assert.match(studio,/const actionForPose=pose/);
 });
 
 test("Riley's game animation needs a real loaded skeleton",()=>{
