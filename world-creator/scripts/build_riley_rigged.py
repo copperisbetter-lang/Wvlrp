@@ -129,6 +129,13 @@ for o in body_candidates:
     # The original detailed Riley head replaces it; both meet around collar.
     bmesh.ops.delete(bm,geom=[v for v in bm.verts if v.co.z>head_cut-.018],
                      context="VERTS")
+    # Seal the upper-neck cross-section: seen from overhead, an open donor
+    # boundary can expose an empty torso through the shoulder/neck opening.
+    # The actual neck bridge overlaps this cap, so it is not an outside shell.
+    boundary=[e for e in bm.edges if e.is_boundary]
+    if boundary:
+        bmesh.ops.holes_fill(bm,edges=boundary,sides=0)
+        print("RILEY_SEALED_NECK_CUT",o.name,len(boundary))
     bm.to_mesh(o.data);bm.free()
 
 for o in donor_objects:
@@ -169,11 +176,17 @@ for v in body.data.vertices:
     # No sphere-based breasts, raised clothing shells or blocky waistband.
     torso=(1-smooth((abs(x)-.14)/.16))*smooth((z-.77)/.18)
     waist=gauss(z-1.11,.105)*torso
-    hip=gauss(z-.955,.125)*torso
+    # Approved narrow 88 cm HIP design target (previous figure was 99 cm).
+    # Sculpt only the actual pelvis and outer upper thighs. The .113 m
+    # falloff fades before the waist and the chest: preserve the 112 cm bust.
+    hip=gauss(z-.925,.113)*torso
+    thigh=gauss(z-.735,.195)*smooth((abs(x)-.065)/.14)
     bust=gauss(z-1.30,.115)*torso
     shoulder=gauss(z-1.405,.065)*torso
-    p.x*=1-.105*waist+.115*hip+.024*bust+.012*shoulder
-    p.y*=1-.065*waist+.065*hip+.03*bust
+    p.x*=1-.105*waist-.035*hip+.024*bust+.012*shoulder
+    p.y*=1-.065*waist-.035*hip+.03*bust
+    if .43<z<.94:
+        p.x*=1-.026*thigh
     # Soft upper glute and lower-back curve, tapering to the hamstring.
     if y>.005:
         p.y+=.014*hip*gauss(abs(x)-.105,.125)
@@ -228,7 +241,7 @@ for vertex in body.data.vertices:
         ymask=smooth((.055-q.y)/.105)
         weight=h*xmask*ymask
         if weight>.005:chest_mask[vertex.index]=weight
-for iteration in range(0):
+for iteration in range(2):
     previous=[vert.co.copy() for vert in body.data.vertices]
     for idx,w in chest_mask.items():
         adjacent=chest_neighbors[idx]
@@ -238,7 +251,7 @@ for iteration in range(0):
         # the breast's lower curve and without shrinking all the ribs.
         shift=(avg-previous[idx])
         body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
-print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",0)
+print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",2)
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -257,7 +270,7 @@ for v in body.data.vertices:
     yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
     weight=zweight*xweight*yweight
     if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
-for iteration in range(0):
+for iteration in range(2):
     old=[v.co.copy() for v in body.data.vertices]
     for idx,weight in abdomen_mask.items():
         ns=neighbors[idx]
@@ -375,7 +388,48 @@ for face in hair.data.polygons:
     face.material_index=0
 print("RILEY_FITTED_HAIR",len(hair.data.vertices),
       "head_top",round(head_top,3),
-      "source","original CC0 bob extended into blonde wavy locks")
+      "source","original CC0 fitted crown retained with long layered blonde locks")
+
+# Extend the scalp-fitted bob with smooth, broad, layered hair surfaces.
+# These are thin, shaded wavy tresses (NOT cylinders sticking through the face)
+# and each stays attached to the head bone. Ends reach past the shoulders.
+# Vary length/parting to break up the rigid cone silhouette on phone previews.
+strand_vertices=[];strand_faces=[];strand_materials=[]
+for lock in range(22):
+    x0=-.170+.340*(lock+.5)/22
+    phase=lock*.73
+    length=.405+.125*(.5+.5*sin(lock*2.7))
+    n_steps=20;n_width=4
+    for j in range(n_steps+1):
+        t=j/n_steps
+        z=head_top-.120-length*t
+        wave=.013*sin(4*pi*t+phase)*smooth(t)
+        # Lower layers fan out a little; the crown remains rooted in the scalp.
+        x=x0+wave+(x0/.17)*.025*smooth(t)
+        y=.097+.056*smooth(t)+.014*sin(2*pi*t+phase)*smooth(t)
+        width=.025*(1-.70*t*t)*(.88+.12*sin(phase))
+        for k in range(n_width+1):
+            u=k/n_width*2-1
+            strand_vertices.append((x+u*width,
+                y+.008*(1-u*u)+.004*sin(pi*t+u+phase),z+.006*u*u))
+        if j:
+            a=(j-1)*(n_width+1)+lock*(n_steps+1)*(n_width+1)
+            b=j*(n_width+1)+lock*(n_steps+1)*(n_width+1)
+            for k in range(n_width):
+                strand_faces.append((a+k,a+k+1,b+k+1,b+k))
+                strand_materials.append(lock%len(hair_colors))
+# The fitted scalp cap stays above these strands so they grow from the head.
+flow_mesh=bpy.data.meshes.new("Riley layered hair surface")
+flow_mesh.from_pydata(strand_vertices,[],strand_faces);flow_mesh.update()
+flowing_hair=bpy.data.objects.new("Riley flowing soft blonde hair length",flow_mesh)
+bpy.context.collection.objects.link(flowing_hair)
+for mat in hair_colors:
+    mat.use_backface_culling=False
+    flow_mesh.materials.append(mat)
+for i,poly in enumerate(flow_mesh.polygons):
+    poly.use_smooth=True
+    poly.material_index=strand_materials[i]
+print("RILEY_LONG_HAIR_SURFACE",len(strand_vertices),len(strand_faces))
 # Attach Riley's preserved head visually to the anatomical shoulders.
 # Find actual open-edge outlines instead of estimating the join from all
 # nearby head/chest vertices (which previously left the visible head seam).
@@ -542,6 +596,7 @@ def bind(ob,kind):
 bind(body,"body")
 bind(neck_bridge,"collar")
 bind(hair,"hair")
+bind(flowing_hair,"hair")
 for obj in head_pieces:bind(obj,"head")
 
 # Put animations on the one rig. Each pose is an action/NLA strip, so the game
