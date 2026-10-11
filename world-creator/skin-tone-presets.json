@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "purpose": "Preview palette for future The Wild human avatars; skin shades are user-selectable and independent of ethnicity, nationality, gender, face geometry and hairstyle.",
+  "status": "Design presets only. Not yet wired to the avatar-creation UI or bound to validated photographic skin textures.",
+  "rendering_requirements": {
+    "preview_hex_is_not_texture": true,
+    "preserve_cc0_uv_photo_detail": true,
+    "preserve_face_neck_body_color_match": true,
+    "allow_warm_neutral_cool_olive_undertones": true,
+    "require_appropriate_licensed_diffuse_texture_for_final_render": true,
+    "no_flat_hex_only_skin_or_light_source_only_recolor": true,
+    "never_change_approved_caitlyn_body_or_skin": true
+  },
+  "complexion_presets": [
+    {
+      "id": "very-light-neutral",
+      "label": "Very light neutral",
+      "swatch_hex": "#E6C5AF",
+      "undertone": "neutral"
+    },
+    {
+      "id": "light-warm",
+      "label": "Light warm",
+      "swatch_hex": "#D8AE93",
+      "undertone": "warm"
+    },
+    {
+      "id": "light-olive",
+      "label": "Light olive",
+      "swatch_hex": "#C5A084",
+      "undertone": "olive"
+    },
+    {
+      "id": "light-medium-golden",
+      "label": "Light-medium golden",
+      "swatch_hex": "#BD946F",
+      "undertone": "golden"
+    },
+    {
+      "id": "medium-neutral",
+      "label": "Medium neutral",
+      "swatch_hex": "#AD8065",
+      "undertone": "neutral"
+    },
+    {
+      "id": "medium-olive",
+      "label": "Medium olive",
+      "swatch_hex": "#A77F62",
+      "undertone": "olive"
+    },
+    {
+      "id": "medium-warm",
+      "label": "Medium warm",
+      "swatch_hex": "#A67450",
+      "undertone": "warm"
+    },
+    {
+      "id": "golden-tan",
+      "label": "Golden tan",
+      "swatch_hex": "#966744",
+      "undertone": "golden"
+    },
+    {
+      "id": "deep-tan-neutral",
+      "label": "Deep tan neutral",
+      "swatch_hex": "#885B45",
+      "undertone": "neutral"
+    },
+    {
+      "id": "rich-brown-warm",
+      "label": "Rich brown warm",
+      "swatch_hex": "#754932",
+      "undertone": "warm"
+    },
+    {
+      "id": "rich-brown-cool",
+      "label": "Rich brown cool",
+      "swatch_hex": "#6B463E",
+      "undertone": "cool"
+    },
+    {
+      "id": "deep-brown-neutral",
+      "label": "Deep brown neutral",
+      "swatch_hex": "#593A30",
+      "undertone": "neutral"
+    },
+    {
+      "id": "deep-brown-warm",
+      "label": "Deep brown warm",
+      "swatch_hex": "#4B3026",
+      "undertone": "warm"
+    },
+    {
+      "id": "very-deep-neutral",
+      "label": "Very deep neutral",
+      "swatch_hex": "#35251F",
+      "undertone": "neutral"
+    }
+  ],
+  "representation_note": "Indigenous/Native American, South Asian (including Indian), and East/Southeast Asian women can have varied complexions. These presets are not ethnic labels and do not dictate features. Assign complexion and features individually with reference-based consent/design."
+}
