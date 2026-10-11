@@ -3,6 +3,7 @@ import {
   creekY, trailHorizontal, trailVertical, spawnDeer
 } from "./world-core.js";
 import { makeFigureBuilder } from "./character-models.js";
+import { makeRiley } from "./riley-model.js";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -49,6 +50,8 @@ function setSelection(o) {
   $("face").value=o.face||"oval";
   $("hair").value=o.hair||"brown";
   $("outfit").value=o.outfit||"ranger";
+  $("pose").value=o.pose||"standing";
+  $("characterPreset").value=o.modelKey==="riley"?"riley":"";
   $("wildlifeFields").hidden=!(o.type==="deer"||o.type==="animal");
   $("npcFields").hidden=o.type!=="npc";
   for(const el of $("objectForm").querySelectorAll("input:not(#photo),select"))el.disabled=!!o.locked;
@@ -83,7 +86,7 @@ function createAt(type,p){
   const o={id:type+"-"+Date.now().toString(36)+"-"+(++serial),type,
     name:(typeNames[type]||"Object"),x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10,
     behavior:type==="deer"?"home-range":"stationary",radius:type==="deer"?180:100,
-    body:"average",face:"oval",hair:"red",hairStyle:"wavy",gender:"woman",skin:"light",outfit:"ranger",animal:"fox"};
+    body:"average",face:"oval",hair:"red",hairStyle:"wavy",gender:"woman",skin:"light",outfit:"ranger",animal:"fox",pose:"standing",modelKey:""};
   world.objects.push(o);setSelection(o);setTool("select");save();dirty3d=true;invalidate();return o;
 }
 function invalidate(){if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;drawMap();});}
@@ -157,7 +160,7 @@ function commitSelection(){
   o.name=$("objectName").value.trim().slice(0,100)||o.type;
   o.x=x;o.y=y;
   if(o.type==="deer"||o.type==="animal"){o.behavior=$("behavior").value;o.radius=Math.max(0,Math.min(5000,Number($("radius").value)||0));}
-  if(o.type==="npc"){for(const field of ["gender","skin","body","face","hair","hairStyle","outfit"])o[field]=$(field).value;}
+  if(o.type==="npc"){for(const field of ["gender","skin","body","face","hair","hairStyle","outfit"])o[field]=$(field).value;o.pose=$("pose").value;}
   save();setSelection(o);dirty3d=true;refresh3d();invalidate();
 }
 function pointerXY(e){const r=rect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
@@ -217,11 +220,13 @@ $("applyPreset").onclick=()=>{
   const looks={
     "ranger-redhead":{gender:"woman",skin:"light",body:"average",face:"heart",hair:"red",hairStyle:"wavy",outfit:"ranger"},
     mercantile:{gender:"woman",skin:"tan",body:"average",face:"oval",hair:"brown",hairStyle:"long",outfit:"mercantile"},
-    lifeguard:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"lifeguard"}
+    lifeguard:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"lifeguard"},
+    riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"casual",pose:"standing"}
   };
   const look=looks[$("characterPreset").value];
   if(!look){status("Choose a character style first");return;}
-  for(const [key,value] of Object.entries(look))$(key).value=value;
+  for(const [key,value] of Object.entries(look))if($(key))$(key).value=value;
+  o.modelKey=$("characterPreset").value==="riley"?"riley":"";
   commitSelection();
   status("Applied "+$("characterPreset").selectedOptions[0].text+" style");
 };
@@ -380,7 +385,7 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      const fallback=figures.person(o,x,h,z);
+      const fallback=o.modelKey==="riley" ? makeRiley(BABYLON,scene,track,o,x,h,z) : figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
       if(characterFile) importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
     }else{
@@ -417,7 +422,7 @@ function init3D(){
     camera=new BABYLON.ArcRotateCamera("orbit",-Math.PI/2.5,1.02,165,new BABYLON.Vector3(0,8,0),scene);
     camera.attachControl($("scene"),true);
     // Phone-friendly inspection: allow moving in close enough to see clothing and facial detail.
-    camera.lowerRadiusLimit=1.25;camera.upperRadiusLimit=350;
+    camera.lowerRadiusLimit=.65;camera.upperRadiusLimit=350;
     camera.minZ=.025;
     camera.wheelPrecision=14;
     camera.pinchPrecision=55;
@@ -449,8 +454,15 @@ function focusObjectIn3D(o,radius=4.4){
 $("inspect3d").onclick=()=>{
   const o=selected();
   if(!o){status("Choose a deer or person on the map first");return;}
-  focusObjectIn3D(o,4.4);
+  focusObjectIn3D(o,o.modelKey==="riley"?2.8:4.4);
   status("Close-up 3D view: "+o.name+" (use 3D +/− or pinch to zoom closer; drag to orbit)");
+};
+// One tap creates just one opt-in Riley test object without disturbing existing deer.
+$("addRiley").onclick=()=>{
+  const o=createAt("npc",{x:view.x+3,y:view.y+3});
+  Object.assign(o,{name:"Riley (test)",modelKey:"riley",pose:"standing",gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",face:"heart",body:"athletic",outfit:"casual"});
+  setSelection(o);save();dirty3d=true;focusObjectIn3D(o,2.9);
+  status("Riley test figure created. Drag to orbit, pinch to zoom; change pose in Object details.");
 };
 $("findDeer3d").onclick=()=>{
   const deer=world.objects.filter(o=>o.type==="deer");
