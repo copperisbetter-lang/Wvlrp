@@ -346,7 +346,7 @@ function calibrateRelaxedArms(){
  return {corrected,details};
 }
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=13',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-photo-skin-published-v2&walking-test=14',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
