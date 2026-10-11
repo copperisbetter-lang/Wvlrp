@@ -110,19 +110,11 @@ def clean_skin_material(body):
     def clamp(x): return max(0.,min(1.,x))
     def skin_for_vertex(v):
         p=v.co
-        norm=(p.z-zlo)/height
-        # Very low contrast variation, never a blotchy/striped skin shader.
-        grain=(math.sin(p.x*57+p.y*31+p.z*83)*math.sin(p.x*41-p.y*43+p.z*67))
-        tone=.012*grain
-        blush=0.
-        if norm>.83 and p.y<.055:
-            cheekx=abs(abs(p.x)-.085)
-            facey=math.exp(-((norm-.918)/.033)**2)
-            blush=.035*math.exp(-(cheekx/.065)**2)*facey
-        warm=math.exp(-((norm-.53)/.08)**2)*.008
-        return (clamp(.840+tone+warm-blush*.45),
-                clamp(.710+tone*.7+warm-blush*.65),
-                clamp(.665+tone*.6+warm-blush*.65),1.0)
+        # One consistent complexion on face, neck, ears, torso and limbs.
+        # The old high-face blush mask created visible face/body color seams.
+        grain=math.sin(p.x*57+p.y*31+p.z*83)*math.sin(p.x*41-p.y*43+p.z*67)
+        tone=.0035*grain
+        return (clamp(.840+tone),clamp(.710+tone*.8),clamp(.665+tone*.68),1.0)
     shades=[skin_for_vertex(v) for v in verts]
     for poly in body.data.polygons:
         poly.use_smooth=True
@@ -144,6 +136,36 @@ def clean_skin_material(body):
     else:
         for i in range(len(body.data.materials)): body.data.materials[i]=skin
     print("WVLRP_CAITLYN_TEXTURED_SKIN",body.name,len(verts),len(body.data.polygons))
+
+def add_natural_smile(body):
+    """Use official CC0 ARKit face morphs instead of altering face colors."""
+    pack=Path("/tmp/mh-faceunits.zip")
+    if not pack.exists():
+        raise RuntimeError("Official CC0 MakeHuman Faceunits 01 archive missing")
+    found={}
+    with zipfile.ZipFile(pack) as archive:
+        for member in archive.infolist():
+            if member.is_dir(): continue
+            base=Path(member.filename).name.lower().replace("_","").replace("-","")
+            if not (base.endswith(".target") or base.endswith(".target.gz")): continue
+            for side in ("left","right"):
+                if "mouthsmile"+side in base or "smilemouth"+side in base:
+                    name="wvlrp_caitlyn_smile_"+side+(".target.gz" if base.endswith(".gz") else ".target")
+                    dest=Path("/tmp")/name
+                    with archive.open(member) as src,open(dest,"wb") as out:
+                        import shutil
+                        shutil.copyfileobj(src,out)
+                    found[side]=dest
+                    print("WVLRP_CAITLYN_FACEUNIT",side,member.filename,dest.stat().st_size)
+    if set(found)!={"left","right"}:
+        raise RuntimeError("Faceunits 01 lacks bilateral mouth smile targets: "+str(found))
+    for side in ("left","right"):
+        key=TargetService.load_target(body,str(found[side]),
+            weight=.52,name="Caitlyn Natural Smile "+side.capitalize())
+        if key is None: raise RuntimeError("Caitlyn smile morph could not be loaded: "+side)
+        key.value=.52
+        print("WVLRP_CAITLYN_SMILE_MORPH",side,key.name,key.value)
+
 
 def polish_anatomical_shape(body):
     """Subtle slim-waist/hip adjustment on the ORIGINAL continuous MPFB body mesh.
@@ -334,6 +356,7 @@ def main():
     clean_skin_material(exp)
     polish_anatomical_shape(exp)
     check_and_repair_pelvic_surface(exp)
+    add_natural_smile(exp)
     # Keep the complete unclothed basemesh: no garments, body masking, or
     # mesh subtraction. The whole back/torso stays present during zoom.
     assert len(exp.data.vertices)>10000, "Incomplete human body"
@@ -641,6 +664,8 @@ def main():
     assert len(meta.get("animations",[]))>=5, "Caitlyn must include five skeletal pose clips"
     assert any("ElbowsAndKnees" in a.get("name","") for a in meta.get("animations",[])), "Missing elbows-and-knees clip"
     assert len(meta["skins"][0].get("joints",[]))>=25, "Skeleton too small"
+    assert any(any("targets" in prim for prim in mesh.get("primitives",[]))
+        for mesh in meta.get("meshes",[])), "Caitlyn smile morph did not export"
     names=[n.get("name","") for n in meta.get("nodes",[])]
     assert any("Caitlyn" in n for n in names), "Caitlyn body naming missing"
     assert not any(("tank" in n.lower() or "shorts" in n.lower() or "dress" in n.lower()) for n in names), "Clothing accidentally exported"
