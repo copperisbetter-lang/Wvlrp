@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v7</title>
+<title>The Wild — Caitlyn Walking Test v8</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,7 +23,7 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v7</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v8</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
@@ -77,7 +77,8 @@ const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
 // Load Caitlyn's ACTUAL rigged GLB, not a blob/mannequin stand-in.
 let caitlynReady=false, caitlynFailure='', gaitBones={}, gaitReady=false, gaitWeight=0, kneeBendSources=0;
 const hipStance={leftThigh:0,rightThigh:0};
-let stanceCalibration=null;
+const armRest={leftArm:{axis:B.Axis.Z,angle:0},rightArm:{axis:B.Axis.Z,angle:0}};
+let stanceCalibration=null, armCalibration=null;
 const gaitAliases={
   leftThigh:['leftupleg','leftthigh','lthigh'],
   rightThigh:['rightupleg','rightthigh','rthigh'],
@@ -86,16 +87,22 @@ const gaitAliases={
   leftFoot:['leftfoot','lfoot'],
   rightFoot:['rightfoot','rfoot'],
   leftArm:['leftarm','leftupperarm','lupperarm'],
-  rightArm:['rightarm','rightupperarm','rupperarm']
+  rightArm:['rightarm','rightupperarm','rupperarm'],
+  leftForearm:['leftforearm','lforearm'],
+  rightForearm:['rightforearm','rforearm'],
+  leftHand:['lefthand','lhand'],
+  rightHand:['righthand','rhand']
 };
 function normalizedBone(n){return String(n||'').toLowerCase().replace(/mixamorig/g,'').replace(/[^a-z0-9]/g,'');}
 function setGait(part,angle){
  const entry=gaitBones[part]; if(!entry)return;
- // Bring the legs in toward a natural track WITHOUT altering body mesh or knee hinges.
- // Use local-Z thigh adduction before the existing forward/back hip swing.
- const adduction=hipStance[part]||0;
+ // Apply the calibrated narrow leg stance OR the lowered resting-arm pose,
+ // then add a small walking swing without replacing the original joint bind.
+ const correction=armRest[part];
+ const axis=correction?.axis||B.Axis.Z;
+ const restAngle=correction?correction.angle:(hipStance[part]||0);
  const quat=entry.base
-   .multiply(B.Quaternion.RotationAxis(B.Axis.Z,adduction))
+   .multiply(B.Quaternion.RotationAxis(axis,restAngle))
    .multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
  if(entry.node)entry.node.rotationQuaternion=quat;
  else entry.bone.setRotationQuaternion(quat,B.Space.LOCAL);
@@ -177,7 +184,7 @@ function calibrateNaturalStance(){
  const middle=(leftHip.x+rightHip.x)*.5;
  const hipWidth=Math.abs(leftHip.x-rightHip.x);
  // Use real-world meters after scaling Caitlyn to 1.72 m.
- const footWidth=Math.max(.22,Math.min(.30,hipWidth*.96));
+ const footWidth=Math.max(.20,Math.min(.25,hipWidth*.86));
  const before=Math.abs(leftFoot.x-rightFoot.x);
  for(const [thigh,foot] of [['leftThigh','leftFoot'],['rightThigh','rightFoot']]){
    const start=jointPosition(foot);
@@ -215,8 +222,57 @@ function calibrateNaturalStance(){
  console.info('Caitlyn stance calibration (meters)',data,'thigh adduction',hipStance);
  return data;
 }
+// Lower Caitlyn's shoulders from the wide rig rest pose and keep the hands
+// near the outside of her hips. Sample the REAL wrist positions to discover
+// each side's rotation axis/sign; glTF arm orientations vary between rigs.
+// Arm correction remains active even when Caitlyn is standing completely still.
+function calibrateRelaxedArms(){
+ const leftHip=jointPosition('leftThigh'),rightHip=jointPosition('rightThigh');
+ if(!leftHip||!rightHip)return {corrected:0,reason:'hip joints unavailable'};
+ const middle=(leftHip.x+rightHip.x)*.5;
+ const hipWidth=Math.abs(rightHip.x-leftHip.x);
+ let corrected=0;
+ const details=[];
+ for(const [arm,hand,forearm] of [['leftArm','leftHand','leftForearm'],['rightArm','rightHand','rightForearm']]){
+   const shoulder=jointPosition(arm);
+   const wrist=jointPosition(hand)||jointPosition(forearm);
+   if(!shoulder||!wrist)continue;
+   const side=Math.sign(shoulder.x-middle)||Math.sign(wrist.x-middle);
+   if(!side)continue;
+   const reach=B.Vector3.Distance(shoulder,wrist);
+   if(reach<.16)continue;
+   const targetX=middle+side*Math.max(.22,hipWidth*.57);
+   const targetY=shoulder.y-reach*.93;
+   const scoreAt=p=>{
+     const crossed=Math.max(0,.15-side*(p.x-middle));
+     return Math.abs(p.x-targetX)*1.15+Math.abs(p.y-targetY)*1.35+
+       Math.abs(p.z-shoulder.z)*.34+crossed*3;
+   };
+   const initialScore=scoreAt(wrist);
+   let bestScore=initialScore,bestAxis=B.Axis.Z,bestAngle=0;
+   for(const axis of [B.Axis.Z,B.Axis.X,B.Axis.Y]){
+     for(let step=-30;step<=30;step++){
+       const candidate=step*.05;
+       armRest[arm]={axis,angle:candidate};
+       setGait(arm,0);
+       const probe=jointPosition(hand)||jointPosition(forearm);
+       if(!probe)continue;
+       const score=scoreAt(probe)+Math.abs(candidate)*.018;
+       if(score<bestScore){bestScore=score;bestAxis=axis;bestAngle=candidate;}
+     }
+   }
+   // Retain the original pose if local axes don't improve the arm placement.
+   armRest[arm]=bestScore<initialScore-.02?
+     {axis:bestAxis,angle:bestAngle}:{axis:B.Axis.Z,angle:0};
+   setGait(arm,0);
+   if(bestScore<initialScore-.02)corrected++;
+   details.push({arm,initialScore:+initialScore.toFixed(3),bestScore:+bestScore.toFixed(3),angle:+armRest[arm].angle.toFixed(2)});
+ }
+ console.info('Caitlyn relaxed arms calibrated',corrected,'/2',details);
+ return {corrected,details};
+}
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=7',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=8',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
@@ -250,6 +306,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
  }
  const bound=bindWalkingRig(result);
  stanceCalibration=gaitReady?calibrateNaturalStance():null;
+ armCalibration=calibrateRelaxedArms();
  for(const mesh of realMeshes){
    const manager=mesh.morphTargetManager;
    if(!manager)continue;
@@ -259,7 +316,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    }
  }
  caitlynReady=true;
- status.textContent=gaitReady?'Caitlyn loaded · knees calibrated'+(stanceCalibration?.corrected?' · feet closer':'')+' ('+bound.length+' joints)'
+ status.textContent=gaitReady?'Caitlyn loaded · knees calibrated'+(stanceCalibration?.corrected?' · feet closer':'')+(armCalibration?.corrected?' · arms relaxed':'')+' ('+bound.length+' joints)'
     :'Caitlyn loaded · knee clip unavailable ('+kneeBendSources+'/2)';
 }).catch(e=>{
  caitlynFailure=e?.message||String(e);
@@ -295,7 +352,7 @@ engine.runRenderLoop(()=>{
  let moved=0;
  // Never slide a mannequin across the ground if the actual leg rig is unavailable.
  // A missing or mismatched skeleton is a visible loading error, not "walking".
- if(Math.abs(f)>.06 && caitlynReady && gaitReady){let speed=1.55*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
+ if(Math.abs(f)>.06 && caitlynReady && gaitReady){let speed=1.10*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
  if(!blocked(nx,root.position.z))root.position.x=nx;else dx=0;
  if(!blocked(root.position.x,nz))root.position.z=nz;else dz=0;
  moved=Math.hypot(dx,dz)/Math.max(dt,.001);
@@ -304,7 +361,7 @@ engine.runRenderLoop(()=>{
  // A distance-driven stride, rather than replaying the bend/stand pose track.
  // Hard stop on joystick release: absolutely no continuing bend, sway or gait.
  gaitWeight=walking&&gaitReady?1:0;
- if(walking)clock+=dt*9.1*(moved/1.55);
+ if(walking)clock+=dt*6.6*(moved/1.10);
  const direction=f<0?-1:1,phase=Math.sin(clock),
        leftLift=Math.max(0,-phase),rightLift=Math.max(0,phase),stride=gaitWeight*direction;
  // A hip swings the leg forward; the corresponding shin folds BACK,
@@ -318,8 +375,9 @@ engine.runRenderLoop(()=>{
  // Limit ankle motion until fully foot-planted IK is available.
  setGait('leftFoot',(-phase*.07-leftLift*.08)*stride);
  setGait('rightFoot',(phase*.07-rightLift*.08)*stride);
- setGait('leftArm',-phase*.24*stride);
- setGait('rightArm',phase*.24*stride);
+ // Arms rest naturally alongside the body, with a modest opposing swing.
+ setGait('leftArm',-phase*.11*stride);
+ setGait('rightArm',phase*.11*stride);
  walkBody.position.y=walking?Math.abs(Math.sin(clock))*.013:0;
  walkBody.rotation.x=0;
  walkBody.rotation.z=0;
