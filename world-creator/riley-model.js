@@ -4,7 +4,7 @@
 export function makeRiley(B,scene,track,o,x,ground,z) {
   const root=track(new B.TransformNode("Riley experimental character",scene));
   root.position.set(x,ground,z);
-  const crawl=o.pose==="hands-knees";
+  const crawl=o.pose==="crouch";
   const mats=new Map();
   const mat=(hex,rough=.82)=>{
     if(!mats.has(hex)) {
