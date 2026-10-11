@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CELL, seedNumber, creekY, heightAt, trailHorizontal, trailVertical,
-  newWorld, sanitizedWorld, spawnDeer
+  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS
 } from "../world-core.js";
 
 test("world seed makes terrain deterministic",()=>{
@@ -48,4 +48,28 @@ test("Riley hands-and-knees pose survives JSON round-trip without disturbing dee
   assert.equal(read.objects.find(o=>o.id==="riley-pose-test").pose,"allfours");
   assert.equal(read.objects.filter(o=>o.type==="deer").length,101);
   assert.deepEqual(read.objects.filter(o=>o.type==="deer").map(o=>[o.id,o.x,o.y]),allDeer.map(o=>[o.id,o.x,o.y]));
+});
+
+test("Amy and Christy join a preexisting world exactly once without moving deer",()=>{
+  const w=newWorld();
+  const deer=spawnDeer(w,24,12,13,4);
+  w.objects.push({id:"owner-cabin",type:"cabin",name:"My cabin",x:75,y:90});
+  const before=deer.map(d=>[d.id,d.x,d.y]);
+  const placed=addTestCharacters(w);
+  assert.deepEqual(placed.map(o=>o.modelKey),["amy","chrissy"]);
+  assert.equal(placed.length,2);
+  assert.equal(addTestCharacters(w).length,0);
+  const reloaded=sanitizedWorld(JSON.parse(JSON.stringify(w)));
+  assert.equal(reloaded.objects.find(o=>o.id==="npc-amy-wild").modelKey,"amy");
+  assert.equal(reloaded.objects.find(o=>o.id==="npc-christy-wild").modelKey,"chrissy");
+  assert.deepEqual(reloaded.objects.filter(o=>o.type==="deer").map(o=>[o.id,o.x,o.y]),before);
+  assert.ok(reloaded.objects.some(o=>o.id==="owner-cabin"));
+  assert.equal(TEST_CHARACTER_STARTERS.length,2);
+});
+
+test("Add only missing test character if one already exists",()=>{
+  const w=newWorld();
+  w.objects.push({id:"custom-amy",name:"Amy",type:"npc",modelKey:"amy",x:90,y:20});
+  assert.deepEqual(addTestCharacters(w).map(o=>o.name),["Christy (test)"]);
+  assert.equal(w.objects.find(o=>o.id==="custom-amy").x,90);
 });
