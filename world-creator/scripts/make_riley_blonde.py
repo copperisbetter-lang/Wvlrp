@@ -144,23 +144,27 @@ head_center_z=head_top-H*.047
 print("RILEY_HEAD_ANCHOR",MODE,"eye_z",round(eye_z,3),
       "scalp_top",round(head_top,3),"cap_center",round(head_center_z,3))
 
-# A close-fitting crown and wavy shoulder-length locks are genuine 3D,
-# attached to the found head, rather than a separate helmet hovering above.
-cap_rz=H*.054
-cap_rx=H*.065
-cap_ry=H*.060
-verts=[(head_x,head_y,head_center_z+cap_rz)]
+# Build one scalp-fitted hairstyle, not a detached updo stacked above the
+# original head.  Every lock is placed in *the original head's world space*
+# and will be joined to the source face/head mesh before GLB export.
+# This is one permanent piece of the STATIC prototype (not a skeletal rig).
+hair_objects=[]
+cap_rz=H*.052
+cap_rx=H*.064
+cap_ry=H*.058
+cap_base=head_top-H*.052
+verts=[(head_x,head_y+H*.006,cap_base+cap_rz)]
 faces=[]
-STEPS=52
+STEPS=56
 RINGS=12
 for j in range(1,RINGS+1):
     theta=(pi/2)*j/RINGS
     rx=cap_rx*sin(theta)
     ry=cap_ry*sin(theta)
-    zz=head_center_z+cap_rz*cos(theta)
+    zz=cap_base+cap_rz*cos(theta)
     for k in range(STEPS):
         a=k*2*pi/STEPS
-        verts.append((head_x+rx*cos(a),head_y+ry*sin(a),zz))
+        verts.append((head_x+rx*cos(a),head_y+H*.006+ry*sin(a),zz))
 for k in range(STEPS):
     faces.append((0,1+k,1+(k+1)%STEPS))
 for j in range(RINGS-1):
@@ -168,77 +172,81 @@ for j in range(RINGS-1):
     for k in range(STEPS):
         n=(k+1)%STEPS
         faces.append((start+k,start+n,start+STEPS+n,start+STEPS+k))
-mesh("Riley fitted blonde hair crown",verts,faces,hair[1])
-# User-supplied ranger-porch reference (the blonde woman on the left):
-# natural, loosely gathered honey-blonde high updo, airy flyaways and a few
-# loose face-framing tendrils. This is an APPROXIMATION, not photo-to-3D scanning.
-# Keep real, visible 3D volume so her hair cannot become a pasted-on cutout.
-random.seed(57012 if MODE=="standing" else 57013 if MODE=="kneeling" else 57014)
-bun=Vector((head_x-H*.004,head_y+H*.037,head_top+H*.020))
-sphere("Riley blonde updo bun core",bun,(H*.068,H*.058,H*.066),hair[0],24)
-for i in range(34):
-    a=(2*pi*i/34)+random.uniform(-.12,.12)
-    rise=random.uniform(-1,1)
-    center=bun+Vector((H*.042*cos(a),
-                       H*.035*sin(a)+H*.004,
-                       H*.040*rise))
-    size=H*random.uniform(.014,.029)
-    ob=sphere("Riley blonde updo tousled curl %02d"%i,center,
-              (size*1.35,size*.85,size*1.35),hair[(i+1)%4],12)
-    ob.rotation_euler=(random.uniform(-.7,.7),random.uniform(-.7,.7),
-                       random.uniform(-.7,.7))
-# Fine swept-back hair ribbons follow the actual scalp into the gathered bun.
+hair_objects.append(mesh("Riley hair attached fitted scalp",verts,faces,hair[0]))
+
+# Dense, tapered, softly wavy real 3D locks. No square curtain, floating bun,
+# broad cardboard strips or face-covering waterfalls. Four softly varied tones
+# break up the uniform plastic-blonde look without extra textures.
+rng=random.Random(57141)  # Same style across all three static poses.
+strand_geo=[([],[]) for _ in hair]
+def add_strand(color_index,root,length,spread,wave,phase,width):
+    vertices,faces=strand_geo[color_index]
+    start=len(vertices)
+    sides=6
+    steps=21
+    for section in range(steps):
+        t=section/(steps-1)
+        taper=max(.08,(1-t)**.67)
+        c=Vector((root.x+spread*t+wave*math.sin(2.65*pi*t+phase)*t,
+                  root.y+H*.017*t+wave*.57*math.cos(2.3*pi*t+phase)*t,
+                  root.z-length*t))
+        radius=width*taper
+        for k in range(sides):
+            a=2*pi*k/sides
+            vertices.append(tuple(c+Vector((radius*math.cos(a),
+                                             radius*.62*math.sin(a),0))))
+        if section:
+            prev=start+(section-1)*sides
+            curr=start+section*sides
+            for k in range(sides):
+                n=(k+1)%sides
+                faces.append((prev+k,prev+n,curr+n,curr+k))
+    faces.append(tuple(reversed(tuple(start+k for k in range(sides)))))
+    faces.append(tuple(start+(steps-1)*sides+k for k in range(sides)))
+
+# Crown-to-back layers follow the skull, with individual lengths and wave
+# phases so the style falls naturally over the shoulders and upper back.
+for layer in range(4):
+    for i in range(37):
+        a=pi*(i+.43*(layer%2))/36
+        a=min(pi,max(0,a))
+        side_x=math.cos(a)
+        rear_y=max(0,math.sin(a))
+        root=Vector((head_x+H*(.054-.004*layer)*side_x,
+                     head_y+H*(.008+.048*rear_y),
+                     head_top-H*(.037+.007*layer)+H*.005*math.sin(a)))
+        length=H*(.255+.055*layer+rng.uniform(-.045,.065))
+        add_strand((i+2*layer)%len(hair),root,length,
+                   H*(side_x*.042+rng.uniform(-.012,.012)),
+                   H*rng.uniform(.004,.012),rng.uniform(0,2*pi),
+                   H*rng.uniform(.0030,.0053))
+
+# Fine face-framing locks; keep the central face and eyes fully visible.
 for side in (-1,1):
-    for i in range(13):
-        t0=i/12
-        root=Vector((head_x+side*H*(.020+t0*.044),
-                     head_y-H*(.045-.010*t0),
-                     head_center_z+H*(.035+.014*random.random())))
-        dest=bun+Vector((side*H*.012,H*.006, H*.007))
-        tangent=Vector((side*H*.012, H*.010, H*.004))
-        verts=[];faces=[]
-        sections=13
-        for k in range(sections):
-            t=k/(sections-1)
-            center=root.lerp(dest,t)+tangent*math.sin(pi*t)
-            width=H*.0085*max(.035,(1-t)**.55)
-            for lane in (-1,0,1):
-                verts.append(tuple(center+Vector((lane*width,0,
-                       H*.002*sin(pi*t)*(1-lane*lane)))-root))
-        for k in range(sections-1):
-            for lane in range(2):
-                n=k*3+lane
-                faces.extend(((n,n+1,n+4),(n,n+4,n+3)))
-        lock=mesh("Riley soft blonde swept-up strand %d %d"%(side,i),
-                  verts,faces,hair[(i+2)%4])
-        lock.location=root
-# Airy loose tendrils curling along the cheeks and down toward the shoulders.
-# Their length remains much shorter than the previous waist-length curtain.
-for side in (-1,1):
-    for i in range(10):
-        root=Vector((head_x+side*H*(.045+.020*(i/9)),
-                     head_y-H*(.014+.009*(i/9)),
-                     head_center_z+H*(.010-.022*(i/9))))
-        length=H*(.105+.100*(i/9)+.025*random.random())
-        phase=2*pi*random.random()
-        verts=[];faces=[]
-        sections=17
-        for k in range(sections):
-            t=k/(sections-1)
-            center=root+Vector((side*H*(.014*t+.009*sin(pi*t)),
-                                H*.011*sin(2.4*pi*t+phase)*t,
-                                -length*t))
-            width=H*.0080*max(.025,(1-t)**.7)
-            for lane in (-1,0,1):
-                verts.append(tuple(center-root+Vector((lane*width,0,0))))
-        for k in range(sections-1):
-            for lane in range(2):
-                n=k*3+lane
-                faces.extend(((n,n+1,n+4),(n,n+4,n+3)))
-        lock=mesh("Riley soft blonde loose face tendril %d %d"%(side,i),
-                  verts,faces,hair[(i+side)%4])
-        lock.location=root
-print("RILEY_REFERENCE_STYLE",MODE,"blonde-updo with loose natural tendrils; smooth display mannequin")
+    for i in range(12):
+        t=i/11
+        root=Vector((head_x+side*H*(.052+.007*t),
+                     head_y-H*(.030-.021*t),
+                     head_top-H*(.046+.022*t)))
+        add_strand((i+1)%len(hair),root,
+                   H*(.145+.105*t+rng.uniform(-.010,.030)),
+                   side*H*(.017+.020*t),
+                   H*rng.uniform(.002,.008),rng.uniform(0,2*pi),
+                   H*rng.uniform(.0022,.0037))
+for index,(points,faces) in enumerate(strand_geo):
+    if points:
+        hair_objects.append(mesh("Riley hair attached wavy blonde layer "+str(index),
+                                 points,faces,hair[index]))
+
+# Sanity checks guard against the towering detached wig seen in the preview.
+hair_bounds=[ob.matrix_world @ Vector(v) for ob in hair_objects
+             for v in ob.bound_box]
+hair_high=max(p.z for p in hair_bounds)
+if hair_high>head_top+H*.035:
+    raise AssertionError("Hair floated above scalp by %.3f"%(hair_high-head_top))
+print("RILEY_HAIR_FITTED",MODE,"mesh_sections",len(hair_objects),
+      "scalp_top",round(head_top,3),"hair_top",round(hair_high,3),
+      "style","long layered wavy blonde hair")
 
 # A restrained, asymmetric mouth-corner lift suggests a cheeky half-smile.
 # Only the existing textured facial geometry is adjusted; no pasted-on mouth.
@@ -274,7 +282,7 @@ print("RILEY_SOFT_HAIR_AND_SMIRK",MODE,
 # Barbie-style adult display mannequin: no clothes and no anatomical
 # detailing. The face/hair stay recognizable, while the body gets a smooth,
 # uniform non-photographic doll finish. This is deliberately NON-anatomical.
-doll_skin=mat("Riley | smooth matte featureless doll skin",(.79,.61,.50),.83)
+doll_skin=mat("Riley | soft realistic satin mannequin skin",(.81,.635,.55),.69)
 body_parts=[ob for ob in bpy.context.scene.objects if ob.type=="MESH" and
             ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly"
              or ob.name.lower().startswith("female_casualsuit"))]
@@ -289,41 +297,44 @@ for obj in list(bpy.context.scene.objects):
             removed_details.append(obj.name)
             bpy.data.objects.remove(obj,do_unlink=True)
 
-# The existing base figure is a continuous, non-rigged surface. Smooth local
-# high-frequency details around the central pelvis; retain natural hips,
-# thighs and leg separation. Do not flatten the entire lower body into a box.
+# The source casual-suit mesh is still the only COMPLETE torso/legs
+# available: recoloring it does not magically turn it into a body scan.
+# Relax its trouser seams / crotch fold, hip folds and waistband over a much
+# broader area, while protecting the face, hands and feet. Avoid hard-edged
+# pelvis filtering that was causing sharp, unnatural creases.
 smoothed_verts=0
-pelvis_center=eye_z-H*.44
 for ob in body_parts:
     world=ob.matrix_world.copy()
     inv=world.inverted_safe()
-    for _ in range(4):
+    adjacency=[set() for _ in ob.data.vertices]
+    for edge in ob.data.edges:
+        a,b=edge.vertices
+        adjacency[a].add(b);adjacency[b].add(a)
+    iterations=15 if ob.name.lower().startswith("female_casualsuit") else 5
+    for _ in range(iterations):
         positions=[world @ v.co for v in ob.data.vertices]
-        adjacency=[set() for _ in positions]
-        for edge in ob.data.edges:
-            a,b=edge.vertices
-            adjacency[a].add(b);adjacency[b].add(a)
         next_positions=list(positions)
         for index,p in enumerate(positions):
             if not adjacency[index]:continue
-            xdist=abs((p.x-head_x)/H)
-            zdist=abs((p.z-pelvis_center)/H)
-            if xdist>=.082 or zdist>=.075:continue
-            weight=(1-(xdist/.082)**2)**2*(1-(zdist/.075)**2)**2
+            height=(p.z-zmin)/H
+            xdist=abs(p.x-head_x)/H
+            # Broad hips, glutes and upper thighs; no influence at the face.
+            pelvis=math.exp(-((height-.445)/.145)**4)
+            waist=.38*math.exp(-((height-.650)/.070)**2)
+            side=1-smooth01((xdist-.155)/.120)
+            weight=min(1.,(pelvis+waist)*max(0.,side))
+            if weight<.01:continue
             avg=sum((positions[n] for n in adjacency[index]),Vector((0,0,0)))/len(adjacency[index])
-            next_positions[index]=p.lerp(avg,.48*weight)
+            next_positions[index]=p.lerp(avg,.38*weight)
             smoothed_verts+=1
         for v,p in zip(ob.data.vertices,next_positions):
             v.co=inv @ p
-    # Replace body decals/skin-texture details by a single flat satin skin.
-    # Preserve all meshes above the neck, including eyes, lips and smile.
+    # Keep original detailed head skin/eyes and replace the casual-suit
+    # material with a consistent slightly soft, satin PBR mannequin finish.
     skin_slot=len(ob.data.materials)
     ob.data.materials.append(doll_skin)
     for poly in ob.data.polygons:
         center=world @ poly.center
-        # The stock clothing shell is the only continuous source torso/leg
-        # surface. Give ALL its polygons the plain skin-matte mannequin finish;
-        # preserve head and facial materials on the separate original meshes.
         if ob.name.lower().startswith("female_casualsuit") or center.z<eye_z-H*.115:
             poly.material_index=skin_slot
         poly.use_smooth=True
@@ -357,7 +368,7 @@ def smooth01(x):
 shoulder_line=eye_z-H*.125
 adjusted=0
 for ob in [obj for obj in bpy.context.scene.objects if obj.type=="MESH"]:
-    if ob.name.startswith(("Riley soft blonde", "Riley fitted blonde hair", "Riley blonde updo")):
+    if ob in hair_objects:
         continue # Do not squash the hair layers while slimming the source figure.
     mx=ob.matrix_world.copy()
     inv=mx.inverted_safe()
@@ -446,12 +457,15 @@ if MODE=="allfours":
     def head_point(p):
         return head_target+head_rot @ (p-head_rest)
 
+    def ob_name_is_hair(name):
+        return name.startswith("riley hair attached")
+
     def articulated_point(p, obj_name):
         name=obj_name.lower()
         # The hair locks, cap, lashes, teeth and brows are separate objects.
         # Apply exactly the same rigid head transform to every vertex, keeping
         # the crown anchored to the real scalp and the face undistorted.
-        if name.startswith("riley soft blonde") or name.startswith("riley fitted blonde") or name.startswith("riley blonde updo") or name.startswith(("eyelashes","eyebrow","teeth")):
+        if ob_name_is_hair(name) or name.startswith(("eyelashes","eyebrow","teeth")):
             return head_point(p)
         height=(p.z-zmin)/H
         side=1 if p.x>=cx else -1
@@ -494,6 +508,30 @@ if MODE=="allfours":
           "height_fraction",round(pose_height/H,3),
           "ground",round(min(p.z for p in points),3))
     assert .23*H < pose_height < .95*H, "The posed mannequin bounds are invalid"
+
+# Physically attach all hair geometry to Riley's actual original head mesh.
+# This eliminates independently transformable wig objects in the exported GLB.
+# Three static poses are still separate assets until she gets a proper rig.
+head_candidates=[o for o in bpy.context.scene.objects if o.type=="MESH"
+                 and (o.name.lower()=="low-poly" or "anatomical body" in o.name.lower())
+                 and any(abs((o.matrix_world @ v.co).z-eye_z)<H*.035
+                         for v in o.data.vertices)]
+if not head_candidates:
+    raise AssertionError("Cannot find facial mesh for permanently attached hair")
+head_mesh=max(head_candidates,
+              key=lambda o:sum(abs((o.matrix_world @ v.co).z-eye_z)<H*.035
+                               for v in o.data.vertices))
+before_verts=len(head_mesh.data.vertices)
+bpy.ops.object.select_all(action="DESELECT")
+for obj in hair_objects:
+    obj.select_set(True)
+head_mesh.select_set(True)
+bpy.context.view_layer.objects.active=head_mesh
+bpy.ops.object.join()
+added=len(head_mesh.data.vertices)-before_verts
+if added<10000:raise AssertionError("Hair was not joined to head mesh")
+print("RILEY_HAIR_PERMANENTLY_ATTACHED",MODE,
+      "head_mesh",head_mesh.name,"hair_vertices",added)
 
 # Do not replace the head with a flat image or a primitive doll; retain the
 # realistic original face, body proportions, and existing textured materials.
