@@ -273,8 +273,8 @@ $("modelFile").addEventListener("change",e=>{
   }
   localCharacterFiles.set(o.id,file);
   $("clearModel").disabled=false;
-  dirty3d=true;refresh3d();
-  status("Loading detailed 3D character. This model stays in this browser session only.");
+  focusObjectIn3D(o,4.4);
+  status("Loading detailed 3D character close-up. This model stays in this browser session only.");
 });
 $("clearModel").onclick=()=>{
   const o=selected();if(!o)return;
@@ -327,7 +327,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const node=track(new BABYLON.TransformNode("custom model "+o.id,scene));
     const roots=meshes.filter(m=>!m.parent || !meshes.includes(m.parent));
     roots.forEach(m=>m.parent=node);
-    const scale=Math.min(100,2.35/(maxY-minY));
+    const scale=Math.min(100,1.70/(maxY-minY));
     node.scaling.setAll(scale);
     node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
     for(const mesh of meshes)track(mesh);
