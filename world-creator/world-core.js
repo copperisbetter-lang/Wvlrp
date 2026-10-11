@@ -131,7 +131,7 @@ export function addCaitlyn(world){
 // Independent adult male rig, separate from every existing character.
 export const MASON_STARTER=Object.freeze({
   id:"npc-mason-wild",type:"npc",name:"Mason (male test)",modelKey:"mason",
-  x:-105,y:-108,behavior:"stationary",radius:0,locked:false,gender:"man",
+  x:-52,y:-42,behavior:"stationary",radius:0,locked:false,gender:"man",
   skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",
   outfit:"mannequin",pose:"standing"
 });
