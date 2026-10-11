@@ -52,6 +52,12 @@ bpy.ops.object.delete(use_global=False)
 donor=root/"assets"/"riley-sculpted-donor.glb"
 if donor.is_file():
     bpy.ops.import_scene.gltf(filepath=str(donor))
+    for donor_part in scene.objects:
+        if donor_part.type!="MESH":continue
+        mat=bpy.data.materials.new("Donor neutral anatomy diagnostic")
+        mat.diffuse_color=(.75,.73,.70,1)
+        donor_part.data.materials.clear()
+        donor_part.data.materials.append(mat)
     for label,pos in {"donor-front":(0,-4,.85),"donor-right":(4,0,.85)}.items():
         camera.location=pos
         camera.rotation_euler=(target-camera.location).to_track_quat("-Z","Y").to_euler()
@@ -72,7 +78,12 @@ for ob in scene.objects:
     print("RILEY_ORIGINAL_SOURCE_MESH",ob.name,
           "vertices",len(coords),
           "height",round(max(c.z for c in coords)-min(c.z for c in coords),3))
-    ob.hide_render=(ob.name.lower()!="low-poly")
+    ob.hide_render=("anatomical body" not in ob.name.lower())
+    if not ob.hide_render:
+        mat=bpy.data.materials.new("Original Riley cropped skin diagnostic")
+        mat.diffuse_color=(.78,.74,.70,1)
+        ob.data.materials.clear()
+        ob.data.materials.append(mat)
 for label,pos in {"source-skin-front":(0,-4,.85),"source-skin-right":(4,0,.85)}.items():
     camera.location=pos
     camera.rotation_euler=(target-camera.location).to_track_quat("-Z","Y").to_euler()
