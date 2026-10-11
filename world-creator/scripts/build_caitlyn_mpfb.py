@@ -125,7 +125,7 @@ def add_natural_smile(body):
         key=TargetService.load_target(body,str(found[side]),
             weight=.52,name="Caitlyn Natural Smile "+side.capitalize())
         if key is None: raise RuntimeError("Caitlyn smile morph could not be loaded: "+side)
-        key.value=.52
+        key.value=0.0  # Relaxed, neutral expression is the exported default; viewer can animate the smile.
         print("WVLRP_CAITLYN_SMILE_MORPH",side,key.name,key.value)
 
 
