@@ -1,0 +1,233 @@
+"""WVLRP Amy MPFB nude anatomical trial. Separate new adult game avatar.
+Uses free MPFB body morph system, CC0 stock skin + long red hair, Mixamo rig.
+No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requires visual QA.
+"""
+import bpy, os, sys, zipfile, json, math, traceback
+from pathlib import Path
+from mathutils import Vector
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "assets" / "amy-mpfb-trial.glb"
+PNG = ROOT / "assets" / "amy-mpfb-trial-preview.png"
+
+# MPFB is installed as a Blender extension into the workflow's local repository.
+from bl_ext.wvlrp_local.mpfb.services.humanservice import HumanService
+from bl_ext.wvlrp_local.mpfb.services.targetservice import TargetService
+from bl_ext.wvlrp_local.mpfb.services.assetservice import AssetService
+from bl_ext.wvlrp_local.mpfb.services.locationservice import LocationService
+from bl_ext.wvlrp_local.mpfb.services.exportservice import ExportService
+from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
+from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectProperties
+
+def load_system_pack():
+    pack = Path("/tmp/mh-system.zip")
+    if not pack.exists():
+        raise RuntimeError("Missing MakeHuman system CC0 asset pack")
+    root=Path(LocationService.get_user_data())
+    categories={"skins","hair","clothes","eyes","eyebrows","eyelashes","tongue","teeth","packs","proxymeshes","poses"}
+    count=0
+    with zipfile.ZipFile(pack) as z:
+        for member in z.infolist():
+            parts=Path(member.filename).parts
+            idx=next((i for i,p in enumerate(parts) if p in categories),None)
+            if idx is None or member.is_dir(): continue
+            rel=Path(*parts[idx:])
+            if ".." in rel.parts: continue
+            dest=root/rel
+            dest.parent.mkdir(parents=True,exist_ok=True)
+            with z.open(member) as src, open(dest,"wb") as dst:
+                import shutil
+                shutil.copyfileobj(src,dst)
+            count+=1
+    print("WVLRP_ASSETS_INSTALLED",count,root)
+    if count < 20:
+        raise RuntimeError("Asset pack contained fewer than 20 usable files")
+    AssetService.invalidate_pack_metadata_cache()
+
+def add_asset(basemesh, subdir, names, asset_type):
+    for name in names:
+        f=AssetService.find_asset_absolute_path(name,asset_subdir=subdir)
+        if f:
+            print("WVLRP_ASSET",asset_type,name)
+            return HumanService.add_mhclo_asset(f,basemesh,asset_type=asset_type,material_type="GAMEENGINE")
+    print("WVLRP_ASSET_MISSING",asset_type,names)
+    return None
+
+def tint(mesh, color, roughness=.78):
+    if not mesh: return
+    for i, mat in enumerate(mesh.data.materials):
+        if not mat: continue
+        mat=mat.copy()
+        mesh.data.materials[i]=mat
+        mat.use_nodes=True
+        for n in mat.node_tree.nodes:
+            if n.type=="BSDF_PRINCIPLED":
+                n.inputs["Base Color"].default_value=(*color,1)
+                n.inputs["Roughness"].default_value=roughness
+                n.inputs["Metallic"].default_value=0
+
+def clean_skin_material(body):
+    """UV-independent, uniformly shaded skin test until original textures are repaired.
+    Mesh and sculpt detail are kept; this fixes the large patchy/discolored UV areas.
+    """
+    skin=bpy.data.materials.new("Amy warm skin - clean opaque PBR")
+    skin.diffuse_color=(.72,.51,.43,1)
+    skin.use_nodes=True
+    p=skin.node_tree.nodes.get("Principled BSDF")
+    p.inputs["Base Color"].default_value=(.72,.51,.43,1)
+    p.inputs["Roughness"].default_value=.79
+    p.inputs["Metallic"].default_value=0
+    if "Subsurface Weight" in p.inputs: p.inputs["Subsurface Weight"].default_value=.06
+    if not body.data.materials: body.data.materials.append(skin)
+    else:
+        for i in range(len(body.data.materials)): body.data.materials[i]=skin
+    for face in body.data.polygons: face.use_smooth=True
+    print("WVLRP_CLEAN_SKIN",body.name,len(body.data.polygons))
+
+
+def polish_anatomical_shape(body):
+    """Subtle slim-waist/hip adjustment on the ORIGINAL continuous MPFB body mesh.
+    Keep morph-based bust contour intact; no separate breast geometry, no garment.
+    """
+    import math
+    verts=body.data.vertices
+    lo=min(v.co.z for v in verts)
+    hi=max(v.co.z for v in verts)
+    tall=max(hi-lo,0.001)
+    cx=(max(v.co.x for v in verts)+min(v.co.x for v in verts))*.5
+    for v in verts:
+        p=v.co
+        z=(p.z-lo)/tall
+        if abs(p.x-cx)>tall*.19: continue
+        waist=math.exp(-((z-.625)/.078)**2)
+        hips=math.exp(-((z-.52)/.080)**2)
+        narrow=.058*waist+.038*hips
+        p.x=cx+(p.x-cx)*(1-narrow)
+        p.y*=1-.027*waist-.020*hips
+    body.data.update()
+    print("WVLRP_AMY_CONTINUOUS_BODY_POLISHED",len(verts))
+
+def main():
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete(use_global=False)
+    load_system_pack()
+    h=HumanService.create_human()
+    h.name="Amy - MPFB original body mesh"
+    # Brand-new adult Amy character; parametric modeling, no photo likeness.
+    # Measurements are visual targets, not calibrated scanner measurements.
+    # The original trial mistakenly chose male (1.0) at the gender macro.
+    # MPFB macro cupsize 1.0 = maximum, firmness 0.0 = minimum.
+    # Use its actual continuous anatomy targets, rather than rigid add-on spheres.
+    for key,val in [("gender",0.0),("age",.40),("weight",.49),
+                    ("muscle",.34),("height",.55),("proportions",.48),
+                    ("cupsize",.96),("firmness",.42)]:
+        try:
+            HumanObjectProperties.set_value(key,val,entity_reference=h)
+            print("WVLRP_PROP",key,val)
+        except Exception as ex:
+            print("WVLRP_PROP_SKIPPED",key,str(ex)[:140])
+    TargetService.reapply_macro_details(h)
+    for key,expected in (("gender",0.0),("cupsize",.96),("firmness",.42)):
+        actual=float(HumanObjectProperties.get_value(key,entity_reference=h))
+        print("WVLRP_VERIFY_MACRO",key,actual)
+        if abs(actual-expected)>.01:
+            raise RuntimeError("Amy macro mismatch for "+key)
+
+    skin=AssetService.find_asset_absolute_path("young_caucasian_female.mhmat",asset_subdir="skins")
+    if not skin: raise RuntimeError("MakeHuman CC0 skin missing")
+    HumanService.set_character_skin(skin,h,skin_type="GAMEENGINE")
+    arm=HumanService.add_builtin_rig(h,"mixamo")
+    if arm is None: raise RuntimeError("MPFB Mixamo skeleton creation failed")
+    for sub,names,kind in [
+        ("eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes"),
+        ("eyebrows",["eyebrow001.mhclo"],"Eyebrows"),
+        ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
+        ("teeth",["teeth_base.mhclo"],"Teeth")]:
+        add_asset(h,sub,names,kind)
+    hair=add_asset(h,"hair",["long01.mhclo"],"Hair")
+    tint(hair,(.60,.225,.115),.78)
+
+    export_root=ExportService.create_character_copy(h,name_suffix="_wvrlp_ref")
+    exp=ObjectService.find_object_of_type_amongst_nearest_relatives(export_root,"Basemesh")
+    if not exp: raise RuntimeError("MPFB export body copy missing")
+    ExportService.bake_modifiers_remove_helpers(exp,
+        bake_masks=True,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+    clean_skin_material(exp)
+    polish_anatomical_shape(exp)
+    # Keep the complete unclothed basemesh: no garments, body masking, or
+    # mesh subtraction. The whole back/torso stays present during zoom.
+    assert len(exp.data.vertices)>10000, "Incomplete human body"
+    print("WVLRP_AMY_UNCLOTHED_BODY",len(exp.data.vertices),len(exp.data.polygons))
+
+    # Moderate MPFB firmness gives a softly gravity-shaped natural bust without
+    # excessively pulled-down lower contours; all anatomy is continuous.
+    # Lightweight idle animation sample so exported GLB includes usable skeletal data.
+    children=list(ObjectService.get_list_of_children(export_root))
+    rigs=[o for o in [export_root]+children if o.type=="ARMATURE"]
+    if not rigs: raise RuntimeError("Export copy is missing armature")
+    rig=rigs[0]
+    print("WVLRP_RIG",rig.name,len(rig.data.bones))
+    actionbone=next((b for b in rig.pose.bones if "Spine" in b.name or "spine" in b.name),None)
+    if actionbone is None: actionbone=next(iter(rig.pose.bones))
+    actionbone.rotation_mode="XYZ"
+    for frame,angle in [(1,0),(13,.015),(25,0),(37,-.015),(49,0)]:
+        actionbone.rotation_euler.x=angle
+        actionbone.keyframe_insert(data_path="rotation_euler",frame=frame,group="Idle")
+    if rig.animation_data and rig.animation_data.action:
+        rig.animation_data.action.name="Amy Idle - MPFB test"
+    bpy.context.scene.frame_set(1)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    chosen=[export_root]+list(ObjectService.get_list_of_children(export_root))
+    for obj in set(chosen): obj.select_set(True)
+    bpy.context.view_layer.objects.active=rig
+    OUT.parent.mkdir(parents=True,exist_ok=True)
+    bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",
+       use_selection=True,export_animations=True,export_nla_strips=False,
+       export_materials="EXPORT")
+    if not OUT.exists() or OUT.stat().st_size<100000:
+        raise RuntimeError("GLB missing or unexpectedly small")
+    # Structural verification: GLB includes body mesh, hair, skin + rig.
+    import struct
+    bs=OUT.read_bytes()
+    n,kind=struct.unpack_from("<II",bs,12)
+    meta=json.loads(bs[20:20+n].decode("utf-8"))
+    print("WVLRP_RESULT_GLB",OUT,OUT.stat().st_size,"skins",len(meta.get("skins",[])),
+        "joint_count",len(meta.get("skins",[{}])[0].get("joints",[])),
+        "animations",len(meta.get("animations",[])),"meshes",len(meta.get("meshes",[])))
+    assert len(meta.get("skins",[]))>=1, "No rigged skin in output"
+    assert len(meta["skins"][0].get("joints",[]))>=25, "Skeleton too small"
+    names=[n.get("name","") for n in meta.get("nodes",[])]
+    assert any("Amy" in n for n in names), "Amy body naming missing"
+    assert not any(("tank" in n.lower() or "shorts" in n.lower() or "dress" in n.lower()) for n in names), "Clothing accidentally exported"
+
+    # Best-effort reference preview; do not fail successfully exported GLB if display render fails.
+    try:
+        bpy.ops.object.select_all(action="SELECT")
+        bpy.ops.object.delete(use_global=False)
+        bpy.ops.import_scene.gltf(filepath=str(OUT))
+        for o in bpy.context.scene.objects:
+            if o.type=="ARMATURE": o.rotation_euler=(0,0,0)
+        def light(pos,energy,size):
+            d=bpy.data.lights.new("Studio",type="AREA");d.energy=energy;d.shape="DISK";d.size=size
+            o=bpy.data.objects.new("Studio light",d);bpy.context.collection.objects.link(o);o.location=pos
+            o.rotation_euler=(Vector((0,0,1))-o.location).to_track_quat("-Z","Y").to_euler()
+        light((2,-3,4),850,4);light((-2,1,3),650,3)
+        camdata=bpy.data.cameras.new("Preview ortho");cam=bpy.data.objects.new("Preview camera",camdata)
+        bpy.context.collection.objects.link(cam)
+        cam.location=(0,-4,1.35);cam.rotation_euler=(Vector((0,0,.85))-cam.location).to_track_quat("-Z","Y").to_euler()
+        camdata.type="ORTHO";camdata.ortho_scale=2.35;bpy.context.scene.camera=cam
+        world=bpy.data.worlds.new("Preview lighting");bpy.context.scene.world=world
+        world.use_nodes=True;world.node_tree.nodes["Background"].inputs["Color"].default_value=(.7,.73,.75,1)
+        world.node_tree.nodes["Background"].inputs["Strength"].default_value=.8
+        scene=bpy.context.scene
+        scene.render.engine="CYCLES";scene.cycles.samples=16
+        scene.render.resolution_x=700;scene.render.resolution_y=950;scene.render.resolution_percentage=100
+        scene.render.image_settings.file_format="PNG";scene.render.filepath=str(PNG)
+        bpy.ops.render.render(write_still=True)
+        print("WVLRP_PREVIEW_SAVED",PNG,PNG.stat().st_size)
+    except Exception:
+        print("WVLRP_RENDER_WARNING",traceback.format_exc())
+    print("WVLRP_AMY_MPFB_SUCCESS")
+
+if __name__=="__main__":main()
