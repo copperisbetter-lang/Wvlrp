@@ -36,6 +36,12 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 - GitHub Actions rebuilds three `.glb` files after `world-creator/scripts/make_riley_blonde.py` changes. **The code commit alone does not prove the finished assets or their on-phone appearance:** inspect Actions success, changed GLB commits and close-up screenshots before calling this a visual fix.
 - These are static mesh poses, not a rigged animated body. Photo-to-model generation and true cloth/hair simulation are not implemented. Existing deer positions and user-local world saves are not changed by the model build.
 
+### Latest Riley test: featureless adult mannequin
+
+- The latest source replaces the teal string bikini with an **unclothed, non-anatomical, smooth Barbie-style test mannequin**, including a matte skin surface and softened central pelvis, without detailed intimate anatomy. It retains the test figure’s blonde hair and subtle smile.
+- The model builder produces updated GLBs for standing, kneeling and hands-and-knees preview poses. These poses remain baked static meshes; the experimental soft hair sway in Babylon is not skeletal or cloth physics.
+- The source/build does not modify existing deer, other NPCs, world JSON, or the Ranger Station. Phone preview and actual generated files must be checked before claiming final visual quality.
+
 ## Critical safety and security boundaries
 
 - **Not an authenticated administrator console.** This repository is public, so the static editor page is also publicly viewable by anyone with the URL. The prototype never publishes changes to live gameplay; all edits are local to the visitor's browser.
