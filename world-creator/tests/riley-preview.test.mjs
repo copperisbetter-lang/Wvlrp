@@ -37,10 +37,12 @@ test("Approved design has stable size baseline for outfits",()=>{
   assert.equal(measurements.height_cm,170);
   assert.equal(measurements.bust_circumference_cm,112);
   assert.equal(measurements.waist_circumference_cm,70);
-  assert.equal(measurements.full_hip_circumference_cm,99);
+  assert.equal(measurements.full_hip_circumference_cm,88);
   assert.equal(measurements.shoulder_width_cm,40);
   assert.match(page,/id="rileyOutfitMeasurements"/);
   assert.match(page,/Bust 112 cm/);
+  assert.match(page,/Hips 88 cm/);
+  assert.match(studio,/approved-112-70-88/);
   assert.match(modelBuilder,/fullness=max\(\.075,min\(\.135/);
   assert.match(modelBuilder,/Riley flowing layered honey-blonde hair/);
   assert.match(modelBuilder,/boundary_points\(/);
@@ -57,5 +59,6 @@ test("Riley's rigged body uses a natural flesh shader without painting her face"
   assert.match(studio,/riley seamless neck transition/);
   assert.match(studio,/riley complexion matched continuous mannequin skin/);
   assert.match(studio,/applyRileyFleshTone\(result,o\.skin\)/);
-  assert.match(studio,/fair:"#E2AF9B"/);
+  assert.match(studio,/const sampledSkin=/);
+  assert.match(studio,/Keep exported body and neck hue matched to original face texture/);
 });
