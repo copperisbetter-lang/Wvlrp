@@ -58,3 +58,24 @@ if donor.is_file():
         scene.render.filepath=str(out/(label+".png"))
         bpy.ops.render.render(write_still=True)
         print("RILEY_DONOR_BASELINE_RENDER",label,scene.render.filepath)
+
+# Inspect the original textured Riley skin by itself, without the casual suit.
+# A continuous source body would eliminate the need to stitch incompatible necks.
+bpy.ops.object.select_all(action="DESELECT")
+for ob in list(scene.objects):
+    if ob.type in ("MESH","ARMATURE"): ob.select_set(True)
+bpy.ops.object.delete(use_global=False)
+bpy.ops.import_scene.gltf(filepath=str(root/"assets"/"riley-real.glb"))
+for ob in scene.objects:
+    if ob.type!="MESH":continue
+    coords=[ob.matrix_world @ v.co for v in ob.data.vertices]
+    print("RILEY_ORIGINAL_SOURCE_MESH",ob.name,
+          "vertices",len(coords),
+          "height",round(max(c.z for c in coords)-min(c.z for c in coords),3))
+    ob.hide_render=(ob.name.lower()!="low-poly")
+for label,pos in {"source-skin-front":(0,-4,.85),"source-skin-right":(4,0,.85)}.items():
+    camera.location=pos
+    camera.rotation_euler=(target-camera.location).to_track_quat("-Z","Y").to_euler()
+    scene.render.filepath=str(out/(label+".png"))
+    bpy.ops.render.render(write_still=True)
+    print("RILEY_SOURCE_SKIN_QA",label,scene.render.filepath)
