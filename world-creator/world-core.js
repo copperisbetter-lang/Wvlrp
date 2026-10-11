@@ -77,6 +77,8 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
+    modelKey:o.modelKey==="riley"?"riley":"",
+    pose:o.pose==="crouch"?"crouch":"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
   // Preserve the original fixed landmarks if an import omitted them.
