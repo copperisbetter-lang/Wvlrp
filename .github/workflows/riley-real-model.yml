@@ -1,0 +1,41 @@
+name: Install CC0 3D Riley base model
+on:
+  push:
+    paths:
+      - .github/workflows/riley-real-model.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download licensed GLB from original CC0 source
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/assets
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 240             -H 'Accept: application/octet-stream'             -o world-creator/assets/riley-real.glb             'https://www.innerscene.com/api/library/riley-3d-person-woman-standing-8d40398f/download'
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('world-creator/assets/riley-real.glb')
+          data = p.read_bytes()
+          assert len(data) > 1_000_000, f"Unexpectedly small model: {len(data)} bytes"
+          assert data[:4] == b'glTF', "Not a valid GLB header"
+          print(f"Validated GLB: {len(data):,} bytes")
+          PY
+      - name: Commit game asset without changing gameplay pages
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-real.glb
+          if git diff --cached --quiet; then
+            echo "GLB already installed"
+          else
+            git commit -m "Add CC0 textured adult character as Riley preview foundation"
+            git push origin HEAD:main
+          fi
