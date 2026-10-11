@@ -36,9 +36,8 @@ let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
 const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
-// Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
-// This is NOT yet a seamless skeletal transition or a fully rigged character.
-// Newly generated single skinned character, with bones and named animation clips.
+// Riley uses one GLB with real armature skinning and named animation clips.
+// Movements are skeletal prototypes, not yet polished motion capture.
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=rigged-skeleton-v1";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -52,7 +51,7 @@ function builtInRileyFile(pose="standing"){
     const request=fetch(url).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
       const bytes=await response.arrayBuffer();
-      if(bytes.byteLength<1_000_000)throw Error("Character asset is incomplete");
+      if(bytes.byteLength<100_000)throw Error("Rigged character asset is incomplete");
       return new File([bytes],url.split("?")[0].split("/").at(-1),{type:"model/gltf-binary"});
     }).catch(err=>{rileyAssetFiles.delete(url);throw err;});
     rileyAssetFiles.set(url,request);
@@ -423,7 +422,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     }
     for(const mesh of meshes)track(mesh);
     fallback.dispose(false,true);
-    status("Detailed GLB preview loaded for "+o.name);
+    if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
     fallback.setEnabled(o.modelKey!=="riley");
     status("Unable to load 3D character: "+String(err.message||err).slice(0,160));
