@@ -1,62 +1,62 @@
 Riley sculpted-body build report
-source_commit: e4191148b217ef38d865155b66b7f5ad9ea41310
+source_commit: 9a97e30fa78eeed133a9780fe76779aa096344d1
 result: success
-checked_utc: 2026-10-11T05:14:02Z
+checked_utc: 2026-10-11T05:16:20Z
 last_blender_log_lines:
 /usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:25: SyntaxWarning: invalid escape sequence '\.'
   regex_dot = re.compile("\.")
 /usr/share/blender/scripts/addons/io_scene_gltf2/io/exp/gltf2_io_image_data.py:27: SyntaxWarning: invalid escape sequence '\]'
   new_name = "".join([char for char in adjusted_name if char not in "!#$&'()*+,/:;<>?@[\]^`{|}~"])
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.13s
+glTF import finished in 0.12s
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.23s
+glTF import finished in 0.42s
 RILEY_SCULPT_DONOR [('Avery | anatomical body', 70985, 'Avery | anatomical body.rig'), ('Icosphere', 42, '')]
-RILEY_CHEST_SURFACE_POLISH 2201 passes 18
-RILEY_ABDOMEN_POLISH smoothed_vertices 2284
+RILEY_CHEST_SURFACE_POLISH 2201 passes 0
+RILEY_ABDOMEN_POLISH smoothed_vertices 2280
 RILEY_FACE_SKIN_REFERENCE (0.8784, 0.702, 0.5725)
 RILEY_REAL_SCULPT_INTEGRATED verts 46904 sculpt_height 1.68 preserved_face_parts 5 head_transition_cm 144.0
 RILEY_HAIR_HEAD_ANCHOR (0.0158, -0.0209, 1.6762)
 RILEY_HAIR_LOCKS 90 longest_ends_below_shoulder True
 RILEY_NECK_JOIN_DIAGNOSTIC body_z 1.4219 face_z 1.4403 gap 0.0184 body_outline (0.0001, 0.0769, 0.12, 0.035) face_outline (0.0179, 0.0147, 0.048, 0.055)
 RILEY_NECK_BRIDGE 576 512
-05:13:45 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
-05:13:45 | INFO: Starting glTF 2.0 export
-05:13:45 | INFO: Extracting primitive: eyebrow006
-05:13:45 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: eyelashes01
-05:13:45 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: low-poly
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: Riley scalp fitted blonde crown
-05:13:45 | INFO: Primitives created: 4
-05:13:45 | INFO: Extracting primitive: base.002
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: Riley neck skin bridge geometry
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: base
-05:13:45 | INFO: Primitives created: 1
-05:13:45 | INFO: Extracting primitive: teeth_base
-05:13:45 | INFO: Primitives created: 1
-05:13:47 | INFO: Finished glTF 2.0 export in 2.748305082321167 s
+05:15:45 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+05:15:45 | INFO: Starting glTF 2.0 export
+05:15:45 | INFO: Extracting primitive: eyebrow006
+05:15:45 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:15:45 | INFO: Primitives created: 1
+05:15:45 | INFO: Extracting primitive: eyelashes01
+05:15:45 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:15:45 | INFO: Primitives created: 1
+05:15:45 | INFO: Extracting primitive: low-poly
+05:15:45 | INFO: Primitives created: 1
+05:15:45 | INFO: Extracting primitive: Riley scalp fitted blonde crown
+05:15:45 | INFO: Primitives created: 4
+05:15:45 | INFO: Extracting primitive: base.002
+05:15:46 | INFO: Primitives created: 1
+05:15:46 | INFO: Extracting primitive: Riley neck skin bridge geometry
+05:15:46 | INFO: Primitives created: 1
+05:15:46 | INFO: Extracting primitive: base
+05:15:46 | INFO: Primitives created: 1
+05:15:46 | INFO: Extracting primitive: teeth_base
+05:15:46 | INFO: Primitives created: 1
+05:15:50 | INFO: Finished glTF 2.0 export in 4.8192055225372314 s
 
 RILEY_RIG_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-rigged-v1.glb 11529044 bones 29 body_vertices 46904 facial_parts 5 height_cm 170 bust_cm 112 waist_cm 70 hip_cm 99
 Blender 4.0.2
 
 Blender quit
 last_preview_render_lines:
-glTF import finished in 0.31s
+glTF import finished in 0.56s
 RILEY_QA_RENDER front /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-front.png
 RILEY_QA_RENDER right /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-right.png
 RILEY_QA_RENDER back /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/riley-back.png
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.22s
+glTF import finished in 0.41s
 RILEY_DONOR_BASELINE_RENDER donor-front /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/donor-front.png
 RILEY_DONOR_BASELINE_RENDER donor-right /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/donor-right.png
 Data are loaded, start creating Blender stuff
-glTF import finished in 0.07s
+glTF import finished in 0.11s
 RILEY_ORIGINAL_SOURCE_MESH bob01 vertices 2929 height 0.25
 RILEY_ORIGINAL_SOURCE_MESH eyebrow006 vertices 124 height 0.012
 RILEY_ORIGINAL_SOURCE_MESH eyelashes01 vertices 250 height 0.016
