@@ -5,6 +5,7 @@ Does not replace the existing Riley character or world data. Generated result re
 import bpy, os, sys, zipfile, json, math, traceback
 from pathlib import Path
 from mathutils import Vector
+from face_materials import preserve_photo_skin, verify_photo_skin_glb
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "chrissy-mpfb-trial.glb"
@@ -67,22 +68,8 @@ def tint(mesh, color, roughness=.78):
                 n.inputs["Metallic"].default_value=0
 
 def clean_skin_material(body):
-    """UV-independent, uniformly shaded skin test until original textures are repaired.
-    Mesh and sculpt detail are kept; this fixes the large patchy/discolored UV areas.
-    """
-    skin=bpy.data.materials.new("Chrissy warm skin - clean opaque PBR")
-    skin.diffuse_color=(.72,.51,.43,1)
-    skin.use_nodes=True
-    p=skin.node_tree.nodes.get("Principled BSDF")
-    p.inputs["Base Color"].default_value=(.72,.51,.43,1)
-    p.inputs["Roughness"].default_value=.79
-    p.inputs["Metallic"].default_value=0
-    if "Subsurface Weight" in p.inputs: p.inputs["Subsurface Weight"].default_value=.06
-    if not body.data.materials: body.data.materials.append(skin)
-    else:
-        for i in range(len(body.data.materials)): body.data.materials[i]=skin
-    for face in body.data.polygons: face.use_smooth=True
-    print("WVLRP_CLEAN_SKIN",body.name,len(body.data.polygons))
+    """Use the original licensed UV skin detail, not a flat color swatch."""
+    return preserve_photo_skin(body, "Chrissy")
 
 
 def garment(base, name, zlo, zhi, max_x_fraction, color, thickness=0.006):
@@ -208,6 +195,7 @@ def main():
     bs=OUT.read_bytes()
     n,kind=struct.unpack_from("<II",bs,12)
     meta=json.loads(bs[20:20+n].decode("utf-8"))
+    verify_photo_skin_glb(meta, "Chrissy")
     print("WVLRP_RESULT_GLB",OUT,OUT.stat().st_size,"skins",len(meta.get("skins",[])),
         "joint_count",len(meta.get("skins",[{}])[0].get("joints",[])),
         "animations",len(meta.get("animations",[])),"meshes",len(meta.get("meshes",[])))
