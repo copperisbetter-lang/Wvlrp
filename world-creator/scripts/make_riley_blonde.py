@@ -19,6 +19,9 @@ OUTPUT = SOURCE / ("riley-blonde-standing.glb" if MODE == "standing" else "riley
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(INPUT))
+print("RILEY_SCENE_OBJECTS", [(ob.name,ob.type, len(ob.data.bones) if ob.type=="ARMATURE" else "") for ob in bpy.context.scene.objects])
+for rig in [ob for ob in bpy.context.scene.objects if ob.type=="ARMATURE"]:
+    print("RILEY_RIG_BONES", [(b.name, list(map(lambda v:round(v,2), b.head_local)), list(map(lambda v:round(v,2), b.tail_local))) for b in rig.data.bones][:150])
 original = [ob for ob in bpy.context.scene.objects if ob.type == "MESH"]
 if not original:
     raise RuntimeError("Original Riley GLB did not import any mesh")
