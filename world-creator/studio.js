@@ -38,16 +38,16 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
 // This is NOT yet a seamless skeletal transition or a fully rigged character.
-const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=riley-attached-long-wavy-v5";
-const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=riley-attached-long-wavy-v5";
-const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=riley-attached-long-wavy-v5";
+// Newly generated single skinned character, with bones and named animation clips.
+const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=rigged-skeleton-v1";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
 function rileyMotionFor(id){if(!rileyMotion.has(id))rileyMotion.set(id,{heading:0,autoTurn:false});return rileyMotion.get(id);}
 const rileyAssetFiles=new Map();
 function builtInRileyFile(pose="standing"){
-  const url=pose==="crouch"?RILEY_KNEELING_GLB:pose==="allfours"?RILEY_ALL_FOURS_GLB:RILEY_REAL_GLB;
+  // All poses are animations on one skeleton, not warped duplicate GLBs.
+  const url=RILEY_RIGGED_GLB;
   if(!rileyAssetFiles.has(url)){
     const request=fetch(url).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
@@ -379,9 +379,8 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
     const isRiley=o.modelKey==="riley";
-    const realKneeling=isRiley&&o.pose==="crouch"&&file.name==="riley-blonde-kneeling.glb";
-    const realAllFours=isRiley&&o.pose==="allfours"&&file.name==="riley-blonde-allfours.glb";
-    const naturalHeight=realAllFours ? 0.93 : realKneeling ? 1.29 : 1.70;
+    // Bone animation changes the pose, not the base mesh or measured height.
+    const naturalHeight=1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
     // Imported GLB parent transforms can shift the mesh after parenting.
@@ -404,22 +403,30 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     if(isRiley){
       const state=rileyMotionFor(o.id);
       node.rotation.y=state.heading;
-      // Broad layered hair ribbons retain their scalp-root pivots from the GLB.
-      // Sway ONLY Riley's modeled hair, never the face or other NPCs.
-      const hairLocks=meshes.filter(m=>m.name?.includes("Riley soft blonde") && m.rotation)
-        .map((m,i)=>({
-          mesh:m,phase:i*0.73,
-          baseEuler:m.rotation.clone(),
-          baseQuaternion:m.rotationQuaternion?.clone()||null
-        }));
-      liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose,hairLocks,lastHairUpdate:0,lastHeading:state.heading});
+      const skeletons=result.skeletons||[];
+      if(file.name==="riley-rigged-v1.glb" && (!skeletons.length ||
+          !skeletons.some(sk=>(sk.bones?.length||0)>=25))) {
+        throw Error("Riley character has no verified articulated skeleton");
+      }
+      const anims=result.animationGroups||[];
+      const actionForPose=pose=>pose==="crouch"?"Riley Kneel":
+        pose==="allfours"?"Riley HandsAndKnees":"Riley Idle";
+      const action=anims.find(g=>g.name===actionForPose(o.pose)) ||
+        anims.find(g=>g.name?.toLowerCase().includes(actionForPose(o.pose).toLowerCase().replace("riley ","")));
+      if(action)action.start(o.pose==="standing",1.0,action.from,action.to,false);
+      liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose,
+        skeletons,animations:anims,lastHeading:state.heading});
+      if(file.name==="riley-rigged-v1.glb") {
+        status("Riley rigged character loaded: "+skeletons[0].bones.length+
+          " bones; "+anims.length+" skeletal animations");
+      }
     }
     for(const mesh of meshes)track(mesh);
     fallback.dispose(false,true);
     status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
-    fallback.setEnabled(true);
-    status("Unable to load this GLB; showing built-in figure. "+String(err.message||err).slice(0,130));
+    fallback.setEnabled(o.modelKey!=="riley");
+    status("Unable to load 3D character: "+String(err.message||err).slice(0,160));
   });
 }
 function refresh3d() {
@@ -477,15 +484,9 @@ function refresh3d() {
           if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          if(o.pose==="crouch"||o.pose==="allfours"){
-            // If a new pose file isn't ready, retain an actual textured character.
-            // Do not switch to a ball-joint doll.
-            builtInRileyFile("standing").then(file=>{
-              if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
-            }).catch(error=>{
-              if(thisBuild===previewBuildId){fallback.setEnabled(true);status("Riley asset unavailable: "+error.message);}
-            });
-          } else {fallback.setEnabled(true);status("Riley asset unavailable: "+err.message);}
+          // Never reintroduce the retired balloon/doll or old damaged GLBs.
+          fallback.setEnabled(false);
+          status("New skeletal Riley asset not available yet: "+err.message);
         });
       }
     }else{
@@ -630,27 +631,12 @@ function animateRiley(now){
     diff-=Math.PI;
     rig.node.rotation.y+=diff*Math.min(1,delta*10);
     // Small natural-looking idle weight shift: no false claim of skeletal animation.
-    rig.node.position.y=rig.baseY+Math.sin(t*2.1+id.length)*.008;
-    rig.node.rotation.z=Math.sin(t*1.15+id.length)*.009;
-    // Light secondary hair motion at 24fps to stay efficient on phones.
-    // This is a preview illusion, not simulated strands or skeletal physics.
-    const turnShift=Math.max(-.035,Math.min(.035,(rig.node.rotation.y-rig.lastHeading)*-.42));
-    rig.lastHeading=rig.node.rotation.y;
-    if(t-rig.lastHairUpdate>=1/24){
-      rig.lastHairUpdate=t;
-      for(const strand of rig.hairLocks||[]){
-        if(!strand.mesh||strand.mesh.isDisposed())continue;
-        const swish=Math.sin(t*1.9+strand.phase)*.022+
-                    Math.sin(t*.8+strand.phase*1.4)*.010+turnShift;
-        if(strand.baseQuaternion){
-          strand.mesh.rotationQuaternion=strand.baseQuaternion.multiply(
-            BABYLON.Quaternion.RotationYawPitchRoll(swish*.55,swish*.25,swish));
-        }else{
-          strand.mesh.rotation.z=strand.baseEuler.z+swish;
-          strand.mesh.rotation.x=strand.baseEuler.x+swish*.25;
-        }
-      }
+    if(rig.pose==="standing"){
+      rig.node.position.y=rig.baseY+Math.sin(t*2.1+id.length)*.004;
+      rig.node.rotation.z=Math.sin(t*1.15+id.length)*.003;
     }
+    // Scalp and real hair are attached to the Head bone in the GLB.
+    // No free-floating wig oscillation or per-strand transform hacks.
   }
 }
 $("expand3d").onclick=()=>{
