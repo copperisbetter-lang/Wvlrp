@@ -1,4 +1,4 @@
-name: Build Caitlyn MPFB unclothed redhead test
+name: Build Caitlyn MPFB platinum-blonde rigged test
 
 on:
   push:
@@ -70,8 +70,9 @@ jobs:
           assert len(doc['skins'][0]['joints'])>=25
           assert len(doc.get('meshes',[]))>=2
           names=[a.get('name','') for a in doc.get('animations',[])]
-          assert len(names)>=4, 'No four named Caitlyn skeletal clips: '+str(names)
+          assert len(names)>=5, 'No five named Caitlyn skeletal clips: '+str(names)
           assert any('HandsAndKnees' in name for name in names), 'Missing hands-and-knees animation'
+          assert any('ElbowsAndKnees' in name for name in names), 'Missing elbows-and-knees animation'
           print('WVLRP_CAITLYN_MPFB_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
           print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
           PY
