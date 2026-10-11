@@ -1,12 +1,12 @@
 {
-  "version": "riley-rigged-v2-design-112",
-  "status": "112 cm bust, 70 cm waist and 99 cm hip are requested design targets for outfit planning, not physical circumference verified on a calibrated 3D mesh.",
+  "version": "riley-rigged-v3-approved-slim-hips-88",
+  "status": "Approved Riley reference targets: 170 cm tall; 112 cm full natural bust; 70 cm waist; 88 cm slim hips. Dimensions are design targets, not calibrated mesh circumferences.",
   "height_cm": 170,
   "bust_circumference_cm": 112,
   "underbust_circumference_cm": 80,
   "waist_circumference_cm": 70,
-  "high_hip_circumference_cm": 87,
-  "full_hip_circumference_cm": 99,
+  "high_hip_circumference_cm": 84,
+  "full_hip_circumference_cm": 88,
   "shoulder_width_cm": 40,
   "back_shoulder_to_waist_cm": 42,
   "sleeve_length_cm": 58,
@@ -14,10 +14,10 @@
   "outseam_cm": 101,
   "neck_circumference_cm": 33,
   "upper_arm_circumference_cm": 27,
-  "thigh_circumference_cm": 56,
+  "thigh_circumference_cm": 53,
   "calf_circumference_cm": 35,
   "foot_length_cm": 25,
-  "front_profile": "Natural adult feminine shape with full, gravity-softened bust, relaxed waist/hips, wavy soft blonde hair; seamless neutral mannequin base layer, barefoot",
+  "front_profile": "Approved adult feminine reference: 112 cm full soft gravity-shaped bust (preserve), 70 cm waist, slimmer 88 cm hips and tapered upper thighs, matching warm face/body skin tone, softly flowing layered blonde hair; seamless neutral mannequin base, barefoot.",
   "unit_scale": "1 Blender unit = 1 metre",
   "construction": "Single body and skeleton. Outfit dimensions are baseline body measurements, NOT finished garment dimensions. Add ease per garment type.",
   "source_views": [
@@ -25,5 +25,5 @@
     "left profile",
     "rear"
   ],
-  "reference_note": "Use original front, side, back rendered images from conversation for manual proportion and texture matching; views are AI generated rather than calibrated identical camera photographs."
+  "reference_note": "Oct 11 2026 user-approved final AI-rendered front/side/back/overhead turnaround is visual target, not automatically reconstructed 3D. Keep face/body complexion consistent and leave 112 cm bust unchanged when slimming hips."
 }
