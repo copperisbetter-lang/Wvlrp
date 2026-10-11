@@ -60,7 +60,7 @@ export function trailVertical(y,col,seed=1) {
     (noise(col*.7,Math.floor(half)*.7,seed+71)-.5)*2;
 }
 export function newWorld() {
-  return {version:1,seed:"WVLRP-Appalachia-01",objects:STARTER_ANCHORS.map(o=>({...o})),updatedAt:null};
+  return {version:1,seed:"WVLRP-Appalachia-01",objects:[],updatedAt:null};
 }
 export function sanitizedWorld(value) {
   if(!value||typeof value!=="object"||!Array.isArray(value.objects)) throw Error("Invalid world JSON");
@@ -81,11 +81,7 @@ export function sanitizedWorld(value) {
     pose:["standing","crouch","allfours"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
-  // Preserve the original fixed landmarks if an import omitted them.
-  for(const anchor of STARTER_ANCHORS) {
-    const i=objects.findIndex(o=>o.id===anchor.id);
-    if(i>=0)objects[i]={...anchor};else objects.unshift({...anchor});
-  }
+  // A clean world has no automatically placed landmarks; the user can add them later.
   return {version:1,seed,objects,updatedAt:typeof value.updatedAt==="string"?value.updatedAt:null};
 }
 export function makeRng(seed) {
