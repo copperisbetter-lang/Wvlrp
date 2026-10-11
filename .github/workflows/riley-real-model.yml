@@ -1,4 +1,4 @@
-name: Install CC0 3D Riley base model
+name: Install CC0 Riley realistic 3D pose assets
 on:
   push:
     paths:
@@ -14,28 +14,37 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Download licensed GLB from original CC0 source
+      - name: Fetch two licensed CC0 meshes of the same Riley character
         run: |
           set -euo pipefail
           mkdir -p world-creator/assets
-          curl --fail --location --retry 3 --connect-timeout 20 --max-time 240             -H 'Accept: application/octet-stream'             -o world-creator/assets/riley-real.glb             'https://www.innerscene.com/api/library/riley-3d-person-woman-standing-8d40398f/download'
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 \
+            -H 'Accept: application/octet-stream' \
+            -o world-creator/assets/riley-real.glb \
+            'https://www.innerscene.com/api/library/riley-3d-person-woman-standing-8d40398f/download'
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 240 \
+            -H 'Accept: application/octet-stream' \
+            -o world-creator/assets/riley-kneeling.glb \
+            'https://www.innerscene.com/api/library/kneeling-upright-3d-person-kneeling-reaching-b3db252b/download'
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('world-creator/assets/riley-real.glb')
-          data = p.read_bytes()
-          assert len(data) > 1_000_000, f"Unexpectedly small model: {len(data)} bytes"
-          assert data[:4] == b'glTF', "Not a valid GLB header"
-          print(f"Validated GLB: {len(data):,} bytes")
+          for name in ('riley-real.glb', 'riley-kneeling.glb'):
+              path = Path('world-creator/assets') / name
+              data = path.read_bytes()
+              assert len(data) > 1_000_000, f'{name} unexpectedly small: {len(data)} bytes'
+              assert data[:4] == b'glTF', f'{name} does not have a valid GLB header'
+              assert int.from_bytes(data[8:12], 'little') == len(data), f'{name} invalid GLB length'
+              print(f'Validated {name}: {len(data):,} bytes')
           PY
-      - name: Commit game asset without changing gameplay pages
+      - name: Install model assets in world creator without touching other site pages
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/riley-real.glb
+          git add world-creator/assets/riley-real.glb world-creator/assets/riley-kneeling.glb
           if git diff --cached --quiet; then
-            echo "GLB already installed"
+            echo 'Both GLB assets already installed'
           else
-            git commit -m "Add CC0 textured adult character as Riley preview foundation"
+            git commit -m "Install matching CC0 standing and kneeling Riley 3D meshes"
             git push origin HEAD:main
           fi
