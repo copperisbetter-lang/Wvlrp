@@ -95,6 +95,137 @@ def add_soft_waves(hair):
     print("WVLRP_CAITLYN_HAIR_WAVES",len(vs))
 
 
+def replace_cape_with_layered_hair(hair_obj, body, rig):
+    """Replace only Caitlyn's stock hair SHELL with scalp-fitted, tapered locks.
+
+    Original body and rig remain intact. Hair is weighted to the same Head
+    bone, so all five existing body poses keep the hairstyle attached.
+    """
+    import random
+    from math import pi, sin, cos
+    from mathutils import Vector
+    if not hair_obj or hair_obj.type != "MESH":
+        raise RuntimeError("Caitlyn flowing hair: no export hair mesh")
+    head_bone=next((b.name for b in rig.data.bones
+                    if b.name.lower().split(":")[-1]=="head"),None)
+    if not head_bone:
+        raise RuntimeError("Caitlyn flowing hair: no rig head bone")
+    body_pts=[body.matrix_world @ v.co for v in body.data.vertices]
+    zlo=min(v.z for v in body_pts); zhi=max(v.z for v in body_pts)
+    height=zhi-zlo
+    # Only the upper head is used as a hair placement landmark.
+    top=[v for v in body_pts if v.z>zhi-.105*height
+         and abs(v.x)<.12*height]
+    if len(top)<60:
+        raise RuntimeError("Caitlyn hair: unable to find head scalp")
+    crown=[v for v in top if v.z>zhi-.070*height]
+    xmid=(min(v.x for v in crown)+max(v.x for v in crown))*.5
+    ymid=(min(v.y for v in crown)+max(v.y for v in crown))*.5
+    rng=random.Random(110126)
+    inv=hair_obj.matrix_world.inverted_safe()
+    vertices=[]; faces=[]; indexes=[]
+    def p(world):
+        vertices.append(tuple(inv @ world))
+        return len(vertices)-1
+    def polygon(inds,material):
+        faces.append(tuple(inds));indexes.append(material)
+    # Thin scalp foundation, only to conceal gaps between follicles.
+    crown_top=zhi+.002*height
+    N=64;R=11
+    pole=p(Vector((xmid,ymid+.012*height,crown_top)))
+    rings=[]
+    for j in range(1,R+1):
+        th=(pi/2)*j/R
+        r=[]
+        for k in range(N):
+            a=2*pi*k/N
+            r.append(p(Vector((xmid+height*.062*sin(th)*cos(a),
+                       ymid+height*(.012+.054*sin(th)*sin(a)),
+                       zhi+height*(.002+.060*(cos(th)-1))))))
+        rings.append(r)
+    for k in range(N):
+        polygon((pole,rings[0][k],rings[0][(k+1)%N]),0)
+    for j in range(R-1):
+        for k in range(N):
+            n=(k+1)%N
+            polygon((rings[j][k],rings[j+1][k],
+                     rings[j+1][n],rings[j][n]),0)
+    # Actual three-dimensional, tapered locks: no single flat curtain mesh.
+    def lock(root,length,spread,wave,phase,width,tone):
+        previous=None
+        sections=24;sides=5
+        for step in range(sections):
+            t=step/(sections-1)
+            # Subtle waves build down the lengths, naturally tapered ends.
+            center=Vector((root.x+spread*t+wave*sin(4.6*pi*t+phase)*t,
+                           root.y+height*.010*t+wave*.57*cos(4.2*pi*t+phase)*t,
+                           root.z-length*t))
+            rad=width*max(.075,(1-t)**.82)
+            ring=[]
+            for k in range(sides):
+                angle=2*pi*k/sides
+                ring.append(p(center+Vector((rad*cos(angle),
+                                             .66*rad*sin(angle),0))))
+            if previous:
+                for k in range(sides):
+                    n=(k+1)%sides
+                    polygon((previous[k],previous[n],ring[n],ring[k]),tone)
+            previous=ring
+    # Crown/back/side layers. Each staggered strand has a distinct endpoint,
+    # thickness and wave phase; varied platinum shading avoids plastic shine.
+    for layer in range(4):
+        for i in range(55):
+            a=pi*(i+.37*(layer%2))/54
+            side=cos(a)
+            back=max(0.,sin(a))
+            root=Vector((xmid+height*(.054-.004*layer)*side,
+                         ymid+height*(.009+.047*back),
+                         zhi-height*(.037+.009*layer)))
+            length=height*(.220+.040*layer+rng.uniform(-.028,.063))
+            lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
+                 height*rng.uniform(.005,.013),rng.uniform(0,2*pi),
+                 height*rng.uniform(.0015,.00275),
+                 (i+layer*2)%4)
+    # Separate wisps frame BOTH cheeks; none cover the eye openings.
+    for side in (-1,1):
+        for i in range(23):
+            t=i/22
+            root=Vector((xmid+side*height*(.052+.008*t),
+                         ymid-height*(.022-.011*t),
+                         zhi-height*(.042+.022*t)))
+            lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
+                 side*height*(.010+.018*t),
+                 height*rng.uniform(.003,.011),rng.uniform(0,2*pi),
+                 height*rng.uniform(.0012,.0021),(i+1)%4)
+    mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
+    mesh.from_pydata(vertices,[],faces)
+    mesh.update()
+    hair_obj.data=mesh
+    shades=[(.86,.84,.79),(.95,.93,.86),(.79,.77,.73),(.91,.89,.82)]
+    for j,rgb in enumerate(shades):
+        mat=bpy.data.materials.new("Caitlyn platinum ash blonde flowing hair "+str(j))
+        mat.use_nodes=True
+        mat.diffuse_color=(*rgb,1.)
+        bsdf=mat.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value=(*rgb,1.)
+        bsdf.inputs["Roughness"].default_value=.76+j*.013
+        bsdf.inputs["Metallic"].default_value=0.
+        mesh.materials.append(mat)
+    for face,mi in zip(mesh.polygons,indexes):
+        face.material_index=mi
+        face.use_smooth=True
+    hair_obj.vertex_groups.clear()
+    group=hair_obj.vertex_groups.new(name=head_bone)
+    group.add(list(range(len(vertices))),1.,"REPLACE")
+    for modifier in hair_obj.modifiers:
+        if modifier.type=="ARMATURE": modifier.object=rig
+    if not any(m.type=="ARMATURE" for m in hair_obj.modifiers):
+        hair_obj.modifiers.new("Caitlyn hair follows head rig","ARMATURE").object=rig
+    print("WVLRP_CAITLYN_FLOWING_STRAND_HAIR",len(vertices),len(faces),
+          "head_bone",head_bone,"world_height",round(height,3),
+          "removed_stock_cape",True)
+
+
 def clean_skin_material(body):
     """Use the original licensed UV skin detail, not a flat color swatch."""
     return preserve_photo_skin(body, "Caitlyn")
@@ -335,6 +466,10 @@ def main():
     if not rigs: raise RuntimeError("Caitlyn export copy has no armature")
     rig=rigs[0]
     print("WVLRP_RIG",rig.name,len(rig.data.bones))
+    # Replace only the stiff long01 hair shell on the export copy.
+    export_hair=next((ob for ob in [export_root]+children
+                      if ob.type=="MESH" and "long01" in ob.name.lower()),None)
+    replace_cape_with_layered_hair(export_hair,exp,rig)
 
     def normbone(name):
         return ''.join(c for c in name.lower() if c.isalnum()).replace("mixamorig","")
