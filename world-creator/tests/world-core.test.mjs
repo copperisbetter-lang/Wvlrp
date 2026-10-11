@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CELL, seedNumber, creekY, heightAt, trailHorizontal, trailVertical,
-  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER
+  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER
 } from "../world-core.js";
 
 test("world seed makes terrain deterministic",()=>{
@@ -108,9 +108,31 @@ test("A customized Caitlyn is not duplicated or repositioned by a future install
 
 
 test("Every avatar can save the new elbows-and-knees pose in the shared world schema",()=>{
-  for(const modelKey of ["caitlyn","riley","amy","chrissy"]){
+  for(const modelKey of ["caitlyn","riley","amy","chrissy","mason"]){
     const world=sanitizedWorld({objects:[{id:"pose-"+modelKey,type:"npc",modelKey,pose:"elbows",x:0,y:0}]});
     assert.equal(world.objects[0].pose,"elbows");
     assert.equal(world.objects[0].modelKey,modelKey);
   }
+});
+
+test("Mason gets his own visible starter location without altering earlier test characters",()=>{
+  const world=newWorld();
+  addTestCharacters(world);addCaitlyn(world);
+  const originals=world.objects.map(o=>[o.id,o.x,o.y,o.modelKey]);
+  assert.equal(addMason(world).length,1);
+  assert.equal(addMason(world).length,0);
+  assert.deepEqual(world.objects.slice(0,originals.length).map(o=>[o.id,o.x,o.y,o.modelKey]),originals);
+  const m=world.objects.find(o=>o.id==="npc-mason-wild");
+  assert.equal(m.modelKey,"mason");
+  assert.ok(Math.abs(m.x)<=86&&Math.abs(m.y)<=86,"Mason must be in the initial 180x180m preview");
+  assert.deepEqual([m.x,m.y],[MASON_STARTER.x,MASON_STARTER.y]);
+  const persisted=sanitizedWorld(JSON.parse(JSON.stringify(world)));
+  assert.equal(persisted.objects.find(o=>o.id===m.id).modelKey,"mason");
+});
+test("A personally placed Mason is not duplicated or moved",()=>{
+  const world=newWorld();
+  world.objects.push({id:"own-mason",type:"npc",name:"Mason",modelKey:"mason",pose:"elbows",x:400,y:234});
+  assert.equal(addMason(world).length,0);
+  const person=sanitizedWorld(JSON.parse(JSON.stringify(world))).objects[0];
+  assert.deepEqual([person.x,person.y,person.modelKey,person.pose],[400,234,"mason","elbows"]);
 });
