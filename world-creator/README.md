@@ -21,12 +21,14 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 - Preview a small 3D terrain area and 3D figures using Babylon.js. Select a character and choose **Inspect selected** for a close view. Use the ranger redhead preset for an adult woman with long wavy red hair and Ranger Station clothing. You may optionally load a legally obtained, textured `.glb` person model for the selected character in your current browser session (under 45 MB) to achieve significantly greater realism.
 - Save metadata to *this browser's* localStorage and import/export a portable JSON blueprint.
 
-## Temporary Riley test figure (October 10)
+## Riley — textured 3D preview upgrade (October 10)
 
-- Click **Add Riley test figure** in the 3D preview controls. This adds exactly one NPC near the current map location, focuses the 3D camera, and does not alter existing deer or other people.
-- Riley is an **optional** custom Babylon shape model in `riley-model.js` with blonde wavy hair, teal cropped top, tan short shorts, white sneakers, and three-dimensional hips/back. Use **Riley: Change pose** to alternate standing and a hands-and-knees pose. Orbit with a drag, zoom with pinch/3D buttons, or **Expand 3D** on mobile.
-- Existing people and the approved Ranger Station character are unaffected. Riley's test selection and pose survive browser-local saves and JSON export/import; her geometry lives in code, not in the JSON.
-- **Quality limitation:** This is an experimental procedural 3D figure, not a photoreal reconstruction of the generated blonde on the Ranger Station steps and not a skeletal/rigged animated person. Pose changes are immediate static shape re-creations, not crawling motion or a natural get-down/get-up animation. Creating the approved visual look as a production asset still requires 3D modeling/textures and skeletal rigging. Live visual testing on the user's device remains pending.
+- Click **Add Riley — textured 3D** near the 3D preview. This creates one NPC near the map center, focuses the orbit camera, and leaves existing deer, NPCs, quests and Ranger Station untouched.
+- Riley's **standing** preview now automatically loads a genuine, textured, full-body CC0 adult female GLB from `world-creator/assets/riley-real.glb`. It is real rotatable 3D geometry, not a photograph composited over spheres.
+- Source: Innerscene's [Riley – 3D Person, Woman Standing](https://www.innerscene.com/tools/library/3d-parts/riley-3d-person-woman-standing-8d40398f), adapted from MakeHuman CC0 assets and released to the public domain (CC0). The asset is downloaded by `.github/workflows/riley-real-model.yml`, validated as a GLB, and committed locally for same-origin loading; it does not require browsing to another model site on the phone.
+- The original `riley-model.js` is retained as a loading/error fallback, **and for the on-hands-and-knees static pose**. The real sourced GLB is a standing static mesh, not a fully rigged character. Changing pose from standing to crouching temporarily uses a simpler figure; it does not animate the detailed GLB.
+- **Appearance honesty:** This freely licensed starter figure is not yet an exact recreation of the approved blonde reference (white fitted top, beige short shorts, white trainers, khaki cap and specific face/body proportions). Custom sculpting, hair geometry, clothing and face textures are still required to match that image, along with real skeletal animations. Do not advertise the exact photoreal likeness as finished.
+- Keep using `Inspect selected`, `＋ Zoom closer`, drag-to-orbit, and `Expand 3D`. Riley's position, identity and pose stay in local browser saves/exports; the shared mesh is part of the site source and need not be copied into world JSON.
 
 ## Critical safety and security boundaries
 
