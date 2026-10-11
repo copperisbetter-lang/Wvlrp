@@ -132,10 +132,17 @@ for o in body_candidates:
     # Seal the upper-neck cross-section: seen from overhead, an open donor
     # boundary can expose an empty torso through the shoulder/neck opening.
     # The actual neck bridge overlaps this cap, so it is not an outside shell.
-    boundary=[e for e in bm.edges if e.is_boundary]
-    if boundary:
-        bmesh.ops.holes_fill(bm,edges=boundary,sides=0)
-        print("RILEY_SEALED_NECK_CUT",o.name,len(boundary))
+    # This CC0 mesh also has thousands of open seams at wrists, fingers,
+    # ankles, and body folds. NEVER fill *all* boundary edges: doing that
+    # generated enormous triangles and destroyed the entire avatar surface.
+    # The seam repair must target the upper neck cut only.
+    neck_rim=[e for e in bm.edges if e.is_boundary and
+              all(v.co.z>head_cut-.030 and abs(v.co.x)<.14
+                  and abs(v.co.y)<.17 for v in e.verts)]
+    if neck_rim and len(neck_rim)<400:
+        bmesh.ops.holes_fill(bm,edges=neck_rim,sides=0)
+    print("RILEY_TARGETED_NECK_RIM",o.name,len(neck_rim),
+          "total_open_edges",sum(e.is_boundary for e in bm.edges))
     bm.to_mesh(o.data);bm.free()
 
 for o in donor_objects:
@@ -403,7 +410,9 @@ for lock in range(40):
         x0=(1 if local%2==0 else -1)*(.124+.012*(local//2))
         length=.345+.120*(.5+.5*sin(lock*2.7))
     else:
-        x0=-.170+.340*(local+.5)/30
+        # Roots tuck beneath the original hair cap and fan outward only
+        # below the ears. Do not leave straight, square-edged hair cards.
+        x0=-.102+.204*(local+.5)/30
         length=.435+.155*(.5+.5*sin(lock*2.7))
     phase=lock*.73
     n_steps=26;n_width=4
@@ -412,10 +421,13 @@ for lock in range(40):
         z=head_top-.120-length*t
         wave=.018*sin(4*pi*t+phase)*smooth(t)
         # Lower layers fan out a little; the crown remains rooted in the scalp.
-        x=x0+wave+(x0/.17)*.022*smooth(t)
-        y=(-.022+.048*smooth(t) if face_lock else .102+.063*smooth(t))
+        x=x0+wave+(x0/.102)*.053*smooth(t)
+        y=(-.022+.048*smooth(t) if face_lock else .075+.095*smooth(t))
         y+=.011*sin(2*pi*t+phase)*smooth(t)
-        width=(.016 if face_lock else .022)*(1-.66*t*t)*(.88+.12*sin(phase))
+        # The cards begin nearly point-thin under the scalp, widen into
+        # overlapping locks and soften to a slender tapered end.
+        width=(.016 if face_lock else .023)*(0.08+.92*smooth(t/.24))
+        width*=max(.12,1-.88*t*t)*(.88+.12*sin(phase))
         for k in range(n_width+1):
             u=k/n_width*2-1
             strand_vertices.append((x+u*width,
