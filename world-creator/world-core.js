@@ -77,7 +77,7 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
-    modelKey:["riley","amy","chrissy","caitlyn"].includes(o.modelKey)?o.modelKey:"",
+    modelKey:["riley","amy","chrissy","caitlyn","mason"].includes(o.modelKey)?o.modelKey:"",
     pose:["standing","bend","crouch","allfours","elbows"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
@@ -125,6 +125,21 @@ export function addCaitlyn(world){
   if(world.objects.length>=5000||world.objects.some(o=>
     o.id===CAITLYN_STARTER.id||(o.type==="npc"&&o.modelKey==="caitlyn")))return [];
   const person={...CAITLYN_STARTER};
+  world.objects.push(person);
+  return [person];
+}
+// Independent adult male rig, separate from every existing character.
+export const MASON_STARTER=Object.freeze({
+  id:"npc-mason-wild",type:"npc",name:"Mason (male test)",modelKey:"mason",
+  x:-105,y:-108,behavior:"stationary",radius:0,locked:false,gender:"man",
+  skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",
+  outfit:"mannequin",pose:"standing"
+});
+export function addMason(world){
+  if(!world||!Array.isArray(world.objects))throw Error("A valid world is required");
+  if(world.objects.length>=5000||world.objects.some(o=>
+    o.id===MASON_STARTER.id||(o.type==="npc"&&o.modelKey==="mason")))return [];
+  const person={...MASON_STARTER};
   world.objects.push(person);
   return [person];
 }
