@@ -321,7 +321,8 @@ for ob in body_parts:
             # Broad hips, glutes and upper thighs; no influence at the face.
             pelvis=math.exp(-((height-.445)/.145)**4)
             waist=.38*math.exp(-((height-.650)/.070)**2)
-            side=1-smooth01((xdist-.155)/.120)
+            edge=max(0.0,min(1.0,(xdist-.155)/.120))
+            side=1-edge*edge*(3-2*edge)
             weight=min(1.,(pelvis+waist)*max(0.,side))
             if weight<.01:continue
             avg=sum((positions[n] for n in adjacency[index]),Vector((0,0,0)))/len(adjacency[index])
