@@ -846,6 +846,60 @@ def main():
                             score=metrics()[0]+.0001*(angle-old)**2
                             if score<best[0]: best=(score,angle)
                         limb_set(limbs,best[1])
+                if use_elbows:
+                    # Independently solve EACH supporting elbow onto the
+                    # knee contact plane. The weighted whole-body optimizer
+                    # formerly left forearm origins ~6 cm above the knees
+                    # while still passing its loose support tolerance.
+                    for side in ("l","r"):
+                        upper=bones[side+"arm"]
+                        base=math.degrees(upper.rotation_euler.x)
+                        candidates=[base+d for d in range(-48,49,2)]
+                        results=[]
+                        for angle in candidates:
+                            upper.rotation_euler.x=math.radians(angle)
+                            bpy.context.view_layer.update()
+                            elbow_point=joint(side+"forearm")
+                            knee_level=(joint("lshin").z+joint("rshin").z)/2
+                            shoulder=joint(side+"arm")
+                            forward=shoulder.y-elbow_point.y
+                            # Small aesthetic preference for the previous
+                            # shoulder pitch, but physical elbow support wins.
+                            score=1500*(elbow_point.z-knee_level)**2
+                            score+=.000015*(angle-base)**2
+                            score+=8*max(0,-.06-forward)**2
+                            results.append((score,angle))
+                        best_angle=min(results)[1]
+                        upper.rotation_euler.x=math.radians(best_angle)
+                        bpy.context.view_layer.update()
+                        print("WVLRP_CAITLYN_ELBOW_ARM_FIT",side,
+                              "from",round(base,1),"to",round(best_angle,1),
+                              "elbow_knee_gap_m",
+                              round(joint(side+"forearm").z-
+                                  (joint("lshin").z+joint("rshin").z)/2,4))
+                        # An elbow-supported pose rests both FOREARMS.
+                        # Bring each palm end close to that same ground plane
+                        # by rotating the forearm about its elbow joint;
+                        # this does not disturb the fitted elbow position.
+                        fore=bones[side+"forearm"]
+                        original_angle=math.degrees(fore.rotation_euler.x)
+                        fore_candidates=[]
+                        for angle in [original_angle+d for d in range(-88,89,4)]:
+                            fore.rotation_euler.x=math.radians(angle)
+                            bpy.context.view_layer.update()
+                            wrist=joint(side+"hand",True)
+                            elbow=joint(side+"forearm")
+                            target_z=elbow.z+.022
+                            fore_candidates.append(
+                                (100*(wrist.z-target_z)**2+
+                                 .000008*(angle-original_angle)**2,
+                                 angle))
+                        fore.rotation_euler.x=math.radians(min(fore_candidates)[1])
+                        bpy.context.view_layer.update()
+                        print("WVLRP_CAITLYN_FOREARM_FIT",side,
+                              "palm_above_elbow_m",
+                              round(joint(side+"hand",True).z-
+                                    joint(side+"forearm").z,4))
                 _,error,hip,knee,contacts,wrists=metrics()
                 # Anchor the same ground elevation used by the standing pose.
                 # Measure the response of root/hips local Z rather than assuming
