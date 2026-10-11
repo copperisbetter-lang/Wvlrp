@@ -74,10 +74,10 @@ def mat(name, rgb, rough=0.82):
         p.inputs["Base Color"].default_value = (*rgb, 1)
         p.inputs["Roughness"].default_value = rough
     return m
-hair = [mat("Riley | honey blonde", (.65,.42,.15),.76),
-        mat("Riley | warm blonde highlights", (.91,.72,.35),.75),
-        mat("Riley | sandy blonde", (.77,.56,.23),.79),
-        mat("Riley | golden lowlights", (.49,.31,.13),.83)]
+hair = [mat("Riley | honey blonde", (.73,.54,.31),.72),
+        mat("Riley | soft champagne highlights", (.90,.74,.49),.67),
+        mat("Riley | sandy blonde", (.78,.61,.39),.73),
+        mat("Riley | soft ash-gold lowlights", (.58,.43,.27),.76)]
 skin = mat("Riley | warm natural skin - legs", (.79,.56,.43))
 shorts = mat("Riley | loose beige cotton shorts",(.55,.49,.34))
 seam = mat("Riley | shorts stitching",(.75,.69,.50))
@@ -212,36 +212,100 @@ for j in range(RINGS-1):
         n=(k+1)%STEPS
         faces.append((start+k,start+n,start+STEPS+n,start+STEPS+k))
 mesh("Riley fitted blonde hair crown",verts,faces,hair[1])
+# Soft overlapping locks instead of 100+ spaghetti-shaped cylindrical strands.
+# Each tapered 3D ribbon has a scalp-root pivot so the browser can gently sway it.
+# Spread the layered curtain behind the face; leave the eyes and smile unobstructed.
 random.seed(57012 if MODE=="standing" else 57013)
-for i in range(92):
-    # Parted wavy layers wrap the back and both sides of her face.
-    angle = (-.12 + (i/91)*1.24)*pi
-    sx=head_x+cap_rx*.92*cos(angle)
-    sy=head_y+cap_ry*.90*sin(angle)
-    ht=head_center_z+H*(.026+.013*random.random())
-    length=H*(.235+.075*random.random())
-    sway=H*(.008+.010*random.random())
-    rad=H*(.0034+.0015*random.random())
-    rings=[]
-    for k in range(12):
-        t=k/11
-        xx=sx + H*.009*cos(angle)*t+sway*sin(t*pi*2.0+i*.31)*t
-        yy=sy + H*.022*sin(angle)*t+sway*.55*sin(t*pi*1.7+i*.43)*t
-        zz=ht-length*t
-        r=rad*(.94-.70*t)
-        rings.append((xx,yy,zz,r,r*.83))
-    loft("Riley layered blonde hair "+str(i),rings,hair[i%len(hair)],9)
+for layer in range(2):
+    strands=50 if layer==0 else 38
+    for i in range(strands):
+        angle=(-.055+(i+.38*layer)/(strands-1)*1.11)*pi
+        outward=Vector((cos(angle),sin(angle),0))
+        tangent=Vector((-sin(angle),cos(angle),0))
+        root=Vector((head_x+cap_rx*(.91+layer*.065)*outward.x,
+                     head_y+cap_ry*(.90+layer*.06)*outward.y,
+                     head_center_z+H*(.017+.014*random.random()-layer*.025)))
+        length=H*(.24+.085*random.random()+.038*(1-layer))
+        width=H*(.012+.0038*random.random())
+        phase=2*pi*random.random()
+        verts=[]
+        faces=[]
+        sections=17
+        for k in range(sections):
+            t=k/(sections-1)
+            # Gentle, broad waves and softly feathered, irregular ends.
+            sway=H*(.0065*sin(2*pi*1.45*t+phase)+.011*sin(2*pi*.77*t+phase*.57))*t
+            center=root+Vector((outward.x*H*(.004+.022*t)+tangent.x*sway,
+                                outward.y*H*(.004+.028*t)+tangent.y*sway,
+                                -length*t))
+            width_t=width*(.82+.17*sin(pi*t))*max(.035,(1-t)**.62)
+            for lane in (-1,0,1):
+                v=center+tangent*(lane*width_t)
+                v+=outward*(H*.0025*(1-lane*lane)*sin(pi*t))
+                verts.append(tuple(v-root))
+        for k in range(sections-1):
+            for lane in range(2):
+                a=k*3+lane
+                faces.extend(((a,a+1,a+4),(a,a+4,a+3)))
+        lock=mesh("Riley soft blonde layer %d strand %d"%(layer,i),verts,faces,
+                  hair[(i+2*layer)%len(hair)])
+        lock.location=root
+# Face-framing waves blend from the sides of the crown, not from a floating halo.
 for side in (-1,1):
-    for j in range(12):
-        sx=head_x+side*H*(.056+.003*j/12)
-        sy=head_y-H*(.011+j*.001)
-        rings=[]
-        for k in range(12):
-            t=k/11
-            rings.append((sx+side*H*(.006*t+.004*sin(pi*t)),
-                          sy-H*.008*sin(pi*t),head_center_z+H*.014-H*(.245+.04*j/12)*t,
-                          H*.0037*(1-.70*t),H*.0037*(1-.70*t)))
-        loft(f"Riley blonde face fringe {side} {j}",rings,hair[(j+1)%4],8)
+    for i in range(13):
+        frac=i/12
+        root=Vector((head_x+side*H*(.045+.008*frac),
+                     head_y-H*(.020+.013*frac),
+                     head_center_z+H*(.021-.015*frac)))
+        length=H*(.185+.105*frac)
+        verts=[];faces=[]
+        for k in range(14):
+            t=k/13
+            center=root+Vector((side*H*(.012*t+.007*sin(pi*t)),
+                                -H*.007*sin(pi*t),
+                                -length*t))
+            halfwidth=H*(.0075+.003*frac)*max(.04,(1-t)**.7)
+            for lane in (-1,0,1):
+                verts.append(tuple(center-root+Vector((lane*halfwidth,0,
+                            H*.0015*(1-lane*lane)*sin(pi*t)))))
+        for k in range(13):
+            for lane in range(2):
+                a=k*3+lane
+                faces.extend(((a,a+1,a+4),(a,a+4,a+3)))
+        lock=mesh("Riley soft blonde face wave %d %d"%(side,i),
+                  verts,faces,hair[(i+1)%len(hair)])
+        lock.location=root
+
+# A restrained, asymmetric mouth-corner lift suggests a cheeky half-smile.
+# Only the existing textured facial geometry is adjusted; no pasted-on mouth.
+face_sculpted=0
+mouth_z=eye_z-H*.044
+front_candidates=[p.y for p in head_vertices if abs(p.z-mouth_z)<H*.025
+                  and abs(p.x-head_x)<H*.065]
+if front_candidates:
+    front_y=min(front_candidates)
+    for ob in [o for o in bpy.context.scene.objects if o.type=="MESH"
+               and ("anatomical body" in o.name.lower() or o.name.lower()=="low-poly")]:
+        mx=ob.matrix_world.copy()
+        inv=mx.inverted_safe()
+        for v in ob.data.vertices:
+            p=mx @ v.co
+            dx=(p.x-head_x)/H
+            dz=(p.z-mouth_z)/H
+            wing=math.exp(-((abs(dx)-.028)/.017)**2)
+            vertical=math.exp(-(dz/.018)**2)
+            near_front=math.exp(-((p.y-front_y)/(H*.040))**2)
+            amount=wing*vertical*near_front
+            if amount<.025:continue
+            # The right corner rises slightly higher: playful, not a big grin.
+            p.z+=H*.0039*amount*(1.16 if dx>0 else .84)
+            p.x+=H*.0012*amount*(1 if dx>0 else -1)
+            p.y-=H*.0007*amount
+            v.co=inv @ p
+            face_sculpted+=1
+        ob.data.update()
+print("RILEY_SOFT_HAIR_AND_SMIRK",MODE,
+      "layers",88,"fringe",26,"face_vertices",face_sculpted)
 
 # The old build only dressed the stock broad torso, so shorts did not change
 # her underlying silhouette. Sculpt ALL skin and clothes together into a
@@ -254,6 +318,8 @@ def smooth01(x):
 shoulder_line=eye_z-H*.125
 adjusted=0
 for ob in [obj for obj in bpy.context.scene.objects if obj.type=="MESH"]:
+    if ob.name.startswith(("Riley soft blonde", "Riley fitted blonde hair")):
+        continue # Do not squash the hair layers while slimming the source figure.
     mx=ob.matrix_world.copy()
     inv=mx.inverted_safe()
     for vertex in ob.data.vertices:
