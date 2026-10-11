@@ -35,6 +35,8 @@
       <label for="deerCount">Total deer to scatter</label><input id="deerCount" type="number" min="1" max="500" value="100">
       <label for="herdSize">Deer per herd</label><input id="herdSize" type="number" min="2" max="8" value="4">
       <button id="scatter" class="primary" type="button">Scatter around map center</button>
+      <button id="removeAllDeer" class="danger" type="button">Remove all deer from this world</button>
+      <p class="subtle">Clears only deer from this device's saved world. People, buildings, and other objects remain. You can scatter new deer whenever you're ready.</p>
       <p class="subtle">Default is small herds, with some deer roaming widely. You can adjust each deer afterward.</p>
     </section>
     <section class="section">
@@ -93,6 +95,6 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./studio.js?v=rileyslim2"></script>
+<script type="module" src="./studio.js?v=deerclear1"></script>
 </body>
 </html>
