@@ -66,6 +66,25 @@ def tint(mesh, color, roughness=.78):
                 n.inputs["Roughness"].default_value=roughness
                 n.inputs["Metallic"].default_value=0
 
+def clean_skin_material(body):
+    """UV-independent, uniformly shaded skin test until original textures are repaired.
+    Mesh and sculpt detail are kept; this fixes the large patchy/discolored UV areas.
+    """
+    skin=bpy.data.materials.new("Chrissy warm skin - clean opaque PBR")
+    skin.diffuse_color=(.72,.51,.43,1)
+    skin.use_nodes=True
+    p=skin.node_tree.nodes.get("Principled BSDF")
+    p.inputs["Base Color"].default_value=(.72,.51,.43,1)
+    p.inputs["Roughness"].default_value=.79
+    p.inputs["Metallic"].default_value=0
+    if "Subsurface Weight" in p.inputs: p.inputs["Subsurface Weight"].default_value=.06
+    if not body.data.materials: body.data.materials.append(skin)
+    else:
+        for i in range(len(body.data.materials)): body.data.materials[i]=skin
+    for face in body.data.polygons: face.use_smooth=True
+    print("WVLRP_CLEAN_SKIN",body.name,len(body.data.polygons))
+
+
 def garment(base, name, zlo, zhi, max_x_fraction, color, thickness=0.006):
     # Extract a real anatomical BODY SURFACE patch rather than making a balloon shell.
     # It shares the body's rig vertex groups and stays skinned to the same armature.
@@ -112,13 +131,23 @@ def main():
     h.name="Chrissy - MPFB original body mesh"
     # The render sheet is the target (front/profile/rear). This is an approximate
     # parametric first pass, NOT a reconstruction of facial pixels or calibrated bust.
-    for key,val in [("gender",1.0),("age",.34),("weight",.42),("muscle",.48),("height",.55)]:
+    # The original trial mistakenly chose male (1.0) at the gender macro.
+    # MPFB macro cupsize 1.0 = maximum, firmness 0.0 = minimum.
+    # Use its actual continuous anatomy targets, rather than rigid add-on spheres.
+    for key,val in [("gender",0.0),("age",.40),("weight",.49),
+                    ("muscle",.34),("height",.55),("proportions",.48),
+                    ("cupsize",.98),("firmness",.12)]:
         try:
             HumanObjectProperties.set_value(key,val,entity_reference=h)
             print("WVLRP_PROP",key,val)
         except Exception as ex:
             print("WVLRP_PROP_SKIPPED",key,str(ex)[:140])
     TargetService.reapply_macro_details(h)
+    for key,expected in (("gender",0.0),("cupsize",.98),("firmness",.12)):
+        actual=float(HumanObjectProperties.get_value(key,entity_reference=h))
+        print("WVLRP_VERIFY_MACRO",key,actual)
+        if abs(actual-expected)>.01:
+            raise RuntimeError("Chrissy macro mismatch for "+key)
 
     skin=AssetService.find_asset_absolute_path("young_caucasian_female.mhmat",asset_subdir="skins")
     if not skin: raise RuntimeError("MakeHuman CC0 skin missing")
@@ -139,11 +168,14 @@ def main():
     if not exp: raise RuntimeError("MPFB export body copy missing")
     ExportService.bake_modifiers_remove_helpers(exp,
         bake_masks=True,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+    clean_skin_material(exp)
     top=garment(exp,"Chrissy taupe fitted tank - reference trial",.575,.835,.129,(.55,.51,.47))
     shorts=garment(exp,"Chrissy taupe short drawstring shorts - reference trial",.435,.575,.163,(.51,.47,.43),.011)
     top.parent=export_root
     shorts.parent=export_root
 
+    # The tank and shorts follow the built-in breast/hip morphology. Gravity-soft
+    # lower breast contour comes from the MPFB firmness target, not animations.
     # Lightweight idle animation sample so exported GLB includes usable skeletal data.
     children=list(ObjectService.get_list_of_children(export_root))
     rigs=[o for o in [export_root]+children if o.type=="ARMATURE"]
