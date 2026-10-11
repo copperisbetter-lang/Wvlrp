@@ -226,6 +226,137 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
           "removed_stock_cape",True)
 
 
+def soften_caitlyn_face_only(body):
+    """Very restrained adult facial contour correction; NO torso/limb edits.
+
+    Model eyes are not enlarged. Preserve original CC0 skin UV, mesh topology,
+    head rig and both natural-smile morphs.
+    """
+    from math import exp
+    vs=body.data.vertices
+    low=min(v.co.z for v in vs); high=max(v.co.z for v in vs)
+    h=high-low
+    center=(min(v.co.x for v in vs)+max(v.co.x for v in vs))*.5
+    # Model-space bounds and soft continuous falloffs prevent visible ridges.
+    eye_z=high-.069*h
+    front=min(v.co.y for v in vs if eye_z-.018*h<v.co.z<eye_z+.018*h
+              and abs(v.co.x-center)<.061*h)
+    changed=0
+    for v in vs:
+        pos=v.co
+        dx=(pos.x-center)/h
+        dz=(pos.z-eye_z)/h
+        if dz> .055 or dz<-.112 or abs(dx)>.095:
+            continue
+        forward=exp(-((pos.y-front)/(.074*h))**2)
+        # Heavy brow ridges are gently pressed back, not cut away.
+        brow=exp(-((dz-.020)/.016)**2)*exp(-((abs(dx)-.029)/.041)**2)
+        # Slight nose bridge refinement; do NOT alter overall eye width.
+        bridge=exp(-((dz+.025)/.028)**2)*exp(-(abs(dx)/.031)**4)
+        # Taper the hard lower jaw while retaining recognizable anatomy.
+        jaw=exp(-((dz+.083)/.028)**2)*exp(-((abs(dx)-.053)/.046)**2)
+        cheek=exp(-((dz+.033)/.026)**2)*exp(-((abs(dx)-.056)/.025)**2)
+        before=(pos.x,pos.y)
+        pos.x=center+(pos.x-center)*(1.-forward*(.035*bridge+.048*jaw))
+        pos.y+=h*forward*(.0018*brow+.0011*bridge-.0012*cheek)
+        if abs(pos.x-before[0])+abs(pos.y-before[1])>1e-7:
+            changed+=1
+    body.data.update()
+    print("WVLRP_CAITLYN_SOFT_FACE_ONLY",changed,
+          "body_and_eye_size_unchanged",True)
+
+
+def add_light_blue_eyes(export_root, body, rig):
+    """Natural-sized muted blue irises following the head; eyes not resized."""
+    from math import sin,cos,pi
+    from mathutils import Vector
+    objs=[export_root]+list(ObjectService.get_list_of_children(export_root))
+    eyes=[ob for ob in objs if ob.type=="MESH"
+          and (("high-poly" in ob.name.lower()) or
+               (("eye" in ob.name.lower()) and
+                not any(x in ob.name.lower() for x in ("eyebrow","eyelash"))))]
+    if not eyes:
+        print("WVLRP_CAITLYN_EYE_WARNING no eye asset: leave original eyes")
+        return
+    body_coords=[v.co for v in body.data.vertices]
+    h=max(v.z for v in body_coords)-min(v.z for v in body_coords)
+    mid=(max(v.x for v in body_coords)+min(v.x for v in body_coords))*.5
+    inv=body.matrix_world.inverted_safe()
+    pts=[inv@(ob.matrix_world@v.co) for ob in eyes for v in ob.data.vertices]
+    # Separate two spherical eyeballs spatially; never scale either.
+    vertices=[];polys=[];mat_ids=[]
+    radius_limit=.0070*h
+    for side in (-1,1):
+        side_pts=[p for p in pts if (p.x-mid)*side>.013*h and
+                  p.z>max(v.z for v in body_coords)-.16*h]
+        if len(side_pts)<28:
+            print("WVLRP_CAITLYN_IRIS_SIDE_WARNING",side,len(side_pts))
+            continue
+        xmin=min(p.x for p in side_pts);xmax=max(p.x for p in side_pts)
+        zmin=min(p.z for p in side_pts);zmax=max(p.z for p in side_pts)
+        cx=(xmin+xmax)*.5;cz=(zmin+zmax)*.5
+        # Front-most eyeball point, not the forehead or eyelid.
+        fore=[p for p in side_pts if abs(p.x-cx)<(xmax-xmin)*.24
+              and abs(p.z-cz)<(zmax-zmin)*.24]
+        if len(fore)<4:fore=side_pts
+        yf=min(p.y for p in fore)
+        r=min(radius_limit,(xmax-xmin)*.18,(zmax-zmin)*.18)
+        if r<.002*h:continue
+        # Curved iris follows the existing eye sphere to avoid sticker look.
+        def vert(rad,ang):
+            t=rad/r
+            vertices.append((cx+rad*cos(ang),yf-.0010*h+.0011*h*t*t,
+                             cz+rad*sin(ang)))
+            return len(vertices)-1
+        rings=[]
+        for fraction in (.12,.32,.44,.64,.84,1.):
+            rings.append([vert(r*fraction,2*pi*k/40) for k in range(40)])
+        vertices.append((cx,yf-.0010*h,cz));center_id=len(vertices)-1
+        for k in range(40):
+            n=(k+1)%40
+            polys.append((center_id,rings[0][k],rings[0][n]))
+            mat_ids.append(0)
+        # Dark natural pupil, soft iris fibers, and a thin blue outer ring.
+        for j in range(len(rings)-1):
+            for k in range(40):
+                n=(k+1)%40
+                polys.append((rings[j][k],rings[j+1][k],
+                              rings[j+1][n],rings[j][n]))
+                mat_ids.append((0,1,2,1,3)[j])
+    if not polys:
+        print("WVLRP_CAITLYN_EYE_WARNING no acceptable iris anchor")
+        return
+    mesh=bpy.data.meshes.new("Caitlyn natural light-blue iris geometry")
+    mesh.from_pydata(vertices,[],polys);mesh.update()
+    names_colors=[
+        ("dark realistic pupils",(.075,.105,.13)),
+        ("light blue iris",(.46,.69,.81)),
+        ("soft iris fibers",(.32,.53,.67)),
+        ("subtle limbal ring",(.18,.36,.51))
+    ]
+    for name,rgb in names_colors:
+        m=bpy.data.materials.new("Caitlyn "+name)
+        m.use_nodes=True;m.diffuse_color=(*rgb,1.)
+        bsdf=m.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value=(*rgb,1.)
+        bsdf.inputs["Roughness"].default_value=.32
+        bsdf.inputs["Metallic"].default_value=0.
+        m.use_backface_culling=False
+        mesh.materials.append(m)
+    for p,i in zip(mesh.polygons,mat_ids):p.material_index=i
+    obj=bpy.data.objects.new("Caitlyn light blue eyes (unchanged size)",mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.parent=export_root
+    obj.matrix_world=body.matrix_world.copy()
+    head=next((b.name for b in rig.data.bones if
+               b.name.lower().split(":")[-1]=="head"),None)
+    if not head: raise RuntimeError("Caitlyn eye iris requires head bone")
+    g=obj.vertex_groups.new(name=head);g.add(list(range(len(vertices))),1.,"REPLACE")
+    obj.modifiers.new("Caitlyn iris head motion","ARMATURE").object=rig
+    print("WVLRP_CAITLYN_LIGHT_BLUE_IRISES",len(polys),
+          "eyes_unchanged_size",True)
+
+
 def clean_skin_material(body):
     """Use the original licensed UV skin detail, not a flat color swatch."""
     return preserve_photo_skin(body, "Caitlyn")
@@ -450,6 +581,7 @@ def main():
     clean_skin_material(exp)
     polish_anatomical_shape(exp)
     check_and_repair_pelvic_surface(exp)
+    soften_caitlyn_face_only(exp)
     add_natural_smile(exp)
     # Keep the complete unclothed basemesh: no garments, body masking, or
     # mesh subtraction. The whole back/torso stays present during zoom.
@@ -470,6 +602,7 @@ def main():
     export_hair=next((ob for ob in [export_root]+children
                       if ob.type=="MESH" and "long01" in ob.name.lower()),None)
     replace_cape_with_layered_hair(export_hair,exp,rig)
+    add_light_blue_eyes(export_root,exp,rig)
 
     def normbone(name):
         return ''.join(c for c in name.lower() if c.isalnum()).replace("mixamorig","")
