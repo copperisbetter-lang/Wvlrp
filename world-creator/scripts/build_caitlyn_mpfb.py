@@ -392,6 +392,70 @@ def main():
                 pb=bones.get(kind)
                 if pb is not None:
                     pb.rotation_euler[axis]=math.radians(degrees)
+            # Correct the two most noticeable FK posing errors from the first
+            # live 3D review: knees folding the wrong way, and the neck/head
+            # tipping around when the torso is pitched forward on all fours.
+            #
+            # Mixamo rigs do not all share the same local Euler X handedness.
+            # Select knee bend from the *evaluated joint positions*, not from
+            # an assumed sign. In Caitlyn's Blender coordinates the back of
+            # the body is +Y; knees should flex with the ankles behind them.
+            if name in ("Caitlyn Kneel", "Caitlyn HandsAndKnees") and frame > 1:
+                back_world=Vector((0,1,0))
+                for part in ("lshin","rshin"):
+                    shin=bones[part]
+                    amount=abs(math.degrees(shin.rotation_euler.x))
+                    trials=[]
+                    for sign in (-1,1):
+                        shin.rotation_euler.x=math.radians(sign*amount)
+                        bpy.context.view_layer.update()
+                        knee_world=rig.matrix_world @ shin.matrix.translation
+                        ankle_world=rig.matrix_world @ (shin.matrix @ Vector((0,shin.bone.length,0)))
+                        posterior=(ankle_world-knee_world).dot(back_world)
+                        trials.append((posterior,sign))
+                    posterior,sign=max(trials,key=lambda v:v[0])
+                    shin.rotation_euler.x=math.radians(sign*amount)
+                    print("WVLRP_CAITLYN_KNEE_DIRECTION",name,part,
+                          "chosen_degrees",round(sign*amount,1),
+                          "posterior_m",round(posterior,4),
+                          "candidates",[(round(v,3),s) for v,s in trials])
+                # With the torso pitched nearly horizontal, offset its
+                # rotation at the neck/head. The previous -12/+7 degree
+                # combination let the face roll forward far too much.
+                # Pick small pitch-only rotations that keep the head upright
+                # and facing the same direction as in the rest pose; no
+                # 180-degree yaw or roll is permitted.
+                if name=="Caitlyn HandsAndKnees" and bones["neck"] and bones["head"]:
+                    neck=bones["neck"];head=bones["head"]
+                    rw=rig.matrix_world.to_3x3()
+                    rest_to_head=head.bone.matrix_local.to_3x3().inverted()
+                    up_ref=Vector((0,0,1))
+                    front_ref=Vector((0,-1,0))
+                    up_local=rest_to_head @ (rw.inverted() @ up_ref)
+                    front_local=rest_to_head @ (rw.inverted() @ front_ref)
+                    candidates=[]
+                    for neck_deg in (-55,-45,-35,-25,-15,0,15,25,35,45,55):
+                        for head_deg in (-25,-15,-5,5,15,25):
+                            neck.rotation_euler=(math.radians(neck_deg),0,0)
+                            head.rotation_euler=(math.radians(head_deg),0,0)
+                            bpy.context.view_layer.update()
+                            hr=rw @ head.matrix.to_3x3()
+                            up=(hr @ up_local).normalized()
+                            front=(hr @ front_local).normalized()
+                            upright=up.dot(up_ref)
+                            forward=front.dot(front_ref)
+                            score=2.5*upright+1.5*forward-.002*(abs(neck_deg)+abs(head_deg))
+                            candidates.append((score,neck_deg,head_deg,upright,forward))
+                    score,nd,hd,upright,forward=max(candidates)
+                    neck.rotation_euler=(math.radians(nd),0,0)
+                    head.rotation_euler=(math.radians(hd),0,0)
+                    bpy.context.view_layer.update()
+                    print("WVLRP_CAITLYN_NECK_DIRECTION",name,
+                          "neck_x",nd,"head_x",hd,
+                          "upright",round(upright,3),
+                          "forward",round(forward,3))
+                    if upright<0.25 or forward<-.35:
+                        raise RuntimeError("Caitlyn head still twists outside safe forward/up pose")
             for pb in rig.pose.bones:
                 pb.keyframe_insert(data_path="rotation_euler",frame=frame,group=pb.name)
             bones["hips"].keyframe_insert(data_path="location",frame=frame,group=bones["hips"].name)
