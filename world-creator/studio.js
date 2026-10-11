@@ -1,6 +1,6 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
-  creekY, trailHorizontal, trailVertical, spawnDeer
+  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS
 } from "./world-core.js";
 import { makeFigureBuilder } from "./character-models.js";
 
@@ -30,6 +30,19 @@ try {
     window.history.replaceState(null,"",url.pathname+url.search+url.hash);
   }
 } catch(err){console.warn("Could not persist fresh world reset",err);world=newWorld();freshWorldStarted=true;}
+// Install Amy and Christy once on this browser without touching existing placements.
+const AMY_CHRISTY_INSTALL="wvlrp-world-creator-amy-christy-added-2026-10-11";
+let installedTestCharacters=0;
+try {
+  if(!localStorage.getItem(AMY_CHRISTY_INSTALL)){
+    installedTestCharacters=addTestCharacters(world).length;
+    if(installedTestCharacters){
+      world.updatedAt=new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
+    }
+    localStorage.setItem(AMY_CHRISTY_INSTALL,"complete");
+  }
+} catch(err){console.warn("Amy/Christy local installation could not be persisted",err);}
 let seed=seedNumber(world.seed);
 const view={x:0,y:0,scale:.40};
 let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
@@ -39,24 +52,30 @@ const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
+const BUILTIN_CHARACTER_GLB=Object.freeze({
+  riley:RILEY_RIGGED_GLB,
+  amy:"./assets/amy-mpfb-trial.glb?v=amy-world-20261011",
+  // Christy in the world uses the previously saved Chrissy source model.
+  chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011"
+});
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
 function rileyMotionFor(id){if(!rileyMotion.has(id))rileyMotion.set(id,{heading:0,autoTurn:false});return rileyMotion.get(id);}
-const rileyAssetFiles=new Map();
-function builtInRileyFile(pose="standing"){
-  // All poses are animations on one skeleton, not warped duplicate GLBs.
-  const url=RILEY_RIGGED_GLB;
-  if(!rileyAssetFiles.has(url)){
+const characterAssetFiles=new Map();
+function builtInCharacterFile(key){
+  const url=BUILTIN_CHARACTER_GLB[key];
+  if(!url)return Promise.reject(Error("Unknown character "+key));
+  if(!characterAssetFiles.has(url)){
     const request=fetch(url,{cache:"no-store"}).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
       const bytes=await response.arrayBuffer();
       if(bytes.byteLength<100_000)throw Error("Rigged character asset is incomplete");
       return new File([bytes],url.split("?")[0].split("/").at(-1),{type:"model/gltf-binary"});
-    }).catch(err=>{rileyAssetFiles.delete(url);throw err;});
-    rileyAssetFiles.set(url,request);
+    }).catch(err=>{characterAssetFiles.delete(url);throw err;});
+    characterAssetFiles.set(url,request);
   }
-  return rileyAssetFiles.get(url);
+  return characterAssetFiles.get(url);
 }
 let previewBuildId = 0;
 let herdFocusCursor = -1;
@@ -93,7 +112,7 @@ function setSelection(o) {
   $("hair").value=o.hair||"brown";
   $("outfit").value=o.outfit||"ranger";
   $("pose").value=o.pose||"standing";
-  $("characterPreset").value=o.modelKey==="riley"?"riley":"";
+  $("characterPreset").value=["riley","amy","chrissy"].includes(o.modelKey)?o.modelKey:"";
   $("wildlifeFields").hidden=!(o.type==="deer"||o.type==="animal");
   $("npcFields").hidden=o.type!=="npc";
   for(const el of $("objectForm").querySelectorAll("input:not(#photo),select"))el.disabled=!!o.locked;
@@ -184,7 +203,7 @@ function drawMap() {
     ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);
     ctx.fillStyle=colors[o.type]||"#fff";ctx.fill();
     ctx.lineWidth=selectedId===o.id?3:1.5;ctx.strokeStyle=selectedId===o.id?"#fff":"#18251b";ctx.stroke();
-    if(o.type==="anchor"||selectedId===o.id||view.scale>.95){
+    if(o.type==="anchor"||["amy","chrissy"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
       ctx.font=(o.type==="anchor"?"bold 12px":"11px")+" system-ui";
       const text=o.name||o.type,tw=ctx.measureText(text).width;
       ctx.fillStyle="#071711da";ctx.fillRect(p.x+11,p.y-10,tw+10,20);
@@ -263,14 +282,15 @@ $("applyPreset").onclick=()=>{
     "ranger-redhead":{gender:"woman",skin:"light",body:"average",face:"heart",hair:"red",hairStyle:"wavy",outfit:"ranger"},
     mercantile:{gender:"woman",skin:"tan",body:"average",face:"oval",hair:"brown",hairStyle:"long",outfit:"mercantile"},
     lifeguard:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"lifeguard"},
-    riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"}
+    riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"},
+    amy:{gender:"woman",skin:"light",body:"slim",face:"oval",hair:"red",hairStyle:"long",outfit:"mannequin",pose:"standing"},
+    chrissy:{gender:"woman",skin:"light",body:"slim",face:"oval",hair:"blonde",hairStyle:"long",outfit:"mannequin",pose:"standing"}
   };
   const look=looks[$("characterPreset").value];
   if(!look){status("Choose a character style first");return;}
   for(const [key,value] of Object.entries(look))if($(key))$(key).value=value;
-  o.modelKey=$("characterPreset").value==="riley"?"riley":"";
-  // An old locally uploaded model must not override the newly rebuilt Riley.
-  if(o.modelKey==="riley")localCharacterFiles.delete(o.id);
+  o.modelKey=["riley","amy","chrissy"].includes($("characterPreset").value)?$("characterPreset").value:"";
+  if(o.modelKey)localCharacterFiles.delete(o.id);
   commitSelection();
   status("Applied "+$("characterPreset").selectedOptions[0].text+" style");
 };
@@ -425,6 +445,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
     const isRiley=o.modelKey==="riley";
+    const isMPFB=["amy","chrissy"].includes(o.modelKey);
     // Bone animation changes the pose, not the base mesh or measured height.
     const naturalHeight=1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
@@ -468,11 +489,18 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
           " bones; "+anims.length+" skeletal animations");
       }
     }
+    if(isMPFB){
+      const rigs=result.skeletons||[];
+      if(!rigs.some(sk=>(sk.bones?.length||0)>=25))throw Error(o.name+" GLB rig is incomplete");
+      const animations=result.animationGroups||[];
+      const idle=animations.find(a=>/idle/i.test(a.name))||animations[0];
+      if(idle)idle.start(true,1,idle.from,idle.to,false);
+    }
     for(const mesh of meshes)track(mesh);
     fallback.dispose(false,true);
     if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
-    fallback.setEnabled(o.modelKey!=="riley");
+    fallback.setEnabled(!Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey));
     status("Unable to load 3D character: "+String(err.message||err).slice(0,160));
   });
 }
@@ -519,21 +547,19 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      // The old balloon figure must never appear when Riley changes pose.
       const fallback=figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
-      // Hide the low-poly placeholder while a detailed Riley mesh is loading.
-      if(o.modelKey==="riley"&&!characterFile)fallback.setEnabled(false);
-      if(characterFile) {
+      const hasBuiltIn=Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey);
+      if(hasBuiltIn&&!characterFile)fallback.setEnabled(false);
+      if(characterFile){
         importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
-      } else if(o.modelKey==="riley") {
-        builtInRileyFile(o.pose).then(file=>{
+      } else if(hasBuiltIn){
+        builtInCharacterFile(o.modelKey).then(file=>{
           if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          // Never reintroduce the retired balloon/doll or old damaged GLBs.
           fallback.setEnabled(false);
-          status("New skeletal Riley asset not available yet: "+err.message);
+          status(o.name+" GLB unavailable: "+err.message);
         });
       }
     }else{
@@ -579,7 +605,7 @@ function init3D(){
     refresh3d();engine.runRenderLoop(()=>{animateRiley(Date.now());scene.render();});
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
-$("refresh3d").onclick=()=>{rileyAssetFiles.clear();dirty3d=true;refresh3d();status("3D preview refreshed with a fresh Riley model file");};
+$("refresh3d").onclick=()=>{characterAssetFiles.clear();dirty3d=true;refresh3d();status("3D preview refreshed with updated model files");};
 function zoom3d(factor){
   if(!camera){status("3D preview is not ready yet");return;}
   camera.inertialRadiusOffset=0;
@@ -603,9 +629,24 @@ function focusObjectIn3D(o,radius=4.4){
 $("inspect3d").onclick=()=>{
   const o=selected();
   if(!o){status("Choose a deer or person on the map first");return;}
-  focusObjectIn3D(o,o.modelKey==="riley"?2.8:4.4);
+  focusObjectIn3D(o,BUILTIN_CHARACTER_GLB[o.modelKey]?2.9:4.4);
   status("Close-up 3D view: "+o.name+" (use 3D +/− or pinch to zoom closer; drag to orbit)");
 };
+// Find Amy and Christy without duplicating either on repeated taps.
+function findOrAddBuiltInCharacter(modelKey){
+  let person=world.objects.find(o=>o.type==="npc"&&o.modelKey===modelKey);
+  if(!person){
+    const base=TEST_CHARACTER_STARTERS.find(o=>o.modelKey===modelKey);
+    if(!base||world.objects.length>=5000){status("No room for character");return;}
+    person={...base};world.objects.push(person);
+  }
+  localCharacterFiles.delete(person.id);
+  setTool("select");setSelection(person);save();focusObjectIn3D(person,2.9);
+  status(person.name+" selected in world map. Drag to orbit and pinch to zoom.");
+}
+$("findAmy").onclick=()=>findOrAddBuiltInCharacter("amy");
+$("findChristy").onclick=()=>findOrAddBuiltInCharacter("chrissy");
+
 // Pressing Add again selects the original Riley instead of duplicating her.
 $("addRiley").onclick=()=>{
   const previous=world.objects.find(item=>item.type==="npc"&&item.modelKey==="riley");
@@ -718,4 +759,5 @@ $("findDeer3d").onclick=()=>{
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
-if(freshWorldStarted)status("Fresh world ready: 0 people, deer, buildings or other objects placed.");
+if(installedTestCharacters)status("Amy and Christy added to your saved world map.");
+else if(freshWorldStarted)status("Fresh world ready.");
