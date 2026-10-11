@@ -32,10 +32,11 @@ test("deer can spawn in small herds with local and wide-roaming modes",()=>{
   assert.ok(animals.every(o=>o.type==="deer"&&Number.isFinite(o.x)));
   assert.ok(animals.every(o=>["wide-roamer","home-range"].includes(o.behavior)));
 });
-test("invalid world import is refused; original anchors are preserved",()=>{
+test("invalid world import is refused; clean worlds do not inject landmarks",()=>{
   assert.throws(()=>sanitizedWorld({nope:true}));
   const w=sanitizedWorld({seed:"my-seed",objects:[{id:"deer-1",type:"deer",name:"Buck",x:1,y:2}]});
-  assert.ok(w.objects.some(o=>o.id==="anchor-ranger"));
+  assert.equal(newWorld().objects.length,0);
+  assert.equal(w.objects.some(o=>o.id==="anchor-ranger"),false);
   assert.ok(w.objects.some(o=>o.name==="Buck"));
 });
 
