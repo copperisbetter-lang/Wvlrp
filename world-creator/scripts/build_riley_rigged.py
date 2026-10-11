@@ -497,6 +497,24 @@ for j in range(rows+1):
             strand_faces.append((d-(cols+1)-1,d-(cols+1),d,d-1))
             # Subtle golden streaks aligned with hair flow.
             strand_materials.append((i//9)%len(hair_colors))
+# A narrow second surface underneath the waves covers the scalp-to-curtain
+# transition. Without it the top of the longer hair shows three oval holes
+# when viewed from overhead. This is hair, not a fake skin or body patch.
+backing_start=len(strand_vertices)
+for j in range(rows+1):
+    t=j/rows
+    spread=smooth(t/.60)
+    for i in range(cols+1):
+        u=2*i/cols-1
+        x=(.101+.091*spread)*u+.006*sin(4*pi*t+5*u)*smooth(t)
+        y=.074+.113*spread+.009*u*u
+        z=head_top-.061-(.508+.012*cos(5*pi*u))*t
+        strand_vertices.append((x,y,z))
+        if j and i:
+            d=backing_start+j*(cols+1)+i
+            strand_faces.append((d-(cols+1)-1,d-(cols+1),d,d-1))
+            strand_materials.append(1)
+
 # Face-framing strands follow the cheek line down to shoulder level.
 for lock in range(12):
     side=-1 if lock<6 else 1
