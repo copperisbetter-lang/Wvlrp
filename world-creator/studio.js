@@ -415,13 +415,26 @@ function init3D(){
     engine=new BABYLON.Engine($("scene"),true,{antialias:true,preserveDrawingBuffer:false});
     scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.65,.79,.86,1);
     camera=new BABYLON.ArcRotateCamera("orbit",-Math.PI/2.5,1.02,165,new BABYLON.Vector3(0,8,0),scene);
-    camera.attachControl($("scene"),true);camera.lowerRadiusLimit=6;camera.upperRadiusLimit=290;
+    camera.attachControl($("scene"),true);
+    // Phone-friendly inspection: allow moving in close enough to see clothing and facial detail.
+    camera.lowerRadiusLimit=1.25;camera.upperRadiusLimit=350;
+    camera.minZ=.025;
+    camera.wheelPrecision=14;
+    camera.pinchPrecision=55;
+    camera.useNaturalPinchZoom=true;
     new BABYLON.HemisphericLight("daylight",new BABYLON.Vector3(.5,1,.2),scene);
     refresh3d();engine.runRenderLoop(()=>scene.render());
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
 $("refresh3d").onclick=()=>{dirty3d=true;refresh3d();status("3D preview refreshed near map center");};
-function focusObjectIn3D(o,radius=14){
+function zoom3d(factor){
+  if(!camera){status("3D preview is not ready yet");return;}
+  camera.inertialRadiusOffset=0;
+  camera.radius=Math.max(camera.lowerRadiusLimit,Math.min(camera.upperRadiusLimit,camera.radius*factor));
+}
+$("zoom3dIn").onclick=()=>zoom3d(.60);
+$("zoom3dOut").onclick=()=>zoom3d(1.55);
+function focusObjectIn3D(o,radius=4.4){
   // Babylon renders only one small terrain tile, not the entire zoomed-out 2D map.
   // Align the local 3D tile with the selected object's world coordinates.
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
@@ -436,8 +449,8 @@ function focusObjectIn3D(o,radius=14){
 $("inspect3d").onclick=()=>{
   const o=selected();
   if(!o){status("Choose a deer or person on the map first");return;}
-  focusObjectIn3D(o,14);
-  status("Close-up 3D view: "+o.name+" (drag to orbit, pinch to zoom)");
+  focusObjectIn3D(o,4.4);
+  status("Close-up 3D view: "+o.name+" (use 3D +/− or pinch to zoom closer; drag to orbit)");
 };
 $("findDeer3d").onclick=()=>{
   const deer=world.objects.filter(o=>o.type==="deer");
