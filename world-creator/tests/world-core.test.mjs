@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CELL, seedNumber, creekY, heightAt, trailHorizontal, trailVertical,
-  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS
+  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER
 } from "../world-core.js";
 
 test("world seed makes terrain deterministic",()=>{
@@ -72,4 +72,36 @@ test("Add only missing test character if one already exists",()=>{
   w.objects.push({id:"custom-amy",name:"Amy",type:"npc",modelKey:"amy",x:90,y:20});
   assert.deepEqual(addTestCharacters(w).map(o=>o.name),["Christy (test)"]);
   assert.equal(w.objects.find(o=>o.id==="custom-amy").x,90);
+});
+
+test("Caitlyn is added once to existing world without moving existing characters or deer",()=>{
+  const world=newWorld();
+  spawnDeer(world,20,11,7,4);
+  addTestCharacters(world);
+  world.objects.push({id:"user-cabin",type:"cabin",name:"Cabin",x:150,y:55});
+  const before=world.objects.map(o=>[o.id,o.x,o.y,o.modelKey]);
+  assert.deepEqual(addCaitlyn(world).map(o=>o.modelKey),["caitlyn"]);
+  assert.equal(addCaitlyn(world).length,0);
+  assert.deepEqual(world.objects.slice(0,before.length).map(o=>[o.id,o.x,o.y,o.modelKey]),before);
+  const saved=sanitizedWorld(JSON.parse(JSON.stringify(world)));
+  const person=saved.objects.find(o=>o.id==="npc-caitlyn-wild");
+  assert.deepEqual([person.modelKey,person.x,person.y,person.pose],["caitlyn",0,-76,"standing"]);
+  assert.equal(saved.objects.filter(o=>o.type==="deer").length,20);
+  assert.equal(CAITLYN_STARTER.id,"npc-caitlyn-wild");
+});
+
+test("Caitlyn's articulated pose and moved map coordinates survive JSON serialization",()=>{
+  const world=newWorld(),person=addCaitlyn(world)[0];
+  person.x=13;person.y=-88;person.pose="allfours";
+  let copy=sanitizedWorld(JSON.parse(JSON.stringify(world))).objects[0];
+  assert.deepEqual([copy.x,copy.y,copy.pose,copy.modelKey],[13,-88,"allfours","caitlyn"]);
+  copy.pose="bend";
+  assert.equal(sanitizedWorld({objects:[copy]}).objects[0].pose,"bend");
+});
+
+test("A customized Caitlyn is not duplicated or repositioned by a future install",()=>{
+  const world=newWorld();
+  world.objects.push({id:"custom-caitlyn",type:"npc",name:"Caitlyn",modelKey:"caitlyn",x:555,y:43});
+  assert.equal(addCaitlyn(world).length,0);
+  assert.deepEqual([world.objects.length,world.objects[0].x],[1,555]);
 });

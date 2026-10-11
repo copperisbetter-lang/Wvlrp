@@ -77,8 +77,8 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
-    modelKey:["riley","amy","chrissy"].includes(o.modelKey)?o.modelKey:"",
-    pose:["standing","crouch","allfours"].includes(o.pose)?o.pose:"standing",
+    modelKey:["riley","amy","chrissy","caitlyn"].includes(o.modelKey)?o.modelKey:"",
+    pose:["standing","bend","crouch","allfours"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
   // A clean world has no automatically placed landmarks; the user can add them later.
@@ -113,6 +113,21 @@ export function addTestCharacters(world) {
   return added;
 }
 
+// Caitlyn is an independent test character; do not alter older map migrations.
+export const CAITLYN_STARTER=Object.freeze({
+  id:"npc-caitlyn-wild",type:"npc",name:"Caitlyn (test)",modelKey:"caitlyn",
+  x:0,y:-76,behavior:"stationary",radius:0,locked:false,gender:"woman",
+  skin:"fair",body:"slim",face:"oval",hair:"blonde",hairStyle:"wavy",
+  outfit:"mannequin",pose:"standing"
+});
+export function addCaitlyn(world){
+  if(!world||!Array.isArray(world.objects))throw Error("A valid world is required");
+  if(world.objects.length>=5000||world.objects.some(o=>
+    o.id===CAITLYN_STARTER.id||(o.type==="npc"&&o.modelKey==="caitlyn")))return [];
+  const person={...CAITLYN_STARTER};
+  world.objects.push(person);
+  return [person];
+}
 export function makeRng(seed) {
   let a=seedNumber(seed)||1;
   return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
