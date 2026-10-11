@@ -23,3 +23,10 @@ Source and viewer changes were committed. At this checkpoint, **do not claim pub
 - https://wvlrp.com/world-creator/amy-mpfb-trial.html
 - https://wvlrp.com/world-creator/chrissy.html
 - https://wvlrp.com/world-creator/
+
+## October 11 ~6:12 PM user's actual screenshots
+Caitlyn displayed an uncanny doll face from front and three-quarter angle: unnaturally broad cheek-to-cheek smile, high-contrast lips, dark near-red eyes, flat gray face against peach torso, and stiff blocky platinum hair. Viewer warning explicitly says **"Older Caitlyn 3D file — photographic face texture not published yet"**. **Do not claim skin issue fixed.**
+- Found browser and map both forced her CC0 smile morph to influence `0.78`. Standalone Caitlyn viewer now defaults to **0** (relaxed/neutral) and smile button toggles only **0.18**, while retaining original two named smile morphs. Her map preview sets only **Caitlyn** influence to 0; **Mason** kept at original visual settings.
+- Changed Caitlyn builder to export facial smile shapekeys at **default influence 0**, so importing the GLB anywhere doesn't create a fixed eerie grin. This triggers an additional build.
+- Verified on public GitHub Actions page that Caitlyn's phototexture build run #13 was **waiting** behind prior run #11 (run #12 was canceled as an older waiting job), not successful. Newest subsequent run needs independent checking. Facial photo texture has not been visually validated.
+- **Next test:** wait for most recent build to complete, make sure its exported GLB includes face+body diffuse map and retains rig, skeleton, 5 clips and two smile morphs. Test neutral face and subtle smile on phone, especially side silhouette, natural eye color, lip shape, jaw, complexion consistency and scalp/hair. The present low-poly hair and head geometry may need a better asset/sculpt even with correct texture.
