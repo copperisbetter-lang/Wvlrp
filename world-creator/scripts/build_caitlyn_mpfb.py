@@ -75,8 +75,9 @@ def tint(mesh, color, roughness=.78):
                 n.inputs["Metallic"].default_value=0
 
 def add_soft_waves(hair):
-    """Shape the lower portions of the stock long hairstyle into gentle waves.
-    Leave the roots/scalp anchored and keep a continuous real 3D hair mesh.
+    """Shape the lower lengths into more visible, soft, offset waves.
+    Keep the front hairline and scalp anchored, and retain the real hair mesh.
+    This does not change the avatar body, armature, or facial shape keys.
     """
     if not hair or hair.type!="MESH": return
     vs=hair.data.vertices
@@ -86,10 +87,10 @@ def add_soft_waves(hair):
     for v in vs:
         p=v.co
         t=(zhi-p.z)/depth
-        amp=.014*max(0.0,min(1.0,(t-.28)/.28))
+        amp=.026*max(0.0,min(1.0,(t-.24)/.34))
         # Two offset, soft wavelengths: not a uniform zigzag or new object.
         p.x+=amp*math.sin((p.z-zlo)*18.0+p.x*8.0)
-        p.y+=amp*.35*math.sin((p.z-zlo)*15.0+p.x*6.0)
+        p.y+=amp*.44*math.sin((p.z-zlo)*15.0+p.x*6.0)
     hair.data.update()
     print("WVLRP_CAITLYN_HAIR_WAVES",len(vs))
 
@@ -288,7 +289,7 @@ def main():
         low=obj.name.lower()
         if "long01" in low:
             mat=pbr_solid("Caitlyn platinum ash blonde · real exported hair",
-                          (.91,.86,.75),.65)
+                          (.91,.86,.75),.60)
             obj.data.materials.clear();obj.data.materials.append(mat)
             print("WVLRP_CAITLYN_PLATINUM_HAIR",obj.name,mat.name)
         elif "eyebrow" in low:
