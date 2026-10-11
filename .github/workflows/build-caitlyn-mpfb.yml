@@ -78,6 +78,8 @@ jobs:
           assert len(names)>=5, 'No five named Caitlyn skeletal clips: '+str(names)
           assert any('HandsAndKnees' in name for name in names), 'Missing hands-and-knees animation'
           assert any('ElbowsAndKnees' in name for name in names), 'Missing elbows-and-knees animation'
+          assert any(any('targets' in p for p in m.get('primitives',[]))
+                     for m in doc.get('meshes',[])), 'Missing Caitlyn smile morph'
           print('WVLRP_CAITLYN_MPFB_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
           print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
           PY
