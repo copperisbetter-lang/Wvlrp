@@ -39,7 +39,7 @@ jobs:
       - name: Export one newly modeled and skinned Riley GLB
         run: |
           set -euo pipefail
-          blender --background --factory-startup --python world-creator/scripts/build_riley_rigged.py | tee /tmp/riley-rig.log
+          blender --background --factory-startup --python world-creator/scripts/build_riley_rigged.py 2>&1 | tee /tmp/riley-rig.log
           grep RILEY_RIG_SUCCESS /tmp/riley-rig.log
       - name: Validate real skin, skeleton, and animation data in GLB
         run: |
@@ -87,7 +87,7 @@ jobs:
             date -u '+checked_utc: %Y-%m-%dT%H:%M:%SZ'
             if [ -f /tmp/riley-rig.log ]; then
               echo 'last_blender_log_lines:'
-              tail -n 35 /tmp/riley-rig.log
+              tail -n 70 /tmp/riley-rig.log
             fi
             if [ -f world-creator/assets/riley-rigged-v1.glb ]; then
               echo "rigged_glb_bytes: $(stat -c%s world-creator/assets/riley-rigged-v1.glb)"
