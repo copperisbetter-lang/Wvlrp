@@ -1,4 +1,4 @@
-"""Make an adult featureless Barbie-style Riley mannequin from CC0 source meshes.
+"""Build an articulated, featureless adult Riley mannequin from CC0 source meshes.
 This changes the standalone test figure only, not the deer or saved game world.
 All new geometry is original, generated here; the underlying model remains licensed CC0.
 Run: blender -b --factory-startup --python make_riley_blonde.py -- standing
@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets"
 MODE = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "standing"
 if MODE not in ("standing", "kneeling", "allfours"):
-    raise ValueError("Choose standing or kneeling")
+    raise ValueError("Choose standing, kneeling or allfours")
 INPUT = SOURCE / ("riley-kneeling.glb" if MODE == "kneeling" else "riley-real.glb")
 OUTPUT = SOURCE / ("riley-blonde-kneeling.glb" if MODE == "kneeling" else "riley-blonde-allfours.glb" if MODE == "allfours" else "riley-blonde-standing.glb")
 
@@ -174,8 +174,8 @@ for layer in range(2):
         root=Vector((head_x+cap_rx*(.91+layer*.065)*outward.x,
                      head_y+cap_ry*(.90+layer*.06)*outward.y,
                      head_center_z+H*(.017+.014*random.random()-layer*.025)))
-        length=H*(.24+.085*random.random()+.038*(1-layer))
-        width=H*(.012+.0038*random.random())
+        length=H*(.26+.10*random.random()+.048*(1-layer))
+        width=H*(.014+.0044*random.random())
         phase=2*pi*random.random()
         verts=[]
         faces=[]
@@ -183,9 +183,9 @@ for layer in range(2):
         for k in range(sections):
             t=k/(sections-1)
             # Gentle, broad waves and softly feathered, irregular ends.
-            sway=H*(.0065*sin(2*pi*1.45*t+phase)+.011*sin(2*pi*.77*t+phase*.57))*t
+            sway=H*(.014*sin(2*pi*1.75*t+phase)+.020*sin(2*pi*.81*t+phase*.57))*t
             center=root+Vector((outward.x*H*(.004+.022*t)+tangent.x*sway,
-                                outward.y*H*(.004+.028*t)+tangent.y*sway,
+                                outward.y*H*(.004+.047*t)+tangent.y*sway,
                                 -length*t))
             width_t=width*(.82+.17*sin(pi*t))*max(.035,(1-t)**.62)
             for lane in (-1,0,1):
@@ -210,7 +210,7 @@ for side in (-1,1):
         verts=[];faces=[]
         for k in range(14):
             t=k/13
-            center=root+Vector((side*H*(.012*t+.007*sin(pi*t)),
+            center=root+Vector((side*H*(.019*t+.013*sin(pi*t)),
                                 -H*.007*sin(pi*t),
                                 -length*t))
             halfwidth=H*(.0075+.003*frac)*max(.04,(1-t)**.7)
@@ -349,46 +349,118 @@ for ob in [obj for obj in bpy.context.scene.objects if obj.type=="MESH"]:
     ob.data.update()
 print("RILEY_SLIM_ATHLETIC_BODY",MODE,"adjusted_vertices",adjusted)
 
-# Hands-and-knees pose: deform real skinned, textured GLB geometry in place.
-# Source is a baked static mesh without an armature; this is a posed prototype,
-# not a full skeletal animation. Mapping places hips high, knees and palms down.
+# True articulated *static* mannequin test.  Do NOT bend the entire figure
+# by altitude: that projects unrelated legs, arms, face and torso onto the same
+# plane (the flattened "Silent Hill" model).  The source GLB has no skeleton,
+# so use anatomically separated, connected limb chains to pose its existing
+# sculpted surface, preserving the recognizable adult face and flowing hair.
 if MODE=="allfours":
-    def clamp(x):return max(0.0,min(1.0,x))
-    def smooth(x):x=clamp(x);return x*x*(3-2*x)
-    def deform(p,name):
-        px,py,pz=p.x,p.y,p.z
-        h=(pz-zmin)/H
-        if h>=.60:
-            # Horizontal back, neck and forward-facing head.
-            dz=pz-z(.60)
-            n_y=cy-0.95*dz + (py-cy)*0.36
-            n_z=zmin+H*.42+0.30*dz-(py-cy)*.92
-        elif h>=.27:
-            t=(h-.27)/.33
-            n_y=cy+H*.19*(1-t)+(py-cy)*.85
-            n_z=zmin+H*(.075+.345*t)
-        else:
-            t=h/.27
-            n_y=cy+H*(.19+.28*(1-t))+(py-cy)*.8
-            n_z=zmin+H*(.075+.020*(1-t))
-        # Original arms hang vertically; bend their mesh into straight supports.
-        # Blend at shoulders so the skin stays connected to the torso.
-        if ("anatomical body" in name or "female_casualsuit" in name) and pz > z(.40):
-            reach=smooth((abs(px-cx)/H-.077)/.055)*smooth((1.45-pz)/.16)
-            if reach>0:
-                t=clamp((z(.86)-pz)/(H*.47)+.45)
-                arm_y=cy-H*(.23+.14*t)+(py-cy)*.22
-                arm_z=zmin+H*(.51-.47*t)
-                n_y=n_y*(1-reach)+arm_y*reach
-                n_z=n_z*(1-reach)+arm_z*reach
-        return Vector((px,n_y,max(zmin+.005,n_z)))
-    for ob in [ob for ob in bpy.context.scene.objects if ob.type=="MESH"]:
-        world=ob.matrix_world.copy()
-        inv=world.inverted_safe()
-        for v in ob.data.vertices:
-            v.co=inv @ deform(world @ v.co,ob.name.lower())
+    from mathutils import Quaternion
+
+    def V(x, y, h):
+        return Vector((x, y, zmin + H*h))
+
+    def clamped(t):
+        return max(0.0,min(1.0,t))
+
+    def eased(t):
+        t=clamped(t)
+        return t*t*(3.0-2.0*t)
+
+    # Rest joints are recovered in source-relative coordinates. In the final
+    # pose the back remains elongated, the knees rest behind the pelvis and
+    # the palms are forward and grounded. The face remains upright.
+    torso=[
+        (V(cx,cy,.90), V(cx,cy-H*.28,.435)),
+        (V(cx,cy,.78), V(cx,cy-H*.145,.445)),
+        (V(cx,cy,.52), V(cx,cy+H*.20,.435)),
+    ]
+    arms={}
+    legs={}
+    for side in (-1,1):
+        arms[side]=[
+            (V(cx+side*H*.115,cy,.815), V(cx+side*H*.124,cy-H*.183,.435)),
+            (V(cx+side*H*.145,cy,.605), V(cx+side*H*.136,cy-H*.285,.235)),
+            (V(cx+side*H*.145,cy,.355), V(cx+side*H*.137,cy-H*.322,.042)),
+        ]
+        legs[side]=[
+            (V(cx+side*H*.060,cy,.515),V(cx+side*H*.064,cy+H*.19,.435)),
+            (V(cx+side*H*.062,cy,.272),V(cx+side*H*.074,cy+H*.392,.054)),
+            (V(cx+side*H*.068,cy,.048),V(cx+side*H*.075,cy+H*.585,.052)),
+        ]
+
+    def chain_point(p, chain):
+        # Rotate the cross-section for the relevant articulated limb segment
+        # while interpolating its new centreline. No global height-projection.
+        for i in range(len(chain)-1):
+            olda,newa=chain[i]
+            oldb,newb=chain[i+1]
+            if p.z>=oldb.z or i==len(chain)-2:
+                denom=oldb.z-olda.z
+                t=(p.z-olda.z)/denom if abs(denom)>1e-7 else 0
+                old_center=olda.lerp(oldb,t)
+                new_center=newa.lerp(newb,t)
+                old_axis=oldb-olda
+                new_axis=newb-newa
+                rotation=old_axis.rotation_difference(new_axis)
+                return new_center+rotation @ (p-old_center)
+        return p.copy()
+
+    head_rest=Vector((head_x,head_y,eye_z))
+    head_target=V(head_x,cy-H*.37,.405)
+    head_rot=Quaternion(Vector((1,0,0)),math.radians(9))
+
+    def head_point(p):
+        return head_target+head_rot @ (p-head_rest)
+
+    def articulated_point(p, obj_name):
+        name=obj_name.lower()
+        # The hair locks, cap, lashes, teeth and brows are separate objects.
+        # Apply exactly the same rigid head transform to every vertex, keeping
+        # the crown anchored to the real scalp and the face undistorted.
+        if name.startswith("riley soft blonde") or name.startswith("riley fitted blonde") or name.startswith(("eyelashes","eyebrow","teeth")):
+            return head_point(p)
+        height=(p.z-zmin)/H
+        side=1 if p.x>=cx else -1
+        width=abs(p.x-cx)/H
+        pelvis_to_neck=chain_point(p,torso)
+        limb_arm=chain_point(p,arms[side])
+        limb_leg=chain_point(p,legs[side])
+
+        # Region weights transition across shoulder, groin, and neck.
+        # Keeping them soft avoids severed arms and disconnected hips.
+        arm_width=eased((width-.085)/.052)
+        arm_height=eased((height-.31)/.09)*(1-eased((height-.825)/.055))
+        arm_weight=arm_width*arm_height
+        leg_weight=(1-eased((height-.43)/.145))*eased((width-.012)/.038)
+        head_weight=eased((height-.852)/.065)
+
+        posed=pelvis_to_neck.lerp(limb_leg,leg_weight)
+        posed=posed.lerp(limb_arm,arm_weight*(1-head_weight))
+        posed=posed.lerp(head_point(p),head_weight)
+        return posed
+
+    moved=0
+    for ob in [o for o in bpy.context.scene.objects if o.type=="MESH"]:
+        original_world=ob.matrix_world.copy()
+        inv=original_world.inverted_safe()
+        for vertex in ob.data.vertices:
+            original_pt=original_world @ vertex.co
+            posed=articulated_point(original_pt,ob.name)
+            # Only prevent ground penetration, never squash the torso/head.
+            posed.z=max(zmin+H*.010,posed.z)
+            vertex.co=inv @ posed
+            moved+=1
         ob.data.update()
-    print("RILEY_POSE allfours: palms and knees lowered; textured source geometry retained")
+    # Height should decrease, but the 3D character must stay full-bodied.
+    points=[o.matrix_world @ Vector(corner)
+            for o in bpy.context.scene.objects if o.type=="MESH"
+            for corner in o.bound_box]
+    pose_height=max(p.z for p in points)-min(p.z for p in points)
+    print("RILEY_ARTICULATED_ALLFOURS", "vertices",moved,
+          "height_fraction",round(pose_height/H,3),
+          "ground",round(min(p.z for p in points),3))
+    assert .23*H < pose_height < .95*H, "The posed mannequin bounds are invalid"
 
 # Do not replace the head with a flat image or a primitive doll; retain the
 # realistic original face, body proportions, and existing textured materials.
