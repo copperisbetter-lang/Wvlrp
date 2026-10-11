@@ -22,3 +22,10 @@ Source has been edited and committed to main on October 11. Newest workflow stil
 ## Review
 https://wvlrp.com/world-creator/caitlyn-mpfb-trial.html
 https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/build-caitlyn-mpfb.yml
+
+
+## October 11, 7:07 PM user screenshot — hovering wig and exposed scalp
+- User supplied a close-up of Caitlyn's LIVE mobile viewer. Her bald-looking scalp and forehead are visible; a gray dome (former procedural scalp cap) visibly hovers above her head, with separate long platinum locks falling at the sides. Hair fit is NOT accepted. Preserve approved body and its existing positions/poses.
+- Root cause under investigation: the hair-builder used the global basemesh maximum Z as the top of her skull, instead of a skull/eye anatomical landmark. This can place the new cap and strand roots too high.
+- Commits `90875d1f365f5aa2d80efd8bec5bd780ba964398` and `7ebce20630840d5fd3385c1bd5c18a695c4f12b2` replace the crown reference with the exported eyeball center plus proportional eye-to-crown spacing, place skull-band center, and lower the cap and strand roots. The source edit triggers the Caitlyn-only GitHub Actions build.
+- **Status at checkpoint:** source committed to main; the rebuilt GLB, workflow completion, mobile rendering and true skull fit were NOT independently verified. Do not call it fixed merely because source was committed. Inspect full face, back, three-quarter, bending and both floor poses after the rebuilt asset arrives.
