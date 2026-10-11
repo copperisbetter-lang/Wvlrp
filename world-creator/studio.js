@@ -9,28 +9,27 @@ const canvas=$("worldMap"),ctx=canvas.getContext("2d");
 let world;
 try { world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY))); }
 catch { world=newWorld(); }
-// The October 10 test world had exactly 101 prototype deer. Retire that herd
-// once on the user's local device; preserve NPCs, cabins, markers, and anchors.
-// A deliberate ?clearDeer=1 link also clears a differently sized herd.
-const DEER_REMOVAL_MARKER="wvlrp-deer-retired-2026-10-10";
-let removedInitialDeer=0;
+// One-time, user-requested fresh start: retire all previously placed people
+// (including former Riley), animals, cabins, quest props, and default markers.
+// Preserve the world builder code and terrain; do not touch other website pages.
+// This stamp prevents wiping any new work after the first clean reload.
+const FRESH_START_MARKER="wvlrp-world-creator-fresh-start-2026-10-10";
+let freshWorldStarted=false;
 try {
-  const deerCount=world.objects.filter(o=>o.type==="deer").length;
-  const requestedClear=new URLSearchParams(window.location.search).has("clearDeer");
-  const initialTestHerd=deerCount===101; // The user-approved prototype herd size, even if Riley is not selected.
-  if(requestedClear || (initialTestHerd && !localStorage.getItem(DEER_REMOVAL_MARKER))) {
-    removedInitialDeer=deerCount;
-    world.objects=world.objects.filter(o=>o.type!=="deer");
+  const requestedReset=new URLSearchParams(window.location.search).has("freshStart");
+  if(requestedReset || !localStorage.getItem(FRESH_START_MARKER)) {
+    world=newWorld();
     world.updatedAt=new Date().toISOString();
     localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
-    localStorage.setItem(DEER_REMOVAL_MARKER,"complete");
+    localStorage.setItem(FRESH_START_MARKER,"complete");
+    freshWorldStarted=true;
   }
-  if(requestedClear) {
+  if(requestedReset) {
     const url=new URL(window.location.href);
-    url.searchParams.delete("clearDeer");
+    url.searchParams.delete("freshStart");
     window.history.replaceState(null,"",url.pathname+url.search+url.hash);
   }
-} catch(err){console.warn("Could not persist requested deer removal",err);}
+} catch(err){console.warn("Could not persist fresh world reset",err);world=newWorld();freshWorldStarted=true;}
 let seed=seedNumber(world.seed);
 const view={x:0,y:0,scale:.40};
 let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
@@ -686,4 +685,4 @@ $("findDeer3d").onclick=()=>{
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
-if(removedInitialDeer)status(removedInitialDeer+" deer removed from this test world; your people and landmarks are still here.");
+if(freshWorldStarted)status("Fresh world ready: 0 people, deer, buildings or other objects placed.");
