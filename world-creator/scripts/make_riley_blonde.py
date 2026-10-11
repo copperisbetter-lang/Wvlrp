@@ -36,6 +36,29 @@ print(f"RILEY_INPUT mode={MODE} mesh_count={len(original)} height={H:.3f} "
 for ob in original:
     print("MODEL_MESH", ob.name, "MATERIALS", [slot.material.name for slot in ob.material_slots if slot.material])
 
+# Remove the actual stock bob and old shoes, otherwise dark hair and footwear
+# protrude through our long blonde hair and fresh sneakers.
+for ob in original:
+    name=ob.name.lower()
+    if name.startswith("bob01") or name.startswith("shoes05"):
+        bpy.data.objects.remove(ob, do_unlink=True)
+
+# The stock outfit contains long trousers. Remove only its old lower section,
+# retaining the original textured T-shirt and the anatomical face/body.
+# Work in object-local mesh coordinates converted to world space.
+import bmesh
+for ob in [v for v in bpy.context.scene.objects if v.type=="MESH" and v.name.startswith("female_casualsuit")]:
+    bm=bmesh.new()
+    bm.from_mesh(ob.data)
+    bm.faces.ensure_lookup_table()
+    old_faces=[f for f in bm.faces if (ob.matrix_world @ f.calc_center_median()).z < zmin + (zmax-zmin)*(.565 if MODE=="standing" else .52)]
+    if old_faces:
+        bmesh.ops.delete(bm, geom=old_faces, context="FACES")
+        bm.to_mesh(ob.data)
+        ob.data.update()
+        print("REMOVED_STOCK_TROUSER_POLYGONS",len(old_faces),ob.name)
+    bm.free()
+
 # Work in proportional coordinates so both source poses receive consistent wardrobe.
 def z(frac):
     return zmin + frac * H
