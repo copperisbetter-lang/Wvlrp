@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Ranger Station Walking Test</title>
+<title>The Wild — Caitlyn Walking Test v3</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,8 +23,8 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Walking Test</h1><p>Caitlyn · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
-<div id="status" role="status">Loading 3D scene…</div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v3</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
 <div id="problem"><h2>3D scene did not load</h2><p id="errorText">Please try refreshing in Chrome with an internet connection.</p></div>
@@ -90,7 +90,7 @@ function setGait(part,angle){
  entry.node.rotationQuaternion=entry.base.multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
 }
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=2',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=3',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
@@ -162,7 +162,7 @@ engine.runRenderLoop(()=>{
  let f=-axisY+(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
  let turn=axisX+(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
  f=Math.max(-1,Math.min(1,f));turn=Math.max(-1,Math.min(1,turn));
- yaw+=turn*dt*2;root.rotation.y=yaw;
+ yaw-=turn*dt*2;root.rotation.y=yaw;
  let moved=0;
  if(Math.abs(f)>.06){let speed=2.8*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
  if(!blocked(nx,root.position.z))root.position.x=nx;else dx=0;
