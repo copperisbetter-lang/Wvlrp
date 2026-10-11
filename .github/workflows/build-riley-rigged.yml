@@ -23,7 +23,7 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender python3-numpy
+          sudo apt-get install -y --no-install-recommends blender python3-numpy xvfb libegl1 libgl1-mesa-dri
       - name: Download CC0 complete anatomical base mesh (no clothing shells)
         run: |
           set -euo pipefail
@@ -68,7 +68,7 @@ jobs:
       - name: Render real front side back views from exported GLB
         run: |
           set -euo pipefail
-          blender --background --factory-startup --python world-creator/scripts/render_riley_turnaround.py 2>&1 | tee /tmp/riley-render.log
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x1024x24" blender --background --factory-startup --python world-creator/scripts/render_riley_turnaround.py 2>&1 | tee /tmp/riley-render.log
           grep RILEY_QA_RENDER /tmp/riley-render.log | grep front
           grep RILEY_QA_RENDER /tmp/riley-render.log | grep right
           grep RILEY_QA_RENDER /tmp/riley-render.log | grep back
@@ -112,6 +112,9 @@ jobs:
           git add world-creator/assets/riley-build-status.txt
           if ! git diff --cached --quiet; then
             git commit -m "Record Riley sculpted-body Blender build outcome"
+            # A failed QA render can leave the newly exported GLB modified;
+            # clean it before rebasing a diagnostics-only commit.
+            git restore -- world-creator/assets/riley-rigged-v1.glb || true
             git pull --rebase origin main
             git push origin HEAD:main
           fi
