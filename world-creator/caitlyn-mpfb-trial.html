@@ -20,11 +20,12 @@
 <button data-pose="Bend">Bend forward</button>
 <button data-pose="Kneel">Kneel</button>
 <button data-pose="HandsAndKnees">Hands &amp; knees</button>
+<button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
 <button id="idle">Play movement</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-knee-neck-v4" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-skin-ground-support-v5" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
-<p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, an unclothed full-body base mesh and a smaller, naturally softened bust profile. It has a 52-bone Mixamo-compatible skeleton and four animations for standing, bending, kneeling, and hands-and-knees. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
+<p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a unified face-and-body skin material, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
 <p class="note">If the model fails on a mobile browser, try refresh once or download the GLB and open it in a separate 3D viewer. The first load may take a moment on cellular data.</p>
 </main>
@@ -103,7 +104,7 @@ function pickPose(pose,animate=false){
  progress.value=animate?'0':(loop?'0':'100');
  frameLabel.textContent=progress.value+'%';
  document.getElementById('idle').textContent=animate?'Pause movement':'Play movement';
- status.textContent='Caitlyn: '+(pose==='HandsAndKnees'?'hands and knees':pose.toLowerCase())+
+ status.textContent='Caitlyn: '+(pose==='HandsAndKnees'?'hands and knees':pose==='ElbowsAndKnees'?'elbows and knees':pose.toLowerCase())+
    (animate?' · playing transition':' · holding final articulated pose');
 }
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
