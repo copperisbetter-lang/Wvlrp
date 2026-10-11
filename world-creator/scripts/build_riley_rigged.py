@@ -207,7 +207,7 @@ for v in body.data.vertices:
         bust_shape=left_right*(.73*lower_fullness+.19*upper_slope+
                                 .08*low_curve)*front*height_envelope
         # Positive y is the back on this mesh; its front points toward -y.
-        p.y-=.65*fullness*bust_shape
+        p.y-=1.02*fullness*bust_shape
         # Lower pole is visibly heavier without a pinched or balloon-like tip.
         p.z-=.009*bust_shape*smooth((1.36-z)/.14)
         if abs(x)>.009:
@@ -241,7 +241,7 @@ for vertex in body.data.vertices:
         ymask=smooth((.055-q.y)/.105)
         weight=h*xmask*ymask
         if weight>.005:chest_mask[vertex.index]=weight
-for iteration in range(2):
+for iteration in range(7):
     previous=[vert.co.copy() for vert in body.data.vertices]
     for idx,w in chest_mask.items():
         adjacent=chest_neighbors[idx]
@@ -251,7 +251,7 @@ for iteration in range(2):
         # the breast's lower curve and without shrinking all the ribs.
         shift=(avg-previous[idx])
         body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
-print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",2)
+print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",7)
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -270,7 +270,7 @@ for v in body.data.vertices:
     yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
     weight=zweight*xweight*yweight
     if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
-for iteration in range(2):
+for iteration in range(9):
     old=[v.co.copy() for v in body.data.vertices]
     for idx,weight in abdomen_mask.items():
         ns=neighbors[idx]
@@ -395,19 +395,27 @@ print("RILEY_FITTED_HAIR",len(hair.data.vertices),
 # and each stays attached to the head bone. Ends reach past the shoulders.
 # Vary length/parting to break up the rigid cone silhouette on phone previews.
 strand_vertices=[];strand_faces=[];strand_materials=[]
-for lock in range(22):
-    x0=-.170+.340*(lock+.5)/22
+for lock in range(40):
+    face_lock=lock>=30
+    local=lock-30 if face_lock else lock
+    if face_lock:
+        # Side-parted face-framing locks fall over the shoulder, not the eyes.
+        x0=(1 if local%2==0 else -1)*(.124+.012*(local//2))
+        length=.345+.120*(.5+.5*sin(lock*2.7))
+    else:
+        x0=-.170+.340*(local+.5)/30
+        length=.435+.155*(.5+.5*sin(lock*2.7))
     phase=lock*.73
-    length=.405+.125*(.5+.5*sin(lock*2.7))
-    n_steps=20;n_width=4
+    n_steps=26;n_width=4
     for j in range(n_steps+1):
         t=j/n_steps
         z=head_top-.120-length*t
-        wave=.013*sin(4*pi*t+phase)*smooth(t)
+        wave=.018*sin(4*pi*t+phase)*smooth(t)
         # Lower layers fan out a little; the crown remains rooted in the scalp.
-        x=x0+wave+(x0/.17)*.025*smooth(t)
-        y=.097+.056*smooth(t)+.014*sin(2*pi*t+phase)*smooth(t)
-        width=.025*(1-.70*t*t)*(.88+.12*sin(phase))
+        x=x0+wave+(x0/.17)*.022*smooth(t)
+        y=(-.022+.048*smooth(t) if face_lock else .102+.063*smooth(t))
+        y+=.011*sin(2*pi*t+phase)*smooth(t)
+        width=(.016 if face_lock else .022)*(1-.66*t*t)*(.88+.12*sin(phase))
         for k in range(n_width+1):
             u=k/n_width*2-1
             strand_vertices.append((x+u*width,
