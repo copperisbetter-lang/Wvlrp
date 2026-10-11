@@ -53,7 +53,7 @@
   <section class="workspace">
     <div class="work-head"><div><h2>Explore and place</h2><p id="coords">Map coordinates</p></div><div class="zoom-controls"><button id="zoomOut" aria-label="Zoom out" type="button">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in" type="button">+</button></div></div>
     <div class="map-frame"><canvas id="worldMap" tabindex="0" aria-label="Zoomable West Virginia procedural game map. Tap to place or select, drag to pan, pinch or scroll to zoom."></canvas><div class="map-key"><span>● Your objects</span><span class="trail-key">━ Connected trails</span><span class="creek-key">〰 Valley creek</span></div></div>
-    <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><div class="preview-actions"><button id="findDeer3d" type="button">Find deer in 3D / Next herd</button><button id="inspect3d" type="button">Inspect selected</button><button id="refresh3d" type="button">Refresh 3D</button></div></div>
+    <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><div class="preview-actions"><button id="findDeer3d" type="button">Find deer in 3D / Next herd</button><button id="inspect3d" type="button">Inspect selected</button><button id="addRiley" type="button">Add Riley test figure</button><button id="refresh3d" type="button">Refresh 3D</button></div></div>
     <div class="preview-zoom" role="group" aria-label="3D character zoom controls"><button id="zoom3dIn" type="button" aria-label="Zoom closer to 3D character">＋ Zoom closer</button><button id="zoom3dOut" type="button" aria-label="Back away from 3D character">− Back away</button></div>
     <div class="preview-frame"><canvas id="scene" aria-label="Interactive Babylon.js woodland terrain preview"></canvas><p id="threeStatus">Loading Babylon.js preview…</p></div>
     <p id="previewCoverage" class="subtle" aria-live="polite">The 3D preview shows a small local area, not every deer on the 2D map. Use Find deer in 3D to jump to a herd.</p>
@@ -78,8 +78,8 @@
         <label for="hair">Hair</label><select id="hair"><option>brown</option><option>red</option><option>blonde</option><option>black</option><option>gray</option><option>white</option></select>
         <label for="hairStyle">Hairstyle</label><select id="hairStyle"><option value="wavy">Long wavy</option><option value="long">Long straight</option><option value="ponytail">Ponytail</option><option value="bob">Bob</option><option value="short">Short</option></select>
         <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option></select>
-        <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option></select><button id="applyPreset" type="button">Use this look</button>
-        <label for="modelFile">Use a detailed 3D person model (.glb)</label>
+        <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option><option value="riley">Riley — blonde test figure</option></select><button id="applyPreset" type="button">Use this look</button>
+        <label for="pose">Character pose</label><select id="pose"><option value="standing">Standing</option><option value="crouch">On hands and knees (test pose)</option></select><p class="subtle">Riley has full 3D hips and clothing. Her poses are snapshots, not a skeletal transition animation. Save with Apply changes.</p><label for="modelFile">Use a detailed 3D person model (.glb)</label>
         <input id="modelFile" type="file" accept=".glb,model/gltf-binary"><button type="button" id="clearModel">Use built-in preview figure</button>
         <p class="subtle">Loads into the 3D preview on this device only; the file itself is not uploaded, published, or saved to your world JSON. For an example of a detailed free woman model, see <a href="https://www.innerscene.com/tools/library/3d-parts/riley-3d-person-woman-standing-8d40398f" target="_blank" rel="noopener noreferrer">this CC0 woman GLB</a>.</p>
         <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
@@ -87,11 +87,11 @@
       </div>
       <div class="form-actions"><button id="commitObject" class="primary" type="button">Apply changes</button><button id="deleteObject" class="danger" type="button">Remove object</button></div>
     </div>
-    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">The studio now makes more detailed adult women and men with selectable hair, complexion, outfits and facial details. These are still procedural previews, not photorealistic/rigger-ready character scans. High-detail imported meshes, rigged animation, photo-to-3D, Oracle sync, and authenticated publishing remain future work.</p></section>
+    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">The studio includes a separate lightweight Riley test figure with two poses and orbit/zoom controls. The artwork is still a smooth procedural 3D prototype, not the photorealistic image or a production-rigged character. Other adults retain their old previews. These are still procedural previews, not photorealistic/rigger-ready character scans. High-detail imported meshes, rigged animation, photo-to-3D, Oracle sync, and authenticated publishing remain future work.</p></section>
   </aside>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./studio.js"></script>
+<script type="module" src="./studio.js?v=riley3"></script>
 </body>
 </html>
