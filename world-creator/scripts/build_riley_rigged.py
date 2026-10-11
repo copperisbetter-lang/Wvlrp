@@ -38,7 +38,9 @@ eye_pts=[o.matrix_world @ v.co for o in source_meshes
          for v in o.data.vertices]
 eye_source=sum(p.z for p in eye_pts)/len(eye_pts) if eye_pts else mins[2]+height*.88
 eye_z=(eye_source-mins[2])*scale
-head_cut=max(1.40,eye_z-.096*H) # Preserve Riley face through neck, replace old body
+# Bring the head through its actual neck; never crop it at the jaw.
+# The donor is trimmed below the cut so its neck will not cover Riley's face.
+head_cut=max(1.382, min(1.435, eye_z-.135*H))
 original_head=[]
 for obj in list(source_meshes):
     name=obj.name.lower()
@@ -125,7 +127,7 @@ for o in body_candidates:
     bm=bmesh.new();bm.from_mesh(o.data)
     # Remove donor head completely, but leave its anatomical neck and chest.
     # The original detailed Riley head replaces it; both meet around collar.
-    bmesh.ops.delete(bm,geom=[v for v in bm.verts if v.co.z>head_cut+.018],
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if v.co.z>head_cut-.018],
                      context="VERTS")
     bm.to_mesh(o.data);bm.free()
 
@@ -181,27 +183,100 @@ for v in body.data.vertices:
         p.y-=.006*bust*gauss(abs(x)-.078,.065)
 body.data.update()
 
-skin=bpy.data.materials.new("Riley smooth warm matte mannequin skin")
+# The donor abdominal surface contains a visibly recessed, heart-shaped patch.
+# Relax ONLY the central front abdomen, retaining the side silhouette and navel.
+# Smooth across existing body topology; never attach a cover-up sphere or decal.
+neighbors=[set() for _ in body.data.vertices]
+for e in body.data.edges:
+    i,j=e.vertices
+    neighbors[i].add(j);neighbors[j].add(i)
+rest=[v.co.copy() for v in body.data.vertices]
+abdomen_mask={}
+for v in body.data.vertices:
+    p=v.co
+    zweight=smooth((p.z-.99)/.07)*(1-smooth((p.z-1.245)/.08))
+    xweight=1-smooth((abs(p.x)-.065)/.13)
+    yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
+    weight=zweight*xweight*yweight
+    if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
+for iteration in range(24):
+    old=[v.co.copy() for v in body.data.vertices]
+    for idx,weight in abdomen_mask.items():
+        ns=neighbors[idx]
+        if not ns:continue
+        mid=sum((old[j] for j in ns),Vector())/len(ns)
+        # Preserve broad profile; relax small local dents and polygon boundaries.
+        body.data.vertices[idx].co=old[idx].lerp(mid,.55*weight)
+# Lift unusually deep local concavities only in the center, not the hips.
+for idx,weight in abdomen_mask.items():
+    p=body.data.vertices[idx].co
+    if p.x*p.x<.010 and 1.055<p.z<1.20 and p.y>-.079:
+        p.y-=.012*weight
+body.data.update()
+print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
+
+# Extract the real face appearance from its skin material where possible.
+# A single opaque body shader gets the sampled complexion, not a second
+# artificial shirt/shorts patch with a heart-shaped material boundary.
+def facial_skin_rgb():
+    swatches=[]
+    for obj in original_head:
+        if "low-poly" not in obj.name.lower() and "anatomical body" not in obj.name.lower():
+            continue
+        uv=obj.data.uv_layers.active
+        for mat in obj.data.materials:
+            if not mat:continue
+            nodes=mat.node_tree.nodes if mat.use_nodes and mat.node_tree else []
+            images=[n.image for n in nodes if n.type=="TEX_IMAGE" and n.image and n.image.size[0]>0]
+            if not images or uv is None:continue
+            im=max(images,key=lambda image:image.size[0]*image.size[1])
+            try:
+                width,height=im.size
+                px=im.pixels
+                for face in obj.data.polygons:
+                    for loopid in face.loop_indices:
+                        pt=obj.data.vertices[obj.data.loops[loopid].vertex_index].co
+                        # Sample visible cheek below eye; exclude eyes, brows, hair.
+                        if not (eye_z-.105<pt.z<eye_z-.045 and .022<abs(pt.x)<.080 and pt.y<-.014):
+                            continue
+                        tc=uv.data[loopid].uv
+                        ix=min(width-1,int((tc.x%1)*width))
+                        iy=min(height-1,int((tc.y%1)*height))
+                        k=4*(iy*width+ix)
+                        rgb=tuple(float(px[k+j]) for j in range(3))
+                        if .12<sum(rgb)/3<.95 and max(rgb)-min(rgb)<.50:
+                            swatches.append(rgb)
+                        if len(swatches)>90:break
+                    if len(swatches)>90:break
+            except Exception as e:
+                print("RILEY_FACE_COLOR_SAMPLING_FALLBACK",str(e)[:120])
+        if len(swatches)>90:break
+    if len(swatches)>6:
+        return tuple(sorted(x[k] for x in swatches)[len(swatches)//2] for k in range(3))
+    for obj in original_head:
+        if obj.name.lower()!="low-poly":continue
+        for m in obj.data.materials:
+            if m and m.use_nodes:
+                p=m.node_tree.nodes.get("Principled BSDF")
+                if p and not p.inputs["Base Color"].is_linked:
+                    rgb=tuple(p.inputs["Base Color"].default_value[:3])
+                    if .2<sum(rgb)/3<.95:return rgb
+    return (.79,.64,.56)
+
+complexion=facial_skin_rgb()
+print("RILEY_FACE_SKIN_REFERENCE",tuple(round(v,4) for v in complexion))
+skin=bpy.data.materials.new("Riley complexion matched continuous mannequin skin")
 skin.use_nodes=True
 bs=skin.node_tree.nodes.get("Principled BSDF")
-bs.inputs["Base Color"].default_value=(.81,.655,.585,1)
+bs.inputs["Base Color"].default_value=(*complexion,1)
 bs.inputs["Roughness"].default_value=.78
-skin.diffuse_color=(.81,.655,.585,1)
-base=bpy.data.materials.new("Riley seamless neutral outfit guides")
-base.use_nodes=True
-bp=base.node_tree.nodes.get("Principled BSDF")
-bp.inputs["Base Color"].default_value=(.77,.615,.55,1)
-bp.inputs["Roughness"].default_value=.86
-base.diffuse_color=(.77,.615,.55,1)
+skin.diffuse_color=(*complexion,1)
+# No separate clothing/torso colored islands. Outfit overlays come later.
 body.data.materials.clear()
-body.data.materials.append(skin);body.data.materials.append(base)
+body.data.materials.append(skin)
 for face in body.data.polygons:
     face.use_smooth=True
-    p=face.center
-    # Only colored regions on the surface, not modeled cups or underwear pieces.
-    tank=(1.14<=p.z<=1.42 and abs(p.x)<.18)
-    shorts=(.84<=p.z<=1.02 and abs(p.x)<.21)
-    face.material_index=1 if (tank or shorts) else 0
+    face.material_index=0
 assert len(body.data.vertices)>8000,"Riley is still using a primitive replacement, not the anatomical sculpt"
 print("RILEY_REAL_SCULPT_INTEGRATED","verts",len(body.data.vertices),
       "sculpt_height",round(dheight,3),"preserved_face_parts",len(original_head),
