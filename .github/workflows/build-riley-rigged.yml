@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 concurrency:
   group: wvlrp-riley-rigged-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:
@@ -36,6 +36,9 @@ jobs:
           assert f.stat().st_size > 100_000 and f.open('rb').read(4)==b'glTF', 'Donor file is not GLB'
           print('CC0_ANATOMICAL_SOURCE_VALID',f.stat().st_size)
           PY
+      - name: Verify Python build scripts compile
+        run: |
+          python3 -m py_compile world-creator/scripts/build_riley_rigged.py world-creator/scripts/render_riley_turnaround.py
       - name: Export one newly modeled and skinned Riley GLB
         run: |
           set -euo pipefail
