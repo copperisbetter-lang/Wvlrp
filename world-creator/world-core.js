@@ -77,13 +77,42 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
-    modelKey:o.modelKey==="riley"?"riley":"",
+    modelKey:["riley","amy","chrissy"].includes(o.modelKey)?o.modelKey:"",
     pose:["standing","crouch","allfours"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
   // A clean world has no automatically placed landmarks; the user can add them later.
   return {version:1,seed,objects,updatedAt:typeof value.updatedAt==="string"?value.updatedAt:null};
 }
+/**
+ * Add the two approved experiment figures to this device's current world.
+ * Run exactly once per browser using a separate migration marker in studio.js.
+ * Never reset the existing map, and never duplicate a model already present.
+ * Assets and identity remain separate from Riley / permanent game NPCs.
+ */
+export const TEST_CHARACTER_STARTERS = Object.freeze([
+  Object.freeze({id:"npc-amy-wild",type:"npc",name:"Amy (test)",modelKey:"amy",
+    x:-28,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
+    skin:"light",body:"slim",face:"oval",hair:"red",hairStyle:"long",
+    outfit:"mannequin",pose:"standing"}),
+  Object.freeze({id:"npc-christy-wild",type:"npc",name:"Christy (test)",modelKey:"chrissy",
+    x:28,y:18,behavior:"stationary",radius:0,locked:false,gender:"woman",
+    skin:"light",body:"slim",face:"oval",hair:"blonde",hairStyle:"long",
+    outfit:"mannequin",pose:"standing"})
+]);
+export function addTestCharacters(world) {
+  if(!world||!Array.isArray(world.objects))throw Error("A valid world is required");
+  const added=[];
+  for(const original of TEST_CHARACTER_STARTERS){
+    if(world.objects.some(o=>o.id===original.id||
+        (o.type==="npc"&&o.modelKey===original.modelKey)))continue;
+    if(world.objects.length>=5000)break;
+    const copy={...original};
+    world.objects.push(copy);added.push(copy);
+  }
+  return added;
+}
+
 export function makeRng(seed) {
   let a=seedNumber(seed)||1;
   return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
