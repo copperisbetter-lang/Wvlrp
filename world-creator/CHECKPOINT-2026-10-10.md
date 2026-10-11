@@ -28,6 +28,12 @@ Source: https://github.com/copperisbetter-lang/Wvlrp/tree/main/world-creator
 - Committed changes in `world-creator/character-models.js`, `studio.js`, `index.html`, `world-core.js`, and `README.md`. Static JS syntax of all three JS files checked; browser visual rendering and complete GLB import were not end-to-end verified.
 - Avoid modifying cameras/approved Ranger Station page or resetting user's locally saved world objects.
 
+## October 10 evening — deer preview discovery fix
+
+- Phone screenshot showed 101 deer visible as 2D map markers, but no deer in the 3D preview. Root cause in code: herd scattering starts at ~90 m from the map center and spreads much farther, while Babylon initially displays only the center 180 m × 180 m tile. The deer were not deleted.
+- Added **Find deer in 3D / Next herd** button to cycle through individual deer/herd leaders, re-center the 2D map and matching local 3D tile, and show nearby deer. Existing **Inspect selected** remains a closer viewpoint. The status caption now reports the count of deer within the local rendered area.
+- Adjusted mobile layout of the preview buttons. No deer positions, saved local world records, terrain data, or approved camera/Ranger Station pages were modified. GitHub code changes committed; live visual acceptance on the user's phone is still pending.
+
 ## User-approved design direction to preserve
 
 1. The **world generator** extends wilderness in chunks before a player approaches the visible boundary; players should never run into an abrupt edge. Generated locations should re-create identically upon return.
