@@ -194,7 +194,7 @@ for v in body.data.vertices:
         bust_shape=left_right*(.73*lower_fullness+.19*upper_slope+
                                 .08*low_curve)*front*height_envelope
         # Positive y is the back on this mesh; its front points toward -y.
-        p.y-=fullness*bust_shape
+        p.y-=.65*fullness*bust_shape
         # Lower pole is visibly heavier without a pinched or balloon-like tip.
         p.z-=.009*bust_shape*smooth((1.36-z)/.14)
         if abs(x)>.009:
@@ -228,7 +228,7 @@ for vertex in body.data.vertices:
         ymask=smooth((.055-q.y)/.105)
         weight=h*xmask*ymask
         if weight>.005:chest_mask[vertex.index]=weight
-for iteration in range(18):
+for iteration in range(0):
     previous=[vert.co.copy() for vert in body.data.vertices]
     for idx,w in chest_mask.items():
         adjacent=chest_neighbors[idx]
@@ -238,7 +238,7 @@ for iteration in range(18):
         # the breast's lower curve and without shrinking all the ribs.
         shift=(avg-previous[idx])
         body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
-print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",18)
+print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",0)
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -257,7 +257,7 @@ for v in body.data.vertices:
     yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
     weight=zweight*xweight*yweight
     if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
-for iteration in range(24):
+for iteration in range(0):
     old=[v.co.copy() for v in body.data.vertices]
     for idx,weight in abdomen_mask.items():
         ns=neighbors[idx]
