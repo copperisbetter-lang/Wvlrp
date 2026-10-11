@@ -40,7 +40,7 @@ eye_source=sum(p.z for p in eye_pts)/len(eye_pts) if eye_pts else mins[2]+height
 eye_z=(eye_source-mins[2])*scale
 # Bring the head through its actual neck; never crop it at the jaw.
 # The donor is trimmed below the cut so its neck will not cover Riley's face.
-head_cut=max(1.382, min(1.435, eye_z-.135*H))
+head_cut=max(1.440, min(1.465, eye_z-.090*H))
 original_head=[]
 for obj in list(source_meshes):
     name=obj.name.lower()
@@ -183,7 +183,7 @@ for v in body.data.vertices:
     # Gravity is expressed by a gentle upper slope, lowered full point, and
     # fuller underside. The chest blends into the rib cage and underarms.
     bust_target=M["bust_circumference_cm"]
-    fullness=max(.080,min(.205,.093+.0040*(bust_target-94)))
+    fullness=max(.075,min(.135,.078+.0020*(bust_target-94)))
     if 1.095 < z < 1.465 and abs(x)<.253:
         front=smooth((.045-p.y)/.152)
         left_right=gauss(abs(x)-.096,.086)
@@ -211,6 +211,34 @@ for v in body.data.vertices:
     if z>1.345 and .16<abs(x)<.36:
         upper_arm=smooth((abs(x)-.16)/.10)
         p.x*=1-.019*shoulder*upper_arm
+# The CC0 donor can develop severe triangular pinches when the full bust is
+# adjusted. Smooth the CHEST topology gently along existing mesh connectivity,
+# preserving broad gravity-soft volume but removing faceted / overlapping folds.
+# This is real sculpt relaxation, not a second mesh or a cover-up material.
+chest_neighbors=[set() for _ in body.data.vertices]
+for edge in body.data.edges:
+    a,b=edge.vertices
+    chest_neighbors[a].add(b);chest_neighbors[b].add(a)
+chest_mask={}
+for vertex in body.data.vertices:
+    q=vertex.co
+    if 1.115<q.z<1.445 and abs(q.x)<.265 and q.y<.055:
+        h=smooth((q.z-1.115)/.075)*(1-smooth((q.z-1.445)/.055))
+        xmask=1-smooth((abs(q.x)-.160)/.105)
+        ymask=smooth((.055-q.y)/.105)
+        weight=h*xmask*ymask
+        if weight>.005:chest_mask[vertex.index]=weight
+for iteration in range(18):
+    previous=[vert.co.copy() for vert in body.data.vertices]
+    for idx,w in chest_mask.items():
+        adjacent=chest_neighbors[idx]
+        if len(adjacent)<3:continue
+        avg=sum((previous[n] for n in adjacent),Vector())/len(adjacent)
+        # Tangential relaxation reduces stretched triangles without erasing
+        # the breast's lower curve and without shrinking all the ribs.
+        shift=(avg-previous[idx])
+        body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
+print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",18)
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -366,15 +394,15 @@ cap_verts=[(hx,hy,head_top+.014)]
 cap_faces=[]
 nsteps=64;nrings=16
 def hairline_drop(a):
-    return .18+.105*max(0,sin(a))-.075*max(0,-sin(a))
+    return .165+.105*max(0,sin(a))-.105*max(0,-sin(a))
 for i in range(1,nrings+1):
     t=i/nrings
-    radial=sin(.5*pi*t)
+    radial=math.sqrt(max(0,2*t-t*t))
     for k in range(nsteps):
         a=2*pi*k/nsteps
         cap_verts.append((
-            hx+(.098+.009*t)*radial*cos(a),
-            hy+(.087+.012*t)*radial*sin(a),
+            hx+(.113+.008*t)*radial*cos(a),
+            hy+(.116+.019*t)*radial*sin(a),
             head_top+.014-(hairline_drop(a)+.014)*smooth(t)
         ))
 for k in range(nsteps):
@@ -401,7 +429,7 @@ for k in range(veil_columns+1):
         wave=.009*sin(2.6*pi*t+3*a)*smooth(t)
         veil_verts.append((
             hx+(.105+.046*t)*ux+wave,
-            hy+(.095+.075*t)*uy+.009*t,
+            hy+(.132+.117*t)*uy+.025*t,
             head_top-.158-length*t
         ))
         if k and j:
@@ -444,11 +472,11 @@ for layer in range(3):
         ux,uy=cos(a),sin(a)
         root=Vector((
             hx+(.101+.004*layer)*ux,
-            hy+(.090+.003*layer)*uy,
+            hy+(.119+.006*layer)*uy,
             head_top-.073-.028*layer
         ))
         length=.37+.08*uy+layer*.012+rng.uniform(-.027,.024)
-        spread=(ux*(.032+.018*layer),.058+.027*uy)
+        spread=(ux*(.039+.019*layer),.093+.035*uy)
         strand(root,length,spread,rng.uniform(0,2*pi),
                rng.uniform(.024,.034),(k+layer)%4)
 # Face-framing temple pieces retain an open view of the facial textures.
