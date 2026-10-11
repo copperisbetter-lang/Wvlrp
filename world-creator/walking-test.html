@@ -387,7 +387,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    if(!manager)continue;
    for(let i=0;i<manager.numTargets;i++){
      const target=manager.getTarget(i);
-     if(/Caitlyn Natural Smile/i.test(target.name))target.influence=.78;
+     if(/Caitlyn Natural Smile/i.test(target.name))target.influence=.12; // calm, natural smile (avoid old .78 grin)
    }
  }
  caitlynReady=true;
