@@ -38,3 +38,13 @@ test("invalid world import is refused; original anchors are preserved",()=>{
   assert.ok(w.objects.some(o=>o.id==="anchor-ranger"));
   assert.ok(w.objects.some(o=>o.name==="Buck"));
 });
+
+test("Riley hands-and-knees pose survives JSON round-trip without disturbing deer",()=>{
+  const w=newWorld();
+  const allDeer=spawnDeer(w,101,0,0,4);
+  w.objects.push({id:"riley-pose-test",type:"npc",modelKey:"riley",name:"Riley (test)",pose:"allfours",x:3,y:3});
+  const read=sanitizedWorld(JSON.parse(JSON.stringify(w)));
+  assert.equal(read.objects.find(o=>o.id==="riley-pose-test").pose,"allfours");
+  assert.equal(read.objects.filter(o=>o.type==="deer").length,101);
+  assert.deepEqual(read.objects.filter(o=>o.type==="deer").map(o=>[o.id,o.x,o.y]),allDeer.map(o=>[o.id,o.x,o.y]));
+});
