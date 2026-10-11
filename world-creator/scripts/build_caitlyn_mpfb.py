@@ -4,6 +4,7 @@ No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requir
 """
 import bpy, os, sys, zipfile, json, math, traceback
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mathutils import Vector
 from face_materials import preserve_photo_skin, verify_photo_skin_glb
 
