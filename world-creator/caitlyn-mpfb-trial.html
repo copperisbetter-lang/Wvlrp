@@ -24,7 +24,7 @@
 <button id="idle">Play movement</button>
 <button id="smile" aria-pressed="true">Smile: gentle</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-face-hair-pose-b58e4b6" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -47,7 +47,7 @@ try {
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
  const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-face-hair-pose-b58e4b6&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
