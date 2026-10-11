@@ -42,3 +42,7 @@ input[type=file]{max-width:100%;color:var(--muted);font-size:11px}
 .preview-zoom{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
 .preview-zoom button{flex:1 1 140px;min-height:48px;touch-action:manipulation}
 #scene{touch-action:none}
+
+/* Optional large 3D inspection without disturbing the 2D editing map. */
+.preview-frame.expanded{height:min(76vh,850px)}
+@media(max-width:740px){.preview-frame.expanded{height:75vh;min-height:420px}.preview-actions{grid-template-columns:1fr 1fr}.preview-actions #addRiley{grid-column:auto}.preview-zoom button{flex-basis:110px}}
