@@ -25,3 +25,14 @@ Date: October 11, 2026
 - Presence of the GLB in the repository has been verified. No visual inspection of that exact 3D export has been completed in this checkpoint; **do not claim Amy's appearance is final or approved**.
 - When continuing, inspect Amy at front / profile / back / overhead, including extreme close zoom for open geometry, and inspect chest contours. Make any fixes to Amy's own files without replacing Chrissy or Riley.
 - Preserve this checkpoint as the character's design target even when updating source or generated assets.
+
+
+## Pelvic mesh defect and repair source checkpoint (October 11)
+- User observed a hollow spot around Amy's crotch after viewing the 3D character.
+- Root cause suspected: `build_amy_mpfb.py` set `bake_masks=True`, which applies clothing/delete MASK modifiers and can permanently remove body surface polygons. See official MPFB export documentation.
+- Source updated to call `ExportService.bake_modifiers_remove_helpers(...bake_masks=False...)` and explicitly **remove** any remaining MASK modifiers before exporting; retain helpers cleanup and rig.
+- Added `check_and_repair_pelvic_surface`: inspect the base mesh's boundary edges around the pelvis, repair only fully enclosed small local border loops, recalculate normals, and **fail build** if any pelvic boundary edges remain. This does not substitute a garment, shell or fake colored patch for the missing human surface.
+- Updated GLB cache keys in `studio.js`, `index.html`, and `amy-mpfb-trial.html` so a rebuilt Amy can be fetched rather than a previous cached GLB.
+- Main source repair GitHub commit `980099e5a1a593762f5695def501ad4c72fd804c`.
+- **Verification status:** Source files committed; the current `assets/amy-mpfb-trial.glb` file was still blob SHA `6715f7ee5a5f890c2109af0457c32e2848fc95fe` on last check, so the published 3D asset had not yet been verified rebuilt. Do not claim the user's visible hole has been fixed until the GLB's SHA changes and front/underside/close-up inspection succeeds.
+- Preserve Amy as a separate test avatar at the same world map location, without touching Christy/Chrissy/Riley.
