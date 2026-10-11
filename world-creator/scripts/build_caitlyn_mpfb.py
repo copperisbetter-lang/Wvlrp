@@ -279,7 +279,8 @@ def add_light_blue_eyes(export_root, body, rig):
         print("WVLRP_CAITLYN_EYE_WARNING no eye asset: leave original eyes")
         return
     body_coords=[v.co for v in body.data.vertices]
-    h=max(v.z for v in body_coords)-min(v.z for v in body_coords)
+    max_z=max(v.z for v in body_coords)
+    h=max_z-min(v.z for v in body_coords)
     mid=(max(v.x for v in body_coords)+min(v.x for v in body_coords))*.5
     inv=body.matrix_world.inverted_safe()
     pts=[inv@(ob.matrix_world@v.co) for ob in eyes for v in ob.data.vertices]
@@ -288,7 +289,7 @@ def add_light_blue_eyes(export_root, body, rig):
     radius_limit=.0070*h
     for side in (-1,1):
         side_pts=[p for p in pts if (p.x-mid)*side>.013*h and
-                  p.z>max(v.z for v in body_coords)-.16*h]
+                  p.z>max_z-.16*h]
         if len(side_pts)<28:
             print("WVLRP_CAITLYN_IRIS_SIDE_WARNING",side,len(side_pts))
             continue
