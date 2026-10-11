@@ -6,6 +6,9 @@ on:
       - world-creator/riley-measurements.json
       - .github/workflows/build-riley-rigged.yml
   workflow_dispatch:
+concurrency:
+  group: wvlrp-riley-rigged-main
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -69,6 +72,32 @@ jobs:
             echo 'Existing rigged asset is current'
           else
             git commit -m "Publish Riley with sculpted CC0 full-body mesh and skeletal actions"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Publish build diagnostic even if export failed
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo 'Riley sculpted-body build report'
+            echo "source_commit: ${GITHUB_SHA}"
+            echo 'result: ${{ job.status }}'
+            date -u '+checked_utc: %Y-%m-%dT%H:%M:%SZ'
+            if [ -f /tmp/riley-rig.log ]; then
+              echo 'last_blender_log_lines:'
+              tail -n 35 /tmp/riley-rig.log
+            fi
+            if [ -f world-creator/assets/riley-rigged-v1.glb ]; then
+              echo "rigged_glb_bytes: $(stat -c%s world-creator/assets/riley-rigged-v1.glb)"
+            fi
+          } > world-creator/assets/riley-build-status.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-build-status.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Riley sculpted-body Blender build outcome"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
