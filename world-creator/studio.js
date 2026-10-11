@@ -17,7 +17,7 @@ let removedInitialDeer=0;
 try {
   const deerCount=world.objects.filter(o=>o.type==="deer").length;
   const requestedClear=new URLSearchParams(window.location.search).has("clearDeer");
-  const initialTestHerd=deerCount===101 && world.objects.some(o=>o.modelKey==="riley");
+  const initialTestHerd=deerCount===101; // The user-approved prototype herd size, even if Riley is not selected.
   if(requestedClear || (initialTestHerd && !localStorage.getItem(DEER_REMOVAL_MARKER))) {
     removedInitialDeer=deerCount;
     world.objects=world.objects.filter(o=>o.type!=="deer");
