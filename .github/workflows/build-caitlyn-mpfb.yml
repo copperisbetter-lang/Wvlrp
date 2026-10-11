@@ -60,6 +60,8 @@ jobs:
             /tmp/blender-4.2.0-linux-x64/blender --background --python \
             world-creator/scripts/build_caitlyn_mpfb.py 2>&1 | tee /tmp/caitlyn-mpfb-build.log
           grep WVLRP_CAITLYN_MPFB_SUCCESS /tmp/caitlyn-mpfb-build.log
+          grep 'WVLRP_CAITLYN_GROUNDED_POSE Caitlyn HandsAndKnees' /tmp/caitlyn-mpfb-build.log
+          grep 'WVLRP_CAITLYN_GROUNDED_POSE Caitlyn ElbowsAndKnees' /tmp/caitlyn-mpfb-build.log
       - name: Check GLB structure (bones, glTF skin)
         run: |
           python3 - <<'PY'
