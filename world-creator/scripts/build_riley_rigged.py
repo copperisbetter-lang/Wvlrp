@@ -471,48 +471,52 @@ print("RILEY_FITTED_HAIR",len(hair.data.vertices),
       "head_top",round(head_top,3),
       "source","original CC0 fitted crown retained with long layered blonde locks")
 
-# Extend the scalp-fitted bob with smooth, broad, layered hair surfaces.
-# These are thin, shaded wavy tresses (NOT cylinders sticking through the face)
-# and each stays attached to the head bone. Ends reach past the shoulders.
-# Vary length/parting to break up the rigid cone silhouette on phone previews.
+# Build a continuous curtain of long, soft, wave-layered blonde hair.
+# A wide, smooth mesh follows the scalp and falls BEHIND both shoulders,
+# replacing the thin spaghetti-like strips that previously began at mid-back.
+# Separate narrow cheek-framing locks blend into the existing fitted crown.
 strand_vertices=[];strand_faces=[];strand_materials=[]
-for lock in range(40):
-    face_lock=lock>=30
-    local=lock-30 if face_lock else lock
-    if face_lock:
-        # Side-parted face-framing locks fall over the shoulder, not the eyes.
-        x0=(1 if local%2==0 else -1)*(.078+.010*(local//2))
-        length=.345+.120*(.5+.5*sin(lock*2.7))
-    else:
-        # Roots tuck beneath the original hair cap and fan outward only
-        # below the ears. Do not leave straight, square-edged hair cards.
-        x0=-.102+.204*(local+.5)/30
-        length=.435+.155*(.5+.5*sin(lock*2.7))
-    phase=lock*.73
-    n_steps=26;n_width=4
-    for j in range(n_steps+1):
-        t=j/n_steps
-        z=head_top-.120-length*t
-        wave=.018*sin(4*pi*t+phase)*smooth(t)
-        # Lower layers fan out a little; the crown remains rooted in the scalp.
-        x=x0+wave+(x0/.102)*.053*smooth(t)
-        y=(-.022+.065*smooth(t) if face_lock else .108+.125*smooth(t))
-        y+=.011*sin(2*pi*t+phase)*smooth(t)
-        # The cards begin nearly point-thin under the scalp, widen into
-        # overlapping locks and soften to a slender tapered end.
-        width=(.019 if face_lock else .028)*(0.08+.92*smooth(t/.24))
-        width*=max(.12,1-.88*t*t)*(.88+.12*sin(phase))
-        for k in range(n_width+1):
-            u=k/n_width*2-1
-            strand_vertices.append((x+u*width,
-                y+.008*(1-u*u)+.004*sin(pi*t+u+phase),z+.006*u*u))
-        if j:
-            a=(j-1)*(n_width+1)+lock*(n_steps+1)*(n_width+1)
-            b=j*(n_width+1)+lock*(n_steps+1)*(n_width+1)
-            for k in range(n_width):
-                strand_faces.append((a+k,a+k+1,b+k+1,b+k))
+cols=64;rows=42
+for j in range(rows+1):
+    t=j/rows
+    spread=smooth(t/.60)
+    for i in range(cols+1):
+        u=2*i/cols-1
+        # Crown is narrow, length widens gently as the hair passes shoulders.
+        x=(.104+.100*spread)*u
+        x+=.013*sin(5.0*pi*t+4.0*u)*smooth(t)
+        # Lay over, not inside, the upper back. Shape has natural vertical waves.
+        y=.070+.158*spread+.011*u*u
+        y+=.011*sin(9.0*u+4.0*pi*t)*smooth(t)
+        # End layers vary a few cm, rather than stopping on a square line.
+        length=.520+.026*sin(3*pi*u)+.015*cos(7*pi*u)
+        z=head_top-.064-length*t
+        strand_vertices.append((x,y,z))
+        if i and j:
+            d=j*(cols+1)+i
+            strand_faces.append((d-(cols+1)-1,d-(cols+1),d,d-1))
+            # Subtle golden streaks aligned with hair flow.
+            strand_materials.append((i//9)%len(hair_colors))
+# Face-framing strands follow the cheek line down to shoulder level.
+for lock in range(12):
+    side=-1 if lock<6 else 1
+    index=lock%6
+    phase=lock*.86
+    start=len(strand_vertices)
+    for j in range(29):
+        t=j/28
+        midx=side*(.082+.008*index+.044*smooth(t))
+        midx+=.012*sin(4*pi*t+phase)*smooth(t)
+        y=-.012+.080*smooth(t)
+        z=head_top-.102-(.350+.090*(.5+.5*sin(phase)))*t
+        halfwidth=(.013+.002*(index%3))*(.06+.94*smooth(t/.24))*max(.17,1-.78*t*t)
+        for k in range(5):
+            u=2*k/4-1
+            strand_vertices.append((midx+u*halfwidth,y+.005*(1-u*u),z+.003*u*u))
+            if j and k:
+                curr=start+j*5+k
+                strand_faces.append((curr-6,curr-5,curr,curr-1))
                 strand_materials.append(lock%len(hair_colors))
-# The fitted scalp cap stays above these strands so they grow from the head.
 flow_mesh=bpy.data.meshes.new("Riley layered hair surface")
 flow_mesh.from_pydata(strand_vertices,[],strand_faces);flow_mesh.update()
 flowing_hair=bpy.data.objects.new("Riley flowing soft blonde hair length",flow_mesh)
@@ -520,10 +524,11 @@ bpy.context.collection.objects.link(flowing_hair)
 for mat in hair_colors:
     mat.use_backface_culling=False
     flow_mesh.materials.append(mat)
-for i,poly in enumerate(flow_mesh.polygons):
-    poly.use_smooth=True
-    poly.material_index=strand_materials[i]
-print("RILEY_LONG_HAIR_SURFACE",len(strand_vertices),len(strand_faces))
+for index,face in enumerate(flow_mesh.polygons):
+    face.use_smooth=True
+    face.material_index=strand_materials[index]
+print("RILEY_LONG_HAIR_SURFACE",len(strand_vertices),len(strand_faces),
+      "curtain_columns",cols,"curtain_rows",rows,"face_locks",12)
 # Attach Riley's preserved head visually to the anatomical shoulders.
 # Find actual open-edge outlines instead of estimating the join from all
 # nearby head/chest vertices (which previously left the visible head seam).
