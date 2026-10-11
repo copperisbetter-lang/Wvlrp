@@ -11,10 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets"
 MODE = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "standing"
-if MODE not in ("standing", "kneeling"):
+if MODE not in ("standing", "kneeling", "allfours"):
     raise ValueError("Choose standing or kneeling")
-INPUT = SOURCE / ("riley-real.glb" if MODE == "standing" else "riley-kneeling.glb")
-OUTPUT = SOURCE / ("riley-blonde-standing.glb" if MODE == "standing" else "riley-blonde-kneeling.glb")
+INPUT = SOURCE / ("riley-kneeling.glb" if MODE == "kneeling" else "riley-real.glb")
+OUTPUT = SOURCE / ("riley-blonde-kneeling.glb" if MODE == "kneeling" else "riley-blonde-allfours.glb" if MODE == "allfours" else "riley-blonde-standing.glb")
 
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
@@ -54,7 +54,7 @@ for ob in [v for v in bpy.context.scene.objects if v.type=="MESH" and v.name.sta
     bm=bmesh.new()
     bm.from_mesh(ob.data)
     bm.faces.ensure_lookup_table()
-    old_faces=[f for f in bm.faces if (ob.matrix_world @ f.calc_center_median()).z < zmin + (zmax-zmin)*(.565 if MODE=="standing" else .52)]
+    old_faces=[f for f in bm.faces if (ob.matrix_world @ f.calc_center_median()).z < zmin + (zmax-zmin)*(.565 if MODE!="kneeling" else .52)]
     if old_faces:
         bmesh.ops.delete(bm, geom=old_faces, context="FACES")
         bm.to_mesh(ob.data)
@@ -124,8 +124,8 @@ def sphere(name, pos, scale, material, segments=16):
 
 # Cover the source jeans with anatomical skin-colored legs, then add short loose fabric shorts.
 # Original meshes are retained intact, and no other NPC is changed.
-hipz=.60 if MODE=="standing" else .59
-hemz=.455 if MODE=="standing" else .47
+hipz=.60 if MODE!="kneeling" else .59
+hemz=.455 if MODE!="kneeling" else .47
 loft("Riley shorts waistband",[(cx,cy,z(hipz+.025),H*.153,H*.105),
                                (cx,cy,z(hipz+.010),H*.153,H*.105)],
      seam,24)
@@ -217,6 +217,47 @@ for side in (-1,1):
                           sy-H*.011*sin(pi*t),head_center_z+H*.025-H*(.33+(.02*j/13))*t,
                           H*.005*(1-.72*t),H*.005*(1-.72*t)))
         loft(f"Riley face-frame blonde {side} {j}",rings,hair[(j+1)%4],7)
+
+# Hands-and-knees pose: deform real skinned, textured GLB geometry in place.
+# Source is a baked static mesh without an armature; this is a posed prototype,
+# not a full skeletal animation. Mapping places hips high, knees and palms down.
+if MODE=="allfours":
+    def clamp(x):return max(0.0,min(1.0,x))
+    def smooth(x):x=clamp(x);return x*x*(3-2*x)
+    def deform(p,name):
+        px,py,pz=p.x,p.y,p.z
+        h=(pz-zmin)/H
+        if h>=.60:
+            # Horizontal back, neck and forward-facing head.
+            dz=pz-z(.60)
+            n_y=cy-0.95*dz + (py-cy)*0.36
+            n_z=zmin+H*.42+0.30*dz-(py-cy)*.92
+        elif h>=.27:
+            t=(h-.27)/.33
+            n_y=cy+H*.19*(1-t)+(py-cy)*.85
+            n_z=zmin+H*(.075+.345*t)
+        else:
+            t=h/.27
+            n_y=cy+H*(.19+.28*(1-t))+(py-cy)*.8
+            n_z=zmin+H*(.075+.020*(1-t))
+        # Original arms hang vertically; bend their mesh into straight supports.
+        # Blend at shoulders so the skin stays connected to the torso.
+        if ("anatomical body" in name or "female_casualsuit" in name) and pz > z(.40):
+            reach=smooth((abs(px-cx)/H-.077)/.055)*smooth((1.45-pz)/.16)
+            if reach>0:
+                t=clamp((z(.86)-pz)/(H*.47)+.45)
+                arm_y=cy-H*(.23+.14*t)+(py-cy)*.22
+                arm_z=zmin+H*(.51-.47*t)
+                n_y=n_y*(1-reach)+arm_y*reach
+                n_z=n_z*(1-reach)+arm_z*reach
+        return Vector((px,n_y,max(zmin+.005,n_z)))
+    for ob in [ob for ob in bpy.context.scene.objects if ob.type=="MESH"]:
+        world=ob.matrix_world.copy()
+        inv=world.inverted_safe()
+        for v in ob.data.vertices:
+            v.co=inv @ deform(world @ v.co,ob.name.lower())
+        ob.data.update()
+    print("RILEY_POSE allfours: palms and knees lowered; textured source geometry retained")
 
 # Do not replace the head with a flat image or a primitive doll; retain the
 # realistic original face, body proportions, and existing textured materials.
