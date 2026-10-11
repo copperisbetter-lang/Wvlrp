@@ -8,16 +8,16 @@
 </style></head><body>
 <header><div><h1>Chrissy — MPFB 3D trial</h1><small>WVLRP World Creator · separate experimental character</small></div><a href="./">← World Creator</a></header>
 <main class="main">
-<div class="legend"><span>Drag to rotate</span><span>Pinch to zoom</span><span>52-joint Mixamo skeleton</span><span>Test GLB, not final Chrissy</span></div>
-<div id="stage"><img id="fallback" src="./assets/chrissy-mpfb-trial-preview.png?v=2" alt="Chrissy model front-view preview while interactive 3D loads"><canvas id="renderCanvas" aria-label="Interactive 3D Chrissy character"></canvas><div id="status" role="status">Loading 3D character…</div></div>
+<div class="legend"><span>Drag to rotate</span><span>Pinch to zoom</span><span>52-joint Mixamo skeleton</span><span>Fuller bust · softer contours · revised skin · still a test</span></div>
+<div id="stage"><img id="fallback" src="./assets/chrissy-mpfb-trial-preview.png?v=3" alt="Chrissy model front-view preview while interactive 3D loads"><canvas id="renderCanvas" aria-label="Interactive 3D Chrissy character"></canvas><div id="status" role="status">Loading 3D character…</div></div>
 <div class="controls">
 <button id="home">Front / reset</button>
 <button id="left">Rotate left</button>
 <button id="right">Rotate right</button>
-<button id="idle">Pause idle motion</button><a class="button" href="./assets/chrissy-mpfb-trial-preview.png?v=2" target="_blank" rel="noopener">Open preview photo</a>
+<button id="idle">Pause idle motion</button><a class="button" href="./assets/chrissy-mpfb-trial-preview.png?v=3" target="_blank" rel="noopener">Open preview photo</a>
 <a class="button" href="./assets/chrissy-mpfb-trial.glb" download="chrissy-mpfb-trial.glb">Download GLB</a>
 </div>
-<p class="note"><strong>What this is:</strong> a real 3D MakeHuman/MPFB-generated reference trial based loosely on the approved blonde front/profile/back appearance. It has an articulated skeleton and a subtle test idle animation. The model has NOT been verified as a faithful match to Chrissy's face or exact dimensions, and it is not plugged into gameplay movement yet. The original Riley character and world data have not been changed.</p>
+<p class="note"><strong>What this is:</strong> a real 3D MakeHuman/MPFB-generated reference trial, now rebuilt with female anatomy, fuller gravity-softened bust and a uniform test skin material. The face, texture detail and exact silhouette still need visual review. It has an articulated skeleton and a subtle test idle animation. The model has NOT been verified as a faithful match to Chrissy's face or exact dimensions, and it is not plugged into gameplay movement yet. The original Riley character and world data have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/chrissy-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
 <p class="note">If the model fails on a mobile browser, try refresh once or download the GLB and open it in a separate 3D viewer. Its approximate 15.7 MB size can take a moment on cellular data.</p>
 </main>
@@ -39,7 +39,7 @@ try {
  camera.inertia=.7;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=1.28;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.7;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','chrissy-mpfb-trial.glb?v=2',scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','chrissy-mpfb-trial.glb?v=3',scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   let low=new BABYLON.Vector3(Infinity,Infinity,Infinity),high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
   for(const m of res.meshes){
