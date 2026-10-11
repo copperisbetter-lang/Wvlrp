@@ -412,6 +412,13 @@ if len(face_lower)<12:
                 for v in o.data.vertices if 1.36<v.co.z<1.55]
 body_upper=boundary_points([body],head_cut-.10,head_cut+.045)
 body_upper=[v for v in body_upper if abs(v.x)<.15 and abs(v.y)<.16]
+# The voxel-remeshed skin is watertight: the former open cut is capped and
+# has no boundary edges. Use its highest neck surface ring in that case.
+if len(body_upper)<12:
+    body_upper=[v.co.copy() for v in body.data.vertices
+                if head_cut-.090<v.co.z<head_cut-.016
+                and abs(v.co.x)<.15 and abs(v.co.y)<.16]
+    print("RILEY_WATERTIGHT_NECK_SECTION",len(body_upper))
 if len(face_lower)<12 or len(body_upper)<12:
     raise RuntimeError("Cannot identify the two physical neck contours for Riley")
 face_z=min(v.z for v in face_lower)
