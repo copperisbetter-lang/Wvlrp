@@ -54,7 +54,7 @@ const localCharacterFiles = new Map();
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
 const BUILTIN_CHARACTER_GLB=Object.freeze({
   riley:RILEY_RIGGED_GLB,
-  amy:"./assets/amy-mpfb-trial.glb?v=amy-world-20261011",
+  amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011"
 });
