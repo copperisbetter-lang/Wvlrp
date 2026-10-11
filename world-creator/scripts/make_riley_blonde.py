@@ -1,5 +1,5 @@
-"""Make an adult beach-test Riley prototype from the repository's CC0 textured models.
-This modifies visible meshes for in-game Babylon previews without changing the world save.
+"""Make an adult featureless Barbie-style Riley mannequin from CC0 source meshes.
+This changes the standalone test figure only, not the deer or saved game world.
 All new geometry is original, generated here; the underlying model remains licensed CC0.
 Run: blender -b --factory-startup --python make_riley_blonde.py -- standing
 """
@@ -39,22 +39,21 @@ print(f"RILEY_INPUT mode={MODE} mesh_count={len(original)} height={H:.3f} "
 for ob in original:
     print("MODEL_MESH", ob.name, "MATERIALS", [slot.material.name for slot in ob.material_slots if slot.material])
 
-# Remove the actual stock bob and old shoes, otherwise dark hair and footwear
-# protrude through our long blonde hair and fresh sneakers.
+# Remove the stock bob and shoes, leaving Riley with soft blonde hair and bare mannequin feet.
 for ob in original:
     name=ob.name.lower()
     if name.startswith("bob01") or name.startswith("shoes05"):
         bpy.data.objects.remove(ob, do_unlink=True)
 
-# Remove the entire legacy shirt/trouser outfit, not just the trouser faces.
-# The anatomical body underneath is used as the skin-colored swimsuit mannequin.
+# Remove the entire legacy shirt/trouser outfit.
+# The original base figure is converted to a featureless doll mannequin.
 old_outfits=[o for o in bpy.context.scene.objects if o.type=="MESH"
              and o.name.startswith("female_casualsuit")]
 for ob in old_outfits:
     bpy.data.objects.remove(ob,do_unlink=True)
 print("RILEY_REMOVED_OLD_CLOTHING",len(old_outfits))
 
-# Work in proportional coordinates so both source poses receive consistent wardrobe.
+# Work in proportional coordinates so all three static poses match.
 def z(frac):
     return zmin + frac * H
 def mat(name, rgb, rough=0.82):
@@ -108,8 +107,7 @@ def sphere(name, pos, scale, material, segments=16):
     for face in ob.data.polygons:face.use_smooth=True
     return ob
 
-# Keep the anatomical legs and feet rather than layering tube legs or shoes over
-# the source mesh. The bikini is fitted to that body after head and face discovery.
+# Keep the continuous base legs and bare feet without layering tube limbs or shoes.
 
 # Find the actual head on each source pose from its visible face and scalp.
 # Overall character bounds cannot position hair reliably: kneeling / stock asset
@@ -258,136 +256,72 @@ if front_candidates:
 print("RILEY_SOFT_HAIR_AND_SMIRK",MODE,
       "layers",88,"fringe",26,"face_vertices",face_sculpted)
 
-# Beach test outfit: a non-nude, adult triangle-string bikini.
-# Fit fabric and straps directly over the anatomical torso. No stock shirt,
-# blocky shorts or separate artificial legs should remain in the final GLBs.
-fabric=mat("Riley | deep ocean teal bikini fabric",(.055,.31,.34),.54)
-trim=mat("Riley | cream bikini piping",(.89,.86,.73),.60)
-cordmat=mat("Riley | teal string ties",(.035,.20,.22),.58)
-for m in (fabric,trim,cordmat):
-    m.use_backface_culling=False
+# Barbie-style adult display mannequin: no clothes and no anatomical
+# detailing. The face/hair stay recognizable, while the body gets a smooth,
+# uniform non-photographic doll finish. This is deliberately NON-anatomical.
+doll_skin=mat("Riley | smooth matte featureless doll skin",(.79,.61,.50),.83)
+body_parts=[ob for ob in bpy.context.scene.objects if ob.type=="MESH" and
+            ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly")]
+if not body_parts:
+    raise RuntimeError("Cannot find Riley's base mannequin body")
+# Strip any separate anatomically detailed add-ons if they exist.
+detail_terms=("genital","vulva","vagina","labia","nipple","areola","pubic")
+removed_details=[]
+for obj in list(bpy.context.scene.objects):
+    if obj.type=="MESH" and any(word in obj.name.lower() for word in detail_terms):
+        if obj not in body_parts:
+            removed_details.append(obj.name)
+            bpy.data.objects.remove(obj,do_unlink=True)
 
-body_cloud=[ob.matrix_world @ v.co
-            for ob in bpy.context.scene.objects if ob.type=="MESH"
-            and ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly")
-            for v in ob.data.vertices]
-if not body_cloud:
-    raise RuntimeError("Body mesh missing: cannot safely dress Riley in a bikini")
-
-def skin_surface_y(xv,zv,front=True):
-    close=[p.y for p in body_cloud if abs(p.x-xv)<H*.030 and abs(p.z-zv)<H*.025]
-    if not close:
-        close=[p.y for p in body_cloud if abs(p.x-xv)<H*.065 and abs(p.z-zv)<H*.055]
-    if not close:
-        # Conservative placement on the near/far torso, not a pasted-on plane.
-        return cy+(-1 if front else 1)*H*.105
-    return (min(close)-H*.0035) if front else (max(close)+H*.0035)
-
-def swim_panel(name, points, material):
-    # Double-sided 3D fabric patch: front and reverse triangles.
-    center=sum((Vector(p) for p in points),Vector((0,0,0)))/len(points)
-    pts=[tuple(p) for p in points]+[tuple(center)]
-    mid=len(points)
-    faces=[]
-    for i in range(mid):
-        n=(i+1)%mid
-        faces.extend(((i,n,mid),(mid,n,i)))
-    return mesh(name,pts,faces,material)
-
-def swimsuit_cord(name,points,material=cordmat,radius=None):
-    radius=H*.0024 if radius is None else radius
-    poly=[Vector(p) for p in points]
-    if len(poly)<2:return
-    verts=[];faces=[]
-    for k,p in enumerate(poly):
-        tangent=(poly[min(k+1,len(poly)-1)]-poly[max(0,k-1)]).normalized()
-        ref=Vector((0,0,1)) if abs(tangent.z)<.88 else Vector((0,1,0))
-        a=tangent.cross(ref).normalized()
-        b=tangent.cross(a).normalized()
-        for j in range(7):
-            theta=2*pi*j/7
-            v=p+radius*(cos(theta)*a+sin(theta)*b)
-            verts.append(tuple(v))
-        if k:
-            for j in range(7):
-                n=(j+1)%7
-                faces.extend((((k-1)*7+j,(k-1)*7+n,k*7+n,k*7+j),))
-    return mesh(name,verts,faces,material)
-
-bust_z=eye_z-H*.197
-bust_bottom=bust_z-H*.051
-bust_top=bust_z+H*.080
-shoulder_z=eye_z-H*.102
-waist_z=eye_z-H*.362
-bottom_z=waist_z-H*.108
-
-for side in (-1,1):
-    center_x=head_x+side*H*.073
-    cup_inner=center_x-side*H*.059
-    cup_outer=center_x+side*H*.060
-    top_front=skin_surface_y(center_x,bust_top)
-    bottom_front=skin_surface_y(center_x,bust_bottom)
-    toppt=(center_x,top_front-H*.007,bust_top)
-    innerpt=(cup_inner,bottom_front-H*.008,bust_bottom)
-    outerpt=(cup_outer,bottom_front-H*.008,bust_bottom)
-    lower_mid=((cup_inner+cup_outer)/2,
-               bottom_front-H*.014,bust_bottom+H*.018)
-    swim_panel("Riley | bikini triangle top "+str(side),
-               [innerpt,outerpt,toppt,lower_mid],fabric)
-    swimsuit_cord("Riley | triangle top hem "+str(side),
-                 [innerpt,lower_mid,outerpt],trim,H*.0030)
-    strap_up=(head_x+side*H*.073,
-              skin_surface_y(center_x,shoulder_z)-H*.010,
-              shoulder_z)
-    strap_back=(head_x+side*H*.066,
-                skin_surface_y(center_x,shoulder_z,False)+H*.010,
-                shoulder_z-H*.028)
-    swimsuit_cord("Riley | neck strap "+str(side),
-                 [toppt,strap_up,strap_back],cordmat,H*.0030)
-    tie_x=head_x+side*H*.17
-    tie_front=(tie_x,skin_surface_y(tie_x,bust_bottom)-H*.009,bust_bottom)
-    tie_back=(tie_x,skin_surface_y(tie_x,bust_bottom,False)+H*.009,bust_bottom)
-    swimsuit_cord("Riley | back band "+str(side),
-                 [outerpt,tie_front,tie_back],cordmat)
-    # Bikini bottom curves across the hip; two slim side ties and a tiny bow.
-    hipx=head_x+side*H*.142
-    front_hip=(hipx,skin_surface_y(hipx,waist_z)-H*.012,waist_z)
-    back_hip=(hipx,skin_surface_y(hipx,waist_z,False)+H*.012,waist_z)
-    swimsuit_cord("Riley | bikini side string "+str(side),
-                 [front_hip,(hipx+side*H*.015,cy,waist_z+H*.003),back_hip])
-    knot=Vector((hipx+side*H*.018,cy,waist_z+H*.006))
-    swimsuit_cord("Riley | bikini bow loop upper "+str(side),
-                 [tuple(knot),tuple(knot+Vector((side*H*.017,0,H*.016))),
-                  tuple(knot+Vector((side*H*.021,0,H*.001))),tuple(knot)])
-    swimsuit_cord("Riley | bikini bow tail "+str(side),
-                 [tuple(knot),tuple(knot+Vector((side*H*.006,0,-H*.026)))])
-
-front_belt_y=skin_surface_y(head_x,waist_z)-H*.010
-front_low_y=skin_surface_y(head_x,bottom_z)-H*.012
-front_points=[(head_x-H*.114,front_belt_y,waist_z),
-              (head_x+H*.114,front_belt_y,waist_z),
-              (head_x+H*.042,front_low_y,bottom_z),
-              (head_x-H*.042,front_low_y,bottom_z)]
-swim_panel("Riley | bikini bottom front",front_points,fabric)
-swimsuit_cord("Riley | bikini front waistband",
-              front_points[:2],trim,H*.0028)
-back_belt_y=skin_surface_y(head_x,waist_z,False)+H*.010
-back_low_y=skin_surface_y(head_x,bottom_z,False)+H*.010
-swim_panel("Riley | bikini bottom back",
-           [(head_x-H*.12,back_belt_y,waist_z),
-            (head_x+H*.12,back_belt_y,waist_z),
-            (head_x+H*.054,back_low_y,bottom_z),
-            (head_x-H*.054,back_low_y,bottom_z)],fabric)
-swimsuit_cord("Riley | bikini back waistband",
-              [(head_x-H*.12,back_belt_y,waist_z),
-               (head_x+H*.12,back_belt_y,waist_z)],trim,H*.0028)
-print("RILEY_SWIMSUIT_FITTED",MODE,"bust",round(bust_z,3),
-      "waist",round(waist_z,3),"body_points",len(body_cloud))
+# The existing base figure is a continuous, non-rigged surface. Smooth local
+# high-frequency details around the central pelvis; retain natural hips,
+# thighs and leg separation. Do not flatten the entire lower body into a box.
+smoothed_verts=0
+pelvis_center=eye_z-H*.44
+for ob in body_parts:
+    world=ob.matrix_world.copy()
+    inv=world.inverted_safe()
+    for _ in range(4):
+        positions=[world @ v.co for v in ob.data.vertices]
+        adjacency=[set() for _ in positions]
+        for edge in ob.data.edges:
+            a,b=edge.vertices
+            adjacency[a].add(b);adjacency[b].add(a)
+        next_positions=list(positions)
+        for index,p in enumerate(positions):
+            if not adjacency[index]:continue
+            xdist=abs((p.x-head_x)/H)
+            zdist=abs((p.z-pelvis_center)/H)
+            if xdist>=.082 or zdist>=.075:continue
+            weight=(1-(xdist/.082)**2)**2*(1-(zdist/.075)**2)**2
+            avg=sum((positions[n] for n in adjacency[index]),Vector((0,0,0)))/len(adjacency[index])
+            next_positions[index]=p.lerp(avg,.48*weight)
+            smoothed_verts+=1
+        for v,p in zip(ob.data.vertices,next_positions):
+            v.co=inv @ p
+    # Replace body decals/skin-texture details by a single flat satin skin.
+    # Preserve all meshes above the neck, including eyes, lips and smile.
+    skin_slot=len(ob.data.materials)
+    ob.data.materials.append(doll_skin)
+    for poly in ob.data.polygons:
+        center=world @ poly.center
+        if center.z<eye_z-H*.115:
+            poly.material_index=skin_slot
+        poly.use_smooth=True
+    ob.data.update()
+print("RILEY_FEATURELESS_MANNEQUIN",MODE,
+      "smoothed",smoothed_verts,"removed_details",removed_details,
+      "body_meshes",len(body_parts))
+# Safety guard: the exported prototype must not reintroduce swimwear or
+# separate explicit-anatomy meshes from the original assets.
+for obj in bpy.context.scene.objects:
+    if obj.type=="MESH" and any(w in obj.name.lower() for w in
+        ("bikini","shorts","sneaker","female_casualsuit","genital","nipple","vulva")):
+        raise AssertionError("Non-mannequin geometry remains: "+obj.name)
 
 
-# The old build only dressed the stock broad torso, so shorts did not change
-# her underlying silhouette. Sculpt ALL skin and clothes together into a
-# proportionate, naturally slim/active adult figure. Leave her actual face,
+# Slim the source broad torso without changing facial features. Sculpt the
+# smooth, matte mannequin into a naturally active adult silhouette. Leave her actual face,
 # scalp, and feet unchanged, preserving expression and grounded posture.
 def clamp01(x):return max(0.,min(1.,x))
 def smooth01(x):
