@@ -83,10 +83,10 @@ const localCharacterFiles = new Map();
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
 const BUILTIN_CHARACTER_GLB=Object.freeze({
   riley:RILEY_RIGGED_GLB,
-  amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
+  amy:"./assets/amy-mpfb-trial.glb?v=cc0-face-texture-20261011-v1",
   // Christy in the world uses the previously saved Chrissy source model.
-  chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8",
+  chrissy:"./assets/chrissy-mpfb-trial.glb?v=cc0-face-texture-20261011-v1",
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=cc0-face-texture-20261011-v1",
   mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
