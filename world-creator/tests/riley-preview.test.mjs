@@ -46,3 +46,12 @@ test("Editor labels early skeletal movement truthfully",()=>{
   assert.match(page,/The new Riley uses one skeleton/);
   assert.match(page,/Kneeling/);
 });
+
+test("Riley's rigged body uses a natural flesh shader without painting her face",()=>{
+  assert.match(studio,/function applyRileyFleshTone\(/);
+  assert.match(studio,/riley sculpted anatomical body/);
+  assert.match(studio,/riley seamless neck transition/);
+  assert.match(studio,/riley complexion matched continuous mannequin skin/);
+  assert.match(studio,/applyRileyFleshTone\(result,o\.skin\)/);
+  assert.match(studio,/fair:"#E2AF9B"/);
+});
