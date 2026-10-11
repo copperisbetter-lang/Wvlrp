@@ -438,9 +438,13 @@ def main():
             # the body is +Y; knees should flex with the ankles behind them.
             if name in ("Caitlyn Kneel", "Caitlyn HandsAndKnees", "Caitlyn ElbowsAndKnees") and frame > 1:
                 back_world=Vector((0,1,0))
+                original_shin_angles={side:abs(math.degrees(bones[side].rotation_euler.x)) for side in ("lshin","rshin")}
                 for part in ("lshin","rshin"):
                     shin=bones[part]
-                    amount=abs(math.degrees(shin.rotation_euler.x))
+                    # Keep the original bend request for BOTH knees. Blender
+                    # dependency-graph evaluations may reset the untouched side
+                    # while we probe the first knee's world direction.
+                    amount=original_shin_angles[part]
                     trials=[]
                     for sign in (-1,1):
                         shin.rotation_euler.x=math.radians(sign*amount)
@@ -533,7 +537,7 @@ def main():
                     hands_forward=mean([shoulder[i].y-wrists[i].y for i in (0,1)])
                     elbow_forward=mean([shoulder[i].y-elbow[i].y for i in (0,1)])
                     grounded_difference=abs(kz-cz)
-                    loss=26*grounded_difference**2
+                    loss=1200*grounded_difference**2
                     loss+=9*(hip.z-kz-.46)**2
                     loss+=7*(knee_back-.15)**2
                     loss+=15*max(0,.035-ankle_back)**2
@@ -544,7 +548,11 @@ def main():
                     loss+=3*(hands_forward-(.30 if use_elbows else .07))**2
                     loss+=3*(elbow_forward-(.12 if use_elbows else .04))**2
                     loss+=7*sum((v.z-kz)**2 for v in knee)/2
-                    loss+=7*sum((v.z-cz)**2 for v in contacts)/2
+                    loss+=36*sum((v.z-cz)**2 for v in contacts)/2
+                    if use_elbows:
+                        # For forearm-and-knee support, the wrists should lie
+                        # near the elbow plane, not float high above it.
+                        loss+=45*sum((wrists[i].z-contacts[i].z-.025)**2 for i in (0,1))/2
                     return loss,grounded_difference,hip,knee,contacts,wrists
                 # All angular adjustments act symmetrically; no snapped or
                 # backward-facing knee, no broken asymmetrical shoulders.
@@ -556,11 +564,12 @@ def main():
                     (("lforearm","rforearm"),[-130,-100,-75,-50,-25,0,25,50,75,100,130])
                 ]
                 # Use two deliberate passes, then finer joint adjustments.
-                for iteration in range(3):
+                for iteration in range(5):
                     for limbs,candidates in choices:
                         old=math.degrees(bones[limbs[0]].rotation_euler.x)
-                        if iteration==2:
-                            candidates=[old-12,old-6,old,old+6,old+12]
+                        if iteration>=2:
+                            step=12 if iteration==2 else 5 if iteration==3 else 2
+                            candidates=[old-2*step,old-step,old,old+step,old+2*step]
                         best=(float("inf"),old)
                         for angle in candidates:
                             limb_set(limbs,angle)
