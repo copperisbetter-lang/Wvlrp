@@ -23,12 +23,13 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Walking Test</h1><p>Temporary male figure · Ranger Station practice area · Not the finished game</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Walking Test</h1><p>Caitlyn · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading 3D scene…</div>
-<div id="help">Push up on joystick to walk toward Ranger Station. Left / right turns. Swipe the scenery to look around.</div>
+<div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
 <div id="problem"><h2>3D scene did not load</h2><p id="errorText">Please try refreshing in Chrome with an internet connection.</p></div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -72,23 +73,72 @@ for(let i=0;i<48;i++){
 }
 const root=new B.TransformNode('player-position',scene);root.position.set(0,0,4);
 const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
-const skin=material('skin','#c99673'),shirt=material('plaid shirt','#47745f'),pants=material('trousers','#555e51'),boots=material('boots','#28291e'),hair=material('hair','#463a30');
-sphere('torso',1,0,1.54,0,shirt,walkBody,[.62,.86,.32]);
-sphere('head',.5,0,2.38,-.02,skin,walkBody,[.82,1.12,.84]);
-sphere('hair cap',.5,0,2.61,-.04,hair,walkBody,[.84,.3,.9]);
-box('nose',.085,.08,.12,0,2.34,-.26,skin,walkBody);
-for(const side of [-1,1]){
-const arm=new B.TransformNode('shoulder',scene);arm.parent=walkBody;arm.position.set(side*.38,1.91,0);
-sphere('arm',.3,0,-.27,0,shirt,arm,[.75,1.75,.8]);
-sphere('hand',.19,0,-.60,0,skin,arm);
-const leg=new B.TransformNode('hip',scene);leg.parent=walkBody;leg.position.set(side*.19,1.06,0);
-sphere('thigh',.36,0,-.25,0,pants,leg,[.85,1.65,.95]);
-const knee=new B.TransformNode('knee',scene);knee.parent=leg;knee.position.y=-.50;
-sphere('shin',.31,0,-.24,0,pants,knee,[.85,1.6,.95]);
-box('shoe',.25,.18,.42,0,-.48,-.10,boots,knee);
-if(!root.metadata)root.metadata={legs:[],arms:[],knees:[]};
-root.metadata.legs.push(leg);root.metadata.knees.push(knee);root.metadata.arms.push(arm);
+// Keep the world, working joystick and collision boundary intact.
+// Load Caitlyn's ACTUAL rigged GLB, not a blob/mannequin stand-in.
+let caitlynReady=false, caitlynFailure='', gaitBones={};
+const gaitAliases={
+  leftThigh:['leftupleg','leftthigh','lthigh'],
+  rightThigh:['rightupleg','rightthigh','rthigh'],
+  leftKnee:['leftleg','leftshin','lshin'],
+  rightKnee:['rightleg','rightshin','rshin'],
+  leftArm:['leftarm','leftupperarm','lupperarm'],
+  rightArm:['rightarm','rightupperarm','rupperarm']
+};
+function normalizedBone(n){return String(n||'').toLowerCase().replace(/mixamorig/g,'').replace(/[^a-z0-9]/g,'');}
+function setGait(part,angle){
+ const entry=gaitBones[part]; if(!entry)return;
+ entry.node.rotationQuaternion=entry.base.multiply(B.Quaternion.RotationAxis(B.Axis.X,angle));
 }
+B.SceneLoader.ImportMeshAsync(null,'./assets/',
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=2',scene,undefined,'.glb')
+.then(result=>{
+ const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
+ if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
+ const lower=new B.Vector3(Infinity,Infinity,Infinity),upper=new B.Vector3(-Infinity,-Infinity,-Infinity);
+ for(const m of realMeshes){
+   m.computeWorldMatrix(true);
+   const b=m.getBoundingInfo().boundingBox;
+   lower.minimizeInPlace(b.minimumWorld); upper.maximizeInPlace(b.maximumWorld);
+ }
+ const height=upper.y-lower.y;
+ if(!Number.isFinite(height)||height<=.1)throw Error('Caitlyn model has invalid dimensions');
+ const scale=1.72/height;
+ const placement=new B.TransformNode('Caitlyn scaled model',scene);
+ placement.parent=walkBody;
+ // In Blender the character faces toward camera/front (+Z after export).
+ // World walking direction is -Z. Turn her toward the station.
+ placement.rotation.y=Math.PI;
+ placement.scaling.set(scale,scale,scale);
+ placement.position.set(-(lower.x+upper.x)*.5*scale,-lower.y*scale,-(lower.z+upper.z)*.5*scale);
+ const imported=[...result.meshes,...result.transformNodes];
+ for(const node of imported){if(!node.parent)node.parent=placement;}
+ // The standing clip supplies a consistent rest pose without touching saved GLB.
+ const idle=result.animationGroups.find(g=>g.name==='Caitlyn Stand');
+ if(idle){idle.start(true,1,idle.from,idle.to,false);idle.goToFrame(idle.from);idle.pause();}
+ const nodes=[...result.transformNodes,...result.meshes];
+ for(const [part,names] of Object.entries(gaitAliases)){
+   const n=nodes.find(node=>names.includes(normalizedBone(node.name)));
+   if(!n)continue;
+   if(!n.rotationQuaternion)n.rotationQuaternion=B.Quaternion.FromEulerAngles(n.rotation.x,n.rotation.y,n.rotation.z);
+   gaitBones[part]={node:n,base:n.rotationQuaternion.clone()};
+ }
+ for(const mesh of realMeshes){
+   const manager=mesh.morphTargetManager;
+   if(!manager)continue;
+   for(let i=0;i<manager.numTargets;i++){
+     const target=manager.getTarget(i);
+     if(/Caitlyn Natural Smile/i.test(target.name))target.influence=.78;
+   }
+ }
+ caitlynReady=true;
+ status.textContent='Caitlyn loaded · try walking and turning';
+}).catch(e=>{
+ caitlynFailure=e?.message||String(e);
+ status.textContent='Caitlyn model failed to load: '+caitlynFailure;
+ document.getElementById('problem').style.display='block';
+ document.querySelector('#problem h2').textContent='Caitlyn could not be loaded';
+ document.getElementById('errorText').textContent=caitlynFailure;
+});
 root.rotation.y=0;
 const camera=new B.ArcRotateCamera('follow',Math.PI/2,1.30,7,new B.Vector3(0,1.5,0),scene);
 camera.lowerRadiusLimit=3;camera.upperRadiusLimit=16;camera.lowerBetaLimit=.45;camera.upperBetaLimit=1.55;camera.wheelPrecision=35;
@@ -112,7 +162,7 @@ engine.runRenderLoop(()=>{
  let f=-axisY+(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
  let turn=axisX+(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
  f=Math.max(-1,Math.min(1,f));turn=Math.max(-1,Math.min(1,turn));
- yaw-=turn*dt*2;root.rotation.y=yaw;
+ yaw+=turn*dt*2;root.rotation.y=yaw;
  let moved=0;
  if(Math.abs(f)>.06){let speed=2.8*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
  if(!blocked(nx,root.position.z))root.position.x=nx;else dx=0;
@@ -122,15 +172,18 @@ engine.runRenderLoop(()=>{
  const walking=moved>.05;
  if(walking)clock+=dt*8.8;
  const swing=walking?Math.sin(clock)*.52:0;
- root.metadata.legs[0].rotation.x=swing;root.metadata.legs[1].rotation.x=-swing;
- root.metadata.knees[0].rotation.x=walking?Math.max(0,-Math.sin(clock))*.45:0;
- root.metadata.knees[1].rotation.x=walking?Math.max(0,Math.sin(clock))*.45:0;
- root.metadata.arms[0].rotation.x=-swing*.7;root.metadata.arms[1].rotation.x=swing*.7;
+ // Small procedural gait on Caitlyn's real skinned joints. Static GLB kept unchanged.
+ setGait('leftThigh',swing*.55);
+ setGait('rightThigh',-swing*.55);
+ setGait('leftKnee',walking?Math.max(0,-Math.sin(clock))*.18:0);
+ setGait('rightKnee',walking?Math.max(0,Math.sin(clock))*.18:0);
+ setGait('leftArm',-swing*.38);
+ setGait('rightArm',swing*.38);
  walkBody.position.y=walking?Math.abs(Math.sin(clock))*.035:0;
  let target=new B.Vector3(root.position.x,1.45,root.position.z);
  camera.setTarget(target);
  if(follow){camera.alpha=Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
- status.textContent=(walking?'Walking':'Standing')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
+ if(caitlynReady)status.textContent='Caitlyn '+(walking?'walking':'standing')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
  scene.render();
 });
 window.addEventListener('resize',()=>engine.resize());
