@@ -79,7 +79,7 @@
         <label for="hairStyle">Hairstyle</label><select id="hairStyle"><option value="wavy">Long wavy</option><option value="long">Long straight</option><option value="ponytail">Ponytail</option><option value="bob">Bob</option><option value="short">Short</option></select>
         <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option></select>
         <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option><option value="riley">Riley — blonde test figure</option></select><button id="applyPreset" type="button">Use this look</button>
-        <label for="pose">Character pose</label><select id="pose"><option value="standing">Standing</option><option value="crouch">Kneeling (static 3D test)</option></select><p class="subtle">Riley now uses textured 3D models for standing and kneeling; these are static poses of the same source character, not a rigged hands-and-knees animation. Save with Apply changes.</p><label for="modelFile">Use a detailed 3D person model (.glb)</label>
+        <label for="pose">Character pose</label><select id="pose"><option value="standing">Standing</option><option value="crouch">Kneeling (static 3D test)</option></select><p class="subtle">Riley uses customized 3D standing and kneeling prototypes with long blonde hair, loose shorts and sneakers. These are static poses, not a rigged hands-and-knees animation. Save with Apply changes.</p><label for="modelFile">Use a detailed 3D person model (.glb)</label>
         <input id="modelFile" type="file" accept=".glb,model/gltf-binary"><button type="button" id="clearModel">Use built-in preview figure</button>
         <p class="subtle">Loads into the 3D preview on this device only; the file itself is not uploaded, published, or saved to your world JSON. For an example of a detailed free woman model, see <a href="https://www.innerscene.com/tools/library/3d-parts/riley-3d-person-woman-standing-8d40398f" target="_blank" rel="noopener noreferrer">this CC0 woman GLB</a>.</p>
         <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
@@ -87,11 +87,11 @@
       </div>
       <div class="form-actions"><button id="commitObject" class="primary" type="button">Apply changes</button><button id="deleteObject" class="danger" type="button">Remove object</button></div>
     </div>
-    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">Riley has real textured standing and kneeling source meshes (CC0). Tap Add / find Riley to focus the same saved character instead of creating copies. Her requested long blonde hair, fitted top, very short loose shorts and sneakers are NOT yet modeled into these assets; realistic hands-and-knees animation requires a properly rigged character. Other NPCs remain procedural previews; Oracle sync and publishing are not active.</p></section>
+    <section class="section" aria-label="Project scope"><h3>Coming next</h3><p class="subtle">Riley has real textured standing and kneeling source meshes (CC0). Tap Add / find Riley to focus the same saved character instead of creating copies. Her long blonde hair, loose shorts and sneakers are now geometry in custom GLBs. This is a prototype; further fitting, facial detail, animation and a rigged hands-and-knees pose are still needed. Other NPCs remain procedural previews; Oracle sync and publishing are not active.</p></section>
   </aside>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./studio.js?v=riley6poses"></script>
+<script type="module" src="./studio.js?v=riley-blonde1"></script>
 </body>
 </html>
