@@ -78,7 +78,7 @@ export function sanitizedWorld(value) {
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
     modelKey:["riley","amy","chrissy","caitlyn"].includes(o.modelKey)?o.modelKey:"",
-    pose:["standing","bend","crouch","allfours"].includes(o.pose)?o.pose:"standing",
+    pose:["standing","bend","crouch","allfours","elbows"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
   // A clean world has no automatically placed landmarks; the user can add them later.
