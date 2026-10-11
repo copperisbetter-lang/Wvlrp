@@ -95,7 +95,7 @@ def add_soft_waves(hair):
     print("WVLRP_CAITLYN_HAIR_WAVES",len(vs))
 
 
-def replace_cape_with_layered_hair(hair_obj, body, rig):
+def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     """Replace only Caitlyn's stock hair SHELL with scalp-fitted, tapered locks.
 
     Original body and rig remain intact. Hair is weighted to the same Head
@@ -117,7 +117,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
     # In the actual exported Caitlyn avatar it produced a floating bald-cap
     # above her visible forehead. Her EYES provide a stable anatomical
     # reference for the skull even when a basemesh vertex has an outlying Z.
-    family=[rig]+list(ObjectService.get_list_of_children(rig))
+    family=[export_root]+list(ObjectService.get_list_of_children(export_root))
     eye_objects=[ob for ob in family if ob.type=="MESH" and
                  ("high-poly" in ob.name.lower() or
                   ("eye" in ob.name.lower() and not any(
@@ -126,11 +126,8 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
     eye_pts=[ob.matrix_world @ v.co for ob in eye_objects
              for v in ob.data.vertices]
     if len(eye_pts)<28:
-        # Fall back to basemesh eye-level landmarks, not zhi as scalp.
-        # This keeps the build reproducible if MakeHuman changes asset names.
-        eye_z=zhi-.072*height
-        print("WVLRP_CAITLYN_HAIR_EYE_FALLBACK",len(eye_pts))
-        eye_mid_x=None
+        raise RuntimeError("Caitlyn flowing hair: exported eyes missing; "
+                           "refusing to position wig from an unreliable body top")
     else:
         eye_z=sum(p.z for p in eye_pts)/len(eye_pts)
         eye_mid_x=(min(p.x for p in eye_pts)+max(p.x for p in eye_pts))*.5
@@ -630,7 +627,7 @@ def main():
     # Replace only the stiff long01 hair shell on the export copy.
     export_hair=next((ob for ob in [export_root]+children
                       if ob.type=="MESH" and "long01" in ob.name.lower()),None)
-    replace_cape_with_layered_hair(export_hair,exp,rig)
+    replace_cape_with_layered_hair(export_hair,exp,rig,export_root)
     add_light_blue_eyes(export_root,exp,rig)
 
     def normbone(name):
