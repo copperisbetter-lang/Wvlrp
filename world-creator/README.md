@@ -42,6 +42,14 @@ For local development, serve the folder using `python3 -m http.server 8000` from
 - The model builder produces updated GLBs for standing, kneeling and hands-and-knees preview poses. These poses remain baked static meshes; the experimental soft hair sway in Babylon is not skeletal or cloth physics.
 - The source/build does not modify existing deer, other NPCs, world JSON, or the Ranger Station. Phone preview and actual generated files must be checked before claiming final visual quality.
 
+## New Riley sculpted-body build (October 11, 2026)
+
+The **previous** torso/limb builder used rings, spheres and tapered cylinders. This made the chest, waist, seat and joints look like a store mannequin no matter how many proportions were tweaked.
+
+The **new candidate** in `scripts/build_riley_rigged.py` imports a full CC0 human body sculpt from [Innerscene's editable anatomical base](https://www.innerscene.com/tools/library/3d-parts/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1) (adapted from MakeHuman/MPFB assets). The workflow downloads the donor into an untracked temporary file, crops the donor head, preserves Riley's source face/eyes, soft-adjusts torso contours on the **existing sculpted surface**, keeps blonde hair and builds an exportable movement rig and animation tracks. It does not add ball-shaped breasts, disconnected capsules or protruding clothing. The figure uses smooth opaque non-explicit mannequin materials for outfit fitting.
+
+Source and output are different: `assets/riley-real.glb` remains the original CC0 source, and `assets/riley-rigged-v1.glb` is the generated output. Workflow validation checks the exported GLB skeleton, animations and sculpted body; `assets/riley-build-status.txt` records the last attempted export. **Until that status reports success AND front, side and rear phone previews are inspected, do not call the v2 body finished or pretend the measurements are a calibrated scan.** The 170/94/70/99 cm values are design targets, not measured circumference of the resulting triangles. Face-to-neck mesh seam and deformation quality will still need visual review.
+
 ## Critical safety and security boundaries
 
 - **Not an authenticated administrator console.** This repository is public, so the static editor page is also publicly viewable by anyone with the URL. The prototype never publishes changes to live gameplay; all edits are local to the visitor's browser.
