@@ -256,7 +256,7 @@ for v in body.data.vertices:
         bust_shape=left_right*(.73*lower_fullness+.19*upper_slope+
                                 .08*low_curve)*front*height_envelope
         # Positive y is the back on this mesh; its front points toward -y.
-        p.y-=.65*fullness*bust_shape
+        p.y-=.91*fullness*bust_shape
         # Lower pole is visibly heavier without a pinched or balloon-like tip.
         p.z-=.009*bust_shape*smooth((1.36-z)/.14)
         if abs(x)>.009:
@@ -290,7 +290,7 @@ for vertex in body.data.vertices:
         ymask=smooth((.055-q.y)/.105)
         weight=h*xmask*ymask
         if weight>.005:chest_mask[vertex.index]=weight
-for iteration in range(0):
+for iteration in range(8):
     previous=[vert.co.copy() for vert in body.data.vertices]
     for idx,w in chest_mask.items():
         adjacent=chest_neighbors[idx]
@@ -300,7 +300,7 @@ for iteration in range(0):
         # the breast's lower curve and without shrinking all the ribs.
         shift=(avg-previous[idx])
         body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
-print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",0)
+print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",8)
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -319,7 +319,7 @@ for v in body.data.vertices:
     yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
     weight=zweight*xweight*yweight
     if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
-for iteration in range(0):
+for iteration in range(10):
     old=[v.co.copy() for v in body.data.vertices]
     for idx,weight in abdomen_mask.items():
         ns=neighbors[idx]
@@ -449,7 +449,7 @@ for lock in range(40):
     local=lock-30 if face_lock else lock
     if face_lock:
         # Side-parted face-framing locks fall over the shoulder, not the eyes.
-        x0=(1 if local%2==0 else -1)*(.124+.012*(local//2))
+        x0=(1 if local%2==0 else -1)*(.078+.010*(local//2))
         length=.345+.120*(.5+.5*sin(lock*2.7))
     else:
         # Roots tuck beneath the original hair cap and fan outward only
@@ -464,11 +464,11 @@ for lock in range(40):
         wave=.018*sin(4*pi*t+phase)*smooth(t)
         # Lower layers fan out a little; the crown remains rooted in the scalp.
         x=x0+wave+(x0/.102)*.053*smooth(t)
-        y=(-.022+.048*smooth(t) if face_lock else .075+.095*smooth(t))
+        y=(-.022+.065*smooth(t) if face_lock else .108+.125*smooth(t))
         y+=.011*sin(2*pi*t+phase)*smooth(t)
         # The cards begin nearly point-thin under the scalp, widen into
         # overlapping locks and soften to a slender tapered end.
-        width=(.016 if face_lock else .023)*(0.08+.92*smooth(t/.24))
+        width=(.019 if face_lock else .028)*(0.08+.92*smooth(t/.24))
         width*=max(.12,1-.88*t*t)*(.88+.12*sin(phase))
         for k in range(n_width+1):
             u=k/n_width*2-1
