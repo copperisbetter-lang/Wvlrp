@@ -875,6 +875,25 @@ def main():
                 print("WVLRP_CAITLYN_SUPPORT_QA",name,
                       "max_support_error_m",round(support_error,3),
                       "left_right_error_m",round(left_right_error,3))
+                # A matched floor plane alone is not a quadrupedal pose.
+                # Check bent hips, horizontal-ish torso and forward arms.
+                chest=joint("chest") or joint("spine",True)
+                shoulders=[joint("larm"),joint("rarm")]
+                mean_knee_z=sum(k.z for k in knee)/2
+                hip_above_knees=hip.z-mean_knee_z
+                chest_forward=hip.y-chest.y
+                torso_slope=abs(chest.z-hip.z)
+                shoulder_forward=sum(hip.y-a.y for a in shoulders)/2
+                print("WVLRP_CAITLYN_POSTURE_QA",name,
+                      "hip_above_knees_m",round(hip_above_knees,3),
+                      "chest_forward_m",round(chest_forward,3),
+                      "shoulder_forward_m",round(shoulder_forward,3),
+                      "torso_slope_m",round(torso_slope,3),
+                      "hip_root_local_offset",round(corrected,3))
+                if not (.18<=hip_above_knees<=.86 and chest_forward>.16
+                        and shoulder_forward>.10 and torso_slope<.42):
+                    raise RuntimeError(name+
+                        " does not lower the torso into a grounded quadrupedal pose")
                 if error>.12 or support_error>.14 or left_right_error>.12:
                     raise RuntimeError(name+" knees and "+
                       ("elbows" if use_elbows else "hands")+
