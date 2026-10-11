@@ -19,7 +19,7 @@ jobs:
       - name: Install Blender for real GLB mesh editing
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender
+          sudo apt-get install -y --no-install-recommends blender python3-numpy
       - name: Generate blonde long-haired Riley 3D mesh and casual wardrobe
         run: |
           set -euo pipefail
