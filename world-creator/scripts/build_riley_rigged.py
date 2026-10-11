@@ -177,10 +177,25 @@ for v in body.data.vertices:
     # Soft upper glute and lower-back curve, tapering to the hamstring.
     if y>.005:
         p.y+=.014*hip*gauss(abs(x)-.105,.125)
-    # An existing body contour is subtly enriched, not supplemented with
-    # separate breast hemispheres that break the silhouette.
-    if y<-.035 and z>1.19 and abs(x)<.18:
-        p.y-=.006*bust*gauss(abs(x)-.078,.065)
+    # Rebuild a naturally contoured adult female bust directly in the donor's
+    # continuous torso topology.  The previous 6-mm nudge left the broad,
+    # nearly flat donor chest looking masculine, despite the 94-cm sizing
+    # label.  Deform the real FRONT chest vertices, not two pasted-on spheres.
+    # Each side tapers smoothly into the sternum, underbust, armpit and ribs;
+    # the lower curve is fuller than the upper slope (no balloon shapes).
+    if 1.115 < z < 1.455 and abs(x) < .238:
+        front=smooth((.027-p.y)/.155)
+        side=gauss(abs(x)-.090,.078)
+        lower=gauss(z-1.283,.092)
+        upper=gauss(z-1.334,.118)
+        bust_shape=side*(.78*lower+.22*upper)*front
+        p.y-=.082*bust_shape
+        # Small natural outward volume at the flanks without square shoulders.
+        p.x+=math.copysign(.0045*bust_shape,x) if abs(x)>.008 else 0
+    # Taper the broad donor deltoid transition, keeping full arm mobility.
+    if z>1.345 and .16<abs(x)<.36:
+        upper_arm=smooth((abs(x)-.16)/.10)
+        p.x*=1-.026*shoulder*upper_arm
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
