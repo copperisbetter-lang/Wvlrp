@@ -749,8 +749,10 @@ def main():
                     knee=[joint("lshin"),joint("rshin")]
                     shoulder=[joint("larm"),joint("rarm")]
                     elbow=[joint("lforearm"),joint("rforearm")]
-                    wrists=[joint("lhand") or joint("lforearm",True),
-                            joint("rhand") or joint("rforearm",True)]
+                    # Use the hand-bone end (the palm), not the wrist origin,
+                    # or the model appears to balance on its wrists in midair.
+                    wrists=[joint("lhand",True) or joint("lforearm",True),
+                            joint("rhand",True) or joint("rforearm",True)]
                     ankles=[joint("lfoot") or joint("lshin",True),
                             joint("rfoot") or joint("rshin",True)]
                     contacts=elbow if use_elbows else wrists
@@ -764,7 +766,7 @@ def main():
                     wrist_drop=mean([shoulder[i].z-wrists[i].z for i in (0,1)])
                     chest_forward=hip.y-chest.y
                     torso_level=abs(chest.z-hip.z)
-                    # Keep shoulders forward of wrists and forearms supported.
+                    # Keep shoulders forward of the supporting palms/forearms.
                     hands_forward=mean([shoulder[i].y-wrists[i].y for i in (0,1)])
                     elbow_forward=mean([shoulder[i].y-elbow[i].y for i in (0,1)])
                     grounded_difference=abs(kz-cz)
@@ -824,8 +826,8 @@ def main():
                 bpy.context.view_layer.update()
                 sample_knee=[joint("lshin"),joint("rshin")]
                 sample_contact=([joint("lforearm"),joint("rforearm")] if use_elbows
-                    else [joint("lhand") or joint("lforearm",True),
-                          joint("rhand") or joint("rforearm",True)])
+                    else [joint("lhand",True) or joint("lforearm",True),
+                          joint("rhand",True) or joint("rforearm",True)])
                 sample_z=sum(v.z for v in sample_knee+sample_contact)/4
                 slope=(sample_z-contact_z)/.10
                 if abs(slope)<.03: raise RuntimeError("Caitlyn hip vertical control cannot reach floor")
