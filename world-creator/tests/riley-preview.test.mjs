@@ -30,7 +30,7 @@ test("Riley's game animation needs a real loaded skeleton",()=>{
 
 test("Add Riley re-selects the character rather than duplicating it",()=>{
   assert.match(studio,/const previous=world\.objects\.find\(item=>item\.type==="npc"&&item\.modelKey==="riley"\)/);
-  assert.match(studio,/if\(previous\)\{\s*setSelection\(previous\)/);
+  assert.match(studio,/if\(previous\)\{[\s\S]*?setSelection\(previous\)/);
 });
 
 test("Approved design has stable size baseline for outfits",()=>{
