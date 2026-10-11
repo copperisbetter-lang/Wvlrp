@@ -160,16 +160,42 @@ for side in (-1,1):
         sphere("Riley lace "+str(side)+" "+str(i),
                (legx,cy-H*(.035+i*.020),z(.096)), (H*.021,H*.004,H*.003),laces,12)
 
-# A modeled cap covers the short dark original hair (not a pasted-on photograph).
-# The flowing locks supply actual 3D volume, visible from any orbit direction.
-head_center_z=z(.927)
-cap_rz=H*.072
-cap_rx=H*.079
-cap_ry=H*.067
-verts=[(cx,cy,head_center_z+cap_rz)]
+# Find the actual head on each source pose from its visible face and scalp.
+# Overall character bounds cannot position hair reliably: kneeling / stock asset
+# hierarchies give different heights. Use real eye and head vertices instead.
+face_marks=[]
+for ob in original:
+    if ob.name.lower().startswith(("eyebrow","eyelashes")):
+        face_marks.extend(ob.matrix_world @ v.co for v in ob.data.vertices)
+if face_marks:
+    eye_z=sum(p.z for p in face_marks)/len(face_marks)
+else:
+    eye_z=z(.87)
+head_vertices=[]
+for ob in original:
+    if ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly"):
+        head_vertices.extend(pt for v in ob.data.vertices
+                             if eye_z-H*.09 <= (pt:=ob.matrix_world @ v.co).z <= eye_z+H*.11)
+if len(head_vertices)<15:
+    head_vertices=face_marks
+if not head_vertices:
+    raise RuntimeError("Cannot locate Riley's physical head to attach her hair")
+head_x=(min(p.x for p in head_vertices)+max(p.x for p in head_vertices))*.5
+head_y=(min(p.y for p in head_vertices)+max(p.y for p in head_vertices))*.5
+head_top=max(p.z for p in head_vertices)
+head_center_z=head_top-H*.047
+print("RILEY_HEAD_ANCHOR",MODE,"eye_z",round(eye_z,3),
+      "scalp_top",round(head_top,3),"cap_center",round(head_center_z,3))
+
+# A close-fitting crown and wavy shoulder-length locks are genuine 3D,
+# attached to the found head, rather than a separate helmet hovering above.
+cap_rz=H*.054
+cap_rx=H*.065
+cap_ry=H*.060
+verts=[(head_x,head_y,head_center_z+cap_rz)]
 faces=[]
-STEPS=44
-RINGS=10
+STEPS=52
+RINGS=12
 for j in range(1,RINGS+1):
     theta=(pi/2)*j/RINGS
     rx=cap_rx*sin(theta)
@@ -177,7 +203,7 @@ for j in range(1,RINGS+1):
     zz=head_center_z+cap_rz*cos(theta)
     for k in range(STEPS):
         a=k*2*pi/STEPS
-        verts.append((cx+rx*cos(a),cy+ry*sin(a),zz))
+        verts.append((head_x+rx*cos(a),head_y+ry*sin(a),zz))
 for k in range(STEPS):
     faces.append((0,1+k,1+(k+1)%STEPS))
 for j in range(RINGS-1):
@@ -185,38 +211,65 @@ for j in range(RINGS-1):
     for k in range(STEPS):
         n=(k+1)%STEPS
         faces.append((start+k,start+n,start+STEPS+n,start+STEPS+k))
-mesh("Riley sculpted blonde crown",verts,faces,hair[1],)
+mesh("Riley fitted blonde hair crown",verts,faces,hair[1])
 random.seed(57012 if MODE=="standing" else 57013)
-for i in range(110):
-    # Wrap from ear to ear across the back half of the head; stagger shoulder-length waves.
-    angle = (-.08 + (i/109)*1.16)*pi  # rear arc
-    sx=cx+H*.074*cos(angle)
-    sy=cy+H*.062*sin(angle)
-    ht=head_center_z+H*(.045 + .013*random.random())
-    length=H*(.25 + .08*random.random())
-    sway=H*(.017 + .012*random.random())
-    radi=H*(.0038+.0025*random.random())
+for i in range(92):
+    # Parted wavy layers wrap the back and both sides of her face.
+    angle = (-.12 + (i/91)*1.24)*pi
+    sx=head_x+cap_rx*.92*cos(angle)
+    sy=head_y+cap_ry*.90*sin(angle)
+    ht=head_center_z+H*(.026+.013*random.random())
+    length=H*(.235+.075*random.random())
+    sway=H*(.008+.010*random.random())
+    rad=H*(.0034+.0015*random.random())
     rings=[]
-    for k in range(9):
-        t=k/8
-        xx=sx + H*.014*cos(angle)*t + sway*sin(t*pi*2.4+i*.31)*t
-        yy=sy + H*.023*sin(angle)*t + sway*.55*sin(t*pi*2+i*.43)*t
+    for k in range(12):
+        t=k/11
+        xx=sx + H*.009*cos(angle)*t+sway*sin(t*pi*2.0+i*.31)*t
+        yy=sy + H*.022*sin(angle)*t+sway*.55*sin(t*pi*1.7+i*.43)*t
         zz=ht-length*t
-        r=radi*(.94-.63*t)
-        rings.append((xx,yy,zz,r,r*.85))
-    loft("Riley long blonde wave "+str(i),rings,hair[i%len(hair)],7)
+        r=rad*(.94-.70*t)
+        rings.append((xx,yy,zz,r,r*.83))
+    loft("Riley layered blonde hair "+str(i),rings,hair[i%len(hair)],9)
 for side in (-1,1):
-    # Face-framing strands hang beside, rather than over, the eyes.
-    for j in range(13):
-        sx=cx+side*H*(.065+.006*j/13)
-        sy=cy-H*(.012+j*.001)
+    for j in range(12):
+        sx=head_x+side*H*(.056+.003*j/12)
+        sy=head_y-H*(.011+j*.001)
         rings=[]
-        for k in range(9):
-            t=k/8
-            rings.append((sx+side*H*(.012*t+.008*sin(pi*t)),
-                          sy-H*.011*sin(pi*t),head_center_z+H*.025-H*(.33+(.02*j/13))*t,
-                          H*.005*(1-.72*t),H*.005*(1-.72*t)))
-        loft(f"Riley face-frame blonde {side} {j}",rings,hair[(j+1)%4],7)
+        for k in range(12):
+            t=k/11
+            rings.append((sx+side*H*(.006*t+.004*sin(pi*t)),
+                          sy-H*.008*sin(pi*t),head_center_z+H*.014-H*(.245+.04*j/12)*t,
+                          H*.0037*(1-.70*t),H*.0037*(1-.70*t)))
+        loft(f"Riley blonde face fringe {side} {j}",rings,hair[(j+1)%4],8)
+
+# The old build only dressed the stock broad torso, so shorts did not change
+# her underlying silhouette. Sculpt ALL skin and clothes together into a
+# proportionate, naturally slim/active adult figure. Leave her actual face,
+# scalp, and feet unchanged, preserving expression and grounded posture.
+def clamp01(x):return max(0.,min(1.,x))
+def smooth01(x):
+    x=clamp01(x)
+    return x*x*(3-2*x)
+shoulder_line=eye_z-H*.125
+adjusted=0
+for ob in [obj for obj in bpy.context.scene.objects if obj.type=="MESH"]:
+    mx=ob.matrix_world.copy()
+    inv=mx.inverted_safe()
+    for vertex in ob.data.vertices:
+        pt=mx @ vertex.co
+        lower=smooth01((pt.z-z(.17))/(H*.14))
+        upper=smooth01((shoulder_line-pt.z)/(H*.12))
+        band=lower*upper
+        if band<.001:continue
+        # Nudge broad stock ribs/waist inward, with gentler hip/upper curves.
+        taper=(.17+.045*math.exp(-((pt.z-z(.57))/(H*.16))**2))*band
+        pt.x=cx+(pt.x-cx)*(1-taper)
+        pt.y=cy+(pt.y-cy)*(1-.105*band)
+        vertex.co=inv @ pt
+        adjusted+=1
+    ob.data.update()
+print("RILEY_SLIM_ATHLETIC_BODY",MODE,"adjusted_vertices",adjusted)
 
 # Hands-and-knees pose: deform real skinned, textured GLB geometry in place.
 # Source is a baked static mesh without an armature; this is a posed prototype,
