@@ -46,3 +46,10 @@ input[type=file]{max-width:100%;color:var(--muted);font-size:11px}
 /* Optional large 3D inspection without disturbing the 2D editing map. */
 .preview-frame.expanded{height:min(76vh,850px)}
 @media(max-width:740px){.preview-frame.expanded{height:75vh;min-height:420px}.preview-actions{grid-template-columns:1fr 1fr}.preview-actions #addRiley{grid-column:auto}.preview-zoom button{flex-basis:110px}}
+
+/* Real 3D Riley preview controls: readable and finger-sized on phones. */
+.riley-motion-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:9px 0 12px}
+.riley-motion-controls button{min-height:50px;font-size:clamp(12px,2.5vw,15px);padding:7px 5px;white-space:normal;touch-action:manipulation}
+.riley-motion-controls button:active{background:#416c55}
+.riley-motion-controls button[aria-pressed="true"]{background:#427356;border-color:#b6d8a5}
+@media(min-width:900px){.riley-motion-controls{grid-template-columns:repeat(6,minmax(0,1fr))}}
