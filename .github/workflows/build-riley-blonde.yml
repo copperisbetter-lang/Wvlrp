@@ -23,7 +23,8 @@ jobs:
       - name: Generate blonde long-haired Riley 3D mesh and casual wardrobe
         run: |
           set -euo pipefail
-          blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- standing
+          blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- standing | tee /tmp/riley-stand-model.log
+          grep -E 'RILEY_SCENE_OBJECTS|RILEY_RIG_BONES' /tmp/riley-stand-model.log > world-creator/scripts/riley-rig-inspection.txt || true
           blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- kneeling
           python3 - <<'PY'
           from pathlib import Path
@@ -40,7 +41,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/riley-blonde-standing.glb world-creator/assets/riley-blonde-kneeling.glb
+          git add world-creator/assets/riley-blonde-standing.glb world-creator/assets/riley-blonde-kneeling.glb world-creator/scripts/riley-rig-inspection.txt
           if git diff --cached --quiet; then
             echo 'Assets already built'
           else
