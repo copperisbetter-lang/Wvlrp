@@ -273,19 +273,6 @@ for idx,weight in abdomen_mask.items():
 body.data.update()
 print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
 
-# Rebuild a single continuous torso/limb skin across the donor's torn
-# clothing-mask seams. The original triangles contain disconnected edges
-# around the chest/abdomen; smoothing vertex coordinates cannot heal holes.
-# A fine voxel reconstruction fuses coincident islands into one watertight skin
-# before skeletal weights are authored.
-bpy.ops.object.select_all(action="DESELECT")
-body.select_set(True)
-bpy.context.view_layer.objects.active=body
-body.data.remesh_voxel_size=.006
-bpy.ops.object.voxel_remesh()
-for face in body.data.polygons:face.use_smooth=True
-print("RILEY_WATERTIGHT_SCULPT",len(body.data.vertices),"faces",len(body.data.polygons))
-
 # Extract the real face appearance from its skin material where possible.
 # A single opaque body shader gets the sampled complexion, not a second
 # artificial shirt/shorts patch with a heart-shaped material boundary.
