@@ -16,6 +16,7 @@ const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 let previewBuildId = 0;
+let herdFocusCursor = -1;
 const colors={anchor:"#fbd182",deer:"#efc08c",npc:"#e7abd0",animal:"#dbceb4",cabin:"#f3d16b",marker:"#ff9e6f"};
 
 function save() {
@@ -371,8 +372,10 @@ function refresh3d() {
     const crown=track(BABYLON.MeshBuilder.CreateSphere("crown",{diameter:5,segments:5},scene));
     crown.scaling.y=1.3;crown.position.set(px,h+7,pz);crown.material=leaves;
   }
+  let deerInPreview=0;
   for(const o of world.objects){
     const x=o.x-view.x,z=o.y-view.y;if(Math.abs(x)>86||Math.abs(z)>86)continue;
+    if(o.type==="deer")deerInPreview++;
     const h=heightAt(o.x,o.y,seed)*26;
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
@@ -404,6 +407,7 @@ function refresh3d() {
     if(Math.abs(wy-view.y)<=90)stream.push(new BABYLON.Vector3(x,heightAt(wx,wy,seed)*26+.7,wy-view.y));}
   if(stream.length>1){const line=track(BABYLON.MeshBuilder.CreateLines("valley creek",{points:stream},scene));line.color=new BABYLON.Color3(.39,.8,.99);}
   $("threeStatus").hidden=true;
+  $("previewCoverage").textContent="3D shows a 180 × 180 m area near the map center · "+deerInPreview+" of "+world.objects.filter(o=>o.type==="deer").length+" deer are inside this area";
 }
 function init3D(){
   if(!window.BABYLON){show3DMessage("Babylon.js could not load. The 2D map and world data editor still work.");return;}
@@ -417,18 +421,36 @@ function init3D(){
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
 $("refresh3d").onclick=()=>{dirty3d=true;refresh3d();status("3D preview refreshed near map center");};
-$("inspect3d").onclick=()=>{
-  const o=selected();
-  if(!o){status("Choose a deer or person on the map first");return;}
+function focusObjectIn3D(o,radius=14){
+  // Babylon renders only one small terrain tile, not the entire zoomed-out 2D map.
+  // Align the local 3D tile with the selected object's world coordinates.
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
   if(camera){
     const h=heightAt(o.x,o.y,seed)*26;
     camera.setTarget(new BABYLON.Vector3(0,h+1.6,0));
-    camera.radius=14;
+    camera.radius=radius;
     camera.alpha=-Math.PI/2.7;
     camera.beta=1.2;
   }
+}
+$("inspect3d").onclick=()=>{
+  const o=selected();
+  if(!o){status("Choose a deer or person on the map first");return;}
+  focusObjectIn3D(o,14);
   status("Close-up 3D view: "+o.name+" (drag to orbit, pinch to zoom)");
+};
+$("findDeer3d").onclick=()=>{
+  const deer=world.objects.filter(o=>o.type==="deer");
+  if(!deer.length){status("No deer placed yet. Place or scatter deer first.");return;}
+  // One representative per adjacent herd, plus individually placed deer.
+  // Preserve every object and its exact coordinates; this only moves the preview.
+  const leaders=deer.filter((o,i)=>i===0||!o.herd||deer[i-1].herd!==o.herd);
+  herdFocusCursor=(herdFocusCursor+1)%leaders.length;
+  const o=leaders[herdFocusCursor];
+  setTool("select");
+  setSelection(o);
+  focusObjectIn3D(o,36);
+  status("Showing "+(o.herd||o.name)+" in 3D ("+(herdFocusCursor+1)+"/"+leaders.length+"). Drag to orbit; pinch to zoom.");
 };
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
