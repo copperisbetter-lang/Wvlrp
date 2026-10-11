@@ -365,7 +365,15 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     if(isRiley){
       const state=rileyMotionFor(o.id);
       node.rotation.y=state.heading;
-      liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose});
+      // Broad layered hair ribbons retain their scalp-root pivots from the GLB.
+      // Sway ONLY Riley's modeled hair, never the face or other NPCs.
+      const hairLocks=meshes.filter(m=>m.name?.includes("Riley soft blonde") && m.rotation)
+        .map((m,i)=>({
+          mesh:m,phase:i*0.73,
+          baseEuler:m.rotation.clone(),
+          baseQuaternion:m.rotationQuaternion?.clone()||null
+        }));
+      liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose,hairLocks,lastHairUpdate:0,lastHeading:state.heading});
     }
     for(const mesh of meshes)track(mesh);
     fallback.dispose(false,true);
@@ -582,6 +590,25 @@ function animateRiley(now){
     // Small natural-looking idle weight shift: no false claim of skeletal animation.
     rig.node.position.y=rig.baseY+Math.sin(t*2.1+id.length)*.008;
     rig.node.rotation.z=Math.sin(t*1.15+id.length)*.009;
+    // Light secondary hair motion at 24fps to stay efficient on phones.
+    // This is a preview illusion, not simulated strands or skeletal physics.
+    const turnShift=Math.max(-.035,Math.min(.035,(rig.node.rotation.y-rig.lastHeading)*-.42));
+    rig.lastHeading=rig.node.rotation.y;
+    if(t-rig.lastHairUpdate>=1/24){
+      rig.lastHairUpdate=t;
+      for(const strand of rig.hairLocks||[]){
+        if(!strand.mesh||strand.mesh.isDisposed())continue;
+        const swish=Math.sin(t*1.9+strand.phase)*.022+
+                    Math.sin(t*.8+strand.phase*1.4)*.010+turnShift;
+        if(strand.baseQuaternion){
+          strand.mesh.rotationQuaternion=strand.baseQuaternion.multiply(
+            BABYLON.Quaternion.RotationYawPitchRoll(swish*.55,swish*.25,swish));
+        }else{
+          strand.mesh.rotation.z=strand.baseEuler.z+swish;
+          strand.mesh.rotation.x=strand.baseEuler.x+swish*.25;
+        }
+      }
+    }
   }
 }
 $("expand3d").onclick=()=>{
