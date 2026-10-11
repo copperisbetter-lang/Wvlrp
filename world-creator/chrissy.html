@@ -12,6 +12,7 @@
 <div id="stage"><img id="fallback" src="./assets/chrissy-mpfb-trial-preview.png?v=3" alt="Chrissy model front-view preview while interactive 3D loads"><canvas id="renderCanvas" aria-label="Interactive 3D Chrissy character"></canvas><div id="status" role="status">Loading 3D character…</div></div>
 <div class="controls">
 <button id="home">Front / reset</button>
+<button id="face">Zoom to face</button>
 <button id="left">Rotate left</button>
 <button id="right">Rotate right</button>
 <button id="idle">Pause idle motion</button><a class="button" href="./assets/chrissy-mpfb-trial-preview.png?v=3" target="_blank" rel="noopener">Open preview photo</a>
@@ -28,7 +29,7 @@
 const canvas=document.getElementById('renderCanvas'), status=document.getElementById('status'), poster=document.getElementById('fallback');
 poster.onerror=()=>{status.textContent='The image preview has not published yet. Please reload after deployment.'};
 window.setTimeout(()=>{if(status.textContent==='Loading 3D character…')status.textContent='Still loading the 15.7 MB model. If this persists, check your connection or open the preview photo.';},20000);
-let engine,scene,camera,groups=[],playing=true;
+let engine,scene,camera,groups=[],playing=true,bodyBounds=null;
 try {
  engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});
  scene=new BABYLON.Scene(engine);
@@ -57,7 +58,8 @@ try {
    camera.lowerRadiusLimit=Math.max(.28,span*.2);
    camera.upperRadiusLimit=Math.max(5,span*4);
   }
-  if(!Number.isFinite(low.y))throw Error('Model contains no visible meshes');
+  if(Number.isFinite(low.y))bodyBounds={low:low.clone(),high:high.clone()};
+   if(!Number.isFinite(low.y))throw Error('Model contains no visible meshes');
   if(groups.length) groups[0].start(true,1,groups[0].from,groups[0].to,false);
   canvas.style.visibility='visible';poster.hidden=true;
      const faceIsTextured=scene.materials.some(m=>m.name.includes('Chrissy real CC0 face and body skin UV') && m.albedoTexture);
@@ -67,7 +69,8 @@ try {
  engine.runRenderLoop(()=>scene.render());
  window.addEventListener('resize',()=>engine.resize());
  document.getElementById('home').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.1;camera.radius=3;};
- document.getElementById('left').onclick=()=>camera.alpha+=Math.PI/4;
+ document.getElementById('face').onclick=()=>{if(!bodyBounds)return;const a=bodyBounds.low,b=bodyBounds.high;camera.setTarget(new BABYLON.Vector3((a.x+b.x)/2,a.y+(b.y-a.y)*.91,(a.z+b.z)/2));camera.radius=.62;};
+  document.getElementById('left').onclick=()=>camera.alpha+=Math.PI/4;
  document.getElementById('right').onclick=()=>camera.alpha-=Math.PI/4;
  document.getElementById('idle').onclick=()=>{playing=!playing;for(const g of groups)playing?g.play(true):g.pause();document.getElementById('idle').textContent=playing?'Pause idle motion':'Resume idle motion';};
 }catch(e){canvas.style.visibility='hidden';poster.hidden=false;status.textContent='3D viewer unavailable. Showing the still preview. '+(e.message||e);}
