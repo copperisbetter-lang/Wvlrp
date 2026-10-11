@@ -22,7 +22,7 @@
 <button data-pose="HandsAndKnees">Hands &amp; knees</button>
 <button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
 <button id="idle">Play movement</button>
-<button id="smile" aria-pressed="true">Smile: on</button>
+<button id="smile" aria-pressed="false">Smile: neutral</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
 <a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=cc0-face-texture-20261011-v1" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
@@ -35,7 +35,7 @@
 <script>
 (function(){
 const canvas=document.getElementById('renderCanvas'), status=document.getElementById('status');
-let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=true;
+let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=false;
 try {
  engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});
  scene=new BABYLON.Scene(engine);
@@ -60,7 +60,7 @@ try {
       const morph=manager.getTarget(i);
       morphCount++;
       if(/Caitlyn Natural Smile/i.test(morph.name)){
-        morph.influence=.78;
+        morph.influence=0;
         smileTargets.push(morph);
         smileCount++;
       }
@@ -149,12 +149,12 @@ function pickPose(pose,animate=false){
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
 document.getElementById('smile').onclick=()=>{
  smileOn=!smileOn;
- for(const t of smileTargets)t.influence=smileOn?.78:0;
+ for(const t of smileTargets)t.influence=smileOn?.18:0;
  const button=document.getElementById('smile');
- button.textContent='Smile: '+(smileOn?'on':'off');
+ button.textContent='Smile: '+(smileOn?'subtle':'neutral');
  button.setAttribute('aria-pressed',String(smileOn));
  status.textContent=smileTargets.length
-  ?'Caitlyn smile '+(smileOn?'ON (78% mouth-corner shapes)':'OFF (neutral mouth)')
+  ?'Caitlyn smile '+(smileOn?'ON (18% mouth-corner shapes)':'OFF (neutral mouth)')
   :'Caitlyn GLB has no usable smile shapes';
 };
 progress.addEventListener('input',()=>{
