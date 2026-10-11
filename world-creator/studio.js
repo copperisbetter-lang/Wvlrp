@@ -271,6 +271,8 @@ $("applyPreset").onclick=()=>{
   if(!look){status("Choose a character style first");return;}
   for(const [key,value] of Object.entries(look))if($(key))$(key).value=value;
   o.modelKey=$("characterPreset").value==="riley"?"riley":"";
+  // An old locally uploaded model must not override the newly rebuilt Riley.
+  if(o.modelKey==="riley")localCharacterFiles.delete(o.id);
   commitSelection();
   status("Applied "+$("characterPreset").selectedOptions[0].text+" style");
 };
@@ -562,6 +564,8 @@ $("addRiley").onclick=()=>{
   const previous=world.objects.find(item=>item.type==="npc"&&item.modelKey==="riley");
   if(previous){
     previous.outfit="mannequin";
+    // Replace any old session-only uploaded GLB with current built-in Riley.
+    localCharacterFiles.delete(previous.id);
     setSelection(previous);save();updateSpinButton();focusObjectIn3D(previous,2.9);
     status("Existing Riley selected. Drag to orbit or change her pose.");
     return;
