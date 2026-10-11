@@ -535,7 +535,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
           for(let i=0;i<manager.numTargets;i++){
             const morph=manager.getTarget(i);
             if(new RegExp(characterName+" Natural Smile (Left|Right)","i").test(morph.name)){
-              morph.influence=.78;smileShapes++;
+              morph.influence=o.modelKey==="caitlyn"?0:.78;smileShapes++;
             }
           }
         }
