@@ -1,5 +1,5 @@
 Riley sculpted-body build report
-source_commit: e3a54ad3705af2aa752f4fe0ff2374e394bb8239
+source_commit: 500a67cf0a6603cb1d41b608bcdfa39474769fd6
 result: cancelled
-checked_utc: 2026-10-11T04:20:26Z
+checked_utc: 2026-10-11T04:21:53Z
 rigged_glb_bytes: 10859004
