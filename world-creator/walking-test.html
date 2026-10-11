@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10221b">
+<title>The Wild — Ranger Station Walking Test</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
+#renderCanvas{width:100%;height:100%;display:block;touch-action:none}
+#top{position:absolute;top:0;left:0;right:0;padding:calc(12px + env(safe-area-inset-top)) 12px 10px;background:linear-gradient(#09190fe8,#09190f00);pointer-events:none}
+#top h1{margin:0;font-size:17px}#top p{margin:4px 0;color:#deeadc;font-size:12px}
+#top a{pointer-events:auto;color:#dbf3b7}
+#status{position:absolute;top:calc(78px + env(safe-area-inset-top));left:12px;background:#0c1e16c9;border-radius:8px;padding:7px 9px;font-size:12px;max-width:70vw}
+#controls{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:0;right:0;display:flex;align-items:end;justify-content:space-between;padding:0 18px;pointer-events:none}
+#pad{pointer-events:auto;position:relative;width:124px;height:124px;border:2px solid #ffffff65;border-radius:50%;background:#142b209e;touch-action:none;user-select:none;box-shadow:0 5px 20px #0005}
+#knob{position:absolute;width:48px;height:48px;left:38px;top:38px;border-radius:50%;background:#e2f5dedb;box-shadow:0 2px 8px #0007;pointer-events:none}
+#buttonside{display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#14382acc;padding:11px;font-weight:700;touch-action:manipulation}
+#help{position:absolute;bottom:max(151px,calc(150px + env(safe-area-inset-bottom)));left:12px;right:12px;text-align:center;color:#e7f4e3;font-size:12px;text-shadow:0 1px 4px #000c;pointer-events:none}
+#problem{display:none;position:absolute;inset:20% 8%;background:#1b3128;padding:18px;border-radius:15px;z-index:9;align-content:center}
+</style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+<div id="top"><h1>THE WILD — Walking Test</h1><p>Temporary male figure · Ranger Station practice area · Not the finished game</p><a href="./index.html">Back to World Creator</a></div>
+<div id="status" role="status">Loading 3D scene…</div>
+<div id="help">Push up on joystick to walk toward Ranger Station. Left / right turns. Swipe the scenery to look around.</div>
+<div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
+<div id="problem"><h2>3D scene did not load</h2><p id="errorText">Please try refreshing in Chrome with an internet connection.</p></div>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script>
+(()=>{
+'use strict';
+const cvs=document.getElementById('renderCanvas'),status=document.getElementById('status'),pad=document.getElementById('pad'),knob=document.getElementById('knob');
+if(!window.BABYLON){document.getElementById('problem').style.display='block';return;}
+try{
+const B=BABYLON, engine=new B.Engine(cvs,true,{preserveDrawingBuffer:false,stencil:false},true);
+const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.68,.81,.85,1);scene.collisionsEnabled=false;
+const hemi=new B.HemisphericLight('skylight',new B.Vector3(0,1,0),scene);hemi.intensity=.9;
+const sun=new B.DirectionalLight('sun',new B.Vector3(-.3,-1,.6),scene);sun.position=new B.Vector3(20,25,-10);sun.intensity=1.15;
+function material(name,c){let m=new B.StandardMaterial(name,scene);m.diffuseColor=B.Color3.FromHexString(c);m.specularColor=new B.Color3(.06,.06,.06);return m;}
+const grass=material('lawn','#466f3d'),ground=new B.MeshBuilder.CreateGround('ground',{width:75,height:75},scene);ground.material=grass;
+const earth=material('earth','#8a6950'),treeBark=material('tree bark','#69533d'),leaf=material('canopy','#285a38'),leaf2=material('canopy2','#487542'),wood=material('siding','#775c3d'),roofMat=material('roof','#43514c'),stone=material('foundation','#85857b'),glass=material('windows','#6597a2'),gold=material('signs','#dfbf7a');
+const path=B.MeshBuilder.CreateGround('trail',{width:3,height:26},scene);path.position.set(0,.014,8);path.material=earth;
+function box(name,w,h,d,x,y,z,mat,parent){let o=B.MeshBuilder.CreateBox(name,{width:w,height:h,depth:d},scene);o.position.set(x,y,z);o.material=mat;if(parent)o.parent=parent;return o;}
+function sphere(name,diam,x,y,z,mat,parent,scaling){let o=B.MeshBuilder.CreateSphere(name,{diameter:diam,segments:10},scene);o.position.set(x,y,z);o.material=mat;if(parent)o.parent=parent;if(scaling)o.scaling=new B.Vector3(...scaling);return o;}
+function cyl(name,diam,h,x,y,z,mat,parent){let o=B.MeshBuilder.CreateCylinder(name,{diameter:diam,height:h,tessellation:10},scene);o.position.set(x,y,z);o.material=mat;if(parent)o.parent=parent;return o;}
+const collision=[];
+function wall(name,w,h,d,x,y,z,mat){let o=box(name,w,h,d,x,y,z,mat);collision.push({x,z,hx:w/2,hz:d/2});return o;}
+// Front wall has an actual opening; go through the door rather than through a solid wall.
+box('station floor',10,.18,10,0,.1,-9,stone);
+wall('back wall',10,3.4,.28,0,1.8,-14,wood);
+wall('left wall',.28,3.4,10,-5,1.8,-9,wood);
+wall('right wall',.28,3.4,10,5,1.8,-9,wood);
+wall('front-left',3.75,3.4,.28,-3.125,1.8,-4,wood);
+wall('front-right',3.75,3.4,.28,3.125,1.8,-4,wood);
+box('front-door lintel',2.6,.75,.3,0,3.18,-4,wood);
+box('roof',11,.35,11,0,3.75,-9,roofMat);
+box('left window',1.35,1.2,.06,-3,2.1,-3.82,glass);
+box('right window',1.35,1.2,.06,3,2.1,-3.82,glass);
+box('station sign',4,.53,.1,0,3.7,-3.68,gold);
+for(let i=0;i<3;i++){box('desk',2,.12,.8,-2.8+i*2.5,.9,-11,wood);}
+for(let i=0;i<3;i++)box('reserved character spot',.56,.03,.56,-2.6+i*2.6,.22,-9.4,gold);
+// Trees are simple environment stand-ins, not the planned realistic vegetation pass.
+for(let i=0;i<48;i++){
+ let angle=i*2.399963,rad=15+Math.sqrt(i/48)*20;
+ let x=Math.cos(angle)*rad,z=Math.sin(angle)*rad;
+ if(Math.abs(x)<5&&z>0)continue;
+ cyl('trunk',.45,3.3,x,1.65,z,treeBark);
+ sphere('foliage',4,x,4.4,z,i%3===0?leaf2:leaf,null,[.9,1.2,.9]);
+}
+const root=new B.TransformNode('player-position',scene);root.position.set(0,0,4);
+const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
+const skin=material('skin','#c99673'),shirt=material('plaid shirt','#47745f'),pants=material('trousers','#555e51'),boots=material('boots','#28291e'),hair=material('hair','#463a30');
+sphere('torso',1,0,1.54,0,shirt,walkBody,[.62,.86,.32]);
+sphere('head',.5,0,2.38,-.02,skin,walkBody,[.82,1.12,.84]);
+sphere('hair cap',.5,0,2.61,-.04,hair,walkBody,[.84,.3,.9]);
+box('nose',.085,.08,.12,0,2.34,-.26,skin,walkBody);
+for(const side of [-1,1]){
+const arm=new B.TransformNode('shoulder',scene);arm.parent=walkBody;arm.position.set(side*.38,1.91,0);
+sphere('arm',.3,0,-.27,0,shirt,arm,[.75,1.75,.8]);
+sphere('hand',.19,0,-.60,0,skin,arm);
+const leg=new B.TransformNode('hip',scene);leg.parent=walkBody;leg.position.set(side*.19,1.06,0);
+sphere('thigh',.36,0,-.25,0,pants,leg,[.85,1.65,.95]);
+const knee=new B.TransformNode('knee',scene);knee.parent=leg;knee.position.y=-.50;
+sphere('shin',.31,0,-.24,0,pants,knee,[.85,1.6,.95]);
+box('shoe',.25,.18,.42,0,-.48,-.10,boots,knee);
+if(!root.metadata)root.metadata={legs:[],arms:[],knees:[]};
+root.metadata.legs.push(leg);root.metadata.knees.push(knee);root.metadata.arms.push(arm);
+}
+root.rotation.y=0;
+const camera=new B.ArcRotateCamera('follow',-Math.PI/2,1.30,7,new B.Vector3(0,1.5,0),scene);
+camera.lowerRadiusLimit=3;camera.upperRadiusLimit=16;camera.lowerBetaLimit=.45;camera.upperBetaLimit=1.55;camera.wheelPrecision=35;
+camera.attachControl(cvs,true);camera.panningSensibility=0;camera.angularSensibilityX=750;camera.angularSensibilityY=850;
+let yaw=0,clock=0,axisX=0,axisY=0,follow=true;
+const keys=new Set();
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key.toLowerCase())});
+window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur',()=>{keys.clear();axisX=axisY=0;knob.style.transform='translate(0,0)'});
+function stick(e){const r=pad.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let x=(e.clientX-cx)/43,y=(e.clientY-cy)/43,mag=Math.hypot(x,y);if(mag>1){x/=mag;y/=mag;}axisX=x;axisY=y;knob.style.transform='translate('+(x*35)+'px,'+(y*35)+'px)';}
+pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);stick(e)});
+pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))stick(e)});
+function release(){axisX=axisY=0;knob.style.transform='translate(0,0)'}
+pad.addEventListener('pointerup',release);pad.addEventListener('pointercancel',release);
+document.getElementById('view').onclick=()=>{follow=!follow;document.getElementById('view').textContent=follow?'View: Follow':'View: Free orbit';};
+document.getElementById('home').onclick=()=>{root.position.set(0,0,4);yaw=0;root.rotation.y=0;follow=true;document.getElementById('view').textContent='View: Follow';};
+function blocked(x,z){if(Math.abs(x)>36||Math.abs(z)>36)return true;return collision.some(w=>Math.abs(x-w.x)<w.hx+.31&&Math.abs(z-w.z)<w.hz+.31)}
+let last=performance.now();
+engine.runRenderLoop(()=>{
+ const now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;
+ let f=-axisY+(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
+ let turn=axisX+(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
+ f=Math.max(-1,Math.min(1,f));turn=Math.max(-1,Math.min(1,turn));
+ yaw-=turn*dt*2;root.rotation.y=yaw;
+ let moved=0;
+ if(Math.abs(f)>.06){let speed=2.8*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
+ if(!blocked(nx,root.position.z))root.position.x=nx;else dx=0;
+ if(!blocked(root.position.x,nz))root.position.z=nz;else dz=0;
+ moved=Math.hypot(dx,dz)/Math.max(dt,.001);
+ }
+ const walking=moved>.05;
+ if(walking)clock+=dt*8.8;
+ const swing=walking?Math.sin(clock)*.52:0;
+ root.metadata.legs[0].rotation.x=swing;root.metadata.legs[1].rotation.x=-swing;
+ root.metadata.knees[0].rotation.x=walking?Math.max(0,-Math.sin(clock))*.45:0;
+ root.metadata.knees[1].rotation.x=walking?Math.max(0,Math.sin(clock))*.45:0;
+ root.metadata.arms[0].rotation.x=-swing*.7;root.metadata.arms[1].rotation.x=swing*.7;
+ walkBody.position.y=walking?Math.abs(Math.sin(clock))*.035:0;
+ let target=new B.Vector3(root.position.x,1.45,root.position.z);
+ camera.setTarget(target);
+ if(follow){camera.alpha=-Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
+ status.textContent=(walking?'Walking':'Standing')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
+ scene.render();
+});
+window.addEventListener('resize',()=>engine.resize());
+}catch(err){document.getElementById('problem').style.display='block';document.getElementById('errorText').textContent='Unable to start: '+(err?.message||String(err));}
+})();
+</script>
+</body>
+</html>
