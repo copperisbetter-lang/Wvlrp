@@ -464,6 +464,21 @@ $("addRiley").onclick=()=>{
   setSelection(o);save();dirty3d=true;focusObjectIn3D(o,2.9);
   status("Riley test figure created. Drag to orbit, pinch to zoom; change pose in Object details.");
 };
+$("toggleRileyPose").onclick=()=>{
+  const o=selected();
+  if(!o||o.type!=="npc"||o.modelKey!=="riley"){status("Select Riley first, or tap Add Riley test figure");return;}
+  o.pose=o.pose==="crouch"?"standing":"crouch";
+  $("pose").value=o.pose;
+  save();dirty3d=true;focusObjectIn3D(o,3.0);
+  status(o.pose==="crouch"?"Riley: hands and knees test pose. Drag to inspect.":"Riley: standing test pose.");
+};
+$("expand3d").onclick=()=>{
+  const frame=document.querySelector(".preview-frame");
+  const expanded=frame.classList.toggle("expanded");
+  $("expand3d").textContent=expanded?"Shrink 3D":"Expand 3D";
+  $("expand3d").setAttribute("aria-pressed",String(expanded));
+  requestAnimationFrame(()=>engine?.resize());
+};
 $("findDeer3d").onclick=()=>{
   const deer=world.objects.filter(o=>o.type==="deer");
   if(!deer.length){status("No deer placed yet. Place or scatter deer first.");return;}
