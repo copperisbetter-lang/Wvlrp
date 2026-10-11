@@ -56,18 +56,21 @@ try {
     localStorage.setItem(CAITLYN_INSTALL,"complete");
   }
 }catch(err){console.warn("Caitlyn map addition could not be saved",err);}
-// Install Mason once without resetting or replacing locally saved characters.
+// Ensure Mason is present even if an earlier install stamp was saved before
+// his character arrived. This does not reset any other world objects.
 const MASON_INSTALL="wvlrp-world-creator-mason-added-2026-10-11";
 let installedMason=0;
 try{
-  if(!localStorage.getItem(MASON_INSTALL)){
-    installedMason=addMason(world).length;
-    if(installedMason){
-      world.updatedAt=new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
-    }
-    localStorage.setItem(MASON_INSTALL,"complete");
+  // Only move the original off-screen starter, never a user-repositioned Mason.
+  const oldMason=world.objects.find(o=>o.id===MASON_STARTER.id &&
+    o.modelKey==="mason" && o.x===-105 && o.y===-108);
+  if(oldMason){oldMason.x=MASON_STARTER.x;oldMason.y=MASON_STARTER.y;}
+  installedMason=addMason(world).length;
+  if(installedMason||oldMason){
+    world.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
   }
+  localStorage.setItem(MASON_INSTALL,"complete");
 }catch(err){console.warn("Mason map installation was not saved",err);}
 let seed=seedNumber(world.seed);
 const view={x:0,y:0,scale:.40};
@@ -316,7 +319,7 @@ $("applyPreset").onclick=()=>{
   const look=looks[$("characterPreset").value];
   if(!look){status("Choose a character style first");return;}
   for(const [key,value] of Object.entries(look))if($(key))$(key).value=value;
-  o.modelKey=["riley","amy","chrissy","caitlyn"].includes($("characterPreset").value)?$("characterPreset").value:"";
+  o.modelKey=["riley","amy","chrissy","caitlyn","mason"].includes($("characterPreset").value)?$("characterPreset").value:"";
   if(o.modelKey)localCharacterFiles.delete(o.id);
   commitSelection();
   status("Applied "+$("characterPreset").selectedOptions[0].text+" style");
