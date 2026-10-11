@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v9</title>
+<title>The Wild — Caitlyn Walking Test v10</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,7 +23,7 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v9</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Walking Test v10</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
 <div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
 <div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
@@ -170,6 +170,7 @@ function bindWalkingRig(result){
 // thigh adduction from ACTUAL hip and foot joint positions, not a guessed sign:
 // imported rigs can have left/right local joint axes reversed after glTF export.
 // A normal gait places feet roughly under the hips instead of in a wide V.
+// v10: tuck the feet inward another ~2-3 cm, without changing step height or speed.
 function jointPosition(part){
  const joint=gaitBones[part];
  const node=joint?.node||joint?.bone?.getTransformNode?.();
@@ -184,7 +185,7 @@ function calibrateNaturalStance(){
  const middle=(leftHip.x+rightHip.x)*.5;
  const hipWidth=Math.abs(leftHip.x-rightHip.x);
  // Use real-world meters after scaling Caitlyn to 1.72 m.
- const footWidth=Math.max(.20,Math.min(.25,hipWidth*.86));
+ const footWidth=Math.max(.18,Math.min(.22,hipWidth*.78));
  const before=Math.abs(leftFoot.x-rightFoot.x);
  for(const [thigh,foot] of [['leftThigh','leftFoot'],['rightThigh','rightFoot']]){
    const start=jointPosition(foot);
@@ -272,7 +273,7 @@ function calibrateRelaxedArms(){
  return {corrected,details};
 }
 B.SceneLoader.ImportMeshAsync(null,'./assets/',
- 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=9',scene,undefined,'.glb')
+ 'caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&walking-test=10',scene,undefined,'.glb')
 .then(result=>{
  const realMeshes=result.meshes.filter(m=>typeof m.getTotalVertices==='function'&&m.getTotalVertices()>0);
  if(!realMeshes.length)throw Error('Caitlyn model contains no visible meshes');
