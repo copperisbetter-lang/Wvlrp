@@ -39,9 +39,9 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
 // This is NOT yet a seamless skeletal transition or a fully rigged character.
-const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=rileydoll1";
-const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=rileydoll1";
-const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=rileydoll1";
+const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=rileyarticulated2";
+const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=rileyarticulated2";
+const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=rileyarticulated2";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
@@ -383,7 +383,23 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const naturalHeight=realAllFours ? 0.93 : realKneeling ? 1.29 : 1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
-    node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
+    // Imported GLB parent transforms can shift the mesh after parenting.
+    // Anchor its actual lowest vertex just above the local terrain.
+    node.position.set(0,0,0);
+    node.computeWorldMatrix(true);
+    let fMinX=Infinity,fMaxX=-Infinity,fMinY=Infinity,fMinZ=Infinity,fMaxZ=-Infinity;
+    for(const mesh of meshes){
+      if(!mesh.getBoundingInfo||!mesh.getTotalVertices||!mesh.getTotalVertices())continue;
+      mesh.computeWorldMatrix(true);
+      const bounds=mesh.getBoundingInfo().boundingBox;
+      fMinX=Math.min(fMinX,bounds.minimumWorld.x);
+      fMaxX=Math.max(fMaxX,bounds.maximumWorld.x);
+      fMinY=Math.min(fMinY,bounds.minimumWorld.y);
+      fMinZ=Math.min(fMinZ,bounds.minimumWorld.z);
+      fMaxZ=Math.max(fMaxZ,bounds.maximumWorld.z);
+    }
+    if(!Number.isFinite(fMinY))throw Error("Imported 3D body has no valid ground bounds");
+    node.position.set(x-(fMinX+fMaxX)/2,h+.035-fMinY,z-(fMinZ+fMaxZ)/2);
     if(isRiley){
       const state=rileyMotionFor(o.id);
       node.rotation.y=state.heading;
@@ -528,8 +544,9 @@ function focusObjectIn3D(o,radius=4.4){
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
   if(camera){
     const h=heightAt(o.x,o.y,seed)*26;
-    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours" ? .76 : o.pose==="crouch" ? 1.06 : 1.6),0));
-    camera.radius=radius;
+    // Centre on the entire mannequin instead of its face.
+    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours" ? .46 : o.pose==="crouch" ? .66 : .88),0));
+    camera.radius=Math.max(radius,o.pose==="standing"?3.3:2.9);
     camera.alpha=o.modelKey==="riley"?Math.PI/2.25:-Math.PI/2.7;
     camera.beta=1.2;
   }
