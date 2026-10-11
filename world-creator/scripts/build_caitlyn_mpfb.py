@@ -847,6 +847,37 @@ def main():
                             if score<best[0]: best=(score,angle)
                         limb_set(limbs,best[1])
                 if use_elbows:
+                    # Raise the pelvis and lower the front torso by hinging
+                    # the SPINE around the hip. Upper-arm X alone cannot
+                    # lower the elbow origins on this imported Mixamo rig,
+                    # as the previous elbow-only fit measured no improvement.
+                    spine=bones["spine"]
+                    spine_base=math.degrees(spine.rotation_euler.x)
+                    spine_trials=[]
+                    for delta in range(-48,49,2):
+                        angle=spine_base+delta
+                        spine.rotation_euler.x=math.radians(angle)
+                        bpy.context.view_layer.update()
+                        knee_plane=(joint("lshin").z+joint("rshin").z)/2
+                        elbow_plane=(joint("lforearm").z+joint("rforearm").z)/2
+                        trial_hip=joint("hips")
+                        trial_chest=joint("chest") or joint("spine",True)
+                        torso_forward=trial_hip.y-trial_chest.y
+                        slope=abs(trial_chest.z-trial_hip.z)
+                        score=8500*(elbow_plane-knee_plane)**2
+                        score+=200*max(0,.16-torso_forward)**2
+                        score+=100*max(0,slope-.32)**2
+                        score+=.000015*delta*delta
+                        spine_trials.append((score,angle))
+                    best_spine=min(spine_trials)[1]
+                    spine.rotation_euler.x=math.radians(best_spine)
+                    bpy.context.view_layer.update()
+                    print("WVLRP_CAITLYN_ELBOW_SPINE_FIT",
+                          "from",round(spine_base,1),
+                          "to",round(best_spine,1),
+                          "elbow_knee_gap_m",round(
+                            (joint("lforearm").z+joint("rforearm").z-
+                             joint("lshin").z-joint("rshin").z)/2,4))
                     # Independently solve EACH supporting elbow onto the
                     # knee contact plane. The weighted whole-body optimizer
                     # formerly left forearm origins ~6 cm above the knees
