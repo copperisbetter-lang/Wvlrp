@@ -17,7 +17,7 @@
 <button id="left">Rotate left</button>
 <button id="right">Rotate right</button>
 <button id="idle">Pause idle motion</button>
-<a class="button" href="./assets/amy-mpfb-trial.glb" download="amy-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2" download="amy-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with long red hair, an unclothed full-body base mesh and a moderately softened anatomical bust profile. It has an articulated skeleton and a subtle test idle animation. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. The existing Amy character and world data have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/amy-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -39,7 +39,7 @@ try {
  camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=1.28;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.7;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','amy-mpfb-trial.glb',scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','amy-mpfb-trial.glb?v=amy-pelvis-qa-v2',scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   let low=new BABYLON.Vector3(Infinity,Infinity,Infinity),high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
   for(const m of res.meshes){
