@@ -17,9 +17,9 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
 // This is NOT yet a seamless skeletal transition or a fully rigged character.
-const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=rileyswim1";
-const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=rileyswim1";
-const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=rileyswim1";
+const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=rileydoll1";
+const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=rileydoll1";
+const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=rileydoll1";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
@@ -243,7 +243,7 @@ $("applyPreset").onclick=()=>{
     "ranger-redhead":{gender:"woman",skin:"light",body:"average",face:"heart",hair:"red",hairStyle:"wavy",outfit:"ranger"},
     mercantile:{gender:"woman",skin:"tan",body:"average",face:"oval",hair:"brown",hairStyle:"long",outfit:"mercantile"},
     lifeguard:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"lifeguard"},
-    riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"swimwear",pose:"standing"}
+    riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"}
   };
   const look=looks[$("characterPreset").value];
   if(!look){status("Choose a character style first");return;}
@@ -522,13 +522,13 @@ $("inspect3d").onclick=()=>{
 $("addRiley").onclick=()=>{
   const previous=world.objects.find(item=>item.type==="npc"&&item.modelKey==="riley");
   if(previous){
-    previous.outfit="swimwear";
+    previous.outfit="mannequin";
     setSelection(previous);save();updateSpinButton();focusObjectIn3D(previous,2.9);
     status("Existing Riley selected. Drag to orbit or change her pose.");
     return;
   }
   const o=createAt("npc",{x:view.x+3,y:view.y+3});
-  Object.assign(o,{name:"Riley (test)",modelKey:"riley",pose:"standing",gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",face:"heart",body:"athletic",outfit:"swimwear"});
+  Object.assign(o,{name:"Riley (test)",modelKey:"riley",pose:"standing",gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",face:"heart",body:"athletic",outfit:"mannequin"});
   setSelection(o);save();updateSpinButton();dirty3d=true;focusObjectIn3D(o,2.9);
   status("Riley test figure created. Tap Add Riley again to find her.");
 };
