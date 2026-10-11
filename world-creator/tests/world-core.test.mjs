@@ -105,3 +105,12 @@ test("A customized Caitlyn is not duplicated or repositioned by a future install
   assert.equal(addCaitlyn(world).length,0);
   assert.deepEqual([world.objects.length,world.objects[0].x],[1,555]);
 });
+
+
+test("Every avatar can save the new elbows-and-knees pose in the shared world schema",()=>{
+  for(const modelKey of ["caitlyn","riley","amy","chrissy"]){
+    const world=sanitizedWorld({objects:[{id:"pose-"+modelKey,type:"npc",modelKey,pose:"elbows",x:0,y:0}]});
+    assert.equal(world.objects[0].pose,"elbows");
+    assert.equal(world.objects[0].modelKey,modelKey);
+  }
+});
