@@ -21,6 +21,18 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends blender python3-numpy
+      - name: Download CC0 complete anatomical base mesh (no clothing shells)
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 \
+            'https://www.innerscene.com/api/library/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1/download' \
+            -o world-creator/assets/riley-sculpted-donor.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('world-creator/assets/riley-sculpted-donor.glb')
+          assert f.stat().st_size > 100_000 and f.open('rb').read(4)==b'glTF', 'Donor file is not GLB'
+          print('CC0_ANATOMICAL_SOURCE_VALID',f.stat().st_size)
+          PY
       - name: Export one newly modeled and skinned Riley GLB
         run: |
           set -euo pipefail
@@ -41,9 +53,9 @@ jobs:
           assert len(doc.get("skins",[]))==1,"No glTF skeleton skin found"
           sk=doc["skins"][0]
           assert len(sk["joints"])>=25,"Skeleton missing major or finger bones"
-          assert len(doc.get("meshes",[]))>=2,"Missing body and hair"
+          assert len(doc.get("meshes",[]))>=2,"Missing sculpted body and hair"
           assert len(doc.get("animations",[]))>=2,"Missing animation clips"
-          assert any("Riley continuous body" in n.get("name","") for n in doc.get("nodes",[]))
+          assert any("Riley sculpted anatomical body" in n.get("name","") for n in doc.get("nodes",[]))
           print("RILEY_RIGGED_GLB_VALID",len(b),
                 "bones",len(sk["joints"]),"animations",[a.get("name") for a in doc["animations"]])
           PY
@@ -56,7 +68,7 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Existing rigged asset is current'
           else
-            git commit -m "Publish Riley v1 complete rigged GLB with skeletal actions"
+            git commit -m "Publish Riley with sculpted CC0 full-body mesh and skeletal actions"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
