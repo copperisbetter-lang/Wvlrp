@@ -46,7 +46,7 @@ for obj in list(source_meshes):
     name=obj.name.lower()
     # Preserve facial mesh and real eyes/brows/lashes; replace every old body
     # and clothing polygon below the neck, including the bad crotch/seat seams.
-    keep=(name in ("low-poly",) or "anatomical body" in name or
+    keep=(name in ("low-poly","bob01") or "anatomical body" in name or
           name.startswith(("eyebrow","eyelashes","teeth")))
     if not keep:
         bpy.data.objects.remove(obj,do_unlink=True)
@@ -273,6 +273,19 @@ for idx,weight in abdomen_mask.items():
 body.data.update()
 print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
 
+# Rebuild a single continuous torso/limb skin across the donor's torn
+# clothing-mask seams. The original triangles contain disconnected edges
+# around the chest/abdomen; smoothing vertex coordinates cannot heal holes.
+# A fine voxel reconstruction fuses coincident islands into one watertight skin
+# before skeletal weights are authored.
+bpy.ops.object.select_all(action="DESELECT")
+body.select_set(True)
+bpy.context.view_layer.objects.active=body
+body.data.remesh_voxel_size=.006
+bpy.ops.object.voxel_remesh()
+for face in body.data.polygons:face.use_smooth=True
+print("RILEY_WATERTIGHT_SCULPT",len(body.data.vertices),"faces",len(body.data.polygons))
+
 # Extract the real face appearance from its skin material where possible.
 # A single opaque body shader gets the sampled complexion, not a second
 # artificial shirt/shorts patch with a heart-shaped material boundary.
@@ -340,166 +353,42 @@ print("RILEY_REAL_SCULPT_INTEGRATED","verts",len(body.data.vertices),
       "sculpt_height",round(dheight,3),"preserved_face_parts",len(original_head),
       "head_transition_cm",round(100*head_cut,1))
 
-# Spherical primitives are permitted for the HAIR SCALP ONLY; not the body.
-parts=[]
-hair_colors=[
-    bpy.data.materials.new("Riley sandy blonde roots"),
-    bpy.data.materials.new("Riley honey-blonde"),
-    bpy.data.materials.new("Riley champagne strands"),
-    bpy.data.materials.new("Riley ash-gold shadows")]
-for mat,shade in zip(hair_colors,[(.62,.48,.31),(.77,.61,.40),(.89,.77,.57),(.68,.54,.37)]):
-    mat.use_nodes=True
-    b=mat.node_tree.nodes.get("Principled BSDF")
-    b.inputs["Base Color"].default_value=(*shade,1)
-    b.inputs["Roughness"].default_value=.74
-    mat.diffuse_color=(*shade,1)
-def sphere(name,xyz,radii,mat,segments=32):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments,ring_count=16,location=xyz)
-    o=bpy.context.object;o.name=name;o.scale=radii
-    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
-    o.data.materials.append(mat)
-    for f in o.data.polygons:f.use_smooth=True
-    parts.append(o)
-    return o
 
-# Shoulder-length, loose blonde hair built from a fitted scalp dome and
-# long, light wavy strands. Roots follow the actual head, not fixed scene 0.
-# Bare scalp ring faces are hidden beneath the flowing layers.
-rng=random.Random(4141)
-hair_meshes=[]
-def hmesh(name,verts,faces,mat):
-    me=bpy.data.meshes.new(name)
-    me.from_pydata(verts,[],faces);me.update()
-    ob=bpy.data.objects.new(name,me)
-    bpy.context.collection.objects.link(ob)
-    me.materials.append(mat)
-    for f in me.polygons:f.use_smooth=True
-    hair_meshes.append(ob)
-    return ob
-head_core=[v.co for o in original_head
-           if (o.name.lower()=="low-poly" or "anatomical body" in o.name.lower())
+# Prefer the real hairstyle geometry from Riley's original CC0 character to
+# handmade cylinders/ribbons. It is already fitted to her ACTUAL skull and
+# contains organically modeled locks, so the rear scalp stays covered.
+original_bob=next((o for o in original_head if o.name.lower()=="bob01"),None)
+if original_bob is None or len(original_bob.data.vertices)<1500:
+    raise RuntimeError("Missing Riley fitted original hair geometry")
+hair=original_bob
+hair.name="Riley flowing layered honey-blonde hair"
+head_pieces=[o for o in original_head if o is not hair]
+head_core=[v.co for o in head_pieces
+           if o.name.lower()=="low-poly" or "anatomical body" in o.name.lower()
            for v in o.data.vertices]
-if len(head_core)<100:raise RuntimeError("Missing head vertices for fitted Riley hair")
+if len(head_core)<100:raise RuntimeError("Missing Riley head for fitted hair")
 head_top=max(v.z for v in head_core)
-cap_center=(sum(p.x for p in head_core if p.z>head_top-.105)/
-            max(1,sum(1 for p in head_core if p.z>head_top-.105)),
-            sum(p.y for p in head_core if p.z>head_top-.105)/
-            max(1,sum(1 for p in head_core if p.z>head_top-.105)))
-hx,hy=cap_center
-print("RILEY_HAIR_HEAD_ANCHOR",tuple(round(t,4) for t in (hx,hy,head_top)))
-# A full fitted hair cap must cover the BACK of the head, not just
-# the top eight centimetres. The forehead stays open to preserve Riley's face.
-# The longer rear hairline hides the donor's differently coloured scalp texture.
-cap_verts=[(hx,hy,head_top+.014)]
-cap_faces=[]
-nsteps=64;nrings=16
-def hairline_drop(a):
-    return .165+.105*max(0,sin(a))-.105*max(0,-sin(a))
-for i in range(1,nrings+1):
-    t=i/nrings
-    radial=math.sqrt(max(0,2*t-t*t))
-    for k in range(nsteps):
-        a=2*pi*k/nsteps
-        cap_verts.append((
-            hx+(.113+.008*t)*radial*cos(a),
-            hy+(.116+.019*t)*radial*sin(a),
-            head_top+.014-(hairline_drop(a)+.014)*smooth(t)
-        ))
-for k in range(nsteps):
-    cap_faces.append((0,1+k,1+(k+1)%nsteps))
-for j in range(nrings-1):
-    lo=1+j*nsteps
-    for k in range(nsteps):
-        n=(k+1)%nsteps
-        # Reverse the original winding: old faces pointed INSIDE the scalp.
-        # Blender looked fine in some modes but the GLB culled the outer surface.
-        cap_faces.append((lo+k,lo+nsteps+k,lo+nsteps+n,lo+n))
-hmesh("Riley scalp fitted blonde crown",cap_verts,cap_faces,hair_colors[1])
-
-# Make a continuous soft hair under-layer down the back. Disconnected thin
-# tubes alone cannot conceal scalp and read as dangling strings on mobile.
-veil_verts=[];veil_faces=[]
-veil_columns=44;veil_rows=18
-for k in range(veil_columns+1):
-    a=pi*k/veil_columns
-    ux,uy=cos(a),sin(a)
-    for j in range(veil_rows+1):
-        t=j/veil_rows
-        length=.35+.075*uy+.016*cos(5*a)
-        wave=.009*sin(2.6*pi*t+3*a)*smooth(t)
-        veil_verts.append((
-            hx+(.105+.046*t)*ux+wave,
-            hy+(.132+.117*t)*uy+.025*t,
-            head_top-.158-length*t
-        ))
-        if k and j:
-            row=veil_rows+1
-            a0=(k-1)*row+j-1
-            b0=k*row+j-1
-            # Down-then-across gives outward-facing normals on the rear sheet.
-            veil_faces.append((a0,a0+1,b0+1,b0))
-hmesh("Riley full back-of-head hair foundation",veil_verts,veil_faces,hair_colors[3])
-
-def strand(root,length,spread,phase,width,color):
-    verts=[];faces=[];N=30;S=8
-    for j in range(N):
-        t=j/(N-1)
-        soft_tip=max(.07,(1-t)**.55)
-        # Broad tapered hair locks follow gravity, swaying through shoulders.
-        # They overlap the foundation instead of leaving gaps between strings.
-        center=Vector((
-            root.x+spread[0]*smooth(t)+.010*sin(3*pi*t+phase)*t,
-            root.y+spread[1]*smooth(t)+.008*cos(3*pi*t+phase)*t,
-            root.z-length*t
-        ))
-        radius=width*soft_tip
-        for k in range(S):
-            th=2*pi*k/S
-            verts.append(tuple(center+Vector((radius*cos(th),radius*.20*sin(th),0))))
-        if j:
-            for k in range(S):
-                q=(k+1)%S
-                # Outer winding was inverted in v7: GLB hid the visible side.
-                faces.append(((j-1)*S+k,j*S+k,j*S+q,(j-1)*S+q))
-    hmesh("Riley flowing layered honey-blonde hair",verts,faces,hair_colors[color])
-
-# Three staggered rows of overlapping blonde locks behind and beside the head.
-# Fewer thicker sections look like hair in motion, rather than narrow hanging rods.
-for layer in range(3):
-    count=24
-    for k in range(count):
-        a=pi*(k+.5+.19*(layer%2))/count
-        ux,uy=cos(a),sin(a)
-        root=Vector((
-            hx+(.101+.004*layer)*ux,
-            hy+(.119+.006*layer)*uy,
-            head_top-.073-.028*layer
-        ))
-        length=.37+.08*uy+layer*.012+rng.uniform(-.027,.024)
-        spread=(ux*(.039+.019*layer),.093+.035*uy)
-        strand(root,length,spread,rng.uniform(0,2*pi),
-               rng.uniform(.024,.034),(k+layer)%4)
-# Face-framing temple pieces retain an open view of the facial textures.
-for side in (-1,1):
-    for k in range(9):
-        t=k/8
-        root=Vector((
-            hx+side*(.090+.008*t),
-            hy-.028+.018*t,
-            head_top-.095-.049*t
-        ))
-        strand(root,.26+.11*t,(side*(.031+.020*t),.026+.039*t),
-               rng.uniform(0,2*pi),rng.uniform(.017,.025),(k+1)%4)
-print("RILEY_HAIR_LOCKS",len(hair_meshes)-2,
-      "longest_ends_below_shoulder",True)
-# Join hair into single mesh; it is parented to head bone, not torso or rig root.
-bpy.ops.object.select_all(action="DESELECT")
-for o in hair_meshes:o.select_set(True)
-bpy.context.view_layer.objects.active=hair_meshes[0]
-bpy.ops.object.join()
-hair=bpy.context.object;hair.name="Riley scalp-attached blonde hair"
-head_pieces=[o for o in original_head if o.type=="MESH"]
-
+hx=sum(p.x for p in head_core if p.z>head_top-.105)/max(1,sum(1 for p in head_core if p.z>head_top-.105))
+hy=sum(p.y for p in head_core if p.z>head_top-.105)/max(1,sum(1 for p in head_core if p.z>head_top-.105))
+# Gravity lengthens the original shoulder-length bob, leaving its crown and
+# face framing unchanged. Vary the lower strands for a relaxed wavy silhouette.
+for vertex in hair.data.vertices:
+    p=vertex.co
+    t=smooth((head_top-.085-p.z)/.185)
+    p.z-=.235*t
+    if t>.002:
+        side=math.copysign(1,p.x-hx)
+        p.x+=side*(.016*t+.008*t*sin(11.0*p.z+7.0*p.x))
+        p.y+=( .055 if p.y>hy else .012)*t
+hair.data.update()
+hair.data.materials.clear()
+hair.data.materials.append(hair_colors[1])
+for face in hair.data.polygons:
+    face.use_smooth=True
+    face.material_index=0
+print("RILEY_FITTED_HAIR",len(hair.data.vertices),
+      "head_top",round(head_top,3),
+      "source","original CC0 bob extended into blonde wavy locks")
 # Attach Riley's preserved head visually to the anatomical shoulders.
 # Find actual open-edge outlines instead of estimating the join from all
 # nearby head/chest vertices (which previously left the visible head seam).
