@@ -2,7 +2,10 @@
 Reference intent: approved front/left-profile/back turnarounds, neutral base outfit.
 Images guide proportions, not automatic 3D reconstruction. Do NOT reuse the
 previous recoloured casual-suit shell, primitive torso rings or ball-shaped limbs.
-Target: Blender 3.x/4.x; exports rigged GLB for Babylon.js.\nThe underlying full-body sculpt is the CC0 Innerscene/MakeHuman/MPFB neutral\nbase rig, downloaded by .github/workflows/build-riley-rigged.yml.\nhttps://www.innerscene.com/tools/library/3d-parts/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1
+Target: Blender 3.x/4.x; exports rigged GLB for Babylon.js.
+The underlying full-body sculpt is the CC0 Innerscene/MakeHuman/MPFB neutral
+base rig, downloaded by .github/workflows/build-riley-rigged.yml.
+https://www.innerscene.com/tools/library/3d-parts/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1
 """
 import bpy, bmesh, math, random, json
 from mathutils import Vector, Matrix
@@ -10,7 +13,8 @@ from math import sin, cos, pi
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-SOURCE=ROOT/"assets"/"riley-real.glb"\nDONOR=ROOT/"assets"/"riley-sculpted-donor.glb"
+SOURCE=ROOT/"assets"/"riley-real.glb"
+DONOR=ROOT/"assets"/"riley-sculpted-donor.glb"
 OUT=ROOT/"assets"/"riley-rigged-v1.glb"
 M=json.loads((ROOT/"riley-measurements.json").read_text())
 H=M["height_cm"]/100.0
