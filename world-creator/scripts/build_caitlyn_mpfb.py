@@ -510,8 +510,11 @@ def main():
                     loss+=6*(wrist_drop-(.39 if use_elbows else .46))**2
                     loss+=3*(hands_forward-(.30 if use_elbows else .07))**2
                     loss+=3*(elbow_forward-(.12 if use_elbows else .04))**2
-                    loss+=7*sum((v.z-kz)**2 for v in knee)/2
-                    loss+=36*sum((v.z-cz)**2 for v in contacts)/2
+                    # Each joint must lie on the same support plane; matching
+                    # only average heights can leave a hand or knee hovering.
+                    loss+=110*sum((v.z-kz)**2 for v in knee)/2
+                    loss+=140*sum((v.z-cz)**2 for v in contacts)/2
+                    loss+=70*sum((v.z-(kz+cz)/2)**2 for v in knee+contacts)/4
                     if use_elbows:
                         # For forearm-and-knee support, the wrists should lie
                         # near the elbow plane, not float high above it.
@@ -567,8 +570,20 @@ def main():
                       "contact_mismatch_m",round(error,3),
                       "root_hip_offset",round(corrected,3),
                       "knee_behind_hip",[round(v.y-hip.y,3) for v in knee])
-                if error>.14:
-                    raise RuntimeError(name+" contacts still miss ground by "+str(round(error,3))+" meters")
+                # Inspect individual supporting joints after translating the
+                # hips. The old mean-height check masked tilted, hovering limbs.
+                contact_heights=[v.z for v in knee+contacts]
+                support_error=max(abs(z-rest_ground) for z in contact_heights)
+                left_right_error=max(abs(knee[0].z-knee[1].z),
+                                     abs(contacts[0].z-contacts[1].z))
+                print("WVLRP_CAITLYN_SUPPORT_QA",name,
+                      "max_support_error_m",round(support_error,3),
+                      "left_right_error_m",round(left_right_error,3))
+                if error>.12 or support_error>.14 or left_right_error>.12:
+                    raise RuntimeError(name+" knees and "+
+                      ("elbows" if use_elbows else "hands")+
+                      " are not individually grounded: "+
+                      str([round(z-rest_ground,3) for z in contact_heights]))
             for pb in rig.pose.bones:
                 pb.keyframe_insert(data_path="rotation_euler",frame=frame,group=pb.name)
             bones["hips"].keyframe_insert(data_path="location",frame=frame,group=bones["hips"].name)
