@@ -16,6 +16,21 @@ let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
 const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
+// This is a genuine textured CC0 GLB, not a picture mapped to a primitive.
+// The temporary procedural figure remains only as the load/error and crouch fallback.
+const RILEY_REAL_GLB = "./assets/riley-real.glb";
+let builtInRileyFilePromise = null;
+function builtInRileyFile() {
+  if (!builtInRileyFilePromise) {
+    builtInRileyFilePromise = fetch(RILEY_REAL_GLB).then(async response => {
+      if (!response.ok) throw Error("Character asset unavailable (" + response.status + ")");
+      const bytes = await response.arrayBuffer();
+      if (bytes.byteLength < 1_000_000) throw Error("Character asset is incomplete");
+      return new File([bytes], "riley-real.glb", {type:"model/gltf-binary"});
+    });
+  }
+  return builtInRileyFilePromise;
+}
 let previewBuildId = 0;
 let herdFocusCursor = -1;
 const colors={anchor:"#fbd182",deer:"#efc08c",npc:"#e7abd0",animal:"#dbceb4",cabin:"#f3d16b",marker:"#ff9e6f"};
@@ -389,7 +404,17 @@ function refresh3d() {
       try{fallback=o.modelKey==="riley" ? makeRiley(BABYLON,scene,track,o,x,h,z) : figures.person(o,x,h,z);}
       catch(err){console.warn("Experimental Riley mesh unavailable, using normal person preview",err);fallback=figures.person(o,x,h,z);}
       const characterFile=localCharacterFiles.get(o.id);
-      if(characterFile) importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
+      if(characterFile) {
+        importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
+      } else if(o.modelKey==="riley" && o.pose!=="crouch") {
+        // Professional textured base figure is the default for Riley's standing pose.
+        // Load once and reuse the bytes on rerenders; never discard browser-local objects.
+        builtInRileyFile().then(file=>{
+          if(thisBuild===previewBuildId) importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
+        }).catch(err=>{
+          if(thisBuild===previewBuildId)status("Riley real model did not load: "+err.message+"; showing temporary figure");
+        });
+      }
     }else{
       const m=track(BABYLON.MeshBuilder.CreateBox(o.name,{size:o.type==="cabin"?6:2},scene));
       m.position.set(x,h+(o.type==="cabin"?3:1.5),z);m.material=otherMat;
