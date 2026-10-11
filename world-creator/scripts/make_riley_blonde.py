@@ -164,7 +164,7 @@ for side in (-1,1):
 # Overall character bounds cannot position hair reliably: kneeling / stock asset
 # hierarchies give different heights. Use real eye and head vertices instead.
 face_marks=[]
-for ob in original:
+for ob in [o for o in bpy.context.scene.objects if o.type=='MESH']:
     if ob.name.lower().startswith(("eyebrow","eyelashes")):
         face_marks.extend(ob.matrix_world @ v.co for v in ob.data.vertices)
 if face_marks:
@@ -172,7 +172,7 @@ if face_marks:
 else:
     eye_z=z(.87)
 head_vertices=[]
-for ob in original:
+for ob in [o for o in bpy.context.scene.objects if o.type=='MESH']:
     if ("anatomical body" in ob.name.lower() or ob.name.lower()=="low-poly"):
         head_vertices.extend(pt for v in ob.data.vertices
                              if eye_z-H*.09 <= (pt:=ob.matrix_world @ v.co).z <= eye_z+H*.11)
