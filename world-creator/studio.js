@@ -1,6 +1,6 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
-  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER
+  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER
 } from "./world-core.js";
 import { makeFigureBuilder } from "./character-models.js";
 
@@ -56,6 +56,19 @@ try {
     localStorage.setItem(CAITLYN_INSTALL,"complete");
   }
 }catch(err){console.warn("Caitlyn map addition could not be saved",err);}
+// Install Mason once without resetting or replacing locally saved characters.
+const MASON_INSTALL="wvlrp-world-creator-mason-added-2026-10-11";
+let installedMason=0;
+try{
+  if(!localStorage.getItem(MASON_INSTALL)){
+    installedMason=addMason(world).length;
+    if(installedMason){
+      world.updatedAt=new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
+    }
+    localStorage.setItem(MASON_INSTALL,"complete");
+  }
+}catch(err){console.warn("Mason map installation was not saved",err);}
 let seed=seedNumber(world.seed);
 const view={x:0,y:0,scale:.40};
 let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
@@ -70,7 +83,8 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8"
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8",
+  mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v1"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -126,7 +140,7 @@ function setSelection(o) {
   $("hair").value=o.hair||"brown";
   $("outfit").value=o.outfit||"ranger";
   $("pose").value=o.pose||"standing";
-  $("characterPreset").value=["riley","amy","chrissy","caitlyn"].includes(o.modelKey)?o.modelKey:"";
+  $("characterPreset").value=["riley","amy","chrissy","caitlyn","mason"].includes(o.modelKey)?o.modelKey:"";
   $("wildlifeFields").hidden=!(o.type==="deer"||o.type==="animal");
   $("npcFields").hidden=o.type!=="npc";
   for(const el of $("objectForm").querySelectorAll("input:not(#photo),select"))el.disabled=!!o.locked;
@@ -217,7 +231,7 @@ function drawMap() {
     ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);
     ctx.fillStyle=colors[o.type]||"#fff";ctx.fill();
     ctx.lineWidth=selectedId===o.id?3:1.5;ctx.strokeStyle=selectedId===o.id?"#fff":"#18251b";ctx.stroke();
-    if(o.type==="anchor"||["amy","chrissy","caitlyn"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
+    if(o.type==="anchor"||["amy","chrissy","caitlyn","mason"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
       ctx.font=(o.type==="anchor"?"bold 12px":"11px")+" system-ui";
       const text=o.name||o.type,tw=ctx.measureText(text).width;
       ctx.fillStyle="#071711da";ctx.fillRect(p.x+11,p.y-10,tw+10,20);
@@ -299,7 +313,8 @@ $("applyPreset").onclick=()=>{
     riley:{gender:"woman",skin:"fair",body:"athletic",face:"heart",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"},
     amy:{gender:"woman",skin:"light",body:"slim",face:"oval",hair:"red",hairStyle:"long",outfit:"mannequin",pose:"standing"},
     chrissy:{gender:"woman",skin:"light",body:"slim",face:"oval",hair:"blonde",hairStyle:"long",outfit:"mannequin",pose:"standing"},
-    caitlyn:{gender:"woman",skin:"fair",body:"slim",face:"oval",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"}
+    caitlyn:{gender:"woman",skin:"fair",body:"slim",face:"oval",hair:"blonde",hairStyle:"wavy",outfit:"mannequin",pose:"standing"},
+    mason:{gender:"man",skin:"tan",body:"athletic",face:"square",hair:"brown",hairStyle:"short",outfit:"mannequin",pose:"standing"}
   };
   const look=looks[$("characterPreset").value];
   if(!look){status("Choose a character style first");return;}
@@ -460,9 +475,9 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
     const isRiley=o.modelKey==="riley";
-    const isMPFB=["amy","chrissy","caitlyn"].includes(o.modelKey);
+    const isMPFB=["amy","chrissy","caitlyn","mason"].includes(o.modelKey);
     // Bone animation changes the pose, not the base mesh or measured height.
-    const naturalHeight=1.70;
+    const naturalHeight=o.modelKey==="mason"?1.82:1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
     // Imported GLB parent transforms can shift the mesh after parenting.
@@ -508,7 +523,8 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
       const rigs=result.skeletons||[];
       if(!rigs.some(sk=>(sk.bones?.length||0)>=25))throw Error(o.name+" GLB rig is incomplete");
       const animations=result.animationGroups||[];
-      if(o.modelKey==="caitlyn"){
+      if(o.modelKey==="caitlyn"||o.modelKey==="mason"){
+        const characterName=o.modelKey==="mason"?"Mason":"Caitlyn";
         // Apply the actual imported mouth-corner shape keys in the 3D world
         // instead of relying on a static smile painted onto the texture.
         let smileShapes=0;
@@ -517,19 +533,19 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
           if(!manager)continue;
           for(let i=0;i<manager.numTargets;i++){
             const morph=manager.getTarget(i);
-            if(/Caitlyn Natural Smile (Left|Right)/i.test(morph.name)){
+            if(new RegExp(characterName+" Natural Smile (Left|Right)","i").test(morph.name)){
               morph.influence=.78;smileShapes++;
             }
           }
         }
-        if(smileShapes!==2)status("Caitlyn loaded without both working smile morphs ("+smileShapes+"/2)");
-        const clipName=({
-          standing:"Caitlyn Stand",bend:"Caitlyn Bend",
-          crouch:"Caitlyn Kneel",allfours:"Caitlyn HandsAndKnees",
-          elbows:"Caitlyn ElbowsAndKnees"
-        })[o.pose]||"Caitlyn Stand";
+        if(smileShapes!==2)status(characterName+" loaded without both working smile morphs ("+smileShapes+"/2)");
+        const clipName=characterName+" "+({
+          standing:"Stand",bend:"Bend",
+          crouch:"Kneel",allfours:"HandsAndKnees",
+          elbows:"ElbowsAndKnees"
+        })[o.pose];
         const clip=animations.find(a=>a.name===clipName);
-        if(!clip)throw Error("Caitlyn missing pose "+clipName);
+        if(!clip)throw Error(characterName+" missing pose "+clipName);
         const standing=o.pose==="standing";
         clip.start(standing,1,clip.from,clip.to,false);
         // Hold articulated end pose for inspection instead of returning to idle.
@@ -680,7 +696,7 @@ function findOrAddBuiltInCharacter(modelKey){
   let person=world.objects.find(o=>o.type==="npc"&&o.modelKey===modelKey);
   if(!person){
     const base=TEST_CHARACTER_STARTERS.find(o=>o.modelKey===modelKey)||
-      (modelKey==="caitlyn"?CAITLYN_STARTER:null);
+      (modelKey==="caitlyn"?CAITLYN_STARTER:modelKey==="mason"?MASON_STARTER:null);
     if(!base||world.objects.length>=5000){status("No room for character");return;}
     person={...base};world.objects.push(person);
   }
@@ -691,6 +707,7 @@ function findOrAddBuiltInCharacter(modelKey){
 $("findAmy").onclick=()=>findOrAddBuiltInCharacter("amy");
 $("findChristy").onclick=()=>findOrAddBuiltInCharacter("chrissy");
 $("findCaitlyn").onclick=()=>findOrAddBuiltInCharacter("caitlyn");
+$("findMason").onclick=()=>findOrAddBuiltInCharacter("mason");
 function setCaitlynPose(pose){
   const o=selected();
   if(!o||o.type!=="npc"||o.modelKey!=="caitlyn"){
@@ -819,6 +836,7 @@ $("findDeer3d").onclick=()=>{
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
-if(installedCaitlyn)status("Caitlyn added to your saved world map near Woodland Trail.");
+if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
+else if(installedCaitlyn)status("Caitlyn added to your saved world map near Woodland Trail.");
 else if(installedTestCharacters)status("Amy and Christy added to your saved world map.");
 else if(freshWorldStarted)status("Fresh world ready.");
