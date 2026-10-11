@@ -84,7 +84,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
   caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8",
-  mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v1"
+  mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -94,15 +94,12 @@ const characterAssetFiles=new Map();
 function builtInCharacterFile(key){
   const url=BUILTIN_CHARACTER_GLB[key];
   if(!url)return Promise.reject(Error("Unknown character "+key));
-  if(!characterAssetFiles.has(url)){
-    const request=fetch(url+(url.includes('?')?'&':'?')+'fresh='+Date.now(),{cache:"no-store"}).then(async response=>{
-      if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
-      const bytes=await response.arrayBuffer();
-      if(bytes.byteLength<100_000)throw Error("Rigged character asset is incomplete");
-      return new File([bytes],url.split("?")[0].split("/").at(-1),{type:"model/gltf-binary"});
-    }).catch(err=>{characterAssetFiles.delete(url);throw err;});
-    characterAssetFiles.set(url,request);
-  }
+  // Load bundled GLBs straight from their published URL. Previously we first
+  // downloaded the entire large GLB into an ArrayBuffer, wrapped it into a
+  // second File and then gave that copy to Babylon. On mobile devices this
+  // unnecessarily duplicates memory and could leave Mason invisible.
+  // User-uploaded GLBs still arrive here as File objects independently.
+  if(!characterAssetFiles.has(url))characterAssetFiles.set(url,Promise.resolve(url));
   return characterAssetFiles.get(url);
 }
 let previewBuildId = 0;
@@ -448,6 +445,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     status("Babylon GLB loader is unavailable; using built-in preview.");
     return;
   }
+  const assetName=typeof file==="string"?file.split("?")[0].split("/").at(-1):file.name;
   BABYLON.SceneLoader.ImportMeshAsync(null,"",file,scene,undefined,".glb").then(result=>{
     const meshes=result.meshes||[];
     if(buildId!==previewBuildId) {
@@ -498,11 +496,11 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     if(!Number.isFinite(fMinY))throw Error("Imported 3D body has no valid ground bounds");
     node.position.set(x-(fMinX+fMaxX)/2,h+.035-fMinY,z-(fMinZ+fMaxZ)/2);
     if(isRiley){
-      if(file.name==="riley-rigged-v1.glb")applyRileyFleshTone(result,o.skin);
+      if(assetName==="riley-rigged-v1.glb")applyRileyFleshTone(result,o.skin);
       const state=rileyMotionFor(o.id);
       node.rotation.y=state.heading;
       const skeletons=result.skeletons||[];
-      if(file.name==="riley-rigged-v1.glb" && (!skeletons.length ||
+      if(assetName==="riley-rigged-v1.glb" && (!skeletons.length ||
           !skeletons.some(sk=>(sk.bones?.length||0)>=25))) {
         throw Error("Riley character has no verified articulated skeleton");
       }
@@ -514,7 +512,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
       if(action)action.start(o.pose==="standing",1.0,action.from,action.to,false);
       liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose,
         skeletons,animations:anims,lastHeading:state.heading});
-      if(file.name==="riley-rigged-v1.glb") {
+      if(assetName==="riley-rigged-v1.glb") {
         status("Riley rigged character loaded: "+skeletons[0].bones.length+
           " bones; "+anims.length+" skeletal animations");
       }
@@ -560,7 +558,8 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
     fallback.setEnabled(o.modelKey==="mason" || !Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey));
-    status("Unable to load 3D character: "+String(err.message||err).slice(0,160));
+    status("Unable to load detailed "+o.name+" model: "+String(err.message||err).slice(0,160)+
+      (o.modelKey==="mason"?" · showing basic fallback figure":""));
   });
 }
 function refresh3d() {
@@ -609,7 +608,8 @@ function refresh3d() {
       const fallback=figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
       const hasBuiltIn=Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey);
-      if(hasBuiltIn&&!characterFile)fallback.setEnabled(false);
+      // Keep a visible basic Mason while the detailed 9 MB asset streams.
+      if(hasBuiltIn&&!characterFile&&o.modelKey!=="mason")fallback.setEnabled(false);
       if(characterFile){
         importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
       } else if(hasBuiltIn){
@@ -617,8 +617,9 @@ function refresh3d() {
           if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          fallback.setEnabled(false);
-          status(o.name+" GLB unavailable: "+err.message);
+          fallback.setEnabled(o.modelKey==="mason");
+          status(o.name+" GLB unavailable: "+err.message+
+            (o.modelKey==="mason"?" · showing basic fallback figure":""));
         });
       }
     }else{
