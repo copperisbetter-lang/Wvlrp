@@ -35,11 +35,15 @@ test("Add Riley re-selects the character rather than duplicating it",()=>{
 
 test("Approved design has stable size baseline for outfits",()=>{
   assert.equal(measurements.height_cm,170);
-  assert.equal(measurements.bust_circumference_cm,94);
+  assert.equal(measurements.bust_circumference_cm,112);
   assert.equal(measurements.waist_circumference_cm,70);
   assert.equal(measurements.full_hip_circumference_cm,99);
   assert.equal(measurements.shoulder_width_cm,40);
   assert.match(page,/id="rileyOutfitMeasurements"/);
+  assert.match(page,/Bust 112 cm/);
+  assert.match(modelBuilder,/fullness=max\(\.080,min\(\.205/);
+  assert.match(modelBuilder,/Riley flowing layered honey-blonde hair/);
+  assert.match(modelBuilder,/boundary_points\(/);
 });
 
 test("Editor labels early skeletal movement truthfully",()=>{

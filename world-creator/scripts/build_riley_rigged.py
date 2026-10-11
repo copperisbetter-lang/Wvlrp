@@ -177,25 +177,40 @@ for v in body.data.vertices:
     # Soft upper glute and lower-back curve, tapering to the hamstring.
     if y>.005:
         p.y+=.014*hip*gauss(abs(x)-.105,.125)
-    # Rebuild a naturally contoured adult female bust directly in the donor's
-    # continuous torso topology.  The previous 6-mm nudge left the broad,
-    # nearly flat donor chest looking masculine, despite the 94-cm sizing
-    # label.  Deform the real FRONT chest vertices, not two pasted-on spheres.
-    # Each side tapers smoothly into the sternum, underbust, armpit and ribs;
-    # the lower curve is fuller than the upper slope (no balloon shapes).
-    if 1.115 < z < 1.455 and abs(x) < .238:
-        front=smooth((.027-p.y)/.155)
-        side=gauss(abs(x)-.090,.078)
-        lower=gauss(z-1.283,.092)
-        upper=gauss(z-1.334,.118)
-        bust_shape=side*(.78*lower+.22*upper)*front
-        p.y-=.082*bust_shape
-        # Small natural outward volume at the flanks without square shoulders.
-        p.x+=math.copysign(.0045*bust_shape,x) if abs(x)>.008 else 0
-    # Taper the broad donor deltoid transition, keeping full arm mobility.
+    # Natural full-bust silhouette is modeled into the original continuous
+    # sculpt (never as separate balls or clothing). 112 cm is an OUTFIT
+    # TARGET, not a verified mesh perimeter until the turnaround QA confirms.
+    # Gravity is expressed by a gentle upper slope, lowered full point, and
+    # fuller underside. The chest blends into the rib cage and underarms.
+    bust_target=M["bust_circumference_cm"]
+    fullness=max(.080,min(.205,.093+.0040*(bust_target-94)))
+    if 1.095 < z < 1.465 and abs(x)<.253:
+        front=smooth((.045-p.y)/.152)
+        left_right=gauss(abs(x)-.096,.086)
+        lower_fullness=gauss(z-1.239,.099)
+        upper_slope=gauss(z-1.327,.104)
+        low_curve=gauss(z-1.170,.059)
+        height_envelope=smooth((z-1.095)/.060)*(1-smooth((z-1.426)/.060))
+        bust_shape=left_right*(.73*lower_fullness+.19*upper_slope+
+                                .08*low_curve)*front*height_envelope
+        # Positive y is the back on this mesh; its front points toward -y.
+        p.y-=fullness*bust_shape
+        # Lower pole is visibly heavier without a pinched or balloon-like tip.
+        p.z-=.009*bust_shape*smooth((1.36-z)/.14)
+        if abs(x)>.009:
+            p.x+=math.copysign(.0065*bust_shape,x)
+    # Restore arm cross-section: the old A-pose conversion compressed the
+    # biceps into thin slabs in side view. Keep the shoulder joint continuous.
+    if .99<z<1.425 and .197<abs(x)<.405:
+        upper_arm_shape=gauss(z-1.274,.129)*smooth((abs(x)-.197)/.060)
+        upper_arm_shape*=1-smooth((abs(x)-.368)/.065)
+        arm_mid_y=-.016
+        p.y=arm_mid_y+(p.y-arm_mid_y)*(1+.31*upper_arm_shape)
+        arm_axis_x=math.copysign(.265,x)
+        p.x=arm_axis_x+(p.x-arm_axis_x)*(1+.12*upper_arm_shape)
     if z>1.345 and .16<abs(x)<.36:
         upper_arm=smooth((abs(x)-.16)/.10)
-        p.x*=1-.026*shoulder*upper_arm
+        p.x*=1-.019*shoulder*upper_arm
 body.data.update()
 
 # The donor abdominal surface contains a visibly recessed, heart-shaped patch.
@@ -376,39 +391,44 @@ def strand(root,length,spread,phase,width,color):
                       root.y+spread[1]*t+
                       .009*cos(3.0*pi*t+phase)*t,
                       root.z-length*t))
-        radius=width*max(.045,w)
+        # Flat, overlapping tapered ribbon locks rather than thin cylindrical
+        # spaghetti or rigid rods. Broad highlights catch the light as hair.
+        radius=width*max(.035,w)
         for k in range(S):
             th=2*pi*k/S
-            verts.append(tuple(center+Vector((radius*cos(th),radius*.56*sin(th),0))))
+            verts.append(tuple(center+Vector((radius*cos(th),radius*.24*sin(th),0))))
         if j:
             for k in range(S):
                 q=(k+1)%S
                 faces.append(((j-1)*S+k,(j-1)*S+q,j*S+q,j*S+k))
     hmesh("Riley flowing layered honey-blonde hair",verts,faces,hair_colors[color])
 # Back and lateral hair, several staggered rows, with no curtain hiding eyes.
-for layer in range(4):
-    for k in range(39):
-        a=2*pi*(k+.21*(layer%2))/39
+for layer in range(3):
+    count=30
+    for k in range(count):
+        a=2*pi*(k+.40*(layer%2))/count
         ux,uy=cos(a),sin(a)
-        if uy<-.18 and abs(ux)<.50:continue
-        root=Vector((hx+(.076+.003*layer)*ux,
-                     hy+(.066+.003*layer)*uy,
-                     cap_base+.014-.015*layer))
-        length=rng.uniform(.37,.49)+layer*.036 if uy>=0 else rng.uniform(.27,.40)
+        if uy<-.22 and abs(ux)<.43:continue
+        root=Vector((hx+(.076+.004*layer)*ux,
+                     hy+(.068+.004*layer)*uy,
+                     cap_base+.021-.019*layer))
+        # Hair settles across shoulders and upper back instead of bunching
+        # under the neck or standing out from the head.
+        length=rng.uniform(.34,.46)+layer*.047 if uy>=0 else rng.uniform(.29,.37)
         side=math.copysign(1,ux)
-        spread=(side*(.028+.015*layer),
-                (.085+.017*layer) if uy>.15 else (.030 if uy<-.2 else .053))
+        spread=(side*(.029+.014*layer),
+                (.073+.013*layer) if uy>.15 else (.027 if uy<-.2 else .043))
         strand(root,length,spread,rng.uniform(0,2*pi),
-               rng.uniform(.0038,.0063),(k+layer)%4)
-# Side-swept framing strands, starting at the temples, leaving face open.
+               rng.uniform(.010,.017),(k+layer)%4)
+# Wider face-framing layers and varying tips; fewer hard string-like strands.
 for side in (-1,1):
-    for k in range(14):
-        t=k/13
-        root=Vector((hx+side*(.064+.015*t),
-                     hy-.035+.023*t,
-                     head_top-.095-.044*t))
-        strand(root,.29+.15*t, (side*(.040+.025*t),.024+.045*t),
-               rng.uniform(0,2*pi),rng.uniform(.0025,.0045),(k+1)%4)
+    for k in range(11):
+        t=k/10
+        root=Vector((hx+side*(.065+.016*t),
+                     hy-.036+.022*t,
+                     head_top-.085-.047*t))
+        strand(root,.31+.12*t,(side*(.039+.028*t),.025+.038*t),
+               rng.uniform(0,2*pi),rng.uniform(.008,.013),(k+1)%4)
 print("RILEY_HAIR_LOCKS",len(hair_meshes)-1,
       "longest_ends_below_shoulder",True)
 # Join hair into single mesh; it is parented to head bone, not torso or rig root.
@@ -419,18 +439,29 @@ bpy.ops.object.join()
 hair=bpy.context.object;hair.name="Riley scalp-attached blonde hair"
 head_pieces=[o for o in original_head if o.type=="MESH"]
 
-# Join Riley's preserved head visually to the anatomical shoulder/neck mesh.
-# Cropping two meshes at different z levels had left a literal air gap.
-# Derive the collar from BOTH real border contours, not a freestanding sphere.
-face_lower=[v.co for o in head_pieces
-            if o.name.lower()=="low-poly" or "anatomical body" in o.name.lower()
-            for v in o.data.vertices if head_cut-.02<v.co.z<head_cut+.12]
+# Attach Riley's preserved head visually to the anatomical shoulders.
+# Find actual open-edge outlines instead of estimating the join from all
+# nearby head/chest vertices (which previously left the visible head seam).
+# Use a close-fitting skinned loft that extends underneath both neck skins.
+def boundary_points(objects, low, high):
+    points=[]
+    for ob in objects:
+        bm=bmesh.new()
+        bm.from_mesh(ob.data)
+        points.extend(v.co.copy() for e in bm.edges if e.is_boundary
+                      for v in e.verts if low<v.co.z<high)
+        bm.free()
+    return points
+face_lower=boundary_points(
+    [o for o in head_pieces if o.name.lower()=="low-poly" or
+     "anatomical body" in o.name.lower()],
+    head_cut-.025,head_cut+.12)
 if len(face_lower)<12:
     face_lower=[v.co for o in head_pieces
                 if o.name.lower()=="low-poly" or "anatomical body" in o.name.lower()
                 for v in o.data.vertices if 1.36<v.co.z<1.55]
-body_upper=[v.co for v in body.data.vertices if head_cut-.10<v.co.z<head_cut+.005
-            and abs(v.co.x)<.15 and abs(v.co.y)<.16]
+body_upper=boundary_points([body],head_cut-.10,head_cut+.045)
+body_upper=[v for v in body_upper if abs(v.x)<.15 and abs(v.y)<.16]
 if len(face_lower)<12 or len(body_upper)<12:
     raise RuntimeError("Cannot identify the two physical neck contours for Riley")
 face_z=min(v.z for v in face_lower)
@@ -456,11 +487,12 @@ neck_verts=[];neck_faces=[]
 for i in range(nr):
     t=i/(nr-1)
     blend=smooth(t)
-    z=(body_z-.016)*(1-blend)+(face_z+.012)*blend
+    z=(body_z-.026)*(1-blend)+(face_z+.031)*blend
     px=bx*(1-blend)+fx*blend
     py=by*(1-blend)+fy*blend
-    rx=brx*(1-blend)+frx*blend
-    ry=bry*(1-blend)+fry*blend
+    # Tiny radial overlap hides pixel-wide cracks when rotated on mobile.
+    rx=1.045*(brx*(1-blend)+frx*blend)
+    ry=1.045*(bry*(1-blend)+fry*blend)
     for k in range(N):
         a=2*pi*k/N
         neck_verts.append((px+rx*cos(a),py+ry*sin(a),z))

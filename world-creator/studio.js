@@ -38,7 +38,7 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
-const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=warm-flesh-preview-v6";
+const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=natural-bust112-rebuild-v7";
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
 const liveRileyModels=new Map();
