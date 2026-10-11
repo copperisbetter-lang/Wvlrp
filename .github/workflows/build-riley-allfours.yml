@@ -1,0 +1,46 @@
+name: Build Riley hands and knees GLB
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-riley-allfours.yml'
+permissions:
+  contents: write
+jobs:
+  pose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender and glTF prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender python3-numpy
+      - name: Build hands-and-knees test pose as real textured 3D geometry
+        run: |
+          set -euo pipefail
+          blender --background --factory-startup --python world-creator/scripts/make_riley_blonde.py -- allfours
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,struct
+          p=Path('world-creator/assets/riley-blonde-allfours.glb')
+          data=p.read_bytes()
+          assert len(data)>1_000_000 and data[:4]==b'glTF'
+          assert int.from_bytes(data[8:12],'little')==len(data)
+          print('HANDS_AND_KNEES_MODEL_VALID',len(data))
+          PY
+      - name: Publish pose without rewriting earlier standing and kneeling assets
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-blonde-allfours.glb
+          if git diff --cached --quiet; then
+            echo 'Hands and knees pose already present'
+          else
+            git commit -m "Publish Riley hands-and-knees textured 3D pose"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
