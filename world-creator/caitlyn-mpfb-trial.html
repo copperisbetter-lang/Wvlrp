@@ -22,8 +22,9 @@
 <button data-pose="HandsAndKnees">Hands &amp; knees</button>
 <button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
 <button id="idle">Play movement</button>
+<button id="smile" aria-pressed="true">Smile: on</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-ground-contact-v7" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -34,7 +35,7 @@
 <script>
 (function(){
 const canvas=document.getElementById('renderCanvas'), status=document.getElementById('status');
-let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null;
+let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=true;
 try {
  engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});
  scene=new BABYLON.Scene(engine);
@@ -45,7 +46,7 @@ try {
  camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92;
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52;
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-ground-contact-v7',scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-poses-smile-v8&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
@@ -59,12 +60,13 @@ try {
       const morph=manager.getTarget(i);
       morphCount++;
       if(/Caitlyn Natural Smile/i.test(morph.name)){
-        morph.influence=Math.max(.52,morph.influence||0);
+        morph.influence=.78;
+        smileTargets.push(morph);
         smileCount++;
       }
     }
   }
-  if(missing.length || !morphCount){
+  if(missing.length || !smileCount){
     status.textContent='Old Caitlyn 3D file: updated poses/smile not built yet ('+
       (missing.length?missing.map(s=>s.replace('Caitlyn ','')).join(', '):'smile morph')+').';
     status.style.background='#563325e8';
@@ -89,9 +91,9 @@ try {
   const stand=groups.find(g=>/Caitlyn Stand/i.test(g.name));
   if(stand){stand.start(true,1,stand.from,stand.to,false);currentGroup=stand;}
   else status.textContent='3D loaded but stand animation missing';
-  if(!missing.length && morphCount){
+  if(!missing.length && smileCount===2){
     status.textContent='Updated Caitlyn loaded · '+(res.skeletons?.[0]?.bones?.length||0)+
-       ' bones · '+groups.length+' motions · '+smileCount+' smile shapes';
+       ' bones · '+groups.length+' motions · '+smileCount+' smile shapes · select a floor pose';
   }
  }).catch(e=>{status.id='err';status.textContent='Unable to load GLB: '+(e.message||e)});
  engine.runRenderLoop(()=>scene.render());
@@ -125,6 +127,16 @@ function pickPose(pose,animate=false){
  if(!animate) {
    clip.goToFrame(loop?clip.from:clip.to);
    clip.pause();
+   // Floor positions are easier to judge from the side at ground level.
+   if(pose==='HandsAndKnees'||pose==='ElbowsAndKnees'){
+     camera.alpha=0.12;
+     camera.beta=Math.PI/2.35;
+     if(bodyBounds){
+       const b=bodyBounds;
+       camera.setTarget(new BABYLON.Vector3((b.low.x+b.high.x)/2,b.low.y+.50,(b.low.z+b.high.z)/2));
+       camera.radius=Math.max(1.55,b.span*.90);
+     }
+   }
  }
  progress.value=animate?'0':(loop?'0':'100');
  frameLabel.textContent=progress.value+'%';
@@ -133,6 +145,16 @@ function pickPose(pose,animate=false){
    (animate?' · playing transition':' · holding final articulated pose');
 }
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
+document.getElementById('smile').onclick=()=>{
+ smileOn=!smileOn;
+ for(const t of smileTargets)t.influence=smileOn?.78:0;
+ const button=document.getElementById('smile');
+ button.textContent='Smile: '+(smileOn?'on':'off');
+ button.setAttribute('aria-pressed',String(smileOn));
+ status.textContent=smileTargets.length
+  ?'Caitlyn smile '+(smileOn?'ON (78% mouth-corner shapes)':'OFF (neutral mouth)')
+  :'Caitlyn GLB has no usable smile shapes';
+};
 progress.addEventListener('input',()=>{
  if(!currentGroup)return;
  // In Babylon, an animation must be active when goToFrame evaluates joints.
