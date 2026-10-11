@@ -9,6 +9,28 @@ const canvas=$("worldMap"),ctx=canvas.getContext("2d");
 let world;
 try { world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY))); }
 catch { world=newWorld(); }
+// The October 10 test world had exactly 101 prototype deer. Retire that herd
+// once on the user's local device; preserve NPCs, cabins, markers, and anchors.
+// A deliberate ?clearDeer=1 link also clears a differently sized herd.
+const DEER_REMOVAL_MARKER="wvlrp-deer-retired-2026-10-10";
+let removedInitialDeer=0;
+try {
+  const deerCount=world.objects.filter(o=>o.type==="deer").length;
+  const requestedClear=new URLSearchParams(window.location.search).has("clearDeer");
+  const initialTestHerd=deerCount===101 && world.objects.some(o=>o.modelKey==="riley");
+  if(requestedClear || (initialTestHerd && !localStorage.getItem(DEER_REMOVAL_MARKER))) {
+    removedInitialDeer=deerCount;
+    world.objects=world.objects.filter(o=>o.type!=="deer");
+    world.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
+    localStorage.setItem(DEER_REMOVAL_MARKER,"complete");
+  }
+  if(requestedClear) {
+    const url=new URL(window.location.href);
+    url.searchParams.delete("clearDeer");
+    window.history.replaceState(null,"",url.pathname+url.search+url.hash);
+  }
+} catch(err){console.warn("Could not persist requested deer removal",err);}
 let seed=seedNumber(world.seed);
 const view={x:0,y:0,scale:.40};
 let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
@@ -618,6 +640,15 @@ $("expand3d").onclick=()=>{
   $("expand3d").setAttribute("aria-pressed",String(expanded));
   requestAnimationFrame(()=>engine?.resize());
 };
+$("removeAllDeer").onclick=()=>{
+  const removed=world.objects.filter(o=>o.type==="deer").length;
+  if(!removed){status("No deer left. You can place or scatter them again later.");return;}
+  world.objects=world.objects.filter(o=>o.type!=="deer");
+  herdFocusCursor=-1;
+  if(selectedId&&!world.objects.some(o=>o.id===selectedId))setSelection(null);
+  save();dirty3d=true;refresh3d();invalidate();
+  status(removed+" deer removed. All people, landmarks and other objects preserved.");
+};
 $("findDeer3d").onclick=()=>{
   const deer=world.objects.filter(o=>o.type==="deer");
   if(!deer.length){status("No deer placed yet. Place or scatter deer first.");return;}
@@ -634,3 +665,4 @@ $("findDeer3d").onclick=()=>{
 $("seed").value=world.seed;
 setTool("select");setSelection(null);invalidate();
 init3D();
+if(removedInitialDeer)status(removedInitialDeer+" deer removed from this test world; your people and landmarks are still here.");
