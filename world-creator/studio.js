@@ -15,12 +15,18 @@ let tool="select",selectedId=null,dirty3d=true,renderQueued=false,serial=0;
 const pointers=new Map();
 let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
-// Two CC0 static meshes of the same Riley source character: not rigged animation.
-const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=blonde1";
-const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=blonde1";
+// Individual detailed poses use custom GLBs. Subtle turn/idle motion happens in Babylon.
+// This is NOT yet a seamless skeletal transition or a fully rigged character.
+const RILEY_REAL_GLB = "./assets/riley-blonde-standing.glb?v=rileymotion1";
+const RILEY_KNEELING_GLB = "./assets/riley-blonde-kneeling.glb?v=rileymotion1";
+const RILEY_ALL_FOURS_GLB = "./assets/riley-blonde-allfours.glb?v=rileymotion1";
+const RILEY_POSES=["standing","crouch","allfours"];
+const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
+const liveRileyModels=new Map();
+function rileyMotionFor(id){if(!rileyMotion.has(id))rileyMotion.set(id,{heading:0,autoTurn:false});return rileyMotion.get(id);}
 const rileyAssetFiles=new Map();
 function builtInRileyFile(pose="standing"){
-  const url=pose==="crouch" ? RILEY_KNEELING_GLB : RILEY_REAL_GLB;
+  const url=pose==="crouch"?RILEY_KNEELING_GLB:pose==="allfours"?RILEY_ALL_FOURS_GLB:RILEY_REAL_GLB;
   if(!rileyAssetFiles.has(url)){
     const request=fetch(url).then(async response=>{
       if(!response.ok)throw Error("Character asset unavailable ("+response.status+")");
@@ -308,7 +314,7 @@ window.addEventListener("resize",()=>{invalidate();engine?.resize();});
 // Babylon.js renders a lightweight editable-scene preview, not final player graphics.
 let engine=null,scene=null,camera=null,ground=null;
 const generated=[];
-function clear3d(){for(const item of generated){try{item.dispose();}catch{}}generated.length=0;}
+function clear3d(){liveRileyModels.clear();for(const item of generated){try{item.dispose();}catch{}}generated.length=0;}
 function show3DMessage(s){$("threeStatus").textContent=s;$("threeStatus").hidden=false;}
 function track(mesh){generated.push(mesh);return mesh;}
 function material(name,color){
@@ -349,15 +355,23 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     const roots=meshes.filter(m=>!m.parent || !meshes.includes(m.parent));
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
-    const realKneeling=o.modelKey==="riley"&&o.pose==="crouch"&&file.name==="riley-blonde-kneeling.glb";
-    const naturalHeight=realKneeling?1.29:1.70;
+    const isRiley=o.modelKey==="riley";
+    const realKneeling=isRiley&&o.pose==="crouch"&&file.name==="riley-blonde-kneeling.glb";
+    const realAllFours=isRiley&&o.pose==="allfours"&&file.name==="riley-blonde-allfours.glb";
+    const naturalHeight=realAllFours?.93:realKneeling?1.29:1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
     node.scaling.setAll(scale);
     node.position.set(x-(minX+maxX)*scale/2,h-minY*scale,z-(minZ+maxZ)*scale/2);
+    if(isRiley){
+      const state=rileyMotionFor(o.id);
+      node.rotation.y=state.heading;
+      liveRileyModels.set(o.id,{node,baseY:node.position.y,pose:o.pose});
+    }
     for(const mesh of meshes)track(mesh);
     fallback.dispose(false,true);
     status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
+    fallback.setEnabled(true);
     status("Unable to load this GLB; showing built-in figure. "+String(err.message||err).slice(0,130));
   });
 }
@@ -407,6 +421,8 @@ function refresh3d() {
       // The old balloon figure must never appear when Riley changes pose.
       const fallback=figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
+      // Hide the low-poly placeholder while a detailed Riley mesh is loading.
+      if(o.modelKey==="riley"&&!characterFile)fallback.setEnabled(false);
       if(characterFile) {
         importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
       } else if(o.modelKey==="riley") {
@@ -414,15 +430,15 @@ function refresh3d() {
           if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          if(o.pose==="crouch"){
-            // The matching kneeling mesh may deploy later than this JS release.
-            // Fall back to the textured standing woman, NEVER the ball-joint doll.
+          if(o.pose==="crouch"||o.pose==="allfours"){
+            // If a new pose file isn't ready, retain an actual textured character.
+            // Do not switch to a ball-joint doll.
             builtInRileyFile("standing").then(file=>{
               if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
             }).catch(error=>{
-              if(thisBuild===previewBuildId)status("Riley asset unavailable: "+error.message);
+              if(thisBuild===previewBuildId){fallback.setEnabled(true);status("Riley asset unavailable: "+error.message);}
             });
-          } else status("Riley asset unavailable: "+err.message);
+          } else {fallback.setEnabled(true);status("Riley asset unavailable: "+err.message);}
         });
       }
     }else{
@@ -465,7 +481,7 @@ function init3D(){
     camera.pinchPrecision=55;
     camera.useNaturalPinchZoom=true;
     new BABYLON.HemisphericLight("daylight",new BABYLON.Vector3(.5,1,.2),scene);
-    refresh3d();engine.runRenderLoop(()=>scene.render());
+    refresh3d();engine.runRenderLoop(()=>{animateRiley(Date.now());scene.render();});
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
 $("refresh3d").onclick=()=>{dirty3d=true;refresh3d();status("3D preview refreshed near map center");};
@@ -482,7 +498,7 @@ function focusObjectIn3D(o,radius=4.4){
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
   if(camera){
     const h=heightAt(o.x,o.y,seed)*26;
-    camera.setTarget(new BABYLON.Vector3(0,h+1.6,0));
+    camera.setTarget(new BABYLON.Vector3(0,h+(o.pose==="allfours"?.76:o.pose==="crouch"?1.06:1.6),0));
     camera.radius=radius;
     camera.alpha=o.modelKey==="riley"?Math.PI/2.25:-Math.PI/2.7;
     camera.beta=1.2;
@@ -498,23 +514,75 @@ $("inspect3d").onclick=()=>{
 $("addRiley").onclick=()=>{
   const previous=world.objects.find(item=>item.type==="npc"&&item.modelKey==="riley");
   if(previous){
-    setSelection(previous);focusObjectIn3D(previous,2.9);
+    setSelection(previous);updateSpinButton();focusObjectIn3D(previous,2.9);
     status("Existing Riley selected. Drag to orbit or change her pose.");
     return;
   }
   const o=createAt("npc",{x:view.x+3,y:view.y+3});
   Object.assign(o,{name:"Riley (test)",modelKey:"riley",pose:"standing",gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",face:"heart",body:"athletic",outfit:"casual"});
-  setSelection(o);save();dirty3d=true;focusObjectIn3D(o,2.9);
+  setSelection(o);save();updateSpinButton();dirty3d=true;focusObjectIn3D(o,2.9);
   status("Riley test figure created. Tap Add Riley again to find her.");
 };
-$("toggleRileyPose").onclick=()=>{
+function selectedRiley(){
   const o=selected();
-  if(!o||o.type!=="npc"||o.modelKey!=="riley"){status("Select Riley first, or tap Add Riley test figure");return;}
-  o.pose=o.pose==="crouch"?"standing":"crouch";
-  $("pose").value=o.pose;
-  save();dirty3d=true;focusObjectIn3D(o,3.0);
-  status(o.pose==="crouch"?"Riley: static kneeling pose, not yet a hands-and-knees animation.":"Riley: standing pose.");
+  if(!o||o.type!=="npc"||o.modelKey!=="riley"){status("Tap Add / find Riley first");return null;}
+  return o;
+}
+function setRileyPose(pose){
+  const o=selectedRiley();if(!o||!RILEY_POSES.includes(pose))return;
+  o.pose=pose;
+  $("pose").value=pose;
+  save();dirty3d=true;focusObjectIn3D(o,pose==="allfours"?3.5:3.0);
+  status("Riley: "+(pose==="allfours"?"hands and knees":pose==="crouch"?"kneeling":"standing")+". Drag 3D to orbit.");
+}
+$("toggleRileyPose").onclick=()=>{
+  const o=selectedRiley();if(!o)return;
+  setRileyPose(RILEY_POSES[(RILEY_POSES.indexOf(o.pose)+1)%RILEY_POSES.length]);
 };
+document.querySelectorAll("[data-riley-pose]").forEach(button=>{
+  button.onclick=()=>setRileyPose(button.dataset.rileyPose);
+});
+document.querySelectorAll("[data-riley-turn]").forEach(button=>{
+  button.onclick=()=>{
+    const o=selectedRiley();if(!o)return;
+    const state=rileyMotionFor(o.id);
+    state.autoTurn=false;
+    state.heading+=Number(button.dataset.rileyTurn)*Math.PI/180;
+    updateSpinButton();
+    status("Riley turned "+(Number(button.dataset.rileyTurn)<0?"left":"right")+".");
+  };
+});
+function updateSpinButton(){
+  const o=selected(),state=o?.modelKey==="riley"?rileyMotionFor(o.id):null;
+  const b=$("rileyAutoTurn");
+  b.textContent=state?.autoTurn?"Stop turning":"Auto turn 360°";
+  b.setAttribute("aria-pressed",String(!!state?.autoTurn));
+}
+$("rileyAutoTurn").onclick=()=>{
+  const o=selectedRiley();if(!o)return;
+  const state=rileyMotionFor(o.id);
+  state.autoTurn=!state.autoTurn;
+  updateSpinButton();
+  status(state.autoTurn?"Riley is turning continuously. Tap Stop turning to pause.":"Riley stopped turning.");
+};
+function animateRiley(now){
+  const t=now/1000;
+  if(!animateRiley.lastTime)animateRiley.lastTime=now;
+  const delta=Math.min(.08,(now-animateRiley.lastTime)/1000);
+  animateRiley.lastTime=now;
+  for(const [id,rig] of liveRileyModels){
+    if(!rig.node||rig.node.isDisposed())continue;
+    const motion=rileyMotionFor(id);
+    if(motion.autoTurn)motion.heading+=delta*.68;
+    let diff=(motion.heading-rig.node.rotation.y+Math.PI)%(2*Math.PI);
+    if(diff<0)diff+=2*Math.PI;
+    diff-=Math.PI;
+    rig.node.rotation.y+=diff*Math.min(1,delta*10);
+    // Small natural-looking idle weight shift: no false claim of skeletal animation.
+    rig.node.position.y=rig.baseY+Math.sin(t*2.1+id.length)*.008;
+    rig.node.rotation.z=Math.sin(t*1.15+id.length)*.009;
+  }
+}
 $("expand3d").onclick=()=>{
   const frame=document.querySelector(".preview-frame");
   const expanded=frame.classList.toggle("expanded");
