@@ -70,7 +70,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=amy-pelvis-qa-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=christy-world-20261011",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-skin-ground-support-v5"
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-smile-skin-ground-v6"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
