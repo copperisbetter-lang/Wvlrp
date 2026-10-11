@@ -404,6 +404,63 @@ bpy.ops.object.join()
 hair=bpy.context.object;hair.name="Riley scalp-attached blonde hair"
 head_pieces=[o for o in original_head if o.type=="MESH"]
 
+# Join Riley's preserved head visually to the anatomical shoulder/neck mesh.
+# Cropping two meshes at different z levels had left a literal air gap.
+# Derive the collar from BOTH real border contours, not a freestanding sphere.
+face_lower=[v.co for o in head_pieces
+            if o.name.lower()=="low-poly" or "anatomical body" in o.name.lower()
+            for v in o.data.vertices if head_cut-.02<v.co.z<head_cut+.12]
+if len(face_lower)<12:
+    face_lower=[v.co for o in head_pieces
+                if o.name.lower()=="low-poly" or "anatomical body" in o.name.lower()
+                for v in o.data.vertices if 1.36<v.co.z<1.55]
+body_upper=[v.co for v in body.data.vertices if head_cut-.10<v.co.z<head_cut+.005
+            and abs(v.co.x)<.15 and abs(v.co.y)<.16]
+if len(face_lower)<12 or len(body_upper)<12:
+    raise RuntimeError("Cannot identify the two physical neck contours for Riley")
+face_z=min(v.z for v in face_lower)
+body_z=max(v.z for v in body_upper)
+def neck_outline(points,level):
+    band=[v for v in points if abs(v.z-level)<.014]
+    if len(band)<8:band=sorted(points,key=lambda v:abs(v.z-level))[:40]
+    x=sum(v.x for v in band)/len(band)
+    y=sum(v.y for v in band)/len(band)
+    dx=sorted(abs(v.x-x) for v in band)
+    dy=sorted(abs(v.y-y) for v in band)
+    return x,y,max(.038,min(.12,dx[int(len(dx)*.82)])),max(.035,min(.11,dy[int(len(dy)*.82)]))
+bx,by,brx,bry=neck_outline(body_upper,body_z)
+fx,fy,frx,fry=neck_outline(face_lower,face_z)
+print("RILEY_NECK_JOIN_DIAGNOSTIC","body_z",round(body_z,4),
+      "face_z",round(face_z,4),"gap",round(face_z-body_z,4),
+      "body_outline",tuple(round(v,4) for v in (bx,by,brx,bry)),
+      "face_outline",tuple(round(v,4) for v in (fx,fy,frx,fry)))
+# Small controlled overlap lets matching skin cover uneven rasterized boundaries.
+# A smooth, multi-ring neck surface follows facial and body neck silhouettes.
+N=64;nr=9
+neck_verts=[];neck_faces=[]
+for i in range(nr):
+    t=i/(nr-1)
+    blend=smooth(t)
+    z=(body_z-.016)*(1-blend)+(face_z+.012)*blend
+    px=bx*(1-blend)+fx*blend
+    py=by*(1-blend)+fy*blend
+    rx=brx*(1-blend)+frx*blend
+    ry=bry*(1-blend)+fry*blend
+    for k in range(N):
+        a=2*pi*k/N
+        neck_verts.append((px+rx*cos(a),py+ry*sin(a),z))
+    if i:
+        for k in range(N):
+            j=(k+1)%N
+            neck_faces.append(((i-1)*N+k,(i-1)*N+j,i*N+j,i*N+k))
+nm=bpy.data.meshes.new("Riley neck skin bridge geometry")
+nm.from_pydata(neck_verts,[],neck_faces);nm.update()
+neck_bridge=bpy.data.objects.new("Riley seamless neck transition",nm)
+bpy.context.collection.objects.link(neck_bridge)
+nm.materials.append(skin)
+for f in nm.polygons:f.use_smooth=True
+print("RILEY_NECK_BRIDGE",len(neck_verts),len(neck_faces))
+
 # Real armature, not parent-only rotation.
 arm_data=bpy.data.armatures.new("Riley human skeleton")
 arm=bpy.data.objects.new("Riley | Rigged Armature",arm_data)
@@ -448,9 +505,13 @@ def bind(ob,kind):
     groups={k:ob.vertex_groups.new(name=k) for k in bones}
     for v in ob.data.vertices:
         p=v.co
-        if kind in ("head","hair"):
-            # Hair/face follows the head bone, so it can't detach during poses.
+        if kind=="hair":
             weights={"Head":1.0}
+        elif kind in ("head","collar"):
+            # Blend preserved lower neck into donor neck to keep the join
+            # together during kneeling and hands-and-knees movements.
+            t=smooth((p.z-head_cut+.008)/.115)
+            weights={"Neck":1-t,"Head":t}
         else:
             z=p.z;x=p.x;side="L" if x>=0 else "R"
             ax=abs(x)
@@ -474,6 +535,11 @@ def bind(ob,kind):
                 vals=[segment_weight(p,n) for n in spine]
                 s=sum(vals)
                 for n,vv in zip(spine,vals):weights[n]=weights.get(n,0)+vv*wcore/s
+            if z>head_cut-.12 and abs(x)<.13 and abs(p.y)<.145:
+                # Anatomical donor's upper neck must travel with the face base.
+                w=smooth((z-head_cut+.12)/.12)
+                weights={n:vv*(1-w) for n,vv in weights.items()}
+                weights["Neck"]=weights.get("Neck",0)+w
         total=sum(weights.values())
         if total<=0:weights={"Hips":1};total=1
         best=sorted(weights.items(),key=lambda kv:kv[1],reverse=True)[:4]
@@ -483,6 +549,7 @@ def bind(ob,kind):
     mod=ob.modifiers.new("Riley skeletal skinning","ARMATURE")
     mod.object=arm;ob.parent=arm
 bind(body,"body")
+bind(neck_bridge,"collar")
 bind(hair,"hair")
 for obj in head_pieces:bind(obj,"head")
 
@@ -492,12 +559,17 @@ arm.animation_data_create()
 def action(name,keys):
     ac=bpy.data.actions.new(name)
     arm.animation_data.action=ac
-    for frame,angles in keys:
+    for key in keys:
+        frame,angles=key[:2]
+        hip_shift=key[2] if len(key)>2 else (0,0,0)
         for p in arm.pose.bones:
             p.rotation_mode="XYZ";p.rotation_euler=(0,0,0)
+            p.location=(0,0,0)
+        arm.pose.bones["Hips"].location=hip_shift
         for bone_name,axis,val in angles:
             if bone_name in arm.pose.bones:arm.pose.bones[bone_name].rotation_euler[axis]=math.radians(val)
         for p in arm.pose.bones:p.keyframe_insert(data_path="rotation_euler",frame=frame,group=p.name)
+        arm.pose.bones["Hips"].keyframe_insert(data_path="location",frame=frame,group="Hips")
     tr=arm.animation_data.nla_tracks.new();tr.name=name
     st=tr.strips.new(name,int(keys[0][0]),ac)
     st.action_frame_start=keys[0][0];st.action_frame_end=keys[-1][0]
@@ -507,15 +579,24 @@ action("Riley Idle",[(1,[]),(15,[("Chest",0,1.0),("Head",2,1.0)]),(30,[])])
 action("Riley Walk",[(1,[("LThigh",0,20),("RThigh",0,-20),("LUpperArm",0,-10),("RUpperArm",0,10)]),
                      (13,[("LThigh",0,-20),("RThigh",0,20),("LUpperArm",0,10),("RUpperArm",0,-10)]),
                      (25,[("LThigh",0,20),("RThigh",0,-20),("LUpperArm",0,-10),("RUpperArm",0,10)])])
-action("Riley Kneel",[(1,[]),(24,[("LThigh",0,-46),("RThigh",0,-46),
-                               ("LShin",0,93),("RShin",0,93),
-                               ("Chest",0,8),("LUpperArm",0,-9),("RUpperArm",0,-9)])])
-action("Riley HandsAndKnees",[(1,[]),(32,[("Hips",0,58),("Spine",0,27),
-                               ("LThigh",0,-91),("RThigh",0,-91),
-                               ("LShin",0,92),("RShin",0,92),
-                               ("LUpperArm",0,79),("RUpperArm",0,79),
-                               ("LForearm",0,-23),("RForearm",0,-23),
-                               ("Neck",0,-25)])])
+# Root height and thigh/shin counter-rotation are essential: bone rotation
+# alone leaves hands-and-knees floating, folded like a monster crouch.
+action("Riley Kneel",[(1,[],(0,0,0)),
+                     (28,[("LThigh",0,-24),("RThigh",0,-24),
+                          ("LShin",0,94),("RShin",0,94),
+                          ("Spine",0,3),("Chest",0,3),
+                          ("LUpperArm",0,-5),("RUpperArm",0,-5)],
+                      (0,0,-.27))])
+action("Riley HandsAndKnees",[
+    (1,[],(0,0,0)),
+    (38,[("Hips",0,74),("Spine",0,13),("Chest",0,3),
+         ("LThigh",0,-76),("RThigh",0,-76),
+         ("LShin",0,92),("RShin",0,92),
+         ("LUpperArm",0,-74),("RUpperArm",0,-74),
+         ("LForearm",0,4),("RForearm",0,4),
+         ("Neck",0,-10),("Head",0,8)],
+     (0,-.035,-.33))
+])
 arm.animation_data.action=None
 for pb in arm.pose.bones:
     pb.rotation_mode="XYZ";pb.rotation_euler=(0,0,0)
