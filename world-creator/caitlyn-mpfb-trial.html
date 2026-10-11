@@ -46,6 +46,7 @@ try {
  camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
+ const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
  BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
@@ -60,7 +61,7 @@ try {
       const morph=manager.getTarget(i);
       morphCount++;
       if(/Caitlyn Natural Smile/i.test(morph.name)){
-        morph.influence=.12; // gentle closed-mouth expression; never use the old .78 grin
+        morph.influence=.18; // gentle expression; never use the old .78 grin
         smileTargets.push(morph);
         smileCount++;
       }
@@ -149,12 +150,12 @@ function pickPose(pose,animate=false){
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
 document.getElementById('smile').onclick=()=>{
  smileOn=!smileOn;
- for(const t of smileTargets)t.influence=smileOn?.12:0;
+ for(const t of smileTargets)t.influence=smileOn?.18:0;
  const button=document.getElementById('smile');
  button.textContent='Smile: '+(smileOn?'gentle':'neutral');
  button.setAttribute('aria-pressed',String(smileOn));
  status.textContent=smileTargets.length
-  ?'Caitlyn smile '+(smileOn?'ON (12% mouth-corner shapes)':'OFF (neutral mouth)')
+  ?'Caitlyn smile '+(smileOn?'ON (18% mouth-corner shapes)':'OFF (neutral mouth)')
   :'Caitlyn GLB has no usable smile shapes';
 };
 progress.addEventListener('input',()=>{
