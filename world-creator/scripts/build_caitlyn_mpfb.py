@@ -113,14 +113,42 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
     body_pts=[body.matrix_world @ v.co for v in body.data.vertices]
     zlo=min(v.z for v in body_pts); zhi=max(v.z for v in body_pts)
     height=zhi-zlo
-    # Only the upper head is used as a hair placement landmark.
-    top=[v for v in body_pts if v.z>zhi-.105*height
-         and abs(v.x)<.12*height]
-    if len(top)<60:
-        raise RuntimeError("Caitlyn hair: unable to find head scalp")
-    crown=[v for v in top if v.z>zhi-.070*height]
-    xmid=(min(v.x for v in crown)+max(v.x for v in crown))*.5
-    ymid=(min(v.y for v in crown)+max(v.y for v in crown))*.5
+    # The former cap used zhi (highest *basemesh* vertex) as the scalp.
+    # In the actual exported Caitlyn avatar it produced a floating bald-cap
+    # above her visible forehead. Her EYES provide a stable anatomical
+    # reference for the skull even when a basemesh vertex has an outlying Z.
+    family=[rig]+list(ObjectService.get_list_of_children(rig))
+    eye_objects=[ob for ob in family if ob.type=="MESH" and
+                 ("high-poly" in ob.name.lower() or
+                  ("eye" in ob.name.lower() and not any(
+                      k in ob.name.lower() for k in
+                      ("eyebrow","eyelash","iris","hair"))))]
+    eye_pts=[ob.matrix_world @ v.co for ob in eye_objects
+             for v in ob.data.vertices]
+    if len(eye_pts)<28:
+        # Fall back to basemesh eye-level landmarks, not zhi as scalp.
+        # This keeps the build reproducible if MakeHuman changes asset names.
+        eye_z=zhi-.072*height
+        print("WVLRP_CAITLYN_HAIR_EYE_FALLBACK",len(eye_pts))
+        eye_mid_x=None
+    else:
+        eye_z=sum(p.z for p in eye_pts)/len(eye_pts)
+        eye_mid_x=(min(p.x for p in eye_pts)+max(p.x for p in eye_pts))*.5
+    # An adult eye-to-crown distance is approximately 7% of stature.
+    # Never place Caitlyn's top hair ABOVE an outlying basemesh vertex.
+    scalp_z=min(zhi+.008*height, eye_z+.068*height)
+    skull_band=[v for v in body_pts
+                if scalp_z-.038*height<v.z<scalp_z+.011*height
+                and abs(v.x-(eye_mid_x or 0.))<.10*height]
+    if len(skull_band)<20:
+        raise RuntimeError("Caitlyn hair: no scalp surface near eye-anchored crown")
+    xmid=(min(v.x for v in skull_band)+max(v.x for v in skull_band))*.5
+    ymid=(min(v.y for v in skull_band)+max(v.y for v in skull_band))*.5
+    print("WVLRP_CAITLYN_HAIR_SCALP_ANCHOR",
+          "basemesh_top",round(zhi,4),"eyes",round(eye_z,4),
+          "scalp_top",round(scalp_z,4),
+          "lowering",round(zhi-scalp_z,4),
+          "skull_samples",len(skull_band))
     rng=random.Random(110126)
     inv=hair_obj.matrix_world.inverted_safe()
     vertices=[]; faces=[]; indexes=[]
@@ -130,7 +158,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
     def polygon(inds,material):
         faces.append(tuple(inds));indexes.append(material)
     # Thin scalp foundation, only to conceal gaps between follicles.
-    crown_top=zhi+.002*height
+    crown_top=scalp_z+.002*height
     N=64;R=11
     pole=p(Vector((xmid,ymid+.012*height,crown_top)))
     rings=[]
@@ -141,7 +169,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
             a=2*pi*k/N
             r.append(p(Vector((xmid+height*.062*sin(th)*cos(a),
                        ymid+height*(.012+.054*sin(th)*sin(a)),
-                       zhi+height*(.002+.060*(cos(th)-1))))))
+                       scalp_z+height*(.002+.052*(cos(th)-1))))))
         rings.append(r)
     for k in range(N):
         polygon((pole,rings[0][k],rings[0][(k+1)%N]),0)
@@ -180,7 +208,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
             back=max(0.,sin(a))
             root=Vector((xmid+height*(.054-.004*layer)*side,
                          ymid+height*(.009+.047*back),
-                         zhi-height*(.037+.009*layer)))
+                         scalp_z-height*(.033+.009*layer)))
             length=height*(.220+.040*layer+rng.uniform(-.028,.063))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
                  height*rng.uniform(.005,.013),rng.uniform(0,2*pi),
@@ -192,7 +220,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig):
             t=i/22
             root=Vector((xmid+side*height*(.052+.008*t),
                          ymid-height*(.022-.011*t),
-                         zhi-height*(.042+.022*t)))
+                         scalp_z-height*(.036+.022*t)))
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
                  height*rng.uniform(.003,.011),rng.uniform(0,2*pi),
