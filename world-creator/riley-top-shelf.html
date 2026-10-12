@@ -54,7 +54,7 @@ function previewBaseline(){
   const b=document.createElement('button');b.textContent='Reset preview';
   b.onclick=previewBaseline;$('actions').append(b);
 }
-load('./assets/riley-top-shelf-blender-trial.glb?v=b286609','Riley Top Shelf Blender trial');
+load('./assets/riley-top-shelf-blender-trial.glb?v=rig-finger-fix-761ad884','Riley Top Shelf Blender trial');
 
 $('file').onchange=()=>{const file=$('file').files[0];if(!file)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);load(objectURL,file.name)};
 </script></body></html>
