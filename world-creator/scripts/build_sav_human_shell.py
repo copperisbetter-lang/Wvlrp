@@ -237,3 +237,4 @@ bpy.ops.export_scene.gltf(filepath=str(OUT.resolve()),export_format="GLB",
  export_animations=True,export_skins=True,export_nla_strips=True,use_selection=True)
 print("SAV_PROTOTYPE_SUCCESS",len(rig.data.bones),OUT.stat().st_size)
 print("SAV_REAL_HUMAN_SHELL",len(body.data.vertices),len(meshes))
+print("SAV_BUILD_REVISION", "2026-10-12-portrait-anatomy-qa")
