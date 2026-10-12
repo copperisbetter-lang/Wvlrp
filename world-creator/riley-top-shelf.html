@@ -17,7 +17,7 @@ const skeletons=result.skeletons||[],boneCount=skeletons.reduce((n,s)=>n+s.bones
 status(name+' loaded: '+real.length+' meshes, '+boneCount+' bones, '+groups.length+' animations. Inspect proportions, knee direction, skin, hair and clipping.');
 for(const g of groups){const b=document.createElement('button');b.textContent=g.name||'Animation';b.onclick=()=>{groups.forEach(x=>x.stop());g.start(true,1,g.from,g.to,false)};$('actions').append(b)}
 if(groups.length)groups[0].start(true,1,groups[0].from,groups[0].to,false);
-}catch(e){status('Load failed: '+e.message);console.error(e)}}
+}catch(e){status('RILEY GLB LOAD FAILED: '+e.message+' — showing no mannequin. Check that the model file is publicly accessible.');console.error(e)}}
 
 // Show a visible procedural preview immediately, without requiring phone file uploads.
 // This is an inspection placeholder, NOT the Oracle-generated GLB or final Riley.
@@ -53,7 +53,7 @@ function previewBaseline(){
   const b=document.createElement('button');b.textContent='Reset preview';
   b.onclick=previewBaseline;$('actions').append(b);
 }
-load('./assets/riley-top-shelf-blender-trial.glb','Riley Top Shelf Blender trial').catch(()=>previewBaseline());
+load('./assets/riley-top-shelf-blender-trial.glb?v=612db0d','Riley Top Shelf Blender trial');
 
 $('file').onchange=()=>{const file=$('file').files[0];if(!file)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);load(objectURL,file.name)};
 </script></body></html>
