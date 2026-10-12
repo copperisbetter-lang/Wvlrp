@@ -4,7 +4,7 @@ Set FORGE_TOKEN and FORGE_WORKDIR. No photo is uploaded to WVLRP web hosting.
 A reconstruction worker must be configured separately; no fake model generation.
 """
 from __future__ import annotations
-import os, uuid, json, shutil, subprocess, zipfile
+import os, uuid, json, shutil, subprocess, shlex, struct, threading
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, Header, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -17,6 +17,31 @@ MAX_IMAGE=12*1024*1024
 app=FastAPI(title="The Wild Avatar Forge",version="0.2.0")
 VALID_VIEWS={"front","back","left","right","face"}
 JOBS={}
+def save_state(jid,state,message):
+    job=JOBS.get(jid)
+    if job is None:return
+    job.update(state=state,message=message)
+    (ROOT/jid/"state.json").write_text(json.dumps({"state":state,"message":message}))
+def run_worker(jid):
+    folder=ROOT/jid
+    command=os.environ.get("FORGE_WORKER_COMMAND","").strip()
+    if not command:return
+    save_state(jid,"processing","Reconstruction worker running")
+    try:
+        result=subprocess.run(shlex.split(command)+[str(folder)],cwd=str(folder),
+                              capture_output=True,text=True,timeout=3600,check=False)
+        if result.returncode:raise RuntimeError((result.stderr or result.stdout or "Worker failed")[-500:])
+        path=folder/"avatar.glb"
+        if not path.is_file() or path.stat().st_size<20:raise ValueError("Worker did not create a GLB")
+        with path.open("rb") as stream:
+            magic,version,length=struct.unpack("<III",stream.read(12))
+        if magic!=0x46546c67 or version!=2 or length!=path.stat().st_size:
+            raise ValueError("Invalid GLB 2.0 header")
+        save_state(jid,"completed","GLB created; anatomical and animation quality unverified")
+    except Exception as exc:
+        (folder/"avatar.glb").unlink(missing_ok=True)
+        save_state(jid,"failed",str(exc)[:500])
+
 class JobInfo(BaseModel):
     id:str
     state:str
@@ -62,7 +87,9 @@ async def create_job(front:UploadFile=File(...),back:UploadFile=File(...),
         shutil.rmtree(folder,ignore_errors=True)
         raise
     (folder/"manifest.json").write_text(json.dumps({"name":name,"description":description,"views":sorted(VALID_VIEWS)}))
-    JOBS[jid]={"state":"awaiting_worker","message":"Photos validated and staged. GPU reconstruction worker not configured.","folder":str(folder)}
+    JOBS[jid]={"state":"awaiting_worker","message":"Photos staged; GPU worker not configured","folder":str(folder)}
+    if os.environ.get("FORGE_WORKER_COMMAND","").strip():
+        threading.Thread(target=run_worker,args=(jid,),daemon=True).start()
     return JobInfo(id=jid,state=JOBS[jid]["state"],message=JOBS[jid]["message"])
 
 @app.get("/jobs/{jid}",response_model=JobInfo)
@@ -84,5 +111,6 @@ def download(jid:str,authorization:str|None=Header(None)):
 def delete_job(jid:str,authorization:str|None=Header(None)):
     authorize(authorization)
     if jid not in JOBS:raise HTTPException(404,"Unknown job")
+    if JOBS[jid]["state"]=="processing":raise HTTPException(409,"Worker still processing")
     shutil.rmtree(ROOT/jid,ignore_errors=True);JOBS.pop(jid,None)
     return {"deleted":True}
