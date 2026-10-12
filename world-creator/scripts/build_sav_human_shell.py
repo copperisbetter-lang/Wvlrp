@@ -77,7 +77,14 @@ for o in meshes:
    lower=math.exp(-((z-(pelvis_z-.075))/.080)**2)
    paired=math.exp(-((abs(x)-.019)/.025)**2)
    center=math.exp(-(x/.018)**2)
+   # Adult external vulvar landmarks: a restrained central groove
+   # framed by bilateral soft tissue, sculpted in the original surface.
+   # Broad Gaussian profiles avoid needle-like protrusions.
+   labial_zone=math.exp(-((z-(pelvis_z-.085))/.055)**2)
+   outer_folds=math.exp(-((abs(x)-.023)/.018)**2)
+   midline=math.exp(-(x/.010)**2)
    y-=front*lower*(.0025*paired-.0015*center)
+   y-=front*labial_zone*(.0035*outer_folds-.0020*midline)
    v.co=world.inverted_safe()@Vector((x,y,z))
  o.data.update()
  # MPFB accessory proxies can carry an independent origin/offset.
