@@ -60,6 +60,25 @@ for o in meshes:
   p=world@v.co
   p=Vector(((p.x-cx)*scale,(p.y-cy)*scale,(p.z-lo)*scale+.055))
   v.co=o.matrix_world.inverted_safe()@p
+ # Subtle integrated external pelvic contours on the continuous adult body mesh.
+ # Front is -Y in the Sav rest pose. Deform existing vertices rather than
+ # adding detached capsules, so skin remains continuous during articulation.
+ if o == body:
+  pelvis_z=(rig.matrix_world@rig.data.bones["Pelvis"].head_local).z
+  for v in o.data.vertices:
+   p=world@v.co
+   x,y,z=p.x,p.y,p.z
+   # Slightly widen the hip silhouette, tapering to the waist and thighs.
+   hip_band=math.exp(-((z-(pelvis_z+.055))/.155)**2)
+   x+=math.copysign(min(abs(x),.24)*.085*hip_band,x)
+   # Pelvic surface relief: central shallow cleft and soft paired folds.
+   # Restrict sculpt to the forward-facing lower pelvis, not the rear.
+   front=max(0.0,min(1.0,(-y-.015)/.10))
+   lower=math.exp(-((z-(pelvis_z-.075))/.080)**2)
+   paired=math.exp(-((abs(x)-.015)/.012)**2)
+   center=math.exp(-(x/.008)**2)
+   y-=front*lower*(.007*paired-.003*center)
+   v.co=world.inverted_safe()@Vector((x,y,z))
  o.data.update()
  # Keep object world transforms stable when reparenting to the Sav armature.
  # Otherwise accessories can jump away from the face after export.
