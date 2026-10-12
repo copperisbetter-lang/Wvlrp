@@ -176,7 +176,14 @@ for o in meshes:
  for v in o.data.vertices:
   p=o.matrix_world@v.co
   if head_only:
-   groups["Head"].add([v.index],1,"REPLACE")
+   # Rigid skull accessories must never inherit Jaw weights. Lower teeth
+   # intentionally follow Jaw; upper teeth, scalp hair and eyes follow Head.
+   label=o.name.lower()
+   if "teeth" in label and any(t in label for t in ("lower","bottom","mandible")):
+    target_bone="Jaw"
+   else:
+    target_bone="Head"
+   groups[target_bone].add([v.index],1,"REPLACE")
    continue
   nearest=[]
   for b in rig.data.bones:
