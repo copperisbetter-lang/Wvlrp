@@ -12,6 +12,24 @@ def mat(name,rgb):
  p.inputs["Metallic"].default_value=0;p.inputs["Roughness"].default_value=.83
  return m
 skin=mat("Sav warm golden complexion",(.69,.435,.325));gold=mat("Sav sandy blonde",(.69,.52,.32));
+# Subtle per-vertex complexion variation for continuous torso; avoids flat plastic color.
+def tone_torso(obj):
+ import random
+ random.seed(72)
+ mesh=obj.data
+ attr=mesh.color_attributes.new(name="SavSkinVariation",type="FLOAT_COLOR",domain="CORNER")
+ for poly in mesh.polygons:
+  for li in poly.loop_indices:
+   v=mesh.vertices[mesh.loops[li].vertex_index].co
+   warmth=.965+.025*math.sin(v.z*12)+.015*math.sin(v.x*21+v.z*7)
+   attr.data[li].color=(min(1,warmth),min(1,.985*warmth),min(1,.97*warmth),1)
+ # Vertex color multiplies the base skin tone rather than replacing it.
+ nodes=skin.node_tree.nodes
+ vertex=nodes.new("ShaderNodeVertexColor");vertex.layer_name="SavSkinVariation"
+ mix=nodes.new("ShaderNodeMixRGB");mix.blend_type="MULTIPLY";mix.inputs[0].default_value=1
+ mix.inputs[1].default_value=(*(.69,.435,.325),1)
+ skin.node_tree.links.new(vertex.outputs["Color"],mix.inputs[2])
+ skin.node_tree.links.new(mix.outputs["Color"],nodes.get("Principled BSDF").inputs["Base Color"])
 parts=[]
 def ell(name,pos,sc,material,bone):
  bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=16,location=pos)
@@ -50,6 +68,8 @@ def torso():
  parts.append((obj,None))
  return obj
 torso_mesh=torso()
+# Torso receives vertex-color tonal variation; limb materials remain neutral until unified mesh.
+tone_torso(torso_mesh)
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
 ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
 ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
