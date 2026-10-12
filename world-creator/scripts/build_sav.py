@@ -11,7 +11,7 @@ def mat(name,rgb):
  p.inputs["Base Color"].default_value=(*rgb,1)
  p.inputs["Metallic"].default_value=0;p.inputs["Roughness"].default_value=.83
  return m
-skin=mat("warm skin",(.57,.35,.25));gold=mat("gold blonde",(.68,.48,.24));green=mat("green outfit",(.08,.32,.18))
+skin=mat("warm skin",(.57,.35,.25));gold=mat("gold blonde",(.68,.48,.24));
 parts=[]
 def ell(name,pos,sc,material,bone):
  bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=16,location=pos)
@@ -35,8 +35,6 @@ for side,label in ((1,"L"),(-1,"R")):
  ell(label+" thigh",(.105*side,0,.80),(.10,.11,.24),skin,label+"Thigh")
  ell(label+" shin",(.11*side,0,.37),(.069,.07,.21),skin,label+"Shin")
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
- ell(label+" green top",(.104*side,-.13,1.405),(.10,.031,.071),green,"Spine3")
- ell(label+" green bottom",(.104*side,-.12,.99),(.105,.029,.06),green,"Pelvis")
  for f in range(5):
   x=(.255+.021*f)*side
   ell(label+" finger "+str(f),(x,-.014,.825),(.01,.012,.056),skin,label+"Finger"+str(f)+"_0")
