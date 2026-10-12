@@ -20,7 +20,7 @@ function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);co
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
 let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
-const modelUrl='./assets/sav-prototype.glb?v=sav-display-refresh-20261012-'+Date.now();
+const modelUrl='./assets/sav-realistic-shell.glb?v=sav-dedicated-shell-20261012-'+Date.now();
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
