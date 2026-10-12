@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Riley Top Shelf — The Wild</title><style>body{margin:0;background:#101c18;color:#f2f4e9;font:16px system-ui}main{max-width:960px;margin:auto;padding:12px}canvas{display:block;width:100%;height:66vh;touch-action:none;border-radius:12px;background:#243c32}label,button,a{display:inline-block;margin:6px 4px;padding:12px;background:#bce3aa;color:#14241c;border:0;border-radius:9px;font-weight:700}input{max-width:95%}#info{white-space:pre-wrap;color:#cfe4d2}small{color:#c4d2c8}</style></head><body><main><h2>🐊 Riley · Top Shelf</h2><p>New model inspection in The Wild's Babylon.js 3D engine. This does not reuse the defective Riley mesh.</p><label>Load NEW Riley GLB <input id="file" type="file" accept=".glb,model/gltf-binary"></label><button id="reset">Reset camera</button><div id="actions"></div><canvas id="canvas"></canvas><p id="info">Awaiting Riley Top Shelf GLB. The new reconstruction has not been generated yet.</p><small>Use one finger to rotate, two fingers to zoom. All files stay on this device in this viewer. A successful GLB load does not certify anatomical accuracy.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Riley Top Shelf — The Wild</title><style>body{margin:0;background:#101c18;color:#f2f4e9;font:16px system-ui}main{max-width:960px;margin:auto;padding:12px}canvas{display:block;width:100%;height:66vh;touch-action:none;border-radius:12px;background:#243c32}label,button,a{display:inline-block;margin:6px 4px;padding:12px;background:#bce3aa;color:#14241c;border:0;border-radius:9px;font-weight:700}input{max-width:95%}#info{white-space:pre-wrap;color:#cfe4d2}small{color:#c4d2c8}</style></head><body><main><h2>🐊 Riley · Top Shelf</h2><p>New model inspection in The Wild's Babylon.js 3D engine. This does not reuse the defective Riley mesh.</p><label>Load NEW Riley GLB <input id="file" type="file" accept=".glb,model/gltf-binary"></label><button id="reset">Reset camera</button><div id="actions"></div><canvas id="canvas"></canvas><p id="info">Loading a procedural base-avatar preview. The finished Riley reconstruction is not ready yet.</p><small>Use one finger to rotate, two fingers to zoom. All files stay on this device in this viewer. A successful GLB load does not certify anatomical accuracy.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
 const $=id=>document.getElementById(id),canvas=$('canvas'),engine=new BABYLON.Engine(canvas,true),scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.16,.24,.20,1);
 const camera=new BABYLON.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.4,4,new BABYLON.Vector3(0,1,0),scene);camera.attachControl(canvas,true);camera.lowerRadiusLimit=.6;camera.upperRadiusLimit=20;
 new BABYLON.HemisphericLight('ambient',new BABYLON.Vector3(0,1,0),scene).intensity=1.1;
@@ -18,5 +18,42 @@ status(name+' loaded: '+real.length+' meshes, '+boneCount+' bones, '+groups.leng
 for(const g of groups){const b=document.createElement('button');b.textContent=g.name||'Animation';b.onclick=()=>{groups.forEach(x=>x.stop());g.start(true,1,g.from,g.to,false)};$('actions').append(b)}
 if(groups.length)groups[0].start(true,1,groups[0].from,groups[0].to,false);
 }catch(e){status('Load failed: '+e.message);console.error(e)}}
+
+// Show a visible procedural preview immediately, without requiring phone file uploads.
+// This is an inspection placeholder, NOT the Oracle-generated GLB or final Riley.
+function previewBaseline(){
+  clear();
+  const root=new BABYLON.TransformNode('baseline-preview',scene);
+  const skin=new BABYLON.StandardMaterial('baseline skin',scene);
+  skin.diffuseColor=new BABYLON.Color3(.76,.56,.45);
+  const parts=[
+    ['pelvis',0,1.02,0,.22,.18,.15],['torso',0,1.37,0,.20,.34,.14],
+    ['chest',0,1.57,0,.23,.18,.15],['neck',0,1.76,0,.075,.11,.075],
+    ['head',0,1.94,0,.12,.16,.115],
+    ['left upper arm',-.30,1.50,0,.095,.24,.095],
+    ['right upper arm',.30,1.50,0,.095,.24,.095],
+    ['left forearm',-.38,1.15,0,.075,.22,.075],
+    ['right forearm',.38,1.15,0,.075,.22,.075],
+    ['left hand',-.40,.92,0,.075,.115,.055],
+    ['right hand',.40,.92,0,.075,.115,.055],
+    ['left thigh',-.12,.77,0,.13,.29,.13],
+    ['right thigh',.12,.77,0,.13,.29,.13],
+    ['left calf',-.12,.31,0,.09,.26,.09],
+    ['right calf',.12,.31,0,.09,.26,.09],
+    ['left foot',-.12,.07,.09,.10,.07,.18],
+    ['right foot',.12,.07,.09,.10,.07,.18]
+  ];
+  for(const [name,x,y,z,rx,ry,rz] of parts){
+    const m=BABYLON.MeshBuilder.CreateSphere(name,{diameter:2,segments:16},scene);
+    m.scaling.set(rx,ry,rz);m.position.set(x,y,z);m.material=skin;m.parent=root;
+    imported.push(m);
+  }
+  camera.target.set(0,1,0);camera.radius=3.6;
+  status('PROCEDURAL BASE PREVIEW — 17 body segments. Drag to rotate; pinch to zoom. This is NOT the generated GLB, not a finished anatomical mesh, and not Riley Top Shelf.');
+  const b=document.createElement('button');b.textContent='Reset preview';
+  b.onclick=previewBaseline;$('actions').append(b);
+}
+previewBaseline();
+
 $('file').onchange=()=>{const file=$('file').files[0];if(!file)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);load(objectURL,file.name)};
 </script></body></html>
