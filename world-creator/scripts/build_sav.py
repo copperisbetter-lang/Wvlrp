@@ -306,6 +306,46 @@ if body:
  # The lower pelvic surface is checked after fusion; these details must
  # survive voxel remeshing, unlike the earlier pre-fusion microrelief.
  print("SAV_PELVIC_RELIEF_POST_FUSION",sum(1 for v in body.data.vertices if .865<v.co.z<.985 and abs(v.co.x)<.082 and v.co.y<-.045))
+ # Anatomical inspection geometry: skin-matched, pelvis-weighted surface details.
+ # All positions are in the existing Sav rig's model coordinates.
+ # These meshes are added AFTER body voxel fusion so the fine detail survives.
+def pelvic_detail(name, points, radius, material=skin):
+ # Build a smooth closed tubular fold along a 3D centerline.
+ from mathutils import Vector
+ n=12; verts=[]; faces=[]
+ for i,(x,y,z) in enumerate(points):
+  for j in range(n):
+   a=2*math.pi*j/n
+   verts.append((x+radius*math.cos(a),y+radius*.55*math.sin(a),z))
+ for i in range(len(points)-1):
+  for j in range(n):
+   k=i*n+j;h=i*n+(j+1)%n
+   faces.append((k,h,h+n,k+n))
+ faces.append(tuple(reversed(range(n))))
+ faces.append(tuple((len(points)-1)*n+j for j in range(n)))
+ mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
+ obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj)
+ obj.data.materials.append(material)
+ for polygon in mesh.polygons:polygon.use_smooth=True
+ vg=obj.vertex_groups.new(name="Pelvis");vg.add(list(range(len(mesh.vertices))),1,"REPLACE")
+ mod=obj.modifiers.new("Pelvis skinning","ARMATURE");mod.object=rig;obj.parent=rig
+ parts.append((obj,"already_weighted"))
+ return obj
+# Two soft outer folds and paired inner folds, following the pelvic midline.
+for side,label in ((-1,"Left"),(1,"Right")):
+ pelvic_detail("Sav "+label+" outer labium",[
+  (side*.033,-.110,.962),(side*.044,-.128,.945),
+  (side*.043,-.137,.917),(side*.034,-.126,.889),
+  (side*.020,-.110,.871)],.014)
+ pelvic_detail("Sav "+label+" inner labium",[
+  (side*.013,-.121,.945),(side*.019,-.139,.924),
+  (side*.017,-.141,.904),(side*.010,-.120,.885)],.006)
+# Neutral shaded central opening and hood, positioned within surrounding folds.
+recess=mat("Sav natural recessed skin",(.40,.235,.205))
+pelvic_detail("Sav vaginal opening",[(0,-.131,.906),(0,-.133,.895)],.006,recess)
+pelvic_detail("Sav clitoral hood",[(0,-.124,.960),(0,-.130,.953)],.009)
+pelvic_detail("Sav clitoris",[(0,-.132,.950),(0,-.133,.947)],.0035)
+print("SAV_PELVIC_ANATOMY_MESHES_CREATED",len([o for o,b in parts if o.name.startswith("Sav ") and ("labium" in o.name or "opening" in o.name or "clitoral" in o.name or "clitoris" in o.name)]))
  # Repair blocky silhouette normals after voxel remeshing.
  for polygon in body.data.polygons:polygon.use_smooth=True
  print("SAV_BODY_SURFACE_RELAXED",len(body.data.vertices))
