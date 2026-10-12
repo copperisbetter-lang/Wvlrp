@@ -20,9 +20,27 @@ def ell(name,pos,sc,material,bone):
  o.data.materials.append(material)
  for face in o.data.polygons:face.use_smooth=True
  parts.append((o,bone))
-ell("pelvis",(0,0,1.01),(.155,.12,.145),skin,"Pelvis")
-ell("lower abdomen",(0,0,1.17),(.145,.105,.175),skin,"Spine1")
-ell("rib cage",(0,0,1.37),(.165,.115,.175),skin,"Spine3")
+# Single continuous torso surface; vertical weights blend across pelvis and spine.
+def torso():
+ rings=[(.88,.105,.085),(.94,.145,.110),(1.02,.155,.120),(1.10,.135,.105),(1.18,.133,.102),(1.26,.148,.115),(1.35,.163,.120),(1.43,.150,.110),(1.49,.103,.086),(1.53,.065,.062)]
+ verts=[];faces=[];count=32
+ for z,rx,ry in rings:
+  for j in range(count):
+   a=2*math.pi*j/count
+   verts.append((rx*math.cos(a),ry*math.sin(a),z))
+ for i in range(len(rings)-1):
+  for j in range(count):
+   k=i*count+j;n=i*count+(j+1)%count
+   faces.append((k,n,n+count,k+count))
+ faces.append(tuple(reversed(tuple(range(count)))))
+ faces.append(tuple((len(rings)-1)*count+j for j in range(count)))
+ mesh=bpy.data.meshes.new("Sav continuous torso mesh");mesh.from_pydata(verts,[],faces);mesh.update()
+ obj=bpy.data.objects.new("Sav continuous torso",mesh);bpy.context.collection.objects.link(obj)
+ obj.data.materials.append(skin)
+ for face in mesh.polygons:face.use_smooth=True
+ parts.append((obj,None))
+ return obj
+torso_mesh=torso()
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
 ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
 ell("blonde swept up hair",(0,.018,1.785),(.111,.09,.067),gold,"Head")
@@ -70,7 +88,22 @@ for side,label in ((1,"L"),(-1,"R")):
 bpy.ops.object.mode_set(mode="OBJECT")
 assert len(rig.data.bones)==56,len(rig.data.bones)
 for o,b in parts:
- vg=o.vertex_groups.new(name=b);vg.add(list(range(len(o.data.vertices))),1,"REPLACE")
+ if b is not None:
+  vg=o.vertex_groups.new(name=b);vg.add(list(range(len(o.data.vertices))),1,"REPLACE")
+ else:
+  levels=[(.90,"Pelvis"),(1.09,"Spine1"),(1.20,"Spine2"),(1.32,"Spine3"),(1.46,"Spine4"),(1.54,"Neck")]
+  groups={name:o.vertex_groups.new(name=name) for _,name in levels}
+  for v in o.data.vertices:
+   z=v.co.z
+   if z<=levels[0][0]:groups["Pelvis"].add([v.index],1,"REPLACE");continue
+   if z>=levels[-1][0]:groups["Neck"].add([v.index],1,"REPLACE");continue
+   for k in range(len(levels)-1):
+    lo,a=levels[k];hi,bone_name=levels[k+1]
+    if lo<=z<=hi:
+     t=(z-lo)/(hi-lo)
+     groups[a].add([v.index],max(.0001,1-t),"REPLACE")
+     groups[bone_name].add([v.index],max(.0001,t),"REPLACE")
+     break
  mod=o.modifiers.new("Armature","ARMATURE");mod.object=rig
  o.parent=rig
 # Pose keyframes on armature; skeletal prototype, not final physically correct floor poses.
