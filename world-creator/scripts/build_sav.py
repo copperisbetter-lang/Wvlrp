@@ -44,7 +44,7 @@ def ell(name,pos,sc,material,bone):
  parts.append((o,bone))
 # Single continuous torso surface; vertical weights blend across pelvis and spine.
 def torso():
- rings=[(.88,.085,.075),(.94,.142,.110),(1.02,.154,.117),(1.10,.120,.091),(1.18,.104,.080),(1.26,.122,.094),(1.35,.146,.109),(1.43,.145,.106),(1.49,.103,.083),(1.53,.065,.062)]
+ rings=[(.88,.096,.078),(.94,.147,.105),(1.02,.149,.106),(1.10,.116,.083),(1.18,.100,.077),(1.26,.119,.093),(1.35,.143,.103),(1.43,.139,.101),(1.49,.099,.079),(1.53,.060,.055)]
  # Smooth silhouette between anatomical landmarks.
  def interp(a,b,c,d,t):
   return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)
@@ -64,8 +64,8 @@ def torso():
    front=max(0,-math.sin(a))
    breast_height=math.exp(-((z-1.365)/.083)**2)
    breast_lobes=math.exp(-((abs(x)-.081)/.061)**2)
-   chest=0.046*breast_height*breast_lobes*front**1.5
-   lower_belly=0.013*math.exp(-((z-1.095)/.082)**2)*front
+   chest=0.070*breast_height*breast_lobes*front**1.5
+   lower_belly=0.019*math.exp(-((z-1.095)/.092)**2)*front
    y-=chest+lower_belly
    verts.append((x,y,z))
  for i in range(len(smooth)-1):
@@ -118,14 +118,27 @@ ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
 # Do not use separate protruding capsules for external pelvic folds.
 # Pelvic anatomical detail requires a continuous sculpted surface, not floating
 # ellipsoids that read as spikes in front/side views.
+# Recognizable adult facial landmarks, front faces negative Y.
+eye=mat("Sav brown eyes",(.18,.105,.068))
+lip=mat("Sav lip tint",(.56,.265,.245))
+for side,label in ((1,"L"),(-1,"R")):
+ ell(label+" eye",(side*.039,-.100,1.699),(.022,.007,.012),eye,"Head")
+ ell(label+" cheek",(side*.064,-.071,1.660),(.028,.012,.024),skin,"Head")
+ ell(label+" ear",(side*.102,-.004,1.679),(.014,.021,.032),skin,"Head")
+ ell(label+" temple hair",(side*.086,-.012,1.734),(.025,.039,.085),gold,"Head")
+ ell(label+" loose side hair",(side*.096,.023,1.668),(.017,.026,.103),gold,"Head")
+ell("nose bridge",(0,-.099,1.681),(.015,.016,.039),skin,"Head")
+ell("nose tip",(0,-.119,1.658),(.021,.016,.013),skin,"Head")
+ell("upper lip",(0,-.099,1.627),(.031,.008,.009),lip,"Jaw")
+ell("lower lip",(0,-.099,1.615),(.029,.009,.009),lip,"Jaw")
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
- socket(label+" shoulder transition",(.185*side,0,1.43),(.072,.085,.083),"Spine4",label+"UpperArm")
- socket(label+" hip transition",(.115*side,0,.975),(.087,.098,.115),"Pelvis",label+"Thigh")
- continuous_limb(label+" joined arm",[(.22*side,0,1.44),(.245*side,0,1.34),(.27*side,0,1.23),(.28*side,0,1.18),(.29*side,0,1.10),(.30*side,0,1.00),(.30*side,0,.97)],[.047,.053,.046,.040,.039,.034,.030],label+"UpperArm",label+"Forearm",3)
- ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- continuous_limb(label+" joined leg",[(.105*side,0,.98),(.105*side,0,.86),(.108*side,0,.72),(.11*side,0,.60),(.11*side,0,.55),(.11*side,0,.43),(.11*side,0,.29),(.11*side,0,.14)],[.078,.091,.082,.063,.054,.050,.044,.038],label+"Thigh",label+"Shin",4)
- ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
+ socket(label+" shoulder transition",(.185*side,0,1.43),(.054,.065,.068),"Spine4",label+"UpperArm")
+ socket(label+" hip transition",(.115*side,0,.975),(.064,.081,.098),"Pelvis",label+"Thigh")
+ continuous_limb(label+" joined arm",[(.22*side,0,1.44),(.245*side,0,1.34),(.27*side,0,1.23),(.28*side,0,1.18),(.29*side,0,1.10),(.30*side,0,1.00),(.30*side,0,.97)],[.050,.051,.045,.040,.036,.031,.026],label+"UpperArm",label+"Forearm",3)
+ ell(label+" hand",(.30*side,0,.90),(.043,.022,.064),skin,label+"Palm")
+ continuous_limb(label+" joined leg",[(.105*side,0,.98),(.105*side,0,.86),(.108*side,0,.72),(.11*side,0,.60),(.11*side,0,.55),(.11*side,0,.43),(.11*side,0,.29),(.11*side,0,.14)],[.077,.083,.079,.066,.053,.049,.042,.034],label+"Thigh",label+"Shin",4)
+ ell(label+" foot",(.11*side,-.075,.10),(.056,.115,.039),skin,label+"Foot")
  for f in range(5):
   x=(.255+.021*f)*side
   ell(label+" finger "+str(f),(x,-.014,.825),(.01,.012,.056),skin,label+"Finger"+str(f)+"_0")
