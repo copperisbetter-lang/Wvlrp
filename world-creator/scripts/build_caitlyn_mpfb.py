@@ -171,8 +171,10 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     # The MPFB head has a stray high-Z region ~11 cm above the photographed
     # face; using the 97th-percentile skull height made a giant white helmet.
     # Use the anatomically eye-anchored crown previously measured instead.
-    crown_top=scalp_z+.018*height
-    hairline_z=eye_z+.071*height
+    # Lower the hair to the visible MPFB photographed forehead, not the
+    # high disconnected scalp estimate. Eyes anchor the TRUE top of head.
+    crown_top=eye_z+.079*height
+    hairline_z=eye_z+.047*height
     if crown_top < hairline_z+.022*height:
         raise RuntimeError("Caitlyn scalp landmarks are inconsistent")
     cap_rings=[]
@@ -187,8 +189,14 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             az=2*math.pi*k/sectors
             ring.append(p(Vector((xmid+height*.058*rad*math.cos(az),
                  ymid+height*.070*rad*math.sin(az),level))))
-        # Scaffold ONLY: keep scalp anchors, but no helmet polygons.
-        # Visible hair is made exclusively of curved hair locks below.
+        # Thin crown coverage, fitted close to the real head. This scalp
+        # sheet is exclusively artificial HAIR geometry, not a head copy.
+        # Swept long locks overlap its border so it has no visible hem.
+        if cap_rings:
+            prior=cap_rings[-1]
+            for k in range(sectors):
+                nxt=(k+1)%sectors
+                polygon((prior[k],ring[k],ring[nxt],prior[nxt]),1)
         cap_rings.append(ring)
     # Root locks ON the new hair-only crown surface. No transformed copies
     # of any face/head vertex are ever included in the exported hair mesh.
@@ -300,12 +308,12 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
                                 (i+int(q*3))%4)
                 prior=ring
     print("WVLRP_CAITLYN_NO_HELMET_HAIR",
-          "crown_strands",124,"opaque_crown_faces",0)
+          "crown_strands",124,"thin_hair_crown_only",True)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
     hair_obj.data=mesh
-    shades=[(.64,.60,.53),(.78,.74,.65),(.67,.63,.55),(.74,.70,.61)]
+    shades=[(.46,.43,.38),(.60,.56,.49),(.51,.47,.40),(.56,.52,.44)]
     for j,rgb in enumerate(shades):
         mat=bpy.data.materials.new("Caitlyn platinum ash blonde flowing hair "+str(j))
         mat.use_nodes=True
