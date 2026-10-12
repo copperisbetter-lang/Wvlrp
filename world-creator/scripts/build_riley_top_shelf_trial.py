@@ -618,15 +618,18 @@ def bind(ob,kind):
                     weights={side+"UpperArm":t,side+"Forearm":1-t}
                 elif z>.88: weights={side+"Forearm":1.0}
                 else: weights={side+"Hand":1.0}
-            elif z<.91 and ax>.075 and (z<.77 or ax>.16):
-                # Protect central groin/hip skin from thigh-driven spikes.
-                if z>.79: weights={"Hips":1.0}
+            elif z<.94 and ax>.065 and (z<.78 or ax>.14):
+                # Continuous pelvis-to-inner-thigh deformation. The center
+                # of the groin remains on Hips; upper thigh attachment
+                # gradually inherits the leg instead of snapping abruptly.
+                if z>.85: weights={"Hips":1.0}
                 elif z>.69:
-                    t=smooth((z-.69)/.10)
-                    weights={side+"Thigh":1-t,"Hips":t}
-                elif z>.46:
-                    t=smooth((z-.46)/.09)
-                    weights={side+"Thigh":t,side+"Shin":1-t}
+                    thigh_share=(1-smooth((z-.69)/.16))*smooth((ax-.065)/.085)
+                    weights={"Hips":1-thigh_share,side+"Thigh":thigh_share}
+                elif z>.55: weights={side+"Thigh":1.0}
+                elif z>.43:
+                    shin_share=1-smooth((z-.43)/.12)
+                    weights={side+"Thigh":1-shin_share,side+"Shin":shin_share}
                 elif z>.15: weights={side+"Shin":1.0}
                 else: weights={side+"Foot":1.0}
             else:
