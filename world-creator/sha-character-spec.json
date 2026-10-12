@@ -1,0 +1,30 @@
+{
+  "name": "Sha",
+  "status": "design specification; 3D GLB not yet built",
+  "project": "WVLRP The Wild",
+  "adult": true,
+  "appearance": {
+    "heritage": "East Asian",
+    "hair": "long dark natural flowing hair, no cap or rigid curtain",
+    "eyes": "dark brown",
+    "build": "slender feminine adult",
+    "bust": "medium, natural gravity",
+    "face": "realistic softly feminine proportions",
+    "skin_preset": "light-warm",
+    "skin_preset_source": "world-creator/skin-tone-presets.json",
+    "skin_requirement": "UV-compatible licensed photographic diffuse texture, shared face/neck/body, verify_photo_skin_glb"
+  },
+  "rig": {
+    "shared_pose_requirements": [
+      "standing",
+      "bending",
+      "kneeling",
+      "hands and knees",
+      "elbows and knees"
+    ],
+    "validation": "check ground contact, anatomical joints, hair and clothing clipping"
+  },
+  "clothing": "simple fitted casual outfit, independently skinned",
+  "isolation": "Do not modify Caitlyn, Amy, Riley, Chrissy or Mason",
+  "quality_gate": "review front side back and poses before calling ready"
+}
