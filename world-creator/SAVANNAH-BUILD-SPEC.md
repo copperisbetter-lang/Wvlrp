@@ -37,3 +37,6 @@ The adult character must be modeled with coherent anatomically accurate external
 
 ## External female pelvic anatomy
 Sav is an adult. Model medically plausible external female pelvic and vulvar anatomy with realistic proportions, continuous skin topology, natural coloration, and correct deformation in neutral, walking, bent, kneeling and floor-contact poses. Prevent crotch clipping, protruding polygons, detached geometry, and implausible intersections. This requirement is not yet implemented or verified.
+
+## Final body specification — user confirmation
+Sav's playable adult anatomical base must be unclothed, with no bikini or outfit meshes. Reference green clothing is for identifying the blonde subject only. Sculpt anatomically credible, naturally gravity-shaped breasts with continuous chest/underbust topology, plausible external female pelvic/vulvar anatomy, accurate rib and abdominal contours, recessed navel, and coherent shoulders, back, hips, hands and feet. Check appearance in rest and movement; no rigid spherical bust, disconnected body sections, crotch spikes, or pale mismatched limbs. These are acceptance requirements, not completed work.
