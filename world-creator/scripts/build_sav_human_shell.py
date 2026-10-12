@@ -67,14 +67,14 @@ for o in meshes:
   pelvis_z=(rig.matrix_world@rig.data.bones["Pelvis"].head_local).z
   # Identify the anterior pelvic surface from the actual normalized mesh.
   # The previous fixed Y threshold missed the body surface on some builds.
-  pelvic_samples=[world@v.co for v in o.data.vertices
-                  if abs((world@v.co).x)<.075
-                  and pelvis_z-.18<(world@v.co).z<pelvis_z+.04]
+  pelvic_samples=[o.matrix_world@v.co for v in o.data.vertices
+                  if abs((o.matrix_world@v.co).x)<.075
+                  and pelvis_z-.18<(o.matrix_world@v.co).z<pelvis_z+.04]
   front_y=min((p.y for p in pelvic_samples),default=-.08)
   print("SAV_PELVIC_SCULPT_REFERENCE",round(pelvis_z,4),round(front_y,4),len(pelvic_samples))
   sculpted=0
   for v in o.data.vertices:
-   p=world@v.co
+   p=o.matrix_world@v.co
    x,y,z=p.x,p.y,p.z
    # Fuller soft bust: broad bilateral anterior volume with a lower
    # gravity-biased pole. This is a rest-pose sculpt, not dynamic physics.
@@ -107,7 +107,7 @@ for o in meshes:
    delta+=front*(.004*hood-.003*parted)
    y-=delta
    if abs(delta)>.001:sculpted+=1
-   v.co=world.inverted_safe()@Vector((x,y,z))
+   v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
   print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
   if sculpted<12:raise RuntimeError("Sav pelvic sculpt missed body topology")
  o.data.update()
