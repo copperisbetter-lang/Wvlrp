@@ -5,6 +5,7 @@
 <body><header><strong>Sav — independent character QA</strong> <small>Human shell inspection build; verify anatomy and reference likeness</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
 <footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button> <button id="wire">Wireframe off</button> <button id="bones">Joint markers off</button><p id="jointstatus"></p></section>
+<section id="anatomy-controls" style="padding:12px 18px;background:#20322d"><strong>Pelvic anatomical inspection</strong><p>Independent controls remain active when changing poses. Both moves both sides together.</p><label>Left <output id="left-value">0%</output><input id="left-open" type="range" min="0" max="100" value="0"></label><label>Right <output id="right-value">0%</output><input id="right-open" type="range" min="0" max="100" value="0"></label><label>Both <output id="both-value">0%</output><input id="both-open" type="range" min="0" max="100" value="0"></label><button id="reset-anatomy">Close both</button><p id="anatomy-status">Waiting for inspection morphs…</p></section>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -25,6 +26,10 @@ const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
  scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);g.scene.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;skinMeshes.push(o);const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(!m)continue;m.transparent=false;m.opacity=1;m.alphaTest=0;m.depthTest=true;m.depthWrite=true;m.colorWrite=true;m.side=THREE.DoubleSide;m.needsUpdate=true;}}});
+ const morphMeshes=skinMeshes.filter(o=>o.morphTargetDictionary && ("Labia_Left_Open" in o.morphTargetDictionary || "Labia_Right_Open" in o.morphTargetDictionary));
+ window.savAnatomyMeshes=morphMeshes;
+ document.getElementById('anatomy-status').textContent=morphMeshes.length?'Independent left/right inspection morphs available in every pose':'Inspection morphs missing: rebuild the Sav shell GLB';
+ applyAnatomy();
  const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
  const unique=[...new Set(joints)];
  const meshReport=skinMeshes.map(o=>o.name+':'+(o.geometry?.attributes?.position?.count||0)).join(', '); const vertexTotal=skinMeshes.reduce((n,o)=>n+(o.geometry?.attributes?.position?.count||0),0); status.textContent='Sav GLB inspection | '+unique.length+' joints | '+clips.length+' clips | '+skinMeshes.length+' skinned meshes | '+vertexTotal.toLocaleString()+' vertices'; console.info('Sav mesh audit',meshReport); if(vertexTotal<10000)status.textContent+=' | WARNING: LOW DETAIL / OLD PROTOTYPE';
@@ -34,6 +39,21 @@ new GLTFLoader().load(modelUrl,g=>{
  select.value=bones.has('LUpperArm')?'LUpperArm':[...bones.keys()][0];selectJoint(select.value);document.getElementById('jointstatus').textContent=bones.size+' joints available';
  play('idle');
 },undefined,e=>{clearTimeout(loadingTimer);status.textContent='Sav failed to load: '+(e?.message||String(e))+' — model: '+modelUrl;console.error('Sav model load failure',e)});
+const anatomyState={left:0,right:0};
+function applyAnatomy(){
+ for(const mesh of (window.savAnatomyMeshes||[])){
+  for(const [side,morph] of [['left','Labia_Left_Open'],['right','Labia_Right_Open']]){
+   const index=mesh.morphTargetDictionary?.[morph];
+   if(index!==undefined)mesh.morphTargetInfluences[index]=anatomyState[side];
+  }
+ }
+ for(const side of ['left','right']){document.getElementById(side+'-open').value=Math.round(anatomyState[side]*100);document.getElementById(side+'-value').textContent=Math.round(anatomyState[side]*100)+'%';}
+}
+for(const side of ['left','right']){
+ document.getElementById(side+'-open').oninput=e=>{anatomyState[side]=Number(e.target.value)/100;applyAnatomy();};
+}
+document.getElementById('both-open').oninput=e=>{anatomyState.left=anatomyState.right=Number(e.target.value)/100;document.getElementById('both-value').textContent=e.target.value+'%';applyAnatomy();};
+document.getElementById('reset-anatomy').onclick=()=>{anatomyState.left=anatomyState.right=0;document.getElementById('both-open').value=0;document.getElementById('both-value').textContent='0%';applyAnatomy();};
 let current=null;
 function stopAnimation(){if(mixer){mixer.stopAllAction();mixer.update(0);}current=null;manual=true;}
 function selectJoint(name){selected=bones.get(name);if(!selected)return;const axes=document.getElementById('axes');axes.replaceChildren();
