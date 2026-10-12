@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sav | WVLRP Character QA</title>
-<style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}</style></head>
+<style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style></head>
 <body><header><strong>Sav — independent character QA</strong> <small>Prototype only; anatomy and reference likeness unapproved</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
-<footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer>
+<footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button><p id="jointstatus"></p></section>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -19,8 +19,8 @@ const camera=new THREE.PerspectiveCamera(40,1,.02,50);
 function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);controls.update()}
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
-let mixer=null;let clips=[];
-const modelUrl='./assets/sav-prototype.glb?v=8da0b715-pose-rebuild';
+let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;
+const modelUrl='./assets/sav-prototype.glb?v=20f04c2-inspection';
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
@@ -29,16 +29,27 @@ new GLTFLoader().load(modelUrl,g=>{
  const unique=[...new Set(joints)];
  status.textContent='Prototype loaded | '+unique.length+' unique skin joints | '+clips.length+' animation clips | Not anatomically approved';
  if(unique.length!==56)status.textContent+=' | JOINT COUNT FAILURE';
+ g.scene.traverse(o=>{if(o.isBone&&unique.includes(o.name)&&!bones.has(o.name)){bones.set(o.name,o);rest.set(o.name,o.rotation.clone());}});
+ const select=document.getElementById('joint');for(const name of [...bones.keys()].sort()){const option=document.createElement('option');option.value=name;option.textContent=name;select.append(option);}
+ select.value=bones.has('LUpperArm')?'LUpperArm':[...bones.keys()][0];selectJoint(select.value);document.getElementById('jointstatus').textContent=bones.size+' joints available';
  play('idle');
 },undefined,e=>{clearTimeout(loadingTimer);status.textContent='Sav failed to load: '+(e?.message||String(e))+' — model: '+modelUrl;console.error('Sav model load failure',e)});
 let current=null;
+function stopAnimation(){if(mixer){mixer.stopAllAction();mixer.update(0);}current=null;manual=true;}
+function selectJoint(name){selected=bones.get(name);if(!selected)return;const axes=document.getElementById('axes');axes.replaceChildren();
+for(const axis of ['x','y','z']){const label=document.createElement('label'),value=document.createElement('output'),slider=document.createElement('input');slider.type='range';slider.min=-180;slider.max=180;slider.step=1;slider.value=Math.round(THREE.MathUtils.radToDeg(selected.rotation[axis]-rest.get(name)[axis]));value.textContent=slider.value+'°';label.append(document.createTextNode(axis.toUpperCase()+' rotation '),value,slider);axes.append(label);slider.oninput=()=>{stopAnimation();selected.rotation[axis]=rest.get(name)[axis]+THREE.MathUtils.degToRad(Number(slider.value));value.textContent=slider.value+'°';document.getElementById('jointstatus').textContent=name+' '+axis.toUpperCase()+': '+slider.value+'°';};}}
+document.getElementById('joint').onchange=e=>selectJoint(e.target.value);
+document.getElementById('resetjoint').onclick=()=>{if(!selected)return;stopAnimation();selected.rotation.copy(rest.get(selected.name));selectJoint(selected.name);};
+document.getElementById('resetall').onclick=()=>{stopAnimation();for(const [name,b] of bones)b.rotation.copy(rest.get(name));selectJoint(document.getElementById('joint').value);};
+document.getElementById('focus').onclick=()=>{if(!selected)return;const p=new THREE.Vector3();selected.getWorldPosition(p);controls.target.copy(p);camera.position.copy(p).add(new THREE.Vector3(0,.2,1.2));controls.update();};
+
 function play(which){const target=clips.find(c=>c.name.toLowerCase().includes(which==='floor'?'elbows':which));
  if(!target){status.textContent='Animation '+which+' not found in GLB';return}
  if(!mixer)return;
- if(current)current.stop();current=mixer.clipAction(target);current.reset().play();
+ if(current)current.stop();manual=false;current=mixer.clipAction(target);current.reset().play();
  status.textContent='Playing '+target.name+' | '+clips.length+' clips | 56-joint prototype';}
 document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>play(b.dataset.pose));
 document.getElementById('reset').onclick=reset;
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();
-const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);if(mixer)mixer.update(clock.getDelta());controls.update();renderer.render(scene,camera)}animate();
+const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();if(mixer&&!manual)mixer.update(dt);controls.update();renderer.render(scene,camera)}animate();
 </script></body></html>
