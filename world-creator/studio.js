@@ -86,7 +86,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-hips-shoulders-hair-dress-v8",
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-hair-only-body-fit-v9",
   mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
