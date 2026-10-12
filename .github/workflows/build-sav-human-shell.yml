@@ -53,6 +53,7 @@ jobs:
       - name: Generate MPFB character GLB and preview
         run: |
           set -euo pipefail
+          export PYTHONPATH="${PWD}/world-creator/scripts:${PYTHONPATH:-}"
           xvfb-run -a -s "-screen 0 1280x1024x24" \
             /tmp/blender-4.2.0-linux-x64/blender --background --python \
             world-creator/scripts/build_sav_human_shell.py 2>&1 | tee /tmp/sav-shell-build.log
