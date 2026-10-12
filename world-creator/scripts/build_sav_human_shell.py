@@ -25,7 +25,7 @@ print("SAV_RIG_PRESERVED",len(rig.data.bones))
 load_system_pack()
 h=HumanService.create_human();h.name="Sav MPFB continuous human shell"
 for key,val in [("gender",0.0),("age",.40),("weight",.52),("muscle",.32),
-                ("height",.53),("proportions",.49),("cupsize",.75),("firmness",.36)]:
+                ("height",.53),("proportions",.49),("cupsize",.82),("firmness",.27)]:
  HumanObjectProperties.set_value(key,val,entity_reference=h)
 TargetService.reapply_macro_details(h)
 skin=AssetService.find_asset_absolute_path("young_caucasian_female.mhmat",asset_subdir="skins")
@@ -86,18 +86,18 @@ for o in meshes:
    breast_height=math.exp(-((z-(chest_z-.018))/.112)**2)
    chest_front=math.exp(-((y-front_y)/.22)**2)
    if z>pelvis_z+.19:
-    y-=.021*breast_lobe*breast_height*chest_front
+    y-=.034*breast_lobe*breast_height*chest_front
     # A small downward bias softens the lower breast silhouette.
     lower_pole=math.exp(-((z-(chest_z-.075))/.070)**2)
-    y-=.008*breast_lobe*lower_pole*chest_front
+    y-=.013*breast_lobe*lower_pole*chest_front
    hip_band=math.exp(-((z-(pelvis_z+.055))/.155)**2)
-   x+=math.copysign(min(abs(x),.24)*.085*hip_band,x)
+   x+=math.copysign(min(abs(x),.24)*.145*hip_band,x)
    # Bilateral anatomical contours are shaped directly on the body surface.
    # No independent accessory mesh means no disconnected protruding capsules.
    nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.018]
    surface_y=min(nearby) if nearby else front_y
    front=math.exp(-((y-surface_y)/.034)**2)
-   z_center=pelvis_z-.09
+   z_center=pelvis_z-.095
    vertical=math.exp(-((z-z_center)/.078)**4)
    outer=math.exp(-((abs(x)-.027)/.018)**2)
    inner=math.exp(-((abs(x)-.010)/.009)**2)
@@ -108,7 +108,7 @@ for o in meshes:
    upper=math.exp(-((z-(z_center+.049))/.019)**2)
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
-   delta=front*vertical*(.026*outer+.010*inner-.013*groove)
+   delta=front*vertical*(.030*outer+.012*inner-.014*groove)
    delta+=front*(.007*hood-.005*parted)
    y-=delta
    if abs(delta)>.001:sculpted+=1
