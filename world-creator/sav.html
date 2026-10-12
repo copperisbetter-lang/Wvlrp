@@ -5,10 +5,11 @@
 <body><header><strong>Sav — independent character QA</strong> <small>Prototype only; anatomy and reference likeness unapproved</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
 <footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
-import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
-import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const stage=document.getElementById('stage'),status=document.getElementById('status');
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x15201d);
 scene.add(new THREE.HemisphereLight(0xffffff,0x52665c,2));
