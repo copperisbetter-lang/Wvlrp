@@ -20,11 +20,11 @@ function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);co
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
 let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
-const modelUrl='./assets/sav-prototype.glb?v=0df114c-human-shell-audit';
+const modelUrl='./assets/sav-prototype.glb?v=sav-opacity-and-culling-20261012';
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
- scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);g.scene.traverse(o=>{if(o.isSkinnedMesh)skinMeshes.push(o);});
+ scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);g.scene.traverse(o=>{if(o.isSkinnedMesh){skinMeshes.push(o);o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(!m)continue;m.transparent=false;m.opacity=1;m.alphaTest=0;m.depthWrite=true;m.side=THREE.DoubleSide;m.needsUpdate=true;}}});
  const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
  const unique=[...new Set(joints)];
  const meshReport=skinMeshes.map(o=>o.name+':'+(o.geometry?.attributes?.position?.count||0)).join(', '); const vertexTotal=skinMeshes.reduce((n,o)=>n+(o.geometry?.attributes?.position?.count||0),0); status.textContent='Sav GLB inspection | '+unique.length+' joints | '+clips.length+' clips | '+skinMeshes.length+' skinned meshes | '+vertexTotal.toLocaleString()+' vertices'; console.info('Sav mesh audit',meshReport); if(vertexTotal<10000)status.textContent+=' | WARNING: LOW DETAIL / OLD PROTOTYPE';
