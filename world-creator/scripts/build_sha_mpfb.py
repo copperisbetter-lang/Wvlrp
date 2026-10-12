@@ -795,11 +795,11 @@ def main():
         low=obj.name.lower()
         if "long01" in low:
             mat=pbr_solid("Sha natural dark brunette · real exported hair",
-                          (.91,.86,.75),.60)
+                          (.075,.055,.048),.72)
             obj.data.materials.clear();obj.data.materials.append(mat)
-            print("WVLRP_SHA_PLATINUM_HAIR",obj.name,mat.name)
+            print("WVLRP_SHA_DARK_HAIR",obj.name,mat.name)
         elif "eyebrow" in low:
-            mat=pbr_solid("Sha cool blonde brows",(.43,.36,.30),.87)
+            mat=pbr_solid("Sha dark natural brows",(.105,.075,.063),.87)
             obj.data.materials.clear();obj.data.materials.append(mat)
             print("WVLRP_SHA_BROWS",obj.name)
         elif "eyelash" in low:
