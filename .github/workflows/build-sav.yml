@@ -1,0 +1,47 @@
+name: Build Sav 56-joint prototype
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_sav.py
+      - .github/workflows/build-sav.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender
+      - name: Build rigged prototype
+        run: |
+          python3 -m py_compile world-creator/scripts/build_sav.py
+          blender --background --factory-startup --python world-creator/scripts/build_sav.py 2>&1 | tee /tmp/sav.log
+          grep SAV_PROTOTYPE_SUCCESS /tmp/sav.log
+      - name: Verify GLB
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          b=Path('world-creator/assets/sav-prototype.glb').read_bytes()
+          n,t=struct.unpack_from('<II',b,12)
+          d=json.loads(b[20:20+n])
+          assert len(d['skins'])>=1
+          assert len(d['skins'][0]['joints'])==56,len(d['skins'][0]['joints'])
+          assert len(d.get('animations',[]))>=3
+          print('SAV_GLB_VALID',len(b))
+          PY
+      - name: Publish prototype
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/sav-prototype.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Sav first 56-joint rigged prototype"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
