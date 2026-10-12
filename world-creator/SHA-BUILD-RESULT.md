@@ -1,6 +1,6 @@
 # Sha latest automated builder result
 
-Source GitHub SHA: `21fbc7aab73bd048d45fced3b7cd2ce2ac3ae81e`
+Source GitHub SHA: `0b4d10d364acc5e8534fa011cb3f75b669102266`
 
 Workflow status before QA report: **success**
 
@@ -38,8 +38,8 @@ INFO Draco mesh compression is available, use library at /tmp/blender-4.2.0-linu
 
 WVLRP_REAL_FACE_GLB_VERIFIED Sha textured_skin_materials 1 images 3
 WVLRP_SHA_EXPORTED_MATERIALS ['Sha dark natural brows', 'Sha natural brown lashes', 'Sha - MPFB original body mesh.high-poly', 'Sha natural dark brunette flowing hair 0', 'Sha natural dark brunette flowing hair 1', 'Sha natural dark brunette flowing hair 2', 'Sha natural dark brunette flowing hair 3', 'Sha - MPFB original body mesh.teeth_base', 'Sha real CC0 face and body skin UV 0']
-WVLRP_RESULT_GLB /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/sha-mpfb-trial.glb 17179304 skins 1 joint_count 52 animations 5 meshes 6
-WVLRP_PREVIEW_SAVED /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/sha-mpfb-trial-preview.png 710572
+WVLRP_RESULT_GLB /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/sha-mpfb-trial.glb 18784812 skins 1 joint_count 52 animations 5 meshes 6
+WVLRP_PREVIEW_SAVED /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/sha-mpfb-trial-preview.png 713194
 WVLRP_SHA_MPFB_SUCCESS
 
 Blender quit
