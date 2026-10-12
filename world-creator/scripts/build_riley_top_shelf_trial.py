@@ -341,7 +341,9 @@ print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
 # vertex topology. Blend out smoothly at the sides, pelvis, and neck; arms,
 # back, head and the full hip silhouette are never projected.
 projected=0
-for v in body.data.vertices:
+# Disable the destructive front-surface projection. It flattened and folded
+# the donor chest; preserve the original continuous anatomical topology.
+for v in []:
     p=v.co
     if not (.88 < p.z < 1.47 and abs(p.x)<.24 and p.y<.082):
         continue
