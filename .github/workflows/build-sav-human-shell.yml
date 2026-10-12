@@ -72,6 +72,10 @@ jobs:
           assert len(doc.get('skins',[]))>=1
           assert len(doc['skins'][0]['joints'])==56
           assert len(doc.get('meshes',[]))>=2
+          morph_names={t.get('name') for mesh in doc.get('meshes',[]) for t in mesh.get('extras',{}).get('targetNames',[])}
+          required={'Labia_Left_Open','Labia_Right_Open'}
+          assert required.issubset(morph_names), f'Pelvic inspection morphs missing from GLB: {morph_names}'
+          print('SAV_PELVIC_INSPECTION_MORPHS_VERIFIED',sorted(required))
           assert any(m.get('pbrMetallicRoughness',{}).get('baseColorTexture') for m in doc.get('materials',[])), 'Human shell texture missing'
           print('SAV_REAL_SHELL_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
           print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
