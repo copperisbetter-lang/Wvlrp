@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14211d">
+<title>WVLRP · Sha MPFB 3D Trial</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#14211d;color:#edf3ec;font:15px system-ui,-apple-system,sans-serif}header{padding:12px 16px;background:#192c25;border-bottom:1px solid #41564a;display:flex;align-items:center;justify-content:space-between;gap:10px}header a{color:#c4e5ce;text-decoration:none}h1{font-size:1.02rem;margin:0}small{display:block;color:#bbccbf;font-size:.76rem;margin-top:3px}.main{max-width:1100px;margin:auto;padding:12px}#stage{position:relative;height:min(69vh,750px);min-height:340px;border:1px solid #53735b;border-radius:14px;overflow:hidden;background:#bdc2c0}#renderCanvas{width:100%;height:100%;touch-action:none;display:block}#status{position:absolute;left:12px;bottom:12px;background:#14211ddf;padding:7px 12px;border-radius:10px;pointer-events:none;font-size:.85rem} .pose-scrub{display:inline-flex;align-items:center;gap:7px}.pose-scrub input{max-width:110px;touch-action:auto}.controls{display:flex;gap:9px;flex-wrap:wrap;margin:11px 0}button,.button{border:1px solid #80a18d;background:#203d30;color:white;padding:10px 13px;border-radius:10px;font:inherit;cursor:pointer;text-decoration:none}button:focus-visible,.button:focus-visible{outline:2px solid white}.note{color:#cbd9ce;font-size:.89rem;line-height:1.55}.note strong{color:white}.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.82rem;color:#afc4b6;margin-bottom:9px}.legend span{border:1px solid #648373;border-radius:99px;padding:3px 8px}details{margin-top:10px}summary{cursor:pointer}details img{display:block;max-width:100%;max-height:520px;object-fit:contain;margin-top:8px;border-radius:12px;background:#d7d9d8}#err{color:#fff2dd}@media(min-width:800px){#stage{height:72vh}}
+</style></head><body>
+<header><div><h1>Sha — MPFB 3D model trial</h1><small>WVLRP World Creator · separate experimental character</small></div><a href="./">← World Creator</a></header>
+<main class="main">
+<div class="legend"><span>Drag to rotate</span><span>Pinch to zoom</span><span>Rigged MPFB test</span><span>Temporary blue sundress · wavy dark hair</span></div>
+<div id="stage"><canvas id="renderCanvas" aria-label="Interactive 3D Sha character"></canvas><div id="status" role="status">Loading 3D character…</div></div>
+<div class="controls">
+<button id="home">Full body / reset</button>
+<button id="face">Zoom to face</button>
+<button id="chest">Upper body</button>
+<button id="left">Rotate left</button>
+<button id="right">Rotate right</button>
+<button data-pose="Stand">Stand / idle</button>
+<button data-pose="Bend">Bend forward</button>
+<button data-pose="Kneel">Kneel</button>
+<button data-pose="HandsAndKnees">Hands &amp; knees</button>
+<button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
+<button id="idle">Play movement</button>
+<button id="smile" aria-pressed="true">Smile: gentle</button>
+<button id="dress" type="button" aria-pressed="true">Sundress: on</button>
+<label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
+<a class="button" href="./assets/sha-mpfb-trial.glb?v=sha-fit-blue-dress-waves-v12" download="sha-mpfb-trial.glb">Download GLB</a>
+</div>
+<p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy dark hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified for calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
+<details><summary>Show offline preview render</summary><img src="./assets/sha-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
+<p class="note">If the model fails on a mobile browser, try refresh once or download the GLB and open it in a separate 3D viewer. The first load may take a moment on cellular data.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script>
+(function(){
+const canvas=document.getElementById('renderCanvas'), status=document.getElementById('status');
+let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=true,dressMeshes=[],dressOn=true,poseBodyMeshes=[];
+try {
+ engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});
+ scene=new BABYLON.Scene(engine);
+ scene.clearColor=new BABYLON.Color4(.77,.79,.79,1);
+ camera=new BABYLON.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.1,3.1,new BABYLON.Vector3(0,.85,0),scene);
+ camera.attachControl(canvas,true);
+ camera.lowerRadiusLimit=.8;camera.upperRadiusLimit=8;camera.wheelDeltaPercentage=.015;camera.pinchDeltaPercentage=.006;
+ camera.inertia=.7;camera.panningSensibility=0;camera.minZ=.025;
+ const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
+ const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
+ const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','sha-mpfb-trial.glb?v=sha-fit-blue-dress-waves-v12&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+  groups=res.animationGroups||[];
+  // Track the actual skinned body, not the dress or the idle-pose bounding box.
+  poseBodyMeshes=(res.meshes||[]).filter(m=>m.skeleton&&m.getTotalVertices?.()>1000&&/original body mesh/i.test(m.name||''));
+  if(!poseBodyMeshes.length)poseBodyMeshes=(res.meshes||[]).filter(m=>m.skeleton&&m.getTotalVertices?.()>1000&&!/hair|dress/i.test(m.name||''));
+  dressMeshes=(res.meshes||[]).filter(m=>/sha temporary sundress/i.test(m.name||''));
+  dressMeshes.forEach(m=>m.setEnabled(true));
+  document.getElementById('dress').textContent=dressMeshes.length?'Sundress: on':'Sundress: rebuilding';
+  document.getElementById('dress').disabled=!dressMeshes.length;
+
+  // A new viewer page is not proof that the GitHub Actions model rebuild
+  // succeeded. Inspect the imported GLB itself before reporting a new pose.
+  const expected=['Sha HandsAndKnees','Sha ElbowsAndKnees'];
+  const missing=expected.filter(n=>!groups.some(g=>g.name===n));
+  let smileCount=0, morphCount=0;
+  for(const mesh of res.meshes) {
+    const manager=mesh.morphTargetManager;
+    if(!manager)continue;
+    for(let i=0;i<manager.numTargets;i++){
+      const morph=manager.getTarget(i);
+      morphCount++;
+      if(/Sha Natural Smile/i.test(morph.name)){
+        morph.influence=.18; // gentle expression; never use the old .78 grin
+        smileTargets.push(morph);
+        smileCount++;
+      }
+    }
+  }
+  if(missing.length || !smileCount){
+    status.textContent='Old Sha 3D file: updated poses/smile not built yet ('+
+      (missing.length?missing.map(s=>s.replace('Sha ','')).join(', '):'smile morph')+').';
+    status.style.background='#563325e8';
+  }
+  let low=new BABYLON.Vector3(Infinity,Infinity,Infinity),high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
+  for(const m of res.meshes){
+   if(typeof m.getTotalVertices!=='function'||m.getTotalVertices()===0) continue;
+   m.computeWorldMatrix(true);
+   const b=m.getBoundingInfo().boundingBox;
+   low=BABYLON.Vector3.Minimize(low,b.minimumWorld);
+   high=BABYLON.Vector3.Maximize(high,b.maximumWorld);
+  }
+  if(Number.isFinite(low.y)){
+   const center=low.add(high).scale(.5);
+   const span=Math.max(high.y-low.y,high.x-low.x,high.z-low.z,.1);
+   camera.setTarget(new BABYLON.Vector3(center.x,low.y+span*.52,center.z));
+   camera.radius=Math.max(span*1.3,1.9);
+   camera.lowerRadiusLimit=Math.max(.7,span*.45);
+   camera.upperRadiusLimit=Math.max(5,span*4);
+   bodyBounds={low:low.clone(), high:high.clone(), span};
+  }
+  const stand=groups.find(g=>/Sha Stand/i.test(g.name));
+  if(stand){stand.start(true,1,stand.from,stand.to,false);currentGroup=stand;}
+  else status.textContent='3D loaded but stand animation missing';
+  const faceIsTextured=scene.materials.some(m=>m.name.includes('Sha real CC0 face and body skin UV') && m.albedoTexture);
+  if(!missing.length && smileCount===2){
+    status.textContent='Updated Sha loaded · '+(res.skeletons?.[0]?.bones?.length||0)+
+       ' bones · '+groups.length+' motions · '+smileCount+' smile shapes · select a floor pose';
+  }
+  if(!faceIsTextured){status.textContent='Older Sha 3D file — photographic face texture not published yet';status.style.background='#563325e8';}
+ }).catch(e=>{status.id='err';status.textContent='Unable to load GLB: '+(e.message||e)});
+ engine.runRenderLoop(()=>scene.render());
+ window.addEventListener('resize',()=>engine.resize());
+ function focus(part){
+ if(!bodyBounds) return;
+ const b=bodyBounds;
+ const center=b.low.add(b.high).scale(.5);
+ const height=b.high.y-b.low.y;
+ const y=part==='face'?b.low.y+height*.91:part==='chest'?b.low.y+height*.73:b.low.y+height*.52;
+ camera.setTarget(new BABYLON.Vector3(center.x,y,center.z));
+ camera.lowerRadiusLimit=part==='face'?.34:part==='chest'?.58:Math.max(.70,b.span*.45);
+ camera.radius=part==='face'?.63:part==='chest'?.95:Math.max(2.2,b.span*1.35);
+ camera.beta=Math.PI/2.1;
+}
+document.getElementById('home').onclick=()=>{showPose('Stand');camera.alpha=-Math.PI/2;focus('full');};
+document.getElementById('face').onclick=()=>focus('face');
+document.getElementById('chest').onclick=()=>focus('chest');
+// Always show the selected skeletal pose FIRST. Previous code probed final
+// keyframes, stopped the animation and tried to replay it; on some mobile
+// Babylon/WebGL sessions that left Sha stuck in standing.
+const progress=document.getElementById('poseProgress');
+const frameLabel=document.getElementById('posePercent');
+function putKeysAtEnd(group){
+  // In addition to Babylon's goToFrame, apply the exported final skeletal
+  // transform tracks directly. This fallback remains visible when a short
+  // animation is auto-stopped or a browser misses its end event.
+  let written=0;
+  for(const track of group.targetedAnimations||[]){
+    const anim=track.animation, target=track.target;
+    const keys=anim?.getKeys?.();
+    if(!target||!keys?.length)continue;
+    const val=keys[keys.length-1].value;
+    const path=(anim.targetProperty||'').split('.');
+    let holder=target;
+    for(const seg of path.slice(0,-1)){ holder=holder?.[seg]; }
+    const prop=path[path.length-1];
+    if(!holder||!prop||val===undefined||val===null)continue;
+    try{
+      const next=val?.clone?val.clone():val;
+      if(holder[prop]?.copyFrom && next && typeof next==='object') holder[prop].copyFrom(next);
+      else holder[prop]=next;
+      written++;
+    }catch(_){/* Some Babylon bone properties are read-only; skip them. */}
+  }
+  return written;
+}
+function focusFloor(){
+  camera.alpha=.12;camera.beta=Math.PI/2.35;
+  // Never aim at the character's old standing position after its hips move.
+  frameLiveSkinnedBody(true);
+}
+function frameLiveSkinnedBody(floor=false){
+  if(!poseBodyMeshes.length)return false;
+  let low=new BABYLON.Vector3(Infinity,Infinity,Infinity);
+  let high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
+  let refreshed=0;
+  for(const mesh of poseBodyMeshes){
+    try{
+      // glTF skinning is animated on the GPU. Ordinary getBoundingInfo()
+      // holds the REST-pose dimensions and can put an articulated avatar
+      // outside the frame. Recalculate with the ACTUAL animated skeleton.
+      mesh.refreshBoundingInfo(true);
+      mesh.computeWorldMatrix(true);
+      const b=mesh.getBoundingInfo().boundingBox;
+      low=BABYLON.Vector3.Minimize(low,b.minimumWorld);
+      high=BABYLON.Vector3.Maximize(high,b.maximumWorld);
+      refreshed++;
+    }catch(e){console.warn('Sha skinned-pose bounds unavailable',e);}
+  }
+  if(!refreshed||![low.x,low.y,low.z,high.x,high.y,high.z].every(Number.isFinite))return false;
+  const center=low.add(high).scale(.5);
+  const height=high.y-low.y;
+  const span=Math.max(height,high.x-low.x,high.z-low.z,.3);
+  if(span>20||span<.2)return false; // Bad animation bounds should NOT fling camera away.
+  camera.setTarget(new BABYLON.Vector3(center.x,center.y+(floor?.025*height:0),center.z));
+  camera.lowerRadiusLimit=Math.max(.2,span*.35);
+  camera.upperRadiusLimit=Math.max(6,span*4);
+  camera.radius=Math.max(floor?1.78:1.55,span*(floor?1.85:1.3));
+  return true;
+}
+function showPose(pose,animate=false){
+ const clip=groups.find(g=>g.name==='Sha '+pose);
+ if(!clip){
+   status.textContent='POSE MISSING in downloaded GLB: Sha '+pose+'.';
+   status.style.background='#7c302fe8';return;
+ }
+ groups.forEach(g=>g.stop());
+ currentGroup=clip;
+ const floor=pose==='HandsAndKnees'||pose==='ElbowsAndKnees';
+ if(floor)focusFloor();
+ clip.start(false,1,clip.from,clip.to,false);
+ if(!animate){
+   clip.goToFrame(clip.to);
+   clip.pause();
+   const applied=putKeysAtEnd(clip);
+   playing=false;
+   scene.render();
+   if(floor)frameLiveSkinnedBody(true);
+   progress.value='100';frameLabel.textContent='100%';
+   document.getElementById('idle').textContent='Play movement';
+   status.style.background='#14211ddf';
+   status.textContent='Sha '+pose+' · HOLDING final pose · '+applied+' keyed transforms applied';
+   // Some Android sessions advance one frame after the tap; pin it again.
+   requestAnimationFrame(()=>{
+     if(currentGroup!==clip||playing)return;
+     clip.goToFrame(clip.to);clip.pause();putKeysAtEnd(clip);
+     if(floor)frameLiveSkinnedBody(true);
+   });
+ }else{
+   playing=true;progress.value='0';frameLabel.textContent='0%';
+   document.getElementById('idle').textContent='Pause movement';
+   status.textContent='Sha '+pose+' · playing movement';
+   clip.onAnimationGroupEndObservable.addOnce(()=>{
+     if(currentGroup!==clip)return;
+     playing=false;clip.goToFrame(clip.to);clip.pause();putKeysAtEnd(clip);
+     if(floor)frameLiveSkinnedBody(true);
+     progress.value='100';frameLabel.textContent='100%';
+     document.getElementById('idle').textContent='Play movement';
+     status.textContent='Sha '+pose+' · HOLDING final pose';
+   });
+ }
+ document.querySelectorAll('[data-pose]').forEach(btn=>{
+   btn.style.borderColor=btn.dataset.pose===pose?'#f3d176':'#80a18d';
+ });
+}
+document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>showPose(btn.dataset.pose));
+document.getElementById('dress').onclick=()=>{
+ dressOn=!dressOn;
+ dressMeshes.forEach(m=>m.setEnabled(dressOn));
+ const b=document.getElementById('dress');
+ b.textContent='Sundress: '+(dressOn?'on':'off');
+ b.setAttribute('aria-pressed',String(dressOn));
+ status.textContent='Sha temporary sundress '+(dressOn?'visible':'hidden');
+};
+document.getElementById('smile').onclick=()=>{
+ smileOn=!smileOn;
+ for(const t of smileTargets)t.influence=smileOn?.18:0;
+ const button=document.getElementById('smile');
+ button.textContent='Smile: '+(smileOn?'gentle':'neutral');
+ button.setAttribute('aria-pressed',String(smileOn));
+ status.textContent=smileTargets.length
+  ?'Sha smile '+(smileOn?'ON (18% mouth-corner shapes)':'OFF (neutral mouth)')
+  :'Sha GLB has no usable smile shapes';
+};
+progress.addEventListener('input',()=>{
+ if(!currentGroup)return;
+ const pct=Math.max(0,Math.min(100,Number(progress.value)))/100;
+ groups.forEach(g=>{if(g!==currentGroup)g.stop();});
+ if(!currentGroup.isStarted)currentGroup.start(false,1,currentGroup.from,currentGroup.to,false);
+ currentGroup.goToFrame(currentGroup.from+(currentGroup.to-currentGroup.from)*pct);
+ currentGroup.pause();playing=false;
+ if(pct>=.999)putKeysAtEnd(currentGroup);
+ if(/HandsAndKnees|ElbowsAndKnees/.test(currentGroup.name))frameLiveSkinnedBody(true);
+ frameLabel.textContent=progress.value+'%';
+ document.getElementById('idle').textContent='Play movement';
+ status.textContent='Sha '+currentGroup.name+' · pose progress '+progress.value+'%';
+});
+ document.getElementById('left').onclick=()=>camera.alpha+=Math.PI/4;
+ document.getElementById('right').onclick=()=>camera.alpha-=Math.PI/4;
+ document.getElementById('idle').onclick=()=>{
+ if(!currentGroup)return;
+ if(playing){currentGroup.pause();playing=false;document.getElementById('idle').textContent='Play movement';return;}
+ const name=currentGroup.name.replace(/^Sha /,'');
+ showPose(name,true);
+};
+
+}catch(e){status.textContent='3D viewer error: '+e.message;}
+})();
+</script></body></html>
