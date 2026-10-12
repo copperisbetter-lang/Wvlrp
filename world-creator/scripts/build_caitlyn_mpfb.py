@@ -1052,6 +1052,49 @@ def main():
                               "palm_above_elbow_m",
                               round(joint(side+"hand",True).z-
                                     joint(side+"forearm").z,4))
+                if use_elbows:
+                    # Shoulder *yaw* is also needed. Earlier only adjusting X
+                    # pitch left elbows 18 cm sideways from their shoulders.
+                    # Search independent X/Z arm rotation so elbows remain
+                    # shoulder-width apart AND grounded, without changing
+                    # Caitlyn's body mesh or touching other poses.
+                    for side in ("l","r"):
+                        upper=bones[side+"arm"]
+                        ox=math.degrees(upper.rotation_euler.x)
+                        oz=math.degrees(upper.rotation_euler.z)
+                        def elbow_score():
+                            bpy.context.view_layer.update()
+                            e=joint(side+"forearm")
+                            shoulder=joint(side+"arm")
+                            knee_level=(joint("lshin").z+joint("rshin").z)*.5
+                            return (2100*(e.x-shoulder.x)**2
+                                  +2200*(e.z-knee_level)**2
+                                  +600*(e.y-shoulder.y)**2)
+                        best=(float("inf"),ox,oz)
+                        for pitch in [ox+d for d in range(-32,33,8)]:
+                            upper.rotation_euler.x=math.radians(pitch)
+                            for yaw in range(-90,91,6):
+                                upper.rotation_euler.z=math.radians(yaw)
+                                score=elbow_score()
+                                score+=.00002*(pitch-ox)**2+.000004*(yaw-oz)**2
+                                if score<best[0]:best=(score,pitch,yaw)
+                        for step in (3,1):
+                            score0,px,pz=best
+                            for pitch in (px-2*step,px-step,px,px+step,px+2*step):
+                                upper.rotation_euler.x=math.radians(pitch)
+                                for yaw in (pz-2*step,pz-step,pz,pz+step,pz+2*step):
+                                    upper.rotation_euler.z=math.radians(yaw)
+                                    score=elbow_score()+.00002*(pitch-ox)**2
+                                    if score<best[0]:best=(score,pitch,yaw)
+                        upper.rotation_euler.x=math.radians(best[1])
+                        upper.rotation_euler.z=math.radians(best[2])
+                        bpy.context.view_layer.update()
+                        print("WVLRP_CAITLYN_ELBOW_SHOULDER_WIDTH_FIT",side,
+                              "pitch",round(best[1],1),"yaw",round(best[2],1),
+                              "lateral_m",round(joint(side+"forearm").x-
+                                   joint(side+"arm").x,4),
+                              "height_m",round(joint(side+"forearm").z-
+                                  (joint("lshin").z+joint("rshin").z)*.5,4))
                 _,error,hip,knee,contacts,wrists=metrics()
                 # Anchor the same ground elevation used by the standing pose.
                 # Measure the response of root/hips local Z rather than assuming
