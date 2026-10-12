@@ -1,0 +1,30 @@
+{
+  "name": "Riley",
+  "status": "reference_only_not_reconstructed",
+  "source": "Generated six-view cabin character sheet (2026-10-12)",
+  "adult": true,
+  "referenceViews": [
+    "front",
+    "back",
+    "left",
+    "right",
+    "three-quarter",
+    "face"
+  ],
+  "appearance": {
+    "hair": "blonde, long hair gathered in loose bun for references",
+    "swimwear": "olive-green two-piece bikini",
+    "complexion": "warm natural",
+    "body": "adult naturalistic proportions; maintain consistent across all views"
+  },
+  "requirements": [
+    "Do not use deformed riley-rigged-v1.glb as geometry source",
+    "Create new base mesh with coherent topology and anatomically realistic proportions",
+    "Fit against reference front/side/back views; generated views are approximate, not calibrated scans",
+    "Rig pelvis, spine, shoulders, elbows, wrists, hips, knees, ankles, neck, head",
+    "Verify standing, walking, kneeling, hands-and-knees, elbows-and-knees, supine arms/legs out",
+    "No inverted knees, detached neck, self-intersection, or visible skin discontinuities",
+    "Preserve original GLB until replacement is accepted"
+  ],
+  "limitations": "No GPU reconstruction worker connected. Reference sheet is not a true multi-camera photogrammetry capture; cannot infer hidden anatomy reliably."
+}
