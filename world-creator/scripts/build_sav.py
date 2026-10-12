@@ -22,7 +22,7 @@ def ell(name,pos,sc,material,bone):
  parts.append((o,bone))
 # Single continuous torso surface; vertical weights blend across pelvis and spine.
 def torso():
- rings=[(.88,.105,.085),(.94,.145,.110),(1.02,.155,.120),(1.10,.135,.105),(1.18,.133,.102),(1.26,.148,.115),(1.35,.163,.120),(1.43,.150,.110),(1.49,.103,.086),(1.53,.065,.062)]
+ rings=[(.88,.105,.085),(.94,.119,.094),(1.02,.128,.100),(1.10,.110,.087),(1.18,.108,.084),(1.26,.122,.093),(1.35,.138,.101),(1.43,.129,.095),(1.49,.103,.086),(1.53,.065,.062)]
  verts=[];faces=[];count=32
  for z,rx,ry in rings:
   for j in range(count):
@@ -47,11 +47,11 @@ ell("blonde swept up hair",(0,.018,1.785),(.111,.09,.067),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.084,.078,.066),gold,"Head")
 ell("navel",(0,-.12,1.15),(.013,.005,.017),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
- ell(label+" upper arm",(.245*side,0,1.30),(.058,.058,.17),skin,label+"UpperArm")
- ell(label+" forearm",(.29*side,0,1.065),(.043,.043,.14),skin,label+"Forearm")
+ ell(label+" upper arm",(.245*side,0,1.30),(.049,.049,.17),skin,label+"UpperArm")
+ ell(label+" forearm",(.29*side,0,1.065),(.037,.037,.14),skin,label+"Forearm")
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- ell(label+" thigh",(.105*side,0,.80),(.083,.088,.24),skin,label+"Thigh")
- ell(label+" shin",(.11*side,0,.37),(.056,.058,.21),skin,label+"Shin")
+ ell(label+" thigh",(.105*side,0,.80),(.067,.070,.225),skin,label+"Thigh")
+ ell(label+" shin",(.11*side,0,.37),(.048,.050,.205),skin,label+"Shin")
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
  for f in range(5):
   x=(.255+.021*f)*side
@@ -107,13 +107,16 @@ for o,b in parts:
  mod=o.modifiers.new("Armature","ARMATURE");mod.object=rig
  o.parent=rig
 # Pose keyframes on armature; skeletal prototype, not final physically correct floor poses.
-def action(name,frames,pose):
+def action(name,frames,pose,root=None):
  for pb in rig.pose.bones:pb.rotation_mode="XYZ"
  for frame in frames:
   for pb in rig.pose.bones:
    pb.rotation_euler=(0,0,0)
    if pb.name in pose:pb.rotation_euler=pose[pb.name](frame)
    pb.keyframe_insert(data_path="rotation_euler",frame=frame)
+   if pb.name=="Pelvis":
+    pb.location=root(frame) if root else (0,0,0)
+    pb.keyframe_insert(data_path="location",frame=frame)
  if rig.animation_data and rig.animation_data.action:
   a=rig.animation_data.action
   a.name=name
@@ -129,15 +132,15 @@ action("Sav_walk",[1,7,13,19,25],{
  "RShin":lambda f:(max(0,-.45*math.sin((f-1)*math.pi/12)),0,0),
  "Pelvis":lambda f:(0,.05*math.sin((f-1)*math.pi/12),0)})
 action("Sav_elbows_knees_pose_preview",[1,24],{
- "Spine1":lambda f:(.55*f/24,0,0),
- "LThigh":lambda f:(-1.2*f/24,0,0),
- "RThigh":lambda f:(-1.2*f/24,0,0),
- "LShin":lambda f:(1.65*f/24,0,0),
- "RShin":lambda f:(1.65*f/24,0,0),
- "LUpperArm":lambda f:(.95*f/24,0,0),
- "RUpperArm":lambda f:(.95*f/24,0,0),
- "LForearm":lambda f:(-1.2*f/24,0,0),
- "RForearm":lambda f:(-1.2*f/24,0,0)})
+ "Spine1":lambda f:(1.0*f/24,0,0),
+ "LThigh":lambda f:(-1.65*f/24,0,0),
+ "RThigh":lambda f:(-1.65*f/24,0,0),
+ "LShin":lambda f:(2.1*f/24,0,0),
+ "RShin":lambda f:(2.1*f/24,0,0),
+ "LUpperArm":lambda f:(-1.4*f/24,0,0),
+ "RUpperArm":lambda f:(-1.4*f/24,0,0),
+ "LForearm":lambda f:(1.4*f/24,0,0),
+ "RForearm":lambda f:(1.4*f/24,0,0)},root=lambda f:(0,-.26*f/24,-.40*f/24))
 # Actions are preserved in NLA tracks as each animation is created.
 bpy.ops.object.select_all(action="DESELECT")
 rig.select_set(True)
