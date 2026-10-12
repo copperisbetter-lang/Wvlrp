@@ -4,7 +4,7 @@
 <style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style></head>
 <body><header><strong>Sav — independent character QA</strong> <small>Prototype only; anatomy and reference likeness unapproved</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
-<footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button><p id="jointstatus"></p></section>
+<footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button> <button id="wire">Wireframe off</button> <button id="bones">Joint markers off</button><p id="jointstatus"></p></section>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -19,12 +19,12 @@ const camera=new THREE.PerspectiveCamera(40,1,.02,50);
 function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);controls.update()}
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
-let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;
-const modelUrl='./assets/sav-prototype.glb?v=20f04c2-inspection';
+let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
+const modelUrl='./assets/sav-prototype.glb?v=634ce626-fused-body';
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
- scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);
+ scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);g.scene.traverse(o=>{if(o.isSkinnedMesh)skinMeshes.push(o);});
  const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
  const unique=[...new Set(joints)];
  status.textContent='Prototype loaded | '+unique.length+' unique skin joints | '+clips.length+' animation clips | Not anatomically approved';
@@ -41,6 +41,8 @@ for(const axis of ['x','y','z']){const label=document.createElement('label'),val
 document.getElementById('joint').onchange=e=>selectJoint(e.target.value);
 document.getElementById('resetjoint').onclick=()=>{if(!selected)return;stopAnimation();selected.rotation.copy(rest.get(selected.name));selectJoint(selected.name);};
 document.getElementById('resetall').onclick=()=>{stopAnimation();for(const [name,b] of bones)b.rotation.copy(rest.get(name));selectJoint(document.getElementById('joint').value);};
+document.getElementById('wire').onclick=()=>{showWire=!showWire;skinMeshes.forEach(o=>{const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.wireframe=showWire;m.needsUpdate=true;});});document.getElementById('wire').textContent=showWire?'Wireframe on':'Wireframe off';};
+document.getElementById('bones').onclick=()=>{showMarkers=!showMarkers;if(!jointMarkers.length){for(const [name,b] of bones){const m=new THREE.Mesh(new THREE.SphereGeometry(.009,8,6),new THREE.MeshBasicMaterial({color:0x00ff88,depthTest:false}));m.renderOrder=99;b.add(m);jointMarkers.push(m);}}jointMarkers.forEach(m=>m.visible=showMarkers);document.getElementById('bones').textContent=showMarkers?'Joint markers on':'Joint markers off';};
 document.getElementById('focus').onclick=()=>{if(!selected)return;const p=new THREE.Vector3();selected.getWorldPosition(p);controls.target.copy(p);camera.position.copy(p).add(new THREE.Vector3(0,.2,1.2));controls.update();};
 
 function play(which){const target=clips.find(c=>c.name.toLowerCase().includes(which==='floor'?'elbows':which));
