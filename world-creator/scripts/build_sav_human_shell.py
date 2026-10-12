@@ -78,7 +78,7 @@ for o in meshes:
   if len(pelvic_surface)<20:raise RuntimeError("Sav anterior pelvic surface not found")
   # Place the relief on the actual visible front skin, not at the rig joint.
   # Pelvis bone heads are inside the body and may be substantially higher.
-  anatomy_z=pelvis_z-.145
+  anatomy_z=pelvis_z-.205
   surface_rows={}
   for p in pelvic_samples:
    key=round(p.z/.012)
@@ -106,10 +106,10 @@ for o in meshes:
    # No independent accessory mesh means no disconnected protruding capsules.
    nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.025]
    surface_y=min(nearby) if nearby else front_y
-   front=math.exp(-((y-surface_y)/.085)**2)
+   front=math.exp(-((y-surface_y)/.145)**2)
    # Broad rounded mons above the cleft; fades smoothly into abdomen and groin.
-   mons=math.exp(-((z-(anatomy_z+.107))/.078)**2)*math.exp(-(x/.095)**4)
-   y-=.031*front*mons
+   mons=math.exp(-((z-(anatomy_z+.107))/.105)**2)*math.exp(-(x/.125)**4)
+   y-=.065*front*mons
    z_center=anatomy_z
    # The superior cleft starts below the hood, not on the mons pubis.
    # Smoothstep at the upper junction tapers the folds into the pubic mound.
@@ -128,8 +128,8 @@ for o in meshes:
    upper=math.exp(-((z-(z_center+.049))/.019)**2)
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
-   delta=front*vertical*(.055*outer+.025*inner-.022*groove)
-   delta+=front*(.007*hood-.005*parted*start*inferior)
+   delta=front*vertical*(.085*outer+.043*inner-.038*groove)
+   delta+=front*(.012*hood-.012*parted*start*inferior)
    y-=delta
    if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.09:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
