@@ -22,7 +22,7 @@ def ell(name,pos,sc,material,bone):
  parts.append((o,bone))
 # Single continuous torso surface; vertical weights blend across pelvis and spine.
 def torso():
- rings=[(.88,.105,.085),(.94,.119,.094),(1.02,.128,.100),(1.10,.110,.087),(1.18,.108,.084),(1.26,.122,.093),(1.35,.138,.101),(1.43,.129,.095),(1.49,.103,.086),(1.53,.065,.062)]
+ rings=[(.88,.085,.075),(.94,.142,.110),(1.02,.154,.117),(1.10,.120,.091),(1.18,.104,.080),(1.26,.122,.094),(1.35,.146,.109),(1.43,.145,.106),(1.49,.103,.083),(1.53,.065,.062)]
  verts=[];faces=[];count=32
  for z,rx,ry in rings:
   for j in range(count):
@@ -43,14 +43,14 @@ def torso():
 torso_mesh=torso()
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
 ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
-ell("blonde swept up hair",(0,.018,1.785),(.111,.09,.067),gold,"Head")
-ell("blonde bun",(0,.072,1.824),(.084,.078,.066),gold,"Head")
-ell("navel",(0,-.12,1.15),(.013,.005,.017),mat("navel shade",(.36,.21,.17)),"Spine1")
+ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
+ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
+ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
  ell(label+" upper arm",(.245*side,0,1.30),(.049,.049,.17),skin,label+"UpperArm")
  ell(label+" forearm",(.29*side,0,1.065),(.037,.037,.14),skin,label+"Forearm")
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- ell(label+" thigh",(.105*side,0,.80),(.067,.070,.225),skin,label+"Thigh")
+ ell(label+" thigh",(.105*side,0,.80),(.084,.082,.235),skin,label+"Thigh")
  ell(label+" shin",(.11*side,0,.37),(.048,.050,.205),skin,label+"Shin")
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
  for f in range(5):
