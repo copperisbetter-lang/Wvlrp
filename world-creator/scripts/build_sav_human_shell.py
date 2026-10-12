@@ -70,7 +70,7 @@ for o in meshes:
   # The previous fixed Y threshold missed the body surface on some builds.
   pelvic_samples=[o.matrix_world@v.co for v in o.data.vertices
                   if abs((o.matrix_world@v.co).x)<.075
-                  and pelvis_z-.18<(o.matrix_world@v.co).z<pelvis_z+.04]
+                  and pelvis_z-.34<(o.matrix_world@v.co).z<pelvis_z+.08]
   front_y=min((p.y for p in pelvic_samples),default=-.08)
   # Identify the local anterior surface separately for each height, avoiding
   # global front thresholds that can select the belly instead of the pelvis.
