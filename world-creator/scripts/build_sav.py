@@ -11,7 +11,7 @@ def mat(name,rgb):
  p.inputs["Base Color"].default_value=(*rgb,1)
  p.inputs["Metallic"].default_value=0;p.inputs["Roughness"].default_value=.83
  return m
-skin=mat("warm skin",(.57,.35,.25));gold=mat("gold blonde",(.68,.48,.24));
+skin=mat("Sav warm golden complexion",(.69,.435,.325));gold=mat("Sav sandy blonde",(.69,.52,.32));
 parts=[]
 def ell(name,pos,sc,material,bone):
  bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=16,location=pos)
@@ -23,17 +23,26 @@ def ell(name,pos,sc,material,bone):
 # Single continuous torso surface; vertical weights blend across pelvis and spine.
 def torso():
  rings=[(.88,.085,.075),(.94,.142,.110),(1.02,.154,.117),(1.10,.120,.091),(1.18,.104,.080),(1.26,.122,.094),(1.35,.146,.109),(1.43,.145,.106),(1.49,.103,.083),(1.53,.065,.062)]
- verts=[];faces=[];count=32
- for z,rx,ry in rings:
+ # Smooth silhouette between anatomical landmarks.
+ def interp(a,b,c,d,t):
+  return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)
+ smooth=[]
+ for i in range(len(rings)-1):
+  p0=rings[max(0,i-1)];p1=rings[i];p2=rings[i+1];p3=rings[min(len(rings)-1,i+2)]
+  for k in range(5):
+   smooth.append(tuple(interp(p0[q],p1[q],p2[q],p3[q],k/5) for q in range(3)))
+ smooth.append(rings[-1])
+ verts=[];faces=[];count=48
+ for z,rx,ry in smooth:
   for j in range(count):
    a=2*math.pi*j/count
    verts.append((rx*math.cos(a),ry*math.sin(a),z))
- for i in range(len(rings)-1):
+ for i in range(len(smooth)-1):
   for j in range(count):
    k=i*count+j;n=i*count+(j+1)%count
    faces.append((k,n,n+count,k+count))
  faces.append(tuple(reversed(tuple(range(count)))))
- faces.append(tuple((len(rings)-1)*count+j for j in range(count)))
+ faces.append(tuple((len(smooth)-1)*count+j for j in range(count)))
  mesh=bpy.data.meshes.new("Sav continuous torso mesh");mesh.from_pydata(verts,[],faces);mesh.update()
  obj=bpy.data.objects.new("Sav continuous torso",mesh);bpy.context.collection.objects.link(obj)
  obj.data.materials.append(skin)
@@ -50,7 +59,7 @@ for side,label in ((1,"L"),(-1,"R")):
  ell(label+" upper arm",(.245*side,0,1.30),(.049,.049,.17),skin,label+"UpperArm")
  ell(label+" forearm",(.29*side,0,1.065),(.037,.037,.14),skin,label+"Forearm")
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- ell(label+" thigh",(.105*side,0,.80),(.084,.082,.235),skin,label+"Thigh")
+ ell(label+" thigh",(.105*side,0,.80),(.090,.085,.235),skin,label+"Thigh")
  ell(label+" shin",(.11*side,0,.37),(.048,.050,.205),skin,label+"Shin")
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
  for f in range(5):
