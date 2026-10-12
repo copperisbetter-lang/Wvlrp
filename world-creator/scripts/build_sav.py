@@ -44,7 +44,7 @@ def ell(name,pos,sc,material,bone):
  parts.append((o,bone))
 # Single continuous torso surface; vertical weights blend across pelvis and spine.
 def torso():
- rings=[(.88,.096,.078),(.94,.147,.105),(1.02,.149,.106),(1.10,.116,.083),(1.18,.100,.077),(1.26,.119,.093),(1.35,.143,.103),(1.43,.139,.101),(1.49,.099,.079),(1.53,.060,.055)]
+ rings=[(.88,.111,.090),(.94,.161,.116),(1.02,.165,.119),(1.10,.119,.087),(1.18,.100,.077),(1.26,.119,.093),(1.35,.143,.103),(1.43,.139,.101),(1.49,.099,.079),(1.53,.060,.055)]
  # Smooth silhouette between anatomical landmarks.
  def interp(a,b,c,d,t):
   return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t)
@@ -62,10 +62,10 @@ def torso():
    # Organic front chest projection and lower-abdominal soft tissue.
    # Front faces toward negative Y. Smooth falloff keeps one torso surface.
    front=max(0,-math.sin(a))
-   breast_height=math.exp(-((z-1.365)/.083)**2)
+   breast_height=math.exp(-((z-1.350)/.099)**2)
    breast_lobes=math.exp(-((abs(x)-.081)/.061)**2)
-   chest=0.070*breast_height*breast_lobes*front**1.5
-   lower_belly=0.019*math.exp(-((z-1.095)/.092)**2)*front
+   chest=0.086*breast_height*breast_lobes*front**1.5
+   lower_belly=0.024*math.exp(-((z-1.095)/.092)**2)*front
    # Integrated neutral external pelvic landmarks on the continuous torso.
    # Sculpt the existing skin vertices, never attach floating primitives.
    pelvic_z=math.exp(-((z-.912)/.046)**2)
@@ -252,7 +252,7 @@ def fuse_body_skin():
  for vg in list(merged.vertex_groups):merged.vertex_groups.remove(vg)
  for mod in list(merged.modifiers):
   if mod.type=="ARMATURE":merged.modifiers.remove(mod)
- merged.data.remesh_voxel_size=.012
+ merged.data.remesh_voxel_size=.006
  bpy.ops.object.voxel_remesh()
  groups={}
  for v in merged.data.vertices:
@@ -278,7 +278,7 @@ body=bpy.data.objects.get("Sav fused anatomical skin")
 if body:
  smooth=body.modifiers.new("Sav surface relaxation","SMOOTH")
  smooth.factor=1.15
- smooth.iterations=5
+ smooth.iterations=3
  bpy.context.view_layer.objects.active=body
  bpy.ops.object.select_all(action="DESELECT")
  body.select_set(True)
@@ -296,7 +296,7 @@ if body:
    outer=(math.exp(-((p.x-.024)/.014)**2)+math.exp(-((p.x+.024)/.014)**2))
    center=math.exp(-(p.x/.012)**2)
    # Raised paired contours separated by a restrained central recess.
-   p.y-=front_factor*vertical*(.016*outer-.006*center)
+   p.y-=front_factor*vertical*(.020*outer-.009*center)
  print("SAV_PELVIC_RELIEF_POST_FUSION",sum(1 for v in body.data.vertices if .865<v.co.z<.985 and abs(v.co.x)<.082 and v.co.y<-.045))
  # Repair blocky silhouette normals after voxel remeshing.
  for polygon in body.data.polygons:polygon.use_smooth=True
