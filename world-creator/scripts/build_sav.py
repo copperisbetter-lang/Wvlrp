@@ -81,9 +81,13 @@ def action(name,frames,pose):
    pb.rotation_euler=(0,0,0)
    if pb.name in pose:pb.rotation_euler=pose[pb.name](frame)
    pb.keyframe_insert(data_path="rotation_euler",frame=frame)
- if rig.animation_data and rig.animation_data.action:rig.animation_data.action.name=name
+ if rig.animation_data and rig.animation_data.action:
+  a=rig.animation_data.action
+  a.name=name
+  track=rig.animation_data.nla_tracks.new();track.name=name
+  track.strips.new(name,1,a)
+  rig.animation_data.action=None
  else:raise RuntimeError("No action")
- rig.animation_data.action=None
 action("Sav_idle",[1,24,48],{"Spine2":lambda f:(.018*math.sin(f*math.pi/24),0,0)})
 action("Sav_walk",[1,7,13,19,25],{
  "LThigh":lambda f:(.35*math.sin((f-1)*math.pi/12),0,0),
@@ -101,10 +105,9 @@ action("Sav_elbows_knees_pose_preview",[1,24],{
  "RUpperArm":lambda f:(.95*f/24,0,0),
  "LForearm":lambda f:(-1.2*f/24,0,0),
  "RForearm":lambda f:(-1.2*f/24,0,0)})
-# Preserve actions as NLA tracks for glTF export.
-for a in list(bpy.data.actions):
- track=rig.animation_data.nla_tracks.new();track.name=a.name
- track.strips.new(a.name,1,a)
-bpy.ops.object.select_all(action="SELECT")
-bpy.ops.export_scene.gltf(filepath=str(out.resolve()),export_format="GLB",export_animations=True,export_skins=True)
+# Actions are preserved in NLA tracks as each animation is created.\nbpy.ops.object.select_all(action="DESELECT")
+rig.select_set(True)
+for o,b in parts:o.select_set(True)
+bpy.context.view_layer.objects.active=rig
+bpy.ops.export_scene.gltf(filepath=str(out.resolve()),export_format="GLB",export_animations=True,export_skins=True,export_nla_strips=True,use_selection=True)
 print("SAV_PROTOTYPE_SUCCESS",len(rig.data.bones),out.stat().st_size)
