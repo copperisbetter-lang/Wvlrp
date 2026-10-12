@@ -49,7 +49,7 @@ if body not in meshes:meshes.append(body)
 for o in list(bpy.data.objects):
  if o.type=="MESH" and o not in meshes:bpy.data.objects.remove(o,do_unlink=True)
 # Transform MPFB character to match the Sav 1.8m skeleton.
-points=[o.matrix_world@v.co for o in meshes for v in o.data.vertices]
+points=[body.matrix_world@v.co for v in body.data.vertices]
 lo=min(p.z for p in points);hi=max(p.z for p in points)
 cx=(min(p.x for p in points)+max(p.x for p in points))*.5
 cy=(min(p.y for p in points)+max(p.y for p in points))*.5
@@ -80,6 +80,30 @@ for o in meshes:
    y-=front*lower*(.007*paired-.003*center)
    v.co=world.inverted_safe()@Vector((x,y,z))
  o.data.update()
+ # MPFB accessory proxies can carry an independent origin/offset.
+ # Align their world-space bounding center to the continuous body's head,
+ # rather than allowing a second face to float above the scalp.
+ if o != body and any(k in o.name.lower() for k in ("hair","eye","lash","brow","teeth")):
+  body_head=[body.matrix_world@v.co for v in body.data.vertices if (body.matrix_world@v.co).z>1.48]
+  if body_head:
+   head_top=max(p.z for p in body_head)
+   head_center=Vector((sum(p.x for p in body_head)/len(body_head),
+                       sum(p.y for p in body_head)/len(body_head),
+                       sum(p.z for p in body_head)/len(body_head)))
+   ap=[o.matrix_world@v.co for v in o.data.vertices]
+   if ap:
+    ac=Vector((sum(p.x for p in ap)/len(ap),sum(p.y for p in ap)/len(ap),sum(p.z for p in ap)/len(ap)))
+    label=o.name.lower()
+    if "hair" in label:
+     target=Vector((head_center.x,head_center.y+.015,head_top-.045))
+    elif "teeth" in label:
+     target=head_center+Vector((0,-.065,-.055))
+    else:
+     target=head_center+Vector((0,-.075,.020))
+    shift=target-ac
+    inv=o.matrix_world.inverted_safe()
+    for v in o.data.vertices:v.co=inv@(o.matrix_world@v.co+shift)
+    o.data.update()
  # Keep object world transforms stable when reparenting to the Sav armature.
  # Otherwise accessories can jump away from the face after export.
  world_before_parent=o.matrix_world.copy()
