@@ -4,12 +4,57 @@
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script></head><body><main><h1>The Wild · Avatar Forge</h1><p>Phone-first character workshop · Prototype 1</p>
 <section><h2>1. Character brief</h2><label>Character name<input id="name" placeholder="New character" maxlength="80"></label><label>Appearance and personality<textarea id="brief" placeholder="Age (adult), hair, face, skin, height, body proportions, outfit, expression…"></textarea></label><button id="copy">Copy reference-image prompt</button><small>Paste the prompt into ChatGPT to generate consistent front, back, and side character references.</small></section>
 <section><h2>2. Reference photographs</h2><p>Choose images from your phone. They stay on your device in this prototype.</p><div id="inputs"></div><div id="shots"></div></section>
-<section><h2>3. Actual 3D character</h2><p>Load a generated GLB here to inspect its geometry and texture. This is a real model viewer, not a 2D image pretending to be 3D.</p><label>Import GLB<input type="file" id="glb" accept=".glb,model/gltf-binary"></label><model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" alt="3D avatar preview"></model-viewer><p id="status">No GLB loaded yet.</p><button id="download" disabled>Download GLB</button><a href="../world-creator/">Open World Creator</a></section>
+<section><h2>3. Actual 3D character</h2><p>Load a generated GLB here to inspect its geometry and texture. This is a real model viewer, not a 2D image pretending to be 3D.</p><label>Import GLB<input type="file" id="glb" accept=".glb,model/gltf-binary"></label><model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" alt="3D avatar preview"></model-viewer><p id="status">No GLB loaded yet.</p><div id="audit" role="status" aria-live="polite"></div><label>Animation clip<select id="animation"><option value="">No animations loaded</option></select></label><button id="play" disabled>Play animation</button><button id="stop" disabled>Stop animation</button><button id="download" disabled>Download GLB</button><a href="../world-creator/">Open World Creator</a></section>
 <section><h2>4. Reconstruction + animation</h2><p><strong>Not yet connected.</strong> Photo-to-3D reconstruction, skeleton creation, skin weighting, and fluid motion require a GPU-backed processing service. This workshop will connect to that service when it is built and verified. An imported GLB may or may not already contain a skeleton.</p></section>
 </main><script>
-const $=id=>document.getElementById(id);let glbUrl=null,glbFile=null;
+const $=id=>document.getElementById(id);let glbUrl=null,glbFile=null;let auditData=null;
 for(const label of ['Front','Back','Left profile','Right profile','Face close-up']){const wrap=document.createElement('label');wrap.textContent=label;const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.addEventListener('change',()=>{const old=wrap.querySelector('img');if(old){URL.revokeObjectURL(old.src);old.remove()}if(inp.files[0]){const img=document.createElement('img');img.src=URL.createObjectURL(inp.files[0]);img.alt=label;wrap.append(img)}});wrap.append(inp);$('inputs').append(wrap)}
 $('copy').onclick=()=>{const prompt='Create consistent photorealistic full-body reference views of ONE adult character for 3D reconstruction. Name: '+($('name').value||'Unnamed')+'. Description: '+$('brief').value+'. Produce separate FRONT, BACK, LEFT PROFILE, RIGHT PROFILE and FACE CLOSE-UP views. Keep identical face, hair, outfit, proportions and neutral A-pose across full-body views. Even lighting, plain background, full feet visible, no perspective distortion.';navigator.clipboard?.writeText(prompt).then(()=>$('status').textContent='Reference prompt copied.').catch(()=>window.prompt('Copy prompt',prompt))};
-$('glb').onchange=()=>{const file=$('glb').files[0];if(!file)return;if(glbUrl)URL.revokeObjectURL(glbUrl);glbFile=file;glbUrl=URL.createObjectURL(file);$('viewer').src=glbUrl;$('download').disabled=false;$('status').textContent='Loaded '+file.name+'. Rotate with one finger; pinch to zoom. Rig and animations not verified.'};
+$('glb').onchange=async()=>{const file=$('glb').files[0];if(!file)return;try{auditData=await inspectGlb(file);renderAudit(auditData)}catch(error){$('status').textContent='Rejected: '+error.message;return}if(glbUrl)URL.revokeObjectURL(glbUrl);glbFile=file;glbUrl=URL.createObjectURL(file);$('viewer').src=glbUrl;$('download').disabled=false;$('status').textContent='Loaded '+file.name+'. Rotate with one finger; pinch to zoom. GLB parsed and structural audit completed; physical movement still requires visual verification.'};
 $('download').onclick=()=>{if(!glbFile)return;const a=document.createElement('a');a.href=glbUrl;a.download=glbFile.name;a.click()};
+
+async function inspectGlb(file){
+  const buffer=await file.arrayBuffer(),view=new DataView(buffer);
+  if(buffer.byteLength<20||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw Error('Not a valid GLB 2.0 file');
+  let offset=12,doc=null;
+  while(offset+8<=buffer.byteLength){
+    const size=view.getUint32(offset,true),type=view.getUint32(offset+4,true);offset+=8;
+    if(size>buffer.byteLength-offset)throw Error('Corrupt GLB chunk length');
+    if(type===0x4e4f534a){doc=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,offset,size)).replace(/\\u0000+$/,''));}
+    offset+=size;
+  }
+  if(!doc||!Array.isArray(doc.nodes))throw Error('Missing GLB scene nodes');
+  const nodes=doc.nodes,skins=doc.skins||[],animations=doc.animations||[],meshes=doc.meshes||[];
+  const joints=new Set(skins.flatMap(s=>s.joints||[]));
+  const jointNames=[...joints].map(i=>nodes[i]?.name||'joint '+i);
+  const countTriangles=meshes.flatMap(m=>m.primitives||[]).reduce((sum,p)=>{
+    if(p.mode!==undefined&&p.mode!==4)return sum;
+    const a=doc.accessors?.[p.indices??p.attributes?.POSITION];
+    return sum+(a?Math.floor(a.count/3):0);
+  },0);
+  const animatedJoints=new Set(animations.flatMap(a=>(a.channels||[]).map(ch=>ch.target?.node)).filter(n=>joints.has(n)));
+  const findings=[];
+  if(!skins.length)findings.push('No skeleton/skin found — static model');
+  else if(joints.size<15)findings.push('Only '+joints.size+' joints — likely insufficient for full-body motion');
+  else findings.push(joints.size+' skeletal joints detected');
+  if(!animations.length)findings.push('No embedded animations');
+  else findings.push(animations.length+' animation clips; '+animatedJoints.size+' joints animated');
+  const leg=jointNames.some(x=>/knee|shin|calf|lowerleg/i.test(x));
+  if(!leg)findings.push('Knee joint names not identified — inspect leg rig manually');
+  findings.push('This audit cannot certify correct joint orientation, body anatomy, skin weights, or collision-free movement');
+  return {meshes:meshes.length,triangles:countTriangles,skins:skins.length,joints:joints.size,animations:animations.map((a,i)=>({name:a.name||'Clip '+(i+1),index:i})),findings};
+}
+function renderAudit(data){
+  $('audit').replaceChildren();
+  const title=document.createElement('strong');title.textContent='3D asset audit';$('audit').append(title);
+  const summary=document.createElement('p');summary.textContent=data.meshes+' meshes · ~'+data.triangles.toLocaleString()+' triangles · '+data.skins+' skins · '+data.joints+' joints';$('audit').append(summary);
+  const list=document.createElement('ul');for(const finding of data.findings){const li=document.createElement('li');li.textContent=finding;list.append(li)}$('audit').append(list);
+  $('animation').replaceChildren();
+  if(!data.animations.length){const option=new Option('No animations in GLB','');$('animation').append(option)}
+  else for(const anim of data.animations)$('animation').append(new Option(anim.name,anim.name));
+  $('play').disabled=!data.animations.length;$('stop').disabled=!data.animations.length;
+}
+$('play').onclick=()=>{const v=$('viewer');v.animationName=$('animation').value;v.play?.()};
+$('stop').onclick=()=>$('viewer').pause?.();
+$('animation').onchange=()=>{const v=$('viewer');v.animationName=$('animation').value;if(!v.paused)v.play?.()};
 </script></body></html>
