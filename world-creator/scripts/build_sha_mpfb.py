@@ -192,11 +192,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         # Thin crown coverage, fitted close to the real head. This scalp
         # sheet is exclusively artificial HAIR geometry, not a head copy.
         # Swept long locks overlap its border so it has no visible hem.
-        if cap_rings:
-            prior=cap_rings[-1]
-            for k in range(sectors):
-                nxt=(k+1)%sectors
-                polygon((prior[k],ring[k],ring[nxt],prior[nxt]),1)
+        # Root guide only: do not render a continuous opaque scalp dome.
+        # The previous dome appeared as a rigid helmet in the phone preview.
+        # Overlapping tapered hair locks below supply visible coverage instead.
         cap_rings.append(ring)
     # Root locks ON the new hair-only crown surface. No transformed copies
     # of any face/head vertex are ever included in the exported hair mesh.
@@ -232,9 +230,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             previous=ring
     # Crown/back/side layers. Each staggered strand has a distinct endpoint,
     # thickness and wave phase; varied platinum shading avoids plastic shine.
-    for layer in range(5):
-        for i in range(68):
-            a=pi*(i+.37*(layer%2))/67
+    for layer in range(7):
+        for i in range(84):
+            a=pi*(i+.37*(layer%2))/83
             side=cos(a)
             back=max(0.,sin(a))
             root=near_root(Vector((xmid+height*(.054-.004*layer)*side,
