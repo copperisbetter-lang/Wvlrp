@@ -42,14 +42,14 @@ new GLTFLoader().load(modelUrl,g=>{
      const geometry=new THREE.SphereGeometry(1,24,32);
      const mesh=new THREE.Mesh(geometry,skinMat.clone());
      mesh.name='Sav_Pelvic_Anatomy_'+(side<0?'L':'R');
-     mesh.scale.set(.023,.016,.076);
+     mesh.scale.set(.0345,.024,.114);
      const worldPos=new THREE.Vector3(side*.029,frontY-.008,boneWorld.z-.092);
      pelvis.worldToLocal(worldPos);
      mesh.position.copy(worldPos);pelvis.add(mesh);return mesh;
    };
    makeFold(-1);makeFold(1);
    const seam=new THREE.Mesh(new THREE.SphereGeometry(1,16,24),new THREE.MeshStandardMaterial({color:0x87594e,roughness:1}));
-   seam.name='Sav_Pelvic_Midline';seam.scale.set(.004,.004,.049);
+   seam.name='Sav_Pelvic_Midline';seam.scale.set(.006,.006,.0735);
    const seamPos=new THREE.Vector3(0,frontY-.025,boneWorld.z-.097);pelvis.worldToLocal(seamPos);seam.position.copy(seamPos);pelvis.add(seam);
    status.textContent+=' | pelvic overlay attached to pelvis bone';
  }
