@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sav | WVLRP Character QA</title>
 <style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style></head>
-<body><header><strong>Sav — independent character QA</strong> <small>Prototype only; anatomy and reference likeness unapproved</small></header>
+<body><header><strong>Sav — independent character QA</strong> <small>Human shell inspection build; verify anatomy and reference likeness</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
 <footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button> <button id="wire">Wireframe off</button> <button id="bones">Joint markers off</button><p id="jointstatus"></p></section>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
@@ -20,7 +20,7 @@ function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);co
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
 let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
-const modelUrl='./assets/sav-prototype.glb?v=634ce626-fused-body';
+const modelUrl='./assets/sav-prototype.glb?v=30ab0f48-human-shell-refresh-20261012';
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
