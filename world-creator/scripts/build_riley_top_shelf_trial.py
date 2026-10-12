@@ -273,34 +273,7 @@ for v in body.data.vertices:
     if z>1.345 and .16<abs(x)<.36:
         upper_arm=smooth((abs(x)-.16)/.10)
         p.x*=1-.019*shoulder*upper_arm
-# The CC0 donor can develop severe triangular pinches when the full bust is
-# adjusted. Smooth the CHEST topology gently along existing mesh connectivity,
-# preserving broad gravity-soft volume but removing faceted / overlapping folds.
-# This is real sculpt relaxation, not a second mesh or a cover-up material.
-chest_neighbors=[set() for _ in body.data.vertices]
-for edge in body.data.edges:
-    a,b=edge.vertices
-    chest_neighbors[a].add(b);chest_neighbors[b].add(a)
-chest_mask={}
-for vertex in body.data.vertices:
-    q=vertex.co
-    if 1.115<q.z<1.445 and abs(q.x)<.265 and q.y<.055:
-        h=smooth((q.z-1.115)/.075)*(1-smooth((q.z-1.445)/.055))
-        xmask=1-smooth((abs(q.x)-.160)/.105)
-        ymask=smooth((.055-q.y)/.105)
-        weight=h*xmask*ymask
-        if weight>.005:chest_mask[vertex.index]=weight
-for iteration in range(8):
-    previous=[vert.co.copy() for vert in body.data.vertices]
-    for idx,w in chest_mask.items():
-        adjacent=chest_neighbors[idx]
-        if len(adjacent)<3:continue
-        avg=sum((previous[n] for n in adjacent),Vector())/len(adjacent)
-        # Tangential relaxation reduces stretched triangles without erasing
-        # the breast's lower curve and without shrinking all the ribs.
-        shift=(avg-previous[idx])
-        body.data.vertices[idx].co=previous[idx]+shift*(.36*w)
-print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",8)
+# Retain the donor's native chest triangles; no vertex relaxation passes.
 body.data.update()
 
 # Preserve the CC0 donor's original connected chest and abdomen topology.
