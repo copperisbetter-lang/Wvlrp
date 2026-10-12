@@ -1032,7 +1032,9 @@ def main():
                     if use_elbows:
                         loss+=950*max(0,.35-(hip.z-kz))**2
                     loss+=15*max(0,.035-ankle_back)**2
-                    loss+=10*max(0,.28-chest_forward)**2
+                    # Avoid backwards-facing torso when elevating the pelvis.
+                    loss+=6500*max(0,.26-chest_forward)**2
+                    loss+=5200*max(0,.20-(hip.y-mean([v.y for v in shoulder])))**2
                     loss+=5*max(0,torso_level-.20)**2
                     loss+=9*(elbow_drop-(.39 if use_elbows else .27))**2
                     loss+=6*(wrist_drop-(.39 if use_elbows else .46))**2
@@ -1075,6 +1077,30 @@ def main():
                             score=metrics()[0]+.0001*(angle-old)**2
                             if score<best[0]: best=(score,angle)
                         limb_set(limbs,best[1])
+                # Solve spine pitch independently of the raised hip and knees.
+                spine=bones["spine"]
+                base_spine=math.degrees(spine.rotation_euler.x)
+                spine_best=(float("inf"),base_spine)
+                for angle in range(-175,176,5):
+                    spine.rotation_euler.x=math.radians(angle)
+                    bpy.context.view_layer.update()
+                    hip_point=joint("hips")
+                    chest_point=joint("chest") or joint("spine",True)
+                    shoulder_points=[joint("larm"),joint("rarm")]
+                    chest_forward_trial=hip_point.y-chest_point.y
+                    shoulder_forward_trial=sum(hip_point.y-v.y for v in shoulder_points)/2
+                    torso_slope_trial=abs(chest_point.z-hip_point.z)
+                    score=8000*max(0,.25-chest_forward_trial)**2
+                    score+=8000*max(0,.20-shoulder_forward_trial)**2
+                    score+=1000*max(0,torso_slope_trial-.30)**2
+                    score+=.00002*(angle-base_spine)**2
+                    if score<spine_best[0]:
+                        spine_best=(score,angle)
+                spine.rotation_euler.x=math.radians(spine_best[1])
+                bpy.context.view_layer.update()
+                print("WVLRP_SHA_FORWARD_SPINE_FIT",name,
+                      "angle",round(spine_best[1],1),
+                      "chest_forward",round(joint("hips").y-(joint("chest") or joint("spine",True)).y,3))
                 if use_elbows:
                     # Raise the pelvis and lower the front torso by hinging
                     # the SPINE around the hip. Upper-arm X alone cannot
