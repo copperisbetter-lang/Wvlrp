@@ -12,10 +12,11 @@ from bl_ext.wvlrp_local.mpfb.services.exportservice import ExportService
 from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
 from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectProperties
 
-OUT=Path("world-creator/assets/sav-prototype.glb")
+RIG_SOURCE=Path("world-creator/assets/sav-prototype.glb")
+OUT=Path("world-creator/assets/sav-realistic-shell.glb")
 # Import the previously published Sav rig/animations as the source of truth.
 bpy.ops.object.select_all(action="SELECT");bpy.ops.object.delete(use_global=False)
-bpy.ops.import_scene.gltf(filepath=str(OUT.resolve()))
+bpy.ops.import_scene.gltf(filepath=str(RIG_SOURCE.resolve()))
 rig=next((o for o in bpy.data.objects if o.type=="ARMATURE" and len(o.data.bones)==56),None)
 if not rig: raise RuntimeError("Existing Sav 56-joint skeleton missing")
 for o in list(bpy.data.objects):
