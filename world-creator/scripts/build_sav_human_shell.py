@@ -134,8 +134,9 @@ for o in meshes:
   for (_,name),w in zip(picks,weights):
    groups[name].add([v.index],w/total,"REPLACE")
  arm=o.modifiers.new("Sav56 deform","ARMATURE");arm.object=rig
- o.parent=rig
- o.matrix_parent_inverse=rig.matrix_world.inverted_safe()
+ # Armature modifier performs deformation; do not also parent the mesh.
+ # Double parent transforms were displacing face accessories on playback.
+ o.parent=None
  o.matrix_world=world_before_parent
  for f in o.data.polygons:f.use_smooth=True
 assert len(body.data.vertices)>10000,"Human shell unexpectedly low detail"
