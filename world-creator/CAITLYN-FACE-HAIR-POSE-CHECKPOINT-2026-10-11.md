@@ -41,3 +41,14 @@ https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/build-caitlyn-mpf
 - Build diagnostics **elbows-and-knees**: individual knees/elbows Z [0.063, 0.063, 0.062, 0.061] m at ground 0.062 m; maximum support error 0.002 m; hips 0.213 m above knees; chest reaches forward 0.308 m. Forearm/palm heights roughly 0.013–0.025 m above elbow.
 - **Important limitation**: successful generation, published GLB, kinematic support and named clips are verified, but *live user phone WebGL visual execution is not yet independently observed.* Do NOT tell user the displayed animations are visually perfect until they test and show it. The hosted public link is https://wvlrp.com/world-creator/caitlyn-mpfb-trial.html?v=caitlyn-floor-pose-20261011-v4
 - Separately Blender's optional static PNG preview still fails with view_settings.look obsolete `Medium High Contrast` enum; this does **not** break GLB export. Could fix later without altering the rig.
+
+
+## October 11 evening — user reports smile works, BOTH floor poses still absent; hair still bad, requests temporary sundress
+- DO NOT claim phone-side hands-and-knees or elbows-and-knees proven. User directly confirmed neither worked even after GLB build #27. Smile morph **does** work.
+- Viewer pose handlers rewritten in `caitlyn-mpfb-trial.html`, commit `7516162`: floor pose button now holds the GLB clip's final frame and independently writes exported last bone transform keys. Removes fragile play/probe/stop/restart chain. Viewer has pose slider, camera side angle and status.
+- World Creator 3D pose selection also pins last joint keys, commit `d144829`; viewer/model URL cache keys updated.
+- Hair builder commit `9dcc3c6` replaces mathematical floating hemispherical wig cap with a surface offset of Caitlyn's **actual scalp faces** and anchors layered wave-lock roots to real scalp mesh vertices. Hair must be judged from phone front/side/rear after re-export.
+- User-approved temporary **sky-blue sleeveless sundress** added as a separate skeleton-skinned object by `add_temporary_sundress` in build script, commit `a8e5416`. No approved body geometry, skin or face proportions modified. Viewer adds Sundress on/off button in `0b1b571`; World Creator uses updated GLB URL via `d144829` and `94f3451`.
+- GitHub Actions build #29, run `38190812053`, was **still in progress** when last checked, not yet published/visually tested. Do not call dress/hair finished until GitHub build succeeds, GLB is committed, site refreshes, and phone testing shows correct appearance/pose.
+- Review: https://wvlrp.com/world-creator/caitlyn-mpfb-trial.html?v=caitlyn-blue-dress-pose-v6
+- Build: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/38190812053
