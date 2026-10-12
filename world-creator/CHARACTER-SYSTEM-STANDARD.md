@@ -30,3 +30,13 @@ Test joint count, hierarchy, GLB export, animation retargeting, smooth skinning,
 - Research/test meshes may contain complete adult anatomy as requested for evaluating modeling accuracy.
 - Public game meshes omit unnecessary intimate anatomy, are clothed and optimized for performance.
 - Both tracks reuse rig, animation, face/hair/skin design tools, and compatible non-intimate modular geometry.
+
+## Master clone architecture — approved October 12, 2026
+Create and validate **one canonical master human asset** containing both the continuous, manifold body surface and the 56-joint armature, authored and skinned together in a single build pipeline. This master is the source of truth for subsequent human character clones. Do not independently regenerate a different skeleton for each character.
+
+- Version master mesh, armature, bind/rest pose, naming, proportions metadata, and skin weights together.
+- Clone the master before modifying character-specific appearance. Character variants can adjust body proportions using compatible morph targets or controlled mesh edits, while retaining skeleton hierarchy, bone naming, attachment conventions and animations.
+- Keep face, hair, skin materials, garments and other optional parts in a compatible modular library. Ensure body geometry is continuous where anatomical continuity is required; modular accessories need not be fused into the body mesh.
+- Test every master revision for exactly 56 exported skin joints, smooth deformation, attachment continuity, walking, hands-and-knees, elbows-and-knees and floor contact before promoting it as a reusable template.
+- Keep research anatomy and public game geometry as distinct mesh variants, with the shared rig and animation contract.
+- The current Sav prototype is **not yet the approved master**. Promote a candidate only after export, visual and motion QA.
