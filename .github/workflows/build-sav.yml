@@ -1,9 +1,7 @@
 name: Build Sav 56-joint prototype
 on:
-  push:
-    paths:
-      - world-creator/scripts/build_sav.py
-      - .github/workflows/build-sav.yml
+  # Legacy mannequin builder must never overwrite the realistic human-shell GLB.
+  # Retain manual dispatch only for isolated diagnostics.
   workflow_dispatch:
 permissions:
   contents: write
@@ -36,6 +34,7 @@ jobs:
           print('SAV_GLB_VALID',len(b))
           PY
       - name: Publish prototype
+        if: false # Never replace the approved human-shell model
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
