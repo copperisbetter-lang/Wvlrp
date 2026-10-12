@@ -133,7 +133,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         eye_mid_x=(min(p.x for p in eye_pts)+max(p.x for p in eye_pts))*.5
     # An adult eye-to-crown distance is approximately 7% of stature.
     # Never place Caitlyn's top hair ABOVE an outlying basemesh vertex.
-    scalp_z=min(zhi+.008*height, eye_z+.068*height)
+    scalp_z=zhi-.009*height  # Crown is near body top; the old eye+.068*h cap started on the face.
     skull_band=[v for v in body_pts
                 if scalp_z-.038*height<v.z<scalp_z+.011*height
                 and abs(v.x-(eye_mid_x or 0.))<.10*height]
@@ -154,13 +154,15 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         return len(vertices)-1
     def polygon(inds,material):
         faces.append(tuple(inds));indexes.append(material)
-    # Fit the hair foundation to Caitlyn's ACTUAL scalp polygons. The old
-    # mathematical ellipsoid floated above the head, like a separate wig.
+    # Copy ONLY the upper crown, NOT the forehead, brows, nose or face.
+    # Previous build included 4,000 head polygons in a wig-colored duplicate
+    # face above her real photographed head. That caused the two-head defect.
+    # The geometry below this crown band is deliberately hair locks, not skin.
     scalp_ids={}
     for vert in body.data.vertices:
         q=body.matrix_world @ vert.co
-        if (q.z>eye_z+.025*height and
-            abs(q.x-xmid)<.085*height and abs(q.y-ymid)<.106*height):
+        if (q.z>max(eye_z+.118*height,zhi-.115*height) and
+            abs(q.x-xmid)<.082*height and abs(q.y-ymid)<.097*height):
             scalp_ids[vert.index]=q
     if len(scalp_ids)<85:
         raise RuntimeError("Caitlyn needs more true skull vertices for scalp cap")
@@ -180,11 +182,12 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         raise RuntimeError("Scalp-shell mesh is not attached to the head")
     def near_root(target):
         return min(scalp_roots,key=lambda q:(q-target).length_squared)
-    print("WVLRP_CAITLYN_SCALP_SURFACE_FIT",len(cap_map),len(faces))
+    print("WVLRP_CAITLYN_SCALP_SURFACE_FIT",len(cap_map),len(faces),
+          "crown_only",True,"lowest_allowed",round(max(eye_z+.118*height,zhi-.115*height),3))
     # Actual three-dimensional, tapered locks: no single flat curtain mesh.
     def lock(root,length,spread,wave,phase,width,tone):
         previous=None
-        sections=24;sides=5
+        sections=28;sides=5
         for step in range(sections):
             t=step/(sections-1)
             # Subtle waves build down the lengths, naturally tapered ends.
@@ -204,9 +207,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             previous=ring
     # Crown/back/side layers. Each staggered strand has a distinct endpoint,
     # thickness and wave phase; varied platinum shading avoids plastic shine.
-    for layer in range(4):
-        for i in range(55):
-            a=pi*(i+.37*(layer%2))/54
+    for layer in range(5):
+        for i in range(68):
+            a=pi*(i+.37*(layer%2))/67
             side=cos(a)
             back=max(0.,sin(a))
             root=near_root(Vector((xmid+height*(.054-.004*layer)*side,
@@ -215,7 +218,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             length=height*(.220+.040*layer+rng.uniform(-.028,.063))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
                  height*rng.uniform(.005,.013),rng.uniform(0,2*pi),
-                 height*rng.uniform(.0015,.00275),
+                 height*rng.uniform(.0028,.0040),
                  (i+layer*2)%4)
     # Separate wisps frame BOTH cheeks; none cover the eye openings.
     for side in (-1,1):
@@ -227,12 +230,12 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
                  height*rng.uniform(.003,.011),rng.uniform(0,2*pi),
-                 height*rng.uniform(.0012,.0021),(i+1)%4)
+                 height*rng.uniform(.0024,.0033),(i+1)%4)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
     hair_obj.data=mesh
-    shades=[(.86,.84,.79),(.95,.93,.86),(.79,.77,.73),(.91,.89,.82)]
+    shades=[(.91,.86,.74),(.97,.94,.82),(.81,.77,.68),(.94,.89,.77)]
     for j,rgb in enumerate(shades):
         mat=bpy.data.materials.new("Caitlyn platinum ash blonde flowing hair "+str(j))
         mat.use_nodes=True
@@ -274,18 +277,21 @@ def add_temporary_sundress(body, rig, export_root):
     def quad(indices,m=0):
         faces.append(tuple(indices));material_ids.append(m)
     n=48
-    # Pleated free-flowing skirt, shaped waist, scooped neckline.
-    rings=[(.35,.223,.171),(.39,.205,.166),(.47,.175,.135),
-           (.55,.145,.109),(.605,.121,.094),(.675,.131,.103),
-           (.765,.146,.115)]
+    # Lightweight fitted sundress: the old 0.223*height hem and 0.146*height
+    # neckline made a rigid blue cone wider than her shoulders. Keep the hem
+    # short enough for floor-pose visibility and the bodice close to the torso.
+    # These dimensions are intentionally smaller; Caitlyn body is unchanged.
+    rings=[(.47,.158,.122),(.50,.151,.117),(.55,.125,.105),
+           (.60,.096,.088),(.63,.091,.086),(.68,.108,.103),
+           (.728,.113,.102)]
     for k,(level,rx,ry) in enumerate(rings):
         ring=[]
         for j in range(n):
             angle=2*pi*j/n
-            wave=(1+.016*sin(12*angle)*(1 if k<3 else .2))
+            wave=(1+.028*sin(12*angle)*(1 if k<3 else .1))
             z=low+level*h
             if k==0:z+=.004*h*sin(12*angle)
-            if k==len(rings)-1:z-=.013*h*max(0,-sin(angle))
+            if k==len(rings)-1:z-=.010*h*max(0,-sin(angle))
             ring.append(point(cx+rx*h*wave*cos(angle),
                               cy+ry*h*wave*sin(angle),z))
         if rows:
@@ -297,22 +303,22 @@ def add_temporary_sundress(body, rig, export_root):
         rows.append(ring)
     # Two straps bridging the front neckline and upper back, over shoulders.
     for side in (-1,1):
-        x=cx+side*.087*h
-        path=[(x,cy-.082*h,low+.758*h),
-              (x,cy-.030*h,low+.854*h),
-              (x,cy+.026*h,low+.854*h),
-              (x,cy+.082*h,low+.758*h)]
+        x=cx+side*.080*h
+        path=[(x,cy-.085*h,low+.725*h),
+              (x,cy-.054*h,low+.794*h),
+              (x,cy+.054*h,low+.794*h),
+              (x,cy+.085*h,low+.725*h)]
         pairs=[]
         for x1,y1,z1 in path:
-            pairs.append((point(x1-.010*h,y1,z1),point(x1+.010*h,y1,z1)))
+            pairs.append((point(x1-.006*h,y1,z1),point(x1+.006*h,y1,z1)))
         for j in range(len(pairs)-1):
-            quad((pairs[j][0],pairs[j][1],pairs[j+1][1],pairs[j+1][0]),2)
+            quad((pairs[j][0],pairs[j][1],pairs[j+1][1],pairs[j+1][0]),0)
     # Cream-colored narrow waistband.
     for j in range(n):
         a=2*pi*j/n;b=2*pi*((j+1)%n)/n
         def waist(angle,zoff):
-            return point(cx+.121*h*cos(angle),cy+.094*h*sin(angle),
-                         low+.609*h+zoff*h)
+            return point(cx+.096*h*cos(angle),cy+.088*h*sin(angle),
+                         low+.628*h+zoff*h)
         quad((waist(a,-.009),waist(b,-.009),
               waist(b,.009),waist(a,.009)),2)
     mesh=bpy.data.meshes.new("Caitlyn removable summer dress cloth")
@@ -355,7 +361,7 @@ def add_temporary_sundress(body, rig, export_root):
     garment.parent=export_root
     garment.matrix_world=origin
     print("WVLRP_CAITLYN_SUNDRESS_BUILT",len(verts),len(faces),
-          "rigged",True)
+          "rigged",True,"hem_width_m",round(2*.158*h,3),"bodice_width_m",round(2*.113*h,3))
     return garment
 
 
@@ -1198,7 +1204,7 @@ def main():
         scene.render.engine="CYCLES";scene.cycles.samples=48
         scene.render.resolution_x=700;scene.render.resolution_y=950;scene.render.resolution_percentage=100
         scene.view_settings.view_transform="AgX"
-        scene.view_settings.look="Medium High Contrast"
+        scene.view_settings.look="AgX - Medium High Contrast"
         scene.view_settings.exposure=-.18
         scene.render.image_settings.file_format="PNG";scene.render.filepath=str(PNG)
         bpy.ops.render.render(write_still=True)
