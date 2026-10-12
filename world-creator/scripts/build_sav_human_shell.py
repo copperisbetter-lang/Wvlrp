@@ -109,6 +109,9 @@ for o in meshes:
    if abs(delta)>.001:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
   print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
+  # Assert the anatomical relief is not lost or absent in exported mesh.
+  if sculpted < 12:
+   raise RuntimeError("Sav realistic shell pelvic anatomy missing: refusing to publish")
   if sculpted<12:raise RuntimeError("Sav pelvic sculpt missed body topology")
  o.data.update()
  # MPFB accessory proxies can carry an independent origin/offset.
