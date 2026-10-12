@@ -76,6 +76,17 @@ for o in meshes:
   for v in o.data.vertices:
    p=world@v.co
    x,y,z=p.x,p.y,p.z
+   # Fuller soft bust: broad bilateral anterior volume with a lower
+   # gravity-biased pole. This is a rest-pose sculpt, not dynamic physics.
+   chest_z=pelvis_z+.395
+   breast_lobe=math.exp(-((abs(x)-.090)/.075)**2)
+   breast_height=math.exp(-((z-(chest_z-.018))/.112)**2)
+   chest_front=math.exp(-((y-front_y)/.22)**2)
+   if z>pelvis_z+.19:
+    y-=.021*breast_lobe*breast_height*chest_front
+    # A small downward bias softens the lower breast silhouette.
+    lower_pole=math.exp(-((z-(chest_z-.075))/.070)**2)
+    y-=.008*breast_lobe*lower_pole*chest_front
    hip_band=math.exp(-((z-(pelvis_z+.055))/.155)**2)
    x+=math.copysign(min(abs(x),.24)*.085*hip_band,x)
    # Bilateral anatomical contours are shaped directly on the body surface.
