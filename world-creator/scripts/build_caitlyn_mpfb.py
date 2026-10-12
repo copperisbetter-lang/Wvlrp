@@ -1,6 +1,6 @@
-"""WVLRP Caitlyn MPFB nude anatomical trial. Separate new adult game avatar.
+"""WVLRP Caitlyn MPFB avatar with optional sundress. Separate new adult game avatar.
 Uses MPFB CC0 anatomy/skin, real ash-platinum wavy hair, and Mixamo skeleton.
-No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requires visual QA.
+Separate non-destructive temporary dress. Does not change other avatars. Requires visual QA.
 """
 import bpy, os, sys, zipfile, json, math, traceback
 from pathlib import Path
@@ -255,6 +255,108 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     print("WVLRP_CAITLYN_FLOWING_STRAND_HAIR",len(vertices),len(faces),
           "head_bone",head_bone,"world_height",round(height,3),
           "removed_stock_cape",True)
+
+
+def add_temporary_sundress(body, rig, export_root):
+    """Independently skinned removable sleeveless blue summer dress.
+    Never change the underlying approved body or skeleton.
+    """
+    from math import pi,sin,cos
+    pts=[body.matrix_world @ v.co for v in body.data.vertices]
+    low=min(p.z for p in pts)
+    h=max(p.z for p in pts)-low
+    cx=(min(p.x for p in pts)+max(p.x for p in pts))*.5
+    core=[p for p in pts if low+.57*h<p.z<low+.74*h and abs(p.x-cx)<.06*h]
+    cy=sum(p.y for p in core)/len(core) if core else 0.
+    verts=[];faces=[];material_ids=[];rows=[]
+    def point(x,y,z):
+        verts.append((x,y,z));return len(verts)-1
+    def quad(indices,m=0):
+        faces.append(tuple(indices));material_ids.append(m)
+    n=48
+    # Pleated free-flowing skirt, shaped waist, scooped neckline.
+    rings=[(.35,.223,.171),(.39,.205,.166),(.47,.175,.135),
+           (.55,.145,.109),(.605,.121,.094),(.675,.131,.103),
+           (.765,.146,.115)]
+    for k,(level,rx,ry) in enumerate(rings):
+        ring=[]
+        for j in range(n):
+            angle=2*pi*j/n
+            wave=(1+.016*sin(12*angle)*(1 if k<3 else .2))
+            z=low+level*h
+            if k==0:z+=.004*h*sin(12*angle)
+            if k==len(rings)-1:z-=.013*h*max(0,-sin(angle))
+            ring.append(point(cx+rx*h*wave*cos(angle),
+                              cy+ry*h*wave*sin(angle),z))
+        if rows:
+            previous=rows[-1]
+            for j in range(n):
+                nxt=(j+1)%n
+                quad((previous[j],previous[nxt],ring[nxt],ring[j]),
+                     0 if j//6%2 else 1)
+        rows.append(ring)
+    # Two straps bridging the front neckline and upper back, over shoulders.
+    for side in (-1,1):
+        x=cx+side*.087*h
+        path=[(x,cy-.082*h,low+.758*h),
+              (x,cy-.030*h,low+.854*h),
+              (x,cy+.026*h,low+.854*h),
+              (x,cy+.082*h,low+.758*h)]
+        pairs=[]
+        for x1,y1,z1 in path:
+            pairs.append((point(x1-.010*h,y1,z1),point(x1+.010*h,y1,z1)))
+        for j in range(len(pairs)-1):
+            quad((pairs[j][0],pairs[j][1],pairs[j+1][1],pairs[j+1][0]),2)
+    # Cream-colored narrow waistband.
+    for j in range(n):
+        a=2*pi*j/n;b=2*pi*((j+1)%n)/n
+        def waist(angle,zoff):
+            return point(cx+.121*h*cos(angle),cy+.094*h*sin(angle),
+                         low+.609*h+zoff*h)
+        quad((waist(a,-.009),waist(b,-.009),
+              waist(b,.009),waist(a,.009)),2)
+    mesh=bpy.data.meshes.new("Caitlyn removable summer dress cloth")
+    mesh.from_pydata(verts,[],faces);mesh.update()
+    garment=bpy.data.objects.new("Caitlyn temporary sundress",mesh)
+    bpy.context.collection.objects.link(garment)
+    for name,rgb in [
+        ("Sundress blue cotton",(.39,.66,.83)),
+        ("Sundress pale blue cotton",(.43,.71,.87)),
+        ("Sundress ivory trim",(.94,.88,.73))
+    ]:
+        mat=bpy.data.materials.new(name)
+        mat.use_nodes=True;mat.diffuse_color=(*rgb,1.)
+        shader=mat.node_tree.nodes.get("Principled BSDF")
+        shader.inputs["Base Color"].default_value=(*rgb,1.)
+        shader.inputs["Roughness"].default_value=.9
+        mesh.materials.append(mat)
+    for face,mat_index in zip(mesh.polygons,material_ids):
+        face.material_index=mat_index;face.use_smooth=True
+    def normalized(name):
+        return ''.join(c for c in name.lower() if c.isalnum()).replace("mixamorig","")
+    matches={normalized(b.name):b.name for b in rig.data.bones}
+    def find(*names):
+        return next((matches[x] for x in names if x in matches),None)
+    hips=find("hips","pelvis")
+    spine=find("spine","spine1")
+    chest=find("spine2","upperchest","chest") or spine
+    if not hips or not spine:raise RuntimeError("Sundress armature hips/spine missing")
+    groups={name:garment.vertex_groups.new(name=name) for name in {hips,spine,chest}}
+    for index,(_,_,z) in enumerate(verts):
+        t=(z-low)/h
+        if t<=.605:weights={hips:1.}
+        elif t<.70:weights={hips:(.70-t)/.095,spine:(t-.605)/.095}
+        else:weights={spine:max(0,(.82-t)/.12),
+                       chest:min(1.,max(0,(t-.70)/.12))}
+        for bone,weight in weights.items():
+            if weight>0.0001:groups[bone].add([index],weight,"REPLACE")
+    garment.modifiers.new("Caitlyn dress skeleton follow","ARMATURE").object=rig
+    origin=garment.matrix_world.copy()
+    garment.parent=export_root
+    garment.matrix_world=origin
+    print("WVLRP_CAITLYN_SUNDRESS_BUILT",len(verts),len(faces),
+          "rigged",True)
+    return garment
 
 
 def soften_caitlyn_face_only(body):
@@ -635,6 +737,7 @@ def main():
                       if ob.type=="MESH" and "long01" in ob.name.lower()),None)
     replace_cape_with_layered_hair(export_hair,exp,rig,export_root)
     add_light_blue_eyes(export_root,exp,rig)
+    add_temporary_sundress(exp,rig,export_root)
 
     def normbone(name):
         return ''.join(c for c in name.lower() if c.isalnum()).replace("mixamorig","")
@@ -1070,7 +1173,7 @@ def main():
         for mesh in meta.get("meshes",[])), "Caitlyn smile morph did not export"
     names=[n.get("name","") for n in meta.get("nodes",[])]
     assert any("Caitlyn" in n for n in names), "Caitlyn body naming missing"
-    assert not any(("tank" in n.lower() or "shorts" in n.lower() or "dress" in n.lower()) for n in names), "Clothing accidentally exported"
+    assert any("temporary sundress" in n.lower() for n in names), "Temporary dress missing from GLB"
 
     # Best-effort reference preview; do not fail successfully exported GLB if display render fails.
     try:
