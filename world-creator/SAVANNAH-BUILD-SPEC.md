@@ -31,3 +31,6 @@ Each mesh vertex must have normalized, anatomically localized weights (max 4 inf
 - Anatomical torso sculpt must be actual mesh geometry, not shader-only illusion.
 - Visual reference comparison is required. A successful workflow alone is NOT approval.
 - Separate `savannah` GLB, build script, viewer and QA outputs; do not overwrite Riley's files.
+
+## User confirmation — complete anatomy (October 12, 2026)
+The adult character must be modeled with coherent anatomically accurate external geometry throughout, including rib cage, abdominal musculature, navel, pelvis, groin, inner thighs, knees, hands and feet. Avoid detached anatomy, artificial gaps, protruding skin surfaces, incorrect joint placement or material discontinuities. Validate both neutral and deeply flexed poses. This is a quality requirement, not a claim that the existing mesh is accurate.
