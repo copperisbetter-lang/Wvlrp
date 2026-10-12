@@ -168,9 +168,12 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
                  abs(q.y-ymid)<.030*height))
     if len(core)<25:
         raise RuntimeError("Hair crown centerline has too few mesh samples")
-    crown_top=core[int(.97*(len(core)-1))]+.002*height
-    hairline_z=eye_z+.049*height
-    if crown_top < hairline_z+.038*height:
+    # The MPFB head has a stray high-Z region ~11 cm above the photographed
+    # face; using the 97th-percentile skull height made a giant white helmet.
+    # Use the anatomically eye-anchored crown previously measured instead.
+    crown_top=scalp_z+.018*height
+    hairline_z=eye_z+.071*height
+    if crown_top < hairline_z+.022*height:
         raise RuntimeError("Caitlyn scalp landmarks are inconsistent")
     cap_rings=[]
     sectors=48
@@ -182,8 +185,8 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         ring=[]
         for k in range(sectors):
             az=2*math.pi*k/sectors
-            ring.append(p(Vector((xmid+height*.078*rad*math.cos(az),
-                 ymid+height*.091*rad*math.sin(az),level))))
+            ring.append(p(Vector((xmid+height*.058*rad*math.cos(az),
+                 ymid+height*.070*rad*math.sin(az),level))))
         if cap_rings:
             before=cap_rings[-1]
             for k in range(sectors):
@@ -231,7 +234,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             back=max(0.,sin(a))
             root=near_root(Vector((xmid+height*(.054-.004*layer)*side,
                          ymid+height*(.009+.047*back),
-                         scalp_z-height*(.045+.008*layer))))
+                         crown_top-height*(.016+.010*layer))))
             length=height*(.245+.026*layer+rng.uniform(-.018,.038))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
                  height*rng.uniform(.014,.024),rng.uniform(0,2*pi),
@@ -243,16 +246,30 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             t=i/22
             root=near_root(Vector((xmid+side*height*(.052+.008*t),
                          ymid-height*(.022-.011*t),
-                         scalp_z-height*(.050+.015*t))))
+                         crown_top-height*(.028+.016*t))))
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
                  height*rng.uniform(.012,.022),rng.uniform(0,2*pi),
                  height*rng.uniform(.0033,.0046),(i+1)%4)
+    # Swept front locks disguise the crown seam and form a soft center part.
+    # Unlike a rigid scalp helmet, these overlap the dome as flowing strands.
+    for side in (-1,1):
+        for i in range(34):
+            t=(i+.5)/34
+            root=near_root(Vector((xmid+side*height*(.006+.046*t),
+                  ymid-height*.038,
+                  crown_top-height*(.014+.015*t))))
+            lock(root,height*(.18+.12*t+rng.uniform(-.012,.015)),
+                 side*height*(.026+.019*t),
+                 height*rng.uniform(.013,.021),
+                 rng.uniform(0,2*pi),
+                 height*rng.uniform(.0041,.0050),
+                 (i+1)%4)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
     hair_obj.data=mesh
-    shades=[(.91,.86,.74),(.97,.94,.82),(.81,.77,.68),(.94,.89,.77)]
+    shades=[(.77,.73,.66),(.88,.85,.76),(.72,.68,.61),(.81,.78,.70)]
     for j,rgb in enumerate(shades):
         mat=bpy.data.materials.new("Caitlyn platinum ash blonde flowing hair "+str(j))
         mat.use_nodes=True
@@ -332,7 +349,7 @@ def add_temporary_sundress(body, rig, export_root):
         skin_r=near[int(.87*(len(near)-1))]
         return max(.035*h,skin_r)
     # Upper fitted bodice from chest to waist, then a gentle cloth skirt.
-    levels=(.385,.415,.455,.505,.555,.600,.630,.680,.728)
+    levels=(.385,.415,.455,.505,.555,.600,.630,.680,.707)
     # Evaluate once per cross-section; the hem gets a modest flare while
     # the bodice has only ~1.1 cm of ease above Caitlyn's actual skin.
     waist_profile=[cloth_radius(.610,2*math.pi*j/n) for j in range(n)]
@@ -343,10 +360,15 @@ def add_temporary_sundress(body, rig, export_root):
             real_skin=cloth_radius(max(level,.515),angle)
             if level>=.600:
                 radius=real_skin+.007*h
+                if level>.660:
+                    # At the clavicle the MPFB section includes shoulders
+                    # and upper arms. Don't turn that into giant dress wings.
+                    max_upper=(.108 if level>.690 else .119)*h
+                    radius=min(radius,max_upper)
             else:
                 flare=(.600-level)/(.600-.385)
                 radius=max(real_skin+.011*h,
-                    waist_profile[j]+(.035*h)*flare)
+                    waist_profile[j]+(.053*h)*flare)
             # Fabric folds only in the SKIRT, never distort the torso.
             if level<.60: radius*=1+.018*math.sin(10*angle)
             z=low+level*h
@@ -368,10 +390,10 @@ def add_temporary_sundress(body, rig, export_root):
     # Two straps bridging the front neckline and upper back, over shoulders.
     for side in (-1,1):
         x=cx+side*.080*h
-        path=[(x,cy-.089*h,low+.722*h),
-              (x,cy-.069*h,low+.765*h),
-              (x,cy-.018*h,low+.796*h),
-              (x,cy+.041*h,low+.792*h),
+        path=[(x,cy-.089*h,low+.706*h),
+              (x,cy-.069*h,low+.762*h),
+              (x,cy-.018*h,low+.785*h),
+              (x,cy+.041*h,low+.783*h),
               (x,cy+.085*h,low+.722*h)]
         pairs=[]
         for x1,y1,z1 in path:
