@@ -20,20 +20,20 @@ def ell(name,pos,sc,material,bone):
  o.data.materials.append(material)
  for face in o.data.polygons:face.use_smooth=True
  parts.append((o,bone))
-ell("pelvis",(0,0,1.01),(.19,.13,.16),skin,"Pelvis")
-ell("lower abdomen",(0,0,1.17),(.17,.12,.19),skin,"Spine1")
-ell("rib cage",(0,0,1.37),(.20,.13,.19),skin,"Spine3")
+ell("pelvis",(0,0,1.01),(.155,.12,.145),skin,"Pelvis")
+ell("lower abdomen",(0,0,1.17),(.145,.105,.175),skin,"Spine1")
+ell("rib cage",(0,0,1.37),(.165,.115,.175),skin,"Spine3")
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
-ell("head",(0,-.018,1.69),(.106,.089,.138),skin,"Head")
+ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
 ell("blonde swept up hair",(0,.018,1.785),(.111,.09,.067),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.084,.078,.066),gold,"Head")
 ell("navel",(0,-.12,1.15),(.013,.005,.017),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
- ell(label+" upper arm",(.245*side,0,1.30),(.075,.075,.17),skin,label+"UpperArm")
- ell(label+" forearm",(.29*side,0,1.065),(.055,.052,.14),skin,label+"Forearm")
+ ell(label+" upper arm",(.245*side,0,1.30),(.058,.058,.17),skin,label+"UpperArm")
+ ell(label+" forearm",(.29*side,0,1.065),(.043,.043,.14),skin,label+"Forearm")
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- ell(label+" thigh",(.105*side,0,.80),(.10,.11,.24),skin,label+"Thigh")
- ell(label+" shin",(.11*side,0,.37),(.069,.07,.21),skin,label+"Shin")
+ ell(label+" thigh",(.105*side,0,.80),(.083,.088,.24),skin,label+"Thigh")
+ ell(label+" shin",(.11*side,0,.37),(.056,.058,.21),skin,label+"Shin")
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
  for f in range(5):
   x=(.255+.021*f)*side
@@ -105,7 +105,8 @@ action("Sav_elbows_knees_pose_preview",[1,24],{
  "RUpperArm":lambda f:(.95*f/24,0,0),
  "LForearm":lambda f:(-1.2*f/24,0,0),
  "RForearm":lambda f:(-1.2*f/24,0,0)})
-# Actions are preserved in NLA tracks as each animation is created.\nbpy.ops.object.select_all(action="DESELECT")
+# Actions are preserved in NLA tracks as each animation is created.
+bpy.ops.object.select_all(action="DESELECT")
 rig.select_set(True)
 for o,b in parts:o.select_set(True)
 bpy.context.view_layer.objects.active=rig
