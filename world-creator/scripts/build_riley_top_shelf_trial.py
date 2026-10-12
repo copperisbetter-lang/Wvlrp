@@ -605,26 +605,30 @@ def bind(ob,kind):
             # Keep the central pelvis, groin and buttock surface on Hips.
             # Side-of-pelvis vertices previously jumped straight to Thigh,
             # causing triangular flaps during deep hip flexion.
-            if ax>.245 and .70<z<1.34:
-                # Wrists and fingers occupy this outer corridor. Previously
-                # z<.91 classified them as thighs, creating long finger spikes.
-                weights={side+"Hand":1.0} if z<.91 else {side+"Forearm":1.0}
-            elif z<.91 and ax>.055 and (z<.72 or ax>.175):
-                # Legs follow their own chain, with narrow joint blends.
-                if z>.79: weights={side+"Thigh":1.0}
+            # Distinguish arms from legs by vertical region AND distance to
+            # their real bone chains. X alone misclassifies fingers and hips.
+            arm_names=[side+"UpperArm",side+"Forearm",side+"Hand"]
+            leg_names=[side+"Thigh",side+"Shin",side+"Foot"]
+            arm_distance=min((p-(bones[n][0]+max(0,min(1,(p-bones[n][0]).dot(bones[n][1]-bones[n][0])/max((bones[n][1]-bones[n][0]).length_squared,1e-8)))*(bones[n][1]-bones[n][0]))).length for n in arm_names)
+            leg_distance=min((p-(bones[n][0]+max(0,min(1,(p-bones[n][0]).dot(bones[n][1]-bones[n][0])/max((bones[n][1]-bones[n][0]).length_squared,1e-8)))*(bones[n][1]-bones[n][0]))).length for n in leg_names)
+            if ax>.205 and z>.72 and arm_distance<leg_distance*.85:
+                if z>1.31: weights={side+"UpperArm":1.0}
+                elif z>1.105:
+                    t=smooth((z-1.105)/.10)
+                    weights={side+"UpperArm":t,side+"Forearm":1-t}
+                elif z>.88: weights={side+"Forearm":1.0}
+                else: weights={side+"Hand":1.0}
+            elif z<.91 and ax>.075 and (z<.77 or ax>.16):
+                # Protect central groin/hip skin from thigh-driven spikes.
+                if z>.79: weights={"Hips":1.0}
+                elif z>.69:
+                    t=smooth((z-.69)/.10)
+                    weights={side+"Thigh":1-t,"Hips":t}
                 elif z>.46:
                     t=smooth((z-.46)/.09)
                     weights={side+"Thigh":t,side+"Shin":1-t}
                 elif z>.15: weights={side+"Shin":1.0}
                 else: weights={side+"Foot":1.0}
-            elif ax>.235 and z>.84:
-                # Arm vertices stay on the arm chain, never the chest.
-                if z>1.31: weights={side+"UpperArm":1.0}
-                elif z>1.10:
-                    t=smooth((z-1.10)/.07)
-                    weights={side+"UpperArm":t,side+"Forearm":1-t}
-                elif z>.87: weights={side+"Forearm":1.0}
-                else: weights={side+"Hand":1.0}
             else:
                 # Stable chest/abdomen skinning prevents bust and belly
                 # from being dragged into shoulder and thigh rotations.
