@@ -54,7 +54,16 @@ def torso():
  for z,rx,ry in smooth:
   for j in range(count):
    a=2*math.pi*j/count
-   verts.append((rx*math.cos(a),ry*math.sin(a),z))
+   x=rx*math.cos(a);y=ry*math.sin(a)
+   # Organic front chest projection and lower-abdominal soft tissue.
+   # Front faces toward negative Y. Smooth falloff keeps one torso surface.
+   front=max(0,-math.sin(a))
+   breast_height=math.exp(-((z-1.365)/.083)**2)
+   breast_lobes=math.exp(-((abs(x)-.081)/.061)**2)
+   chest=0.046*breast_height*breast_lobes*front**1.5
+   lower_belly=0.013*math.exp(-((z-1.095)/.082)**2)*front
+   y-=chest+lower_belly
+   verts.append((x,y,z))
  for i in range(len(smooth)-1):
   for j in range(count):
    k=i*count+j;n=i*count+(j+1)%count
@@ -99,6 +108,11 @@ ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
 ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
 ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
+# Anatomical detail is intentionally subtle and non-erotic. Geometry is
+# attached to pelvis and evaluated in movement QA; not a final sculpt.
+ell("lower pelvic soft tissue",(0,-.090,.916),(.056,.018,.039),skin,"Pelvis")
+ell("left external pelvic fold",(.019,-.108,.894),(.014,.010,.033),skin,"Pelvis")
+ell("right external pelvic fold",(-.019,-.108,.894),(.014,.010,.033),skin,"Pelvis")
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
  socket(label+" shoulder transition",(.185*side,0,1.43),(.072,.085,.083),"Spine4",label+"UpperArm")
