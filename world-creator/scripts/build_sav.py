@@ -12,6 +12,10 @@ def mat(name,rgb):
  p.inputs["Metallic"].default_value=0;p.inputs["Roughness"].default_value=.83
  return m
 skin=mat("Sav warm golden complexion",(.69,.435,.325));gold=mat("Sav sandy blonde",(.69,.52,.32));
+# GLB-compatible node colors: use the same PBR material on ALL skin meshes.
+# Per-object vertex-color multiplication previously made torso and limbs render
+# in different tones (and could wash out on export). Keep material unified.
+
 # Subtle per-vertex complexion variation for continuous torso; avoids flat plastic color.
 def tone_torso(obj):
  import random
@@ -103,16 +107,17 @@ def socket(name,center,scale,parent,child):
  parts.append((o,("socket",parent,child,center)))
  return o
 # Torso receives vertex-color tonal variation; limb materials remain neutral until unified mesh.
-tone_torso(torso_mesh)
+# Uniform PBR skin throughout: no torso-only color attribute shader.
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
 ell("head",(0,-.018,1.69),(.099,.083,.128),skin,"Head")
 ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
 # Anatomical detail is intentionally subtle and non-erotic. Geometry is
 # attached to pelvis and evaluated in movement QA; not a final sculpt.
-ell("lower pelvic soft tissue",(0,-.090,.916),(.056,.018,.039),skin,"Pelvis")
-ell("left external pelvic fold",(.019,-.108,.894),(.014,.010,.033),skin,"Pelvis")
-ell("right external pelvic fold",(-.019,-.108,.894),(.014,.010,.033),skin,"Pelvis")
+# Remove floating lower-pelvis capsule; continuous torso/hip mesh is next.
+# Do not use separate protruding capsules for external pelvic folds.
+# Pelvic anatomical detail requires a continuous sculpted surface, not floating
+# ellipsoids that read as spikes in front/side views.
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
  socket(label+" shoulder transition",(.185*side,0,1.43),(.072,.085,.083),"Spine4",label+"UpperArm")
