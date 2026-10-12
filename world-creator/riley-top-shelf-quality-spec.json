@@ -1,0 +1,41 @@
+{
+  "name": "Riley Top Shelf",
+  "adult": true,
+  "status": "TARGET SPECIFICATION — NOT VERIFIED OR APPROVED",
+  "isolation": "Separate from original Riley, Sha, Amy, Caitlyn, Chrissy, Mason",
+  "appearance": {
+    "goal": "Stunning, believable, natural-looking adult woman; girl-next-door outdoorsy character; realistic anatomy rather than exaggerated or disconnected geometry",
+    "height_cm": 170,
+    "bust_cm": 112,
+    "waist_cm": 70,
+    "hips_cm": 88,
+    "face": "Preserve approved Riley face; smooth anatomically continuous head-neck-shoulder transition",
+    "skin": "UV-compatible realistic warm photographic skin with consistent face neck torso arms legs and hands; no pale body mismatch",
+    "hair": "Long layered natural blonde hair attached to scalp with realistic movement",
+    "body": "Continuous full anatomical mesh, natural soft contours, realistic shoulder arms chest waist hips pelvis thighs knees hands and feet; no protrusions or holes"
+  },
+  "engineering": {
+    "rig": "Use validated MPFB/MakeHuman-compatible skeleton and original anatomical weights where possible; avoid crude coordinate-threshold vertex weighting",
+    "skin_weights": "Normalize all vertices, inspect bone influences at shoulders chest pelvis groin elbows knees wrists ankles and fingers; no stray bone weights",
+    "geometry": "Check manifold continuity, mesh islands, clipping, normals and deformation across all poses",
+    "animation_tests": [
+      "neutral standing",
+      "walk",
+      "bend at hips",
+      "kneel",
+      "hands and knees with ground contact",
+      "elbows and knees with ground contact"
+    ],
+    "visual_tests": [
+      "front",
+      "back",
+      "left side",
+      "right side",
+      "overhead",
+      "close-up face",
+      "each animation at multiple frames"
+    ],
+    "approval_gate": "Never label anatomically perfect or approved without verified GLB rebuild, deformation tests, and user visual approval"
+  },
+  "notes": "This JSON records the required target. It does not itself rebuild or repair the GLB."
+}
