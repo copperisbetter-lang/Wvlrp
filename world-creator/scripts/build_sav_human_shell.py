@@ -75,9 +75,9 @@ for o in meshes:
    # Restrict sculpt to the forward-facing lower pelvis, not the rear.
    front=max(0.0,min(1.0,(-y-.015)/.10))
    lower=math.exp(-((z-(pelvis_z-.075))/.080)**2)
-   paired=math.exp(-((abs(x)-.015)/.012)**2)
-   center=math.exp(-(x/.008)**2)
-   y-=front*lower*(.007*paired-.003*center)
+   paired=math.exp(-((abs(x)-.019)/.025)**2)
+   center=math.exp(-(x/.018)**2)
+   y-=front*lower*(.0025*paired-.0015*center)
    v.co=world.inverted_safe()@Vector((x,y,z))
  o.data.update()
  # MPFB accessory proxies can carry an independent origin/offset.
@@ -121,6 +121,7 @@ for o in meshes:
    continue
   nearest=[]
   for b in rig.data.bones:
+   if o == body and ("Finger" in b.name or b.name in ("Jaw",) or "Palm" in b.name):continue
    a=rig.matrix_world@b.head_local;c=rig.matrix_world@b.tail_local
    d=c-a
    t=max(0,min(1,(p-a).dot(d)/max(d.length_squared,1e-9)))
@@ -134,6 +135,7 @@ for o in meshes:
    groups[name].add([v.index],w/total,"REPLACE")
  arm=o.modifiers.new("Sav56 deform","ARMATURE");arm.object=rig
  o.parent=rig
+ o.matrix_parent_inverse=rig.matrix_world.inverted_safe()
  o.matrix_world=world_before_parent
  for f in o.data.polygons:f.use_smooth=True
 assert len(body.data.vertices)>10000,"Human shell unexpectedly low detail"
