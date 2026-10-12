@@ -86,7 +86,7 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   amy:"./assets/amy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
-  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-face-hair-pose-b58e4b6",
+  caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-blue-dress-floor-pose-v6",
   mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
@@ -550,7 +550,26 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
         const standing=o.pose==="standing";
         clip.start(standing,1,clip.from,clip.to,false);
         // Hold articulated end pose for inspection instead of returning to idle.
-        if(!standing){clip.goToFrame(clip.to);clip.pause();}
+        if(!standing){
+           clip.goToFrame(clip.to);clip.pause();
+           // Force the real last bone transforms as a fallback for Android
+           // WebGL sessions that lose a one-shot Babylon animation's hold.
+           for(const track of clip.targetedAnimations||[]){
+             const anim=track.animation,target=track.target,keys=anim?.getKeys?.();
+             if(!target||!keys?.length)continue;
+             const value=keys[keys.length-1].value;
+             const parts=(anim.targetProperty||"").split(".");
+             let holder=target;
+             for(const key of parts.slice(0,-1))holder=holder?.[key];
+             const field=parts[parts.length-1];
+             if(!holder||!field||value==null)continue;
+             try{
+               const v=value?.clone?value.clone():value;
+               if(holder[field]?.copyFrom&&typeof v==="object")holder[field].copyFrom(v);
+               else holder[field]=v;
+             }catch(_){/* unsupported imported bone property */}
+           }
+         }
       }else{
         const idle=animations.find(a=>/idle/i.test(a.name))||animations[0];
         if(idle)idle.start(true,1,idle.from,idle.to,false);
