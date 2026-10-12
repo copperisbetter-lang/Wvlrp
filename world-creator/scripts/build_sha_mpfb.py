@@ -1026,7 +1026,8 @@ def main():
                     # Reward raised hips and tucked-under knees strongly,
                     # while preserving the much better hands/knees fit.
                     target_hip=.43 if use_elbows else .43
-                    loss+=360*(hip.z-kz-target_hip)**2
+                    loss+=2400*(hip.z-kz-target_hip)**2
+                    loss+=5000*max(0,.20-(hip.z-kz))**2
                     loss+=1600*(knee_back-.015)**2
                     if use_elbows:
                         loss+=950*max(0,.35-(hip.z-kz))**2
@@ -1055,18 +1056,18 @@ def main():
                 # All angular adjustments act symmetrically; no snapped or
                 # backward-facing knee, no broken asymmetrical shoulders.
                 choices=[
-                    (("hips",),[45,55,65,75,85,95]),
+                    (("hips",),[-150,-120,-90,-60,-30,0,30,45,60,75,90,105,120,150]),
                     (("lthigh","rthigh"),[-135,-120,-105,-90,-75,-60,-45,-30,-15,15,30,45,60,75]),
                     (("lshin","rshin"),[-120,-105,-90,-75,75,90,105,120]),
                     (("larm","rarm"),[-140,-115,-90,-70,-50,-30,0,30,50,70,90]),
                     (("lforearm","rforearm"),[-130,-100,-75,-50,-25,0,25,50,75,100,130])
                 ]
                 # Use two deliberate passes, then finer joint adjustments.
-                for iteration in range(6):
+                for iteration in range(8):
                     for limbs,candidates in choices:
                         old=math.degrees(bones[limbs[0]].rotation_euler.x)
                         if iteration>=2:
-                            step=12 if iteration==2 else 6 if iteration==3 else 3 if iteration==4 else 1
+                            step=15 if iteration==2 else 8 if iteration==3 else 4 if iteration==4 else 2 if iteration==5 else 1
                             candidates=[old-2*step,old-step,old,old+step,old+2*step]
                         best=(float("inf"),old)
                         for angle in candidates:
