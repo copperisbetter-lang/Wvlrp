@@ -1351,6 +1351,14 @@ def main():
                   ("larm",0,-90),("rarm",0,-90),
                   ("lforearm",0,90),("rforearm",0,90),
                   ("neck",0,-8),("head",0,5)],-.34)])
+    # Supine starfish pose: back to floor, arms and legs spread wide.
+    # Independent animation; no changes to the existing five poses.
+    build_pose("Sha LieOnBackSpread",[
+        rest,(42,[("hips",0,-90),
+                  ("larm",2,-80),("rarm",2,80),
+                  ("lthigh",2,-24),("rthigh",2,24),
+                  ("lforearm",0,0),("rforearm",0,0),
+                  ("lshin",0,0),("rshin",0,0)],-.78)])
     rig.animation_data.action=None
     for existing_track in rig.animation_data.nla_tracks:
         existing_track.mute=False
