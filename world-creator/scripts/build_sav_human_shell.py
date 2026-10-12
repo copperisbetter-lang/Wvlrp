@@ -2,6 +2,8 @@
 import bpy, math
 from pathlib import Path
 from mathutils import Vector
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_amy_mpfb import load_system_pack, add_asset
 from bl_ext.wvlrp_local.mpfb.services.humanservice import HumanService
 from bl_ext.wvlrp_local.mpfb.services.targetservice import TargetService
