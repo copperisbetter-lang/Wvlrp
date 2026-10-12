@@ -8,15 +8,23 @@ import os, uuid, json, shutil, subprocess, shlex, struct, threading
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, Header, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 ROOT=Path(os.environ.get("FORGE_WORKDIR","/tmp/wild-avatar-forge")).resolve()
 ROOT.mkdir(parents=True,exist_ok=True)
 TOKEN=os.environ.get("FORGE_TOKEN")
 MAX_IMAGE=12*1024*1024
-app=FastAPI(title="The Wild Avatar Forge",version="0.2.0")
+app=FastAPI(title="The Wild Avatar Forge",version="0.3.0")
+app.add_middleware(CORSMiddleware,allow_origins=["https://wvlrp.com","https://www.wvlrp.com"],allow_credentials=False,allow_methods=["GET","POST","DELETE"],allow_headers=["Authorization","Content-Type"])
 VALID_VIEWS={"front","back","left","right","face"}
 JOBS={}
+for state_file in ROOT.glob("*/state.json"):
+    try:
+        saved=json.loads(state_file.read_text())
+        if saved["state"]=="processing":saved={"state":"interrupted","message":"Server restarted during processing; resubmit job"}
+        JOBS[state_file.parent.name]={**saved,"folder":str(state_file.parent)}
+    except (OSError,ValueError,KeyError):pass
 def save_state(jid,state,message):
     job=JOBS.get(jid)
     if job is None:return
@@ -88,6 +96,7 @@ async def create_job(front:UploadFile=File(...),back:UploadFile=File(...),
         raise
     (folder/"manifest.json").write_text(json.dumps({"name":name,"description":description,"views":sorted(VALID_VIEWS)}))
     JOBS[jid]={"state":"awaiting_worker","message":"Photos staged; GPU worker not configured","folder":str(folder)}
+    save_state(jid,"awaiting_worker","Photos staged; GPU worker not configured")
     if os.environ.get("FORGE_WORKER_COMMAND","").strip():
         threading.Thread(target=run_worker,args=(jid,),daemon=True).start()
     return JobInfo(id=jid,state=JOBS[jid]["state"],message=JOBS[jid]["message"])
