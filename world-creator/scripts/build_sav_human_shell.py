@@ -65,27 +65,34 @@ for o in meshes:
  # adding detached capsules, so skin remains continuous during articulation.
  if o == body:
   pelvis_z=(rig.matrix_world@rig.data.bones["Pelvis"].head_local).z
+  # Identify the anterior pelvic surface from the actual normalized mesh.
+  # The previous fixed Y threshold missed the body surface on some builds.
+  pelvic_samples=[world@v.co for v in o.data.vertices
+                  if abs((world@v.co).x)<.075
+                  and pelvis_z-.18<(world@v.co).z<pelvis_z+.04]
+  front_y=min((p.y for p in pelvic_samples),default=-.08)
+  print("SAV_PELVIC_SCULPT_REFERENCE",round(pelvis_z,4),round(front_y,4),len(pelvic_samples))
+  sculpted=0
   for v in o.data.vertices:
    p=world@v.co
    x,y,z=p.x,p.y,p.z
-   # Slightly widen the hip silhouette, tapering to the waist and thighs.
    hip_band=math.exp(-((z-(pelvis_z+.055))/.155)**2)
    x+=math.copysign(min(abs(x),.24)*.085*hip_band,x)
-   # Pelvic surface relief: central shallow cleft and soft paired folds.
-   # Restrict sculpt to the forward-facing lower pelvis, not the rear.
-   front=max(0.0,min(1.0,(-y-.015)/.10))
-   lower=math.exp(-((z-(pelvis_z-.075))/.080)**2)
-   paired=math.exp(-((abs(x)-.019)/.025)**2)
-   center=math.exp(-(x/.018)**2)
-   # Adult external vulvar landmarks: a restrained central groove
-   # framed by bilateral soft tissue, sculpted in the original surface.
-   # Broad Gaussian profiles avoid needle-like protrusions.
-   labial_zone=math.exp(-((z-(pelvis_z-.085))/.055)**2)
-   outer_folds=math.exp(-((abs(x)-.023)/.018)**2)
-   midline=math.exp(-(x/.010)**2)
-   y-=front*lower*(.0025*paired-.0015*center)
-   y-=front*labial_zone*(.0035*outer_folds-.0020*midline)
+   # Bilateral anatomical contours are shaped directly on the body surface.
+   # No independent accessory mesh means no disconnected protruding capsules.
+   front=math.exp(-((y-front_y)/.075)**2)
+   z_center=pelvis_z-.09
+   vertical=math.exp(-((z-z_center)/.078)**4)
+   outer=math.exp(-((abs(x)-.027)/.018)**2)
+   inner=math.exp(-((abs(x)-.010)/.009)**2)
+   groove=math.exp(-(x/.006)**2)
+   # Outer labial relief, softer inner folds, and a recessed midline.
+   delta=front*vertical*(.011*outer+.005*inner-.005*groove)
+   y-=delta
+   if abs(delta)>.001:sculpted+=1
    v.co=world.inverted_safe()@Vector((x,y,z))
+  print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
+  if sculpted<12:raise RuntimeError("Sav pelvic sculpt missed body topology")
  o.data.update()
  # MPFB accessory proxies can carry an independent origin/offset.
  # Align their world-space bounding center to the continuous body's head,
