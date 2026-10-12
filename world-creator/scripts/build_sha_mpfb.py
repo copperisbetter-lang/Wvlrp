@@ -1026,7 +1026,7 @@ def main():
                     target_hip=.43 if use_elbows else .43
                     loss+=2400*(hip.z-kz-target_hip)**2
                     loss+=5000*max(0,.20-(hip.z-kz))**2
-                    loss+=1600*(knee_back-.015)**2
+                    loss+=16000*(knee_back-.015)**2
                     if use_elbows:
                         loss+=950*max(0,.35-(hip.z-kz))**2
                     loss+=25000*sum(max(0,.12-(ankles[i].y-knee[i].y))**2 for i in (0,1))
