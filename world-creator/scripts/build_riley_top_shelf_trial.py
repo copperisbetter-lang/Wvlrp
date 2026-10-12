@@ -330,8 +330,15 @@ def facial_skin_rgb():
                     if .2<sum(rgb)/3<.95:return rgb
     return (.79,.64,.56)
 
-complexion=facial_skin_rgb()
-print("RILEY_FACE_SKIN_REFERENCE",tuple(round(v,4) for v in complexion))
+face_complexion=facial_skin_rgb()
+# The source face uses a textured, shaded material; using its raw texture
+# pixels as an untextured body Base Color renders noticeably chalkier.
+# Compensate for the missing facial texture/occlusion with a warmer,
+# deeper skin base, shared by body and the neck bridge.
+complexion=tuple(max(.0,min(1.0,c*f)) for c,f in
+                 zip(face_complexion,(.80,.73,.70)))
+print("RILEY_FACE_SKIN_REFERENCE",tuple(round(v,4) for v in face_complexion))
+print("RILEY_BODY_WARM_TONE_CORRECTION",tuple(round(v,4) for v in complexion))
 skin=bpy.data.materials.new("Riley complexion matched continuous mannequin skin")
 skin.use_nodes=True
 bs=skin.node_tree.nodes.get("Principled BSDF")
