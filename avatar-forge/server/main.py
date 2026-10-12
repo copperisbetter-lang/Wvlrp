@@ -6,6 +6,7 @@ A reconstruction worker must be configured separately; no fake model generation.
 from __future__ import annotations
 import os, uuid, json, shutil, subprocess, shlex, struct, threading
 from pathlib import Path
+from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, Header, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,7 +57,7 @@ class JobInfo(BaseModel):
     message:str
     download_ready:bool=False
 
-def authorize(authorization:str|None):
+def authorize(authorization:Optional[str]):
     if not TOKEN or authorization != "Bearer "+TOKEN:
         raise HTTPException(401,"Avatar Forge access token required")
 
@@ -83,7 +84,7 @@ def health():
 async def create_job(front:UploadFile=File(...),back:UploadFile=File(...),
                      left:UploadFile=File(...),right:UploadFile=File(...),
                      face:UploadFile=File(...),name:str=Form("New avatar"),
-                     description:str=Form(""),authorization:str|None=Header(None)):
+                     description:str=Form(""),authorization:Optional[str]=Header(None)):
     authorize(authorization)
     if len(name)>80 or len(description)>5000:raise HTTPException(422,"Text too long")
     jid=uuid.uuid4().hex
@@ -102,14 +103,14 @@ async def create_job(front:UploadFile=File(...),back:UploadFile=File(...),
     return JobInfo(id=jid,state=JOBS[jid]["state"],message=JOBS[jid]["message"])
 
 @app.get("/jobs/{jid}",response_model=JobInfo)
-def job_status(jid:str,authorization:str|None=Header(None)):
+def job_status(jid:str,authorization:Optional[str]=Header(None)):
     authorize(authorization)
     if jid not in JOBS:raise HTTPException(404,"Unknown job")
     j=JOBS[jid]
     return JobInfo(id=jid,state=j["state"],message=j["message"],download_ready=(ROOT/jid/"avatar.glb").exists())
 
 @app.get("/jobs/{jid}/download")
-def download(jid:str,authorization:str|None=Header(None)):
+def download(jid:str,authorization:Optional[str]=Header(None)):
     authorize(authorization)
     if jid not in JOBS:raise HTTPException(404,"Unknown job")
     file=ROOT/jid/"avatar.glb"
@@ -117,7 +118,7 @@ def download(jid:str,authorization:str|None=Header(None)):
     return FileResponse(file,media_type="model/gltf-binary",filename=f"wild-{jid}.glb")
 
 @app.delete("/jobs/{jid}")
-def delete_job(jid:str,authorization:str|None=Header(None)):
+def delete_job(jid:str,authorization:Optional[str]=Header(None)):
     authorize(authorization)
     if jid not in JOBS:raise HTTPException(404,"Unknown job")
     if JOBS[jid]["state"]=="processing":raise HTTPException(409,"Worker still processing")
