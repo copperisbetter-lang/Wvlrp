@@ -1,6 +1,6 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
-  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER
+  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER
 } from "./world-core.js";
 import { makeFigureBuilder } from "./character-models.js?v=mason-fallback-v1";
 
@@ -80,6 +80,7 @@ let gesture=null,photoUrl=null;
 const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
+try {if(addSha(world).length){world.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(world));}}catch(err){console.warn("Sha installation",err);}
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
 const BUILTIN_CHARACTER_GLB=Object.freeze({
   riley:RILEY_RIGGED_GLB,
@@ -87,7 +88,8 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   // Christy in the world uses the previously saved Chrissy source model.
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
   caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-fit-blue-dress-waves-v12",
-  mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2"
+  mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2",
+  sha:"./assets/sha-mpfb-trial.glb?v=sha-20261012-v1"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -140,7 +142,7 @@ function setSelection(o) {
   $("hair").value=o.hair||"brown";
   $("outfit").value=o.outfit||"ranger";
   $("pose").value=o.pose||"standing";
-  $("characterPreset").value=["riley","amy","chrissy","caitlyn","mason"].includes(o.modelKey)?o.modelKey:"";
+  $("characterPreset").value=["riley","amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey)?o.modelKey:"";
   $("wildlifeFields").hidden=!(o.type==="deer"||o.type==="animal");
   $("npcFields").hidden=o.type!=="npc";
   for(const el of $("objectForm").querySelectorAll("input:not(#photo),select"))el.disabled=!!o.locked;
@@ -231,7 +233,7 @@ function drawMap() {
     ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);
     ctx.fillStyle=colors[o.type]||"#fff";ctx.fill();
     ctx.lineWidth=selectedId===o.id?3:1.5;ctx.strokeStyle=selectedId===o.id?"#fff":"#18251b";ctx.stroke();
-    if(o.type==="anchor"||["amy","chrissy","caitlyn","mason"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
+    if(o.type==="anchor"||["amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
       ctx.font=(o.type==="anchor"?"bold 12px":"11px")+" system-ui";
       const text=o.name||o.type,tw=ctx.measureText(text).width;
       ctx.fillStyle="#071711da";ctx.fillRect(p.x+11,p.y-10,tw+10,20);
@@ -476,7 +478,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     roots.forEach(m=>m.parent=node);
     // A kneeling person should stay shorter than her standing height.
     const isRiley=o.modelKey==="riley";
-    const isMPFB=["amy","chrissy","caitlyn","mason"].includes(o.modelKey);
+    const isMPFB=["amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey);
     // Bone animation changes the pose, not the base mesh or measured height.
     const naturalHeight=o.modelKey==="mason"?1.82:1.70;
     const scale=Math.min(100,naturalHeight/(maxY-minY));
@@ -719,7 +721,7 @@ function findOrAddBuiltInCharacter(modelKey){
   let person=world.objects.find(o=>o.type==="npc"&&o.modelKey===modelKey);
   if(!person){
     const base=TEST_CHARACTER_STARTERS.find(o=>o.modelKey===modelKey)||
-      (modelKey==="caitlyn"?CAITLYN_STARTER:modelKey==="mason"?MASON_STARTER:null);
+      (modelKey==="caitlyn"?CAITLYN_STARTER:modelKey==="mason"?MASON_STARTER:modelKey==="sha"?SHA_STARTER:null);
     if(!base||world.objects.length>=5000){status("No room for character");return;}
     person={...base};world.objects.push(person);
   }
@@ -731,6 +733,8 @@ $("findAmy").onclick=()=>findOrAddBuiltInCharacter("amy");
 $("findChristy").onclick=()=>findOrAddBuiltInCharacter("chrissy");
 $("findCaitlyn").onclick=()=>findOrAddBuiltInCharacter("caitlyn");
 $("findMason").onclick=()=>findOrAddBuiltInCharacter("mason");
+$("findSha").onclick=()=>findOrAddBuiltInCharacter("sha");
+if(new URLSearchParams(location.search).get("focus")==="sha")window.addEventListener("load",()=>setTimeout(()=>findOrAddBuiltInCharacter("sha"),500));
 function setCaitlynPose(pose){
   const o=selected();
   if(!o||o.type!=="npc"||o.modelKey!=="caitlyn"){
