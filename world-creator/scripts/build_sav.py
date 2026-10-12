@@ -141,6 +141,13 @@ for side,label in ((1,"L"),(-1,"R")):
  bone(label+"Foot",(.11*side,-.03,.09),(.11*side,-.17,.08),label+"Ankle")
 bpy.ops.object.mode_set(mode="OBJECT")
 assert len(rig.data.bones)==56,len(rig.data.bones)
+# Verify each elbow and knee is represented by one connected surface.
+for label in ("L","R"):
+ for part in ("joined arm","joined leg"):
+  obj=bpy.data.objects.get(label+" "+part)
+  assert obj and obj.type=="MESH",label+" "+part+" missing"
+  assert len(obj.data.polygons)>100,label+" "+part+" insufficient geometry"
+print("SAV_CONTINUOUS_LIMB_MESHES_VERIFIED")
 for o,b in parts:
  if isinstance(b,tuple) and b[0]=="socket":
   _,parent,child,center=b
