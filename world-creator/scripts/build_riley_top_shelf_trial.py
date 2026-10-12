@@ -675,33 +675,34 @@ def bind(ob,kind):
             t=smooth((p.z-head_cut+.008)/.115)
             weights={"Neck":1-t,"Head":t}
         else:
-            z=p.z;x=p.x;side="L" if x>=0 else "R"
-            ax=abs(x)
-            wleg=1-smooth((z-.84)/.19)
-            warm=smooth((ax-.177)/.104)*smooth((z-1.02)/.12)
-            warm*=1-smooth((z-1.43)/.06)
-            wcore=max(0,1-max(wleg,warm))
-            weights={}
-            if wleg>.001:
-                leg=[side+"Thigh",side+"Shin",side+"Foot",side+"Toe"]
-                vals=[segment_weight(p,n) for n in leg]
-                s=sum(vals)
-                for n,vv in zip(leg,vals):weights[n]=vv*wleg/s
-            if warm>.001:
-                upper=[side+"Shoulder",side+"UpperArm",side+"Forearm",side+"Hand"]
-                vals=[segment_weight(p,n) for n in upper]
-                s=sum(vals)
-                for n,vv in zip(upper,vals):weights[n]=weights.get(n,0)+vv*warm/s
-            if wcore>.001:
-                spine=["Hips","Spine","Chest","Neck"]
-                vals=[segment_weight(p,n) for n in spine]
-                s=sum(vals)
-                for n,vv in zip(spine,vals):weights[n]=weights.get(n,0)+vv*wcore/s
-            if z>head_cut-.12 and abs(x)<.13 and abs(p.y)<.145:
-                # Anatomical donor's upper neck must travel with the face base.
-                w=smooth((z-head_cut+.12)/.12)
-                weights={n:vv*(1-w) for n,vv in weights.items()}
-                weights["Neck"]=weights.get("Neck",0)+w
+            # Anatomical regions must not blend with unrelated limbs.
+            # Previous distance-to-bone weighting pulled chest vertices
+            # toward arms and thighs, collapsing the torso in the viewer.
+            z=p.z;x=p.x;ax=abs(x)
+            side="L" if x>=0 else "R"
+            if z<.91 and ax>.055:
+                # Legs follow their own chain, with narrow joint blends.
+                if z>.79: weights={side+"Thigh":1.0}
+                elif z>.46:
+                    t=smooth((z-.46)/.09)
+                    weights={side+"Thigh":t,side+"Shin":1-t}
+                elif z>.15: weights={side+"Shin":1.0}
+                else: weights={side+"Foot":1.0}
+            elif ax>.235 and z>.84:
+                # Arm vertices stay on the arm chain, never the chest.
+                if z>1.31: weights={side+"UpperArm":1.0}
+                elif z>1.10:
+                    t=smooth((z-1.10)/.07)
+                    weights={side+"UpperArm":t,side+"Forearm":1-t}
+                elif z>.87: weights={side+"Forearm":1.0}
+                else: weights={side+"Hand":1.0}
+            else:
+                # Stable chest/abdomen skinning prevents bust and belly
+                # from being dragged into shoulder and thigh rotations.
+                if z>1.395: weights={"Neck":1.0}
+                elif z>1.17: weights={"Chest":1.0}
+                elif z>1.015: weights={"Spine":1.0}
+                else: weights={"Hips":1.0}
         total=sum(weights.values())
         if total<=0:weights={"Hips":1};total=1
         best=sorted(weights.items(),key=lambda kv:kv[1],reverse=True)[:4]
