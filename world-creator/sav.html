@@ -30,28 +30,6 @@ new GLTFLoader().load(modelUrl,g=>{
  const meshReport=skinMeshes.map(o=>o.name+':'+(o.geometry?.attributes?.position?.count||0)).join(', '); const vertexTotal=skinMeshes.reduce((n,o)=>n+(o.geometry?.attributes?.position?.count||0),0); status.textContent='Sav GLB inspection | '+unique.length+' joints | '+clips.length+' clips | '+skinMeshes.length+' skinned meshes | '+vertexTotal.toLocaleString()+' vertices'; console.info('Sav mesh audit',meshReport); if(vertexTotal<10000)status.textContent+=' | WARNING: LOW DETAIL / OLD PROTOTYPE';
  if(unique.length!==56)status.textContent+=' | JOINT COUNT FAILURE';
  g.scene.traverse(o=>{if(o.isBone&&unique.includes(o.name)&&!bones.has(o.name)){bones.set(o.name,o);rest.set(o.name,o.rotation.clone());}});
- // Debug-only pelvic locator: world coordinates are converted through the
- // actual bone's world matrix after the glTF scene has been attached.
- const pelvis=bones.get('Pelvis');
- if(pelvis){
-   g.scene.updateMatrixWorld(true);
-   pelvis.updateWorldMatrix(true,false);
-   const center=new THREE.Vector3();
-   pelvis.getWorldPosition(center);
-   const marker=new THREE.Mesh(
-     new THREE.SphereGeometry(.035,20,12),
-     new THREE.MeshBasicMaterial({color:0x00ff55,depthTest:false})
-   );
-   marker.name='Sav_Pelvis_Locator';
-   marker.renderOrder=100;
-   const markerWorld=center.clone().add(new THREE.Vector3(0,0,.10));
-   pelvis.worldToLocal(markerWorld);
-   marker.position.copy(markerWorld);
-   pelvis.add(marker);
-   pelvis.updateWorldMatrix(true,true);
-   console.info('Sav pelvis locator',center.toArray(),marker.getWorldPosition(new THREE.Vector3()).toArray());
-   status.textContent+=' | green pelvis locator active';
- }
  const select=document.getElementById('joint');for(const name of [...bones.keys()].sort()){const option=document.createElement('option');option.value=name;option.textContent=name;select.append(option);}
  select.value=bones.has('LUpperArm')?'LUpperArm':[...bones.keys()][0];selectJoint(select.value);document.getElementById('jointstatus').textContent=bones.size+' joints available';
  play('idle');
