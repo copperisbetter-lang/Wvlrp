@@ -605,7 +605,11 @@ def bind(ob,kind):
             # Keep the central pelvis, groin and buttock surface on Hips.
             # Side-of-pelvis vertices previously jumped straight to Thigh,
             # causing triangular flaps during deep hip flexion.
-            if z<.91 and ax>.055 and (z<.72 or ax>.175):
+            if ax>.245 and .70<z<1.34:
+                # Wrists and fingers occupy this outer corridor. Previously
+                # z<.91 classified them as thighs, creating long finger spikes.
+                weights={side+"Hand":1.0} if z<.91 else {side+"Forearm":1.0}
+            elif z<.91 and ax>.055 and (z<.72 or ax>.175):
                 # Legs follow their own chain, with narrow joint blends.
                 if z>.79: weights={side+"Thigh":1.0}
                 elif z>.46:
