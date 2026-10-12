@@ -284,6 +284,20 @@ if body:
  body.select_set(True)
  # Apply only the smoothing modifier, keeping the armature live.
  bpy.ops.object.modifier_apply(modifier=smooth.name)
+ # Reapply pelvic anatomical relief AFTER voxel fusion and smoothing.
+ # Earlier sculpt was erased by the .012m voxel remesh and five smoothing passes.
+ # Modify the fused skinned surface directly; do not add separate floating meshes.
+ from mathutils import Vector
+ for v in body.data.vertices:
+  p=v.co
+  if .865 < p.z < .985 and abs(p.x)<.082 and p.y<-.045:
+   front_factor=max(0.0,min(1.0,(-p.y-.045)/.065))
+   vertical=math.exp(-((p.z-.915)/.038)**2)
+   outer=(math.exp(-((p.x-.024)/.014)**2)+math.exp(-((p.x+.024)/.014)**2))
+   center=math.exp(-(p.x/.012)**2)
+   # Raised paired contours separated by a restrained central recess.
+   p.y-=front_factor*vertical*(.016*outer-.006*center)
+ print("SAV_PELVIC_RELIEF_POST_FUSION",sum(1 for v in body.data.vertices if .865<v.co.z<.985 and abs(v.co.x)<.082 and v.co.y<-.045))
  # Repair blocky silhouette normals after voxel remeshing.
  for polygon in body.data.polygons:polygon.use_smooth=True
  print("SAV_BODY_SURFACE_RELAXED",len(body.data.vertices))
