@@ -1211,18 +1211,33 @@ def main():
                 # Rest ground is recorded from rigged feet in neutral standing.
                 # It may differ slightly from the mesh soles on individual rigs.
                 rest_ground=rig_ground_z
-                original=bones["hips"].location.z
-                bones["hips"].location.z=original+.10
+                # MPFB/Mixamo hip local Z is not necessarily world vertical.
+                # Probe all local translation axes and solve using the one
+                # that actually changes world-space knee/hand contact height.
+                original_location=bones["hips"].location.copy()
+                best_axis=None
+                best_slope=0.0
+                for axis in range(3):
+                    bones["hips"].location=original_location.copy()
+                    bones["hips"].location[axis]+=0.10
+                    bpy.context.view_layer.update()
+                    sample_knee=[joint("lshin"),joint("rshin")]
+                    sample_contact=([joint("lforearm"),joint("rforearm")] if use_elbows
+                        else [joint("lhand",True) or joint("lforearm",True),
+                              joint("rhand",True) or joint("rforearm",True)])
+                    sample_z=sum(v.z for v in sample_knee+sample_contact)/4
+                    candidate_slope=(sample_z-contact_z)/0.10
+                    if abs(candidate_slope)>abs(best_slope):
+                        best_axis,best_slope=axis,candidate_slope
+                bones["hips"].location=original_location.copy()
                 bpy.context.view_layer.update()
-                sample_knee=[joint("lshin"),joint("rshin")]
-                sample_contact=([joint("lforearm"),joint("rforearm")] if use_elbows
-                    else [joint("lhand",True) or joint("lforearm",True),
-                          joint("rhand",True) or joint("rforearm",True)])
-                sample_z=sum(v.z for v in sample_knee+sample_contact)/4
-                slope=(sample_z-contact_z)/.10
-                if abs(slope)<.03: raise RuntimeError("Sha hip vertical control cannot reach floor")
-                corrected=original+(rest_ground-contact_z)/slope
-                bones["hips"].location.z=corrected
+                if best_axis is None or abs(best_slope)<0.03:
+                    raise RuntimeError("Sha hip translation has no usable world-vertical axis")
+                corrected=original_location[best_axis]+(rest_ground-contact_z)/best_slope
+                bones["hips"].location[best_axis]=corrected
+                bpy.context.view_layer.update()
+                print("WVLRP_SHA_HIP_VERTICAL_AXIS",name,best_axis,
+                      "response",round(best_slope,4))
                 _,error,hip,knee,contacts,wrists=metrics()
                 print("WVLRP_SHA_GROUNDED_POSE",name,
                       "contacts_height",[round(v.z,3) for v in knee+contacts],
