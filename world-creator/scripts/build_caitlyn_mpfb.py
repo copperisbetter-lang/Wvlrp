@@ -187,11 +187,8 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             az=2*math.pi*k/sectors
             ring.append(p(Vector((xmid+height*.058*rad*math.cos(az),
                  ymid+height*.070*rad*math.sin(az),level))))
-        if cap_rings:
-            before=cap_rings[-1]
-            for k in range(sectors):
-                nxt=(k+1)%sectors
-                polygon((before[k],ring[k],ring[nxt],before[nxt]),0)
+        # Scaffold ONLY: keep scalp anchors, but no helmet polygons.
+        # Visible hair is made exclusively of curved hair locks below.
         cap_rings.append(ring)
     # Root locks ON the new hair-only crown surface. No transformed copies
     # of any face/head vertex are ever included in the exported hair mesh.
@@ -256,20 +253,59 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     for side in (-1,1):
         for i in range(34):
             t=(i+.5)/34
-            root=near_root(Vector((xmid+side*height*(.006+.046*t),
-                  ymid-height*.038,
-                  crown_top-height*(.014+.015*t))))
+            root=near_root(Vector((xmid+side*height*(.045+.018*t),
+                  ymid-height*.023,
+                  crown_top-height*(.023+.012*t))))
             lock(root,height*(.18+.12*t+rng.uniform(-.012,.015)),
-                 side*height*(.026+.019*t),
+                 side*height*(.011+.017*t),
                  height*rng.uniform(.013,.021),
                  rng.uniform(0,2*pi),
                  height*rng.uniform(.0041,.0050),
                  (i+1)%4)
+    # Narrow swept-over-crown plaits REPLACE the previous opaque helmet.
+    # Sweep outward while ABOVE her forehead, then fall beside the cheeks,
+    # leaving the light-blue eyes and mouth unobstructed.
+    for side in (-1,1):
+        for i in range(62):
+            q=(i+.5)/62
+            part_x=side*height*(.002+.008*(i%5)/5)
+            y0=ymid+height*(-.033+.096*q)
+            root=near_root(Vector((xmid+part_x,y0,crown_top)))
+            prior=None
+            sections=31;sides=5
+            phase=rng.uniform(0,2*math.pi)
+            length=height*(.19+.08*q+rng.uniform(-.011,.018))
+            spread=height*(.013+.01*q)
+            for step in range(sections):
+                t=step/(sections-1)
+                sweep=min(1.,t/.24)
+                eased=sweep*sweep*(3-2*sweep)
+                tail=max(0.,(t-.24)/.76)
+                center=Vector((root.x+side*height*.067*eased+
+                                side*spread*tail+
+                                height*.007*math.sin(4.5*math.pi*tail+phase)*tail,
+                    root.y+height*.018*eased+height*.012*tail,
+                    root.z-height*.044*eased-length*tail))
+                width=height*(.0047+.0016*(i%4)/4)
+                width*=max(.10,(1.-t)**.85)
+                ring=[]
+                for k in range(sides):
+                    a=2*math.pi*k/sides
+                    ring.append(p(center+Vector((width*math.cos(a),
+                              width*.72*math.sin(a),0))))
+                if prior:
+                    for k in range(sides):
+                        nxt=(k+1)%sides
+                        polygon((prior[k],prior[nxt],ring[nxt],ring[k]),
+                                (i+int(q*3))%4)
+                prior=ring
+    print("WVLRP_CAITLYN_NO_HELMET_HAIR",
+          "crown_strands",124,"opaque_crown_faces",0)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
     hair_obj.data=mesh
-    shades=[(.77,.73,.66),(.88,.85,.76),(.72,.68,.61),(.81,.78,.70)]
+    shades=[(.64,.60,.53),(.78,.74,.65),(.67,.63,.55),(.74,.70,.61)]
     for j,rgb in enumerate(shades):
         mat=bpy.data.materials.new("Caitlyn platinum ash blonde flowing hair "+str(j))
         mat.use_nodes=True
