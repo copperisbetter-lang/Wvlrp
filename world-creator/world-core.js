@@ -77,7 +77,7 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
-    modelKey:["riley","amy","chrissy","caitlyn","mason"].includes(o.modelKey)?o.modelKey:"",
+    modelKey:["riley","amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey)?o.modelKey:"",
     pose:["standing","bend","crouch","allfours","elbows"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
@@ -166,3 +166,7 @@ export function spawnDeer(world,count,atX,atY,groupSize=4) {
 export function connectionRule() {
   return "Every generated path segment joins a connected network of loops: no procedural dead-end paths.";
 }
+
+// Sha is an independent adult test avatar, kept separate from all existing models.
+export const SHA_STARTER=Object.freeze({id:"npc-sha-wild",type:"npc",name:"Sha (test)",modelKey:"sha",x:-46,y:-37,gender:"woman",skin:"tan",hair:"black",hairStyle:"long",face:"oval",body:"slim",outfit:"mannequin",pose:"standing"});
+export function addSha(world){if(world.objects.some(o=>o.id===SHA_STARTER.id||(o.type==="npc"&&o.modelKey==="sha")))return [];const person={...SHA_STARTER};world.objects.push(person);return [person];}
