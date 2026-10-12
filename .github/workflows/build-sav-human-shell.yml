@@ -63,7 +63,7 @@ jobs:
           python3 - <<'PY'
           import struct,json
           from pathlib import Path
-          p=Path('world-creator/assets/sav-prototype.glb')
+          p=Path('world-creator/assets/sav-realistic-shell.glb')
           data=p.read_bytes()
           assert data[:4]==b'glTF' and len(data)==struct.unpack_from('<I',data,8)[0]
           length,kind=struct.unpack_from('<II',data,12)
@@ -81,9 +81,9 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/sav-prototype.glb
+          git add world-creator/assets/sav-realistic-shell.glb
           if [ -f world-creator/assets/sav-shell-preview.png ]; then
-            git add world-creator/assets/amy-mpfb-trial-preview.png
+            git add world-creator/assets/sav-shell-preview.png
           fi
           if ! git diff --cached --quiet; then
             git commit -m "Publish Sav realistic human shell with 56-joint rig"
@@ -97,7 +97,7 @@ jobs:
           name: sav-human-shell-report
           path: |
             /tmp/sav-shell-build.log
-            world-creator/assets/sav-prototype.glb
+            world-creator/assets/sav-realistic-shell.glb
             world-creator/assets/amy-mpfb-trial-preview.png
           if-no-files-found: ignore
           retention-days: 7
