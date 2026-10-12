@@ -264,6 +264,21 @@ def fuse_body_skin():
  parts.append((merged,"already_weighted"))
  print("SAV_FUSED_SKIN",len(merged.data.vertices),len(groups))
 fuse_body_skin()
+# Smooth the fused body at the mesh level to eliminate the last spherical
+# socket seams without disturbing the underlying 56-bone armature.
+body=bpy.data.objects.get("Sav fused anatomical skin")
+if body:
+ smooth=body.modifiers.new("Sav surface relaxation","SMOOTH")
+ smooth.factor=1.15
+ smooth.iterations=5
+ bpy.context.view_layer.objects.active=body
+ bpy.ops.object.select_all(action="DESELECT")
+ body.select_set(True)
+ # Apply only the smoothing modifier, keeping the armature live.
+ bpy.ops.object.modifier_apply(modifier=smooth.name)
+ # Repair blocky silhouette normals after voxel remeshing.
+ for polygon in body.data.polygons:polygon.use_smooth=True
+ print("SAV_BODY_SURFACE_RELAXED",len(body.data.vertices))
 # Pose keyframes on armature; skeletal prototype, not final physically correct floor poses.
 def action(name,frames,pose,root=None):
  for pb in rig.pose.bones:pb.rotation_mode="XYZ"
