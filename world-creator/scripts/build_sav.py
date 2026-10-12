@@ -66,7 +66,15 @@ def torso():
    breast_lobes=math.exp(-((abs(x)-.081)/.061)**2)
    chest=0.070*breast_height*breast_lobes*front**1.5
    lower_belly=0.019*math.exp(-((z-1.095)/.092)**2)*front
-   y-=chest+lower_belly
+   # Integrated neutral external pelvic landmarks on the continuous torso.
+   # Sculpt the existing skin vertices, never attach floating primitives.
+   pelvic_z=math.exp(-((z-.912)/.046)**2)
+   midline=math.exp(-(x/.041)**2)
+   paired_folds=(math.exp(-((x-.020)/.013)**2)+math.exp(-((x+.020)/.013)**2))
+   front_pelvis=front**3 * pelvic_z
+   outer_volume=.012*paired_folds*front_pelvis
+   central_recess=.006*midline*front_pelvis
+   y-=chest+lower_belly+outer_volume-central_recess
    verts.append((x,y,z))
  for i in range(len(smooth)-1):
   for j in range(count):
