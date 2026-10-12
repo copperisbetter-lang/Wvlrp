@@ -108,7 +108,14 @@ for o in meshes:
    surface_y=min(nearby) if nearby else front_y
    front=math.exp(-((y-surface_y)/.085)**2)
    z_center=anatomy_z
-   vertical=math.exp(-((z-z_center)/.070)**4)
+   # The superior cleft starts below the hood, not on the mons pubis.
+   # Smoothstep at the upper junction tapers the folds into the pubic mound.
+   superior=z_center+.057
+   start=max(0.0,min(1.0,(superior-z)/.027))
+   start=start*start*(3.0-2.0*start)
+   inferior=max(0.0,min(1.0,(z-(z_center-.077))/.028))
+   inferior=inferior*inferior*(3.0-2.0*inferior)
+   vertical=math.exp(-((z-z_center)/.070)**4)*start*inferior
    outer=math.exp(-((abs(x)-.028)/.018)**2)
    inner=math.exp(-((abs(x)-.010)/.007)**2)
    groove=math.exp(-(x/.0045)**2)
@@ -119,7 +126,7 @@ for o in meshes:
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
    delta=front*vertical*(.055*outer+.025*inner-.022*groove)
-   delta+=front*(.007*hood-.005*parted)
+   delta+=front*(.007*hood-.005*parted*start*inferior)
    y-=delta
    if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.09:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
