@@ -72,6 +72,8 @@ for o in meshes:
                   if abs((o.matrix_world@v.co).x)<.075
                   and pelvis_z-.18<(o.matrix_world@v.co).z<pelvis_z+.04]
   front_y=min((p.y for p in pelvic_samples),default=-.08)
+  # Identify the local anterior surface separately for each height, avoiding
+  # global front thresholds that can select the belly instead of the pelvis.
   pelvic_surface=[(p.z,p.y) for p in pelvic_samples]
   if len(pelvic_surface)<20:raise RuntimeError("Sav anterior pelvic surface not found")
   print("SAV_PELVIC_SCULPT_REFERENCE",round(pelvis_z,4),round(front_y,4),len(pelvic_samples))
@@ -96,19 +98,19 @@ for o in meshes:
    # No independent accessory mesh means no disconnected protruding capsules.
    nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.018]
    surface_y=min(nearby) if nearby else front_y
-   front=math.exp(-((y-surface_y)/.034)**2)
+   front=math.exp(-((y-surface_y)/.065)**2)
    z_center=pelvis_z-.095
-   vertical=math.exp(-((z-z_center)/.078)**4)
-   outer=math.exp(-((abs(x)-.027)/.018)**2)
-   inner=math.exp(-((abs(x)-.010)/.009)**2)
-   groove=math.exp(-(x/.006)**2)
+   vertical=math.exp(-((z-z_center)/.098)**4)
+   outer=math.exp(-((abs(x)-.031)/.023)**2)
+   inner=math.exp(-((abs(x)-.013)/.012)**2)
+   groove=math.exp(-(x/.009)**2)
    # Soft fuller bilateral outer contours, smaller inner folds, and a
    # naturally parted central depression. Subtle superior hood contour.
    # Keep all sculpting on the existing manifold body mesh.
    upper=math.exp(-((z-(z_center+.049))/.019)**2)
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
-   delta=front*vertical*(.030*outer+.012*inner-.014*groove)
+   delta=front*vertical*(.036*outer+.014*inner-.019*groove)
    delta+=front*(.007*hood-.005*parted)
    y-=delta
    if abs(delta)>.001:sculpted+=1
