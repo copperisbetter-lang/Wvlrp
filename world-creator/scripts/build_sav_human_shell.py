@@ -78,7 +78,7 @@ for o in meshes:
   if len(pelvic_surface)<20:raise RuntimeError("Sav anterior pelvic surface not found")
   # Place the relief on the actual visible front skin, not at the rig joint.
   # Pelvis bone heads are inside the body and may be substantially higher.
-  anatomy_z=pelvis_z-.095
+  anatomy_z=pelvis_z-.145
   surface_rows={}
   for p in pelvic_samples:
    key=round(p.z/.012)
@@ -108,7 +108,7 @@ for o in meshes:
    surface_y=min(nearby) if nearby else front_y
    front=math.exp(-((y-surface_y)/.085)**2)
    z_center=anatomy_z
-   vertical=math.exp(-((z-z_center)/.098)**4)
+   vertical=math.exp(-((z-z_center)/.070)**4)
    outer=math.exp(-((abs(x)-.031)/.023)**2)
    inner=math.exp(-((abs(x)-.013)/.012)**2)
    groove=math.exp(-(x/.009)**2)
@@ -118,12 +118,12 @@ for o in meshes:
    upper=math.exp(-((z-(z_center+.049))/.019)**2)
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
-   delta=front*vertical*(.036*outer+.014*inner-.019*groove)
+   delta=front*vertical*(.052*outer+.022*inner-.026*groove)
    delta+=front*(.007*hood-.005*parted)
    y-=delta
-   if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.11:sculpted+=1
+   if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.09:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
-  print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
+  print("SAV_PELVIC_SCULPT_VERTICES",sculpted, "CENTER_Z", round(anatomy_z,4))
   # Assert the anatomical relief is not lost or absent in exported mesh.
   if sculpted < 25:
    raise RuntimeError("Sav realistic shell pelvic anatomy missing: refusing to publish")
