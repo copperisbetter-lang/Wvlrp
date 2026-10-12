@@ -270,45 +270,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
                  rng.uniform(0,2*pi),
                  height*rng.uniform(.0041,.0050),
                  (i+1)%4)
-    # Narrow swept-over-crown plaits REPLACE the previous opaque helmet.
-    # Sweep outward while ABOVE her forehead, then fall beside the cheeks,
-    # leaving the light-blue eyes and mouth unobstructed.
-    for side in (-1,1):
-        for i in range(62):
-            q=(i+.5)/62
-            part_x=side*height*(.002+.008*(i%5)/5)
-            y0=ymid+height*(-.033+.096*q)
-            root=near_root(Vector((xmid+part_x,y0,crown_top)))
-            prior=None
-            sections=31;sides=5
-            phase=rng.uniform(0,2*math.pi)
-            length=height*(.19+.08*q+rng.uniform(-.011,.018))
-            spread=height*(.013+.01*q)
-            for step in range(sections):
-                t=step/(sections-1)
-                sweep=min(1.,t/.24)
-                eased=sweep*sweep*(3-2*sweep)
-                tail=max(0.,(t-.24)/.76)
-                center=Vector((root.x+side*height*.067*eased+
-                                side*spread*tail+
-                                height*.007*math.sin(4.5*math.pi*tail+phase)*tail,
-                    root.y+height*.018*eased+height*.012*tail,
-                    root.z-height*.044*eased-length*tail))
-                width=height*(.0047+.0016*(i%4)/4)
-                width*=max(.10,(1.-t)**.85)
-                ring=[]
-                for k in range(sides):
-                    a=2*math.pi*k/sides
-                    ring.append(p(center+Vector((width*math.cos(a),
-                              width*.72*math.sin(a),0))))
-                if prior:
-                    for k in range(sides):
-                        nxt=(k+1)%sides
-                        polygon((prior[k],prior[nxt],ring[nxt],ring[k]),
-                                (i+int(q*3))%4)
-                prior=ring
-    print("WVLRP_CAITLYN_NO_HELMET_HAIR",
-          "crown_strands",124,"thin_hair_crown_only",True)
+    # No over-crown plait bundles: those formed the protruding rigid shelf
+    # visible in side views. The scalp shell and side/back locks remain.
+    print("WVLRP_CAITLYN_HAIR_NO_CROWN_SHELF",True)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
@@ -434,11 +398,18 @@ def add_temporary_sundress(body, rig, export_root):
     # Two straps bridging the front neckline and upper back, over shoulders.
     for side in (-1,1):
         x=cx+side*.080*h
-        path=[(x,cy-.089*h,low+.706*h),
-              (x,cy-.069*h,low+.762*h),
-              (x,cy-.018*h,low+.785*h),
-              (x,cy+.041*h,low+.783*h),
-              (x,cy+.085*h,low+.722*h)]
+        # Anchor straps to the actual front/back bodice ring, rather than
+        # fixed offsets that leave straps floating beside the shoulders.
+        top_ring=rows[-1]
+        front=min((verts[k] for k in top_ring if (verts[k][0]-cx)*side>0),
+                  key=lambda q:abs(q[0]-x)+max(0,q[1]-cy)*3)
+        back=min((verts[k] for k in top_ring if (verts[k][0]-cx)*side>0),
+                 key=lambda q:abs(q[0]-x)+max(0,cy-q[1])*3)
+        path=[(front[0],front[1],front[2]),
+              (x,cy-.055*h,low+.756*h),
+              (x,cy-.005*h,low+.780*h),
+              (x,cy+.050*h,low+.755*h),
+              (back[0],back[1],back[2])]
         pairs=[]
         for x1,y1,z1 in path:
             pairs.append((point(x1-.0035*h,y1,z1),point(x1+.0035*h,y1,z1)))
