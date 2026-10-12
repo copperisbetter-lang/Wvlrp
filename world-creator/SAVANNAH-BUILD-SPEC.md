@@ -34,3 +34,6 @@ Each mesh vertex must have normalized, anatomically localized weights (max 4 inf
 
 ## User confirmation — complete anatomy (October 12, 2026)
 The adult character must be modeled with coherent anatomically accurate external geometry throughout, including rib cage, abdominal musculature, navel, pelvis, groin, inner thighs, knees, hands and feet. Avoid detached anatomy, artificial gaps, protruding skin surfaces, incorrect joint placement or material discontinuities. Validate both neutral and deeply flexed poses. This is a quality requirement, not a claim that the existing mesh is accurate.
+
+## External female pelvic anatomy
+Sav is an adult. Model medically plausible external female pelvic and vulvar anatomy with realistic proportions, continuous skin topology, natural coloration, and correct deformation in neutral, walking, bent, kneeling and floor-contact poses. Prevent crotch clipping, protruding polygons, detached geometry, and implausible intersections. This requirement is not yet implemented or verified.
