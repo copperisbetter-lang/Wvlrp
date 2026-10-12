@@ -133,7 +133,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         eye_mid_x=(min(p.x for p in eye_pts)+max(p.x for p in eye_pts))*.5
     # An adult eye-to-crown distance is approximately 7% of stature.
     # Never place Caitlyn's top hair ABOVE an outlying basemesh vertex.
-    scalp_z=zhi-.009*height  # Crown is near body top; the old eye+.068*h cap started on the face.
+    scalp_z=min(zhi-.010*height, eye_z+.090*height)  # Crown anchored to eyes, not a stray vertex.
     skull_band=[v for v in body_pts
                 if scalp_z-.038*height<v.z<scalp_z+.011*height
                 and abs(v.x-(eye_mid_x or 0.))<.10*height]
@@ -161,7 +161,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     scalp_ids={}
     for vert in body.data.vertices:
         q=body.matrix_world @ vert.co
-        if (q.z>max(eye_z+.118*height,zhi-.115*height) and
+        if (q.z>max(eye_z+.040*height,scalp_z-.078*height) and
             abs(q.x-xmid)<.082*height and abs(q.y-ymid)<.097*height):
             scalp_ids[vert.index]=q
     if len(scalp_ids)<85:
@@ -183,7 +183,7 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     def near_root(target):
         return min(scalp_roots,key=lambda q:(q-target).length_squared)
     print("WVLRP_CAITLYN_SCALP_SURFACE_FIT",len(cap_map),len(faces),
-          "crown_only",True,"lowest_allowed",round(max(eye_z+.118*height,zhi-.115*height),3))
+          "crown_only",True,"lowest_allowed",round(max(eye_z+.040*height,scalp_z-.078*height),3))
     # Actual three-dimensional, tapered locks: no single flat curtain mesh.
     def lock(root,length,spread,wave,phase,width,tone):
         previous=None
@@ -214,10 +214,10 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             back=max(0.,sin(a))
             root=near_root(Vector((xmid+height*(.054-.004*layer)*side,
                          ymid+height*(.009+.047*back),
-                         scalp_z-height*(.033+.009*layer))))
-            length=height*(.220+.040*layer+rng.uniform(-.028,.063))
+                         scalp_z-height*(.045+.008*layer))))
+            length=height*(.245+.026*layer+rng.uniform(-.018,.038))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
-                 height*rng.uniform(.005,.013),rng.uniform(0,2*pi),
+                 height*rng.uniform(.010,.021),rng.uniform(0,2*pi),
                  height*rng.uniform(.0028,.0040),
                  (i+layer*2)%4)
     # Separate wisps frame BOTH cheeks; none cover the eye openings.
@@ -226,10 +226,10 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             t=i/22
             root=near_root(Vector((xmid+side*height*(.052+.008*t),
                          ymid-height*(.022-.011*t),
-                         scalp_z-height*(.036+.022*t))))
+                         scalp_z-height*(.050+.015*t))))
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
-                 height*rng.uniform(.003,.011),rng.uniform(0,2*pi),
+                 height*rng.uniform(.009,.018),rng.uniform(0,2*pi),
                  height*rng.uniform(.0024,.0033),(i+1)%4)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
@@ -281,16 +281,16 @@ def add_temporary_sundress(body, rig, export_root):
     # neckline made a rigid blue cone wider than her shoulders. Keep the hem
     # short enough for floor-pose visibility and the bodice close to the torso.
     # These dimensions are intentionally smaller; Caitlyn body is unchanged.
-    rings=[(.47,.158,.122),(.50,.151,.117),(.55,.125,.105),
-           (.60,.096,.088),(.63,.091,.086),(.68,.108,.103),
-           (.728,.113,.102)]
+    rings=[(.385,.134,.102),(.415,.150,.111),(.455,.154,.118),
+           (.505,.138,.108),(.555,.112,.099),(.60,.096,.088),
+           (.63,.091,.086),(.68,.106,.100),(.728,.113,.102)]
     for k,(level,rx,ry) in enumerate(rings):
         ring=[]
         for j in range(n):
             angle=2*pi*j/n
-            wave=(1+.028*sin(12*angle)*(1 if k<3 else .1))
+            wave=(1+.035*sin(12*angle)*(1 if k<5 else .1))
             z=low+level*h
-            if k==0:z+=.004*h*sin(12*angle)
+            if k==0:z+=.011*h*sin(8*angle)
             if k==len(rings)-1:z-=.010*h*max(0,-sin(angle))
             ring.append(point(cx+rx*h*wave*cos(angle),
                               cy+ry*h*wave*sin(angle),z))
@@ -304,13 +304,14 @@ def add_temporary_sundress(body, rig, export_root):
     # Two straps bridging the front neckline and upper back, over shoulders.
     for side in (-1,1):
         x=cx+side*.080*h
-        path=[(x,cy-.085*h,low+.725*h),
-              (x,cy-.054*h,low+.794*h),
-              (x,cy+.054*h,low+.794*h),
-              (x,cy+.085*h,low+.725*h)]
+        path=[(x,cy-.089*h,low+.722*h),
+              (x,cy-.069*h,low+.765*h),
+              (x,cy-.018*h,low+.796*h),
+              (x,cy+.041*h,low+.792*h),
+              (x,cy+.085*h,low+.722*h)]
         pairs=[]
         for x1,y1,z1 in path:
-            pairs.append((point(x1-.006*h,y1,z1),point(x1+.006*h,y1,z1)))
+            pairs.append((point(x1-.0035*h,y1,z1),point(x1+.0035*h,y1,z1)))
         for j in range(len(pairs)-1):
             quad((pairs[j][0],pairs[j][1],pairs[j+1][1],pairs[j+1][0]),0)
     # Cream-colored narrow waistband.
@@ -319,8 +320,8 @@ def add_temporary_sundress(body, rig, export_root):
         def waist(angle,zoff):
             return point(cx+.096*h*cos(angle),cy+.088*h*sin(angle),
                          low+.628*h+zoff*h)
-        quad((waist(a,-.009),waist(b,-.009),
-              waist(b,.009),waist(a,.009)),2)
+        quad((waist(a,-.003),waist(b,-.003),
+              waist(b,.003),waist(a,.003)),2)
     mesh=bpy.data.meshes.new("Caitlyn removable summer dress cloth")
     mesh.from_pydata(verts,[],faces);mesh.update()
     garment=bpy.data.objects.new("Caitlyn temporary sundress",mesh)
@@ -917,23 +918,28 @@ def main():
                     # 14 cm over the floor. That is NOT elbows-and-knees.
                     # Reward raised hips and tucked-under knees strongly,
                     # while preserving the much better hands/knees fit.
-                    target_hip=.34 if use_elbows else .46
-                    loss+=(300 if use_elbows else 9)*(hip.z-kz-target_hip)**2
-                    loss+=(190 if use_elbows else 7)*(knee_back-.15)**2
+                    target_hip=.43 if use_elbows else .43
+                    loss+=360*(hip.z-kz-target_hip)**2
+                    loss+=1600*(knee_back-.015)**2
                     if use_elbows:
-                        loss+=650*max(0,.25-(hip.z-kz))**2
+                        loss+=950*max(0,.35-(hip.z-kz))**2
                     loss+=15*max(0,.035-ankle_back)**2
                     loss+=10*max(0,.28-chest_forward)**2
                     loss+=5*max(0,torso_level-.20)**2
                     loss+=9*(elbow_drop-(.39 if use_elbows else .27))**2
                     loss+=6*(wrist_drop-(.39 if use_elbows else .46))**2
-                    loss+=3*(hands_forward-(.30 if use_elbows else .07))**2
-                    loss+=3*(elbow_forward-(.12 if use_elbows else .04))**2
+                    loss+=430*(hands_forward-(.23 if use_elbows else .00))**2
+                    loss+=310*(elbow_forward-(.005 if use_elbows else .04))**2
                     # Each joint must lie on the same support plane; matching
                     # only average heights can leave a hand or knee hovering.
-                    loss+=110*sum((v.z-kz)**2 for v in knee)/2
-                    loss+=140*sum((v.z-cz)**2 for v in contacts)/2
-                    loss+=70*sum((v.z-(kz+cz)/2)**2 for v in knee+contacts)/4
+                    loss+=700*sum((v.z-kz)**2 for v in knee)/2
+                    loss+=700*sum((v.z-cz)**2 for v in contacts)/2
+                    loss+=250*sum((v.z-(kz+cz)/2)**2 for v in knee+contacts)/4
+                    # Test forward/back and side support, not floor height alone.
+                    loss+=1100*sum((knee[i].y-hip.y-.015)**2 for i in (0,1))/2
+                    loss+=700*sum((contacts[i].y-shoulder[i].y)**2 for i in (0,1))/2
+                    loss+=650*sum((contacts[i].x-shoulder[i].x)**2 for i in (0,1))/2
+                    loss+=400*sum((knee[i].x-(hip.x+(shoulder[i].x-hip.x)*.65))**2 for i in (0,1))/2
                     if use_elbows:
                         # For forearm-and-knee support, the wrists should lie
                         # near the elbow plane, not float high above it.
@@ -942,18 +948,18 @@ def main():
                 # All angular adjustments act symmetrically; no snapped or
                 # backward-facing knee, no broken asymmetrical shoulders.
                 choices=[
-                    (("hips",),[55,65,75,85,95]),
-                    (("lthigh","rthigh"),[-115,-100,-85,-70,-55,-40,-25,25,40,55,70]),
+                    (("hips",),[45,55,65,75,85,95]),
+                    (("lthigh","rthigh"),[-135,-120,-105,-90,-75,-60,-45,-30,-15,15,30,45,60,75]),
                     (("lshin","rshin"),[-120,-105,-90,-75,75,90,105,120]),
                     (("larm","rarm"),[-140,-115,-90,-70,-50,-30,0,30,50,70,90]),
                     (("lforearm","rforearm"),[-130,-100,-75,-50,-25,0,25,50,75,100,130])
                 ]
                 # Use two deliberate passes, then finer joint adjustments.
-                for iteration in range(5):
+                for iteration in range(6):
                     for limbs,candidates in choices:
                         old=math.degrees(bones[limbs[0]].rotation_euler.x)
                         if iteration>=2:
-                            step=12 if iteration==2 else 5 if iteration==3 else 2
+                            step=12 if iteration==2 else 6 if iteration==3 else 3 if iteration==4 else 1
                             candidates=[old-2*step,old-step,old,old+step,old+2*step]
                         best=(float("inf"),old)
                         for angle in candidates:
@@ -1092,6 +1098,16 @@ def main():
                 chest_forward=hip.y-chest.y
                 torso_slope=abs(chest.z-hip.z)
                 shoulder_forward=sum(hip.y-a.y for a in shoulders)/2
+                knee_xy=[knee[i].y-hip.y for i in (0,1)]
+                arm_y=[contacts[i].y-shoulders[i].y for i in (0,1)]
+                arm_x=[contacts[i].x-shoulders[i].x for i in (0,1)]
+                max_knee_offset=max(abs(x) for x in knee_xy)
+                max_arm_offset=max(abs(x) for x in arm_y)
+                max_arm_side=max(abs(x) for x in arm_x)
+                print("WVLRP_CAITLYN_SUPPORT_ALIGNMENT",name,
+                      "knee_fore_aft_m",[round(x,3) for x in knee_xy],
+                      "arm_fore_aft_m",[round(x,3) for x in arm_y],
+                      "arm_lateral_m",[round(x,3) for x in arm_x])
                 print("WVLRP_CAITLYN_POSTURE_QA",name,
                       "hip_above_knees_m",round(hip_above_knees,3),
                       "chest_forward_m",round(chest_forward,3),
@@ -1102,6 +1118,9 @@ def main():
                         and shoulder_forward>.10 and torso_slope<.42):
                     raise RuntimeError(name+
                         " does not lower the torso into a grounded quadrupedal pose")
+                if max_knee_offset>.14 or max_arm_offset>.19 or max_arm_side>.15:
+                    raise RuntimeError(name+" unsupported joint alignment: "+
+                        str((round(max_knee_offset,3),round(max_arm_offset,3),round(max_arm_side,3))))
                 if error>.12 or support_error>.14 or left_right_error>.12:
                     raise RuntimeError(name+" knees and "+
                       ("elbows" if use_elbows else "hands")+
@@ -1204,7 +1223,7 @@ def main():
         scene.render.engine="CYCLES";scene.cycles.samples=48
         scene.render.resolution_x=700;scene.render.resolution_y=950;scene.render.resolution_percentage=100
         scene.view_settings.view_transform="AgX"
-        scene.view_settings.look="AgX - Medium High Contrast"
+        scene.view_settings.look="Medium High Contrast"
         scene.view_settings.exposure=-.18
         scene.render.image_settings.file_format="PNG";scene.render.filepath=str(PNG)
         bpy.ops.render.render(write_still=True)
