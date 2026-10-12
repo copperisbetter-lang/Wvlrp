@@ -76,7 +76,15 @@ for o in meshes:
   # global front thresholds that can select the belly instead of the pelvis.
   pelvic_surface=[(p.z,p.y) for p in pelvic_samples]
   if len(pelvic_surface)<20:raise RuntimeError("Sav anterior pelvic surface not found")
-  print("SAV_PELVIC_SCULPT_REFERENCE",round(pelvis_z,4),round(front_y,4),len(pelvic_samples))
+  # Place the relief on the actual visible front skin, not at the rig joint.
+  # Pelvis bone heads are inside the body and may be substantially higher.
+  anatomy_z=pelvis_z-.095
+  surface_rows={}
+  for p in pelvic_samples:
+   key=round(p.z/.012)
+   surface_rows.setdefault(key,[]).append(p.y)
+  if not surface_rows:raise RuntimeError("Sav pelvic surface rows unavailable")
+  print("SAV_PELVIC_SCULPT_REFERENCE",round(anatomy_z,4),round(front_y,4),len(pelvic_samples))
   sculpted=0
   for v in o.data.vertices:
    p=o.matrix_world@v.co
@@ -96,10 +104,10 @@ for o in meshes:
    x+=math.copysign(min(abs(x),.24)*.145*hip_band,x)
    # Bilateral anatomical contours are shaped directly on the body surface.
    # No independent accessory mesh means no disconnected protruding capsules.
-   nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.018]
+   nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.025]
    surface_y=min(nearby) if nearby else front_y
-   front=math.exp(-((y-surface_y)/.065)**2)
-   z_center=pelvis_z-.095
+   front=math.exp(-((y-surface_y)/.085)**2)
+   z_center=anatomy_z
    vertical=math.exp(-((z-z_center)/.098)**4)
    outer=math.exp(-((abs(x)-.031)/.023)**2)
    inner=math.exp(-((abs(x)-.013)/.012)**2)
@@ -113,7 +121,7 @@ for o in meshes:
    delta=front*vertical*(.036*outer+.014*inner-.019*groove)
    delta+=front*(.007*hood-.005*parted)
    y-=delta
-   if abs(delta)>.001:sculpted+=1
+   if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.11:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
   print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
   # Assert the anatomical relief is not lost or absent in exported mesh.
