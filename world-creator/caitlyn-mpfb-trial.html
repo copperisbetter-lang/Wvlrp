@@ -24,7 +24,7 @@
 <button id="idle">Play movement</button>
 <button id="smile" aria-pressed="true">Smile: gentle</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v4" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-fixed-v5" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
 <p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
@@ -47,7 +47,7 @@ try {
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
  const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-20261011-v4&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-fixed-v5&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
@@ -115,115 +115,86 @@ try {
 document.getElementById('home').onclick=()=>{camera.alpha=-Math.PI/2;focus('full');};
 document.getElementById('face').onclick=()=>focus('face');
 document.getElementById('chest').onclick=()=>focus('chest');
-// An animation *name* is not proof that joints actually move. Verify the
-// loaded GLB's transform targets change from frame 1 to the held final pose.
-function trackedJointState(group){
- const numbers=[];
- for(const track of (group.targetedAnimations||[])){
-   const a=track.animation, target=track.target;
-   if(!a||!target||!/rotation|position/i.test(a.targetProperty||''))continue;
-   let value=target;
-   for(const part of a.targetProperty.split('.'))value=value?.[part];
-   if(value&&Number.isFinite(value.x)){
-     numbers.push(value.x,value.y||0,value.z||0);
-     if(Number.isFinite(value.w))numbers.push(value.w);
-   } else if(Number.isFinite(value))numbers.push(value);
- }
- return numbers;
-}
-function jointMovement(start,end){
- if(start.length!==end.length||!start.length)return 0;
- return start.reduce((sum,v,i)=>sum+Math.abs(v-end[i]),0);
-}
-// Pose buttons display the FINISHED articulated pose so users do not
-// mistake a 1-second clip that returns to standing for a missing skeleton.
+// Always show the selected skeletal pose FIRST. Previous code probed final
+// keyframes, stopped the animation and tried to replay it; on some mobile
+// Babylon/WebGL sessions that left Caitlyn stuck in standing.
 const progress=document.getElementById('poseProgress');
 const frameLabel=document.getElementById('posePercent');
-function pickPose(pose,animate=false){
+function putKeysAtEnd(group){
+  // In addition to Babylon's goToFrame, apply the exported final skeletal
+  // transform tracks directly. This fallback remains visible when a short
+  // animation is auto-stopped or a browser misses its end event.
+  let written=0;
+  for(const track of group.targetedAnimations||[]){
+    const anim=track.animation, target=track.target;
+    const keys=anim?.getKeys?.();
+    if(!target||!keys?.length)continue;
+    const val=keys[keys.length-1].value;
+    const path=(anim.targetProperty||'').split('.');
+    let holder=target;
+    for(const seg of path.slice(0,-1)){ holder=holder?.[seg]; }
+    const prop=path[path.length-1];
+    if(!holder||!prop||val===undefined||val===null)continue;
+    try{
+      const next=val?.clone?val.clone():val;
+      if(holder[prop]?.copyFrom && next && typeof next==='object') holder[prop].copyFrom(next);
+      else holder[prop]=next;
+      written++;
+    }catch(_){/* Some Babylon bone properties are read-only; skip them. */}
+  }
+  return written;
+}
+function focusFloor(){
+  camera.alpha=0.12;camera.beta=Math.PI/2.35;
+  if(bodyBounds){
+    const b=bodyBounds;
+    camera.setTarget(new BABYLON.Vector3((b.low.x+b.high.x)/2,b.low.y+.50,(b.low.z+b.high.z)/2));
+    camera.radius=Math.max(2.0,b.span*1.22);
+  }
+}
+function showPose(pose,animate=false){
  const clip=groups.find(g=>g.name==='Caitlyn '+pose);
  if(!clip){
-   status.textContent='NOT READY: Caitlyn '+pose+' missing from this GLB. Rebuild needed.';
-   status.style.background='#7c302fe8';
-   return;
- }
- const floor=pose==='HandsAndKnees'||pose==='ElbowsAndKnees';
- const tracks=(clip.targetedAnimations||[]).filter(t=>t.animation&&t.target);
- if(floor&&tracks.length<16){
-   status.textContent='NOT READY: '+pose+' has only '+tracks.length+' usable skeleton tracks. Model needs rebuild.';
-   status.style.background='#7c302fe8';
-   return;
+   status.textContent='POSE MISSING in downloaded GLB: Caitlyn '+pose+'.';
+   status.style.background='#7c302fe8';return;
  }
  groups.forEach(g=>g.stop());
  currentGroup=clip;
- playing=animate;
- const loop=pose==='Stand';
- clip.start(loop,1,clip.from,clip.to,false);
- let delta=0;
+ const floor=pose==='HandsAndKnees'||pose==='ElbowsAndKnees';
+ if(floor)focusFloor();
+ clip.start(false,1,clip.from,clip.to,false);
  if(!animate){
-   if(floor){
-     clip.goToFrame(clip.from);
-     scene.render();
-     const start=trackedJointState(clip);
-     clip.goToFrame(clip.to);
-     scene.render();
-     delta=jointMovement(start,trackedJointState(clip));
-   }else{
-     clip.goToFrame(loop?clip.from:clip.to);
-     scene.render();
-   }
-   if(!floor)clip.pause();
-   if(floor){
-     // A ground-level SIDE view shows the whole character, not the old
-     // cropped face zoom. This is important for checking palms and elbows.
-     camera.alpha=0.12;
-     camera.beta=Math.PI/2.35;
-     if(bodyBounds){
-       const b=bodyBounds;
-       camera.setTarget(new BABYLON.Vector3((b.low.x+b.high.x)/2,b.low.y+.50,(b.low.z+b.high.z)/2));
-       camera.radius=Math.max(2.0,b.span*1.22);
-     }
-   }
- }
- if(floor&&!animate){
-   // First verify both limb clips actually alter joint transforms. Then
-   // run the full transition, rather than silently teleporting to a frame.
-   if(!Number.isFinite(delta)||delta<.05){
-     clip.pause();playing=false;
-     status.textContent='POSE ERROR: '+pose+' has no actual joint movement (Δ='+delta.toFixed(3)+').';
-     status.style.background='#7c302fe8';
-     return;
-   }
+   clip.goToFrame(clip.to);
+   clip.pause();
+   const applied=putKeysAtEnd(clip);
+   playing=false;
+   scene.render();
+   progress.value='100';frameLabel.textContent='100%';
+   document.getElementById('idle').textContent='Play movement';
    status.style.background='#14211ddf';
-   // Reset a fresh animatable after probing the last frame. Babylon may
-   // have ended a one-shot clip during scene.render() at that last frame.
-   clip.stop();
-   clip.start(false,1,clip.from,clip.to,false);
-   clip.goToFrame(clip.from);
-   playing=true;
-   progress.value='0';frameLabel.textContent='0%';
+   status.textContent='Caitlyn '+pose+' · HOLDING final pose · '+applied+' keyed transforms applied';
+   // Some Android sessions advance one frame after the tap; pin it again.
+   requestAnimationFrame(()=>{
+     if(currentGroup!==clip||playing)return;
+     clip.goToFrame(clip.to);clip.pause();putKeysAtEnd(clip);
+   });
+ }else{
+   playing=true;progress.value='0';frameLabel.textContent='0%';
    document.getElementById('idle').textContent='Pause movement';
-   status.textContent='Caitlyn lowering into '+(pose==='HandsAndKnees'?'hands and knees':'elbows and knees')+
-     ' · '+tracks.length+' skeletal tracks';
+   status.textContent='Caitlyn '+pose+' · playing movement';
    clip.onAnimationGroupEndObservable.addOnce(()=>{
      if(currentGroup!==clip)return;
-     clip.goToFrame(clip.to);
-     clip.pause();
-     playing=false;
+     playing=false;clip.goToFrame(clip.to);clip.pause();putKeysAtEnd(clip);
      progress.value='100';frameLabel.textContent='100%';
      document.getElementById('idle').textContent='Play movement';
-     status.textContent='Caitlyn: '+(pose==='HandsAndKnees'?'hands and knees':'elbows and knees')+
-       ' · holding final pose · joint Δ '+delta.toFixed(2);
+     status.textContent='Caitlyn '+pose+' · HOLDING final pose';
    });
-   return;
  }
- progress.value=animate?'0':(loop?'0':'100');
- frameLabel.textContent=progress.value+'%';
- document.getElementById('idle').textContent=animate?'Pause movement':'Play movement';
- status.style.background='#14211ddf';
- status.textContent='Caitlyn: '+(pose.toLowerCase())+
-   (animate?' · playing transition':' · holding');
+ document.querySelectorAll('[data-pose]').forEach(btn=>{
+   btn.style.borderColor=btn.dataset.pose===pose?'#f3d176':'#80a18d';
+ });
 }
-document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>pickPose(btn.dataset.pose));
+document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>showPose(btn.dataset.pose));
 document.getElementById('smile').onclick=()=>{
  smileOn=!smileOn;
  for(const t of smileTargets)t.influence=smileOn?.18:0;
@@ -236,24 +207,25 @@ document.getElementById('smile').onclick=()=>{
 };
 progress.addEventListener('input',()=>{
  if(!currentGroup)return;
- // In Babylon, an animation must be active when goToFrame evaluates joints.
- currentGroup.play(currentGroup.name==='Caitlyn Stand');
- let pct=Math.max(0,Math.min(100,Number(progress.value)))/100;
+ const pct=Math.max(0,Math.min(100,Number(progress.value)))/100;
+ groups.forEach(g=>{if(g!==currentGroup)g.stop();});
+ if(!currentGroup.isStarted)currentGroup.start(false,1,currentGroup.from,currentGroup.to,false);
  currentGroup.goToFrame(currentGroup.from+(currentGroup.to-currentGroup.from)*pct);
  currentGroup.pause();playing=false;
+ if(pct>=.999)putKeysAtEnd(currentGroup);
  frameLabel.textContent=progress.value+'%';
  document.getElementById('idle').textContent='Play movement';
- status.textContent='Caitlyn: skeleton at '+progress.value+'% of '+currentGroup.name;
+ status.textContent='Caitlyn '+currentGroup.name+' · pose progress '+progress.value+'%';
 });
  document.getElementById('left').onclick=()=>camera.alpha+=Math.PI/4;
  document.getElementById('right').onclick=()=>camera.alpha-=Math.PI/4;
  document.getElementById('idle').onclick=()=>{
  if(!currentGroup)return;
- playing=!playing;
- if(playing){currentGroup.play(currentGroup.name==='Caitlyn Stand');currentGroup.goToFrame(currentGroup.from);}
- else currentGroup.pause();
- document.getElementById('idle').textContent=playing?'Pause movement':'Play movement';
+ if(playing){currentGroup.pause();playing=false;document.getElementById('idle').textContent='Play movement';return;}
+ const name=currentGroup.name.replace(/^Caitlyn /,'');
+ showPose(name,true);
 };
+
 }catch(e){status.textContent='3D viewer error: '+e.message;}
 })();
 </script></body></html>
