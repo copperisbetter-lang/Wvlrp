@@ -768,10 +768,8 @@ def main():
         ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
         ("teeth",["teeth_base.mhclo"],"Teeth")]:
         add_asset(h,sub,names,kind)
-    hair=add_asset(h,"hair",["long01.mhclo"],"Hair")
-    if hair is None: raise RuntimeError('MPFB long hairstyle asset is unavailable')
-    tint(hair,(.085,.065,.058),.78)
-    add_soft_waves(hair)
+    # Hair intentionally omitted until a natural hairstyle is approved.
+    print("WVLRP_SHA_HAIR_REMOVED",True)
 
     export_root=ExportService.create_character_copy(h,name_suffix="_wvrlp_ref")
     # The copied MakeHuman long01 mesh used its stock brown shader even after
@@ -843,7 +841,9 @@ def main():
     # Replace only the stiff long01 hair shell on the export copy.
     export_hair=next((ob for ob in [export_root]+children
                       if ob.type=="MESH" and "long01" in ob.name.lower()),None)
-    replace_cape_with_layered_hair(export_hair,exp,rig,export_root)
+    if export_hair is not None:
+        bpy.data.objects.remove(export_hair,do_unlink=True)
+    print("WVLRP_SHA_EXPORT_HAIRLESS",True)
     # Keep natural dark irises for Sha; no blue overlay.
     # Sha base model: no clothing assets.
 
@@ -1381,7 +1381,7 @@ def main():
     print("WVLRP_RESULT_GLB",OUT,OUT.stat().st_size,"skins",len(meta.get("skins",[])),
         "joint_count",len(meta.get("skins",[{}])[0].get("joints",[])),
         "animations",len(meta.get("animations",[])),"meshes",len(meta.get("meshes",[])))
-    assert any("natural dark brunette" in m.get("name","") for m in meta.get("materials",[])), "Sha dark hair material missing"
+    assert not any("natural dark brunette" in m.get("name","") for m in meta.get("materials",[])), "Unexpected Sha hair material"
     assert len(meta.get("skins",[]))>=1, "No rigged skin in output"
     assert len(meta.get("animations",[]))>=5, "Sha must include five skeletal pose clips"
     assert any("ElbowsAndKnees" in a.get("name","") for a in meta.get("animations",[])), "Missing elbows-and-knees clip"
