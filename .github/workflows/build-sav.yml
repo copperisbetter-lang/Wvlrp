@@ -16,7 +16,7 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender
+          sudo apt-get install -y --no-install-recommends blender python3-numpy
       - name: Build rigged prototype
         run: |
           python3 -m py_compile world-creator/scripts/build_sav.py
