@@ -72,6 +72,8 @@ for o in meshes:
                   if abs((o.matrix_world@v.co).x)<.075
                   and pelvis_z-.18<(o.matrix_world@v.co).z<pelvis_z+.04]
   front_y=min((p.y for p in pelvic_samples),default=-.08)
+  pelvic_surface=[(p.z,p.y) for p in pelvic_samples]
+  if len(pelvic_surface)<20:raise RuntimeError("Sav anterior pelvic surface not found")
   print("SAV_PELVIC_SCULPT_REFERENCE",round(pelvis_z,4),round(front_y,4),len(pelvic_samples))
   sculpted=0
   for v in o.data.vertices:
@@ -92,7 +94,9 @@ for o in meshes:
    x+=math.copysign(min(abs(x),.24)*.085*hip_band,x)
    # Bilateral anatomical contours are shaped directly on the body surface.
    # No independent accessory mesh means no disconnected protruding capsules.
-   front=math.exp(-((y-front_y)/.075)**2)
+   nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.018]
+   surface_y=min(nearby) if nearby else front_y
+   front=math.exp(-((y-surface_y)/.034)**2)
    z_center=pelvis_z-.09
    vertical=math.exp(-((z-z_center)/.078)**4)
    outer=math.exp(-((abs(x)-.027)/.018)**2)
@@ -104,14 +108,14 @@ for o in meshes:
    upper=math.exp(-((z-(z_center+.049))/.019)**2)
    hood=math.exp(-(x/.014)**2)*upper
    parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
-   delta=front*vertical*(.017*outer+.006*inner-.009*groove)
-   delta+=front*(.004*hood-.003*parted)
+   delta=front*vertical*(.026*outer+.010*inner-.013*groove)
+   delta+=front*(.007*hood-.005*parted)
    y-=delta
    if abs(delta)>.001:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
   print("SAV_PELVIC_SCULPT_VERTICES",sculpted)
   # Assert the anatomical relief is not lost or absent in exported mesh.
-  if sculpted < 12:
+  if sculpted < 25:
    raise RuntimeError("Sav realistic shell pelvic anatomy missing: refusing to publish")
   if sculpted<12:raise RuntimeError("Sav pelvic sculpt missed body topology")
  o.data.update()
