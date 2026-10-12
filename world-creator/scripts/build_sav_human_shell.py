@@ -97,8 +97,14 @@ for o in meshes:
    outer=math.exp(-((abs(x)-.027)/.018)**2)
    inner=math.exp(-((abs(x)-.010)/.009)**2)
    groove=math.exp(-(x/.006)**2)
-   # Outer labial relief, softer inner folds, and a recessed midline.
-   delta=front*vertical*(.011*outer+.005*inner-.005*groove)
+   # Soft fuller bilateral outer contours, smaller inner folds, and a
+   # naturally parted central depression. Subtle superior hood contour.
+   # Keep all sculpting on the existing manifold body mesh.
+   upper=math.exp(-((z-(z_center+.049))/.019)**2)
+   hood=math.exp(-(x/.014)**2)*upper
+   parted=math.exp(-(x/.008)**2)*math.exp(-((z-z_center)/.051)**2)
+   delta=front*vertical*(.017*outer+.006*inner-.009*groove)
+   delta+=front*(.004*hood-.003*parted)
    y-=delta
    if abs(delta)>.001:sculpted+=1
    v.co=world.inverted_safe()@Vector((x,y,z))
