@@ -24,7 +24,7 @@ print("SAV_RIG_PRESERVED",len(rig.data.bones))
 load_system_pack()
 h=HumanService.create_human();h.name="Sav MPFB continuous human shell"
 for key,val in [("gender",0.0),("age",.40),("weight",.52),("muscle",.32),
-                ("height",.53),("proportions",.49),("cupsize",.68),("firmness",.42)]:
+                ("height",.53),("proportions",.49),("cupsize",.75),("firmness",.36)]:
  HumanObjectProperties.set_value(key,val,entity_reference=h)
 TargetService.reapply_macro_details(h)
 skin=AssetService.find_asset_absolute_path("young_caucasian_female.mhmat",asset_subdir="skins")
@@ -61,6 +61,9 @@ for o in meshes:
   p=Vector(((p.x-cx)*scale,(p.y-cy)*scale,(p.z-lo)*scale+.055))
   v.co=o.matrix_world.inverted_safe()@p
  o.data.update()
+ # Keep object world transforms stable when reparenting to the Sav armature.
+ # Otherwise accessories can jump away from the face after export.
+ world_before_parent=o.matrix_world.copy()
  # Existing MPFB weights refer to a different skeleton. Clear them.
  for vg in list(o.vertex_groups):o.vertex_groups.remove(vg)
  for m in list(o.modifiers):
@@ -88,6 +91,7 @@ for o in meshes:
    groups[name].add([v.index],w/total,"REPLACE")
  arm=o.modifiers.new("Sav56 deform","ARMATURE");arm.object=rig
  o.parent=rig
+ o.matrix_world=world_before_parent
  for f in o.data.polygons:f.use_smooth=True
 assert len(body.data.vertices)>10000,"Human shell unexpectedly low detail"
 bpy.ops.object.select_all(action="DESELECT")
