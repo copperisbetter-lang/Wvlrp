@@ -45,3 +45,13 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav-build-diagnostics
+          path: |
+            /tmp/sav.log
+            world-creator/assets/sav-prototype.glb
+          if-no-files-found: warn
