@@ -154,27 +154,33 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         return len(vertices)-1
     def polygon(inds,material):
         faces.append(tuple(inds));indexes.append(material)
-    # Thin scalp foundation, only to conceal gaps between follicles.
-    crown_top=scalp_z+.002*height
-    N=64;R=11
-    pole=p(Vector((xmid,ymid+.012*height,crown_top)))
-    rings=[]
-    for j in range(1,R+1):
-        th=(pi/2)*j/R
-        r=[]
-        for k in range(N):
-            a=2*pi*k/N
-            r.append(p(Vector((xmid+height*.062*sin(th)*cos(a),
-                       ymid+height*(.012+.054*sin(th)*sin(a)),
-                       scalp_z+height*(.002+.052*(cos(th)-1))))))
-        rings.append(r)
-    for k in range(N):
-        polygon((pole,rings[0][k],rings[0][(k+1)%N]),0)
-    for j in range(R-1):
-        for k in range(N):
-            n=(k+1)%N
-            polygon((rings[j][k],rings[j+1][k],
-                     rings[j+1][n],rings[j][n]),0)
+    # Fit the hair foundation to Caitlyn's ACTUAL scalp polygons. The old
+    # mathematical ellipsoid floated above the head, like a separate wig.
+    scalp_ids={}
+    for vert in body.data.vertices:
+        q=body.matrix_world @ vert.co
+        if (q.z>eye_z+.025*height and
+            abs(q.x-xmid)<.085*height and abs(q.y-ymid)<.106*height):
+            scalp_ids[vert.index]=q
+    if len(scalp_ids)<85:
+        raise RuntimeError("Caitlyn needs more true skull vertices for scalp cap")
+    cap_map={};scalp_roots=[]
+    for poly in body.data.polygons:
+        if not all(i in scalp_ids for i in poly.vertices):continue
+        inds=[]
+        for vi in poly.vertices:
+            if vi not in cap_map:
+                src=body.data.vertices[vi]
+                normal=(body.matrix_world.to_3x3() @ src.normal).normalized()
+                fitted=scalp_ids[vi]+normal*(.0013*height)
+                cap_map[vi]=p(fitted);scalp_roots.append(fitted)
+            inds.append(cap_map[vi])
+        polygon(inds,0)
+    if len(cap_map)<80 or not scalp_roots:
+        raise RuntimeError("Scalp-shell mesh is not attached to the head")
+    def near_root(target):
+        return min(scalp_roots,key=lambda q:(q-target).length_squared)
+    print("WVLRP_CAITLYN_SCALP_SURFACE_FIT",len(cap_map),len(faces))
     # Actual three-dimensional, tapered locks: no single flat curtain mesh.
     def lock(root,length,spread,wave,phase,width,tone):
         previous=None
@@ -203,9 +209,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
             a=pi*(i+.37*(layer%2))/54
             side=cos(a)
             back=max(0.,sin(a))
-            root=Vector((xmid+height*(.054-.004*layer)*side,
+            root=near_root(Vector((xmid+height*(.054-.004*layer)*side,
                          ymid+height*(.009+.047*back),
-                         scalp_z-height*(.033+.009*layer)))
+                         scalp_z-height*(.033+.009*layer))))
             length=height*(.220+.040*layer+rng.uniform(-.028,.063))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
                  height*rng.uniform(.005,.013),rng.uniform(0,2*pi),
@@ -215,9 +221,9 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
     for side in (-1,1):
         for i in range(23):
             t=i/22
-            root=Vector((xmid+side*height*(.052+.008*t),
+            root=near_root(Vector((xmid+side*height*(.052+.008*t),
                          ymid-height*(.022-.011*t),
-                         scalp_z-height*(.036+.022*t)))
+                         scalp_z-height*(.036+.022*t))))
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
                  height*rng.uniform(.003,.011),rng.uniform(0,2*pi),
