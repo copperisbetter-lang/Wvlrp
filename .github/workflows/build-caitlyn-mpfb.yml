@@ -101,6 +101,38 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+      # Always commit machine-readable build outcome. A passing Python solver
+      # alone does not prove phone-side visual fit; the report is for diagnosis.
+      - name: Save Caitlyn QA status to repository
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator
+          {
+            echo "# Caitlyn latest automated builder result"
+            echo ""
+            echo "Source GitHub SHA: \`${{ github.sha }}\`"
+            echo ""
+            echo "Workflow status before QA report: **${{ job.status }}**"
+            echo ""
+            echo "These are Blender geometry checks, NOT approval of the appearance on Android."
+            echo ""
+            echo "\`\`\`text"
+            if [ -f /tmp/caitlyn-mpfb-build.log ]; then
+              grep -E 'WVLRP_CAITLYN_(HAIR_SCALP_ANCHOR|SCALP_SURFACE_FIT|SUNDRESS_BUILT|SUPPORT_ALIGNMENT|SUPPORT_QA|POSTURE_QA|GROUNDED_POSE|MPFB_SUCCESS)|RuntimeError|Traceback' /tmp/caitlyn-mpfb-build.log | tail -n 35 || true
+              echo "LAST BUILDER OUTPUT:"
+              tail -n 25 /tmp/caitlyn-mpfb-build.log
+            else
+              echo "Blender build log not generated."
+            fi
+            echo "\`\`\`"
+          } > world-creator/CAITLYN-BUILD-RESULT.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/CAITLYN-BUILD-RESULT.md
+          git commit -m "Record Caitlyn Blender pose QA result" || exit 0
+          git pull --rebase origin main
+          git push origin HEAD:main
       - name: Save build troubleshooting log
         if: always()
         uses: actions/upload-artifact@v4
