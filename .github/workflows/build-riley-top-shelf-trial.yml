@@ -1,0 +1,121 @@
+name: Build Riley rigged game character
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_riley_top_shelf_trial.py
+      - world-creator/scripts/render_riley_turnaround.py
+      - world-creator/riley-measurements.json
+      - .github/workflows/build-riley-top-shelf-trial.yml
+  workflow_dispatch:
+concurrency:
+  group: wvlrp-riley-top-shelf-trial
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  build-character:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender python3-numpy xvfb libegl1 libgl1-mesa-dri
+      - name: Download CC0 complete anatomical base mesh (no clothing shells)
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 3 --connect-timeout 20 \
+            'https://www.innerscene.com/api/library/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1/download' \
+            -o world-creator/assets/riley-sculpted-donor.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('world-creator/assets/riley-sculpted-donor.glb')
+          assert f.stat().st_size > 100_000 and f.open('rb').read(4)==b'glTF', 'Donor file is not GLB'
+          print('CC0_ANATOMICAL_SOURCE_VALID',f.stat().st_size)
+          PY
+      - name: Verify Python build scripts compile
+        run: |
+          python3 -m py_compile world-creator/scripts/build_riley_top_shelf_trial.py world-creator/scripts/render_riley_turnaround.py
+      - name: Export one newly modeled and skinned Riley GLB
+        run: |
+          set -euo pipefail
+          blender --background --factory-startup --python world-creator/scripts/build_riley_top_shelf_trial.py 2>&1 | tee /tmp/riley-rig.log
+          grep RILEY_RIG_SUCCESS /tmp/riley-rig.log
+      - name: Validate real skin, skeleton, and animation data in GLB
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path("world-creator/assets/riley-top-shelf-blender-trial.glb")
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          off=12
+          length,kind=struct.unpack_from('<II',b,off)
+          assert kind==0x4E4F534A
+          doc=json.loads(b[off+8:off+8+length].decode())
+          assert len(doc.get("skins",[]))==1,"No glTF skeleton skin found"
+          sk=doc["skins"][0]
+          assert len(sk["joints"])>=25,"Skeleton missing major or finger bones"
+          assert len(doc.get("meshes",[]))>=2,"Missing sculpted body and hair"
+          assert len(doc.get("animations",[]))>=2,"Missing animation clips"
+          assert any("Riley sculpted anatomical body" in n.get("name","") for n in doc.get("nodes",[]))
+          print("RILEY_RIGGED_GLB_VALID",len(b),
+                "bones",len(sk["joints"]),"animations",[a.get("name") for a in doc["animations"]])
+          PY
+      - name: Render real front side back views from exported GLB
+        run: |
+          set -euo pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x1024x24" blender --background --factory-startup --python world-creator/scripts/render_riley_turnaround.py 2>&1 | tee /tmp/riley-render.log
+          grep RILEY_QA_RENDER /tmp/riley-render.log | grep front
+          grep RILEY_QA_RENDER /tmp/riley-render.log | grep right
+          grep RILEY_QA_RENDER /tmp/riley-render.log | grep back
+      - name: Publish rebuilt rigged character without overwriting old assets
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-top-shelf-blender-trial.glb world-creator/assets/riley-qa/*.png
+          if git diff --cached --quiet; then
+            echo 'Existing rigged asset is current'
+          else
+            git commit -m "Publish Riley with sculpted CC0 full-body mesh and skeletal actions"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Publish build diagnostic even if export failed
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo 'Riley sculpted-body build report'
+            echo "source_commit: ${GITHUB_SHA}"
+            echo 'result: ${{ job.status }}'
+            date -u '+checked_utc: %Y-%m-%dT%H:%M:%SZ'
+            if [ -f /tmp/riley-rig.log ]; then
+              echo 'last_blender_log_lines:'
+              tail -n 45 /tmp/riley-rig.log
+            fi
+            if [ -f /tmp/riley-render.log ]; then
+              echo "last_preview_render_lines:"
+              tail -n 24 /tmp/riley-render.log
+            fi
+            if [ -f world-creator/assets/riley-top-shelf-blender-trial.glb ]; then
+              echo "rigged_glb_bytes: $(stat -c%s world-creator/assets/riley-top-shelf-blender-trial.glb)"
+            fi
+          } > world-creator/assets/riley-build-status.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-build-status.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Riley sculpted-body Blender build outcome"
+            # A failed QA render can leave the newly exported GLB modified;
+            # clean it before rebasing a diagnostics-only commit.
+            git restore -- world-creator/assets/riley-top-shelf-blender-trial.glb || true
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
