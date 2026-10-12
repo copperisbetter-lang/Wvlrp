@@ -673,9 +673,11 @@ def action(name,keys):
     st.repeat=1
     return ac
 action("Riley Idle",[(1,[]),(15,[("Chest",0,1.0),("Head",2,1.0)]),(30,[])])
-action("Riley Walk",[(1,[("LThigh",0,20),("RThigh",0,-20),("LUpperArm",0,-10),("RUpperArm",0,10)]),
-                     (13,[("LThigh",0,-20),("RThigh",0,20),("LUpperArm",0,10),("RUpperArm",0,-10)]),
-                     (25,[("LThigh",0,20),("RThigh",0,-20),("LUpperArm",0,-10),("RUpperArm",0,10)])])
+action("Riley Walk",[(1,[("Hips",1,3),("Hips",2,-3),("Spine",2,2),("LThigh",0,20),("RThigh",0,-20),("LShin",0,9),("RShin",0,24),("LUpperArm",0,-10),("RUpperArm",0,10)]),
+                     (7,[("Hips",1,0),("Hips",2,0),("LThigh",0,0),("RThigh",0,0),("LShin",0,16),("RShin",0,16)]),
+                     (13,[("Hips",1,-3),("Hips",2,3),("Spine",2,-2),("LThigh",0,-20),("RThigh",0,20),("LShin",0,24),("RShin",0,9),("LUpperArm",0,10),("RUpperArm",0,-10)]),
+                     (19,[("Hips",1,0),("Hips",2,0),("LThigh",0,0),("RThigh",0,0),("LShin",0,16),("RShin",0,16)]),
+                     (25,[("Hips",1,3),("Hips",2,-3),("Spine",2,2),("LThigh",0,20),("RThigh",0,-20),("LShin",0,9),("RShin",0,24),("LUpperArm",0,-10),("RUpperArm",0,10)])])
 # Root height and thigh/shin counter-rotation are essential: bone rotation
 # alone leaves hands-and-knees floating, folded like a monster crouch.
 action("Riley Kneel",[(1,[],(0,0,0)),
