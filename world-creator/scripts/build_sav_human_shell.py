@@ -133,6 +133,29 @@ for o in meshes:
    y-=delta
    if abs(delta)>.001 and abs(x)<.075 and abs(z-anatomy_z)<.09:sculpted+=1
    v.co=o.matrix_world.inverted_safe()@Vector((x,y,z))
+  # Independent left/right inspection morphs on the same continuous body mesh.
+  # Shape keys preserve the rest mesh and follow the existing armature in every pose.
+  o.shape_key_add(name="Basis",from_mix=False)
+  for side,name in ((-1,"Labia_Left_Open"),(1,"Labia_Right_Open")):
+   key=o.shape_key_add(name=name,from_mix=False)
+   changed=0
+   for i,v in enumerate(o.data.vertices):
+    p=o.matrix_world@v.co
+    x,y,z=p.x,p.y,p.z
+    if x*side<=0:continue
+    # Restrict displacement to the appropriate labial fold on the anterior surface.
+    height=math.exp(-((z-anatomy_z)/.064)**4)
+    lateral=math.exp(-((abs(x)-.020)/.020)**4)
+    nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.025]
+    surface_y=min(nearby) if nearby else front_y
+    anterior=math.exp(-((y-surface_y)/.095)**2)
+    influence=height*lateral*anterior
+    if influence<.003:continue
+    displaced=Vector((x+side*.016*influence,y+.008*influence,z))
+    key.data[i].co=o.matrix_world.inverted_safe()@displaced
+    changed+=1
+   print("SAV_INSPECTION_MORPH",name,changed)
+   if changed<15:raise RuntimeError("Sav inspection morph lacks sufficient geometry")
   print("SAV_PELVIC_SCULPT_VERTICES",sculpted, "CENTER_Z", round(anatomy_z,4))
   # Assert the anatomical relief is not lost or absent in exported mesh.
   if sculpted < 25:
