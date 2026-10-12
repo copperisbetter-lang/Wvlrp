@@ -8,7 +8,7 @@
 </style></head><body>
 <header><div><h1>Caitlyn — MPFB 3D model trial</h1><small>WVLRP World Creator · separate experimental character</small></div><a href="./">← World Creator</a></header>
 <main class="main">
-<div class="legend"><span>Drag to rotate</span><span>Pinch to zoom</span><span>Rigged MPFB test</span><span>No clothing · wavy platinum-blonde hair</span></div>
+<div class="legend"><span>Drag to rotate</span><span>Pinch to zoom</span><span>Rigged MPFB test</span><span>Temporary blue sundress · wavy platinum-blonde hair</span></div>
 <div id="stage"><canvas id="renderCanvas" aria-label="Interactive 3D Caitlyn character"></canvas><div id="status" role="status">Loading 3D character…</div></div>
 <div class="controls">
 <button id="home">Full body / reset</button>
@@ -23,10 +23,11 @@
 <button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
 <button id="idle">Play movement</button>
 <button id="smile" aria-pressed="true">Smile: gentle</button>
+<button id="dress" type="button" aria-pressed="true">Sundress: on</button>
 <label class="pose-scrub" for="poseProgress">Pose progress <input type="range" id="poseProgress" min="0" max="100" step="1" value="0" aria-label="Pose progress"></label> <output id="posePercent" for="poseProgress">0%</output>
-<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-fixed-v5" download="caitlyn-mpfb-trial.glb">Download GLB</a>
+<a class="button" href="./assets/caitlyn-mpfb-trial.glb?v=caitlyn-blue-dress-pose-v6" download="caitlyn-mpfb-trial.glb">Download GLB</a>
 </div>
-<p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified as a calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
+<p class="note"><strong>What this is:</strong> a separate adult MakeHuman/MPFB-generated character with wavy platinum-blonde hair, a continuous, complexion-matched face/neck/body material and a subtle smile morph, and a preserved full-body base mesh. It has a Mixamo-compatible skeleton and five named animations: standing, bending, kneeling, hands-and-knees, and elbows-and-knees. Both floor poses are tested with ground support diagnostics during the build. Tap a pose to hold its final position; use Pose progress to scrub through the movement, or Play movement to view it. The poses are for preview testing; they have not been verified as physically realistic. The model has NOT been verified for calibrated measurements, and it is not plugged into gameplay movement yet. Other characters and the existing world map have not been changed.</p>
 <details><summary>Show offline preview render</summary><img src="./assets/caitlyn-mpfb-trial-preview.png" alt="Blender's front-view render of the MPFB trial model"></details>
 <p class="note">If the model fails on a mobile browser, try refresh once or download the GLB and open it in a separate 3D viewer. The first load may take a moment on cellular data.</p>
 </main>
@@ -35,7 +36,7 @@
 <script>
 (function(){
 const canvas=document.getElementById('renderCanvas'), status=document.getElementById('status');
-let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=true;
+let engine,scene,camera,groups=[],playing=true,bodyBounds=null,currentGroup=null,smileTargets=[],smileOn=true,dressMeshes=[],dressOn=true;
 try {
  engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});
  scene=new BABYLON.Scene(engine);
@@ -47,8 +48,13 @@ try {
  const key=new BABYLON.HemisphericLight('soft studio light',new BABYLON.Vector3(0,1,0),scene); key.intensity=.92; key.diffuse=new BABYLON.Color3(1,.965,.935);
  const side=new BABYLON.DirectionalLight('key light',new BABYLON.Vector3(-.4,-1,.6),scene); side.intensity=.52; side.diffuse=new BABYLON.Color3(1,.985,.965);
  const faceFill=new BABYLON.DirectionalLight('subtle face fill',new BABYLON.Vector3(.15,-.40,-1),scene); faceFill.intensity=.13; faceFill.diffuse=new BABYLON.Color3(1,.97,.95);
- BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-floor-pose-fixed-v5&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
+ BABYLON.SceneLoader.ImportMeshAsync(null,'./assets/','caitlyn-mpfb-trial.glb?v=caitlyn-blue-dress-pose-v6&fresh='+Date.now(),scene,undefined,'.glb').then(res=>{
   groups=res.animationGroups||[];
+  dressMeshes=(res.meshes||[]).filter(m=>/caitlyn temporary sundress/i.test(m.name||''));
+  dressMeshes.forEach(m=>m.setEnabled(true));
+  document.getElementById('dress').textContent=dressMeshes.length?'Sundress: on':'Sundress: rebuilding';
+  document.getElementById('dress').disabled=!dressMeshes.length;
+
   // A new viewer page is not proof that the GitHub Actions model rebuild
   // succeeded. Inspect the imported GLB itself before reporting a new pose.
   const expected=['Caitlyn HandsAndKnees','Caitlyn ElbowsAndKnees'];
@@ -195,6 +201,14 @@ function showPose(pose,animate=false){
  });
 }
 document.querySelectorAll('[data-pose]').forEach(btn=>btn.onclick=()=>showPose(btn.dataset.pose));
+document.getElementById('dress').onclick=()=>{
+ dressOn=!dressOn;
+ dressMeshes.forEach(m=>m.setEnabled(dressOn));
+ const b=document.getElementById('dress');
+ b.textContent='Sundress: '+(dressOn?'on':'off');
+ b.setAttribute('aria-pressed',String(dressOn));
+ status.textContent='Caitlyn temporary sundress '+(dressOn?'visible':'hidden');
+};
 document.getElementById('smile').onclick=()=>{
  smileOn=!smileOn;
  for(const t of smileTargets)t.influence=smileOn?.18:0;
