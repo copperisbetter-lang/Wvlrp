@@ -1029,7 +1029,7 @@ def main():
                     loss+=1600*(knee_back-.015)**2
                     if use_elbows:
                         loss+=950*max(0,.35-(hip.z-kz))**2
-                    loss+=15*max(0,.035-ankle_back)**2
+                    loss+=25000*sum(max(0,.12-(ankles[i].y-knee[i].y))**2 for i in (0,1))
                     # Avoid backwards-facing torso when elevating the pelvis.
                     loss+=6500*max(0,.26-chest_forward)**2
                     loss+=5200*max(0,.20-(hip.y-mean([v.y for v in shoulder])))**2
