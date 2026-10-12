@@ -894,7 +894,11 @@ def main():
         if not rig.animation_data: rig.animation_data_create()
         action=bpy.data.actions.new(name)
         rig.animation_data.action=action
+        # Previously authored NLA strips must not override the pose being solved.
+        for existing_track in rig.animation_data.nla_tracks:
+            existing_track.mute=True
         for frame,angles,hip_drop in keys:
+            bpy.context.scene.frame_set(frame)
             for pb in rig.pose.bones:
                 pb.rotation_mode="XYZ"
                 pb.rotation_euler=(0,0,0)
@@ -1308,6 +1312,8 @@ def main():
                   ("lforearm",0,90),("rforearm",0,90),
                   ("neck",0,-8),("head",0,5)],-.34)])
     rig.animation_data.action=None
+    for existing_track in rig.animation_data.nla_tracks:
+        existing_track.mute=False
     for pb in rig.pose.bones:
         pb.rotation_mode="XYZ";pb.rotation_euler=(0,0,0);pb.location=(0,0,0)
     # NLA is how Blender's glTF exporter discovers separate named clips.
