@@ -44,7 +44,7 @@ parents={"hips":None,"spine":"hips","chest":"spine","neck":"chest","head":"neck"
 "leftUpperArm":"chest","leftLowerArm":"leftUpperArm","rightUpperArm":"chest","rightLowerArm":"rightUpperArm",
 "leftUpperLeg":"hips","leftLowerLeg":"leftUpperLeg","rightUpperLeg":"hips","rightLowerLeg":"rightUpperLeg",
 "leftFoot":"leftLowerLeg","rightFoot":"rightLowerLeg"}
-centers={p[4]:p[1] for p in parts}
+centers={p[3]:p[1] for p in parts}
 nodes=[];indices={};children={}
 for key,parent in parents.items():
     pos=centers[key]; relative=tuple(pos[i]-(centers[parent][i] if parent else 0) for i in range(3))
