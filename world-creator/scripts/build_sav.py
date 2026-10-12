@@ -201,6 +201,56 @@ for o,b in parts:
      break
  mod=o.modifiers.new("Armature","ARMATURE");mod.object=rig
  o.parent=rig
+# Consolidate body pieces into one connected skin surface BEFORE animation export.
+# Keep hair, navel and finger meshes separate; those require finer sculpting.
+# Voxel remesh removes intersecting ellipsoid seams at shoulders and hips.
+def fuse_body_skin():
+ from mathutils import Vector
+ from mathutils.kdtree import KDTree
+ candidates=[o for o,b in parts if o.type=="MESH" and
+   (o.name=="Sav continuous torso" or "transition" in o.name or
+    "joined arm" in o.name or "joined leg" in o.name or
+    o.name=="neck" or o.name=="head")]
+ if len(candidates)<10:raise RuntimeError("Missing skin pieces for fusion")
+ # Record source vertex positions and weights in world space before joining.
+ points=[]
+ for obj in candidates:
+  for v in obj.data.vertices:
+   weights={obj.vertex_groups[g.group].name:g.weight for g in v.groups}
+   points.append((obj.matrix_world@v.co,weights))
+ kd=KDTree(len(points))
+ for i,(co,weights) in enumerate(points):kd.insert(co,i)
+ kd.balance()
+ bpy.ops.object.select_all(action="DESELECT")
+ for obj in candidates:obj.select_set(True)
+ bpy.context.view_layer.objects.active=candidates[0]
+ bpy.ops.object.join()
+ merged=bpy.context.object
+ merged.name="Sav fused anatomical skin"
+ # Delete stale vertex groups; rebuild localized skin weights after remeshing.
+ for vg in list(merged.vertex_groups):merged.vertex_groups.remove(vg)
+ for mod in list(merged.modifiers):
+  if mod.type=="ARMATURE":merged.modifiers.remove(mod)
+ merged.data.remesh_voxel_size=.012
+ bpy.ops.object.voxel_remesh()
+ groups={}
+ for v in merged.data.vertices:
+  _,index,_=kd.find(merged.matrix_world@v.co)
+  weights=points[index][1]
+  weights=sorted(weights.items(),key=lambda kv:kv[1],reverse=True)[:4]
+  total=sum(w for _,w in weights)
+  for name,w in weights:
+   if total<=0:continue
+   if name not in groups:groups[name]=merged.vertex_groups.new(name=name)
+   groups[name].add([v.index],w/total,"REPLACE")
+ for p in merged.data.polygons:p.use_smooth=True
+ arm=merged.modifiers.new("Sav anatomical armature","ARMATURE");arm.object=rig
+ merged.parent=rig
+ # Replace original entries so only the fused surface is exported.
+ parts[:]=[(o,b) for o,b in parts if o not in candidates]
+ parts.append((merged,"already_weighted"))
+ print("SAV_FUSED_SKIN",len(merged.data.vertices),len(groups))
+fuse_body_skin()
 # Pose keyframes on armature; skeletal prototype, not final physically correct floor poses.
 def action(name,frames,pose,root=None):
  for pb in rig.pose.bones:pb.rotation_mode="XYZ"
