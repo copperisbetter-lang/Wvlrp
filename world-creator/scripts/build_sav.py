@@ -130,14 +130,19 @@ ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
 eye=mat("Sav brown eyes",(.18,.105,.068))
 lip=mat("Sav lip tint",(.56,.265,.245))
 for side,label in ((1,"L"),(-1,"R")):
- ell(label+" eye",(side*.039,-.100,1.699),(.022,.007,.012),eye,"Head")
+ # Eye centers sit within the face surface rather than on its outer plane.
+ ell(label+" eye",(side*.039,-.088,1.699),(.018,.012,.013),eye,"Head")
  ell(label+" cheek",(side*.064,-.071,1.660),(.028,.012,.024),skin,"Head")
  ell(label+" ear",(side*.102,-.004,1.679),(.014,.021,.032),skin,"Head")
  ell(label+" temple hair",(side*.086,-.012,1.734),(.025,.039,.085),gold,"Head")
  ell(label+" loose side hair",(side*.096,.023,1.668),(.017,.026,.103),gold,"Head")
 ell("nose bridge",(0,-.099,1.681),(.015,.016,.039),skin,"Head")
 ell("nose tip",(0,-.119,1.658),(.021,.016,.013),skin,"Head")
-ell("upper lip",(0,-.099,1.627),(.031,.008,.009),lip,"Jaw")
+# Dental surfaces are parented to the jaw/head, never to hair geometry.
+teeth=mat("Sav natural enamel",(.87,.82,.73))
+ell("upper dental arch",(0,-.096,1.623),(.028,.008,.006),teeth,"Head")
+ell("lower dental arch",(0,-.095,1.609),(.027,.008,.006),teeth,"Jaw")
+ell("upper lip",(0,-.099,1.627),(.031,.008,.009),lip,"Head")
 ell("lower lip",(0,-.099,1.615),(.029,.009,.009),lip,"Jaw")
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
@@ -295,8 +300,11 @@ if body:
    vertical=math.exp(-((p.z-.915)/.038)**2)
    outer=(math.exp(-((p.x-.024)/.014)**2)+math.exp(-((p.x+.024)/.014)**2))
    center=math.exp(-(p.x/.012)**2)
-   # Raised paired contours separated by a restrained central recess.
-   p.y-=front_factor*vertical*(.020*outer-.009*center)
+   # Build a visible mound above paired labial contours on the fused skin.
+   mound=math.exp(-((p.z-.956)/.044)**2)*math.exp(-(p.x/.075)**2)
+   p.y-=front_factor*(.025*mound+vertical*(.025*outer-.008*center))
+ # The lower pelvic surface is checked after fusion; these details must
+ # survive voxel remeshing, unlike the earlier pre-fusion microrelief.
  print("SAV_PELVIC_RELIEF_POST_FUSION",sum(1 for v in body.data.vertices if .865<v.co.z<.985 and abs(v.co.x)<.082 and v.co.y<-.045))
  # Repair blocky silhouette normals after voxel remeshing.
  for polygon in body.data.polygons:polygon.use_smooth=True
