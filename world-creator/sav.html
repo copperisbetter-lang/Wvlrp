@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sav | WVLRP Character QA</title>
+<style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}</style></head>
+<body><header><strong>Sav — independent character QA</strong> <small>Prototype only; anatomy and reference likeness unapproved</small></header>
+<main id="stage"><div id="status">Loading Sav prototype…</div></main>
+<footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+const stage=document.getElementById('stage'),status=document.getElementById('status');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x15201d);
+scene.add(new THREE.HemisphereLight(0xffffff,0x52665c,2));
+const light=new THREE.DirectionalLight(0xfff1d8,2);light.position.set(2,4,4);scene.add(light);
+const grid=new THREE.GridHelper(5,10,0x648071,0x30433b);scene.add(grid);
+const camera=new THREE.PerspectiveCamera(40,1,.02,50);
+function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);controls.update()}
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
+const mixer=new THREE.AnimationMixer(scene);let clips=[];
+new GLTFLoader().load('./assets/sav-prototype.glb',g=>{
+ scene.add(g.scene);clips=g.animations;
+ const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
+ const unique=[...new Set(joints)];
+ status.textContent='Prototype loaded | '+unique.length+' unique skin joints | '+clips.length+' animation clips | Not anatomically approved';
+ if(unique.length!==56)status.textContent+=' | JOINT COUNT FAILURE';
+ play('idle');
+},undefined,e=>{status.textContent='Sav GLB not available or failed to load. Check GitHub build workflow. '+e.message});
+let current=null;
+function play(which){const target=clips.find(c=>c.name.toLowerCase().includes(which==='floor'?'elbows':which));
+ if(!target){status.textContent='Animation '+which+' not found in GLB';return}
+ if(current)current.stop();current=mixer.clipAction(target);current.reset().play();}
+document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>play(b.dataset.pose));
+document.getElementById('reset').onclick=reset;
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();
+const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);mixer.update(clock.getDelta());controls.update();renderer.render(scene,camera)}animate();
+</script></body></html>
