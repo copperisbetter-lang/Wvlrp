@@ -17,7 +17,8 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x52665c,2));
 const light=new THREE.DirectionalLight(0xfff1d8,2);light.position.set(2,4,4);scene.add(light);
 const grid=new THREE.GridHelper(5,10,0x648071,0x30433b);scene.add(grid);
 const camera=new THREE.PerspectiveCamera(40,1,.02,50);
-function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);controls.update()}
+function reset(){// Open at shoulders-up portrait framing; orbit and zoom-out remain unrestricted.
+ camera.position.set(0,1.68,.62);controls.target.set(0,1.665,0);controls.minDistance=.12;controls.maxDistance=15;controls.enableZoom=true;controls.enablePan=true;controls.update()}
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
 let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
