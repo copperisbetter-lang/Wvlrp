@@ -139,8 +139,8 @@ for o in body_candidates:
     neck_rim=[e for e in bm.edges if e.is_boundary and
               all(v.co.z>head_cut-.030 and abs(v.co.x)<.14
                   and abs(v.co.y)<.17 for v in e.verts)]
-    if neck_rim and len(neck_rim)<400:
-        bmesh.ops.holes_fill(bm,edges=neck_rim,sides=0)
+    # Never fill an arbitrary donor seam as a hole: it can span the torso.
+    # The dedicated neck bridge covers the intentional neck cut.
     print("RILEY_TARGETED_NECK_RIM",o.name,len(neck_rim),
           "total_open_edges",sum(e.is_boundary for e in bm.edges))
     bm.to_mesh(o.data);bm.free()
@@ -765,7 +765,7 @@ for pb in arm.pose.bones:
     pb.rotation_mode="XYZ";pb.rotation_euler=(0,0,0)
 # Mute NLA for rest-pose export; glTF still includes named animation strips.
 for track in arm.animation_data.nla_tracks:track.mute=False
-bpy.context.scene.frame_set(1)
+bpy.context.scene.frame_set(0)
 
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",
