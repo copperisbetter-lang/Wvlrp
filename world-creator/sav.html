@@ -30,6 +30,29 @@ new GLTFLoader().load(modelUrl,g=>{
  const meshReport=skinMeshes.map(o=>o.name+':'+(o.geometry?.attributes?.position?.count||0)).join(', '); const vertexTotal=skinMeshes.reduce((n,o)=>n+(o.geometry?.attributes?.position?.count||0),0); status.textContent='Sav GLB inspection | '+unique.length+' joints | '+clips.length+' clips | '+skinMeshes.length+' skinned meshes | '+vertexTotal.toLocaleString()+' vertices'; console.info('Sav mesh audit',meshReport); if(vertexTotal<10000)status.textContent+=' | WARNING: LOW DETAIL / OLD PROTOTYPE';
  if(unique.length!==56)status.textContent+=' | JOINT COUNT FAILURE';
  g.scene.traverse(o=>{if(o.isBone&&unique.includes(o.name)&&!bones.has(o.name)){bones.set(o.name,o);rest.set(o.name,o.rotation.clone());}});
+ // Separate, inspectable pelvic surface geometry, independent of shell voxel smoothing.
+ // Parent to the pelvis bone so it follows the existing 56-joint skeleton.
+ const pelvis=bones.get('Pelvis');
+ if(pelvis){
+   const skinMat=new THREE.MeshStandardMaterial({color:0xb98572,roughness:.9,side:THREE.DoubleSide,depthTest:true});
+   const boneWorld=new THREE.Vector3();pelvis.getWorldPosition(boneWorld);
+   const shellBox=new THREE.Box3().setFromObject(g.scene);
+   const frontY=shellBox.min.y;
+   const makeFold=(side)=>{
+     const geometry=new THREE.SphereGeometry(1,24,32);
+     const mesh=new THREE.Mesh(geometry,skinMat.clone());
+     mesh.name='Sav_Pelvic_Anatomy_'+(side<0?'L':'R');
+     mesh.scale.set(.023,.016,.076);
+     const worldPos=new THREE.Vector3(side*.029,frontY-.008,boneWorld.z-.092);
+     pelvis.worldToLocal(worldPos);
+     mesh.position.copy(worldPos);pelvis.add(mesh);return mesh;
+   };
+   makeFold(-1);makeFold(1);
+   const seam=new THREE.Mesh(new THREE.SphereGeometry(1,16,24),new THREE.MeshStandardMaterial({color:0x87594e,roughness:1}));
+   seam.name='Sav_Pelvic_Midline';seam.scale.set(.004,.004,.049);
+   const seamPos=new THREE.Vector3(0,frontY-.025,boneWorld.z-.097);pelvis.worldToLocal(seamPos);seam.position.copy(seamPos);pelvis.add(seam);
+   status.textContent+=' | pelvic overlay attached to pelvis bone';
+ }
  const select=document.getElementById('joint');for(const name of [...bones.keys()].sort()){const option=document.createElement('option');option.value=name;option.textContent=name;select.append(option);}
  select.value=bones.has('LUpperArm')?'LUpperArm':[...bones.keys()][0];selectJoint(select.value);document.getElementById('jointstatus').textContent=bones.size+' joints available';
  play('idle');
