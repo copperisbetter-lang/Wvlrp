@@ -19,12 +19,12 @@ const camera=new THREE.PerspectiveCamera(40,1,.02,50);
 function reset(){camera.position.set(0,1.45,3.7);controls.target.set(0,.95,0);controls.update()}
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
-const mixer=new THREE.AnimationMixer(scene);let clips=[];
-const modelUrl='./assets/sav-prototype.glb?v=sav-56-20261012-build-success';
+let mixer=null;let clips=[];
+const modelUrl='./assets/sav-prototype.glb?v=8da0b715-pose-rebuild';
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
- scene.add(g.scene);clips=g.animations;
+ scene.add(g.scene);clips=g.animations;mixer=new THREE.AnimationMixer(g.scene);
  const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
  const unique=[...new Set(joints)];
  status.textContent='Prototype loaded | '+unique.length+' unique skin joints | '+clips.length+' animation clips | Not anatomically approved';
@@ -34,9 +34,11 @@ new GLTFLoader().load(modelUrl,g=>{
 let current=null;
 function play(which){const target=clips.find(c=>c.name.toLowerCase().includes(which==='floor'?'elbows':which));
  if(!target){status.textContent='Animation '+which+' not found in GLB';return}
- if(current)current.stop();current=mixer.clipAction(target);current.reset().play();}
+ if(!mixer)return;
+ if(current)current.stop();current=mixer.clipAction(target);current.reset().play();
+ status.textContent='Playing '+target.name+' | '+clips.length+' clips | 56-joint prototype';}
 document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>play(b.dataset.pose));
 document.getElementById('reset').onclick=reset;
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();
-const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);mixer.update(clock.getDelta());controls.update();renderer.render(scene,camera)}animate();
+const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);if(mixer)mixer.update(clock.getDelta());controls.update();renderer.render(scene,camera)}animate();
 </script></body></html>
