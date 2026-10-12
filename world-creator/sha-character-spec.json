@@ -24,7 +24,15 @@
     ],
     "validation": "check ground contact, anatomical joints, hair and clothing clipping"
   },
-  "clothing": "simple fitted casual outfit, independently skinned",
+  "clothing": "None in base-model construction; start with anatomical base mesh, skin UV, hair, rig and pose validation. Clothing is a separate later stage.",
   "isolation": "Do not modify Caitlyn, Amy, Riley, Chrissy or Mason",
-  "quality_gate": "review front side back and poses before calling ready"
+  "quality_gate": "review front side back and poses before calling ready",
+  "build_order": [
+    "adult base anatomy and proportions",
+    "photographic UV skin and face/neck/body matching",
+    "face and eyes",
+    "scalp-fitted flowing hair",
+    "skeletal rig and pose validation",
+    "optional separate clothing only after base approval"
+  ]
 }
