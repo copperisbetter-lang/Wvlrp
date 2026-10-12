@@ -84,6 +84,15 @@ def continuous_limb(name,centers,radii,first,second,pivot):
  parts.append((obj,("blend",first,second,pivot,n)))
  return obj
 torso_mesh=torso()
+# Smooth shoulder and hip socket transitions, weighted between torso and limb.
+def socket(name,center,scale,parent,child):
+ bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=20,location=center)
+ o=bpy.context.object;o.name=name;o.scale=scale
+ bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+ o.data.materials.append(skin)
+ for face in o.data.polygons:face.use_smooth=True
+ parts.append((o,("socket",parent,child,center)))
+ return o
 # Torso receives vertex-color tonal variation; limb materials remain neutral until unified mesh.
 tone_torso(torso_mesh)
 ell("neck",(0,0,1.55),(.063,.06,.09),skin,"Neck")
@@ -92,6 +101,8 @@ ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
+ socket(label+" shoulder transition",(.185*side,0,1.43),(.072,.085,.083),"Spine4",label+"UpperArm")
+ socket(label+" hip transition",(.115*side,0,.975),(.087,.098,.115),"Pelvis",label+"Thigh")
  continuous_limb(label+" joined arm",[(.22*side,0,1.44),(.245*side,0,1.34),(.27*side,0,1.23),(.28*side,0,1.18),(.29*side,0,1.10),(.30*side,0,1.00),(.30*side,0,.97)],[.047,.053,.046,.040,.039,.034,.030],label+"UpperArm",label+"Forearm",3)
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
  continuous_limb(label+" joined leg",[(.105*side,0,.98),(.105*side,0,.86),(.108*side,0,.72),(.11*side,0,.60),(.11*side,0,.55),(.11*side,0,.43),(.11*side,0,.29),(.11*side,0,.14)],[.078,.091,.082,.063,.054,.050,.044,.038],label+"Thigh",label+"Shin",4)
@@ -131,7 +142,15 @@ for side,label in ((1,"L"),(-1,"R")):
 bpy.ops.object.mode_set(mode="OBJECT")
 assert len(rig.data.bones)==56,len(rig.data.bones)
 for o,b in parts:
- if isinstance(b,tuple) and b[0]=="blend":
+ if isinstance(b,tuple) and b[0]=="socket":
+  _,parent,child,center=b
+  gp=o.vertex_groups.new(name=parent);gc=o.vertex_groups.new(name=child)
+  for v in o.data.vertices:
+   # Local coordinates are relative to socket center.
+   lateral=abs(v.co.x)
+   t=max(.05,min(.95,(lateral+.02)/(.14 if "shoulder" in o.name else .17)))
+   gp.add([v.index],1-t,"REPLACE");gc.add([v.index],t,"REPLACE")
+ elif isinstance(b,tuple) and b[0]=="blend":
   _,first,second,pivot,n=b
   g1=o.vertex_groups.new(name=first);g2=o.vertex_groups.new(name=second)
   for v in o.data.vertices:
