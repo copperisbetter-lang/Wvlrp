@@ -303,71 +303,11 @@ for iteration in range(8):
 print("RILEY_CHEST_SURFACE_POLISH",len(chest_mask),"passes",8)
 body.data.update()
 
-# The donor abdominal surface contains a visibly recessed, heart-shaped patch.
-# Relax ONLY the central front abdomen, retaining the side silhouette and navel.
-# Smooth across existing body topology; never attach a cover-up sphere or decal.
-neighbors=[set() for _ in body.data.vertices]
-for e in body.data.edges:
-    i,j=e.vertices
-    neighbors[i].add(j);neighbors[j].add(i)
-rest=[v.co.copy() for v in body.data.vertices]
-abdomen_mask={}
-for v in body.data.vertices:
-    p=v.co
-    zweight=smooth((p.z-.99)/.07)*(1-smooth((p.z-1.245)/.08))
-    xweight=1-smooth((abs(p.x)-.065)/.13)
-    yweight=1-smooth((-.01-p.y)/.12) if p.y>-.02 else 1.0
-    weight=zweight*xweight*yweight
-    if weight>.001 and p.y<.035: abdomen_mask[v.index]=weight
-for iteration in range(10):
-    old=[v.co.copy() for v in body.data.vertices]
-    for idx,weight in abdomen_mask.items():
-        ns=neighbors[idx]
-        if not ns:continue
-        mid=sum((old[j] for j in ns),Vector())/len(ns)
-        # Preserve broad profile; relax small local dents and polygon boundaries.
-        body.data.vertices[idx].co=old[idx].lerp(mid,.55*weight)
-# Lift unusually deep local concavities only in the center, not the hips.
-for idx,weight in abdomen_mask.items():
-    p=body.data.vertices[idx].co
-    if p.x*p.x<.010 and 1.055<p.z<1.20 and p.y>-.079:
-        p.y-=.012*weight
+# Preserve the CC0 donor's original connected chest and abdomen topology.
+# Previous sculpt relaxations and front projection produced severe dents
+# and pinched triangular breast shapes in mobile preview.
 body.data.update()
-print("RILEY_ABDOMEN_POLISH","smoothed_vertices",len(abdomen_mask))
-
-# Correct the original donor's hard-edged bodice-shaped recesses without
-# adding a second skin shell. Project ONLY the front ribcage, bust and belly
-# onto a continuously curved human torso surface using the EXISTING welded
-# vertex topology. Blend out smoothly at the sides, pelvis, and neck; arms,
-# back, head and the full hip silhouette are never projected.
-projected=0
-# Disable the destructive front-surface projection. It flattened and folded
-# the donor chest; preserve the original continuous anatomical topology.
-for v in []:
-    p=v.co
-    if not (.88 < p.z < 1.47 and abs(p.x)<.24 and p.y<.082):
-        continue
-    chest_env=gauss(p.z-1.285,.165)
-    waist_env=gauss(p.z-1.060,.135)
-    horizontal=1-smooth((abs(p.x)-.136)/.101)
-    vertical=smooth((p.z-.88)/.115)*(1-smooth((p.z-1.395)/.080))
-    front_envelope=1-smooth((p.y+.030)/.112)
-    w=.94*horizontal*vertical*front_envelope
-    if w<.005:continue
-    rx=.187+.020*chest_env-.013*waist_env
-    ribdepth=.108+.019*chest_env-.012*waist_env
-    ellipse=math.sqrt(max(.012,1-(p.x/rx)**2))
-    full_bust=max(.066,min(.114,.075+.002*(M["bust_circumference_cm"]-94)))
-    soft_lower=gauss(p.z-1.248,.105)*gauss(abs(p.x)-.088,.079)
-    top_slope=.19*gauss(p.z-1.343,.11)*gauss(abs(p.x)-.087,.087)
-    breast_volume=full_bust*(soft_lower+top_slope)
-    ideal_front=-ribdepth*ellipse-breast_volume
-    p.y=(1-w)*p.y+w*ideal_front
-    projected+=1
-body.data.update()
-print("RILEY_FRONT_TORSO_CONTINUOUS_SCULPT",projected,
-      "bust_target_cm",M["bust_circumference_cm"],
-      "hip_target_cm",M["full_hip_circumference_cm"])
+print("RILEY_TORSO_SOURCE_TOPOLOGY_PRESERVED")
 
 # Extract the real face appearance from its skin material where possible.
 # A single opaque body shader gets the sampled complexion, not a second
