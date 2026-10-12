@@ -107,6 +107,9 @@ for o in meshes:
    nearby=[sy for sz,sy in pelvic_surface if abs(sz-z)<.025]
    surface_y=min(nearby) if nearby else front_y
    front=math.exp(-((y-surface_y)/.085)**2)
+   # Broad rounded mons above the cleft; fades smoothly into abdomen and groin.
+   mons=math.exp(-((z-(anatomy_z+.107))/.078)**2)*math.exp(-(x/.095)**4)
+   y-=.031*front*mons
    z_center=anatomy_z
    # The superior cleft starts below the hood, not on the mons pubis.
    # Smoothstep at the upper junction tapers the folds into the pubic mound.
