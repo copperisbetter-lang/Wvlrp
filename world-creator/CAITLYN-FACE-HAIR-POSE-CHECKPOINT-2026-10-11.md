@@ -52,3 +52,9 @@ https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/build-caitlyn-mpf
 - GitHub Actions build #29, run `38190812053`, was **still in progress** when last checked, not yet published/visually tested. Do not call dress/hair finished until GitHub build succeeds, GLB is committed, site refreshes, and phone testing shows correct appearance/pose.
 - Review: https://wvlrp.com/world-creator/caitlyn-mpfb-trial.html?v=caitlyn-blue-dress-pose-v6
 - Build: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/38190812053
+
+## Oct 11 9:12 PM EDT — dress-and-hair GLB build VERIFIED
+- GitHub Actions **#29** (`38190812053`, job `114623044388`) completed **SUCCESS** and published Caitlyn GLB on main in commit `c75cec227e9a`.
+- Actual exported GLB **14,643,488 bytes**, 52 joints, five skeletal animation clips, eight meshes. Log: `WVLRP_CAITLYN_SCALP_SURFACE_FIT 4052 4010`; `WVLRP_CAITLYN_SUNDRESS_BUILT 544 342 rigged True`.
+- Both poses pass builder support diagnostics (hands 6 mm max, elbows 2 mm max contact deviations). **Phone visual appearance/playback is NOT verified yet.** User should open the cache-busted standalone viewer, try both buttons and inspect hair/dress.
+- Live test link: https://wvlrp.com/world-creator/caitlyn-mpfb-trial.html?v=caitlyn-blue-dress-pose-v6
