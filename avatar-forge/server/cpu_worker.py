@@ -24,25 +24,28 @@ skin=sample_skin()
 # Humanoid ellipsoid parts; skinned to 15 named joints. All mesh vertices and
 # joints are in a common world-space bind pose.
 parts=[
- ("Hips",(0,1.00,0),(.22,.16,.13),"hips"),
- ("Spine",(0,1.29,0),(.20,.31,.12),"spine"),
- ("Chest",(0,1.53,0),(.24,.20,.14),"chest"),
- ("Neck",(0,1.75,0),(.065,.10,.065),"neck"),
- ("Head",(0,1.91,0),(.125,.16,.11),"head"),
- ("LeftUpperArm",(-.31,1.53,0),(.095,.23,.095),"leftUpperArm"),
- ("LeftLowerArm",(-.39,1.14,0),(.073,.22,.073),"leftLowerArm"),
- ("RightUpperArm",(.31,1.53,0),(.095,.23,.095),"rightUpperArm"),
- ("RightLowerArm",(.39,1.14,0),(.073,.22,.073),"rightLowerArm"),
- ("LeftUpperLeg",(-.12,.77,0),(.125,.28,.12),"leftUpperLeg"),
- ("LeftLowerLeg",(-.12,.30,0),(.085,.25,.09),"leftLowerLeg"),
- ("RightUpperLeg",(.12,.77,0),(.125,.28,.12),"rightUpperLeg"),
- ("RightLowerLeg",(.12,.30,0),(.085,.25,.09),"rightLowerLeg"),
+ ("Hips",(0,1.00,0),(.215,.19,.15),"hips"),
+ ("Spine",(0,1.29,0),(.19,.32,.135),"spine"),
+ ("Chest",(0,1.53,0),(.235,.22,.145),"chest"),
+ ("Neck",(0,1.75,0),(.074,.11,.074),"neck"),
+ ("Head",(0,1.91,0),(.115,.15,.105),"head"),
+ ("LeftUpperArm",(-.29,1.52,0),(.105,.255,.10),"leftUpperArm"),
+ ("LeftLowerArm",(-.38,1.16,0),(.079,.245,.075),"leftLowerArm"),
+ ("RightUpperArm",(.29,1.52,0),(.105,.255,.10),"rightUpperArm"),
+ ("RightLowerArm",(.38,1.16,0),(.079,.245,.075),"rightLowerArm"),
+ ("LeftUpperLeg",(-.12,.78,0),(.14,.31,.135),"leftUpperLeg"),
+ ("LeftLowerLeg",(-.12,.32,0),(.10,.27,.10),"leftLowerLeg"),
+ ("RightUpperLeg",(.12,.78,0),(.14,.31,.135),"rightUpperLeg"),
+ ("RightLowerLeg",(.12,.32,0),(.10,.27,.10),"rightLowerLeg"),
+ ("LeftHand",(-.40,.90,0),(.075,.12,.055),"leftHand"),
+ ("RightHand",(.40,.90,0),(.075,.12,.055),"rightHand"),
  ("LeftFoot",(-.12,.065,.09),(.10,.07,.19),"leftFoot"),
  ("RightFoot",(.12,.065,.09),(.10,.07,.19),"rightFoot"),
 ]
 parents={"hips":None,"spine":"hips","chest":"spine","neck":"chest","head":"neck",
 "leftUpperArm":"chest","leftLowerArm":"leftUpperArm","rightUpperArm":"chest","rightLowerArm":"rightUpperArm",
 "leftUpperLeg":"hips","leftLowerLeg":"leftUpperLeg","rightUpperLeg":"hips","rightLowerLeg":"rightUpperLeg",
+"leftHand":"leftLowerArm","rightHand":"rightLowerArm",
 "leftFoot":"leftLowerLeg","rightFoot":"rightLowerLeg"}
 centers={p[3]:p[1] for p in parts}
 nodes=[];indices={};children={}
@@ -102,6 +105,22 @@ for name,amp in (("Idle",.04),("Walk",.32)):
         samplers.append({"input":times,"output":output,"interpolation":"LINEAR"})
         channels.append({"sampler":len(samplers)-1,"target":{"node":indices[key],"path":"rotation"}})
     animations.append({"name":name,"channels":channels,"samplers":samplers})
+# Pose clips are joint rotations, not camera tricks. This baseline uses a
+# simplified articulated skeleton; poses require further ergonomic QA.
+for name,angles in (
+ ("Kneel",{"leftUpperLeg":-1.0,"rightUpperLeg":-1.0,"leftLowerLeg":1.85,"rightLowerLeg":1.85,"spine":.12}),
+ ("HandsAndKnees",{"spine":.85,"chest":.32,"leftUpperLeg":-.95,"rightUpperLeg":-.95,"leftLowerLeg":1.75,"rightLowerLeg":1.75,"leftUpperArm":-.9,"rightUpperArm":-.9,"leftLowerArm":-.15,"rightLowerArm":-.15,"neck":-.35}),
+ ("ElbowsAndKnees",{"spine":.92,"chest":.4,"leftUpperLeg":-.95,"rightUpperLeg":-.95,"leftLowerLeg":1.75,"rightLowerLeg":1.75,"leftUpperArm":-1.15,"rightUpperArm":-1.15,"leftLowerArm":-1.15,"rightLowerArm":-1.15,"neck":-.4}),
+ ("FlatOnBack",{"hips":-math.pi/2,"neck":.1}),
+):
+    channels=[];samplers=[]
+    for key,angle in angles.items():
+        q=[]
+        for a in (0,angle,angle):q.extend([math.sin(a/2),0,0,math.cos(a/2)])
+        output=add(q,"f",5126,"VEC4",3)
+        samplers.append({"input":times,"output":output,"interpolation":"LINEAR"})
+        channels.append({"sampler":len(samplers)-1,"target":{"node":indices[key],"path":"rotation"}})
+    animations.append({"name":name,"channels":channels,"samplers":samplers})
 meshnode=len(nodes);nodes.append({"name":"ProceduralBody","mesh":0,"skin":0})
 gltf={"asset":{"version":"2.0","generator":"WVLRP CPU Avatar Forge baseline"},
 "buffers":[{"byteLength":len(blob)}],"bufferViews":views,"accessors":accessors,
@@ -114,4 +133,4 @@ while len(j)%4:j+=b" "
 while len(blob)%4:blob.append(0)
 total=12+8+len(j)+8+len(blob)
 (folder/"avatar.glb").write_bytes(struct.pack("<III",0x46546c67,2,total)+struct.pack("<I4s",len(j),b"JSON")+j+struct.pack("<I4s",len(blob),b"BIN\\x00".replace(b"\\x00",b"\x00"))+blob)
-print("Wrote CPU baseline rigged GLB",total,"bytes, 15 joints, 2 animations; not a photorealistic reconstruction")
+print("Wrote CPU baseline rigged GLB",total,"bytes, 17 joints, 6 animations; not a photorealistic reconstruction")
