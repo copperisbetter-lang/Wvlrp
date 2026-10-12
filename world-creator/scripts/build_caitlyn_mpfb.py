@@ -154,36 +154,53 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
         return len(vertices)-1
     def polygon(inds,material):
         faces.append(tuple(inds));indexes.append(material)
-    # Copy ONLY the upper crown, NOT the forehead, brows, nose or face.
-    # Previous build included 4,000 head polygons in a wig-colored duplicate
-    # face above her real photographed head. That caused the two-head defect.
-    # The geometry below this crown band is deliberately hair locks, not skin.
-    scalp_ids={}
-    for vert in body.data.vertices:
-        q=body.matrix_world @ vert.co
-        if (q.z>max(eye_z+.040*height,scalp_z-.078*height) and
-            abs(q.x-xmid)<.082*height and abs(q.y-ymid)<.097*height):
-            scalp_ids[vert.index]=q
-    if len(scalp_ids)<85:
-        raise RuntimeError("Caitlyn needs more true skull vertices for scalp cap")
-    cap_map={};scalp_roots=[]
-    for poly in body.data.polygons:
-        if not all(i in scalp_ids for i in poly.vertices):continue
-        inds=[]
-        for vi in poly.vertices:
-            if vi not in cap_map:
-                src=body.data.vertices[vi]
-                normal=(body.matrix_world.to_3x3() @ src.normal).normalized()
-                fitted=scalp_ids[vi]+normal*(.0013*height)
-                cap_map[vi]=p(fitted);scalp_roots.append(fitted)
-            inds.append(cap_map[vi])
-        polygon(inds,0)
-    if len(cap_map)<80 or not scalp_roots:
-        raise RuntimeError("Scalp-shell mesh is not attached to the head")
+    # HAIR-ONLY scalp: NEVER copy MPFB head polygons into the hairstyle.
+    # Copying that skin geometry caused the mobile viewer's extra floating
+    # mannequin head. This separate closed crown is made solely of new hair
+    # vertices; it contains no nose, mouth, ear, or duplicate face surfaces.
+    skull_pts=[q for q in body_pts if
+              eye_z+.052*height < q.z < zhi+.002*height and
+              abs(q.x-xmid)<.100*height and abs(q.y-ymid)<.120*height]
+    if len(skull_pts)<180:
+        raise RuntimeError("Hair crown cannot locate Caitlyn's original skull")
+    core=sorted((q.z for q in skull_pts if
+                 abs(q.x-xmid)<.018*height and
+                 abs(q.y-ymid)<.030*height))
+    if len(core)<25:
+        raise RuntimeError("Hair crown centerline has too few mesh samples")
+    crown_top=core[int(.97*(len(core)-1))]+.002*height
+    hairline_z=eye_z+.049*height
+    if crown_top < hairline_z+.038*height:
+        raise RuntimeError("Caitlyn scalp landmarks are inconsistent")
+    cap_rings=[]
+    sectors=48
+    for row in range(14):
+        t=(row+.012)/13.012
+        polar=(math.pi/2)*t
+        rad=math.sin(polar)
+        level=hairline_z+(crown_top-hairline_z)*math.cos(polar)
+        ring=[]
+        for k in range(sectors):
+            az=2*math.pi*k/sectors
+            ring.append(p(Vector((xmid+height*.078*rad*math.cos(az),
+                 ymid+height*.091*rad*math.sin(az),level))))
+        if cap_rings:
+            before=cap_rings[-1]
+            for k in range(sectors):
+                nxt=(k+1)%sectors
+                polygon((before[k],ring[k],ring[nxt],before[nxt]),0)
+        cap_rings.append(ring)
+    # Root locks ON the new hair-only crown surface. No transformed copies
+    # of any face/head vertex are ever included in the exported hair mesh.
+    scalp_roots=[Vector(vertices[i]) for ring in cap_rings for i in ring]
+    scalp_roots=[hair_obj.matrix_world @ q for q in scalp_roots]
     def near_root(target):
         return min(scalp_roots,key=lambda q:(q-target).length_squared)
-    print("WVLRP_CAITLYN_SCALP_SURFACE_FIT",len(cap_map),len(faces),
-          "crown_only",True,"lowest_allowed",round(max(eye_z+.040*height,scalp_z-.078*height),3))
+    print("WVLRP_CAITLYN_HAIR_ONLY_CAP",
+          "new_cap_vertices",len(cap_rings)*sectors,
+          "no_copied_head_polygons",True,
+          "crown_top",round(crown_top,4),
+          "hairline",round(hairline_z,4))
     # Actual three-dimensional, tapered locks: no single flat curtain mesh.
     def lock(root,length,spread,wave,phase,width,tone):
         previous=None
@@ -217,8 +234,8 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
                          scalp_z-height*(.045+.008*layer))))
             length=height*(.245+.026*layer+rng.uniform(-.018,.038))
             lock(root,length,height*(.025*side+rng.uniform(-.007,.007)),
-                 height*rng.uniform(.010,.021),rng.uniform(0,2*pi),
-                 height*rng.uniform(.0028,.0040),
+                 height*rng.uniform(.014,.024),rng.uniform(0,2*pi),
+                 height*rng.uniform(.0040,.0052),
                  (i+layer*2)%4)
     # Separate wisps frame BOTH cheeks; none cover the eye openings.
     for side in (-1,1):
@@ -229,8 +246,8 @@ def replace_cape_with_layered_hair(hair_obj, body, rig, export_root):
                          scalp_z-height*(.050+.015*t))))
             lock(root,height*(.135+.116*t+rng.uniform(-.012,.029)),
                  side*height*(.010+.018*t),
-                 height*rng.uniform(.009,.018),rng.uniform(0,2*pi),
-                 height*rng.uniform(.0024,.0033),(i+1)%4)
+                 height*rng.uniform(.012,.022),rng.uniform(0,2*pi),
+                 height*rng.uniform(.0033,.0046),(i+1)%4)
     mesh=bpy.data.meshes.new("Caitlyn layered flowing wavy hair")
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
@@ -277,23 +294,67 @@ def add_temporary_sundress(body, rig, export_root):
     def quad(indices,m=0):
         faces.append(tuple(indices));material_ids.append(m)
     n=48
-    # Lightweight fitted sundress: the old 0.223*height hem and 0.146*height
-    # neckline made a rigid blue cone wider than her shoulders. Keep the hem
-    # short enough for floor-pose visibility and the bodice close to the torso.
-    # These dimensions are intentionally smaller; Caitlyn body is unchanged.
-    rings=[(.385,.134,.102),(.415,.150,.111),(.455,.154,.118),
-           (.505,.138,.108),(.555,.112,.099),(.60,.096,.088),
-           (.63,.091,.086),(.68,.106,.100),(.728,.113,.102)]
-    for k,(level,rx,ry) in enumerate(rings):
+    # Follow THIS avatar's actual exported MPFB torso instead of generic
+    # height-scaled torso/hip rings. Do not touch her saved body mesh.
+    # Sample local cross-sections while excluding arms from the torso fit.
+    # Coordinates are in world space like the original body profile.
+    def body_section(level):
+        z=low+level*h
+        side_cap=.151*h if level>.675 else .179*h
+        sample=[p for p in pts
+                if abs(p.z-z)<.018*h and abs(p.x-cx)<side_cap]
+        if len(sample)<36:
+            sample=[p for p in pts
+                    if abs(p.z-z)<.034*h and abs(p.x-cx)<side_cap]
+        if len(sample)<20:
+            raise RuntimeError("Caitlyn dress cannot sample torso at level "+str(level))
+        # Median depth places each slice around its real body, not a generic
+        # front/back center; explicit sampling keeps the dress with Caitlyn.
+        ys=sorted(p.y for p in sample)
+        mid_y=(ys[int(.08*(len(ys)-1))]+ys[int(.92*(len(ys)-1))])*.5
+        return sample,mid_y
+    def cloth_radius(level,angle):
+        sample,mid_y=body_section(level)
+        ux=math.cos(angle); uy=math.sin(angle)
+        # Select vertices in a forward-facing angular sector. The result
+        # follows skin contours (including bust/waist), not an ellipse.
+        near=[]
+        for p in sample:
+            dx=p.x-cx;dy=p.y-mid_y
+            r=math.hypot(dx,dy)
+            if r<.004*h:continue
+            alignment=(dx*ux+dy*uy)/r
+            if alignment>.89:
+                near.append(r)
+        if len(near)<3:
+            near=[max(0,(p.x-cx)*ux+(p.y-mid_y)*uy) for p in sample]
+        near.sort()
+        skin_r=near[int(.87*(len(near)-1))]
+        return max(.035*h,skin_r)
+    # Upper fitted bodice from chest to waist, then a gentle cloth skirt.
+    levels=(.385,.415,.455,.505,.555,.600,.630,.680,.728)
+    # Evaluate once per cross-section; the hem gets a modest flare while
+    # the bodice has only ~1.1 cm of ease above Caitlyn's actual skin.
+    waist_profile=[cloth_radius(.610,2*math.pi*j/n) for j in range(n)]
+    for k,level in enumerate(levels):
         ring=[]
         for j in range(n):
-            angle=2*pi*j/n
-            wave=(1+.035*sin(12*angle)*(1 if k<5 else .1))
+            angle=2*math.pi*j/n
+            real_skin=cloth_radius(max(level,.515),angle)
+            if level>=.600:
+                radius=real_skin+.007*h
+            else:
+                flare=(.600-level)/(.600-.385)
+                radius=max(real_skin+.011*h,
+                    waist_profile[j]+(.035*h)*flare)
+            # Fabric folds only in the SKIRT, never distort the torso.
+            if level<.60: radius*=1+.018*math.sin(10*angle)
             z=low+level*h
-            if k==0:z+=.011*h*sin(8*angle)
-            if k==len(rings)-1:z-=.010*h*max(0,-sin(angle))
-            ring.append(point(cx+rx*h*wave*cos(angle),
-                              cy+ry*h*wave*sin(angle),z))
+            if k==0:z+=.009*h*math.sin(8*angle)
+            elif k==len(levels)-1:z-=.003*h*max(0,-math.sin(angle))
+            sample,mid_y=body_section(max(level,.515))
+            ring.append(point(cx+radius*math.cos(angle),
+                              mid_y+radius*math.sin(angle),z))
         if rows:
             previous=rows[-1]
             for j in range(n):
@@ -301,6 +362,9 @@ def add_temporary_sundress(body, rig, export_root):
                 quad((previous[j],previous[nxt],ring[nxt],ring[j]),
                      0 if j//6%2 else 1)
         rows.append(ring)
+    print("WVLRP_CAITLYN_BODY_FITTED_DRESS",
+          "source_vertex_count",len(pts),
+          "sampled_bodice",True,"ring_count",len(rows))
     # Two straps bridging the front neckline and upper back, over shoulders.
     for side in (-1,1):
         x=cx+side*.080*h
@@ -314,14 +378,16 @@ def add_temporary_sundress(body, rig, export_root):
             pairs.append((point(x1-.0035*h,y1,z1),point(x1+.0035*h,y1,z1)))
         for j in range(len(pairs)-1):
             quad((pairs[j][0],pairs[j][1],pairs[j+1][1],pairs[j+1][0]),0)
-    # Cream-colored narrow waistband.
+    # Seam follows the actual fitted bodice ring rather than a rigid oval.
+    seam=rows[6]
     for j in range(n):
-        a=2*pi*j/n;b=2*pi*((j+1)%n)/n
-        def waist(angle,zoff):
-            return point(cx+.096*h*cos(angle),cy+.088*h*sin(angle),
-                         low+.628*h+zoff*h)
-        quad((waist(a,-.003),waist(b,-.003),
-              waist(b,.003),waist(a,.003)),2)
+        j2=(j+1)%n
+        v=verts[seam[j]];v2=verts[seam[j2]]
+        ia=point(v[0],v[1],v[2]-.002*h)
+        ib=point(v2[0],v2[1],v2[2]-.002*h)
+        ic=point(v2[0],v2[1],v2[2]+.002*h)
+        id=point(v[0],v[1],v[2]+.002*h)
+        quad((ia,ib,ic,id),2)
     mesh=bpy.data.meshes.new("Caitlyn removable summer dress cloth")
     mesh.from_pydata(verts,[],faces);mesh.update()
     garment=bpy.data.objects.new("Caitlyn temporary sundress",mesh)
@@ -1266,7 +1332,7 @@ def main():
         scene.render.engine="CYCLES";scene.cycles.samples=48
         scene.render.resolution_x=700;scene.render.resolution_y=950;scene.render.resolution_percentage=100
         scene.view_settings.view_transform="AgX"
-        scene.view_settings.look="Medium High Contrast"
+        scene.view_settings.look="AgX - Medium High Contrast"
         scene.view_settings.exposure=-.18
         scene.render.image_settings.file_format="PNG";scene.render.filepath=str(PNG)
         bpy.ops.render.render(write_still=True)
