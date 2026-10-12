@@ -67,6 +67,22 @@ def torso():
  for face in mesh.polygons:face.use_smooth=True
  parts.append((obj,None))
  return obj
+def continuous_limb(name,centers,radii,first,second,pivot):
+ n=24;verts=[];faces=[]
+ for (x,y,z),rad in zip(centers,radii):
+  for j in range(n):
+   a=2*math.pi*j/n
+   verts.append((x+rad*math.cos(a),y+rad*math.sin(a),z))
+ for i in range(len(centers)-1):
+  for j in range(n):
+   a=i*n+j;b=i*n+(j+1)%n;faces.append((a,b,b+n,a+n))
+ faces.append(tuple(reversed(range(n))))
+ faces.append(tuple((len(centers)-1)*n+j for j in range(n)))
+ mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
+ obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj);mesh.materials.append(skin)
+ for face in mesh.polygons:face.use_smooth=True
+ parts.append((obj,("blend",first,second,pivot,n)))
+ return obj
 torso_mesh=torso()
 # Torso receives vertex-color tonal variation; limb materials remain neutral until unified mesh.
 tone_torso(torso_mesh)
@@ -76,11 +92,9 @@ ell("blonde swept up hair",(0,.018,1.785),(.109,.087,.054),gold,"Head")
 ell("blonde bun",(0,.072,1.824),(.067,.064,.055),gold,"Head")
 ell("navel",(0,-.082,1.15),(.008,.004,.011),mat("navel shade",(.36,.21,.17)),"Spine1")
 for side,label in ((1,"L"),(-1,"R")):
- ell(label+" upper arm",(.245*side,0,1.30),(.049,.049,.17),skin,label+"UpperArm")
- ell(label+" forearm",(.29*side,0,1.065),(.037,.037,.14),skin,label+"Forearm")
+ continuous_limb(label+" joined arm",[(.22*side,0,1.44),(.245*side,0,1.34),(.27*side,0,1.23),(.28*side,0,1.18),(.29*side,0,1.10),(.30*side,0,1.00),(.30*side,0,.97)],[.047,.053,.046,.040,.039,.034,.030],label+"UpperArm",label+"Forearm",3)
  ell(label+" hand",(.30*side,0,.90),(.055,.027,.07),skin,label+"Palm")
- ell(label+" thigh",(.105*side,0,.80),(.090,.085,.235),skin,label+"Thigh")
- ell(label+" shin",(.11*side,0,.37),(.048,.050,.205),skin,label+"Shin")
+ continuous_limb(label+" joined leg",[(.105*side,0,.98),(.105*side,0,.86),(.108*side,0,.72),(.11*side,0,.60),(.11*side,0,.55),(.11*side,0,.43),(.11*side,0,.29),(.11*side,0,.14)],[.078,.091,.082,.063,.054,.050,.044,.038],label+"Thigh",label+"Shin",4)
  ell(label+" foot",(.11*side,-.075,.10),(.079,.14,.054),skin,label+"Foot")
  for f in range(5):
   x=(.255+.021*f)*side
@@ -117,7 +131,14 @@ for side,label in ((1,"L"),(-1,"R")):
 bpy.ops.object.mode_set(mode="OBJECT")
 assert len(rig.data.bones)==56,len(rig.data.bones)
 for o,b in parts:
- if b is not None:
+ if isinstance(b,tuple) and b[0]=="blend":
+  _,first,second,pivot,n=b
+  g1=o.vertex_groups.new(name=first);g2=o.vertex_groups.new(name=second)
+  for v in o.data.vertices:
+   t=max(0,min(1,(v.index//n-pivot+1)/2))
+   if t<1:g1.add([v.index],max(.0001,1-t),"REPLACE")
+   if t>0:g2.add([v.index],max(.0001,t),"REPLACE")
+ elif b is not None:
   vg=o.vertex_groups.new(name=b);vg.add(list(range(len(o.data.vertices))),1,"REPLACE")
  else:
   levels=[(.90,"Pelvis"),(1.09,"Spine1"),(1.20,"Spine2"),(1.32,"Spine3"),(1.46,"Spine4"),(1.54,"Neck")]
