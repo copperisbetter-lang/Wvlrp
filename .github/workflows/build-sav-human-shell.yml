@@ -1,0 +1,102 @@
+name: Build Sav realistic human shell 56 joints
+
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_sav_human_shell.py
+      - world-creator/scripts/build_amy_mpfb.py
+      - world-creator/scripts/face_materials.py
+      - .github/workflows/build-sav-human-shell.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sav-real-shell
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Blender 4.2 and dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          curl -fL --retry 4 --retry-delay 5 --connect-timeout 25 \
+            'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp/
+          /tmp/blender-4.2.0-linux-x64/blender --background --version | head -n 4
+      - name: Install official MPFB 2.0.18 extension
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          ( cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/wvlrp-mpfb-ext.zip . )
+          mkdir -p /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
+          /tmp/blender-4.2.0-linux-x64/blender --command extension list
+      - name: Download official CC0 MakeHuman system assets
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 6 --connect-timeout 40 \
+            'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' \
+            -o /tmp/mh-system.zip
+          unzip -t /tmp/mh-system.zip | tail -n 2
+      - name: Generate MPFB character GLB and preview
+        run: |
+          set -euo pipefail
+          xvfb-run -a -s "-screen 0 1280x1024x24" \
+            /tmp/blender-4.2.0-linux-x64/blender --background --python \
+            world-creator/scripts/build_sav_human_shell.py 2>&1 | tee /tmp/sav-shell-build.log
+          grep SAV_REAL_HUMAN_SHELL /tmp/sav-shell-build.log
+      - name: Check GLB structure (bones, glTF skin)
+        run: |
+          python3 - <<'PY'
+          import struct,json
+          from pathlib import Path
+          p=Path('world-creator/assets/sav-prototype.glb')
+          data=p.read_bytes()
+          assert data[:4]==b'glTF' and len(data)==struct.unpack_from('<I',data,8)[0]
+          length,kind=struct.unpack_from('<II',data,12)
+          assert kind==0x4E4F534A
+          doc=json.loads(data[20:20+length])
+          assert len(doc.get('skins',[]))>=1
+          assert len(doc['skins'][0]['joints'])==56
+          assert len(doc.get('meshes',[]))>=2
+          assert any(m.get('pbrMetallicRoughness',{}).get('baseColorTexture') for m in doc.get('materials',[])), 'Human shell texture missing'
+          print('SAV_REAL_SHELL_GLB_VERIFIED',p.stat().st_size,len(doc['skins'][0]['joints']))
+          print('ANIMATIONS',[x.get('name') for x in doc.get('animations',[])])
+          PY
+      - name: Publish Sav real shell; preserve other characters
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/sav-prototype.glb
+          if [ -f world-creator/assets/sav-shell-preview.png ]; then
+            git add world-creator/assets/amy-mpfb-trial-preview.png
+          fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Sav realistic human shell with 56-joint rig"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Save build troubleshooting log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav-human-shell-report
+          path: |
+            /tmp/sav-shell-build.log
+            world-creator/assets/sav-prototype.glb
+            world-creator/assets/amy-mpfb-trial-preview.png
+          if-no-files-found: ignore
+          retention-days: 7
