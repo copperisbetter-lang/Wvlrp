@@ -56,7 +56,7 @@
       <button id="cabinInspect" type="button">Inspect selected cabin resident</button>
       <button id="cabinRoof" type="button">Put roof back</button>
       <button id="cabinFullCrew" type="button">Load every detailed avatar (heavy)</button>
-      <p class="subtle">On phones, two detailed 3D models load at once by default; everyone else remains visible with light preview figures. Load every detailed avatar only if your device can handle several large GLBs. All characters remain separately editable and can be moved again.</p>
+      <p class="subtle">No more blob people: only genuine saved 3D character models can appear. On phones, two real 3D avatars load by default; the other residents have name labels but no placeholder bodies. Use Inspect selected cabin resident to load another actual model. Loading all seven together is heavy and may overwhelm Android memory. Character identities and positions are preserved.</p>
     </section>
     <section class="section">
       <h3>Find your way</h3>
@@ -100,7 +100,7 @@
         <label for="outfit">Outfit</label><select id="outfit"><option>ranger</option><option>casual</option><option>hiking</option><option>lifeguard</option><option>mercantile</option><option>swimwear</option><option>mannequin</option></select>
         <label for="characterPreset">Quick character setup</label><select id="characterPreset"><option value="">Choose a look…</option><option value="ranger-redhead">Redheaded Ranger Station woman</option><option value="mercantile">Mercantile woman</option><option value="lifeguard">Beach lifeguard (man)</option><option value="riley">Riley — rigged blonde prototype</option><option value="amy">Amy — redhead 3D model</option><option value="chrissy">Christy — saved Chrissy 3D model</option><option value="caitlyn">Caitlyn — platinum-blonde 3D model</option><option value="sha">Sha — Asian adult test avatar</option><option value="mason">Mason — adult male 3D model</option></select><button id="applyPreset" type="button">Use this look</button>
         <label for="pose">Character pose</label><select id="pose"><option value="standing">Standing</option><option value="bend">Bend forward (Caitlyn)</option><option value="crouch">Kneeling</option><option value="allfours">Hands and knees</option><option value="elbows">Elbows and knees</option></select><p class="subtle">Stand, kneel, or try either floor pose (hands and knees, or elbows and knees). Turn left/right rotates the actual 3D figure; Auto turn spins her for inspection. There is subtle idle movement. The new Riley uses one skeleton with pose animations instead of swapping warped meshes. Save with Apply changes.</p><label for="modelFile">Use a detailed 3D person model (.glb)</label>
-        <input id="modelFile" type="file" accept=".glb,model/gltf-binary"><button type="button" id="clearModel">Use built-in preview figure</button>
+        <input id="modelFile" type="file" accept=".glb,model/gltf-binary"><button type="button" id="clearModel">Use real built-in model</button>
         <p class="subtle">Loads into the 3D preview on this device only; the file itself is not uploaded, published, or saved to your world JSON. For an example of a detailed free woman model, see <a href="https://www.innerscene.com/tools/library/3d-parts/riley-3d-person-woman-standing-8d40398f" target="_blank" rel="noopener noreferrer">this CC0 woman GLB</a>.</p>
         <label for="photo">Photograph reference (local preview)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><img id="photoPreview" alt="Reference photo preview" hidden>
         <p class="subtle">Photo-to-3D conversion is not active yet. Photo stays in this browser session and is not saved or uploaded.</p>
@@ -112,6 +112,6 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./studio.js?v=hearthside-cabin-20261012-v5"></script>
+<script type="module" src="./studio.js?v=hearthside-no-blob-20261013-v1"></script>
 </body>
 </html>
