@@ -276,7 +276,9 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   // The cliff reaches well above the native treetops, matching the approved
   // scene's dominant high ridge. It lives beyond all 3D village buildings.
   const vistaWall=B.MeshBuilder.CreatePlane("VISIBLE mountain and cliff behind village",
-    {width:1470,height:480,sideOrientation:B.Mesh.DOUBLESIDE},scene);
+    // A near horizon-scale backdrop, with rock skyline clearly above the
+    // 10m Ranger Station roof when seen from the south-side spawn.
+    {width:1150,height:530,sideOrientation:B.Mesh.DOUBLESIDE},scene);
   vistaWall.material=vistaMat;
   vistaWall.applyFog=false;
   vistaWall.isPickable=false;
@@ -285,10 +287,10 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   // streamed terrain tile, but retains the same world north bearing.
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
-    vistaWall.position.set(camera.position.x,camera.position.y+125,camera.position.z+640);
+    vistaWall.position.set(camera.position.x,camera.position.y+54,camera.position.z+460);
   });
   dome.position.copyFrom(camera.position);
-  vistaWall.position.set(camera.position.x,camera.position.y+125,camera.position.z+640);
+  vistaWall.position.set(camera.position.x,camera.position.y+54,camera.position.z+460);
   return {dome,vistaWall,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
     vistaWall.dispose();vistaMat.dispose();vista.dispose();
