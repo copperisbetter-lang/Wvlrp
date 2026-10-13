@@ -55,7 +55,7 @@ export const VILLAGE_CLEARING=Object.freeze({
   centerX:93,centerZ:85,halfWidth:66,halfDepth:43,
   // Extend ONLY the northern/back edge, leaving the campfire and entrances
   // on their original ground level, and pushing the treeline behind the roofs.
-  backExtension:40,transition:15,
+  backExtension:100,transition:18,
   fireX:93,fireZ:65
 });
 function plateauDistance(x,z){
@@ -75,7 +75,7 @@ export function isWalkableTrail(x,z){return pathDistance(x,z)<2.7;}
 // this sightline, hundreds of instanced trees physically cover the distant
 // mountain panorama even if the 360-degree sky texture loads correctly.
 export const VILLAGE_MOUNTAIN_VIEW=Object.freeze({
-  centerX:93,fromZ:160,toZ:510,nearHalfWidth:73,farHalfWidth:42
+  centerX:93,fromZ:126,toZ:545,nearHalfWidth:90,farHalfWidth:48
 });
 export function isVillageMountainSightline(x,z){
   const v=VILLAGE_MOUNTAIN_VIEW;
@@ -93,7 +93,8 @@ export function keepForestTree(x,z){
 export function keepUnderstory(x,z){
   // Leave the meeting space open. Its perimeter gets natural fern/laurel
   // masses, while tubs and planters decorate the building foundations.
-  return !isCommunityClearing(x,z)&&pathDistance(x,z)>1.95;
+  return !isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
+    &&pathDistance(x,z)>1.95;
 }
 export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
   const d=plateauDistance(x,z),c=VILLAGE_CLEARING;
@@ -109,10 +110,14 @@ export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
   // Preserve the level shared plaza, then continue as a broad shallow cove
   // beyond the roofs. The previous sharp up-slope was in the viewing ray and
   // hid distant cliffs even when their backdrop loaded successfully.
-  if(z<138||z>615)return graded;
-  const north=ease((z-138)/42)*(1-ease((z-410)/205));
-  const sides=1-ease((Math.abs(x-c.centerX)-58)/85);
+  // The plateau stays at the same elevation through the rear forest opening.
+  // Farther north a broad cove CUTS down into the hillside rather than
+  // allowing the original high terrain to stand in front of the mountain.
+  // Smooth entry/exit and shoulders preserve continuous, walkable ground.
+  if(z<170||z>625)return graded;
+  const north=ease((z-170)/90)*(1-ease((z-485)/140));
+  const sides=1-ease((Math.abs(x-c.centerX)-72)/90);
   const weight=north*sides;
-  const valley=flat-Math.max(0,z-138)*.037;
-  return graded*(1-weight)+valley*weight;
+  const valley=flat-Math.max(0,z-160)*.085;
+  return graded*(1-weight)+Math.min(graded,valley)*weight;
 }
