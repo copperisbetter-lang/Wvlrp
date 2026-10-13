@@ -73,6 +73,10 @@ try{
   console.log("VILLAGE_STATE",JSON.stringify(village));
   assert.equal(village.communityBuildings,3,"All three village façades must load");
   assert.equal(village.communityFirePits,1,"A permanent burning campfire must load");
+  assert.equal(village.villageMountainLayers,4,
+    "All four actual mountain layers must exist in the village scene");
+  assert.equal(village.mountainTopVisible,true,
+    "Ranger spawn must render visible mountain geometry, not only sky");
   assert.ok(Math.abs(village.eyeHeight-1.98)<.08,"Village walker should have adult eye height");
   assert.ok(village.position[2]<80,"Village spawn must be out in the open plaza");
   await page.screenshot({path:"wild-village-qa.png",fullPage:true});
