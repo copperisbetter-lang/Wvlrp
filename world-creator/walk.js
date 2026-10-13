@@ -10,6 +10,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
 import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=visible-appalachian-cliff-v9";
+import {createWildPlayerMap} from "./wild-player-map.js?v=live-peer-map-20261013-v1";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -397,9 +398,16 @@ const cameraGround=(x,z)=>{
 // Peer mode is enabled only by the public Game Beta Test entrance.
 // The local visitor stays first person and resident GLB characters are untouched.
 let multiplayer=null;
+// Use the existing encrypted peer-to-peer positions for a player map.
+// It opens only when the visitor presses "Players Map", not over gameplay.
+const playerMap=BETA_MODE?createWildPlayerMap({
+  getSelf:()=>({x:camera.position.x,z:camera.position.z,yaw:camera.rotation.y}),
+  getPeers:()=>multiplayer?.getPeerPositions?.()??[],
+  getStatus:()=>multiplayer?.getStatus?.()??"connecting"
+}):null;
 if(BETA_MODE){
   const playersBadge=document.getElementById("players");
-  import("./wild-multiplayer.js?v=20261013-beta1").then(({connectWildMultiplayer})=>{
+  import("./wild-multiplayer.js?v=20261013-beta-players-map-v2").then(({connectWildMultiplayer})=>{
     multiplayer=connectWildMultiplayer({B,scene,
       getCamera:()=>camera,groundAt:(x,z)=>cameraGround(x,z),
       statusElement:playersBadge});
@@ -465,6 +473,7 @@ engine.runRenderLoop(()=>{
   sunDisc.position.set(camera.position.x+sunLook.x*420,
     camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
   multiplayer?.update(dt);
+  playerMap?.update(performance.now());
   scene.render();
 });
 if(START_AT_RANGER)goToRanger();
@@ -496,6 +505,8 @@ window.__wildDiagnostics=()=>({
     betaMode:BETA_MODE,
     multiplayerPeers:multiplayer?.getPeerCount()??0,
     multiplayerStatus:multiplayer?.getStatus()??(BETA_MODE?"connecting":"disabled"),
+    connectedPeerPositions:multiplayer?.getPeerPositions?.()??[],
+    playerMapOpen:playerMap?.isOpen()??false,
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
