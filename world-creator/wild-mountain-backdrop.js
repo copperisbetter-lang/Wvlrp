@@ -287,10 +287,10 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   // streamed terrain tile, but retains the same world north bearing.
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
-    vistaWall.position.set(camera.position.x,camera.position.y+54,camera.position.z+460);
+    vistaWall.position.set(camera.position.x-112,camera.position.y+54,camera.position.z+460);
   });
   dome.position.copyFrom(camera.position);
-  vistaWall.position.set(camera.position.x,camera.position.y+54,camera.position.z+460);
+  vistaWall.position.set(camera.position.x-112,camera.position.y+54,camera.position.z+460);
   return {dome,vistaWall,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
     vistaWall.dispose();vistaMat.dispose();vista.dispose();
