@@ -62,15 +62,16 @@ function structure(B,scene,track,materials){
    box(name+" waist rail",w,.065,.22,x,y-.06,z,trim);
  }
  function sign(name,label,x,y,z,w,h){
-   box(name+" solid walnut sign",w,h,.24,x,y,z,frame);
-   box(name+" lighter inset panel",w-.19,h-.15,.28,x,y,z-.035,trim);
+   box(name+" carved sign edge",w,h,.24,x,y,z,trim);
+   box(name+" deep walnut signboard",w-.19,h-.15,.28,x,y,z-.035,frame);
    const tex=track(new B.DynamicTexture(name+" engraved lettering",{width:1024,height:160},scene,false));
    tex.hasAlpha=true;
    const c=tex.getContext();c.clearRect(0,0,1024,160);
-   c.fillStyle="#352517";c.textAlign="center";c.textBaseline="middle";
+   c.save();c.translate(1024,0);c.scale(-1,1);
+   c.fillStyle="#f8e5bf";c.textAlign="center";c.textBaseline="middle";
    const font=label.length>18?68:label.length>14?76:89;
    c.font="bold "+font+"px Georgia,serif";
-   c.fillText(label,512,84,985);
+   c.fillText(label,512,84,985);c.restore();
    tex.update();
    const mat=track(new B.StandardMaterial(name+" sign text",scene));
    mat.diffuseTexture=tex;mat.useAlphaFromDiffuseTexture=true;
@@ -248,7 +249,7 @@ export function renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight}){
    stone:material(B,scene,track,"native cut field sandstone","#777167"),
    metal:material(B,scene,track,"aged metal seams","#414d49"),
    trim:material(B,scene,track,"light Appalachian timber","#ad8760"),
-   glass:material(B,scene,track,"blue smoke window panes","#3f5858",true),
+   glass:material(B,scene,track,"deep glazed forest reflections","#24352e"),
    roof:material(B,scene,track,"charcoal standing seam roof","#454c49"),
    soil:material(B,scene,track,"warm crushed woodland soil","#756348"),
    brick:material(B,scene,track,"patina brick","#76533d"),
