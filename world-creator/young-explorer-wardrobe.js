@@ -407,6 +407,19 @@ class YoungExplorerWardrobe {
   }
   if($('pose-feedback'))$('pose-feedback').textContent='';
  }
+ naturalStand(){
+  // A relaxed standing pose instead of the exported wide A-pose.
+  // Rotate the actual upper-arm joints, so skin and sleeves follow the rig.
+  this.model.animationGroups?.forEach(g=>g.stop());
+  this.resetPose();
+  for(const [name,angle] of [['leftarm',-.48],['rightarm',.48]]){
+    const joint=this.boneTarget(name);if(!joint)continue;
+    const base=(joint.rotationQuaternion||this.B.Quaternion.FromEulerVector(joint.rotation)).clone();
+    joint.rotationQuaternion=base.multiply(this.B.Quaternion.RotationAxis(this.B.Axis.Z,angle));
+    joint.markAsDirty?.('rotation');
+  }
+  if($('pose-feedback'))$('pose-feedback').textContent='Relaxed standing pose';
+ }
  rememberBindPose(){
   for(const b of this.model.skeletons?.[0]?.bones||[]){
    const node=b.getTransformNode?.()||b._linkedTransformNode;
