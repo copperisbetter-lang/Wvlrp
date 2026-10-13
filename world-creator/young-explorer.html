@@ -8,12 +8,12 @@ header{padding:12px 14px;background:#223b2b;display:flex;align-items:center;just
 header a{color:#cbf4d1}h1{margin:0;font-size:19px}.tiny{font-size:12px;color:#d6ead6}
 #view{position:relative;flex:1;min-height:200px;touch-action:none}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#status{position:absolute;left:10px;bottom:10px;right:10px;background:#13231edc;border:1px solid #6c8e79;padding:9px 12px;border-radius:8px;font-size:13px;pointer-events:none}
+#status{display:none}
 #controls{padding:10px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;background:#1c3227}
 button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6e4;font-size:14px;padding:10px 12px;min-height:44px;touch-action:manipulation}button:focus-visible{outline:3px solid #e0c786}
 #wardrobe{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#263e30;border-top:1px solid #53795b}
 #wardrobe label{font-weight:700;font-size:14px}
-#outfit-select{background:#f4f2e7;color:#193324;border:1px solid #88a58d;border-radius:8px;padding:10px;font-size:14px;min-height:44px;max-width:100%}
+#outfit-select,#hair-select{background:#f4f2e7;color:#193324;border:1px solid #88a58d;border-radius:8px;padding:10px;font-size:14px;min-height:44px;max-width:100%}
 #outfit-feedback,#pose-feedback{font-size:12px;color:#c5e7c7}
 #measure-panel{padding:8px 14px;background:#142a1f;border-top:1px solid #496954}
 #measure-panel summary{font-size:13px;cursor:pointer;font-weight:700}
@@ -32,7 +32,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </div>
 <div id="wardrobe" aria-label="Try on Young Explorer clothing">
  <label for="outfit-select">Clothing:</label><select id="outfit-select" aria-label="Automatically put an outfit on Young Explorer"><option>Loading outfits…</option></select>
- <span id="outfit-feedback" role="status"></span><span id="pose-feedback" role="status"></span>
+ <button id="remove-all" type="button">Remove All</button><label for="hair-select">Hair:</label><select id="hair-select" aria-label="Young Explorer hairstyle"><option value="original">Original</option><option value="ponytail">Ponytail</option><option value="pigtails">Pigtails</option></select><span id="outfit-feedback" role="status"></span><span id="pose-feedback" role="status"></span>
 </div>
 <details id="measure-panel" open><summary>Young Explorer · body sizing</summary>
  <div id="model-measurements">Measuring her actual full-body 3D mesh…</div>
@@ -41,7 +41,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./young-explorer-wardrobe.js?v=wardrobe-20261013-1"></script>
+<script src="./young-explorer-wardrobe.js?v=wardrobe-20261013-2"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
