@@ -59,11 +59,11 @@ export function buildHearthsideCabin(B, scene, track, cx, groundY, cz, showRoof=
   // High gable roof: hide roof halves to expose the entire interior.
   for(const side of [-1,1]){
     const roof=box("cedar roof slope "+side,10.3,.28,16.2,side*4.3,5.45,0,"roof",true);
-    roof.rotation.z=side*.43;
+    roof.rotation.z=-side*.43;
     for(let i=0;i<5;i++){
       const z=-6.1+i*3.05;
       const rafter=box("roof beam "+side+" "+i,10.3,.22,.19,side*4.3,5.13,z,"trim",true);
-      rafter.rotation.z=side*.43;
+      rafter.rotation.z=-side*.43;
     }
   }
   box("ridge cap",.9,.42,16.5,0,7.24,0,"roof",true);
