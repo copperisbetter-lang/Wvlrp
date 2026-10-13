@@ -4,8 +4,8 @@
  * The real cabin and real bundled GLB avatars are preserved; no blob NPCs.
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
-import { cabinGrade, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=ground-follow-fix-20261013-v1";
+import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=preserved-forest-20261013-v7";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
