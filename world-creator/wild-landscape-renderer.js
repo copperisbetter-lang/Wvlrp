@@ -6,7 +6,7 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
+import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=open-village-mountain-sightline-20261013-v3";
 import {renderWildVillage} from "./wild-village.js?v=real-stone-timber-slate-20261013-v2";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=full-brush-plaza-20261013-v10";
 const PROFILES={
@@ -509,13 +509,16 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   const addedFar=supplementalTreesInArea(cx,cy,470,seed,33.9).filter(t=>
     keepForestTree(t.x,t.y)&&
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>255);
-  // Keep every trunk touching the terrain used by the CAMERA. Before this,
-  // deeply sunk shrubs and stems looked absent or needle-thin on uphill slopes.
-  for(const t of near.concat(addedNear)){
-    const y=walkSurface(t.x,t.y);
-    if(Number.isFinite(y))t.height=y+.04;
-  }
+  // Anchor every trunk to the exact reshaped terrain, including trees along
+  // the shoulder of the new mountain-view valley (not just near-camera ones).
+  // The previous natural-only heights would leave distant trunks floating.
   const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar);
+  const flatHeight=cabinGrade(93,85,seed);
+  for(const t of allTrees){
+    const y=walkSurface(t.x,t.y);
+    t.height=(Number.isFinite(y)?y:
+      gradeCommunityGround(t.x,t.y,cabinGrade(t.x,t.y,seed),()=>flatHeight))+.04;
+  }
   // Near-camera timber is entirely re-authored: tapered buttress roots,
   // curved trunks, irregular limb forks and diffuse-shaded native crowns.
   // Distant groves retain inexpensive LOD prototypes for phone performance.
