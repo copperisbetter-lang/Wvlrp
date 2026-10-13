@@ -174,7 +174,13 @@ export function connectWildMultiplayer({B,scene,getCamera,groundAt,statusElement
       try{room.leave();}catch(_){}
     }
     addEventListener("pagehide",shutdown,{once:true});
-    return {update,shutdown,getPeerCount:()=>peers.size,getStatus:()=>transport};
+    return {update,shutdown,getPeerCount:()=>peers.size,getStatus:()=>transport,
+      // Expose only CURRENT position packets from the same peer-to-peer room.
+      // In-game UI can plot remote explorers at any distance without retaining
+      // their locations on a server or tracking disconnected players.
+      getPeerPositions:()=>[...peers.entries()].filter(([,p])=>
+        p.pose&&performance.now()-p.updated<PEER_EXPIRY_MS
+      ).map(([id,p])=>({id,x:p.pose.x,z:p.pose.z,yaw:p.pose.yaw}))};
   }catch(err){
     transport="error";display();throw err;
   }
