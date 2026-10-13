@@ -5,8 +5,9 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=woodland-village-20261013-v1";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=level-village-forest-20261013-v4";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
+import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -324,6 +325,8 @@ const collision=(x,z)=>{
   if(closeX>8.36&&closeX<9.35&&closeZ<7.15)return true;
   if(z>6.36&&z<7.30&&closeX<9.1&&closeX>1.24)return true;
   if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
+  // Keep walkers out of the permanent village flames.
+  if(Math.hypot(x-VILLAGE_CLEARING.fireX,z-VILLAGE_CLEARING.fireZ)<2.30)return true;
   const water=waterAt(x,z,seed);
   if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
   // Test actual rendered trunks, including the new evergreen and old-growth
@@ -342,8 +345,19 @@ const cameraGround=(x,z)=>{
   // The altitude is sampled from the VISIBLE mesh triangles, not Babylon's
   // obsolete GroundMesh height cache or the unsmoothed mathematical slope.
   const rendered=habitat?.surfaceHeight?.(x,z);
-  if(Number.isFinite(rendered))return rendered;
-  return cabinGrade(x,z,seed);
+  const ground=Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
+  // The porch floor and four grounded steps become physically walkable.
+  for(const site of COMMUNITY_SITES){
+    const front=site.z-site.depth/2;
+    const porchFront=front-(site.id==="wild-ranger-station"?4.45:4.65);
+    if(Math.abs(x-site.x)<site.width/2+.15&&z>=porchFront&&z<=front)
+      return ground+.78;
+    if(Math.abs(x-site.x)<2.48&&z>=porchFront-3.58&&z<porchFront){
+      const index=Math.max(0,Math.min(3,Math.floor((z-(porchFront-3.58))/.80)));
+      return ground+.15+index*.19;
+    }
+  }
+  return ground;
 };
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
@@ -426,6 +440,7 @@ window.__wildDiagnostics=()=>({
   heroPlants:habitat?.heroPlants??0,
   heroGraphics:habitat?.heroGraphics??false,
    communityBuildings:habitat?.communityBuildings??0,
+    communityFirePits:habitat?.communityFirePits??0,
    communityPaths:habitat?.communityPaths??0,
    spawnLocation:START_AT_RANGER?"ranger":"hearthside",
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
