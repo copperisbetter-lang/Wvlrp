@@ -7,7 +7,7 @@ import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, ri
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
 import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
-import {renderWildVillage} from "./wild-village.js?v=wide-plaza-campfire-20261013-v3";
+import {renderWildVillage} from "./wild-village.js?v=engraved-signs-campfire-20261013-v4";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=full-brush-plaza-20261013-v10";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
