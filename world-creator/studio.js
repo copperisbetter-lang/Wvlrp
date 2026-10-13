@@ -3,7 +3,7 @@ import {
   creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, HEARTHSIDE_CABIN
 } from "./world-core.js?v=hearthside-cabin-v5";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
-import { makeFigureBuilder } from "./character-models.js?v=mason-fallback-v1";
+import { makeFigureBuilder } from "./character-models.js?v=no-human-blobs-20261013-v1";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -124,7 +124,7 @@ function builtInCharacterFile(key){
   return characterAssetFiles.get(url);
 }
 let cabinRoofVisible=false;
-let cabinFullCrew=false; // Phone-safe first load: 2 detailed avatars; other people remain visible.
+let cabinFullCrew=false; // Phone-safe mode: max 2 detailed avatars; other residents display nameplates ONLY.
 let previewBuildId = 0;
 let herdFocusCursor = -1;
 const colors={anchor:"#fbd182",deer:"#efc08c",npc:"#e7abd0",animal:"#dbceb4",cabin:"#f3d16b",marker:"#ff9e6f"};
@@ -407,8 +407,8 @@ $("cabinFullCrew").onclick=()=>{
   cabinFullCrew=!cabinFullCrew;
   $("cabinFullCrew").textContent=cabinFullCrew?"Mobile mode: two detailed avatars":"Load every detailed avatar (heavy)";
   dirty3d=true;refresh3d();
-  status(cabinFullCrew?"Loading all detailed 3D people; may use significant phone memory.":
-    "Mobile view: two detailed avatars, other people remain visible as light previews.");
+  status(cabinFullCrew?"Loading all real 3D character assets; may use significant phone memory.":
+    "Mobile view: two real 3D characters; others have name labels only. Blob figures permanently disabled.");
 };
 $("home").onclick=()=>{view.x=-420;view.y=0;dirty3d=true;invalidate();refresh3d();};
 $("ranger").onclick=()=>{view.x=420;view.y=0;dirty3d=true;invalidate();refresh3d();};
@@ -441,11 +441,11 @@ $("clearModel").onclick=()=>{
   const o=selected();if(!o)return;
   localCharacterFiles.delete(o.id);$("modelFile").value="";
   $("clearModel").disabled=true;dirty3d=true;refresh3d();
-  status("Using built-in preview for "+o.name);
+  status("Using the real built-in 3D model for "+o.name+" (no blob fallback).");
 };
 window.addEventListener("resize",()=>{invalidate();engine?.resize();});
 
-// Babylon.js renders a lightweight editable-scene preview, not final player graphics.
+// Babylon.js draws terrain and wildlife; HUMAN CHARACTERS MUST LOAD REAL GLBs.
 let engine=null,scene=null,camera=null,ground=null;
 const generated=[];
 function clear3d(){liveRileyModels.clear();for(const item of generated){try{item.dispose();}catch{}}generated.length=0;}
@@ -503,11 +503,11 @@ function applyRileyFleshTone(result, complexion="fair") {
     }
   }
 }
-function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
+function importCharacterGlb(file,o,x,h,z,buildId) {
   // A complete GLB can contain textured meshes, hair, clothes and skeletons.
   // Import is browser-local; no server uploads, no file bytes in world JSON.
   if(!BABYLON.SceneLoader?.ImportMeshAsync) {
-    status("Babylon GLB loader is unavailable; using built-in preview.");
+    status("Real 3D character loader unavailable. No blob replacement will appear.");
     return;
   }
   const assetName=typeof file==="string"?file.split("?")[0].split("/").at(-1):file.name;
@@ -638,12 +638,12 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
       }
     }
     for(const mesh of meshes)track(mesh);
-    fallback.dispose(false,true);
-    if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
+    if(!isRiley)status("Real 3D character loaded: "+o.name);
   }).catch(err=>{
-    fallback.setEnabled(true);
-    status("Unable to load detailed "+o.name+" model: "+String(err.message||err).slice(0,160)+
-      (o.modelKey==="mason"?" · showing basic fallback figure":""));
+    if(buildId!==previewBuildId)return;
+    // Keep the nameplate; never recreate or substitute a procedural person.
+    status("Could not load real 3D "+o.name+": "+String(err.message||err).slice(0,160)+
+      ". No blob character will be displayed.");
   });
 }
 function refresh3d() {
@@ -706,10 +706,9 @@ function refresh3d() {
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
-      const fallback=figures.person(o,x,h,z);
       if(isInsideCabin){
-        // Billboarding the real occupant names makes the whole crew easy to
-        // identify even when Android is showing lightweight preview geometry.
+        // Nameplate marks a saved resident even if their GLB is not currently
+        // loaded in phone-safe mode or cannot load. No placeholder body exists.
         const label=track(new BABYLON.DynamicTexture("name "+o.id,{width:384,height:86},scene,false));
         label.hasAlpha=true;
         label.drawText((o.name||"Visitor").slice(0,27),14,60,
@@ -729,17 +728,18 @@ function refresh3d() {
       const hasBuiltIn=Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey);
       const loadDetailed=!isInsideCabin||cabinFullCrew||o.id===selectedId||detailedPeople<2;
       if(isInsideCabin&&loadDetailed)detailedPeople++;
-      // Every person stays visible. Limit simultaneous GLBs on Android by default.
+      // NEVER render generated blob people. In phone-safe mode, render up to
+      // two detailed GLBs (including the selected resident). Everyone else
+      // remains a saved cabin occupant, identified by a nameplate.
       if(characterFile&&loadDetailed){
-        importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
+        importCharacterGlb(characterFile,o,x,h,z,thisBuild);
       } else if(hasBuiltIn&&loadDetailed){
         builtInCharacterFile(o.modelKey).then(file=>{
-          if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
+          if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          fallback.setEnabled(true);
-          status(o.name+" GLB unavailable: "+err.message+
-            (o.modelKey==="mason"?" · showing basic fallback figure":""));
+          status(o.name+" real 3D file unavailable: "+err.message+
+            ". No placeholder will be substituted.");
         });
       }
     }else if(o.id===HEARTHSIDE_CABIN.id){
@@ -771,7 +771,7 @@ function refresh3d() {
   $("previewCoverage").textContent=cabin
     ? "Hearthside Cabin · one furnished room · "+world.objects.filter(o=>o.type==="npc"&&Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7).length+
       " people inside · roof "+(cabinRoofVisible?"on":"hidden")+
-      ". "+(cabinFullCrew?"All detailed 3D models requested.":"Phone-safe: two detailed avatars, others remain visible as light models.")
+      ". "+(cabinFullCrew?"All real 3D models requested.":"Phone-safe: two real 3D avatars; other saved people shown by nameplates only.")
     : "3D shows 180 × 180 m near the map center · "+deerInPreview+" deer here. Generic grass and ball trees removed.";
 }
 function init3D(){
