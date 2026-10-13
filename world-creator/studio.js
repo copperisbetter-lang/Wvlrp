@@ -1,7 +1,8 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
-  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER
+  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, HEARTHSIDE_CABIN
 } from "./world-core.js";
+import { buildHearthsideCabin } from "./cabin-builder.js";
 import { makeFigureBuilder } from "./character-models.js?v=mason-fallback-v1";
 
 const $=id=>document.getElementById(id);
@@ -89,7 +90,8 @@ const BUILTIN_CHARACTER_GLB=Object.freeze({
   chrissy:"./assets/chrissy-mpfb-trial.glb?v=cc0-face-texture-published-20261011-v2",
   caitlyn:"./assets/caitlyn-mpfb-trial.glb?v=caitlyn-fit-blue-dress-waves-v12",
   mason:"./assets/mason-mpfb-trial.glb?v=mason-20261011-v2",
-  sha:"./assets/sha-mpfb-trial.glb?v=sha-20261012-v1"
+  sha:"./assets/sha-mpfb-trial.glb?v=sha-20261012-v1",
+  sav:"./assets/sav-realistic-shell.glb?v=sav-prototype-cabin-v1"
 });
 const RILEY_POSES=["standing","crouch","allfours"];
 const rileyMotion=new Map();  // Runtime orientation and auto-turn only; never alters other NPCs.
@@ -107,6 +109,8 @@ function builtInCharacterFile(key){
   if(!characterAssetFiles.has(url))characterAssetFiles.set(url,Promise.resolve(url));
   return characterAssetFiles.get(url);
 }
+let cabinRoofVisible=false;
+let cabinFullCrew=false; // Phone-safe first load: 2 detailed avatars; other people remain visible.
 let previewBuildId = 0;
 let herdFocusCursor = -1;
 const colors={anchor:"#fbd182",deer:"#efc08c",npc:"#e7abd0",animal:"#dbceb4",cabin:"#f3d16b",marker:"#ff9e6f"};
@@ -229,11 +233,12 @@ function drawMap() {
   }
   for(const o of world.objects){
     const p=screen(o.x,o.y);if(p.x< -100||p.x>w+100||p.y< -100||p.y>h+100)continue;
-    const radius=o.type==="anchor"?9:6;
+    const radius=o.type==="anchor"?9:o.id===HEARTHSIDE_CABIN.id?11:6;
     ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);
-    ctx.fillStyle=colors[o.type]||"#fff";ctx.fill();
+    ctx.fillStyle=o.id===HEARTHSIDE_CABIN.id?"#d6a460":(colors[o.type]||"#fff");ctx.fill();
+    if(o.id===HEARTHSIDE_CABIN.id){ctx.strokeStyle="#ffdb9d";ctx.lineWidth=2;ctx.strokeRect(p.x-7,p.y-7,14,14);}
     ctx.lineWidth=selectedId===o.id?3:1.5;ctx.strokeStyle=selectedId===o.id?"#fff":"#18251b";ctx.stroke();
-    if(o.type==="anchor"||["amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
+    if(o.type==="anchor"||o.id===HEARTHSIDE_CABIN.id||["amy","chrissy","caitlyn","mason","sha","sav","riley"].includes(o.modelKey)||selectedId===o.id||view.scale>.95){
       ctx.font=(o.type==="anchor"?"bold 12px":"11px")+" system-ui";
       const text=o.name||o.type,tw=ctx.measureText(text).width;
       ctx.fillStyle="#071711da";ctx.fillRect(p.x+11,p.y-10,tw+10,20);
@@ -349,6 +354,40 @@ $("import").onchange=async e=>{
     setSelection(null);save();dirty3d=true;invalidate();refresh3d();status("Imported "+world.objects.length+" placed items");
   }catch(err){status("Import failed: "+err.message);}
   e.target.value="";
+};
+function focusCabin(){
+  const cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id);
+  if(!cabin){status("Build Hearthside Cabin first.");return;}
+  view.x=cabin.x;view.y=cabin.y;
+  setTool("select");setSelection(cabin);
+  dirty3d=true;invalidate();refresh3d();
+  if(camera){
+    camera.setTarget(new BABYLON.Vector3(0,heightAt(view.x,view.y,seed)*26+2.8,0));
+    camera.alpha=-Math.PI/2.55;camera.beta=1.0;camera.radius=29;
+  }
+  status("Hearthside Cabin · roof "+(cabinRoofVisible?"on":"hidden for interior inspection")+".");
+}
+$("buildCabin").onclick=()=>{
+  let result;
+  try{result=gatherCabinCrew(world);}catch(err){status("Cabin setup failed: "+err.message);return;}
+  cabinRoofVisible=false;$("cabinRoof").textContent="Put roof back";
+  save();focusCabin();
+  status("Hearthside Cabin ready · "+result.totalPeople+" people inside. "+
+    (result.addedPeople?result.addedPeople+" missing trial avatars added. ":"")+"Roof hidden to show the one-room interior.");
+};
+$("visitCabin").onclick=focusCabin;
+$("cabinRoof").onclick=()=>{
+  cabinRoofVisible=!cabinRoofVisible;
+  $("cabinRoof").textContent=cabinRoofVisible?"Remove roof (show interior)":"Put roof back";
+  dirty3d=true;refresh3d();
+  status("Cabin roof "+(cabinRoofVisible?"visible":"hidden for interior inspection")+".");
+};
+$("cabinFullCrew").onclick=()=>{
+  cabinFullCrew=!cabinFullCrew;
+  $("cabinFullCrew").textContent=cabinFullCrew?"Mobile mode: two detailed avatars":"Load every detailed avatar (heavy)";
+  dirty3d=true;refresh3d();
+  status(cabinFullCrew?"Loading all detailed 3D people; may use significant phone memory.":
+    "Mobile view: two detailed avatars, other people remain visible as light previews.");
 };
 $("home").onclick=()=>{view.x=-420;view.y=0;dirty3d=true;invalidate();refresh3d();};
 $("ranger").onclick=()=>{view.x=420;view.y=0;dirty3d=true;invalidate();refresh3d();};
@@ -581,7 +620,7 @@ function importCharacterGlb(file,o,x,h,z,fallback,buildId) {
     fallback.dispose(false,true);
     if(!isRiley)status("Detailed GLB preview loaded for "+o.name);
   }).catch(err=>{
-    fallback.setEnabled(o.modelKey==="mason" || !Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey));
+    fallback.setEnabled(true);
     status("Unable to load detailed "+o.name+" model: "+String(err.message||err).slice(0,160)+
       (o.modelKey==="mason"?" · showing basic fallback figure":""));
   });
@@ -591,61 +630,61 @@ function refresh3d() {
   dirty3d=false;
   const thisBuild=++previewBuildId;
   clear3d();
-  const forest=material("forest","#52784b"),trunk=material("trunk","#6f5239"),leaves=material("leaves","#315f35");
+  // Retire spherical placeholder trees and uniform generic grass.
+  const forest=material("leaf-litter soil","#635645");
+  const cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id&&
+    Math.abs(o.x-view.x)<70&&Math.abs(o.y-view.y)<70);
+  const cabinGround=cabin?heightAt(cabin.x,cabin.y,seed)*26:null;
   const otherMat=material("object","#d8ba72");
   const figures=makeFigureBuilder(BABYLON,scene,track);
   const blue=material("creek","#519db9");
   ground=track(BABYLON.MeshBuilder.CreateGround("procedural terrain",{width:180,height:180,subdivisions:38,updatable:true},scene));
   const positions=ground.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-  for(let i=0;i<positions.length;i+=3)positions[i+1]=heightAt(view.x+positions[i],view.y+positions[i+2],seed)*26;
+  for(let i=0;i<positions.length;i+=3){
+    const wx=view.x+positions[i],wy=view.y+positions[i+2],natural=heightAt(wx,wy,seed)*26;
+    const d=cabin?Math.max(Math.abs(wx-cabin.x)/12,Math.abs(wy-cabin.y)/10):Infinity;
+    const blend=d<=1?0:d>=2?1:(d-1)*(d-1)*(3-2*(d-1));
+    positions[i+1]=cabin?cabinGround*(1-blend)+natural*blend:natural;
+  }
   const normals=[];BABYLON.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
   ground.updateVerticesData(BABYLON.VertexBuffer.PositionKind,positions);
   ground.updateVerticesData(BABYLON.VertexBuffer.NormalKind,normals);
   ground.material=forest;
-  // Preview trees have stable locations in the current world tile.
-  const treeSeed=seedNumber(world.seed);
-  // Generate trees from absolute world-grid coordinates so returning to a spot
-  // gives the same vegetation rather than repositioning trees with the camera.
-  const treeStep=25;
-  const minCol=Math.floor((view.x-86)/treeStep),maxCol=Math.ceil((view.x+86)/treeStep);
-  const minRow=Math.floor((view.y-86)/treeStep),maxRow=Math.ceil((view.y+86)/treeStep);
-  for(let col=minCol;col<=maxCol;col++)for(let row=minRow;row<=maxRow;row++){
-    if(hash(col,row,treeSeed)<.28)continue;
-    const wx=col*treeStep+(hash(col,row,treeSeed+17)-.5)*12;
-    const wy=row*treeStep+(hash(col,row,treeSeed+18)-.5)*12;
-    const px=wx-view.x,pz=wy-view.y;
-    if(Math.abs(px)>86||Math.abs(pz)>86||Math.abs(wy-creekY(wx,seed))<13)continue;
-    const h=heightAt(wx,wy,seed)*26;
-    const stem=track(BABYLON.MeshBuilder.CreateCylinder("tree",{height:5,diameter:.75,tessellation:5},scene));
-    stem.position.set(px,h+2.5,pz);stem.material=trunk;
-    const crown=track(BABYLON.MeshBuilder.CreateSphere("crown",{diameter:5,segments:5},scene));
-    crown.scaling.y=1.3;crown.position.set(px,h+7,pz);crown.material=leaves;
-  }
+  // The placeholder cylinder trunks and ball crowns are retired.
+  // Convincing native trees will be added as proper forest assets later.
+  if(cabin)buildHearthsideCabin(BABYLON,scene,track,
+    cabin.x-view.x,cabinGround,cabin.y-view.y,cabinRoofVisible);
+  let detailedPeople=0;
   let deerInPreview=0;
   for(const o of world.objects){
     const x=o.x-view.x,z=o.y-view.y;if(Math.abs(x)>86||Math.abs(z)>86)continue;
     if(o.type==="deer")deerInPreview++;
-    const h=heightAt(o.x,o.y,seed)*26;
+    const isInsideCabin=!!cabin&&o.type==="npc"&&
+      Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7;
+    const h=isInsideCabin?cabinGround+.38:heightAt(o.x,o.y,seed)*26;
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
       const fallback=figures.person(o,x,h,z);
       const characterFile=localCharacterFiles.get(o.id);
       const hasBuiltIn=Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey);
-      // Keep a visible basic Mason while the detailed 9 MB asset streams.
-      if(hasBuiltIn&&!characterFile&&o.modelKey!=="mason")fallback.setEnabled(false);
-      if(characterFile){
+      const loadDetailed=!isInsideCabin||cabinFullCrew||o.id===selectedId||detailedPeople<2;
+      if(isInsideCabin&&loadDetailed)detailedPeople++;
+      // Every person stays visible. Limit simultaneous GLBs on Android by default.
+      if(characterFile&&loadDetailed){
         importCharacterGlb(characterFile,o,x,h,z,fallback,thisBuild);
-      } else if(hasBuiltIn){
+      } else if(hasBuiltIn&&loadDetailed){
         builtInCharacterFile(o.modelKey).then(file=>{
           if(thisBuild===previewBuildId)importCharacterGlb(file,o,x,h,z,fallback,thisBuild);
         }).catch(err=>{
           if(thisBuild!==previewBuildId)return;
-          fallback.setEnabled(o.modelKey==="mason");
+          fallback.setEnabled(true);
           status(o.name+" GLB unavailable: "+err.message+
             (o.modelKey==="mason"?" · showing basic fallback figure":""));
         });
       }
+    }else if(o.id===HEARTHSIDE_CABIN.id){
+      // Hearthside is the modeled cabin, not a placeholder cube.
     }else{
       const m=track(BABYLON.MeshBuilder.CreateBox(o.name,{size:o.type==="cabin"?6:2},scene));
       m.position.set(x,h+(o.type==="cabin"?3:1.5),z);m.material=otherMat;
@@ -670,7 +709,11 @@ function refresh3d() {
     if(Math.abs(wy-view.y)<=90)stream.push(new BABYLON.Vector3(x,heightAt(wx,wy,seed)*26+.7,wy-view.y));}
   if(stream.length>1){const line=track(BABYLON.MeshBuilder.CreateLines("valley creek",{points:stream},scene));line.color=new BABYLON.Color3(.39,.8,.99);}
   $("threeStatus").hidden=true;
-  $("previewCoverage").textContent="3D shows a 180 × 180 m area near the map center · "+deerInPreview+" of "+world.objects.filter(o=>o.type==="deer").length+" deer are inside this area";
+  $("previewCoverage").textContent=cabin
+    ? "Hearthside Cabin · one furnished room · "+world.objects.filter(o=>o.type==="npc"&&Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7).length+
+      " people inside · roof "+(cabinRoofVisible?"on":"hidden")+
+      ". "+(cabinFullCrew?"All detailed 3D models requested.":"Phone-safe: two detailed avatars, others remain visible as light models.")
+    : "3D shows 180 × 180 m near the map center · "+deerInPreview+" deer here. Generic grass and ball trees removed.";
 }
 function init3D(){
   if(!window.BABYLON){show3DMessage("Babylon.js could not load. The 2D map and world data editor still work.");return;}
