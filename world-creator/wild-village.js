@@ -46,6 +46,8 @@ function structure(B,scene,track,materials){
    const p=[-w/2,wallY,z,0,peakY,z,w/2,wallY,z];
    m.setVerticesData(B.VertexBuffer.PositionKind,new Float32Array(p));
    m.setIndices([0,1,2,2,1,0]);
+   const normals=[];B.VertexData.ComputeNormals(p,[0,1,2,2,1,0],normals);
+   m.setVerticesData(B.VertexBuffer.NormalKind,new Float32Array(normals));
    m.material=mat;m.isPickable=false;return m;
  }
  function window(name,x,y,z,w,h){
@@ -73,7 +75,7 @@ function structure(B,scene,track,materials){
    mat.emissiveColor=new B.Color3(.22,.16,.08);
    mat.backFaceCulling=false;
    const face=track(B.MeshBuilder.CreatePlane(name+" legible sign",{width:w-.42,height:h-.3},scene));
-   face.position.set(x,y,z-.188);face.material=mat;face.isPickable=false;
+   face.position.set(x,y,z-.188);face.rotation.y=Math.PI;face.material=mat;face.isPickable=false;
  }
  function porchRail(name,left,right,y,z){
    box(name+" railing",right-left,.12,.13,(left+right)/2,y+.98,z,frame);
