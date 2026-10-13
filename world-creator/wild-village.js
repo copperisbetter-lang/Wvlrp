@@ -4,7 +4,8 @@
  * panorama cards or marker cubes. A deliberately lightweight architectural
  * approximation of the user-owned WVLRP woodland reference photography.
  */
-import {COMMUNITY_SITES,WILD_TRAIL_SEGMENTS} from "./wild-reference-layout.js";
+import {COMMUNITY_SITES,WILD_TRAIL_SEGMENTS} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
+import {stageVillageCampfire} from "./wild-campfire.js?v=permanent-campfire-20261013-v1";
 import {cabinGrade} from "./wild-nature.js";
 import {hash} from "./world-core.js";
 
@@ -41,13 +42,14 @@ function structure(B,scene,track,materials){
    }
    m.material=mat;m.isPickable=false;return m;
  }
- function gable(name,w,wallY,peakY,z,mat){
+ function gable(name,w,wallY,peakY,z,mat,centerX=0){
    const m=track(new B.Mesh(name,scene));
    const p=[-w/2,wallY,z,0,peakY,z,w/2,wallY,z];
    m.setVerticesData(B.VertexBuffer.PositionKind,new Float32Array(p));
    m.setIndices([0,1,2,2,1,0]);
    const normals=[];B.VertexData.ComputeNormals(p,[0,1,2,2,1,0],normals);
    m.setVerticesData(B.VertexBuffer.NormalKind,new Float32Array(normals));
+   m.position.x=centerX;
    m.material=mat;m.isPickable=false;return m;
  }
  function window(name,x,y,z,w,h){
@@ -112,8 +114,8 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
    S.box(site.name+" staggered horizontal log course",w+.2,.16,.26,X,Y+h,front-.09,materials.frame);
    S.box(site.name+" rear log course",w+.2,.16,.24,X,Y+h,back+.10,materials.frame);
  }
- S.gable(site.name+" front timber gable",w,Y+wall, Y+peak,front,materials.timber);
- S.gable(site.name+" rear timber gable",w,Y+wall,Y+peak,back,materials.timber);
+ S.gable(site.name+" front timber gable",w,Y+wall, Y+peak,front,materials.timber,X);
+ S.gable(site.name+" rear timber gable",w,Y+wall,Y+peak,back,materials.timber,X);
  const rise=peak-wall,span=w/2+.75,angle=Math.atan2(rise,span);
  const sloping=Math.hypot(rise,span)+.75;
  // Real 3D standing-seam metal roofing with sloped panels and ridge cap.
@@ -131,11 +133,14 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
  S.box(site.name+" covered porch floor",w+2,.33,porchD+1,X,porchY,front-porchD/2,materials.frame);
  S.box(site.name+" porch roof",w+2.2,.24,porchD+1.4,X,Y+4.18,front-porchD/2,materials.roof);
  S.box(site.name+" fascia board",w+2.25,.40,.25,X,Y+4.02,porchFront-.32,materials.timber);
+ S.box(site.name+" weathered roof edge",w+2.1,.12,.23,X,Y+4.21,porchFront-.43,materials.trim);
  for(let i=0;i<=4;i++){
    const x=X-(w/2+.55)+i*(w+1.1)/4;
    S.column(site.name+" heavy porch beam",x,Y+2.4,porchFront,.32,3.4);
    S.box(site.name+" log post foot",.85,.78,.8,x,Y+.95,porchFront,materials.stone);
    if(i<4)S.line(site.name+" natural porch truss",x,Y+3.6,porchFront,x+2,Y+4.03,porchFront,.11);
+   S.line(site.name+" handmade porch knee brace",x,Y+3.05,porchFront,
+     x+(i<2?.72:-.72),Y+3.90,porchFront,.095,materials.trim);
  }
  S.porchRail(site.name+" left porch",X-w/2-.38,X-w/6,porchY,porchFront);
  S.porchRail(site.name+" right porch",X+w/6,X+w/2+.38,porchY,porchFront);
@@ -144,11 +149,19 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
    S.box(site.name+" entry stair "+k,4.75,.17,1.06,X,Y+.68-k*.19,porchFront-.67-k*.80,materials.stone);
  }
  // Reflective multi-paned windows and center double doors.
- const doorY=Y+2.50,entryFront=front-.18;
- S.box(site.name+" central arched door",3.2,3.85,.16,X,doorY,entryFront,materials.frame);
+ // Hand-paneled doors. The handles should sit below a standing adult's eyes.
+ const doorY=Y+2.70,entryFront=front-.18;
+ S.box(site.name+" double door surround",3.48,4.03,.24,X,doorY,entryFront,materials.trim);
  for(const side of [-1,1]){
-   S.box(site.name+" narrow door glazing",1.03,2.4,.22,X+side*.79,doorY+.19,entryFront-.04,materials.glass);
-   S.column(site.name+" brass door knob",X+side*.22,doorY-.35,entryFront-.21,.07,.12,materials.metal);
+   const dx=X+side*.82;
+   S.box(site.name+" green door panel",1.60,3.84,.15,dx,doorY,entryFront-.18,materials.door);
+   S.box(site.name+" lower door panel",1.18,1.02,.17,dx,Y+1.49,entryFront-.28,materials.frame);
+   S.box(site.name+" middle stile",1.38,.09,.18,dx,Y+2.12,entryFront-.30,materials.trim);
+   for(const off of [-.33,.33])for(const rise of [0,.60]){
+     S.box(site.name+" glazed door panes",.53,.54,.19,dx+off,
+       Y+2.83+rise,entryFront-.30,materials.glass);
+   }
+   S.column(site.name+" brass door handle",X+side*.13,Y+1.60,entryFront-.37,.075,.12,materials.metal);
    S.window(site.name+" porch windows",X+side*(w*.29),Y+3.0,front-.26,3.0,2.7);
    S.window(site.name+" endwall windows",X+side*(w*.46),Y+3.1,Z+1.2,1.3,2.2);
  }
@@ -159,8 +172,14 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
     X+side*w*.28,Y+wall+.22,front-1.0,.19);
  }
  S.sign(site.name+" hand-lettered plaque",
-   station?"Ranger Station":kitchen?"Laurels Kitchen":"Mercantile and Giftshop",
+   station?"Ranger Station":kitchen?"Laurel's Kitchen":"Mercantile & Gift Shop",
    X,Y+5.35,front-1.23,station?14.7:kitchen?12.8:17.4,1.28);
+ // Lanterns glow by day under the sheltered porch.
+ for(const side of [-1,1]){
+   const lx=X+side*2.45;
+   S.box(site.name+" lantern mount",.22,.56,.25,lx,Y+3.70,front-.51,materials.metal);
+   S.box(site.name+" glowing lantern",.19,.33,.29,lx,Y+3.67,front-.69,materials.lantern);
+ }
  // A stone chimney, short porch benches and native flower tubs.
  const chX=X+(station?-.36:-.34)*w, chZ=Z+d*.22;
  S.box(site.name+" Appalachian stone chimney",2.2,peak-1.2,2.6,chX,Y+(peak+1.0)/2,chZ,materials.stone);
@@ -235,12 +254,32 @@ export function renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight}){
    brick:material(B,scene,track,"patina brick","#76533d"),
    flowers:material(B,scene,track,"native purple asters","#805e8d"),
    flowerGold:material(B,scene,track,"native goldenrod","#c6a54a"),
-   leaf:material(B,scene,track,"woodland wildflower green","#425d35")
+   leaf:material(B,scene,track,"woodland wildflower green","#425d35"),
+   door:material(B,scene,track,"heritage forest-green doors","#24423a"),
+   lantern:material(B,scene,track,"warm amber porch lantern","#ffbe58",true)
  };
+ // Fine plank grain keeps broad siding from looking like flat brown cubes.
+ const grain=track(new B.DynamicTexture("weathered village timber grain",
+   {width:128,height:256},scene,false));
+ const ctx=grain.getContext();
+ ctx.fillStyle="#e5d2b9";ctx.fillRect(0,0,128,256);
+ for(let i=0;i<270;i++){
+   const x=(i*53.91)%128,y=(i*97.37)%256;
+   ctx.strokeStyle=i%7===0?"#584c3a38":"#84705624";
+   ctx.lineWidth=i%5===0?1.8:.68;
+   ctx.beginPath();ctx.moveTo(x,y);
+   ctx.bezierCurveTo(x-4,y+9,x+5,y+21,x+(i%3)-1,y+37);ctx.stroke();
+ }
+ grain.update(false);grain.wrapU=B.Texture.WRAP_ADDRESSMODE;
+ grain.wrapV=B.Texture.WRAP_ADDRESSMODE;
+ for(const mat of [mats.timber,mats.frame,mats.trim,mats.door])
+   mat.diffuseTexture=grain;
  let buildings=0;
  for(const site of COMMUNITY_SITES){
    if(Math.abs(site.x-cx)>92||Math.abs(site.z-cy)>92)continue;
    buildings+=stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,mats);
  }
- return {buildings,paths:trails(B,scene,track,{cx,cy,seed,surfaceHeight,materials:mats})};
+ const firePits=stageVillageCampfire(B,scene,track,{cx,cy,seed,surfaceHeight,materials:mats});
+ return {buildings,firePits,
+   paths:trails(B,scene,track,{cx,cy,seed,surfaceHeight,materials:mats})};
 }
