@@ -139,6 +139,9 @@ class YoungExplorerWardrobe {
   }
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
+  // The imported continuous skin must render from both sides, including at the neckline.
+  for(const m of (this.body.material?.subMaterials||[this.body.material])){if(m){m.backFaceCulling=false;m.twoSidedLighting=true;}}
+  for(const m of (this.dress.material?.subMaterials||[this.dress.material])){if(m){m.backFaceCulling=false;m.twoSidedLighting=true;}}
   this.fitMaterial=new B.StandardMaterial('Opaque neutral fitting mannequin',scene);
   this.fitMaterial.diffuseColor=new B.Color3(.46,.57,.49);
   this.fitMaterial.backFaceCulling=false;
@@ -183,10 +186,10 @@ class YoungExplorerWardrobe {
   const size=$('dress-size-select'),vertical=$('dress-position'),width=$('dress-width'),depth=$('dress-depth'),reset=$('dress-reset');
   if(!size||!vertical||!width||!depth)return;
   const base=this.dress.scaling.clone(),origin=this.dress.position.clone();
-  const factors={2:.68,3:.74,4:.81,5:.88,6:.94,7:1,8:1.06,10:1.13};
+  const factors={2:.88,3:.91,4:.94,5:.97,6:1,7:1.03,8:1.06,10:1.10};
   const update=()=>{
    const ratio=factors[size.value]||1;
-   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y*ratio,base.z*ratio*(Number(depth.value)/100));
+   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y,base.z*ratio*(Number(depth.value)/100));
    this.dress.position.copyFrom(origin);
    const parent=this.dress.parent;
    const shift=new this.B.Vector3(0,Number(vertical.value)/100,0);
