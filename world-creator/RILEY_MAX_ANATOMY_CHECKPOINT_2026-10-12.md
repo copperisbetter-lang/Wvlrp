@@ -9,9 +9,11 @@ User request: replace the current coarse vulva on adult **Riley** trial with a m
 - `world-creator/riley-vulva1-trial.html`, commit `a888f761401a920165337a81f1c50a6770482608`: whole attachment 300% default (max), new storage key to bypass earlier saved small settings, new cache-busted JS and GLB references, and 300% close-fit preset.
 - Hood and clitoral controls stay disabled. This source topology does not provide those as independently modeled components.
 
-## Readiness / follow-up verification
+## Verified build / remaining viewer QA
 
-- **Source changes committed.** GitHub workflow `.github/workflows/build-riley-vulva1-trial.yml` is triggered by the Python builder path; it is designed to publish the regenerated binary to the existing trial asset path.
-- **Do NOT claim the revised GLB built, deployed, loaded, visually fit, or worked on the user's phone until actual evidence.** Last status inspected was old success `source_commit=1fd4fdc5ed8ebfa8babf3b4879a7937c9d668611`, from earlier 181-vertex binary. Check status and/or workflow output for current commit `266dd4d395d8a1611b1021892f37bb467b3744ad`.
-- Once published, verify GLB vertex count, rig/animation preservation, and in-browser effect of ALL sliders, body skin-match, rim clipping, standing and elbows/knees poses from multiple views. New max sizing intentionally may be visually oversized; user should inspect and dial back.
-- Viewer target (only call new 3D build ready after successful binary validation): `https://wvlrp.com/world-creator/riley-vulva1-trial.html?v=20261012-max-sculpt-r6`.
+- The new Blender job **SUCCEEDED** for `source_commit=266dd4d395d8a1611b1021892f37bb467b3744ad` on `2026-10-13T02:48:34Z`.
+- Revised GLB: **1,549 vertices and 1,512 faces** for the replacement subdivided attachment, up from the licensed donor's 181 vertices and 168 faces; Blender reported `RILEY_VULVA1_TRIAL_SUCCESS` and 10,964,524-byte GLB.
+- **Published replacement binary confirmed:** commit `d692f797abd87b9e72092ba7f9a98784d79aebb3` changes `world-creator/assets/riley-top-shelf-vulva1-trial.glb`. Status diagnostics committed `f2687a5880387d635640654377930fd9eaeb1f5c`.
+- Existing Riley 5 animations survived in Blender export, including elbows-and-knees. The body mesh and original GLB remain unchanged.
+- **Not yet visually verified on Android or confirmed deployed to wvlrp.com.** Need user to open viewer and inspect real scale, skin-match, top edge, body clipping, standing and rear poses. The 300%/400% size values are MAX viewport controls, not baked in the GLB, so they remain reversible.
+- Viewer test URL: `https://wvlrp.com/world-creator/riley-vulva1-trial.html?v=20261012-max-sculpt-r6`.
