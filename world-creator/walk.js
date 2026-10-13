@@ -38,20 +38,56 @@ if(!B){status("3D engine unavailable. Reload while connected to the internet.");
 const engine=new B.Engine(canvas,true,{antialias:!mobile,stencil:true,preserveDrawingBuffer:false});
 engine.setHardwareScalingLevel(mobile?1.4:1);
 const scene=new B.Scene(engine);
-scene.clearColor=new B.Color4(.49,.61,.61,1);
+// Clear, sunny afternoon: enough diffuse skylight reaches forest-floor plants
+// beneath the dense native canopy, without making all foliage fluorescent.
+scene.clearColor=new B.Color4(.67,.82,.95,1);
 scene.fogMode=B.Scene.FOGMODE_EXP2;
-scene.fogDensity=.00175;
-scene.fogColor=new B.Color3(.46,.57,.56);
+scene.fogDensity=.00125;
+scene.fogColor=new B.Color3(.67,.79,.87);
 scene.skipPointerMovePicking=true;
-const sky=new B.HemisphericLight("daylight",new B.Vector3(.35,1,.21),scene);
-sky.intensity=.78;sky.groundColor=new B.Color3(.19,.21,.16);
-const sun=new B.DirectionalLight("Appalachian afternoon",new B.Vector3(-.45,-.9,-.27),scene);
-sun.diffuse=new B.Color3(1,.91,.74);sun.intensity=.78;
+scene.imageProcessingConfiguration.exposure=1.14;
+scene.imageProcessingConfiguration.contrast=1.05;
+const sky=new B.HemisphericLight("blue-sky bounce",new B.Vector3(.35,1,.21),scene);
+sky.intensity=1.2;
+sky.diffuse=new B.Color3(.94,.97,1);
+sky.groundColor=new B.Color3(.39,.43,.34);
+const sunLook=new B.Vector3(.25,.77,-.58).normalize();
+const sun=new B.DirectionalLight("bright Appalachian afternoon sun",sunLook.scale(-1),scene);
+sun.diffuse=new B.Color3(1,.96,.85);
+sun.intensity=1.55;
+const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
 const camera=new B.FreeCamera("first person at Hearthside",
-  new B.Vector3(0,cabinY+1.72,16),scene);
+  new B.Vector3(0,cabinY+EYE_HEIGHT,16),scene);
 camera.minZ=.07;camera.maxZ=900;camera.fov=1.13;
 camera.rotation.set(0,Math.PI,0);
 scene.activeCamera=camera;
+// A small, softly glowing visible sun follows the camera's *position*, not
+// its rotation, so its direction stays fixed in the real 3D sky while walking.
+// The quad is behind nearby trees, has no fog, and costs only one draw call.
+const sunlightTexture=new B.DynamicTexture("sun disc and soft haze",{width:128,height:128},scene,false);
+const sunlightCtx=sunlightTexture.getContext();
+const sunlightGradient=sunlightCtx.createRadialGradient(64,64,0,64,64,64);
+sunlightGradient.addColorStop(0,"rgba(255,255,247,1)");
+sunlightGradient.addColorStop(.07,"rgba(255,251,218,.98)");
+sunlightGradient.addColorStop(.15,"rgba(255,249,205,.68)");
+sunlightGradient.addColorStop(.34,"rgba(255,242,204,.24)");
+sunlightGradient.addColorStop(.7,"rgba(255,242,207,.055)");
+sunlightGradient.addColorStop(1,"rgba(255,244,214,0)");
+sunlightCtx.fillStyle=sunlightGradient;
+sunlightCtx.fillRect(0,0,128,128);
+sunlightTexture.hasAlpha=true;
+sunlightTexture.update();
+const sunDiscMat=new B.StandardMaterial("sun glow material",scene);
+sunDiscMat.diffuseTexture=sunlightTexture;
+sunDiscMat.useAlphaFromDiffuseTexture=true;
+sunDiscMat.disableLighting=true;
+sunDiscMat.emissiveColor=new B.Color3(1,1,1);
+sunDiscMat.backFaceCulling=false;
+const sunDisc=B.MeshBuilder.CreatePlane("visible afternoon sunlight",{size:66},scene);
+sunDisc.material=sunDiscMat;
+sunDisc.isPickable=false;
+sunDisc.applyFog=false;
+sunDisc.billboardMode=B.Mesh.BILLBOARDMODE_ALL;
 // Do not attach Babylon's default touch look: one finger operates our custom
 // joystick and the other drags to look without firing accidental movement.
 const permanent=[];
@@ -174,7 +210,7 @@ crewButton.addEventListener("click",()=>{
   (async()=>{for(const o of cabinCrew)await loadAvatar(o);status("Cabin crew load attempted: "+avatarRoots.size+" of "+cabinCrew.length+" actual models visible.");})();
 });
 const resetToCabin=()=>{
-  camera.position.set(0,cameraGround(0,16)+1.68,16);
+  camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
   camera.rotation.set(0,Math.PI,0);
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
@@ -281,8 +317,8 @@ engine.runRenderLoop(()=>{
   // consistent while approaching ridges, ravines or the cabin porch.
   const walking=len>.04?1:0;
   const sway=Math.sin(walkTime*1.45)*.012*walking;
-  const targetY=cameraGround(camera.position.x,camera.position.z)+1.68+sway;
-  // Stay 1.68 m above the surface on EVERY frame. Slow Y interpolation let
+  const targetY=cameraGround(camera.position.x,camera.position.z)+EYE_HEIGHT+sway;
+  // Stay at EYE_HEIGHT above the surface on EVERY frame. Slow Y interpolation let
   // steep terrain overtake the camera, making the adult walker appear short.
   // Following the ground directly also avoids a dive on chunk transitions.
   camera.position.y=targetY;
@@ -297,6 +333,10 @@ engine.runRenderLoop(()=>{
     seconds=0;positionSync++;
     info.textContent=`${Math.round(walkDistance)}m walked · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
   }
+  // Keep the sun fixed against the distant sky without clipping at the edge
+  // of the streamed terrain or drifting as the walker leaves the cabin.
+  sunDisc.position.set(camera.position.x+sunLook.x*420,
+    camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
   scene.render();
 });
 resetToCabin();
@@ -320,6 +360,11 @@ window.__wildDiagnostics=()=>({
   combinedCabinMeshes,
   walkedMetres:walkDistance,
   groundAltitude:cameraGround(camera.position.x,camera.position.z),
+  configuredEyeHeight:EYE_HEIGHT,
+  sunlightIntensity:sun.intensity,
+  skylightIntensity:sky.intensity,
+  daylightExposure:scene.imageProcessingConfiguration.exposure,
+  sunDiscVisible:sunDisc.isEnabled(),
   eyeHeight:camera.position.y-cameraGround(camera.position.x,camera.position.z),
   // This reference is independent of GroundMesh.getHeightAtCoordinates.
   renderedSurfaceHeight:habitat?.surfaceHeight?.(camera.position.x,camera.position.z)??null,
