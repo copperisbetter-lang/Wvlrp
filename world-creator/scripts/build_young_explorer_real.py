@@ -349,4 +349,47 @@ def main():
           'human_body_vertices',len(body.data.vertices),
           'joint_count',len(meta['skins'][0]['joints']),
           'animations',[a['name'] for a in meta['animations']])
-if __name__=='__main__':main()
+def render_full_body_preview(body):
+    """Proof-of-build full body preview for visual QA, independent of web viewer."""
+    pts=[body.matrix_world@v.co for v in body.data.vertices]
+    low=min(p.z for p in pts)
+    tall=max(p.z for p in pts)-low
+    cx=(min(p.x for p in pts)+max(p.x for p in pts))*.5
+    cy=(min(p.y for p in pts)+max(p.y for p in pts))*.5
+    scene=bpy.context.scene
+    bpy.ops.object.camera_add(location=(cx,cy-tall*2.8,low+tall*.54))
+    cam=bpy.context.object
+    cam.name='Young Explorer full human head-to-toe preview camera'
+    target=Vector((cx,cy,low+tall*.53))
+    cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+    cam.data.type='ORTHO'
+    cam.data.ortho_scale=tall*1.44
+    scene.camera=cam
+    for pos,power,sz in [((-1.0,-1.5,2.5),550,2.4),((1.5,.6,2.1),400,2.0)]:
+        light=bpy.data.lights.new('Young Explorer soft studio fill','AREA')
+        light.energy=power;light.size=sz
+        ob=bpy.data.objects.new('Young Explorer soft light',light)
+        bpy.context.collection.objects.link(ob)
+        ob.location=(cx+pos[0]*tall,cy+pos[1]*tall,low+pos[2]*tall)
+        ob.rotation_euler=(target-ob.location).to_track_quat('-Z','Y').to_euler()
+    scene.render.engine='CYCLES'
+    scene.cycles.samples=12
+    scene.render.resolution_x=680;scene.render.resolution_y=1000
+    scene.render.resolution_percentage=100
+    scene.render.film_transparent=False
+    scene.render.image_settings.file_format='PNG'
+    scene.render.filepath=str(ROOT/'assets'/'young-explorer-real-full-body-preview.png')
+    scene.view_settings.view_transform='AgX'
+    bpy.ops.render.render(write_still=True)
+    print('WVLRP_CHILD_HEAD_TO_TOE_PREVIEW_SAVED',scene.render.filepath,
+          Path(scene.render.filepath).stat().st_size,'height_m',round(tall,3))
+
+if __name__=='__main__':
+    main()
+    try:
+        body=next(obj for obj in bpy.data.objects
+                  if obj.type=='MESH' and 'Young Explorer realistic continuous child basemesh' in obj.name)
+        render_full_body_preview(body)
+    except Exception as exc:
+        print('WVLRP_CHILD_PREVIEW_FAILED_NOT_A_GLB_FAILURE',repr(exc))
+
