@@ -204,13 +204,41 @@ class YoungExplorerWardrobe {
    if($('outfit-feedback'))$('outfit-feedback').textContent='Clothing hidden for non-anatomical mannequin fit inspection. Select an outfit to restore.';
   };
   if(hair){
-   const original=this.model.meshes.filter(m=>/hair/i.test(m.name||''));
    const B=this.B,scene=this.scene;
-   const strands=[];
-   const mat=new B.StandardMaterial('Young Explorer brown hairstyle',scene);mat.diffuseColor=new B.Color3(.19,.105,.07);mat.specularColor=new B.Color3(.035,.025,.02);
-   const make=(name,x)=>{const mesh=B.MeshBuilder.CreateSphere(name,{diameter:.13,segments:12},scene);mesh.scaling.set(.65,1.4,.7);mesh.position.set(x,this.measure.maxY-.19,-.09);mesh.material=mat;mesh.setEnabled(false);strands.push(mesh);};
-   make('ponytail',0);make('left pigtail',-.12);make('right pigtail',.12);
-   hair.onchange=()=>{strands.forEach(m=>m.setEnabled(false));original.forEach(m=>m.setEnabled(hair.value==='original'));if(hair.value==='ponytail')strands[0].setEnabled(true);if(hair.value==='pigtails'){strands[1].setEnabled(true);strands[2].setEnabled(true);}};
+   const original=this.model.meshes.filter(m=>/hair/i.test(m.name||''));
+   const mat=new B.StandardMaterial('Young Explorer natural brown hair strands',scene);
+   mat.diffuseColor=new B.Color3(.19,.105,.075);mat.specularColor=new B.Color3(.045,.035,.025);
+   mat.backFaceCulling=false;
+   const head=this.model.skeletons?.flatMap(s=>s.bones||[]).find(b=>normalize(b.name)==='head');
+   const headNode=head?.getTransformNode?.()||head?._linkedTransformNode;
+   const cx=this.measure.cx,top=this.measure.maxY,H=this.measure.H;
+   const strands={ponytail:[],pigtails:[]};
+   const build=(kind,x,z,length)=>{
+     // Many narrow, tapering, curved locks replace the old oval primitives.
+     for(let i=0;i<18;i++){
+       const theta=i*2.39996,rad=Math.sqrt((i+.5)/18);
+       const ox=Math.cos(theta)*rad*.036*H,oz=Math.sin(theta)*rad*.030*H;
+       const start=new B.Vector3(cx+x+ox,top-.145*H,z+oz);
+       const path=[];
+       for(let j=0;j<=9;j++){
+         const t=j/9;
+         path.push(new B.Vector3(start.x+(.014*H*Math.sin(t*2.5+i*.13)),start.y-length*t,start.z+.045*H*t*t));
+       }
+       const lock=B.MeshBuilder.CreateTube('realistic '+kind+' hair lock '+i,{path,radius:.0048*H,tessellation:6,cap:B.Mesh.CAP_ALL},scene);
+       lock.material=mat;lock.isPickable=false;
+       if(headNode){lock.setParent(headNode);}
+       lock.setEnabled(false);strands[kind].push(lock);
+     }
+   };
+   build('ponytail',0,-.075*H,.29*H);
+   build('pigtails',-.102*H,-.01*H,.23*H);
+   build('pigtails',.102*H,-.01*H,.23*H);
+   hair.onchange=()=>{
+     for(const meshes of Object.values(strands))for(const mesh of meshes)mesh.setEnabled(false);
+     // Retain the scalp and original textured hair; additional strands hang naturally.
+     original.forEach(m=>m.setEnabled(true));
+     for(const mesh of strands[hair.value]||[])mesh.setEnabled(true);
+   };
   }
  }
  select(id){
