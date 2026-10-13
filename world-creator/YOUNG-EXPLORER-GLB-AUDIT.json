@@ -1,0 +1,73 @@
+{
+  "bytes": 13257824,
+  "total_vertices_across_gltf_meshes": 22255,
+  "max_vertices_in_single_gltf_mesh": 14517,
+  "meshes": [
+    {
+      "name": "Complete child sundress 3D cloth mesh",
+      "vertices": 548,
+      "primitives": 1
+    },
+    {
+      "name": "Sphere",
+      "vertices": 607,
+      "primitives": 1
+    },
+    {
+      "name": "Sphere.001",
+      "vertices": 607,
+      "primitives": 1
+    },
+    {
+      "name": "eyebrow001.001",
+      "vertices": 124,
+      "primitives": 1
+    },
+    {
+      "name": "eyelashes01.001",
+      "vertices": 250,
+      "primitives": 1
+    },
+    {
+      "name": "high-poly.001",
+      "vertices": 1076,
+      "primitives": 1
+    },
+    {
+      "name": "long01.001",
+      "vertices": 3312,
+      "primitives": 1
+    },
+    {
+      "name": "base.001",
+      "vertices": 14517,
+      "primitives": 1
+    },
+    {
+      "name": "Sphere.002",
+      "vertices": 607,
+      "primitives": 1
+    },
+    {
+      "name": "Sphere.003",
+      "vertices": 607,
+      "primitives": 1
+    }
+  ],
+  "joint_counts": [
+    52
+  ],
+  "animations": [
+    "Young Explorer Idle",
+    "Young Explorer Walk",
+    "Young Explorer Wave"
+  ],
+  "real_uv_skin_materials": [
+    "Young Explorer real CC0 face and body skin UV 0"
+  ],
+  "plaid_dress_materials": [
+    "Young Explorer woven opaque plaid sundress"
+  ],
+  "image_count": 6,
+  "PASS_realistic_full_body": true
+}
