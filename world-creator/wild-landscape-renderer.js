@@ -6,7 +6,7 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=open-village-mountain-sightline-20261013-v3";
+import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=flatter-rocky-village-cove-20261013-v4";
 import {renderWildVillage} from "./wild-village.js?v=real-stone-timber-slate-20261013-v2";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=full-brush-plaza-20261013-v10";
 const PROFILES={
