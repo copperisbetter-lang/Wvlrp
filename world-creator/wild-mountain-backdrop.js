@@ -54,7 +54,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
       Math.sin(t*23+band)*3.4;
     // The tallest bluff sits near one mountain skyline arc, as in the photo.
     const cliff=band===0?62*Math.pow(Math.max(0,Math.cos(t-4.3)),8):0;
-    const base=[462,508,544][band];
+    const base=[590,664,724][band];
     return base-macro-cliff+(hash(Math.round(x/7),band)-.5)*(band===2?7:3);
   }
   const colors=[
@@ -97,13 +97,13 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
   for(let x=x1;x>=x0;x-=7)ctx.lineTo(x,ridge(x,0)+47+
     9*Math.sin(x*.031)+12*hash(Math.floor(x/29),14));
   ctx.closePath();ctx.clip();
-  const rock=ctx.createLinearGradient(x0,363,x1,521);
+  const rock=ctx.createLinearGradient(x0,500,x1,720);
   rock.addColorStop(0,"#b1b1a6");
   rock.addColorStop(.55,"#828982");
   rock.addColorStop(1,"#586d61");
-  ctx.fillStyle=rock;ctx.fillRect(x0,330,x1-x0,250);
+  ctx.fillStyle=rock;ctx.fillRect(x0,480,x1-x0,290);
   for(let i=0;i<140;i++){
-    const x=x0+hash(i,33)*(x1-x0),y=350+hash(i,34)*170;
+    const x=x0+hash(i,33)*(x1-x0),y=485+hash(i,34)*240;
     const len=9+hash(i,35)*38;
     ctx.strokeStyle=i%3===0?"#d3cbb9a9":"#48555086";
     ctx.lineWidth=1.2+hash(i,36)*3;
@@ -114,15 +114,15 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
   ctx.restore();
   // Mist at the lower distance line softens the painted terrain behind
   // actual 3D hemlocks, native shrubs, village porches and paths.
-  const haze=ctx.createLinearGradient(0,519,0,735);
+  const haze=ctx.createLinearGradient(0,600,0,835);
   haze.addColorStop(0,"rgba(210,224,203,0)");
   haze.addColorStop(.7,"rgba(182,203,176,.10)");
   haze.addColorStop(1,"rgba(52,81,63,.02)");
-  ctx.fillStyle=haze;ctx.fillRect(0,519,W,220);
+  ctx.fillStyle=haze;ctx.fillRect(0,600,W,235);
   // Fill under the horizon; nearby world terrain conceals most of this.
-  const valley=ctx.createLinearGradient(0,610,0,H);
+  const valley=ctx.createLinearGradient(0,860,0,H);
   valley.addColorStop(0,"#314c3d");valley.addColorStop(1,"#1b382c");
-  ctx.fillStyle=valley;ctx.fillRect(0,715,W,H-715);
+  ctx.fillStyle=valley;ctx.fillRect(0,860,W,H-860);
   ctx.restore();
   texture.update(false);
   texture.wrapU=B.Texture.WRAP_ADDRESSMODE;
