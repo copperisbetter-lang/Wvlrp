@@ -2,25 +2,75 @@
 <strong>Fit Riley's pelvic attachment — trial only</strong>
 <p style="margin:6px 0 10px;color:#d6ecd9;font-size:14px">Move sliders slowly and rotate the model to check the side. Changes are temporary until we rebuild the GLB.</p>
 <div style="display:grid;gap:10px">
+<label style="margin:0">Swing lower end under (upper-edge hinge): <output id="hingeAmount">65°</output><input id="hingeFit" type="range" min="-20" max="145" value="65" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 <label style="margin:0">Slide farther under: <output id="backAmount">30 mm</output><input id="backFit" type="range" min="-40" max="100" value="30" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 <label style="margin:0">Move up / down: <output id="upAmount">+10 mm (up)</output><input id="upFit" type="range" min="-70" max="70" value="10" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 <label style="margin:0">Closer to body / outward: <output id="inAmount">+20 mm (in)</output><input id="inFit" type="range" min="-50" max="90" value="20" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="fitReset" type="button">Original placement</button><button id="fitSuggested" type="button">Suggested fit</button></div>
 <p style="font-size:13px;margin:5px 0;color:#d4eadd" id="fitStatus">Waiting for the model...</p>
-</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. The three placement sliders shift ONLY the trial attachment in this viewer; they do not rebuild Riley's GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
+</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. The hinge rotates the ENTIRE trial attachment rigidly about its upper edge (not a bending/deformation effect). The other three sliders translate it. Nothing here changes the approved base Riley GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
 const $=id=>document.getElementById(id),canvas=$('canvas'),engine=new BABYLON.Engine(canvas,true),scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.16,.24,.20,1);
 const camera=new BABYLON.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.4,4,new BABYLON.Vector3(0,1,0),scene);camera.attachControl(canvas,true);camera.lowerRadiusLimit=.17;camera.upperRadiusLimit=8;camera.minZ=.01;camera.wheelPrecision=350;camera.panningSensibility=900;camera.pinchPrecision=650;camera.pinchDeltaPercentage=0;camera.inertia=.45;
 new BABYLON.HemisphericLight('ambient',new BABYLON.Vector3(0,1,0),scene).intensity=1.1;
 const key=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.7,-1,.4),scene);key.intensity=1.1;
 const ground=BABYLON.MeshBuilder.CreateGround('forest clearing',{width:20,height:20},scene);const mat=new BABYLON.StandardMaterial('earth',scene);mat.diffuseColor=new BABYLON.Color3(.25,.36,.22);ground.material=mat;
 engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());let imported=[],groups=[],objectURL=null;
-let addonMesh=null,originalAddonWorld=null;
+let addonMesh=null,originalAddonWorld=null,hingeOriginal=null;
+// Viewer-only rigid hinge. Rotates all attachment vertices together around a
+// transverse X-axis at the upper edge, leaving that edge fixed. This avoids
+// bending/distorting the donor's original topology or editing Riley's base GLB.
+function setupPelvicHinge(mesh){
+  hingeOriginal=null;
+  if(!mesh)return;
+  const p=mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  if(!p||p.length<9){console.warn('Trial attachment lacks vertex data for hinge');return;}
+  const positions=Array.from(p);
+  const n=mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+  const normals=n?Array.from(n):null;
+  let yMin=Infinity,yMax=-Infinity;
+  for(let i=1;i<positions.length;i+=3){yMin=Math.min(yMin,positions[i]);yMax=Math.max(yMax,positions[i]);}
+  const height=Math.max(.001,yMax-yMin),topBand=yMax-height*.12;
+  let zSum=0,count=0;
+  for(let i=0;i<positions.length;i+=3){
+    if(positions[i+1]>=topBand){zSum+=positions[i+2];count++;}
+  }
+  const pivotY=yMax, pivotZ=count?zSum/count:0;
+  hingeOriginal={positions,normals,pivotY,pivotZ};
+  mesh.setVerticesData(BABYLON.VertexBuffer.PositionKind,positions,true);
+  if(normals)mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind,normals,true);
+}
+function applyPelvicHinge(){
+  const degrees=Number($('hingeFit').value);
+  $('hingeAmount').textContent=degrees+'°';
+  if(!addonMesh||!hingeOriginal)return;
+  // A negative X rotation carries the originally downward-pointing free end
+  // toward posterior (+Z), then upward along the underside of the pelvis.
+  const a=-degrees*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
+  const {positions,normals,pivotY,pivotZ}=hingeOriginal;
+  const p=positions.slice();
+  for(let i=0;i<p.length;i+=3){
+    const dy=positions[i+1]-pivotY,dz=positions[i+2]-pivotZ;
+    p[i+1]=pivotY+dy*c-dz*si;
+    p[i+2]=pivotZ+dy*si+dz*c;
+  }
+  addonMesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind,p,true);
+  if(normals){
+    const ns=normals.slice();
+    for(let i=0;i<ns.length;i+=3){
+      ns[i+1]=normals[i+1]*c-normals[i+2]*si;
+      ns[i+2]=normals[i+1]*si+normals[i+2]*c;
+    }
+    addonMesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind,ns,false);
+  }
+}
+
 function signedLabel(mm,directions){
  if(mm===0)return '0 mm';
  return (mm>0?'+':'')+mm+' mm ('+(mm>0?directions[0]:directions[1])+')';
 }
 function applyPelvicFit(){
+ applyPelvicHinge();
  const back=Number($('backFit').value),up=Number($('upFit').value),inward=Number($('inFit').value);
  $('backAmount').textContent=signedLabel(back,['under','forward']);
  $('upAmount').textContent=signedLabel(up,['up','down']);
@@ -39,14 +89,15 @@ function applyPelvicFit(){
  );
  addonMesh.setAbsolutePosition(nextPosition);
  addonMesh.computeWorldMatrix(true);
- $('fitStatus').textContent='Trial: '+back+' mm under / '+up+' mm vertical / '+inward+' mm inward. Rotate sideways and look for floating edges.';
+ $('fitStatus').textContent='Trial: rigid upper-edge hinge '+$('hingeFit').value+'° / '+back+' mm under / '+up+' mm vertical / '+inward+' mm inward. Rotate to side and underneath to inspect fit.';
 }
+$('hingeFit').oninput=applyPelvicFit;
 $('backFit').oninput=applyPelvicFit;
 $('upFit').oninput=applyPelvicFit;
 $('inFit').oninput=applyPelvicFit;
-$('fitReset').onclick=()=>{$('backFit').value=0;$('upFit').value=0;$('inFit').value=0;applyPelvicFit();};
-$('fitSuggested').onclick=()=>{$('backFit').value=30;$('upFit').value=10;$('inFit').value=20;applyPelvicFit();};
-function clear(){addonMesh=null;originalAddonWorld=null;groups.forEach(g=>g.stop());groups=[];imported.forEach(m=>m.dispose());imported=[];$('actions').replaceChildren();applyPelvicFit()}
+$('fitReset').onclick=()=>{$('hingeFit').value=0;$('backFit').value=0;$('upFit').value=0;$('inFit').value=0;applyPelvicFit();};
+$('fitSuggested').onclick=()=>{$('hingeFit').value=65;$('backFit').value=30;$('upFit').value=10;$('inFit').value=20;applyPelvicFit();};
+function clear(){addonMesh=null;originalAddonWorld=null;hingeOriginal=null;groups.forEach(g=>g.stop());groups=[];imported.forEach(m=>m.dispose());imported=[];$('actions').replaceChildren();applyPelvicFit()}
 function status(t){$('info').textContent=t}
 const ZMIN=.18,ZMAX=6.0;
 function showZoom(){
@@ -67,7 +118,7 @@ $('detail').onclick=()=>{camera.target=new BABYLON.Vector3(0,.868,0); camera.alp
 $('reset').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.4;camera.radius=4;camera.inertialRadiusOffset=0;camera.target=new BABYLON.Vector3(0,1,0);showZoom();};
 async function load(url,name){clear();status('Loading '+name+'…');try{const result=await BABYLON.SceneLoader.ImportMeshAsync('','',''+url,scene,undefined,'.glb');imported=result.meshes;groups=result.animationGroups||[];
 addonMesh=result.meshes.find(m=>/Riley Vulva1/i.test(m.name)||/Original Vulva 1/i.test(m.name))||null;
-if(addonMesh){addonMesh.computeWorldMatrix(true);originalAddonWorld=addonMesh.getAbsolutePosition().clone();}
+if(addonMesh){addonMesh.computeWorldMatrix(true);originalAddonWorld=addonMesh.getAbsolutePosition().clone();setupPelvicHinge(addonMesh);}
 applyPelvicFit();
 const real=result.meshes.filter(m=>m.getTotalVertices?.()>0);if(!real.length)throw Error('No meshes found');
 let lo=new BABYLON.Vector3(Infinity,Infinity,Infinity),hi=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
