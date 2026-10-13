@@ -1,0 +1,60 @@
+name: Inspect published Young Explorer GLB
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-young-explorer.yml'
+      - 'world-creator/assets/young-explorer-olive-plaid.glb'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check actual published binary's body, rig, and skin
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          p=pathlib.Path('world-creator/assets/young-explorer-olive-plaid.glb')
+          bs=p.read_bytes()
+          assert bs[:4]==b'glTF' and struct.unpack_from('<I',bs,8)[0]==len(bs)
+          n,t=struct.unpack_from('<II',bs,12)
+          doc=json.loads(bs[20:20+n])
+          mesh_report=[]
+          total=0
+          for mesh in doc.get('meshes',[]):
+              count=sum(doc['accessors'][prim['attributes']['POSITION']]['count'] for prim in mesh['primitives'] if 'POSITION' in prim.get('attributes',{}))
+              total+=count
+              mesh_report.append({'name':mesh.get('name'),'vertices':count,'primitives':len(mesh['primitives'])})
+          materials=[m.get('name','') for m in doc.get('materials',[])]
+          skin_names=[name for name in materials if 'Young Explorer real CC0 face and body skin UV' in name]
+          dresses=[name for name in materials if 'plaid' in name.lower()]
+          rigs=[len(s.get('joints',[])) for s in doc.get('skins',[])]
+          animation_names=[x.get('name') for x in doc.get('animations',[])]
+          qa={'bytes':len(bs),'total_vertices_across_gltf_meshes':total,
+              'max_vertices_in_single_gltf_mesh':max((m['vertices'] for m in mesh_report),default=0),
+              'meshes':mesh_report,'joint_counts':rigs,'animations':animation_names,
+              'real_uv_skin_materials':skin_names,'plaid_dress_materials':dresses,
+              'image_count':len(doc.get('images',[])),
+              'PASS_realistic_full_body':total>=10000 and max(rigs or [0])>=25 and bool(skin_names) and bool(dresses) and len(animation_names)>=3}
+          dest=pathlib.Path('world-creator/YOUNG-EXPLORER-GLB-AUDIT.json')
+          dest.write_text(json.dumps(qa,indent=2)+'\n')
+          print(json.dumps(qa,indent=2))
+          if not qa['PASS_realistic_full_body']:raise SystemExit('Published model failed GLB realism/rig structure audit')
+          PY
+      - name: Commit verifiable audit results
+        if: always()
+        run: |
+          if [ ! -f world-creator/YOUNG-EXPLORER-GLB-AUDIT.json ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/YOUNG-EXPLORER-GLB-AUDIT.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record actual Young Explorer GLB geometry and skeleton audit"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
