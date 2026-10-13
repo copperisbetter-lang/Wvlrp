@@ -1,9 +1,11 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
-  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, HEARTHSIDE_CABIN
-} from "./world-core.js?v=hearthside-cabin-v5";
+  creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, resetToWildCabin, HEARTHSIDE_CABIN
+} from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import { makeFigureBuilder } from "./character-models.js?v=no-human-blobs-20261013-v1";
+import { terrainHeight, cabinGrade, riverY, riverWidth, riverLevel, creekPath, earthColor } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=wild-full-landscape-20261013-v1";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
@@ -96,6 +98,22 @@ try{
     console.info("Hearthside scene installed",report);
   }
 }catch(err){console.warn("Hearthside installation could not be saved",err);}
+// One-time clean landscape conversion. World-wide trees, valleys and waterways
+// are generated scenery; they do not become thousands of editable map objects.
+// Do this AFTER old character install markers, so legacy deer/anchors/props and
+// old extra buildings cannot be silently reintroduced by old migrations.
+const WILD_LANDSCAPE_RESET="wvlrp-wild-native-forest-cabin-only-20261013-v1";
+let wildReset=false;
+try {
+  if(!localStorage.getItem(WILD_LANDSCAPE_RESET)){
+    const change=resetToWildCabin(world);
+    world.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
+    localStorage.setItem(WILD_LANDSCAPE_RESET,"complete");
+    wildReset=true;
+    console.info("Wild cabin-only reset saved",change);
+  }
+}catch(err){console.warn("Wild landscape reset could not persist",err);}
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
 const BUILTIN_CHARACTER_GLB=Object.freeze({
   riley:RILEY_RIGGED_GLB,
@@ -207,38 +225,40 @@ function resize(){
 function drawMap() {
   const r=resize(),w=r.width,h=r.height;
   ctx.clearRect(0,0,w,h);
-  // Render a low-cost topographic grid, sampling the same deterministic height function used by Babylon.
-  const step=22, left=view.x-w/(2*view.scale),top=view.y+h/(2*view.scale);
-  for(let py=0;py<h+step;py+=step) for(let px=0;px<w+step;px+=step){
+  // Topography and riparian colors come from the SAME elevation/biome model
+  // as the 3D forest. No legacy grid paths or fake straight creek overlay.
+  const step=12,left=view.x-w/(2*view.scale),top=view.y+h/(2*view.scale);
+  for(let py=0;py<h+step;py+=step)for(let px=0;px<w+step;px+=step){
     const wx=left+(px+step*.5)/view.scale,wy=top-(py+step*.5)/view.scale;
-    const z=heightAt(wx,wy,seed),c=Math.round(z*70);
-    const nearCreek=Math.abs(wy-creekY(wx,seed))<20;
-    ctx.fillStyle=nearCreek?"#3a5b46":"rgb("+(33+c/3)+","+(69+c)+","+(45+c/3)+")";
+    const clr=earthColor(wx,wy,seed),e=terrainHeight(wx,wy,seed);
+    const shade=Math.max(.58,Math.min(1.22,.78+(e-150)/520));
+    ctx.fillStyle="rgb("+[0,1,2].map(i=>Math.round(Math.min(255,255*clr[i]*shade))).join(",")+")";
     ctx.fillRect(px,py,step+1,step+1);
   }
   const bounds={minX:view.x-w/(2*view.scale),maxX:view.x+w/(2*view.scale),minY:view.y-h/(2*view.scale),maxY:view.y+h/(2*view.scale)};
-  function drawLine(points,outer,inner){
+  const drawWater=(points,lineWidth,color)=>{
     if(points.length<2)return;
-    ctx.beginPath();points.forEach((p,i)=>{const s=screen(p.x,p.y);if(i===0)ctx.moveTo(s.x,s.y);else ctx.lineTo(s.x,s.y);});
-    ctx.lineWidth=outer;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#27392f";ctx.stroke();
-    ctx.lineWidth=inner;ctx.strokeStyle="#d8bd7b";ctx.stroke();
-  }
-  // Every vertical/horizontal corridor crosses at its exact world-grid node.
-  // Thus a newly generated trail always offers a loop and rejoins the network.
-  for(let row=Math.floor(bounds.minY/CELL)-1;row<=Math.ceil(bounds.maxY/CELL)+1;row++){
-    const pts=[];for(let x=bounds.minX-40;x<=bounds.maxX+40;x+=25)pts.push({x,y:trailHorizontal(x,row,seed)});
-    drawLine(pts,8,3.2);
-  }
-  for(let col=Math.floor(bounds.minX/CELL)-1;col<=Math.ceil(bounds.maxX/CELL)+1;col++){
-    const pts=[];for(let y=bounds.minY-40;y<=bounds.maxY+40;y+=25)pts.push({x:trailVertical(y,col,seed),y});
-    drawLine(pts,8,3.2);
-  }
-  ctx.beginPath();
-  for(let x=bounds.minX-20,i=0;x<=bounds.maxX+20;x+=15,i++){
-    const p=screen(x,creekY(x,seed));if(!i)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
-  }
-  ctx.strokeStyle="#2d596c";ctx.lineWidth=9;ctx.stroke();
-  ctx.strokeStyle="#81c7e6";ctx.lineWidth=3;ctx.stroke();
+    ctx.beginPath();
+    points.forEach((p,i)=>{const q=screen(p.x,p.y);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});
+    ctx.strokeStyle=color;ctx.lineWidth=lineWidth;ctx.lineCap="round";ctx.lineJoin="round";ctx.stroke();
+  };
+  const riverPts=[];
+  const waterStep=Math.max(6,Math.min(85,7/view.scale));
+  for(let x=bounds.minX-20;x<=bounds.maxX+20;x+=waterStep)
+    riverPts.push({x,y:riverY(x,seed)});
+  drawWater(riverPts,Math.max(2,riverWidth(view.x,seed)*2*view.scale),"#527f8c");
+  for(let j=Math.floor((bounds.minX-220)/780)-1;j<=Math.ceil((bounds.maxX+220)/780)+1;j++)
+    for(const side of [-1,1]){
+      let pts=[];
+      for(let t=0;t<=970;t+=18){
+        const p=creekPath(j,side,t,seed);
+        if(p.x<bounds.minX-10||p.x>bounds.maxX+10||p.y<bounds.minY-10||p.y>bounds.maxY+10){
+          drawWater(pts,Math.max(1,2*view.scale),"#557b7a");pts=[];continue;
+        }
+        pts.push(p);
+      }
+      drawWater(pts,Math.max(1,2.5*view.scale),"#557b7a");
+    }
   const picked=selected();
   if(picked&&["deer","animal"].includes(picked.type)&&picked.behavior==="home-range"){
     const p=screen(picked.x,picked.y);
@@ -376,7 +396,7 @@ function focusCabin(){
   setTool("select");setSelection(cabin);
   dirty3d=true;invalidate();refresh3d();
   if(camera){
-    camera.setTarget(new BABYLON.Vector3(0,heightAt(view.x,view.y,seed)*26+2.8,0));
+    camera.setTarget(new BABYLON.Vector3(0,cabinGrade(view.x,view.y,seed)+2.8,0));
     camera.alpha=-Math.PI/2.55;camera.beta=1.0;camera.radius=29;
   }
   status("Hearthside Cabin · roof "+(cabinRoofVisible?"on":"hidden for interior inspection")+".");
@@ -410,13 +430,13 @@ $("cabinFullCrew").onclick=()=>{
   status(cabinFullCrew?"Loading all real 3D character assets; may use significant phone memory.":
     "Mobile view: two real 3D characters; others have name labels only. Blob figures permanently disabled.");
 };
-$("home").onclick=()=>{view.x=-420;view.y=0;dirty3d=true;invalidate();refresh3d();};
-$("ranger").onclick=()=>{view.x=420;view.y=0;dirty3d=true;invalidate();refresh3d();};
+$("home").onclick=focusCabin;
+$("ranger").onclick=()=>{view.x=280;view.y=-175;dirty3d=true;invalidate();refresh3d();status("Exploring the mountain slopes, hollows and watercourses.");};
 $("zoomIn").onclick=()=>zoomAt(rect().width/2,rect().height/2,1.25);
 $("zoomOut").onclick=()=>zoomAt(rect().width/2,rect().height/2,.8);
 $("resetDemo").onclick=()=>{
   if(!confirm("Reset all local changes? Export your JSON first if you want a backup."))return;
-  world=newWorld();seed=seedNumber(world.seed);$("seed").value=world.seed;
+  world=newWorld();resetToWildCabin(world);seed=seedNumber(world.seed);$("seed").value=world.seed;
   view.x=0;view.y=0;setSelection(null);save();dirty3d=true;invalidate();refresh3d();
 };
 $("photo").onchange=e=>{
@@ -651,48 +671,14 @@ function refresh3d() {
   dirty3d=false;
   const thisBuild=++previewBuildId;
   clear3d();
-  // Retire spherical placeholder trees and uniform generic grass.
-  const forest=material("leaf-litter soil","#635645");
+  // Rebuild native forest as batched branch/leaf meshes over two terrain
+  // resolutions. Far ridges and connected winding waterways are visible too.
+  const habitat=renderWildLandscape(BABYLON,scene,track,{cx:view.x,cy:view.y,seed});
   const cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id&&
     Math.abs(o.x-view.x)<70&&Math.abs(o.y-view.y)<70);
-  const cabinGround=cabin?heightAt(cabin.x,cabin.y,seed)*26:null;
-  const otherMat=material("object","#d8ba72");
+  const cabinGround=cabin?cabinGrade(cabin.x,cabin.y,seed):null;
+  const otherMat=material("editable object","#d8ba72");
   const figures=makeFigureBuilder(BABYLON,scene,track);
-  const blue=material("creek","#519db9");
-  ground=track(BABYLON.MeshBuilder.CreateGround("procedural terrain",{width:180,height:180,subdivisions:38,updatable:true},scene));
-  const positions=ground.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-  for(let i=0;i<positions.length;i+=3){
-    const wx=view.x+positions[i],wy=view.y+positions[i+2],natural=heightAt(wx,wy,seed)*26;
-    const d=cabin?Math.max(Math.abs(wx-cabin.x)/12,Math.abs(wy-cabin.y)/10):Infinity;
-    const blend=d<=1?0:d>=2?1:(d-1)*(d-1)*(3-2*(d-1));
-    positions[i+1]=cabin?cabinGround*(1-blend)+natural*blend:natural;
-  }
-  const normals=[];BABYLON.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
-  ground.updateVerticesData(BABYLON.VertexBuffer.PositionKind,positions);
-  ground.updateVerticesData(BABYLON.VertexBuffer.NormalKind,normals);
-  // Woodland floor variation: leaf litter, earth, silt and stone in place of
-  // the old flat green grass. Deterministic vertex tints cost no image fetches.
-  const earthColors=[];
-  for(let i=0;i<positions.length;i+=3){
-    const wx=view.x+positions[i],wy=view.y+positions[i+2];
-    const patch=hash(Math.floor(wx/8),Math.floor(wy/8),seed+931);
-    const fine=hash(Math.floor(wx/3),Math.floor(wy/3),seed+127);
-    const slope=Math.abs(heightAt(wx+4,wy,seed)-heightAt(wx-4,wy,seed))+
-      Math.abs(heightAt(wx,wy+4,seed)-heightAt(wx,wy-4,seed));
-    const nearWater=Math.abs(wy-creekY(wx,seed))<22;
-    const rock=Math.min(1,slope*8);
-    const shade=(patch-.5)*.12+(fine-.5)*.08;
-    const base=nearWater?[.38,.38,.36]:[.36+.06*rock,.28+.08*rock,.22+.10*rock];
-    earthColors.push(Math.max(.06,Math.min(1,base[0]+shade)),
-      Math.max(.06,Math.min(1,base[1]+shade)),
-      Math.max(.06,Math.min(1,base[2]+shade)),1);
-  }
-  ground.setVerticesData(BABYLON.VertexBuffer.ColorKind,earthColors,true);
-  ground.useVertexColors=true;
-  forest.diffuseColor=new BABYLON.Color3(1,1,1);
-  ground.material=forest;
-  // The placeholder cylinder trunks and ball crowns are retired.
-  // Convincing native trees will be added as proper forest assets later.
   if(cabin)buildHearthsideCabin(BABYLON,scene,track,
     cabin.x-view.x,cabinGround,cabin.y-view.y,cabinRoofVisible);
   let detailedPeople=0;
@@ -702,7 +688,7 @@ function refresh3d() {
     if(o.type==="deer")deerInPreview++;
     const isInsideCabin=!!cabin&&o.type==="npc"&&
       Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7;
-    const h=isInsideCabin?cabinGround+.38:heightAt(o.x,o.y,seed)*26;
+    const h=isInsideCabin?cabinGround+.38:cabinGrade(o.x,o.y,seed);
     if(o.type==="deer"||o.type==="animal"){
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
@@ -749,30 +735,16 @@ function refresh3d() {
       m.position.set(x,h+(o.type==="cabin"?3:1.5),z);m.material=otherMat;
     }
   }
-  function drawTrail(points){
-    if(points.length<2)return;
-    const line=track(BABYLON.MeshBuilder.CreateLines("trail",{points},scene));
-    line.color=new BABYLON.Color3(.91,.74,.45);
-  }
-  for(let row=Math.floor((view.y-90)/CELL);row<=Math.ceil((view.y+90)/CELL);row++){
-    const pts=[];for(let x=-90;x<=90;x+=3){const wx=view.x+x,wy=trailHorizontal(wx,row,seed);
-      if(Math.abs(wy-view.y)<=90)pts.push(new BABYLON.Vector3(x,heightAt(wx,wy,seed)*26+.6,wy-view.y));}
-    drawTrail(pts);
-  }
-  for(let col=Math.floor((view.x-90)/CELL);col<=Math.ceil((view.x+90)/CELL);col++){
-    const pts=[];for(let z=-90;z<=90;z+=3){const wy=view.y+z,wx=trailVertical(wy,col,seed);
-      if(Math.abs(wx-view.x)<=90)pts.push(new BABYLON.Vector3(wx-view.x,heightAt(wx,wy,seed)*26+.6,z));}
-    drawTrail(pts);
-  }
-  const stream=[];for(let x=-90;x<=90;x+=3){const wx=view.x+x,wy=creekY(wx,seed);
-    if(Math.abs(wy-view.y)<=90)stream.push(new BABYLON.Vector3(x,heightAt(wx,wy,seed)*26+.7,wy-view.y));}
-  if(stream.length>1){const line=track(BABYLON.MeshBuilder.CreateLines("valley creek",{points:stream},scene));line.color=new BABYLON.Color3(.39,.8,.99);}
+  // NO automatic trail grid, cable-like fake creek lines or old props.
+  // Wilderness has actual river/creek ribbons and a biome-grown forest.
   $("threeStatus").hidden=true;
   $("previewCoverage").textContent=cabin
     ? "Hearthside Cabin · one furnished room · "+world.objects.filter(o=>o.type==="npc"&&Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7).length+
       " people inside · roof "+(cabinRoofVisible?"on":"hidden")+
-      ". "+(cabinFullCrew?"All real 3D models requested.":"Phone-safe: two real 3D avatars; other saved people shown by nameplates only.")
-    : "3D shows 180 × 180 m near the map center · "+deerInPreview+" deer here. Generic grass and ball trees removed.";
+      ". "+habitat.nearTrees+" native trees nearby · "+habitat.distantTrees+" on outer slopes. "+
+      (cabinFullCrew?"All real 3D models requested.":"Two real avatars loaded in mobile mode; others named.")
+    : "Wild terrain: "+habitat.nearTrees+" native trees nearby · "+habitat.distantTrees+
+      " distant trees · "+habitat.species+" species · mountain relief, streams and river.";
 }
 function init3D(){
   if(!window.BABYLON){show3DMessage("Babylon.js could not load. The 2D map and world data editor still work.");return;}
@@ -784,7 +756,7 @@ function init3D(){
       Math.abs(o.x-view.x)<70&&Math.abs(o.y-view.y)<70);
     if(firstCabin) {
       camera.target=new BABYLON.Vector3(firstCabin.x-view.x,
-        heightAt(firstCabin.x,firstCabin.y,seed)*26+2.8,firstCabin.y-view.y);
+        cabinGrade(firstCabin.x,firstCabin.y,seed)+2.8,firstCabin.y-view.y);
       camera.radius=29;
     }
     camera.attachControl($("scene"),true);
@@ -811,7 +783,7 @@ function focusObjectIn3D(o,radius=4.4){
   // Align the local 3D tile with the selected object's world coordinates.
   view.x=o.x;view.y=o.y;dirty3d=true;invalidate();refresh3d();
   if(camera){
-    const h=heightAt(o.x,o.y,seed)*26;
+    const h=cabinGrade(o.x,o.y,seed);
     // Centre on the entire mannequin instead of its face.
     camera.setTarget(new BABYLON.Vector3(0,h+(["allfours","elbows"].includes(o.pose) ? .46 : o.pose==="crouch" ? .66 : o.pose==="bend" ? .74 : .88),0));
     camera.radius=Math.max(radius,o.pose==="standing"?3.3:2.9);
@@ -996,5 +968,6 @@ else if(["mason","caitlyn","amy","chrissy"].includes(focusCharacter)) {
 else if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
 else if(installedCaitlyn)status("Caitlyn added to your saved world map near Woodland Trail.");
 else if(installedTestCharacters)status("Amy and Christy added to your saved world map.");
+else if(wildReset)status("The Wild refreshed: cabin and seven people kept; old outside objects cleared; native WV landscape planted.");
 else if(cabinJustBuilt)status("Hearthside Cabin is built · all seven test people gathered indoors.");
 else if(freshWorldStarted)status("Fresh world ready.");
