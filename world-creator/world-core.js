@@ -77,7 +77,7 @@ export function sanitizedWorld(value) {
     skin:["fair","light","tan","brown","deep"].includes(o.skin)?o.skin:"light",
     hairStyle:["long","wavy","ponytail","bob","short"].includes(o.hairStyle)?o.hairStyle:"wavy",
     body:String(o.body||"average").slice(0,40),face:String(o.face||"oval").slice(0,40),
-    modelKey:["riley","amy","chrissy","caitlyn","mason","sha"].includes(o.modelKey)?o.modelKey:"",
+    modelKey:["riley","amy","chrissy","caitlyn","mason","sha","sav"].includes(o.modelKey)?o.modelKey:"",
     pose:["standing","bend","crouch","allfours","elbows"].includes(o.pose)?o.pose:"standing",
     animal:String(o.animal||"fox").slice(0,40)
   }));
@@ -170,3 +170,56 @@ export function connectionRule() {
 // Sha is an independent adult test avatar, kept separate from all existing models.
 export const SHA_STARTER=Object.freeze({id:"npc-sha-wild",type:"npc",name:"Sha (test)",modelKey:"sha",x:-46,y:-37,gender:"woman",skin:"tan",hair:"black",hairStyle:"long",face:"oval",body:"slim",outfit:"mannequin",pose:"standing"});
 export function addSha(world){if(world.objects.some(o=>o.id===SHA_STARTER.id||(o.type==="npc"&&o.modelKey==="sha")))return [];const person={...SHA_STARTER};world.objects.push(person);return [person];}
+
+
+/** The Wild's first playable environment: a single-room mountain retreat.
+ * Cabin and character coordinates are game-local metres, not real GPS.
+ * Installation is opt-in and additive except for intentionally relocating
+ * existing people. Deer, user cabins and quest markers are left untouched.
+ */
+export const HEARTHSIDE_CABIN=Object.freeze({
+  id:"cabin-hearthside-wild",type:"cabin",name:"Hearthside Cabin",
+  x:0,y:0,behavior:"stationary",locked:false
+});
+export const RILEY_CABIN_STARTER=Object.freeze({
+  id:"npc-riley-cabin",type:"npc",name:"Riley (test)",modelKey:"riley",
+  x:0,y:0,gender:"woman",skin:"fair",hair:"blonde",hairStyle:"wavy",
+  body:"athletic",face:"heart",outfit:"mannequin",pose:"standing"
+});
+export const SAV_CABIN_STARTER=Object.freeze({
+  id:"npc-sav-cabin",type:"npc",name:"Sav (test)",modelKey:"sav",
+  x:0,y:0,gender:"woman",skin:"light",hair:"brown",hairStyle:"long",
+  body:"average",face:"oval",outfit:"casual",pose:"standing"
+});
+export const CABIN_CREW_KEYS=Object.freeze(["amy","chrissy","caitlyn","mason","sha","riley","sav"]);
+export function gatherCabinCrew(world){
+  if(!world||!Array.isArray(world.objects))throw Error("A valid world is required");
+  let cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id);
+  let madeCabin=false,addedPeople=0,moved=0;
+  if(!cabin){
+    if(world.objects.length>=5000)throw Error("World is full");
+    cabin={...HEARTHSIDE_CABIN};world.objects.push(cabin);madeCabin=true;
+  }
+  // Install missing built-in test models without duplicating an existing person.
+  for(const p of [...TEST_CHARACTER_STARTERS,CAITLYN_STARTER,MASON_STARTER,SHA_STARTER,RILEY_CABIN_STARTER,SAV_CABIN_STARTER]){
+    if(world.objects.some(o=>o.type==="npc"&&o.modelKey===p.modelKey))continue;
+    if(world.objects.length>=5000)break;
+    world.objects.push({...p});addedPeople++;
+  }
+  const crew=world.objects.filter(o=>o.type==="npc");
+  // Furnishings leave the cabin center open. All positions fit inside its
+  // 18m by 14m footprint. The player can later move anyone back outside.
+  const seats=[
+    [-5.4,3.0],[-2.5,3.0],[.4,3.0],[3.3,3.0],[5.8,3.0],
+    [-5.4,-1.7],[-2.5,-1.7],[.4,-1.7],[3.3,-1.7],[5.8,-1.7],
+    [-5.4,0.65],[-2.5,.65],[.4,.65],[3.3,.65],[5.8,.65]
+  ];
+  for(let i=0;i<crew.length;i++){
+    const [dx,dy]=seats[i%seats.length],ring=Math.floor(i/seats.length);
+    const x=cabin.x+dx,y=cabin.y+dy+ring*.5;
+    if(crew[i].x!==x||crew[i].y!==y){crew[i].x=x;crew[i].y=y;moved++;}
+    // Neutral standing is the safe shared bind pose for a mixed group.
+    // Preserve an avatar's actual selected pose if the visitor changed it.
+  }
+  return {cabin, madeCabin, addedPeople, moved, totalPeople:crew.length};
+}
