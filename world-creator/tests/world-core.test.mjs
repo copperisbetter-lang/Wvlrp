@@ -177,7 +177,7 @@ test("Cabin gathering repositions existing people but never replaces their ident
   assert.equal(w.objects.length,originalLength+1+6);
 });
 
-test("Wilderness reset keeps only Hearthside and seven authored GLB identities",()=>{
+test("Wilderness reset keeps Hearthside, seven avatars, and exactly three original village locations",()=>{
   const w=newWorld();
   w.objects.push({id:"another-house",type:"cabin",name:"Old House",x:500,y:300});
   w.objects.push({id:"mystery-marker",type:"marker",name:"Old Quest",x:1,y:1});
@@ -186,8 +186,11 @@ test("Wilderness reset keeps only Hearthside and seven authored GLB identities",
     x:100,y:200,pose:"elbows",skin:"tan"});
   const info=resetToWildCabin(w);
   assert.equal(info.people,7);
-  assert.equal(w.objects.length,8);
-  assert.deepEqual(new Set(w.objects.map(o=>o.type)),new Set(["cabin","npc"]));
+  assert.equal(w.objects.length,11);
+   assert.deepEqual(new Set(w.objects.map(o=>o.type)),new Set(["cabin","npc","marker"]));
+   assert.deepEqual(w.objects.filter(o=>o.type==="marker").map(o=>[o.id,o.x,o.y]),[
+     ["wild-ranger-station",93,77],["wild-laurels-kitchen",90,78],["wild-mercantile",90,75]
+   ]);
   assert.equal(w.objects.filter(o=>o.type==="cabin")[0].id,HEARTHSIDE_CABIN.id);
   assert.equal(w.objects.find(o=>o.modelKey==="riley").id,"custom-riley");
   assert.equal(w.objects.find(o=>o.modelKey==="riley").pose,"elbows");
