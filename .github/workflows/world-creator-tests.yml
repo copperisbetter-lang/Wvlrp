@@ -31,6 +31,8 @@ jobs:
       - name: Check first-person walk and forest module syntax
         run: |
           node --check walk.js
+          node --check wild-multiplayer.js
+          node --check wild-multiplayer-protocol.js
           node --check wild-nature.js
           node --check wild-landscape-renderer.js
         working-directory: world-creator
