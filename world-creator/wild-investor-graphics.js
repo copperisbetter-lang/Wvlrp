@@ -6,6 +6,7 @@
  */
 import { hash, noise } from "./world-core.js";
 import { cabinGrade, biomeAt, waterAt } from "./wild-nature.js";
+import {keepUnderstory} from "./wild-reference-layout.js";
 
 const TAU=Math.PI*2;
 const speciesColor={
@@ -312,7 +313,7 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surf
    const y=(j+(hash(i,j,seed+923)-.5)*.93)*step;
    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||
      Math.hypot(x,y)<17||Math.abs(x)<3.1&&y>0&&y<36||
-     waterAt(x,y,seed))continue;
+     waterAt(x,y,seed)||!keepUnderstory(x,y))continue;
    // Organic gaps and dense colonies are controlled by a low-frequency patch.
    const patch=noise(x/26,y/27,seed+2021);
    const chance=.74+patch*.22;
@@ -331,7 +332,7 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surf
    if(patch>.60&&hash(i,j,seed+930)<.48){
      const x2=x+(hash(i,j,seed+931)-.5)*1.8;
      const y2=y+(hash(i,j,seed+932)-.5)*1.8;
-     if(Math.hypot(x2,y2)>17&&!waterAt(x2,y2,seed))
+     if(Math.hypot(x2,y2)>17&&!waterAt(x2,y2,seed)&&keepUnderstory(x2,y2))
        groups[kind].push({x:x2,y:y2,h:plantGround(x2,y2)+.11,
          sx:sx*.66,sy:sy*.90,sz:sx*.74,
          yaw:hash(i,j,seed+933)*TAU});
