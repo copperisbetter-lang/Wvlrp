@@ -32,14 +32,23 @@ try{
     "Cabin underbrush must form a dense layered forest, not sparse props");
   assert.ok(state.nativeTrees>0&&state.distantTrees>0,
     "Improved graphics must keep the full native forest");
-  assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
+  assert.ok(Math.abs(state.eyeHeight-1.98)<.045,
     "Walker should spawn at adult eye height above ground: "+state.eyeHeight);
   assert.ok(state.renderedSurfaceHeight!==null,
     "Ground mesh should expose real triangle altitude");
-  assert.ok(Math.abs(state.renderedEyeHeight-1.68)<.08,
-    "Camera must be ~1.68m above VISIBLE ground triangles at spawn: "+state.renderedEyeHeight);
+  assert.ok(Math.abs(state.renderedEyeHeight-1.98)<.08,
+    "Camera must be ~1.98m above VISIBLE ground triangles at spawn: "+state.renderedEyeHeight);
   const before=state.position.slice();
   const center={x:joystick.x+joystick.width/2,y:joystick.y+joystick.height/2};
+  assert.equal(state.runMode,false,"Walking must be the initial mode");
+  await page.mouse.click(center.x,center.y,{clickCount:2,delay:85});
+  state=await page.evaluate(()=>window.__wildDiagnostics());
+  assert.equal(state.runMode,true,"Double tapping center enables running");
+  assert.equal(state.moveSpeed,9.5,"Running is faster than walking");
+  await page.waitForTimeout(420);
+  await page.mouse.click(center.x,center.y,{clickCount:2,delay:85});
+  state=await page.evaluate(()=>window.__wildDiagnostics());
+  assert.equal(state.runMode,false,"Second double tap reverts to walking");
   await page.mouse.move(center.x,center.y);
   await page.mouse.down();
   await page.mouse.move(center.x,center.y-35,{steps:5});
@@ -49,9 +58,9 @@ try{
   console.log("AFTER_WALK_STATE",JSON.stringify(state));
   assert.ok(state.walkedMetres>.12,
     "Joystick must actually move camera: "+JSON.stringify(before)+" => "+JSON.stringify(state.position));
-  assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
+  assert.ok(Math.abs(state.eyeHeight-1.98)<.045,
     "Walk camera must follow the rendered terrain without sinking: "+state.eyeHeight);
-  assert.ok(Math.abs(state.renderedEyeHeight-1.68)<.08,
+  assert.ok(Math.abs(state.renderedEyeHeight-1.98)<.08,
     "Walker must retain adult standing eye height above visible hill mesh: "+state.renderedEyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
