@@ -9,7 +9,7 @@
  * genuine 3D objects in front of it; movement and collisions are unchanged.
  * No network image downloads or large GLB assets: phone-friendly at 1024x512.
  */
-export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
+export function installWildMountainBackdrop(B,scene,camera,{mobile=false,villageX=93,villageBackZ=172,villageGroundY=0}={}){
   const width=mobile?1024:2048,height=mobile?512:1024;
   const scale=width/2048;
   const texture=new B.DynamicTexture("West Virginia sunny 360 mountain skyline",
@@ -355,18 +355,24 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   solidCliff.material=cliffMaterial;solidCliff.isPickable=false;
   solidCliff.applyFog=false;solidCliff.renderingGroupId=0;
 
-  // The mountain wall is 200m north of each camera viewpoint, always behind
-  // the 110m-north buildings and beyond their open valley, but in FRONT of
-  // distant 3D forest sprites which otherwise conceal every cliff pixel.
-  // It is noncollidable and follows the view without changing level geometry.
+  // Anchor both mountain layers in the WORLD behind the Ranger Station.
+  // The old camera-following offset put them behind a nearer terrain ridge
+  // and made the approved mountain disappear from the portrait start view.
+  // The backs of the buildings are at Z ~119; the view plane is well behind.
+  vistaWall.position.set(villageX,villageGroundY+13,villageBackZ);
+  solidCliff.position.set(villageX+5,villageGroundY-27,villageBackZ+5);
+  vistaWall.checkCollisions=false;
+  solidCliff.checkCollisions=false;
+  // The painted distant woods blend into genuine 3D stone. Fade the two
+  // non-collidable skyline layers before walking through their world location.
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
-    vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
-    solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
+    const remaining=villageBackZ-camera.position.z;
+    const amount=Math.max(0,Math.min(1,(remaining-8)/44));
+    vistaWall.visibility=amount;
+    solidCliff.visibility=amount;
   });
   dome.position.copyFrom(camera.position);
-  vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
-  solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
   return {dome,vistaWall,solidCliff,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
     solidCliff.dispose();cliffMaterial.dispose();cliffTexture.dispose();
