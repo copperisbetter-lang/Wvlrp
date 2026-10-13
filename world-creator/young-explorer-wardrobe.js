@@ -179,16 +179,27 @@ class YoungExplorerWardrobe {
    '<small>Widths are straight-line mesh measurements, not body circumferences. Clothing is fitted to this character\'s rigged mesh; figures are not physical measurements of a real child.</small>';
  }
  bindDressSizes(){
-  const el=$('dress-size-select');if(!el)return;
-  const sizes={5:.92,6:.96,7:1,8:1.045,10:1.10};
-  const original=this.dress.scaling.clone();
-  el.value='7';
-  el.onchange=()=>{
-   const ratio=sizes[el.value]||1;
-   this.dress.scaling.set(original.x*ratio,original.y,original.z*ratio);
-   if($('outfit-feedback'))$('outfit-feedback').textContent='Dress size '+el.value+' selected.';
+  const size=$('dress-size-select'),vertical=$('dress-position'),width=$('dress-width'),depth=$('dress-depth'),reset=$('dress-reset');
+  if(!size||!vertical||!width||!depth)return;
+  const base=this.dress.scaling.clone(),origin=this.dress.position.clone();
+  const factors={5:.88,6:.94,7:1,8:1.06,10:1.13};
+  const update=()=>{
+   const ratio=factors[size.value]||1;
+   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y,base.z*ratio*(Number(depth.value)/100));
+   this.dress.position.copyFrom(origin);
+   const parent=this.dress.parent;
+   const shift=new this.B.Vector3(0,Number(vertical.value)/100,0);
+   if(parent){parent.computeWorldMatrix(true);const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(shift,inverse));}
+   else this.dress.position.addInPlace(shift);
+   if($('dress-position-value'))$('dress-position-value').textContent=vertical.value+' cm';
+   if($('dress-width-value'))$('dress-width-value').textContent=width.value+'%';
+   if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
   };
+  for(const el of [size,vertical,width,depth])el.addEventListener('input',update);
+  if(reset)reset.onclick=()=>{size.value='7';vertical.value='0';width.value='100';depth.value='100';update();};
+  update();
  }
+
  bindSelector(){
   const el=$('outfit-select');if(!el)return;
   el.innerHTML=outfits.map(o=>'<option value="'+o.id+'">'+o.label+'</option>').join('');
