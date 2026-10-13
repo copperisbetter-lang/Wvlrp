@@ -1,10 +1,14 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Riley Vulva 1 Trial — The Wild</title><style>body{margin:0;background:#101c18;color:#f2f4e9;font:16px system-ui}main{max-width:960px;margin:auto;padding:12px}canvas{display:block;width:100%;height:66vh;touch-action:none;border-radius:12px;background:#243c32}label,button,a{display:inline-block;margin:6px 4px;padding:12px;background:#bce3aa;color:#14241c;border:0;border-radius:9px;font-weight:700}input{max-width:95%}.viewport{position:relative}.zoom-panel{position:absolute;bottom:12px;left:12px;right:12px;display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 10px;background:#0a1819d9;border:1px solid #739884;border-radius:13px;z-index:5}.zoom-panel button{min-width:54px;min-height:46px;padding:6px 10px;margin:0;font-size:24px;touch-action:manipulation}.zoom-panel input{width:100%;min-width:55px;flex:1;accent-color:#bce3aa;touch-action:manipulation}.zoom-panel label{display:none}.zoom-panel output{font-size:12px;white-space:nowrap;min-width:34px;text-align:center}.zoom-panel:focus-within{background:#0a1819ef}#info{white-space:pre-wrap;color:#cfe4d2}small{color:#c4d2c8}</style></head><body><main><h2>🐊 Riley · Vulva 1 Trial</h2><p>Inspect the Riley's reversible Vulva 1 test build automatically. Experimental removable attachment using original MakeHuman Vulva 1 geometry. Base Riley GLB is unchanged.</p><label>Load custom Riley GLB <input id="file" type="file" accept=".glb,model/gltf-binary"></label><button id="reset">Reset camera</button><button id="detail">Focus on pelvic fit</button><div id="actions"></div><div class="fit-panel" style="margin:10px 0;padding:12px;background:#203b31;border:1px solid #68947d;border-radius:13px">
-<strong>Adjust pelvis placement (trial only)</strong>
-<div style="display:grid;gap:10px;margin-top:10px">
-<label style="margin:0">Slide back between legs: <output id="backAmount">30 mm</output><input id="backFit" type="range" min="0" max="70" value="30" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Move lower: <output id="downAmount">22 mm</output><input id="downFit" type="range" min="0" max="65" value="22" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-</div><button id="fitReset" type="button">Original placement</button><small id="fitStatus">Waiting for the model...</small>
-</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. The back/down sliders shift ONLY the trial attachment in this viewer; they do not rebuild Riley's GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
+<strong>Fit Riley's pelvic attachment — trial only</strong>
+<p style="margin:6px 0 10px;color:#d6ecd9;font-size:14px">Move sliders slowly and rotate the model to check the side. Changes are temporary until we rebuild the GLB.</p>
+<div style="display:grid;gap:10px">
+<label style="margin:0">Slide farther under: <output id="backAmount">30 mm</output><input id="backFit" type="range" min="-40" max="100" value="30" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Move up / down: <output id="upAmount">+10 mm (up)</output><input id="upFit" type="range" min="-70" max="70" value="10" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Closer to body / outward: <output id="inAmount">+20 mm (in)</output><input id="inFit" type="range" min="-50" max="90" value="20" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="fitReset" type="button">Original placement</button><button id="fitSuggested" type="button">Suggested fit</button></div>
+<p style="font-size:13px;margin:5px 0;color:#d4eadd" id="fitStatus">Waiting for the model...</p>
+</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. The three placement sliders shift ONLY the trial attachment in this viewer; they do not rebuild Riley's GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
 const $=id=>document.getElementById(id),canvas=$('canvas'),engine=new BABYLON.Engine(canvas,true),scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.16,.24,.20,1);
 const camera=new BABYLON.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.4,4,new BABYLON.Vector3(0,1,0),scene);camera.attachControl(canvas,true);camera.lowerRadiusLimit=.17;camera.upperRadiusLimit=8;camera.minZ=.01;camera.wheelPrecision=350;camera.panningSensibility=900;camera.pinchPrecision=650;camera.pinchDeltaPercentage=0;camera.inertia=.45;
 new BABYLON.HemisphericLight('ambient',new BABYLON.Vector3(0,1,0),scene).intensity=1.1;
@@ -12,24 +16,36 @@ const key=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.7,-1,.4),scen
 const ground=BABYLON.MeshBuilder.CreateGround('forest clearing',{width:20,height:20},scene);const mat=new BABYLON.StandardMaterial('earth',scene);mat.diffuseColor=new BABYLON.Color3(.25,.36,.22);ground.material=mat;
 engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());let imported=[],groups=[],objectURL=null;
 let addonMesh=null,originalAddonWorld=null;
+function signedLabel(mm,directions){
+ if(mm===0)return '0 mm';
+ return (mm>0?'+':'')+mm+' mm ('+(mm>0?directions[0]:directions[1])+')';
+}
 function applyPelvicFit(){
- const back=Number($('backFit').value),down=Number($('downFit').value);
- $('backAmount').textContent=back+' mm';
- $('downAmount').textContent=down+' mm';
+ const back=Number($('backFit').value),up=Number($('upFit').value),inward=Number($('inFit').value);
+ $('backAmount').textContent=signedLabel(back,['under','forward']);
+ $('upAmount').textContent=signedLabel(up,['up','down']);
+ $('inAmount').textContent=signedLabel(inward,['in','out']);
  if(!addonMesh||!originalAddonWorld){
-   $('fitStatus').textContent='Waiting for the Riley attachment to load…'; return;
+   $('fitStatus').textContent='Waiting for the Riley attachment to load…';return;
  }
- // In the Babylon scene the front view is -Z, posterior/back is +Z.
- // Mesh adjustment is only in this viewer; original Riley and GLB remain untouched.
- addonMesh.setAbsolutePosition(new BABYLON.Vector3(
-   originalAddonWorld.x,originalAddonWorld.y-down/1000,originalAddonWorld.z+back/1000
- ));
+ // Trial-only transforms. +Z is posterior in this Babylon viewer. The
+ // under-body control follows a shallow upward path; the inward control
+ // shifts only depth, and the up/down control shifts only height.
+ const underRise=.30*back;
+ const nextPosition=new BABYLON.Vector3(
+   originalAddonWorld.x,
+   originalAddonWorld.y+(up+underRise)/1000,
+   originalAddonWorld.z+(back+inward)/1000
+ );
+ addonMesh.setAbsolutePosition(nextPosition);
  addonMesh.computeWorldMatrix(true);
- $('fitStatus').textContent='Live fitting preview • '+back+' mm back / '+down+' mm down. Tell us the best values to bake into the mesh.';
+ $('fitStatus').textContent='Trial: '+back+' mm under / '+up+' mm vertical / '+inward+' mm inward. Rotate sideways and look for floating edges.';
 }
 $('backFit').oninput=applyPelvicFit;
-$('downFit').oninput=applyPelvicFit;
-$('fitReset').onclick=()=>{$('backFit').value=0;$('downFit').value=0;applyPelvicFit();};
+$('upFit').oninput=applyPelvicFit;
+$('inFit').oninput=applyPelvicFit;
+$('fitReset').onclick=()=>{$('backFit').value=0;$('upFit').value=0;$('inFit').value=0;applyPelvicFit();};
+$('fitSuggested').onclick=()=>{$('backFit').value=30;$('upFit').value=10;$('inFit').value=20;applyPelvicFit();};
 function clear(){addonMesh=null;originalAddonWorld=null;groups.forEach(g=>g.stop());groups=[];imported.forEach(m=>m.dispose());imported=[];$('actions').replaceChildren();applyPelvicFit()}
 function status(t){$('info').textContent=t}
 const ZMIN=.18,ZMAX=6.0;
