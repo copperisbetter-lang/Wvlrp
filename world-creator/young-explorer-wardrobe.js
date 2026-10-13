@@ -20,7 +20,9 @@ const outfits = [
   {id:'sunflower',label:'Golden summer dress',type:'dress'},
   {id:'denim',label:'Denim shorts + cream shirt',type:'shorts'},
   {id:'hiking',label:'Forest hiking shorts + yellow shirt',type:'shorts'},
-  {id:'navy',label:'Navy shorts + rose shirt',type:'shorts'}
+  {id:'navy',label:'Navy shorts + rose shirt',type:'shorts'},
+  {id:'regular-shorts',label:'Regular shorts + cream shirt',type:'shorts'},
+  {id:'loose-shorts',label:'Loose-fitting shorts + cream shirt',type:'shorts'}
 ];
 function clothTexture(B,scene,id,color,floral=false){
  const tex = new B.DynamicTexture('Young Explorer fabric ' + id,{width:512,height:512},scene,false);
@@ -153,8 +155,13 @@ class YoungExplorerWardrobe {
   this.suits={
    denim:create('denim',shades.denim[1],shades.denim[0]),
    hiking:create('hiking',shades.hiking[1],shades.hiking[0]),
-   navy:create('navy',shades.navy[1],shades.navy[0])
+   navy:create('navy',shades.navy[1],shades.navy[0]),
+   'regular-shorts':create('regular-shorts','#f1e6c9','#64809a'),
+   'loose-shorts':create('loose-shorts','#f1e6c9','#64809a')
   };
+  // Loose shorts use a roomier outward normal offset without altering the body.
+  const loose=this.suits['loose-shorts']?.shorts;
+  if(loose){const p=loose.getVerticesData(B.VertexBuffer.PositionKind);const n=loose.getVerticesData(B.VertexBuffer.NormalKind);if(p&&n){const q=Float32Array.from(p);for(let i=0;i<q.length;i++)q[i]+=n[i]*this.measure.H*.018;loose.updateVerticesData(B.VertexBuffer.PositionKind,q);}}
   this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
