@@ -8,6 +8,8 @@ on:
       - "world-creator/wild-landscape-renderer.js"
       - "world-creator/wild-reference-layout.js"
       - "world-creator/wild-mountain-backdrop.js"
+      - "world-creator/wild-visible-mountain-stage.js"
+      - "world-creator/tests/wild-village-layout.test.mjs"
       - "world-creator/tests/wild-browser-smoke.mjs"
       - ".github/workflows/wild-walk-browser-qa.yml"
   workflow_dispatch:
