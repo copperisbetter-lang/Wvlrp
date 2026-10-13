@@ -34,10 +34,10 @@
     "wardrobe": {
       "ready": true,
       "measurements": {
-        "heightMeters": 1.6658903360366821,
-        "shoulderWidthMeters": 0.5197601318359375,
-        "waistWidthMeters": 0.29468005895614624,
-        "hipWidthMeters": 0.3431400954723358,
+        "heightMeters": 0.8934561798933046,
+        "shoulderWidthMeters": 0.27875956450763795,
+        "waistWidthMeters": 0.1580438403130069,
+        "hipWidthMeters": 0.18403409615474153,
         "bodyVertices": 14517
       },
       "outfits": [
@@ -92,7 +92,7 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791920831638",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791921079026",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
@@ -125,10 +125,10 @@
     "wardrobe": {
       "ready": true,
       "measurements": {
-        "heightMeters": 1.6658903360366821,
-        "shoulderWidthMeters": 0.5197601318359375,
-        "waistWidthMeters": 0.29468005895614624,
-        "hipWidthMeters": 0.3431400954723358,
+        "heightMeters": 0.8934561798933046,
+        "shoulderWidthMeters": 0.27875956450763795,
+        "waistWidthMeters": 0.1580438403130069,
+        "hipWidthMeters": 0.18403409615474153,
         "bodyVertices": 14517
       },
       "outfits": [
