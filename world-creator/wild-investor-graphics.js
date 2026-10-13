@@ -186,8 +186,8 @@ export function buildHeroTree(B,scene,track,species,seed,variant,textures){
  for(let i=0;i<limbs;i++){
    const u=i/(limbs-1),level=p.start+u*(conifer?.76:.59),y=h*level;
    const a=i*2.39996323+rand()*.6;
-   const width=r*(conifer?Math.pow(1-u,.80)*(.58+rand()*.4):
-     (.50+.55*rand())*(.84+.32*Math.sin(u*Math.PI)));
+   const width=r*(conifer?Math.pow(1-u,.70)*(.76+rand()*.45):
+     (.74+.68*rand())*(.93+.28*Math.sin(u*Math.PI)));
    const start=origin(y),elbow=[
      start[0]+Math.cos(a)*width*.48,y+h*(conifer?-.023:.046),
      start[2]+Math.sin(a)*width*.48
@@ -213,23 +213,23 @@ export function buildHeroTree(B,scene,track,species,seed,variant,textures){
      const leaves=conifer?9:8;
      for(let j=0;j<leaves;j++){
        const phase=TAU*(j/leaves)+rand()*.30;
-       const spread=conifer?.45:.75,dist=(.20+rand()*.8)*spread;
+       const spread=conifer?1.14:1.62,dist=(.30+rand()*.85)*spread;
        const tip=[center[0]+Math.cos(phase)*dist,
          center[1]+(rand()-.35)*(conifer?.48:.71),
          center[2]+Math.sin(phase)*dist];
-       leaf(lV,lI,lC,center,tip,conifer?.027:.11,p.shade,rand,conifer);
+       leaf(lV,lI,lC,center,tip,conifer?.22:.38,p.shade,rand,conifer);
      }
    }
  }
  if(!conifer){
    for(let j=0;j<45;j++){
-     const a=rand()*TAU,d=rand()*r*.53,y=h*(.80+rand()*.18);
+     const a=rand()*TAU,d=rand()*r*.87,y=h*(.76+rand()*.22);
      const center=[bendX(y)+Math.cos(a)*d,y,bendZ(y)+Math.sin(a)*d];
      for(let q=0;q<4;q++){
-       const ang=a+q*TAU/4,dist=.30+rand()*.55;
+       const ang=a+q*TAU/4,dist=.55+rand()*1.20;
        leaf(lV,lI,lC,center,[center[0]+Math.cos(ang)*dist,
          center[1]+(rand()-.5)*.55,center[2]+Math.sin(ang)*dist],
-         .10,p.shade,rand,false);
+         .29,p.shade,rand,false);
      }
    }
  }
@@ -259,16 +259,16 @@ function detailPrototype(B,scene,track,kind){
      const shade=.68+rand()*.54;colors.push(...base.map(x=>x*shade),1);}
    ids.push(at,at+1,at+2,at,at+2,at+3);
  }
- const n=kind==="rhododendron-mass"?28:kind==="fern-field"?35:
-   kind==="sapling"?20:kind==="briar-tangle"?25:34;
+ const n=kind==="rhododendron-mass"?30:kind==="fern-field"?35:
+   kind==="sapling"?24:kind==="briar-tangle"?28:34;
  for(let i=0;i<n;i++){
    const angle=TAU*(i/n)+rand()*.4,r=.2+rand()*.88;
    const x=Math.cos(angle)*r,z=Math.sin(angle)*r;
-   const tall=kind==="rhododendron-mass"?1.20:kind==="sapling"?1.4:
-     kind==="fern-field"?.58:kind==="briar-tangle"?.97:.46;
+   const tall=kind==="rhododendron-mass"?1.95:kind==="sapling"?2.35:
+     kind==="fern-field"?1.03:kind==="briar-tangle"?1.42:.76;
    const h=tall*(.5+rand()*.65);
-   const reach=.18+rand()*.39,dx=Math.cos(angle)*reach,dz=Math.sin(angle)*reach;
-   const wid=kind==="fern-field"?.09:kind==="rhododendron-mass"?.18:.072;
+   const reach=.29+rand()*.63,dx=Math.cos(angle)*reach,dz=Math.sin(angle)*reach;
+   const wid=kind==="fern-field"?.18:kind==="rhododendron-mass"?.32:.16;
    quad([[x,.035,z],[x-wid,h*.63,z+.02],[x+dx,h,z+dz],
      [x+wid,h*.58,z-.02]],palette);
    if(kind==="rhododendron-mass"||kind==="sapling"){
@@ -297,7 +297,9 @@ function detailMatrices(B,model,placements,cx,cy){
 }
 /** Dense undergrowth for the walk's first ~90m. Deliberately patchy: wet
  * coves support banks of fern and rhodo, higher slopes favor briar and sedge. */
-export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false}){
+export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surfaceHeight=null}){
+ const plantGround=(x,y)=>{const h=surfaceHeight?.(x,y);
+   return Number.isFinite(h)?h:cabinGrade(x,y,seed);};
  const kinds=["fern-field","rhododendron-mass","stiltgrass","sapling","briar-tangle"];
  const groups=Object.fromEntries(kinds.map(k=>[k,[]]));
  // Four-fold visually layered forest floor within the investor walk zone.
@@ -308,7 +310,7 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false}){
    const x=(i+(hash(i,j,seed+922)-.5)*.93)*step;
    const y=(j+(hash(i,j,seed+923)-.5)*.93)*step;
    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||
-     Math.hypot(x,y)<25||Math.abs(x)<2.7&&y>0&&y<36||
+     Math.hypot(x,y)<17||Math.abs(x)<3.1&&y>0&&y<36||
      waterAt(x,y,seed))continue;
    // Organic gaps and dense colonies are controlled by a low-frequency patch.
    const patch=noise(x/26,y/27,seed+2021);
@@ -322,14 +324,14 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false}){
      sample<.78?"briar-tangle":sample<.90?"sapling":"rhododendron-mass";
    const sx=.67+hash(i,j,seed+926)*.83;
    const sy=(.62+hash(i,j,seed+927)*.85)*(patch>.56?1.20:1);
-   groups[kind].push({x,y,h:cabinGrade(x,y,seed)+.035,
+   groups[kind].push({x,y,h:plantGround(x,y)+.12,
      sx,sy,sz:sx*(.8+hash(i,j,seed+928)*.3),
      yaw:hash(i,j,seed+929)*TAU});
    if(patch>.60&&hash(i,j,seed+930)<.48){
      const x2=x+(hash(i,j,seed+931)-.5)*1.8;
      const y2=y+(hash(i,j,seed+932)-.5)*1.8;
-     if(Math.hypot(x2,y2)>25&&!waterAt(x2,y2,seed))
-       groups[kind].push({x:x2,y:y2,h:cabinGrade(x2,y2,seed)+.02,
+     if(Math.hypot(x2,y2)>17&&!waterAt(x2,y2,seed))
+       groups[kind].push({x:x2,y:y2,h:plantGround(x2,y2)+.11,
          sx:sx*.66,sy:sy*.90,sz:sx*.74,
          yaw:hash(i,j,seed+933)*TAU});
    }
