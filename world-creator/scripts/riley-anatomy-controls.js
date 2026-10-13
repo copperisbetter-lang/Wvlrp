@@ -11,6 +11,8 @@
     ['innerThickness', 'Inner labia thickness', 50, 175, 100, '%'],
     ['hoodLength', 'Clitoral hood length', 65, 150, 100, '%'],
     ['hoodThickness', 'Clitoral hood thickness', 50, 175, 100, '%'],
+    ['clitLength', 'Clitoris length', 60, 180, 100, '%'],
+    ['clitFullness', 'Clitoris fullness', 50, 200, 100, '%'],
     ['sideSeal', 'Sink exposed outer flap only', 0, 35, 0, ' mm']
   ];
   const panel = document.createElement('section');
@@ -113,7 +115,8 @@
     const dl={
       outerLength:(vals.outerLength-100)/100,outerThickness:(vals.outerThickness-100)/100,
       innerLength:(vals.innerLength-100)/100,innerThickness:(vals.innerThickness-100)/100,
-      hoodLength:(vals.hoodLength-100)/100,hoodThickness:(vals.hoodThickness-100)/100
+      hoodLength:(vals.hoodLength-100)/100,hoodThickness:(vals.hoodThickness-100)/100,
+      clitLength:(vals.clitLength-100)/100,clitFullness:(vals.clitFullness-100)/100
     };
     if(vals.sideSeal===0&&Object.values(dl).every(v=>v===0))return;
     const data=addonMesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
@@ -127,17 +130,23 @@
       const outer=bump(nx,.55,.32)*bump(v,.62,.39);
       const inner=bump(nx,.23,.20)*bump(v,.53,.29);
       const hood=bump(nx,.105,.20)*bump(v,.88,.16);
+      // Separate, smaller region immediately below the anterior hood.
+      // Approximate local geometry mask, not a guaranteed anatomical selection.
+      const clit=bump(nx,.055,.12)*bump(v,.80,.095);
       // Move affected local regions in their own axes, then rotate local
       // deltas along the hinge. Other body/attachment vertices stay untouched.
       const dy=height*(dl.outerLength*outer*(v-.62)*.38 +
         dl.innerLength*inner*(v-.53)*.46 +
-        dl.hoodLength*hood*(v-.88)*.55);
+        dl.hoodLength*hood*(v-.88)*.55 +
+        dl.clitLength*clit*(v-.80)*.65);
       const dz=-(dl.outerThickness*outer*.008 +
         dl.innerThickness*inner*.006 +
-        dl.hoodThickness*hood*.005);
+        dl.hoodThickness*hood*.005 +
+        dl.clitFullness*clit*.007);
       const dx=Math.sign(x)*(dl.outerThickness*outer*.002 +
         dl.innerThickness*inner*.0015 +
-        dl.hoodThickness*hood*.001);
+        dl.hoodThickness*hood*.001 +
+        dl.clitFullness*clit*.0012);
       p[i]+=dx;
       p[i+1]+=dy*c-dz*sin;
       p[i+2]+=dy*sin+dz*c;
