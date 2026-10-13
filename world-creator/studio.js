@@ -82,6 +82,20 @@ const localCharacterFiles = new Map();
 // Riley uses one GLB with real armature skinning and named animation clips.
 // Movements are skeletal prototypes, not yet polished motion capture.
 try {if(addSha(world).length){world.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(world));}}catch(err){console.warn("Sha installation",err);}
+// User-approved first Wild home: install the cabin and gather everyone ONCE.
+ // Keeps deer, other cabins, marker quests, and map seed exactly as saved.
+const CABIN_CREW_INSTALL="wvlrp-hearthside-crew-home-20261012-v1";
+let cabinJustBuilt=false;
+try{
+  if(!localStorage.getItem(CABIN_CREW_INSTALL)){
+    const report=gatherCabinCrew(world);
+    world.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(world));
+    localStorage.setItem(CABIN_CREW_INSTALL,"complete");
+    cabinJustBuilt=true;
+    console.info("Hearthside scene installed",report);
+  }
+}catch(err){console.warn("Hearthside installation could not be saved",err);}
 const RILEY_RIGGED_GLB = "./assets/riley-rigged-v1.glb?v=approved-112-70-88-continuous-hair-v6";
 const BUILTIN_CHARACTER_GLB=Object.freeze({
   riley:RILEY_RIGGED_GLB,
@@ -721,6 +735,13 @@ function init3D(){
     engine=new BABYLON.Engine($("scene"),true,{antialias:true,preserveDrawingBuffer:false});
     scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.65,.79,.86,1);
     camera=new BABYLON.ArcRotateCamera("orbit",-Math.PI/2.5,1.02,165,new BABYLON.Vector3(0,8,0),scene);
+    const firstCabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id&&
+      Math.abs(o.x-view.x)<70&&Math.abs(o.y-view.y)<70);
+    if(firstCabin) {
+      camera.target=new BABYLON.Vector3(firstCabin.x-view.x,
+        heightAt(firstCabin.x,firstCabin.y,seed)*26+2.8,firstCabin.y-view.y);
+      camera.radius=29;
+    }
     camera.attachControl($("scene"),true);
     // Phone-friendly inspection: allow moving in close enough to see clothing and facial detail.
     camera.lowerRadiusLimit=.65;camera.upperRadiusLimit=350;
@@ -929,4 +950,5 @@ if(["mason","caitlyn","amy","chrissy"].includes(focusCharacter)) {
 else if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
 else if(installedCaitlyn)status("Caitlyn added to your saved world map near Woodland Trail.");
 else if(installedTestCharacters)status("Amy and Christy added to your saved world map.");
+else if(cabinJustBuilt)status("Hearthside Cabin is built · all seven test people gathered indoors.");
 else if(freshWorldStarted)status("Fresh world ready.");
