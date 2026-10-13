@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=investor-hero-20261013-v2";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=ground-follow-fix-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -174,7 +174,7 @@ crewButton.addEventListener("click",()=>{
   (async()=>{for(const o of cabinCrew)await loadAvatar(o);status("Cabin crew load attempted: "+avatarRoots.size+" of "+cabinCrew.length+" actual models visible.");})();
 });
 const resetToCabin=()=>{
-  camera.position.set(0,cabinY+1.7,16);
+  camera.position.set(0,cameraGround(0,16)+1.68,16);
   camera.rotation.set(0,Math.PI,0);
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
@@ -249,11 +249,11 @@ const collision=(x,z)=>{
 const cameraGround=(x,z)=>{
   if(Math.abs(x)<8.5&&Math.abs(z)<6.4)return cabinY+.38;
   if(Math.abs(x)<9.4&&z>=6.4&&z<=10.05)return cabinY+.36;
-  const estimated=cabinGrade(x,z,seed);
-  // Use the actual visible triangulated ground, not just the mathematical
-  // height field: sharp Appalachian slopes can diverge between vertices.
+  // The altitude is sampled from the VISIBLE mesh triangles, not Babylon's
+  // obsolete GroundMesh height cache or the unsmoothed mathematical slope.
   const rendered=habitat?.surfaceHeight?.(x,z);
-  return Number.isFinite(rendered)&&Math.abs(rendered-estimated)<10?rendered:estimated;
+  if(Number.isFinite(rendered))return rendered;
+  return cabinGrade(x,z,seed);
 };
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
@@ -321,6 +321,9 @@ window.__wildDiagnostics=()=>({
   walkedMetres:walkDistance,
   groundAltitude:cameraGround(camera.position.x,camera.position.z),
   eyeHeight:camera.position.y-cameraGround(camera.position.x,camera.position.z),
+  // This reference is independent of GroundMesh.getHeightAtCoordinates.
+  renderedSurfaceHeight:habitat?.surfaceHeight?.(camera.position.x,camera.position.z)??null,
+  renderedEyeHeight:(()=>{const y=habitat?.surfaceHeight?.(camera.position.x,camera.position.z);return Number.isFinite(y)?camera.position.y-y:null;})(),
   framesPerSecond:Math.round(engine.getFps()),
   webgl:engine.webGLVersion
 });
