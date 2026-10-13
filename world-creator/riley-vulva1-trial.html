@@ -141,7 +141,7 @@ function applyPelvicFit(){
  );
  addonMesh.setAbsolutePosition(nextPosition);
  addonMesh.computeWorldMatrix(true);
- $('fitStatus').textContent='Trial: whole attachment '+$('overallSize').value+'% / upper-edge hinge '+$('hingeFit').value+'° / +back+' mm under / '+up+' mm vertical / '+inward+' mm inward / top rim rounding '+$('rimSmooth').value+'% / upper-edge tuck '+$('rimTuck').value+' mm. Viewer-only fit: no mesh welding or GLB export yet.';
+ $('fitStatus').textContent='Trial: whole attachment '+$('overallSize').value+'% / upper-edge hinge '+$('hingeFit').value+'° / '+back+' mm under / '+up+' mm vertical / '+inward+' mm inward / top rim rounding '+$('rimSmooth').value+'% / upper-edge tuck '+$('rimTuck').value+' mm. Viewer-only fit: no mesh welding or GLB export yet.';
 }
 $('overallSize').oninput=applyPelvicFit;
 $('hingeFit').oninput=applyPelvicFit;
