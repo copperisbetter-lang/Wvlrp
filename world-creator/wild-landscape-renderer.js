@@ -397,8 +397,8 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     }
   // About 60% more native trees (spacing reduced by ~sqrt(1/1.6)).
   // Shared thin-instance tree prototypes keep the mobile GPU cost bounded.
-  const near=treesInArea(cx,cy,102,seed,8.7);
-  const far=treesInArea(cx,cy,470,seed,34).filter(t=>
+  const near=treesInArea(cx,cy,102,seed,8.65);
+  const far=treesInArea(cx,cy,470,seed,33.9).filter(t=>
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
   const groups=new Map();
   for(const t of near.concat(far)){
