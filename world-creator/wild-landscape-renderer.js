@@ -6,7 +6,7 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=preserved-forest-20261013-v7";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=low-brush-run-20261013-v9";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -117,12 +117,12 @@ function prototype(B,scene,track,species,seed){
   foliage.material=foliageMat;
   return {bark,foliage};
 }
-function setInstances(B,mesh,trees,cx,cy){
+function setInstances(B,mesh,trees,cx,cy,verticalScale=1){
   const data=new Float32Array(trees.length*16);
   const q=new B.Quaternion(),pos=new B.Vector3(),sc=new B.Vector3(),matrix=new B.Matrix();
   for(let i=0;i<trees.length;i++){
     const t=trees[i],s=t.scale;
-    sc.set(s*(.91+t.variation*.19),s,s*(.90+t.variation*.21));
+    sc.set(s*(.91+t.variation*.19),s*verticalScale,s*(.90+t.variation*.21));
     B.Quaternion.RotationAxisToRef(B.Axis.Y,t.heading,q);
     pos.set(t.x-cx,t.height,t.y-cy);
     B.Matrix.ComposeToRef(sc,q,pos,matrix);matrix.copyToArray(data,i*16);
@@ -403,7 +403,10 @@ function renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight=null}){
   for(const kind of types){
     if(!groups[kind].length)continue;
     const model=floorPrototype(B,scene,track,kind);
-    setInstances(B,model,groups[kind],cx,cy);
+    // Living underbrush stays low; rocks, logs and floor debris keep their height.
+    const lowGrowing=!["rock","rock-cluster","deadfall","fallen-log",
+      "leaflitter","moss"].includes(kind);
+    setInstances(B,model,groups[kind],cx,cy,lowGrowing?.28:1);
     total+=groups[kind].length;
   }
   return total;
