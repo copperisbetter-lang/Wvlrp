@@ -96,6 +96,56 @@ for poly, src_uv_indices in zip(mesh.polygons, m["uv_faces"]):
     for loop_i, uv_i in zip(poly.loop_indices, src_uv_indices):
         uv_layer.data[loop_i].uv = m["uv_coordinates"][uv_i]
     poly.use_smooth = True
+
+# REPLACEMENT TRIAL: A 181-vertex donor cannot support four independently
+# useful shaping controls. Subdivide the actual licensed mesh in Blender,
+# preserving/interpolating its existing UVs, then add smooth bilateral labial
+# ridges to the *same* skin-matched, hips-skinned removable attachment.
+# The viewer handles user-selected 300% whole-size and 400% lip maxima;
+# they are not baked here, so the user can dial them back without rebuilding.
+import bmesh
+bm = bmesh.new()
+bm.from_mesh(mesh)
+bmesh.ops.subdivide_edges(bm, edges=list(bm.edges),
+                          cuts=2, use_grid_fill=True, smooth=0.0)
+bm.to_mesh(mesh)
+bm.free()
+mesh.update()
+assert len(mesh.vertices) > 800 and len(mesh.polygons) > 1000, (
+    "Labial surface subdivision failed", len(mesh.vertices), len(mesh.polygons))
+for poly in mesh.polygons:
+    poly.use_smooth = True
+
+def smoothstep01(v):
+    v = min(1.0, max(0.0, v))
+    return v * v * (3.0 - 2.0 * v)
+
+outer_ridge_count = 0
+inner_ridge_count = 0
+for vertex in mesh.vertices:
+    # Convert back to donor coordinates for dimensionless sculpt masks.
+    # Source Z is head-to-toe; source X spans left-right. The sculpt leaves
+    # the outer perimeter and the troublesome upper sheet largely untouched.
+    src_x = abs(vertex.co.x) / scale
+    src_z = z_middle + (vertex.co.z - z_middle_target) / scale
+    lower_band = smoothstep01((src_z - .33) / .16)
+    upper_band = 1.0 - smoothstep01((src_z - .84) / .16)
+    span = lower_band * upper_band
+    outer = math.exp(-2.0 * ((src_x - .091) / .060) ** 2) * span
+    inner = math.exp(-2.0 * ((src_x - .029) / .023) ** 2) * span
+    # Front is negative Blender Y. Small shallow sculpted ridges create
+    # meaningful detail while keeping the source sheet and rig intact.
+    vertex.co.y -= .0045 * outer + .0028 * inner
+    outer_ridge_count += int(outer > .25)
+    inner_ridge_count += int(inner > .25)
+assert outer_ridge_count > 40 and inner_ridge_count > 30, (
+    "Replacement labial sculpt did not cover enough geometry",
+    outer_ridge_count, inner_ridge_count)
+print("RILEY_REPLACEMENT_LABIAL_SCULPT_READY",
+      "vertices", len(mesh.vertices),
+      "polygons", len(mesh.polygons),
+      "outer_region", outer_ridge_count, "inner_region", inner_ridge_count)
+
 addon = bpy.data.objects.new("Riley Vulva1 | removable anatomical trial", mesh)
 bpy.context.collection.objects.link(addon)
 # The fitted points are world-space; convert to the rig's local space.
