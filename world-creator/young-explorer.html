@@ -107,6 +107,39 @@ let bounds=null, center=null, model=null;
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
  groups.push(...result.animationGroups);
  if(groups.length<3)throw Error('Missing movement clips');
+ // Measure the displayed world-space human vertices, NOT an unscaled glTF
+ // bounding-box proxy. glTF exporters may apply parent scaling at import.
+ // Use the same measurement technique as the garment fitter.
+ const human=meshes.filter(m=>(m.getTotalVertices?.()||0)>10000)
+   .sort((a,b)=>b.getTotalVertices()-a.getTotalVertices())[0];
+ if(!human)throw Error('Full body missing for precise child-scale calibration');
+ const vertexHeight=()=>{
+   human.computeWorldMatrix(true);
+   const xyz=human.getVerticesData(B.VertexBuffer.PositionKind);
+   const transform=human.getWorldMatrix(),v=new B.Vector3();
+   let lo=Infinity,hi=-Infinity;
+   for(let k=0;k<xyz.length;k+=3){
+     B.Vector3.TransformCoordinatesToRef(new B.Vector3(xyz[k],xyz[k+1],xyz[k+2]),transform,v);
+     lo=Math.min(lo,v.y);hi=Math.max(hi,v.y);
+   }
+   return hi-lo;
+ };
+ const measured=vertexHeight();
+ if(!(measured>.4&&measured<2.2))throw Error('Invalid imported child body height '+measured);
+ if(Math.abs(measured-1.22)>.012){
+   const scaleNode=new B.TransformNode('Young Explorer full-rig height calibration',scene);
+   const imported=[...(result.meshes||[]),...(result.transformNodes||[])];
+   const roots=imported.filter(n=>n!==scaleNode&&!n.parent);
+   if(!roots.length)throw Error('No rig roots available for uniform child height correction');
+   for(const n of roots)n.parent=scaleNode;
+   scaleNode.scaling.setAll(1.22/measured);
+   scaleNode.computeWorldMatrix(true);
+   for(const m of meshes)m.computeWorldMatrix(true);
+ }
+ const verifiedHeight=vertexHeight();
+ if(Math.abs(verifiedHeight-1.22)>.025)
+   throw Error('Child clothing and rig failed unified height check: '+verifiedHeight.toFixed(3)+'m');
+ console.info('Young Explorer precise clothed child display height',verifiedHeight);
  let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
  for(const m of meshes){if(!m.getTotalVertices?.())continue;m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
  bounds={min,max,span:Math.max(max.y-min.y,.2)};center=min.add(max).scale(.5);
