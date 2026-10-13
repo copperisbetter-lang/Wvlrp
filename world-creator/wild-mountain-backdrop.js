@@ -280,7 +280,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   vistaWall.material=vistaMat;
   vistaWall.applyFog=false;
   vistaWall.isPickable=false;
-  vistaWall.renderingGroupId=1;
+  vistaWall.renderingGroupId=0;
   // Camera-following far vista: cannot collide with paths or wander into a
   // streamed terrain tile, but retains the same world north bearing.
   const obs=scene.onBeforeRenderObservable.add(()=>{
