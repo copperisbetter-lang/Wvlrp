@@ -186,9 +186,29 @@ class YoungExplorerWardrobe {
   const size=$('dress-size-select'),vertical=$('dress-position'),width=$('dress-width'),depth=$('dress-depth'),reset=$('dress-reset');
   if(!size||!vertical||!width||!depth)return;
   const base=this.dress.scaling.clone(),origin=this.dress.position.clone();
+  // Upper bodice needs its own fit: whole-dress width/depth also changes the skirt.
+  this.dress.makeGeometryUnique();
+  const originalVertices=this.dress.getVerticesData(this.B.VertexBuffer.PositionKind)?.slice();
+  const bounds=this.dress.getBoundingInfo().boundingBox;
+  const low=bounds.minimum.y,high=bounds.maximum.y,span=Math.max(.001,high-low);
+  const topWidth=$('dress-top-width'),topDepth=$('dress-top-depth');
+  const adjustBodice=()=>{
+    if(!originalVertices)return;
+    const updated=originalVertices.slice();
+    const wx=Number(topWidth?.value||75)/100,dz=Number(topDepth?.value||75)/100;
+    for(let i=0;i<updated.length;i+=3){
+      const t=(originalVertices[i+1]-low)/span;
+      const blend=Math.max(0,Math.min(1,(t-.48)/.32));
+      updated[i]=originalVertices[i]*(1-blend*(1-wx));
+      updated[i+2]=originalVertices[i+2]*(1-blend*(1-dz));
+    }
+    this.dress.updateVerticesData(this.B.VertexBuffer.PositionKind,updated,true);
+    this.dress.refreshBoundingInfo();
+  };
   const factors={2:.88,3:.91,4:.94,5:.97,6:1,7:1.03,8:1.06,10:1.10};
   const update=()=>{
    const ratio=factors[size.value]||1;
+   adjustBodice();
    this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y,base.z*ratio*(Number(depth.value)/100));
    this.dress.position.copyFrom(origin);
    const parent=this.dress.parent;
@@ -209,9 +229,11 @@ class YoungExplorerWardrobe {
    if($('dress-position-value'))$('dress-position-value').textContent=vertical.value+' cm';
    if($('dress-width-value'))$('dress-width-value').textContent=width.value+'%';
    if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
+   if($('dress-top-width-value'))$('dress-top-width-value').textContent=(topWidth?.value||75)+'%';
+   if($('dress-top-depth-value'))$('dress-top-depth-value').textContent=(topDepth?.value||75)+'%';
   };
-  for(const el of [size,vertical,width,depth])el.addEventListener('input',update);
-  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';update();};
+  for(const el of [size,vertical,width,depth,topWidth,topDepth].filter(Boolean))el.addEventListener('input',update);
+  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='75';if(topDepth)topDepth.value='75';update();};
   update();
  }
 
