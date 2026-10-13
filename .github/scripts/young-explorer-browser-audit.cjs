@@ -26,8 +26,38 @@ const fs=require('fs');
        skeletonBones:s?.skeletons.map(x=>x.bones.length),
        materialNames:s?.materials.map(x=>x.name).filter(x=>/young explorer|olive|plaid/i.test(x))};
    });
+   rec.wardrobe=await page.evaluate(()=>{
+     const w=window.youngExplorerWardrobe;
+     if(!w)return {ready:false,error:'Wardrobe not initialized'};
+     const outfits=['plaid','floral','sunflower','denim','hiking','navy'];
+     const state=[];
+     for(const name of outfits){
+       document.querySelector('#outfit-select').value=name;
+       document.querySelector('#outfit-select').dispatchEvent(new Event('change',{bubbles:true}));
+       state.push({name,selected:w.selectedOutfit,
+         dressEnabled:w.dress.isEnabled(),
+         shirtEnabled:w.suits[name]?.shirt?.isEnabled()||false,
+         shortsEnabled:w.suits[name]?.shorts?.isEnabled()||false});
+     }
+     document.querySelector('#bend').click();
+     const bend=w.poseTokens.length;
+     document.querySelector('#sit').click();
+     const sit=w.poseTokens.length;
+     document.querySelector('#idle').click();
+     const m=w.measure;
+     return {ready:true,measurements:{heightMeters:m.height,shoulderWidthMeters:m.shoulder,
+       waistWidthMeters:m.waist,hipWidthMeters:m.hip,bodyVertices:m.modelVertexCount},
+       outfits:state,bendBones:bend,sitBones:sit,
+       restoredPose:!w.activePose};
+   });
    rec.pass=!!rec.scene?.status?.includes('Realistic full body loaded')&&
-     rec.scene?.meshVertices>=10000&&Math.max(0,...(rec.scene?.skeletonBones||[]))>=25;
+     rec.scene?.meshVertices>=10000&&Math.max(0,...(rec.scene?.skeletonBones||[]))>=25&&
+     !!rec.wardrobe?.ready&&rec.wardrobe.outfits.length===6&&
+     rec.wardrobe.outfits.every(o=>o.selected===o.name&&
+       (['plaid','floral','sunflower'].includes(o.name)?o.dressEnabled:
+         !o.dressEnabled&&o.shirtEnabled&&o.shortsEnabled))&&
+     rec.wardrobe.bendBones>=3&&rec.wardrobe.sitBones>=3&&
+     rec.wardrobe.restoredPose&&rec.wardrobe.measurements.heightMeters>.5;
    await page.screenshot({path:'/tmp/young-explorer-'+name+'.png',fullPage:true});
   }catch(err){
    rec.error=String(err).slice(0,800);
