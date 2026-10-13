@@ -85,14 +85,14 @@
         }
       ],
       "bendBones": 6,
-      "sitBones": 8,
+      "sitBones": 9,
       "restoredPose": true
     },
     "pass": true
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791920246178",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791920398817",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
@@ -176,7 +176,7 @@
         }
       ],
       "bendBones": 6,
-      "sitBones": 8,
+      "sitBones": 9,
       "restoredPose": true
     },
     "pass": true
