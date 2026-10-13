@@ -91,6 +91,17 @@ export function stageVillageCampfire(B,scene,track,{cx,cy,seed,surfaceHeight,mat
   ctx.fillStyle=core;ctx.beginPath();ctx.moveTo(64,112);
   ctx.bezierCurveTo(96,187,76,211,96,255);
   ctx.lineTo(32,255);ctx.bezierCurveTo(55,210,35,164,64,112);ctx.fill();
+  // Clip the overlapping gradients into an irregular tapered flame silhouette;
+  // unmasked rectangular sprites looked like a solid orange billboard.
+  ctx.globalCompositeOperation="destination-in";
+  ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.moveTo(18,255);
+  ctx.bezierCurveTo(9,212,33,179,45,148);
+  ctx.bezierCurveTo(55,118,51,73,67,26);
+  ctx.bezierCurveTo(78,98,93,136,85,160);
+  ctx.bezierCurveTo(118,198,116,227,109,255);
+  ctx.closePath();ctx.fill();
+  ctx.globalCompositeOperation="source-over";
   flameTexture.hasAlpha=true;flameTexture.update();
   const flameMat=track(new B.StandardMaterial("permanently burning fire",scene));
   flameMat.diffuseTexture=flameTexture;
@@ -99,12 +110,13 @@ export function stageVillageCampfire(B,scene,track,{cx,cy,seed,surfaceHeight,mat
   flameMat.disableLighting=true;
   flameMat.backFaceCulling=false;
   flameMat.alphaMode=B.Engine.ALPHA_COMBINE;
+  flameMat.alpha=.79;
   const flames=[];
-  for(let i=0;i<4;i++){
+  for(let i=0;i<3;i++){
     const f=build("animated campfire flame "+i,"CreatePlane",
-      {width:1.6,height:2.7,sideOrientation:B.Mesh.DOUBLESIDE},
-      X+Math.cos(i*2.4)*.23,ground+1.36,Z+Math.sin(i*2.4)*.23,flameMat);
-    f.rotation.y=i*Math.PI/4;
+      {width:1.36,height:2.15,sideOrientation:B.Mesh.DOUBLESIDE},
+      X+Math.cos(i*2.4)*.18,ground+1.12,Z+Math.sin(i*2.4)*.18,flameMat);
+    f.rotation.y=i*Math.PI/3;
     flames.push(f);
   }
   const light=track(new B.PointLight("warm village campfire glow",
@@ -121,7 +133,7 @@ export function stageVillageCampfire(B,scene,track,{cx,cy,seed,surfaceHeight,mat
     for(let i=0;i<flames.length;i++){
       const wave=Math.sin(elapsed*(8.2+i*.92)+i*1.8);
       flames[i].scaling.set(.88+.12*wave,.79+.13*wave,1);
-      flames[i].position.y=ground+1.30+.11*wave;
+      flames[i].position.y=ground+1.14+.08*wave;
     }
     light.intensity=1.17+.27*Math.sin(elapsed*11)+.10*Math.sin(elapsed*17.2);
   });
