@@ -125,6 +125,12 @@ export function connectWildMultiplayer({B,scene,getCamera,groundAt,statusElement
       const parsed=normalizeWildPose(packet);
       if(!parsed)return;
       const peer=ensurePeer(peerId);
+      if(!peer.pose){
+        // First packet must put the avatar immediately at the real peer
+        // position, not interpolate it across the entire wilderness from 0,0.
+        peer.body.root.position.set(parsed.x,groundAt(parsed.x,parsed.z),parsed.z);
+        peer.body.root.rotation.y=parsed.yaw;
+      }
       peer.pose=parsed;
       peer.updated=performance.now();
       peer.body.root.setEnabled(true);
