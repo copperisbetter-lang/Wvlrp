@@ -41,23 +41,35 @@ const groups=[];
 let bounds=null, center=null, model=null;
 (async()=>{
  const sources=[
-  './assets/young-explorer-olive-plaid.glb?v=real-continuous-human-child-20261013-v1',
-  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/young-explorer-olive-plaid.glb',
-  'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@main/world-creator/assets/young-explorer-olive-plaid.glb'
+  './assets/young-explorer-olive-plaid.glb?v=real-continuous-human-child-20261013-v3',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/0b951af9b29d9fbd0711dfea51c7f28c17d043f8/world-creator/assets/young-explorer-olive-plaid.glb',
+  'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@0b951af9b29d9fbd0711dfea51c7f28c17d043f8/world-creator/assets/young-explorer-olive-plaid.glb'
  ];
  let lastError;
  for(let i=0;i<sources.length;i++){
   try{
    status.textContent=i===0?'Loading realistic full-body model from WVLRP…':'Checking newest full-body model source '+i+' of 2…';
    const model=await B.SceneLoader.ImportMeshAsync(null,'',sources[i],scene,undefined,'.glb');
-   const hasDetailedBody=(model.meshes||[]).some(m=>m.getTotalVertices?.()>=10000);
-   const isRealRig=(model.skeletons||[]).some(s=>(s.bones?.length||0)>=25);
-   if(!hasDetailedBody||!isRealRig){
+   // glTF splits a continuous human mesh into several Babylon meshes when
+   // material primitives or nodes are partitioned. The previous "one mesh
+   // >=10,000 vertices" test rejected valid photoreal humans. Sum geometry.
+   const pieceSizes=(model.meshes||[]).map(m=>({name:m.name,vertices:m.getTotalVertices?.()||0}));
+   const totalVertices=pieceSizes.reduce((sum,m)=>sum+m.vertices,0);
+   const rigSizes=(model.skeletons||[]).map(s=>s.bones?.length||0);
+   const joints=Math.max(0,...rigSizes);
+   const hasDetailedBody=totalVertices>=10000;
+   const isRealRig=joints>=25;
+   const realSkin=model.meshes.some(m=>m.material?.name?.includes('Young Explorer real CC0 face and body skin UV'));
+   const hasDress=model.meshes.some(m=>m.material?.name?.toLowerCase().includes('plaid'));
+   console.info('Young Explorer imported geometry audit',{source:sources[i],totalVertices,joints,realSkin,hasDress,pieceSizes});
+   if(!hasDetailedBody||!isRealRig||!realSkin||!hasDress){
+     const why='needs realistic 3D geometry, complete skeleton, textured skin and plaid dress; source '+(i+1)+' reported '+totalVertices+' vertices, '+joints+' bones, skin '+realSkin+', dress '+hasDress;
      (model.animationGroups||[]).forEach(g=>g.dispose());
      (model.meshes||[]).forEach(m=>m.dispose());
      (model.skeletons||[]).forEach(s=>s.dispose());
-     throw Error('Old mannequin geometry rejected; waiting for the continuous realistic body model');
+     throw Error(why);
    }
+   model.modelAudit={totalVertices,joints,source:i+1,realSkin,hasDress};
    return model;
   }catch(err){lastError=err;console.warn('Young Explorer model source unavailable',i,err);}
  }
@@ -74,10 +86,10 @@ let bounds=null, center=null, model=null;
  camera.setTarget(new B.Vector3(center.x,min.y+bounds.span*.54,center.z));
  camera.radius=bounds.span*2.3;camera.lowerRadiusLimit=.24;camera.upperRadiusLimit=9;
  // Use imported textures and true exposed-skin PBR materials unmodified.
- const skins=scene.materials.filter(m=>m.name.startsWith('Olive child skin'));
- if(skins.length!==1)throw Error('Skin material audit failed');
+ const skins=scene.materials.filter(m=>m.name.includes('Young Explorer real CC0 face and body skin UV'));
+ if(!skins.length)throw Error('Real textured human skin material not found');
  model=result;play('Idle');
- status.textContent='Realistic full body loaded · '+(result.skeletons[0].bones?.length||0)+' rig bones · '+groups.length+' animation clips · one matching olive skin material';
+ status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
 }).catch(e=>{console.error(e);status.textContent='Model not published or unable to load: '+e.message;});
 function play(name){if(!groups.length)return;
  groups.forEach(g=>g.stop());
