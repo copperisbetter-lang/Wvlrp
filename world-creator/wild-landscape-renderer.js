@@ -141,6 +141,95 @@ function waterRibbon(B,scene,track,name,pts,width,mat){
   const mesh=track(B.MeshBuilder.CreateRibbon(name,{pathArray:[left,right],sideOrientation:B.Mesh.DOUBLESIDE},scene));
   mesh.material=mat;return mesh;
 }
+
+function floorPrototype(B,scene,track,kind){
+  const verts=[],ids=[],cols=[];
+  const rng=randomSeed(kind==="fern"?213:786);
+  if(kind==="fern"||kind==="laurel"){
+    const fronds=kind==="fern"?9:15;
+    for(let i=0;i<fronds;i++){
+      const a=i*2.39996,reach=(kind==="fern"?.68:.82)*(.73+rng()*.45);
+      const stalkHeight=kind==="fern"?.67:1.18;
+      const end=[Math.cos(a)*reach,stalkHeight*(.8+rng()*.3),Math.sin(a)*reach];
+      const from=[.03*Math.sin(a),.06,.03*Math.cos(a)];
+      // Fern fronds and mountain laurel leaves use shaped tapered polygons.
+      for(let k=0;k<6;k++){
+        const t=(k+.55)/6;
+        const sx=from[0]+end[0]*t,sy=from[1]+(end[1]-from[1])*t,sz=from[2]+end[2]*t;
+        const tangent=[-Math.sin(a),0,Math.cos(a)],w=(1-t)*.18*(kind==="fern"?1:1.42);
+        const index=verts.length/3;
+        verts.push(sx-tangent[0]*w,sy,sz-tangent[2]*w,
+          sx+tangent[0]*w,sy,sz+tangent[2]*w,
+          sx+Math.cos(a)*.14,sy+.13,sz+Math.sin(a)*.14);
+        ids.push(index,index+1,index+2);
+        const shade=.57+rng()*.38;
+        for(let q=0;q<3;q++)cols.push(.24*shade,.60*shade,.28*shade,1);
+      }
+    }
+  }else if(kind==="rock"){
+    const ringCount=9;
+    verts.push(0,.84,0);
+    for(let k=0;k<ringCount;k++){
+      const a=k*2*Math.PI/ringCount,rr=.62+rng()*.49;
+      verts.push(Math.cos(a)*rr,.27+rng()*.35,Math.sin(a)*rr);
+    }
+    for(let k=0;k<ringCount;k++){
+      const a=k*2*Math.PI/ringCount,rr=.75+rng()*.25;
+      verts.push(Math.cos(a)*rr,-.18+rng()*.20,Math.sin(a)*rr);
+    }
+    verts.push(0,-.21,0);
+    for(let i=0;i<ringCount;i++){
+      const next=(i+1)%ringCount;
+      ids.push(0,i+1,next+1);
+      ids.push(i+1,i+1+ringCount,next+1+ringCount,
+        i+1,next+1+ringCount,next+1);
+      ids.push(1+ringCount*2,next+1+ringCount,i+1+ringCount);
+    }
+    for(let i=0;i<verts.length/3;i++)cols.push(.56+rng()*.11,.54+rng()*.09,.49+rng()*.08,1);
+  }else if(kind==="deadfall"){
+    addBranch(verts,ids,[-2,.18,0],[2,.10,0],.28,.19,9);
+    addBranch(verts,ids,[-.9,.14,0],[-.18,.55,.55],.13,.018,6);
+    addBranch(verts,ids,[1,.14,0],[1.44,.43,-.65],.13,.018,6);
+    for(let i=0;i<verts.length/3;i++)cols.push(.43,.35,.28,1);
+  }
+  const m=geometry(B,scene,track,"WV floor "+kind,verts,ids,cols);
+  const mat=track(new B.StandardMaterial("WV floor "+kind+" material",scene));
+  mat.diffuseColor=kind==="fern"?B.Color3.FromHexString("#638449"):
+    kind==="laurel"?B.Color3.FromHexString("#506d45"):
+    kind==="rock"?B.Color3.FromHexString("#a6a49a"):
+    B.Color3.FromHexString("#715a46");
+  mat.backFaceCulling=false;mat.specularColor=new B.Color3(.025,.03,.025);
+  mat.useVertexColors=true;m.material=mat;
+  return m;
+}
+function renderForestFloor(B,scene,track,{cx,cy,seed}){
+  const types=["fern","laurel","rock","deadfall"];
+  const groups=Object.fromEntries(types.map(t=>[t,[]]));
+  const step=6.2,half=100;
+  const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
+  const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
+  for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
+    const x=(i+(hash(i,j,seed+336)-.5)*.70)*step,
+      y=(j+(hash(i,j,seed+337)-.5)*.70)*step;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<35)continue;
+    const roll=hash(i,j,seed+338);
+    let kind=roll<.46?"fern":roll<.69?"laurel":roll<.85?"rock":roll<.93?"deadfall":null;
+    if(!kind)continue;
+    const scale=kind==="rock"?.4+hash(i,j,seed+339)*1.5:
+      kind==="deadfall"?.7+hash(i,j,seed+339)*.7:
+      .46+hash(i,j,seed+339)*.9;
+    groups[kind].push({x,y,height:cabinGrade(x,y,seed)+
+      (kind==="rock"?-.09:kind==="deadfall"?-.04:0),scale,
+      variation:hash(i,j,seed+340),heading:hash(i,j,seed+341)*Math.PI*2});
+  }
+  let total=0;
+  for(const kind of types){
+    if(!groups[kind].length)continue;
+    const model=floorPrototype(B,scene,track,kind);
+    setInstances(B,model,groups[kind],cx,cy);total+=groups[kind].length;
+  }
+  return total;
+}
 export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
   const soil=track(new B.StandardMaterial("Appalachian leaf litter and stone",scene));
   soil.diffuseColor=new B.Color3(1,1,1);
@@ -188,8 +277,8 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     }
   // Dense native canopy nearby. Distant groves use fewer, spaced trunks and
   // thinner height scaling to keep the mobile GPU cost bounded.
-  const near=treesInArea(cx,cy,102,seed,9);
-  const far=treesInArea(cx,cy,470,seed,28).filter(t=>
+  const near=treesInArea(cx,cy,102,seed,11);
+  const far=treesInArea(cx,cy,470,seed,43).filter(t=>
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
   const groups=new Map();
   for(const t of near.concat(far)){
@@ -201,6 +290,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     setInstances(B,model.bark,trees,cx,cy);
     setInstances(B,model.foliage,trees,cx,cy);
   }
+  const understory=renderForestFloor(B,scene,track,{cx,cy,seed});
   return {nearTrees:near.length,distantTrees:far.length,species:groups.size,
-    forestExtentMetres:470};
+    understory,forestExtentMetres:470};
 }
