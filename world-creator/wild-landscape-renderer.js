@@ -365,15 +365,19 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     }
     const normals=[];
     B.VertexData.ComputeNormals(positions,mesh.getIndices(),normals);
-    mesh.updateVerticesData(B.VertexBuffer.PositionKind,positions);
+    mesh.updateVerticesData(B.VertexBuffer.PositionKind,positions,true);
     mesh.updateVerticesData(B.VertexBuffer.NormalKind,normals);
     mesh.setVerticesData(B.VertexBuffer.ColorKind,new Float32Array(tints));
-    mesh.useVertexColors=true;mesh.material=soil;return mesh;
+    mesh.useVertexColors=true;mesh.material=soil;
+    // GroundMesh altitude lookup must use the UPDATED geometry, not its old
+    // flat construction heights. Rebuild its per-cell collision surface once.
+    if(typeof mesh.updateCoordinateHeights==="function")mesh.updateCoordinateHeights();
+    return mesh;
   }
   // High-resolution local terrain plus distant ridge panoramas. Far land is
   // offset very slightly beneath the local ground to avoid z-fighting.
   terrain(1100,96,.40);
-  terrain(196,66,0);
+  const localWalkingGround=terrain(196,66,0);
   const waterMat=track(new B.StandardMaterial("river glints",scene));
   waterMat.diffuseColor=new B.Color3(.18,.33,.36);
   waterMat.specularColor=new B.Color3(.34,.38,.41);waterMat.specularPower=38;
@@ -412,5 +416,12 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
   }
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed});
   return {nearTrees:near.length,distantTrees:far.length,species:groups.size,
-    understory,forestExtentMetres:470};
+    understory,forestExtentMetres:470,
+    // A walker samples the same triangles the eye actually sees. The terrain
+    // approximation alone can dip below an uphill triangle between vertices.
+    surfaceHeight(x,z){
+      if(Math.abs(x-cx)>97||Math.abs(z-cy)>97)return null;
+      const y=localWalkingGround.getHeightAtCoordinates?.(x,z);
+      return Number.isFinite(y)?y:null;
+    }};
 }
