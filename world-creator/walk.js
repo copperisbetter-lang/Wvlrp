@@ -56,7 +56,30 @@ scene.activeCamera=camera;
 // joystick and the other drags to look without firing accidental movement.
 const permanent=[];
 const keep=o=>{permanent.push(o);return o;};
+// The furnished cabin is built from many individually placed beams, logs and
+// floor boards. In walking mode these are static: merge identical materials
+// into fewer draw calls while retaining their true shape and surface colors.
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
+const woodGroups=new Map();
+for(const mesh of permanent){
+  if(!(mesh instanceof B.Mesh)||!mesh.material||!mesh.getTotalVertices?.())continue;
+  if(!woodGroups.has(mesh.material))woodGroups.set(mesh.material,[]);
+  woodGroups.get(mesh.material).push(mesh);
+}
+let combinedCabinMeshes=0;
+for(const [mat,meshes] of woodGroups){
+  if(meshes.length<2)continue;
+  try{
+    const joined=B.Mesh.MergeMeshes(meshes,true,true,undefined,false,false);
+    if(joined){
+      joined.name="Hearthside combined "+mat.name;
+      joined.material=mat;
+      keep(joined);combinedCabinMeshes++;
+    }
+  }catch(err){
+    console.warn("Cabin static batching was skipped for",mat.name,err.message);
+  }
+}
 const tiles=[];
 let tileCx=0,tileCy=0,loadedTiles=0;
 function addLandscape(x,z){
@@ -279,6 +302,7 @@ window.__wildDiagnostics=()=>({
   understory:habitat?.understory??0,
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
+  combinedCabinMeshes,
   walkedMetres:walkDistance,
   framesPerSecond:Math.round(engine.getFps()),
   webgl:engine.webGLVersion
