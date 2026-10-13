@@ -40,15 +40,17 @@ const ground=new B.StandardMaterial('forest floor',scene);ground.diffuseColor=ne
 const groups=[];
 let bounds=null, center=null, model=null;
 (async()=>{
+ // Check the exact audited 52-bone binary first. WVLRP hosting may still
+ // have the old 16-bone mannequin cached. Never let that stale file win.
  const sources=[
-  './assets/young-explorer-olive-plaid.glb?v=real-continuous-human-child-20261013-v3',
   'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/0b951af9b29d9fbd0711dfea51c7f28c17d043f8/world-creator/assets/young-explorer-olive-plaid.glb',
-  'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@0b951af9b29d9fbd0711dfea51c7f28c17d043f8/world-creator/assets/young-explorer-olive-plaid.glb'
+  'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@0b951af9b29d9fbd0711dfea51c7f28c17d043f8/world-creator/assets/young-explorer-olive-plaid.glb',
+  './assets/young-explorer-olive-plaid.glb?v=real-human-52bones-audit-20261013'
  ];
  let lastError;
  for(let i=0;i<sources.length;i++){
   try{
-   status.textContent=i===0?'Loading realistic full-body model from WVLRP…':'Checking newest full-body model source '+i+' of 2…';
+   status.textContent=i===0?'Loading verified realistic 3D Young Explorer…':'Trying verified model mirror '+(i+1)+' of 3…';
    const model=await B.SceneLoader.ImportMeshAsync(null,'',sources[i],scene,undefined,'.glb');
    // glTF splits a continuous human mesh into several Babylon meshes when
    // material primitives or nodes are partitioned. The previous "one mesh
@@ -74,7 +76,7 @@ let bounds=null, center=null, model=null;
    return model;
   }catch(err){lastError=err;console.warn('Young Explorer model source unavailable',i,err);}
  }
- throw new Error('The realistic full-body model is not published yet. '+(lastError?.message||String(lastError)));
+ throw new Error('Could not load the verified 52-joint Young Explorer model. '+(lastError?.message||String(lastError)));
 })().then(result=>{
  const meshes=result.meshes||[];
  if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
@@ -91,7 +93,7 @@ let bounds=null, center=null, model=null;
  if(!skins.length)throw Error('Real textured human skin material not found');
  model=result;play('Idle');
  status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
-}).catch(e=>{console.error(e);status.textContent='Model not published or unable to load: '+e.message;});
+}).catch(e=>{console.error(e);status.textContent='Young Explorer viewer unable to load: '+e.message;});
 function play(name){if(!groups.length)return;
  groups.forEach(g=>g.stop());
  const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
