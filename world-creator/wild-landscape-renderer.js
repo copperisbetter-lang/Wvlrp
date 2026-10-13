@@ -3,7 +3,7 @@
  * Procedural woody branch frames, layered leaf/needle cards and batched GPU
  * thin instances. This is an art-directed prototype, not scanned vegetation.
  */
-import { treesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js";
+import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js";
 import {hash} from "./world-core.js";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
@@ -147,7 +147,8 @@ function waterRibbon(B,scene,track,name,pts,width,mat){
 function floorPrototype(B,scene,track,kind){
   const verts=[],ids=[],cols=[];
   const kinds=["fern","laurel","rhododendron","spicebush","blueberry","pawpaw",
-    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall"];
+    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall",
+    "fallen-log","rock-cluster"];
   const rng=randomSeed(213+Math.max(0,kinds.indexOf(kind))*863);
   const leafy={
     fern:[.27,.57,.25],laurel:[.23,.48,.23],rhododendron:[.20,.43,.27],
@@ -256,6 +257,40 @@ function floorPrototype(B,scene,track,kind){
           [x+.03,top[1]-.03,z+.05],petal);
       }
     }
+  }else if(kind==="fallen-log"){
+    // Irregular fallen trees in varying decay stages, branch snags, broken
+    // ends and exposed smaller limbs. Keep the main trunk near ground level.
+    addBranch(verts,ids,[-2.8,.29,-.10],[-.75,.22,.10],.34,.28,9);
+    addBranch(verts,ids,[-.75,.22,.10],[1.45,.14,-.05],.28,.18,8);
+    addBranch(verts,ids,[1.45,.14,-.05],[3.08,.11,-.17],.18,.025,7);
+    addBranch(verts,ids,[-1.4,.23,.04],[-1.78,.78,.73],.11,.018,5);
+    addBranch(verts,ids,[.33,.20,.07],[.74,.55,-.82],.075,.008,5);
+    addBranch(verts,ids,[2.12,.12,-.09],[2.45,.37,.61],.052,.006,5);
+    for(let i=0;i<verts.length/3;i++){
+      const v=.73+rng()*.40;
+      cols.push(.35*v,.27*v,.17*v,1);
+    }
+  }else if(kind==="rock-cluster"){
+    // Locally weathered sandstone in tight irregular ledges and talus clusters.
+    for(const [x,z,r,h] of [
+      [-.83,-.19,.93,.63],[.31,.30,1.18,.88],
+      [1.38,-.34,.62,.39],[-.18,-1.11,.68,.37],
+      [-1.23,.75,.47,.36]]){
+      const count=7,at=verts.length/3;
+      verts.push(x,h,z);
+      for(let j=0;j<count;j++){
+        const a=j*2*Math.PI/count,rad=r*(.78+.33*rng());
+        verts.push(x+Math.cos(a)*rad,.10+.24*rng(),z+Math.sin(a)*rad);
+      }
+      for(let j=0;j<count;j++){
+        const a=at+1+j,b=at+1+(j+1)%count;
+        ids.push(at,a,b);
+      }
+      for(let j=0;j<count+1;j++){
+        const shade=.78+rng()*.3;
+        cols.push(.51*shade,.50*shade,.45*shade,1);
+      }
+    }
   }else if(kind==="rock"){
     const ringCount=9;verts.push(0,.84,0);
     for(let k=0;k<ringCount;k++){
@@ -284,7 +319,8 @@ function floorPrototype(B,scene,track,kind){
   const mesh=geometry(B,scene,track,"WV understory "+kind,verts,ids,cols);
   const material=track(new B.StandardMaterial("WV understory "+kind+" material",scene));
   material.diffuseColor=B.Color3.FromHexString(
-    kind==="rock"?"#aaa69a":kind==="deadfall"?"#715a46":"#a7b69a");
+    kind==="rock"||kind==="rock-cluster"?"#aaa69a":
+    kind==="deadfall"||kind==="fallen-log"?"#715a46":"#a7b69a");
   material.backFaceCulling=false;
   material.specularColor=new B.Color3(.018,.024,.015);
   material.useVertexColors=true;
@@ -299,11 +335,12 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
     "mixed-slope":["fern","fern","laurel","spicebush","blueberry","bramble","pawpaw","sedge","leaflitter","rhododendron"]
   };
   const types=["fern","laurel","rhododendron","spicebush","blueberry","pawpaw",
-    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall"];
+    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall",
+    "fallen-log","rock-cluster"];
   const groups=Object.fromEntries(types.map(kind=>[kind,[]]));
-  // 4.65 m vs the former 6.2 m, with broader multilayered plants and
-  // occasional second clumps, delivers far fuller (not evenly carpeted) cover.
-  const step=4.65,half=101;
+  // ~80% denser vegetation/forest debris than the preceding release. The
+  // layered thickets, scattered logs and sandstone clusters are still batched.
+  const step=3.7,half=101;
   const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
   const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
   const place=(kind,x,y,i,j,salt,multiplier=1)=>{
@@ -312,11 +349,13 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
     // Keep a narrow, usable approach to the cabin steps.
     if(Math.abs(x)<2.5&&y>0&&y<35)return;
     const roll=hash(i,j,seed+salt);
-    const size=kind==="rock"?.37+roll*.85:kind==="deadfall"?.55+roll*.65:
+    const size=kind==="rock"?.37+roll*.85:kind==="rock-cluster"?.53+roll*.55:
+      kind==="fallen-log"?.57+roll*.65:kind==="deadfall"?.55+roll*.65:
       kind==="leaflitter"?.75+roll*.5:kind==="moss"?.83+roll*.54:
       .84+roll*.71;
     groups[kind].push({x,y,height:cabinGrade(x,y,seed)+
-      (kind==="rock"?-.10:kind==="deadfall"?-.06:.015),
+      (kind==="rock"||kind==="rock-cluster"?-.10:
+      kind==="deadfall"||kind==="fallen-log"?-.06:.015),
       scale:size*multiplier,variation:hash(i,j,seed+salt+4),
       heading:hash(i,j,seed+salt+8)*Math.PI*2});
   };
@@ -332,7 +371,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
     const kind=palette[index];
     place(kind,x,y,i,j,339);
     // Natural companion plants in irregular overlapping thickets.
-    if(hash(i,j,seed+343)<.29&&kind!=="rock"&&kind!=="deadfall"){
+    if(hash(i,j,seed+343)<.40&&kind!=="rock"&&kind!=="deadfall"){
       const accent=palette[Math.floor(hash(i,j,seed+344)*palette.length)];
       if(accent!=="deadfall"&&accent!=="rock")
         place(accent,x+(hash(i,j,seed+345)-.5)*2.5,
@@ -340,6 +379,13 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
     }
     if(hash(i,j,seed+355)<.045&&biome!=="dry-ridge")
       place("wildflower",x+1,y-1,i,j,358,.68);
+    // Coarse natural deadwood and genuine clusters of sandstone boulders.
+    if(hash(i,j,seed+360)<.024)
+      place("fallen-log",x+(hash(i,j,seed+361)-.5)*2,
+        y+(hash(i,j,seed+362)-.5)*2,i,j,363,.76);
+    if(hash(i,j,seed+368)<.027)
+      place("rock-cluster",x+(hash(i,j,seed+369)-.5)*2,
+        y+(hash(i,j,seed+370)-.5)*2,i,j,371,.83);
   }
   let total=0;
   for(const kind of types){
@@ -399,13 +445,18 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
       if(path.length>2)waterRibbon(B,scene,track,"flowing hollow creek",path,
         p=>2*Math.max(.65,3.5-p[3]*.0025),waterMat);
     }
-  // About 60% more native trees (spacing reduced by ~sqrt(1/1.6)).
-  // Shared thin-instance tree prototypes keep the mobile GPU cost bounded.
+  // Preserve prior forest: add about half again as many new trees, with 40%
+  // evergreen additions (hemlock, white pine, Virginia pine) and +30%
+  // old-growth veterans. Existing positions stay untouched.
   const near=treesInArea(cx,cy,102,seed,8.65);
   const far=treesInArea(cx,cy,470,seed,33.9).filter(t=>
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
+  const addedNear=supplementalTreesInArea(cx,cy,102,seed,8.65);
+  const addedFar=supplementalTreesInArea(cx,cy,470,seed,33.9).filter(t=>
+    Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
+  const allTrees=near.concat(far,addedNear,addedFar);
   const groups=new Map();
-  for(const t of near.concat(far)){
+  for(const t of allTrees){
     if(!groups.has(t.species))groups.set(t.species,[]);
     groups.get(t.species).push(t);
   }
@@ -415,7 +466,13 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     setInstances(B,model.foliage,trees,cx,cy);
   }
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed});
-  return {nearTrees:near.length,distantTrees:far.length,species:groups.size,
+  const addedTrees=addedNear.concat(addedFar);
+  return {nearTrees:near.length+addedNear.length,
+    distantTrees:far.length+addedFar.length,
+    addedTrees:addedTrees.length,
+    addedEvergreens:addedTrees.filter(t=>t.evergreen).length,
+    elderTrees:allTrees.filter(t=>t.elder).length,
+    collidableTrees:allTrees,species:groups.size,
     understory,forestExtentMetres:470,
     // A walker samples the same triangles the eye actually sees. The terrain
     // approximation alone can dip below an uphill triangle between vertices.
