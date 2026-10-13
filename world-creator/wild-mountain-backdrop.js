@@ -191,12 +191,13 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
       rnd(i,7),0,Math.PI*2);
     vc.fill();
   }
-  // The user's reference has a tall stratified Appalachian sandstone
-  // escarpment, right of center and ABOVE the village roof line.
+  // A broad stratified Appalachian sandstone escarpment above the village.
+  // The narrow right-only cliff occupied just 24% of panorama pixels, and
+  // phone portrait FOV cropped it away. Extend across the full central view.
   // Outline includes projecting ledges and deep vertical clefts.
   const rockTop=x=>crest(x)+14+11*Math.sin(x*.047);
   vc.save();vc.beginPath();
-  const c0=1132,c1=1616;
+  const c0=430,c1=1845; // full central Appalachian escarpment, also visible on portrait phones
   vc.moveTo(c0,rockTop(c0)+40);
   for(let x=c0;x<=c1;x+=7)vc.lineTo(x,rockTop(x));
   for(let x=c1;x>=c0;x-=7){
@@ -210,7 +211,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   stone.addColorStop(.59,"#858f82");
   stone.addColorStop(1,"#515d52");
   vc.fillStyle=stone;vc.fillRect(c0,140,c1-c0,650);
-  for(let i=0;i<580;i++){
+  for(let i=0;i<1900;i++){
     const x=c0+rnd(i,23)*(c1-c0),y=170+rnd(i,24)*445;
     const len=10+rnd(i,25)*115;
     vc.strokeStyle=i%4===0?"#e2ddc594":i%3===0?"#4554478c":"#7a8476ab";
@@ -220,7 +221,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
     vc.stroke();
   }
   // Tree shadows and occasional hemlocks growing across rock benches.
-  for(let i=0;i<90;i++){
+  for(let i=0;i<160;i++){
     const x=c0+rnd(i,41)*(c1-c0),y=rockTop(x)+60+rnd(i,42)*315;
     const len=8+rnd(i,43)*40;
     vc.strokeStyle=i%3===0?"#384e3cb9":"#5b6d4b9c";
