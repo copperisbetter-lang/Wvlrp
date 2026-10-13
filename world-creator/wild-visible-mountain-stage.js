@@ -139,26 +139,26 @@ export function installVisibleVillageMountains(B,scene,camera,{
   }
   // The far wooded massif fills the *upper* village view. The silhouette is
   // varied for a recognizable uneven Appalachian mountain, not a green wall.
-  const farTop=x=>91+21*Math.exp(-Math.pow((x-28)/102,2))+
-    8*Math.sin(x*.019+1.5)+4*Math.sin(x*.082+.8);
+  const farTop=x=>58+17*Math.exp(-Math.pow((x-28)/102,2))+
+    7*Math.sin(x*.019+1.5)+3*Math.sin(x*.082+.8);
   surface("BACK Appalachian blue-green mountain ridge",190,-275,275,-48,
     x=>farTop(x)-13,farMat,1);
-  const woodedTop=x=>64+17*Math.exp(-Math.pow((x-5)/92,2))+
-    7*Math.sin(x*.021+.7)+4*Math.sin(x*.095);
+  const woodedTop=x=>43+12*Math.exp(-Math.pow((x-5)/92,2))+
+    6*Math.sin(x*.021+.7)+3*Math.sin(x*.095);
   surface("MID real wooded mountain hillside",158,-224,224,-42,
     woodedTop,woodsMat,2);
   // Long unmistakable exposed sandstone cliffs sit IN FRONT of the woodland
   // texture and well above all 10m roofs, behind every actual building.
-  const rockTop=x=>48+19*Math.exp(-Math.pow((x-16)/93,2))+
-    6*Math.sin(x*.024+1)+3*Math.sin(x*.13);
+  const rockTop=x=>34+12*Math.exp(-Math.pow((x-16)/93,2))+
+    5*Math.sin(x*.024+1)+2*Math.sin(x*.13);
   const rockBase=x=>19+5*Math.sin(x*.032+2)+
     8*Math.exp(-Math.pow((x+35)/80,2));
   surface("VISIBLE sunlit rocky cliff above Ranger Station",144,-167,167,
     rockBase,rockTop,rockMat,3);
   // Irregular wooded ledges at the foot of the cliff preserve the natural
   // valley look, without hiding the broad gray ridge behind the rooftops.
-  const nearTop=x=>14+9*Math.exp(-Math.pow(x/118,2))+
-    4*Math.sin(x*.046+.7)+2*Math.sin(x*.15);
+  const nearTop=x=>11+6*Math.exp(-Math.pow(x/118,2))+
+    3*Math.sin(x*.046+.7)+2*Math.sin(x*.15);
   surface("LOW green wooded foothill behind all village shops",133,-193,193,-34,
     nearTop,woodsMat,4);
 
