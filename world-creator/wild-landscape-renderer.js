@@ -6,6 +6,8 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
+import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=woodland-reference-20261013-v1";
+import {renderWildVillage} from "./wild-village.js?v=woodland-village-20261013-v1";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=low-brush-run-20261013-v9";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
@@ -348,7 +350,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight=null}){
   const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
   const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
   const place=(kind,x,y,i,j,salt,multiplier=1)=>{
-    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17)return;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17||!keepUnderstory(x,y))return;
     if(waterAt(x,y,seed))return;
     // Keep a narrow, usable approach to the cabin steps.
     if(Math.abs(x)<2.5&&y>0&&y<35)return;
@@ -366,7 +368,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight=null}){
   for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
     const x=(i+(hash(i,j,seed+336)-.5)*.76)*step;
     const y=(j+(hash(i,j,seed+337)-.5)*.76)*step;
-    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17)continue;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17||!keepUnderstory(x,y))continue;
     const roll=hash(i,j,seed+338);
     // Bare patches, stones, and woody debris still punctuate the rich floor.
     if(roll<.07)continue;
@@ -423,7 +425,8 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     const positions=mesh.getVerticesData(B.VertexBuffer.PositionKind),tints=[];
     for(let i=0;i<positions.length;i+=3){
       const x=cx+positions[i],y=cy+positions[i+2];
-      positions[i+1]=cabinGrade(x,y,seed)-offset;
+      positions[i+1]=gradeCommunityGround(x,y,cabinGrade(x,y,seed),
+         site=>cabinGrade(site.x,site.z,seed))-offset;
       // Woodland duff atlas stays visible; biome-specific color and dampness
       // tint it without turning the near ground into a flat brown carpet.
       const earth=earthColor(x,y,seed);
@@ -485,22 +488,26 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // Preserve prior forest: add about half again as many new trees, with 40%
   // evergreen additions (hemlock, white pine, Virginia pine) and +30%
   // old-growth veterans. Existing positions stay untouched.
-  const near=treesInArea(cx,cy,102,seed,8.65);
+  const near=treesInArea(cx,cy,102,seed,8.65).filter(t=>keepForestTree(t.x,t.y));
   // The old transition leapt from ~9m stands to 34m stands, producing the
   // photographically barren hillside beyond the first line of trees.
   // Fill that gap with mid-distance timber while retaining cheap LOD meshes.
   const mid=treesInArea(cx,cy,255,seed,16.7).filter(t=>{
+    if(!keepForestTree(t.x,t.y))return false;
     const d=Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy));
     return d>104&&d<=255;
   });
   const far=treesInArea(cx,cy,470,seed,33.9).filter(t=>
+    keepForestTree(t.x,t.y)&&
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>255);
-  const addedNear=supplementalTreesInArea(cx,cy,102,seed,8.65);
+  const addedNear=supplementalTreesInArea(cx,cy,102,seed,8.65).filter(t=>keepForestTree(t.x,t.y));
   const addedMid=supplementalTreesInArea(cx,cy,255,seed,16.7).filter(t=>{
+    if(!keepForestTree(t.x,t.y))return false;
     const d=Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy));
     return d>104&&d<=255;
   });
   const addedFar=supplementalTreesInArea(cx,cy,470,seed,33.9).filter(t=>
+    keepForestTree(t.x,t.y)&&
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>255);
   // Keep every trunk touching the terrain used by the CAMERA. Before this,
   // deeply sunk shrubs and stems looked absent or needle-thin on uphill slopes.
@@ -532,6 +539,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const heroPlants=heroZone?renderHeroUnderstory(B,scene,track,
     {cx,cy,seed,mobile,surfaceHeight:walkSurface}):0;
+   const community=renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const addedTrees=addedNear.concat(addedMid,addedFar);
   return {nearTrees:near.length+addedNear.length,
     distantTrees:mid.length+far.length+addedMid.length+addedFar.length,
@@ -540,6 +548,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     elderTrees:allTrees.filter(t=>t.elder).length,
     collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
     understory:understory+heroPlants,heroPlants,
+     communityBuildings:community.buildings,communityPaths:community.paths,
     heroGraphics:heroZone,forestExtentMetres:470,
     // True interpolated altitude of the visible ground, including on steep
     // slopes and after streamed-tile changes. No Babylon stale height cache.
