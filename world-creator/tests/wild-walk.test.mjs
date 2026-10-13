@@ -38,3 +38,17 @@ test("Double tapping the joystick center switches between running and walking",(
   assert.match(page,/#joystick\.running/);
   assert.match(page,/Double-tap stick center: run \/ walk/);
 });
+
+test("Joystick steering turns the camera toward the movement vector, not sideways",()=>{
+  assert.match(walk,/moveReferenceHeading=camera\.rotation\.y/);
+  assert.match(walk,/moveReferenceHeading\+Math\.atan2\(side,f\)/);
+  assert.match(walk,/camera\.rotation\.y\+=Math\.max\(-maxTurn/);
+  assert.match(walk,/const dx=Math\.sin\(yaw\)\*pace,dz=Math\.cos\(yaw\)\*pace/);
+  assert.match(walk,/else moveReferenceHeading=null/);
+  assert.match(page,/Left thumb: steer & move/);
+});
+test("One level native village plaza has a permanent fire and grounded porches",()=>{
+  assert.match(walk,/communityFirePits/);
+  assert.match(walk,/COMMUNITY_SITES,VILLAGE_CLEARING/);
+  assert.match(walk,/return ground\+\.78/);
+});
