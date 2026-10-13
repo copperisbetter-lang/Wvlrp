@@ -119,7 +119,7 @@ export function installVisibleVillageMountains(B,scene,camera,{
       for(let j=0;j<rows;j++){
         const f=j/(rows-1);
         // These are actual vertices at varying depths, not a billboard.
-        verts.push(x,villageY+base+(top-base)*f,
+        verts.push(villageX+x,villageY+base+(top-base)*f,
           z+.8*Math.sin(x*.028+seedOffset)+.27*Math.sin(x*.15+j));
         uvs.push(i/steps*3.5,f);
         if(i>0&&j>0){
