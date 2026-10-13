@@ -327,7 +327,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
   cliffMaterial.backFaceCulling=false;
   cliffMaterial.specularColor=new B.Color3(.06,.055,.05);
   const solidCliff=new B.Mesh("SOLID_VISIBLE_ROCK_MOUNTAIN_BEHIND_RANGER",scene);
-  const p=[],uv=[],indices=[],colors=[],N=120;
+  const p=[],uv=[],indices=[],cliffColors=[],N=120;
   for(let i=0;i<=N;i++){
     const x=-100+i*300/N;
     const mound=Math.exp(-Math.pow((x-55)/91,2));
@@ -340,7 +340,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
       p.push(x,y,j===1?-2.0*Math.sin(x*.033):0);
       uv.push(i/N*3.5,j*.85);
       const shade=j===0?1:j===1?.76:.63;
-      colors.push(shade,shade*.99,shade*.92,1);
+      cliffColors.push(shade,shade*.99,shade*.92,1);
     }
     if(i>0)for(let j=0;j<2;j++){
       const a=(i-1)*3+j,b=i*3+j;
@@ -349,7 +349,7 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
   }
   const cliffData=new B.VertexData();
   cliffData.positions=p;cliffData.indices=indices;cliffData.uvs=uv;
-  cliffData.colors=colors;
+  cliffData.colors=cliffColors;
   const norms=[];B.VertexData.ComputeNormals(p,indices,norms);
   cliffData.normals=norms;cliffData.applyToMesh(solidCliff);
   solidCliff.material=cliffMaterial;solidCliff.isPickable=false;
