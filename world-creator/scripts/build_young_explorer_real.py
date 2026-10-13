@@ -128,96 +128,137 @@ def make_plaid():
     return m
 
 def make_dress(body,rig,root):
+    """Tailor a real dress to THIS continuous child basemesh, not the former blob.
+
+    Sample each cross-section of the actual exported human body. Fitted chest,
+    waist and shoulder sections have a small fabric ease; the skirt flares only
+    gently below the waist. These measurements are regenerated on every build.
+    """
     plaid=make_plaid()
     cream=material('Young Explorer dress finishing seams',(.83,.78,.68))
     pts=[body.matrix_world@v.co for v in body.data.vertices]
-    z0=min(p.z for p in pts);h=max(p.z for p in pts)-z0
+    z0=min(p.z for p in pts)
+    h=max(p.z for p in pts)-z0
     cx=(min(p.x for p in pts)+max(p.x for p in pts))*.5
-    mid=[p for p in pts if z0+.55*h<p.z<z0+.7*h and abs(p.x-cx)<.075*h]
-    cy=sum(p.y for p in mid)/max(1,len(mid))
-    n=48;v=[];f=[];materials=[];rings=[]
-    def insert(p):v.append(tuple(p));return len(v)-1
-    def quad(a,b,c,d,mi=0):f.append((a,b,c,d));materials.append(mi)
-    def section(l):
-        z=z0+l*h
-        found=[p for p in pts if abs(p.z-z)<.02*h and abs(p.x-cx)<.13*h]
-        if len(found)<20:found=[p for p in pts if abs(p.z-z)<.045*h and abs(p.x-cx)<.17*h]
-        if len(found)<15:raise RuntimeError('Cannot fit child dress to human torso at '+str(l))
-        vals=sorted(p.y for p in found)
-        return found,(vals[int(.13*(len(vals)-1))]+vals[int(.87*(len(vals)-1))])*.5
-    def radius(l,t):
-        sample,m=section(l)
-        ux,uy=math.cos(t),math.sin(t)
-        near=[]
-        for p in sample:
-            dx,dy=p.x-cx,p.y-m
-            length=math.hypot(dx,dy)
-            if length>.002*h and (dx*ux+dy*uy)/length>.84:near.append(length)
-        if len(near)<3:near=[max(0.,(p.x-cx)*ux+(p.y-m)*uy) for p in sample]
-        near.sort()
-        return max(.03*h,near[int(.85*(len(near)-1))])
-    levels=[.44,.456,.48,.51,.54,.57,.60,.63,.666,.695,.712]
-    waist=[radius(.61,2*math.pi*i/n) for i in range(n)]
+    n=64
+    v=[];f=[];materials=[];rings=[];fitted=[]
+    def insert(p):
+        v.append(tuple(p))
+        return len(v)-1
+    def quad(a,b,c,d,mi=0):
+        f.append((a,b,c,d));materials.append(mi)
+    def percentile(sorted_values,fraction):
+        return sorted_values[min(len(sorted_values)-1,int(fraction*(len(sorted_values)-1)))]
+
+    def body_section(level):
+        z=z0+level*h
+        # Keep the sample on the torso/upper legs, not the outstretched arms.
+        # Earlier construction used one broad circular radius; it made the
+        # clothing sized like the old rounded test avatar.
+        sample=[]
+        for tolerance in (.012,.022,.040,.062):
+            sample=[p for p in pts if abs(p.z-z)<tolerance*h and abs(p.x-cx)<.145*h]
+            if len(sample)>=30:break
+        if len(sample)<20:
+            raise RuntimeError('Insufficient realistic body cross-section for fitted dress at '+str(level))
+        xs=sorted(p.x for p in sample)
+        ys=sorted(p.y for p in sample)
+        xl,xr=percentile(xs,.025),percentile(xs,.975)
+        yb,yf=percentile(ys,.025),percentile(ys,.975)
+        midx=(xl+xr)*.5
+        midy=(yb+yf)*.5
+        return midx,midy,max(.023*h,(xr-xl)*.5),max(.023*h,(yf-yb)*.5)
+
+    # A fitted bodice and lightly flared knee-to-thigh length skirt.
+    # No whole-body scaling, fixed mannequin ring, or inflated blob radius.
+    levels=[.405,.423,.45,.48,.51,.54,.57,.595,.61,.635,.665,.69,.715]
+    waist=body_section(.61)
     for j,l in enumerate(levels):
         ring=[]
+        bx,by,rx_body,ry_body=body_section(l)
+        if l<.61:
+            # Cover hips/upper thighs without ballooning the dress.
+            # At hem add only ~1.8cm for a 1m model, not the old ~7cm.
+            flare=max(0.,(.61-l)/(.61-levels[0]))*.018*h
+            # The skirt hangs from the fitted waist while clearing real hips.
+            rx=max(rx_body+.012*h,waist[2]+.008*h)+flare
+            ry=max(ry_body+.012*h,waist[3]+.008*h)+flare*.70
+        else:
+            # Gentle ease over chest/waist: ~8-11mm for a 1m-tall child.
+            rx=rx_body+.010*h
+            ry=ry_body+.011*h
+        fitted.append(dict(z_fraction=l,skin_half_width=round(rx_body,5),
+                           cloth_half_width=round(rx,5),skin_half_depth=round(ry_body,5),
+                           cloth_half_depth=round(ry,5),
+                           width_ratio=round(rx/rx_body,3),
+                           depth_ratio=round(ry/ry_body,3)))
         for k in range(n):
             t=2*math.pi*k/n
-            if l<.61:
-                r=max(waist[k]+(.069*h)*(.61-l)/(.61-.44),radius(.61,t)+.015*h)
-                r*=1+.009*math.sin(t*11)
-            else:
-                r=radius(min(.713,l),t)+.009*h
-                if l>.68:r=min(r,.116*h)
-            _,my=section(max(.61,l))
-            z=z0+l*h+(.002*h*math.sin(11*t) if j==0 else 0)
-            ring.append(insert((cx+r*math.cos(t),my+r*math.sin(t),z)))
+            ripple=1+.005*math.sin(10*t) if l<.595 else 1.
+            z=z0+l*h+(.002*h*math.sin(10*t) if j==0 else 0.)
+            ring.append(insert((bx+rx*ripple*math.cos(t),
+                                by+ry*ripple*math.sin(t),z)))
         if rings:
             prev=rings[-1]
-            for k in range(n):k2=(k+1)%n;quad(prev[k],prev[k2],ring[k2],ring[k])
+            for k in range(n):
+                k2=(k+1)%n
+                quad(prev[k],prev[k2],ring[k2],ring[k])
         rings.append(ring)
-    # Proper neckline: shoulders covered by straps; full dress is child-appropriate.
+
+    # Both shoulder straps sit on the actual body; no floating old-model fit.
     top=rings[-1]
-    for side in [-1,1]:
-        x=cx+side*.068*h
-        front=min((v[i] for i in top if (v[i][0]-cx)*side>0),key=lambda p:abs(p[0]-x)+max(0,p[1]-cy)*2)
-        back=min((v[i] for i in top if (v[i][0]-cx)*side>0),key=lambda p:abs(p[0]-x)+max(0,cy-p[1])*2)
-        path=[front,(x,cy-.050*h,z0+.762*h),(x,cy,z0+.781*h),
-              (x,cy+.050*h,z0+.762*h),back]
+    shoulder_section=body_section(.755)
+    strap_x=max(.04*h,min(.072*h,shoulder_section[2]*.74))
+    for side in (-1,1):
+        x=cx+side*strap_x
+        front=min((v[i] for i in top if (v[i][0]-cx)*side>0),
+                  key=lambda p:abs(p[0]-x)+max(0,p[1]-shoulder_section[1])*2)
+        back=min((v[i] for i in top if (v[i][0]-cx)*side>0),
+                 key=lambda p:abs(p[0]-x)+max(0,shoulder_section[1]-p[1])*2)
+        sx,sy,srx,sry=shoulder_section
+        path=[front,(sx+side*strap_x,sy-sry-.009*h,z0+.751*h),
+              (sx+side*strap_x,sy,z0+.770*h),
+              (sx+side*strap_x,sy+sry+.009*h,z0+.751*h),back]
         strips=[]
         for p in path:
-            strips.append((insert((p[0]-.006*h,p[1],p[2])),
-                           insert((p[0]+.006*h,p[1],p[2]))))
+            strips.append((insert((p[0]-.008*h,p[1],p[2])),
+                           insert((p[0]+.008*h,p[1],p[2]))))
         for k in range(len(strips)-1):
             a,b=strips[k];c,d=strips[k+1];quad(a,b,d,c)
-    mesh=bpy.data.meshes.new('Complete child sundress 3D cloth mesh')
+
+    # Reject the oversized-bodice regression before publishing an outfit.
+    for sec in fitted:
+        if sec['z_fraction']>=.61 and (sec['width_ratio']>1.31 or sec['depth_ratio']>1.40):
+            raise RuntimeError('Dress bodice is not fitted to child: '+str(sec))
+    mesh=bpy.data.meshes.new('Measured, fitted child sundress cloth mesh')
     mesh.from_pydata(v,[],f);mesh.update()
     mesh.materials.append(plaid);mesh.materials.append(cream)
     uv=mesh.uv_layers.new(name='Plaid UV')
-    # Continuous plaid coverage with natural fabric folds.
     for face in mesh.polygons:
         for loop_id in face.loop_indices:
             vertex=mesh.vertices[mesh.loops[loop_id].vertex_index].co
-            a=math.atan2(vertex.y-cy,vertex.x-cx)
-            uv.data[loop_id].uv=((a+math.pi)/(2*math.pi)*3,
+            angle=math.atan2(vertex.y-waist[1],vertex.x-waist[0])
+            uv.data[loop_id].uv=((angle+math.pi)/(2*math.pi)*3,
                                   ((vertex.z-z0)/h)*7)
         face.use_smooth=True
-    obj=bpy.data.objects.new('Young Explorer fitted opaque plaid sundress',mesh)
+    obj=bpy.data.objects.new('Young Explorer body-fitted opaque plaid sundress',mesh)
     bpy.context.collection.objects.link(obj)
     hip=get_bone(rig,'hips','pelvis')
     spine=get_bone(rig,'spine','spine1')
     chest=get_bone(rig,'spine2','chest','upperchest') or spine
     if not hip or not spine:raise RuntimeError('Young Explorer bone groups missing')
-    groups={n:obj.vertex_groups.new(name=n) for n in {hip,spine,chest}}
+    groups={name:obj.vertex_groups.new(name=name) for name in {hip,spine,chest}}
     for i,(_,_,z) in enumerate(v):
         l=(z-z0)/h
-        if l<.61:weights={hip:1.}
+        if l<.61: weights={hip:1.}
         elif l<.69:weights={hip:(.69-l)/.08,spine:(l-.61)/.08}
         else:weights={spine:max(0,(.79-l)/.10),chest:min(1,max(0,(l-.69)/.10))}
         for name,w in weights.items():
             if w>0:groups[name].add([i],w,'REPLACE')
-    obj.modifiers.new('Dress follows human bones','ARMATURE').object=rig
+    obj.modifiers.new('Dress follows child armature','ARMATURE').object=rig
     world=obj.matrix_world.copy();obj.parent=root;obj.matrix_world=world
-    print('WVLRP_CHILD_DRESS_FITTED',len(v),'vertices','hem_fraction',levels[0])
+    print('WVLRP_CHILD_DRESS_FITTED_TO_REAL_BODY',json.dumps(fitted,sort_keys=True),
+          'vertices',len(v),'height_m',round(h,3))
     return obj
 
 def make_shoes(body,rig,root):
