@@ -41,5 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wild-first-step-mobile-visual-qa
-          path: world-creator/wild-walk-qa.png
+          path: |
+            world-creator/wild-walk-qa.png
+            world-creator/wild-village-qa.png
           if-no-files-found: ignore
