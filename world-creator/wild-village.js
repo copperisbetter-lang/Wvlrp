@@ -107,21 +107,25 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
  const w=site.width,d=site.depth,station=site.id==="wild-ranger-station",
   kitchen=site.id==="wild-laurels-kitchen";
  const wall=station?5.45:5.6,peak=station?10.4:kitchen?9.6:10.5;
+ // Different architectural identities, on the same existing walkable plots.
+ const woodFinish=station?materials.timber:kitchen?materials.kitchenWood:materials.storeWood;
+ const roofFinish=station?materials.roof:kitchen?materials.kitchenRoof:materials.storeRoof;
+ const trimFinish=station?materials.trim:kitchen?materials.kitchenTrim:materials.storeTrim;
  const front=Z-d/2,back=Z+d/2;
  // Stone rubble footing, horizontal timber planks, timber end walls.
  S.box(site.name+" thick stone foundation",w+1,1.05,d+.65,X,Y+.15,Z,materials.stone);
- S.box(site.name+" entry interior",w-.15,wall-.62,d-.15,X,Y+wall/2+.6,Z,materials.timber);
+ S.box(site.name+" entry interior",w-.15,wall-.62,d-.15,X,Y+wall/2+.6,Z,woodFinish);
  for(let h=1.30;h<wall;h+=.66){
-   S.box(site.name+" staggered horizontal log course",w+.2,.16,.26,X,Y+h,front-.09,materials.frame);
-   S.box(site.name+" rear log course",w+.2,.16,.24,X,Y+h,back+.10,materials.frame);
+   S.box(site.name+" staggered horizontal log course",w+.2,.16,.26,X,Y+h,front-.09,station?materials.frame:woodFinish);
+   S.box(site.name+" rear log course",w+.2,.16,.24,X,Y+h,back+.10,station?materials.frame:woodFinish);
  }
- S.gable(site.name+" front timber gable",w,Y+wall, Y+peak,front,materials.timber,X);
- S.gable(site.name+" rear timber gable",w,Y+wall,Y+peak,back,materials.timber,X);
+ S.gable(site.name+" front timber gable",w,Y+wall, Y+peak,front,woodFinish,X);
+ S.gable(site.name+" rear timber gable",w,Y+wall,Y+peak,back,woodFinish,X);
  const rise=peak-wall,span=w/2+.75,angle=Math.atan2(rise,span);
  const sloping=Math.hypot(rise,span)+.75;
  // Real 3D standing-seam metal roofing with sloped panels and ridge cap.
- S.box(site.name+" left metal roof",sloping,.22,d+1.8,X-span/2,Y+(peak+wall)/2,Z,materials.roof,angle);
- S.box(site.name+" right metal roof",sloping,.22,d+1.8,X+span/2,Y+(peak+wall)/2,Z,materials.roof,-angle);
+ S.box(site.name+" left metal roof",sloping,.22,d+1.8,X-span/2,Y+(peak+wall)/2,Z,roofFinish,angle);
+ S.box(site.name+" right metal roof",sloping,.22,d+1.8,X+span/2,Y+(peak+wall)/2,Z,roofFinish,-angle);
  S.box(site.name+" ridge cap",.29,.21,d+1.7,X,Y+peak+.06,Z,materials.metal);
  for(let u=2;u<sloping-1;u+=1.12){
    const dx=(span-u*Math.cos(angle));
@@ -132,7 +136,7 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
  // Massive porch and its slate/log awning.
  const porchD=station?4.45:4.65,porchY=Y+.78,porchFront=front-porchD;
  S.box(site.name+" covered porch floor",w+2,.33,porchD+1,X,porchY,front-porchD/2,materials.frame);
- S.box(site.name+" porch roof",w+2.2,.24,porchD+1.4,X,Y+4.18,front-porchD/2,materials.roof);
+ S.box(site.name+" porch roof",w+2.2,.24,porchD+1.4,X,Y+4.18,front-porchD/2,roofFinish);
  S.box(site.name+" fascia board",w+2.25,.40,.25,X,Y+4.02,porchFront-.32,materials.timber);
  S.box(site.name+" weathered roof edge",w+2.1,.12,.23,X,Y+4.21,porchFront-.43,materials.trim);
  for(let i=0;i<=4;i++){
@@ -174,7 +178,7 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
  }
  S.sign(site.name+" hand-lettered plaque",
    station?"Ranger Station":kitchen?"Laurel's Kitchen":"Mercantile & Gift Shop",
-   X,Y+5.35,front-1.23,station?14.7:kitchen?12.8:17.4,1.28);
+   X,Y+(station?5.35:kitchen?5.45:8.18),station?front-1.23:kitchen?front-1.23:front-1.65,station?14.7:kitchen?12.8:17.4,1.28);
  // Lanterns glow by day under the sheltered porch.
  for(const side of [-1,1]){
    const lx=X+side*2.45;
@@ -194,12 +198,71 @@ function stageVillageBuilding(B,scene,track,site,cx,cy,seed,surfaceHeight,materi
  // Kitchen: an additional front dormer and garden edge, Mercantile: upstairs
  // broad windows and business-like porch, Ranger: center loft windows.
  if(kitchen){
-   S.box(site.name+" central dormer",4,2.1,1.65,X,Y+wall+1.13,front+2.1,materials.timber);
+   S.box(site.name+" central dormer",4,2.1,1.65,X,Y+wall+1.13,front+2.1,woodFinish);
    S.window(site.name+" kitchen dormer glass",X,Y+wall+1.30,front+1.24,1.35,1.55);
  }else if(!station){
    S.window(site.name+" mercantile loft glass",X,Y+wall+1.04,front+1.22,2.1,1.35);
  }else{
    S.window(site.name+" ranger loft glass",X,Y+wall+.55,front+1.23,1.3,1.1);
+ }
+
+ // Local details are decorative; foundations, entrances, original world-marker
+ // coordinates, walk controls and network synchronization are unchanged.
+ if(kitchen){
+   // Cottage board-and-batten detailing, window shutters, herbs and flowers.
+   for(let i=0;i<15;i++){
+     const x=X-w*.46+i*w*.92/14;
+     if(Math.abs(x-X)<2.2||Math.abs(Math.abs(x-X)-w*.29)<2.2)continue;
+     S.box(site.name+" vertical cottage batten "+i,.12,wall-1.12,.22,
+       x,Y+wall*.56,front-.24,trimFinish);
+   }
+   for(const side of [-1,1]){
+     const x=X+side*w*.29;
+     for(const sh of [-1,1])S.box(site.name+" painted window shutter",
+        .44,2.7,.20,x+sh*1.77,Y+3.0,front-.40,materials.kitchenShutter);
+     S.planter(site.name+" blooming window herb trough",x,Y+1.55,front-.8,materials.flowers);
+     S.planter(site.name+" porch herb garden",X+side*w*.43,Y+.15,porchFront-1.8,materials.flowers);
+   }
+   S.box(site.name+" kitchen roof ridge trim",.34,.26,d+2,X,Y+peak+.09,Z,trimFinish);
+ }else if(station){
+   // The ranger lodge is the substantial stone-and-timber central landmark.
+   for(const side of [-1,1]){
+     S.box(site.name+" carved timber porch brace",1.22,.42,.55,
+       X+side*w*.39,Y+3.72,porchFront,materials.trim);
+     S.box(site.name+" solid entrance sandstone pier",1.0,1.12,1.0,
+       X+side*(w*.5+.45),Y+1.05,porchFront,materials.stone);
+   }
+   S.box(site.name+" ranger stone and timber crest base",2.5,1.1,.33,
+     X,Y+7.6,front-1.21,materials.frame);
+ }else{
+   // Mercantile: unmistakable old-fashioned false-front general store.
+   // Facade fronts the real roof; visually different silhouette than gables.
+   S.box(site.name+" old general-store raised false-front",w+.95,3.8,.46,
+     X,Y+7.25,front-1.13,woodFinish);
+   S.box(site.name+" storefront top coping",w+1.3,.34,.73,
+     X,Y+9.31,front-1.28,trimFinish);
+   S.box(site.name+" storefront top inset band",w*.87,.18,.52,
+     X,Y+8.90,front-1.43,materials.frame);
+   for(let j=0;j<19;j++){
+      S.box(site.name+" vertical cedar storefront board "+j,.13,3.54,.19,
+        X-w*.46+j*w*.92/18,Y+7.22,front-1.43,trimFinish);
+   }
+   // Store sign is mounted in front of the false-front, not buried inside it.
+   S.sign(site.name+" main painted trading-post sign","Mercantile & Gift Shop",
+     X,Y+8.22,front-1.75,w*.77,1.25);
+   for(const side of [-1,1]){
+     const x=X+side*w*.35;
+     S.box(site.name+" broad store display window",3.90,2.84,.20,
+       x,Y+2.75,front-.54,materials.glass);
+     S.box(site.name+" window display shelf",4.18,.24,1.05,
+       x,Y+1.42,front-1.12,materials.frame);
+     for(let j=0;j<3;j++)S.box(site.name+" local goods crates "+j,
+       .80,.62,.68,x+(j-1)*1.08,Y+1.86,front-1.24,materials.storeTrim);
+   }
+   for(const side of [-1,1]){
+      S.box(site.name+" trading post barrel",.83,1.25,.83,
+        X+side*w*.44,Y+.78,porchFront-1.18,materials.frame);
+   }
  }
  return 1;
 }
@@ -244,6 +307,14 @@ function trails(B,scene,track,{cx,cy,seed,surfaceHeight,materials}){
 }
 export function renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight}){
  const mats={
+   kitchenWood:material(B,scene,track,"Laurel honey cottage timber","#b58c62"),
+   kitchenRoof:material(B,scene,track,"Laurel weathered brown shingle","#62544a"),
+   kitchenTrim:material(B,scene,track,"Laurel cream cabin trim","#c6a47c"),
+   kitchenShutter:material(B,scene,track,"Laurel sage shutters","#60765c"),
+   storeWood:material(B,scene,track,"mercantile aged reddish cedar","#80503c"),
+   storeRoof:material(B,scene,track,"mercantile dark weathered tin","#565351"),
+   storeTrim:material(B,scene,track,"mercantile warm timber edging","#ac8161"),
+
    timber:material(B,scene,track,"WV aged honey poplar","#78583b"),
    frame:material(B,scene,track,"WV deep weathered walnut","#513a29"),
    stone:material(B,scene,track,"native cut field sandstone","#777167"),
@@ -273,7 +344,7 @@ export function renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight}){
  }
  grain.update(false);grain.wrapU=B.Texture.WRAP_ADDRESSMODE;
  grain.wrapV=B.Texture.WRAP_ADDRESSMODE;
- for(const mat of [mats.timber,mats.frame,mats.trim,mats.door])
+ for(const mat of [mats.timber,mats.frame,mats.trim,mats.door,mats.kitchenWood,mats.kitchenTrim,mats.storeWood,mats.storeTrim])
    mat.diffuseTexture=grain;
  let buildings=0;
  for(const site of COMMUNITY_SITES){
