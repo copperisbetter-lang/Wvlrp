@@ -38,7 +38,14 @@ export function buildHearthsideCabin(B, scene, track, cx, groundY, cz, showRoof=
   for(let level=0;level<levels;level++){
     const y=.22+level*logH,log=(level%3===0?"trim":"log");
     for(const side of [-1,1]){
-      box("side log "+side+" "+level,.43,logH-.028,14.3,side*8.85,y,0,log);
+      // Side-wall windows are real openings, not glass pasted on solid logs.
+      if(y>=1.3&&y<=3.16){
+        for(const seg of [{z:-5.5,l:3.0},{z:-.25,l:3.3},{z:5.35,l:3.3}])
+          box("window-jamb side log "+side+" "+level+" "+seg.z,.43,logH-.028,seg.l,
+            side*8.85,y,seg.z,log);
+      }else{
+        box("side log "+side+" "+level,.43,logH-.028,14.3,side*8.85,y,0,log);
+      }
       box("rear log "+side+" "+level,9.1,logH-.028,.46,side*4.4,y,-6.85,log);
       // Entry faces out to the porch (+Z). Door has a real 2m wide gap.
       if(y>2.95)box("front upper "+side+" "+level,8.88,logH-.028,.46,side*4.4,y,6.85,log);
@@ -56,6 +63,10 @@ export function buildHearthsideCabin(B, scene, track, cx, groundY, cz, showRoof=
     for(const yy of [1.26,3.2])box("window casing rail",.17,.16,2.4,xx,yy,zz,"trim");
     box("window sash",.12,.12,2.25,xx,2.22,zz,"trim");
   }
+  // Open solid-timber front door swung inward, with forged black handle.
+  const door=box("front door swung open",1.85,2.82,.17,1.82,1.47,5.92,"trim");
+  door.rotation.y=-1.18;
+  box("front door pull",.12,.34,.13,2.08,1.43,6.14,"iron");
   // High gable roof: hide roof halves to expose the entire interior.
   for(const side of [-1,1]){
     const roof=box("cedar roof slope "+side,10.3,.28,16.2,side*4.3,5.45,0,"roof",true);
