@@ -6,9 +6,9 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v8";
-import {renderWildVillage} from "./wild-village.js?v=real-stone-timber-slate-20261013-v2";
-import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=full-brush-plaza-20261013-v10";
+import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
+import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=mountain-sightline-v9";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
