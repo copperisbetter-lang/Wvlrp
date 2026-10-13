@@ -6,10 +6,10 @@
   'use strict';
   const q=id=>document.getElementById(id);
   const specs = [
-    ['outerLength', 'Outer labia length', 50, 400, 100, '%'],
-    ['outerThickness', 'Outer labia fullness', 40, 400, 100, '%'],
-    ['innerLength', 'Inner labia length', 50, 400, 100, '%'],
-    ['innerThickness', 'Inner labia fullness', 40, 400, 100, '%'],
+    ['outerLength', 'Outer labia length', 50, 400, 400, '%'],
+    ['outerThickness', 'Outer labia fullness', 40, 400, 400, '%'],
+    ['innerLength', 'Inner labia length', 50, 400, 400, '%'],
+    ['innerThickness', 'Inner labia fullness', 40, 400, 400, '%'],
     ['topFlapFold', 'Fold top outer flap back toward body', -30, 100, 0, ' mm'],
     ['hoodLength', 'Clitoral hood length — reserved', 65, 150, 100, '%'],
     ['hoodThickness', 'Clitoral hood thickness — reserved', 50, 175, 100, '%'],
@@ -20,13 +20,13 @@
   const panel=document.createElement('section');
   panel.setAttribute('aria-label','Riley independent labia and upper flap fitting controls');
   panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #93b89f;background:#254737;border-radius:12px;color:#f1f9ed';
-  panel.innerHTML='<strong>Labia shape + separate top-flap fold — Riley trial</strong>'+
+  panel.innerHTML='<strong>MAX-size revised anatomy — inner/outer lip controls</strong>'+
     '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">Move a lip length/fullness slider above 100% for an obvious change in the attached 3D mesh (up to 400%). You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
     specs.map(([id,label,min,max,initial,unit])=>
       '<label style="display:block;margin:9px 0;'+(futureIds.has(id)?'opacity:.55;':'')+'">'+label+': <output id="'+id+'Amount">'+initial+unit+'</output>'+
       '<input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"'+(futureIds.has(id)?' disabled title="Reserved until separate clitoral and hood geometry is present"':'')+' style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>'
     ).join('')+
-    '<div><button type="button" id="rileyMorphOriginal">Reset lip sizes (100%)</button>'+
+    '<div><button type="button" id="rileyAllSizeMax">Set ALL size controls to MAX</button><button type="button" id="rileyMorphOriginal">Reset lip sizes (100%)</button>'+
     '<button type="button" id="rileyFlapOriginal">Unfold top flap (0 mm)</button></div>'+
     '<p id="rileyMorphStatus" role="status" style="font-size:12px;margin:8px 0;color:#e4f2e4">Waiting for donor mesh…</p>'+
     '<p style="font-size:12px;margin:8px 0;color:#dbe9dc">Hood/clitoris sliders are intentionally disabled until a proper detailed mesh exists. This is a reversible viewport deformation, not an exported GLB or a mesh weld.</p>';
@@ -44,6 +44,14 @@
       applyPelvicFit();
     };
   }
+  q('rileyAllSizeMax').onclick=()=>{
+    q('overallSize').value=300;
+    for(const id of ['outerLength','outerThickness','innerLength','innerThickness']){
+      q(id).value=400;
+      q(id+'Amount').textContent='400%';
+    }
+    applyPelvicFit();
+  };
   q('rileyMorphOriginal').onclick=()=>{
     for(const id of ['outerLength','outerThickness','innerLength','innerThickness']){
       q(id).value=100;q(id+'Amount').textContent='100%';
@@ -75,8 +83,11 @@
       // Localize both lips on the central lower part of this sparse donor.
       // The former weak morph moved only a few millimeters and was easily
       // obscured by the full-size body and its oversized upper sheet.
-      const o=bump(nx,.29,.24)*bump(v,.48,.37);
-      const inn=bump(nx,.075,.13)*bump(v,.47,.35);
+      // Source labial ridges lie close to the midline. Distinct radial
+      // bands on the subdivided mesh give independent, smooth deformation.
+      // Outer target ~0.15 of donor half-width; inner ~0.035.
+      const o=bump(nx,.15,.115)*bump(v,.43,.30);
+      const inn=bump(nx,.035,.048)*bump(v,.43,.29);
       const top=smooth((v-.69)/.28)*(.20+.80*smooth((nx-.12)/.46));
       outer[i]=o;inner[i]=inn;upperFlap[i]=top;
       if(o>.18)outerCount++;if(inn>.18)innerCount++;if(top>.18)flapCount++;
@@ -127,9 +138,11 @@
       // Physical displacements follow the enlarged insert. Longer controls
       // stretch the lips vertically; fullness adds visible forward relief
       // AND left/right width, without enlarging the entire upper flap.
-      const dy=-size*(.062*outerLength*o+.048*innerLength*inn)*extend;
-      const relief=size*(.032*outerThickness*o+.025*innerThickness*inn);
-      const lateral=Math.sign(x)*size*(.013*outerThickness*o+.009*innerThickness*inn);
+      // Max settings are intentionally strong but vertex displacements
+      // remain on a human-scale range, rather than the old 0.5-meter stretch.
+      const dy=-size*(.009*outerLength*o+.006*innerLength*inn)*extend;
+      const relief=size*(.007*outerThickness*o+.005*innerThickness*inn);
+      const lateral=Math.sign(x)*size*(.004*outerThickness*o+.0025*innerThickness*inn);
       // Independently hinge the upper outside sheet backward toward the body.
       // The change tapers smoothly to zero below its upper attachment.
       const fold=foldMM/1000*flap;
