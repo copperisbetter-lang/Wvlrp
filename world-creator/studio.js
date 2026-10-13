@@ -670,6 +670,26 @@ function refresh3d() {
   const normals=[];BABYLON.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
   ground.updateVerticesData(BABYLON.VertexBuffer.PositionKind,positions);
   ground.updateVerticesData(BABYLON.VertexBuffer.NormalKind,normals);
+  // Woodland floor variation: leaf litter, earth, silt and stone in place of
+  // the old flat green grass. Deterministic vertex tints cost no image fetches.
+  const earthColors=[];
+  for(let i=0;i<positions.length;i+=3){
+    const wx=view.x+positions[i],wy=view.y+positions[i+2];
+    const patch=hash(Math.floor(wx/8),Math.floor(wy/8),seed+931);
+    const fine=hash(Math.floor(wx/3),Math.floor(wy/3),seed+127);
+    const slope=Math.abs(heightAt(wx+4,wy,seed)-heightAt(wx-4,wy,seed))+
+      Math.abs(heightAt(wx,wy+4,seed)-heightAt(wx,wy-4,seed));
+    const nearWater=Math.abs(wy-creekY(wx,seed))<22;
+    const rock=Math.min(1,slope*8);
+    const shade=(patch-.5)*.12+(fine-.5)*.08;
+    const base=nearWater?[.38,.38,.36]:[.36+.06*rock,.28+.08*rock,.22+.10*rock];
+    earthColors.push(Math.max(.06,Math.min(1,base[0]+shade)),
+      Math.max(.06,Math.min(1,base[1]+shade)),
+      Math.max(.06,Math.min(1,base[2]+shade)),1);
+  }
+  ground.setVerticesData(BABYLON.VertexBuffer.ColorKind,earthColors,true);
+  ground.useVertexColors=true;
+  forest.diffuseColor=new BABYLON.Color3(1,1,1);
   ground.material=forest;
   // The placeholder cylinder trunks and ball crowns are retired.
   // Convincing native trees will be added as proper forest assets later.
