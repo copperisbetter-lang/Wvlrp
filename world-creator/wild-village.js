@@ -330,22 +330,118 @@ export function renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight}){
    door:material(B,scene,track,"heritage forest-green doors","#24423a"),
    lantern:material(B,scene,track,"warm amber porch lantern","#ffbe58",true)
  };
- // Fine plank grain keeps broad siding from looking like flat brown cubes.
- const grain=track(new B.DynamicTexture("weathered village timber grain",
-   {width:128,height:256},scene,false));
- const ctx=grain.getContext();
- ctx.fillStyle="#e5d2b9";ctx.fillRect(0,0,128,256);
- for(let i=0;i<270;i++){
-   const x=(i*53.91)%128,y=(i*97.37)%256;
-   ctx.strokeStyle=i%7===0?"#584c3a38":"#84705624";
-   ctx.lineWidth=i%5===0?1.8:.68;
-   ctx.beginPath();ctx.moveTo(x,y);
-   ctx.bezierCurveTo(x-4,y+9,x+5,y+21,x+(i%3)-1,y+37);ctx.stroke();
+ // Material-specific, irregular surfaces. Flat one-color boxes were making
+ // all three buildings read as the same generic low-poly structure.
+ // These procedural textures are baked ONCE and reused across the settlement.
+ function surfaceTexture(name,w,h,paint){
+   const tex=track(new B.DynamicTexture(name,{width:w,height:h},scene,false,
+     B.Texture.BILINEAR_SAMPLINGMODE));
+   const c=tex.getContext();paint(c,w,h);
+   tex.update(false);
+   tex.wrapU=B.Texture.WRAP_ADDRESSMODE;
+   tex.wrapV=B.Texture.WRAP_ADDRESSMODE;
+   return tex;
  }
- grain.update(false);grain.wrapU=B.Texture.WRAP_ADDRESSMODE;
- grain.wrapV=B.Texture.WRAP_ADDRESSMODE;
- for(const mat of [mats.timber,mats.frame,mats.trim,mats.door,mats.kitchenWood,mats.kitchenTrim,mats.storeWood,mats.storeTrim])
-   mat.diffuseTexture=grain;
+ function rand(i,s=0){
+   const a=Math.sin(i*128.1+s*311.7+42.8)*43758.5453;
+   return a-Math.floor(a);
+ }
+ const woodgrain=surfaceTexture("varied aged Appalachian board grain",256,512,(c,w,h)=>{
+   c.fillStyle="#e5dfd1";c.fillRect(0,0,w,h);
+   // Each broad band has its own wood tone, weathering and checking.
+   for(let y=0;y<h;y+=34){
+     const v=Math.floor(201+rand(y,1)*41);
+     c.fillStyle=`rgb(${v},${Math.max(0,v-9)},${Math.max(0,v-24)})`;
+     c.fillRect(0,y,w,33);
+     c.fillStyle="#43342575";c.fillRect(0,y+32,w,2);
+     c.fillStyle="#f4e6c34c";c.fillRect(0,y+3,w,2);
+   }
+   for(let i=0;i<930;i++){
+     const x=rand(i,3)*w,y=rand(i,4)*h;
+     c.strokeStyle=i%9===0?"#3b292d63":i%3===0?"#6453424d":"#fff8e933";
+     c.lineWidth=.30+rand(i,5)*1.2;
+     c.beginPath();c.moveTo(x,y);
+     c.bezierCurveTo(x+3,y+6,x-5,y+14,x+2,y+36+rand(i,6)*50);
+     c.stroke();
+   }
+ });
+ const fieldstone=surfaceTexture("native split sandstone fieldstone and mortar",512,512,(c,w,h)=>{
+   c.fillStyle="#4d4b45";c.fillRect(0,0,w,h);
+   let row=0;
+   for(let y=-23;y<h+32;){
+     const rh=37+Math.floor(rand(row,20)*33),offset=(row%2)*37;
+     for(let x=-90+offset,i=0;x<w+90;i++){
+       const rw=51+Math.floor(rand(row*41+i,21)*67);
+       const jitter=rand(row*27+i,22);
+       const pale=170+Math.floor(rand(row*73+i,23)*53);
+       const r=Math.floor(pale*.98),g=Math.floor(pale*.97),b=Math.floor(pale*.89);
+       c.fillStyle=`rgb(${r},${g},${b})`;
+       c.beginPath();
+       c.moveTo(x+4,y+4+jitter*2);
+       c.lineTo(x+rw-4,y+4+rand(i,24)*4);
+       c.lineTo(x+rw-2,y+rh-8);
+       c.lineTo(x+rw-7,y+rh-4);
+       c.lineTo(x+3,y+rh-5);
+       c.closePath();c.fill();
+       c.strokeStyle="#fff8e15a";c.lineWidth=1.3;
+       c.beginPath();c.moveTo(x+6,y+6);c.lineTo(x+rw*.75,y+7);c.stroke();
+       c.strokeStyle="#35393675";c.lineWidth=2;
+       c.beginPath();c.moveTo(x+7,y+rh-7);c.lineTo(x+rw-7,y+rh-7);c.stroke();
+       // Mineral flecks and weathered pores in each large fieldstone.
+       for(let k=0;k<16;k++){
+         const px=x+9+rand(i*71+k,row)*Math.max(2,rw-18),
+           py=y+9+rand(i*31+k,row+1)*Math.max(2,rh-18);
+         c.fillStyle=k%3===0?"#43494540":"#faf7de40";
+         c.fillRect(px,py,.8+rand(k,i)*2.5,.8+rand(k,i+1)*1.8);
+       }
+       x+=rw+3;
+     }
+     y+=rh+2;row++;
+   }
+ });
+ const shingles=surfaceTexture("irregular hand-laid slate shingle roofs",512,512,(c,w,h)=>{
+   c.fillStyle="#b2b0a4";c.fillRect(0,0,w,h);
+   const sh=22;
+   for(let row=0;row<Math.ceil(h/sh);row++){
+     const y=row*sh,offset=(row%2)*24;
+     for(let x=-60+offset,i=0;x<w+60;i++){
+       const rw=37+Math.floor(rand(i+row*17,40)*31);
+       const v=128+Math.floor(rand(i+row*31,41)*75);
+       c.fillStyle=`rgb(${v},${v+1},${Math.max(0,v-4)})`;
+       c.fillRect(x+1,y+1,rw-2,sh-2);
+       c.fillStyle="#292e2c46";c.fillRect(x+2,y+sh-4,rw-2,3);
+       c.strokeStyle="#f1ead447";c.lineWidth=1;
+       c.beginPath();c.moveTo(x+4,y+4);c.lineTo(x+rw-3,y+4);c.stroke();
+       x+=rw;
+     }
+   }
+ });
+ const leafTrail=surfaceTexture("village crushed soil natural fallen leaf path",256,256,(c,w,h)=>{
+   c.fillStyle="#aaa08a";c.fillRect(0,0,w,h);
+   for(let i=0;i<4300;i++){
+     const x=rand(i,51)*w,y=rand(i,52)*h;
+     const l=2+rand(i,53)*8,a=rand(i,54)*Math.PI*2;
+     c.save();c.translate(x,y);c.rotate(a);
+     c.fillStyle=["#655b3e","#a38451","#85744b","#5f6546","#cac099"][i%5];
+     c.beginPath();c.moveTo(0,-l*.55);
+     c.quadraticCurveTo(l*.46,0,0,l*.52);
+     c.quadraticCurveTo(-l*.46,0,0,-l*.55);
+     c.fill();c.restore();
+   }
+   for(let i=0;i<1100;i++){
+     c.fillStyle=i%2?"#b8b8ad9b":"#64695d82";
+     c.beginPath();c.arc(rand(i,55)*w,rand(i,56)*h,.25+rand(i,57)*1.5,0,Math.PI*2);c.fill();
+   }
+ });
+ for(const mat of [mats.timber,mats.frame,mats.trim,mats.door,mats.kitchenWood,
+   mats.kitchenTrim,mats.storeWood,mats.storeTrim,mats.kitchenShutter])
+   mat.diffuseTexture=woodgrain;
+ mats.stone.diffuseTexture=fieldstone;
+ for(const mat of [mats.roof,mats.kitchenRoof,mats.storeRoof])mat.diffuseTexture=shingles;
+ mats.soil.diffuseTexture=leafTrail;
+ mats.glass.specularColor=new B.Color3(.32,.36,.33);
+ mats.glass.specularPower=95;
+ mats.glass.emissiveColor=new B.Color3(.018,.027,.021);
  let buildings=0;
  for(const site of COMMUNITY_SITES){
    if(Math.abs(site.x-cx)>92||Math.abs(site.z-cy)>92)continue;
