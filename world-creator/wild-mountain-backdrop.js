@@ -285,6 +285,76 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   vistaWall.applyFog=false;
   vistaWall.isPickable=false;
   vistaWall.renderingGroupId=0;
+  // Solid, non-pickable Appalachian cliff geometry. The transparent
+  // panorama alone can be buried beneath streamed ridges/forest in WebGL;
+  // this textured mesh sits past the three cabins but in front of the
+  // far-tree LODs. Its irregular top edge is actual 3D geometry, not a
+  // rectangle pasted over the sky or any walkable village content.
+  const cliffTexture=new B.DynamicTexture("sunlit WV sedimentary cliff stone",
+    {width:1024,height:512},scene,false,B.Texture.BILINEAR_SAMPLINGMODE);
+  const rc=cliffTexture.getContext();
+  rc.fillStyle="#aca99a";rc.fillRect(0,0,1024,512);
+  for(let i=0;i<24;i++){
+    const yy=i*23-12;
+    rc.fillStyle=["#b7ae98","#8b9487","#a9aa93","#798b7e","#c0baa7"][i%5];
+    rc.fillRect(0,yy,1024,18+hash(i,72)*9);
+    rc.fillStyle="#515c53a9";rc.fillRect(0,yy+19,1024,2.2);
+    rc.fillStyle="#e0d7c0a1";rc.fillRect(0,yy+1,1024,2);
+  }
+  for(let i=0;i<850;i++){
+    const x=hash(i,80)*1024,y=hash(i,81)*512;
+    const len=8+hash(i,82)*63;
+    rc.strokeStyle=i%4===0?"#e4d9bd9a":i%3===0?"#4b5c5594":"#68726780";
+    rc.lineWidth=.7+hash(i,83)*4;
+    rc.beginPath();rc.moveTo(x,y);
+    rc.lineTo(x+len*(hash(i,84)-.27),y+hash(i,85)*12-6);
+    rc.stroke();
+  }
+  for(let i=0;i<110;i++){
+    const x=hash(i,90)*1024, y=hash(i,91)*512;
+    rc.strokeStyle="#40574c9b";rc.lineWidth=1.5+hash(i,92)*5;
+    rc.beginPath();rc.moveTo(x,y);
+    rc.lineTo(x-8+hash(i,93)*16,y+22+hash(i,94)*90);
+    rc.stroke();
+  }
+  cliffTexture.update(false);
+  cliffTexture.wrapU=B.Texture.WRAP_ADDRESSMODE;
+  cliffTexture.wrapV=B.Texture.WRAP_ADDRESSMODE;
+  const cliffMaterial=new B.StandardMaterial("real sunlit 3D Appalachian sandstone escarpment",scene);
+  cliffMaterial.diffuseTexture=cliffTexture;
+  cliffMaterial.diffuseColor=new B.Color3(.98,.96,.91);
+  cliffMaterial.emissiveColor=new B.Color3(.24,.26,.22);
+  cliffMaterial.backFaceCulling=false;
+  cliffMaterial.specularColor=new B.Color3(.06,.055,.05);
+  const solidCliff=new B.Mesh("SOLID_VISIBLE_ROCK_MOUNTAIN_BEHIND_RANGER",scene);
+  const p=[],uv=[],indices=[],colors=[],N=120;
+  for(let i=0;i<=N;i++){
+    const x=-100+i*300/N;
+    const mound=Math.exp(-Math.pow((x-55)/91,2));
+    const taper=Math.min(1,Math.max(0,(x+100)/48),
+      Math.max(0,(200-x)/55));
+    const top=(31+58*mound+7*Math.sin(x*.043)+3.2*Math.sin(x*.16))*taper;
+    const bottom=-62+4*Math.sin(x*.031);
+    for(let j=0;j<3;j++){
+      const y=j===0?top:j===1?bottom*.15+top*.27:bottom;
+      p.push(x,y,j===1?-2.0*Math.sin(x*.033):0);
+      uv.push(i/N*3.5,j*.85);
+      const shade=j===0?1:j===1?.76:.63;
+      colors.push(shade,shade*.99,shade*.92,1);
+    }
+    if(i>0)for(let j=0;j<2;j++){
+      const a=(i-1)*3+j,b=i*3+j;
+      indices.push(a,b,a+1,b,b+1,a+1);
+    }
+  }
+  const cliffData=new B.VertexData();
+  cliffData.positions=p;cliffData.indices=indices;cliffData.uvs=uv;
+  cliffData.colors=colors;
+  const norms=[];B.VertexData.ComputeNormals(p,indices,norms);
+  cliffData.normals=norms;cliffData.applyToMesh(solidCliff);
+  solidCliff.material=cliffMaterial;solidCliff.isPickable=false;
+  solidCliff.applyFog=false;solidCliff.renderingGroupId=0;
+
   // The mountain wall is 200m north of each camera viewpoint, always behind
   // the 110m-north buildings and beyond their open valley, but in FRONT of
   // distant 3D forest sprites which otherwise conceal every cliff pixel.
@@ -292,11 +362,14 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
     vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
+  solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
+    solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
   });
   dome.position.copyFrom(camera.position);
   vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
-  return {dome,vistaWall,dispose(){
+  return {dome,vistaWall,solidCliff,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
+    solidCliff.dispose();cliffMaterial.dispose();cliffTexture.dispose();
     vistaWall.dispose();vistaMat.dispose();vista.dispose();
     dome.dispose();mat.dispose();texture.dispose();
   }};
