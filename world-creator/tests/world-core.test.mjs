@@ -252,3 +252,21 @@ test("new forest stands stay native, seeded, older and about 40% evergreen",()=>
   assert.ok(addedOld/oldCount>.23&&addedOld/oldCount<.43,
     "aim for 30% more established old-growth trees");
 });
+
+test("protected Hearthside woods close back in naturally beyond the cabin",()=>{
+  const seed=seedNumber("The-Wild-WV");
+  const nearby=treesInArea(0,0,102,seed,8.65);
+  assert.ok(nearby.some(t=>Math.hypot(t.x,t.y)>=20&&Math.hypot(t.x,t.y)<33),
+    "woodland must return near the porch instead of leaving a huge logged clearing");
+  assert.ok(nearby.every(t=>Math.hypot(t.x,t.y)>=20),
+    "cabin and occupants retain safe tree clearance");
+  const mid=treesInArea(0,0,255,seed,16.7).filter(t=>{
+    const d=Math.max(Math.abs(t.x),Math.abs(t.y));return d>104&&d<=255;
+  });
+  const midNew=supplementalTreesInArea(0,0,255,seed,16.7).filter(t=>{
+    const d=Math.max(Math.abs(t.x),Math.abs(t.y));return d>104&&d<=255;
+  });
+  assert.ok(mid.length+midNew.length>700,
+    "the previously bare background band must hold abundant native timber");
+  assert.ok(mid.concat(midNew).every(t=>NATIVE_TREES.includes(t.species)));
+});
