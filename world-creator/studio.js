@@ -390,6 +390,13 @@ $("buildCabin").onclick=()=>{
     (result.addedPeople?result.addedPeople+" missing trial avatars added. ":"")+"Roof hidden to show the one-room interior.");
 };
 $("visitCabin").onclick=focusCabin;
+$("cabinInspect").onclick=()=>{
+  const choice=$("cabinPerson").value;
+  const person=world.objects.find(o=>o.type==="npc"&&o.modelKey===choice);
+  if(!person){status("That person is not in the world yet. Gather everyone first.");return;}
+  setTool("select");setSelection(person);focusObjectIn3D(person,3.8);
+  status(person.name+" inside Hearthside Cabin. Drag the 3D camera to look around.");
+};
 $("cabinRoof").onclick=()=>{
   cabinRoofVisible=!cabinRoofVisible;
   $("cabinRoof").textContent=cabinRoofVisible?"Remove roof (show interior)":"Put roof back";
@@ -680,6 +687,24 @@ function refresh3d() {
       figures.deer(o,x,h,z);
     }else if(o.type==="npc"){
       const fallback=figures.person(o,x,h,z);
+      if(isInsideCabin){
+        // Billboarding the real occupant names makes the whole crew easy to
+        // identify even when Android is showing lightweight preview geometry.
+        const label=track(new BABYLON.DynamicTexture("name "+o.id,{width:384,height:86},scene,false));
+        label.hasAlpha=true;
+        label.drawText((o.name||"Visitor").slice(0,27),14,60,
+          "bold 31px Arial","#ffe9bd","rgba(21,30,24,.84)",true,true);
+        const signMat=material("crew badge "+o.id,"#ffffff");
+        signMat.diffuseTexture=label;
+        signMat.emissiveColor=new BABYLON.Color3(.56,.50,.38);
+        signMat.useAlphaFromDiffuseTexture=true;
+        signMat.backFaceCulling=false;
+        const plate=track(BABYLON.MeshBuilder.CreatePlane("crew name "+o.id,
+          {width:2.55,height:.55},scene));
+        plate.material=signMat;
+        plate.position.set(x,h+2.2,z);
+        plate.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;
+      }
       const characterFile=localCharacterFiles.get(o.id);
       const hasBuiltIn=Object.hasOwn(BUILTIN_CHARACTER_GLB,o.modelKey);
       const loadDetailed=!isInsideCabin||cabinFullCrew||o.id===selectedId||detailedPeople<2;
@@ -944,7 +969,8 @@ init3D();
 // Direct inspection link for a specific existing test avatar. This navigates
 // to the character's map tile and frames the camera without resetting the map.
 const focusCharacter=new URLSearchParams(window.location.search).get("focus");
-if(["mason","caitlyn","amy","chrissy"].includes(focusCharacter)) {
+if(focusCharacter==="cabin")focusCabin();
+else if(["mason","caitlyn","amy","chrissy"].includes(focusCharacter)) {
   findOrAddBuiltInCharacter(focusCharacter);
 }
 else if(installedMason)status("Mason added to your saved world map near Woodland Trail.");
