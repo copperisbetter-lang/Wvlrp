@@ -209,7 +209,14 @@ class YoungExplorerWardrobe {
       const blend=Math.max(0,Math.min(1,(t-.48)/.32));
       const rimBlend=Math.max(0,Math.min(1,(t-.67)/.27));
       updated[i]=originalVertices[i]*(1-blend*(1-wx))*(1-rimBlend*(1-rimRatio));
-      updated[i+2]=originalVertices[i+2]*(1-blend*(1-dz))*(1-rimBlend*(1-rimRatio));
+      // Side-view correction: the imported skirt balloons in depth around the
+      // waist/seat even when the front silhouette is already right. Reduce only
+      // front-to-back skirt volume; leave X (front-view width) untouched.
+      // Smooth falloff avoids a sharp crease at the bodice and hem.
+      const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
+      const skirtWeight=(1-smooth((t-.49)/.16))*smooth((t-.04)/.19);
+      const profileFactor=1-.23*skirtWeight;
+      updated[i+2]=originalVertices[i+2]*profileFactor*(1-blend*(1-dz))*(1-rimBlend*(1-rimRatio));
     }
     this.dress.updateVerticesData(this.B.VertexBuffer.PositionKind,updated,true);
     this.dress.refreshBoundingInfo();
