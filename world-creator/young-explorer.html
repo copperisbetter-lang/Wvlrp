@@ -107,11 +107,22 @@ let bounds=null, center=null, model=null;
    bodyMesh.computeWorldMatrix(true);
    const bb0=bodyMesh.getBoundingInfo().boundingBox;
    const rawHeight=bb0.maximumWorld.y-bb0.minimumWorld.y;
-   const rootMesh=meshes.find(m=>!m.parent && (m.getTotalVertices?.()||0)===0);
-   if(Number.isFinite(rawHeight)&&rawHeight>1.36&&rootMesh){
-     rootMesh.scaling.scaleInPlace(1.22/rawHeight);
-     meshes.forEach(m=>m.computeWorldMatrix(true));
-     console.info('Young Explorer child-sized world scale',{rawHeight,displayHeight:1.22});
+   if(Number.isFinite(rawHeight)&&rawHeight>1.36){
+     // GLB loading doesn't always include its synthetic root in result.meshes.
+     // Place ALL imported top-level scene nodes (including skeletal armature
+     // parents) under one new pivot, rather than scaling only the skin mesh.
+     const pivot=new B.TransformNode('Young Explorer unified child-size pivot',scene);
+     const imported=[...(result.meshes||[]),...(result.transformNodes||[])];
+     const roots=imported.filter(n=>n!==pivot&&!n.parent);
+     if(!roots.length)throw Error('Cannot safely scale complete child rig');
+     for(const node of roots)node.parent=pivot;
+     pivot.scaling.setAll(1.22/rawHeight);
+     pivot.computeWorldMatrix(true);
+     for(const m of meshes)m.computeWorldMatrix(true);
+     const scaledBounds=bodyMesh.getBoundingInfo().boundingBox;
+     const resultingHeight=scaledBounds.maximumWorld.y-scaledBounds.minimumWorld.y;
+     console.info('Young Explorer rig and garments normalized to age-seven height',{
+       rawHeight,displayHeight:resultingHeight,originalTopLevelNodes:roots.map(x=>x.name)});
    }
  }
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
