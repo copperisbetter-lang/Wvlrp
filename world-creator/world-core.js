@@ -1,3 +1,4 @@
+import {COMMUNITY_SITES} from "./wild-reference-layout.js?v=woodland-reference-20261013-v1";
 /**
  * WVLRP World Creator — reproducible terrain, connected trail network, and editor data.
  * Prototype world units are metres. No network requests or user data uploads.
@@ -242,7 +243,17 @@ export function resetToWildCabin(world){
     if(o.type==="npc"&&CABIN_CREW_KEYS.includes(o.modelKey)&&!residents.has(o.modelKey))
       residents.set(o.modelKey,o);
   }
-  world.objects=[cabin,...CABIN_CREW_KEYS.map(key=>residents.get(key)).filter(Boolean)];
+  // The player's three numbered village markers survive the wilderness reset.
+  // Their original close-together map coordinates are intentionally preserved;
+  // the 3D building footprints are separated visually around the clearing.
+  const village=COMMUNITY_SITES.map(site=>{
+    const original=world.objects.find(o=>o.id===site.id)||
+      world.objects.find(o=>o.type==="cabin"&&
+        Math.hypot(o.x-site.markerX,o.y-site.markerZ)<.75);
+    return {...(original||{}),id:site.id,type:"marker",name:site.name,
+      x:site.markerX,y:site.markerZ,locked:false,behavior:"stationary"};
+  });
+  world.objects=[cabin,...CABIN_CREW_KEYS.map(key=>residents.get(key)).filter(Boolean),...village];
   // Gather again after filtering so all seven occupy the designed seats.
   gatherCabinCrew(world);
   return {removed:Math.max(0,before-world.objects.length),remaining:world.objects.length,
