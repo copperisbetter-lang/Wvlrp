@@ -287,7 +287,8 @@ function detailMatrices(B,model,placements,cx,cy){
  const q=new B.Quaternion(),pos=new B.Vector3(),sc=new B.Vector3(),matrix=new B.Matrix();
  for(let i=0;i<placements.length;i++){
    const t=placements[i];
-   sc.set(t.sx,t.sy,t.sz);
+   // Preserve dense brush spread but keep it below the eye line.
+   sc.set(t.sx,t.sy*.26,t.sz);
    B.Quaternion.RotationAxisToRef(B.Axis.Y,t.yaw,q);
    pos.set(t.x-cx,t.h,t.y-cy);
    B.Matrix.ComposeToRef(sc,q,pos,matrix);matrix.copyToArray(data,i*16);
