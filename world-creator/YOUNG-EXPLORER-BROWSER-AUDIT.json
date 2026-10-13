@@ -7,8 +7,8 @@
     "scene": {
       "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 388,
-      "meshVertices": 109727,
+      "canvasHeight": 574,
+      "meshVertices": 111032,
       "skeletonBones": [
         52
       ],
@@ -28,7 +28,8 @@
         "Young Explorer fitted hiking shirt",
         "Young Explorer fitted hiking woven shorts",
         "Young Explorer fitted navy shirt",
-        "Young Explorer fitted navy woven shorts"
+        "Young Explorer fitted navy woven shorts",
+        "Young Explorer brown hairstyle"
       ]
     },
     "wardrobe": {
@@ -92,14 +93,14 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791922055359",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791922352030",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
       "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 388,
-      "meshVertices": 109727,
+      "canvasHeight": 574,
+      "meshVertices": 111032,
       "skeletonBones": [
         52
       ],
@@ -119,7 +120,8 @@
         "Young Explorer fitted hiking shirt",
         "Young Explorer fitted hiking woven shorts",
         "Young Explorer fitted navy shirt",
-        "Young Explorer fitted navy woven shorts"
+        "Young Explorer fitted navy woven shorts",
+        "Young Explorer brown hairstyle"
       ]
     },
     "wardrobe": {
