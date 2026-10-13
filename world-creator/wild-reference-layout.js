@@ -114,10 +114,10 @@ export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
   // Farther north a broad cove CUTS down into the hillside rather than
   // allowing the original high terrain to stand in front of the mountain.
   // Smooth entry/exit and shoulders preserve continuous, walkable ground.
-  if(z<170||z>625)return graded;
-  const north=ease((z-170)/90)*(1-ease((z-485)/140));
+  if(z<228||z>625)return graded;
+  const north=ease((z-228)/42)*(1-ease((z-485)/140));
   const sides=1-ease((Math.abs(x-c.centerX)-72)/90);
   const weight=north*sides;
-  const valley=flat-Math.max(0,z-160)*.085;
+  const valley=flat-Math.max(0,z-200)*.12;
   return graded*(1-weight)+Math.min(graded,valley)*weight;
 }
