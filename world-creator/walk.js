@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=oldgrowth-cover-20261013-v6";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=investor-hero-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -38,15 +38,15 @@ if(!B){status("3D engine unavailable. Reload while connected to the internet.");
 const engine=new B.Engine(canvas,true,{antialias:!mobile,stencil:true,preserveDrawingBuffer:false});
 engine.setHardwareScalingLevel(mobile?1.4:1);
 const scene=new B.Scene(engine);
-scene.clearColor=new B.Color4(.62,.74,.78,1);
+scene.clearColor=new B.Color4(.49,.61,.61,1);
 scene.fogMode=B.Scene.FOGMODE_EXP2;
-scene.fogDensity=.00115;
-scene.fogColor=new B.Color3(.62,.72,.75);
+scene.fogDensity=.00175;
+scene.fogColor=new B.Color3(.46,.57,.56);
 scene.skipPointerMovePicking=true;
 const sky=new B.HemisphericLight("daylight",new B.Vector3(.35,1,.21),scene);
-sky.intensity=.9;sky.groundColor=new B.Color3(.23,.22,.18);
+sky.intensity=.78;sky.groundColor=new B.Color3(.19,.21,.16);
 const sun=new B.DirectionalLight("Appalachian afternoon",new B.Vector3(-.45,-.9,-.27),scene);
-sun.diffuse=new B.Color3(1,.92,.78);sun.intensity=.65;
+sun.diffuse=new B.Color3(1,.91,.74);sun.intensity=.78;
 const camera=new B.FreeCamera("first person at Hearthside",
   new B.Vector3(0,cabinY+1.72,16),scene);
 camera.minZ=.07;camera.maxZ=900;camera.fov=1.13;
@@ -93,7 +93,7 @@ function addLandscape(x,z){
     tiles.push(item);
     return item;
   }
-  const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed});
+  const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed,mobile});
   tileCx=x;tileCy=z;loadedTiles++;
   status(loadedTiles===1?"Explore Hearthside Cabin and the West Virginia mountains.":"The Wild continues beyond the cabin clearing.");
   return result;
@@ -313,6 +313,8 @@ window.__wildDiagnostics=()=>({
   addedTrees:habitat?.addedTrees??0,
   addedEvergreens:habitat?.addedEvergreens??0,
   elderTrees:habitat?.elderTrees??0,
+  heroPlants:habitat?.heroPlants??0,
+  heroGraphics:habitat?.heroGraphics??false,
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
