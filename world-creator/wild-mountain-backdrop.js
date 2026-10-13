@@ -282,6 +282,10 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false,village
     // 10m Ranger Station roof when seen from the south-side spawn.
     {width:500,height:230,sideOrientation:B.Mesh.DOUBLESIDE},scene);
   vistaWall.material=vistaMat;
+  // The older painted foreground foliage was appearing as a giant green wall
+  // in front of the village, hiding the real mountain. Retain the harmless
+  // material for disposal but do not render this obstructing overlay.
+  vistaWall.isVisible=false;
   vistaWall.applyFog=false;
   vistaWall.isPickable=false;
   vistaWall.renderingGroupId=0;
