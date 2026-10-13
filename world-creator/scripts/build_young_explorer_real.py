@@ -176,6 +176,13 @@ def make_dress(body,rig,root):
     for j,l in enumerate(levels):
         ring=[]
         bx,by,rx_body,ry_body=body_section(l)
+        if l>.69:
+            # Arms at the upper chest can be inside the z slice: they are
+            # NOT part of the dress bodice. Cap this ring to the adjacent
+            # armless chest section instead of making a ballooning neckline.
+            chest_core=body_section(.69)
+            rx_body=min(rx_body,chest_core[2]+.012*h)
+            bx=chest_core[0]
         if l<.61:
             # Cover hips/upper thighs without ballooning the dress.
             # At hem add only ~1.8cm for a 1m model, not the old ~7cm.
