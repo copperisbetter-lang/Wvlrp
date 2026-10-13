@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#13241d">
+<title>Walk The Wild · Hearthside Cabin · WVLRP</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#0c1612;color:#f8f2df;overflow:hidden}
+#world{display:block;width:100vw;height:100dvh;touch-action:none;outline:none}
+.hud{position:fixed;z-index:5;pointer-events:none}
+.top{top:env(safe-area-inset-top,0);left:0;right:0;display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding:12px;pointer-events:none}
+.brand{background:#0b1c16da;border:1px solid #e9ddb76e;padding:9px 12px;border-radius:12px;max-width:55%;box-shadow:0 3px 16px #0006}
+.brand strong{font-size:14px;letter-spacing:.08em}.brand small{display:block;font-size:11px;opacity:.87;margin-top:3px}
+.actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:46%;pointer-events:auto}
+button,.link{appearance:none;font:600 12px system-ui;color:#fff5d8;background:#153e2fdc;border:1px solid #a6b79b7e;padding:10px 11px;border-radius:10px;text-decoration:none;cursor:pointer;box-shadow:0 4px 12px #0005}
+button:active,.link:active{background:#467052}button:focus-visible,.link:focus-visible{outline:2px solid #ffe99f}
+#message{top:68px;left:50%;transform:translateX(-50%);background:#0b1812d9;padding:9px 12px;border:1px solid #ffffff35;border-radius:9px;max-width:90vw;text-align:center;font-size:12px}
+#help{position:fixed;z-index:5;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:47vw;text-align:center;font:12px/1.4 system-ui;color:#fff5d7;background:#0b2019b8;border-radius:10px;padding:8px;pointer-events:none}
+#joystick{position:fixed;z-index:9;left:calc(15px + env(safe-area-inset-left));bottom:calc(16px + env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;touch-action:none;user-select:none;background:#173c31a6;border:2px solid #e6ead87d;box-shadow:inset 0 0 25px #09211b,0 6px 24px #0007}
+#joystick::after{content:"MOVE";position:absolute;top:9px;left:0;right:0;text-align:center;font:700 10px system-ui;letter-spacing:.12em;color:#ddebcfa8;pointer-events:none}
+#stick{position:absolute;left:40px;top:40px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 36% 31%,#c9d9b5,#4e805f);border:2px solid #f0f7e2bb;box-shadow:0 3px 12px #000a;pointer-events:none;transform:translate(0,0)}
+#reticle{position:fixed;left:50%;top:50%;width:7px;height:7px;border:1px solid #fcfcf6aa;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+#info{position:fixed;z-index:5;right:12px;bottom:calc(15px + env(safe-area-inset-bottom));color:#e9e8dbd6;background:#11251cbd;padding:7px 10px;border-radius:9px;font:11px system-ui;pointer-events:none}
+@media(max-width:550px){.top{padding:7px;gap:5px}.brand{padding:8px;max-width:49%}.brand strong{font-size:12px}.brand small{font-size:10px}.actions{max-width:50%}.actions button,.actions .link{padding:8px;font-size:11px}#message{top:70px;font-size:11px}#help{font-size:11px;max-width:42vw;bottom:calc(20px + env(safe-area-inset-bottom))}#info{bottom:calc(166px + env(safe-area-inset-bottom));right:8px}}
+</style>
+</head>
+<body>
+<canvas id="world" tabindex="0" aria-label="First-person playable Appalachian wilderness near Hearthside Cabin. Left-hand touch joystick to walk. Drag on the right to look. WASD and mouse work on desktop."></canvas>
+<div class="hud top">
+ <div class="brand"><strong>THE WILD</strong><small>Hearthside Cabin · first-person walk</small></div>
+ <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="crew" type="button">Load crew</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
+</div>
+<div id="message" class="hud" role="status" aria-live="polite">Loading West Virginia forest and Hearthside Cabin…</div>
+<div id="joystick" role="group" aria-label="Movement joystick"><div id="stick"></div></div>
+<div id="reticle" aria-hidden="true"></div>
+<div id="help">Left thumb: walk<br>Drag right: look<br>Desktop: WASD + mouse</div>
+<div id="info">Starting at Hearthside Cabin</div>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script type="module" src="./walk.js?v=walk-the-wild-20261013-v1"></script>
+</body>
+</html>
