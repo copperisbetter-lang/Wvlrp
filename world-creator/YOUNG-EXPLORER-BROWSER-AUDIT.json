@@ -7,8 +7,8 @@
     "scene": {
       "status": "Realistic full body loaded · 22255 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 544,
-      "meshVertices": 22321,
+      "canvasHeight": 440,
+      "meshVertices": 109423,
       "skeletonBones": [
         52
       ],
@@ -20,21 +20,86 @@
         "Young Explorer realistic continuous child basemesh.eyelashes01",
         "Young Explorer realistic continuous child basemesh.high-poly",
         "Young Explorer naturally brown hair 0",
-        "Young Explorer real CC0 face and body skin UV 0"
+        "Young Explorer real CC0 face and body skin UV 0",
+        "Young Explorer fitted blue floral sundress",
+        "Young Explorer fitted golden summer dress",
+        "Young Explorer fitted denim shirt",
+        "Young Explorer fitted denim woven shorts",
+        "Young Explorer fitted hiking shirt",
+        "Young Explorer fitted hiking woven shorts",
+        "Young Explorer fitted navy shirt",
+        "Young Explorer fitted navy woven shorts"
       ]
+    },
+    "wardrobe": {
+      "ready": true,
+      "measurements": {
+        "heightMeters": 1.6658903360366821,
+        "shoulderWidthMeters": 0.5197601318359375,
+        "waistWidthMeters": 0.29468005895614624,
+        "hipWidthMeters": 0.3431400954723358,
+        "bodyVertices": 14517
+      },
+      "outfits": [
+        {
+          "name": "plaid",
+          "selected": "plaid",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "floral",
+          "selected": "floral",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "sunflower",
+          "selected": "sunflower",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "denim",
+          "selected": "denim",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        },
+        {
+          "name": "hiking",
+          "selected": "hiking",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        },
+        {
+          "name": "navy",
+          "selected": "navy",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        }
+      ],
+      "bendBones": 6,
+      "sitBones": 8,
+      "restoredPose": true
     },
     "pass": true
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791919590912",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791920246178",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
       "status": "Realistic full body loaded · 22255 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 544,
-      "meshVertices": 22321,
+      "canvasHeight": 440,
+      "meshVertices": 109423,
       "skeletonBones": [
         52
       ],
@@ -46,8 +111,73 @@
         "Young Explorer realistic continuous child basemesh.eyelashes01",
         "Young Explorer realistic continuous child basemesh.high-poly",
         "Young Explorer naturally brown hair 0",
-        "Young Explorer real CC0 face and body skin UV 0"
+        "Young Explorer real CC0 face and body skin UV 0",
+        "Young Explorer fitted blue floral sundress",
+        "Young Explorer fitted golden summer dress",
+        "Young Explorer fitted denim shirt",
+        "Young Explorer fitted denim woven shorts",
+        "Young Explorer fitted hiking shirt",
+        "Young Explorer fitted hiking woven shorts",
+        "Young Explorer fitted navy shirt",
+        "Young Explorer fitted navy woven shorts"
       ]
+    },
+    "wardrobe": {
+      "ready": true,
+      "measurements": {
+        "heightMeters": 1.6658903360366821,
+        "shoulderWidthMeters": 0.5197601318359375,
+        "waistWidthMeters": 0.29468005895614624,
+        "hipWidthMeters": 0.3431400954723358,
+        "bodyVertices": 14517
+      },
+      "outfits": [
+        {
+          "name": "plaid",
+          "selected": "plaid",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "floral",
+          "selected": "floral",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "sunflower",
+          "selected": "sunflower",
+          "dressEnabled": true,
+          "shirtEnabled": false,
+          "shortsEnabled": false
+        },
+        {
+          "name": "denim",
+          "selected": "denim",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        },
+        {
+          "name": "hiking",
+          "selected": "hiking",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        },
+        {
+          "name": "navy",
+          "selected": "navy",
+          "dressEnabled": false,
+          "shirtEnabled": true,
+          "shortsEnabled": true
+        }
+      ],
+      "bendBones": 6,
+      "sitBones": 8,
+      "restoredPose": true
     },
     "pass": true
   }
