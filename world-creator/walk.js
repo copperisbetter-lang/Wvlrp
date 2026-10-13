@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=preserved-forest-20261013-v7";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=low-brush-run-20261013-v9";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -216,10 +216,26 @@ const resetToCabin=()=>{
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
 let joyX=0,joyY=0,joyPointer=null;
+let runMode=false,lastCenterTap=-Infinity,tapStartAt=0,tapStartRadius=Infinity,tapMaxRadius=0;
+const DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27;
+function joystickCenterRadius(e){
+ const r=joystick.getBoundingClientRect();
+ return Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2));
+}
+function setRunMode(enabled){
+ runMode=enabled;
+ joystick.classList.toggle("running",runMode);
+ joystick.setAttribute("aria-label",runMode?
+   "Movement joystick. Running on. Double tap center to walk.":
+   "Movement joystick. Walking. Double tap center to run.");
+ status(runMode?"RUN MODE ON · double-tap joystick center to walk.":
+   "WALK MODE ON · double-tap joystick center to run.");
+}
 function joyPosition(e){
   const r=joystick.getBoundingClientRect();
   const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
   const cap=40,length=Math.hypot(dx,dy),mul=length>cap?cap/length:1;
+  tapMaxRadius=Math.max(tapMaxRadius,length);
   const sx=dx*mul,sy=dy*mul;
   joyX=Math.abs(sx)<3?0:sx/cap;
   joyY=Math.abs(sy)<3?0:sy/cap;
@@ -228,14 +244,27 @@ function joyPosition(e){
 joystick.addEventListener("pointerdown",e=>{
   if(joyPointer!==null)return;
   e.preventDefault();e.stopPropagation();joyPointer=e.pointerId;
+  tapStartAt=performance.now();tapStartRadius=joystickCenterRadius(e);
+  tapMaxRadius=tapStartRadius;
   joystick.setPointerCapture(e.pointerId);joyPosition(e);
 });
 joystick.addEventListener("pointermove",e=>{
   if(e.pointerId!==joyPointer)return;e.preventDefault();joyPosition(e);
 });
 const resetStick=e=>{
-  if(e.pointerId!==joyPointer)return;joyPointer=null;joyX=joyY=0;
+  if(e.pointerId!==joyPointer)return;
+  const now=performance.now();
+  const centerTap=e.type==="pointerup"&&now-tapStartAt<260&&
+    tapStartRadius<CENTER_TAP_RADIUS&&tapMaxRadius<CENTER_TAP_RADIUS&&
+    joystickCenterRadius(e)<CENTER_TAP_RADIUS;
+  joyPointer=null;joyX=joyY=0;
   stick.style.transform="translate(0,0)";
+  if(centerTap){
+    if(now-lastCenterTap<=DOUBLE_TAP_MS){
+      lastCenterTap=-Infinity;
+      setRunMode(!runMode);
+    }else lastCenterTap=now;
+  }else lastCenterTap=-Infinity;
 };
 joystick.addEventListener("pointerup",resetStick);
 joystick.addEventListener("pointercancel",resetStick);
@@ -300,7 +329,7 @@ engine.runRenderLoop(()=>{
   if(keys.has("e"))camera.rotation.y+=dt*1.7;
   // Walk pace raised from its former 20%-feeling speed to roughly 38%.
   // Maintain the same faster sprint-to-walk ratio for desktop users.
-  const len=Math.hypot(f,side),speed=keys.has("shift")?9.5:5.7;
+  const len=Math.hypot(f,side),speed=runMode||keys.has("shift")?9.5:5.7;
   if(len>.04){
     const yaw=camera.rotation.y,forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw);
     const dx=(forwardX*f+Math.cos(yaw)*side)/Math.max(1,len)*speed*dt;
@@ -331,7 +360,7 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`${Math.round(walkDistance)}m walked · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
+    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
@@ -340,7 +369,7 @@ engine.runRenderLoop(()=>{
   scene.render();
 });
 resetToCabin();
-status("You're at Hearthside Cabin. Push the left joystick forward and drag the right side to look around.");
+status("You're at Hearthside Cabin. Push the joystick to walk, double-tap its center to run, and drag right to look.");
 
 // Non-interactive read-only telemetry for repeatable browser smoke tests.
 window.__wildDiagnostics=()=>({
@@ -360,6 +389,8 @@ window.__wildDiagnostics=()=>({
   combinedCabinMeshes,
   walkedMetres:walkDistance,
   groundAltitude:cameraGround(camera.position.x,camera.position.z),
+  runMode,
+  moveSpeed:runMode?9.5:5.7,
   configuredEyeHeight:EYE_HEIGHT,
   sunlightIntensity:sun.intensity,
   skylightIntensity:sky.intensity,
