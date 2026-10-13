@@ -300,7 +300,8 @@ function detailMatrices(B,model,placements,cx,cy){
 export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false}){
  const kinds=["fern-field","rhododendron-mass","stiltgrass","sapling","briar-tangle"];
  const groups=Object.fromEntries(kinds.map(k=>[k,[]]));
- const step=mobile?2.65:2.2,half=89;
+ // Four-fold visually layered forest floor within the investor walk zone.
+ const step=mobile?1.60:1.48,half=89;
  const xmin=Math.floor((cx-half)/step)-1,xmax=Math.ceil((cx+half)/step)+1;
  const ymin=Math.floor((cy-half)/step)-1,ymax=Math.ceil((cy+half)/step)+1;
  for(let i=xmin;i<=xmax;i++)for(let j=ymin;j<=ymax;j++){
