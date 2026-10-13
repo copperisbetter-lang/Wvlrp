@@ -9,6 +9,7 @@ import { renderWildLandscape } from "./wild-landscape-renderer.js?v=north-villag
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=open-village-mountain-sightline-20261013-v3";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=world-anchored-cliff-20261013-v4";
+import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=rocky-ridge-in-front-20261013-v1";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -84,12 +85,22 @@ camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
 scene.activeCamera=camera;
 // October-approved distant sunlit Appalachian ridge: real 360-degree skyline,
 // behind the actual navigable buildings and forest. No panorama cabin cutouts.
-installWildMountainBackdrop(B,scene,camera,{
+const horizon=installWildMountainBackdrop(B,scene,camera,{
   mobile,
   villageX:VILLAGE_CLEARING.centerX,
   villageBackZ:VILLAGE_CLEARING.centerZ+VILLAGE_CLEARING.halfDepth+
     VILLAGE_CLEARING.backExtension+4,
   villageGroundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
+});
+// The earlier mountain-only panorama and mesh sat BEHIND the 1.1 km terrain
+// and painted an oversized, generic green wall. Keep the continuous sky dome,
+// but replace those two obsolete distant layers with nearer parallax mountains.
+horizon.vistaWall.setEnabled(false);
+horizon.solidCliff.setEnabled(false);
+const villageMountains=installVisibleVillageMountains(B,scene,camera,{
+  mobile,
+  villageX:VILLAGE_CLEARING.centerX,
+  villageY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
 });
 // A small, softly glowing visible sun follows the camera's *position*, not
 // its rotation, so its direction stays fixed in the real 3D sky while walking.
@@ -504,5 +515,7 @@ window.__wildDiagnostics=()=>({
   renderedSurfaceHeight:habitat?.surfaceHeight?.(camera.position.x,camera.position.z)??null,
   renderedEyeHeight:(()=>{const y=habitat?.surfaceHeight?.(camera.position.x,camera.position.z);return Number.isFinite(y)?camera.position.y-y:null;})(),
   framesPerSecond:Math.round(engine.getFps()),
+  villageMountainLayers:villageMountains.meshes.length,
+  mountainTopVisible:villageMountains.meshes.some(m=>m.isEnabled()&&m.visibility>.01),
   webgl:engine.webGLVersion
 });
