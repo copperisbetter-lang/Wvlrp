@@ -5,7 +5,7 @@
  * approximation of the user-owned WVLRP woodland reference photography.
  */
 import {COMMUNITY_SITES,WILD_TRAIL_SEGMENTS} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
-import {stageVillageCampfire} from "./wild-campfire.js?v=permanent-campfire-20261013-v1";
+import {stageVillageCampfire} from "./wild-campfire.js?v=tapered-live-fire-20261013-v2";
 import {cabinGrade} from "./wild-nature.js";
 import {hash} from "./world-core.js";
 
