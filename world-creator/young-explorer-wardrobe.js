@@ -126,7 +126,7 @@ class YoungExplorerWardrobe {
   this.body.computeWorldMatrix(true);
   const db=this.dress.getBoundingInfo().boundingBox;
   const dressCenter=(db.minimumWorld.y+db.maximumWorld.y)/2;
-  const targetCenter=this.measure.minY+this.measure.H*.635;
+  const targetCenter=this.measure.minY+this.measure.H*.665;
   const delta=targetCenter-dressCenter;
   if(Math.abs(delta)>this.measure.H*.08){
     const parent=this.dress.parent;
@@ -182,10 +182,10 @@ class YoungExplorerWardrobe {
   const size=$('dress-size-select'),vertical=$('dress-position'),width=$('dress-width'),depth=$('dress-depth'),reset=$('dress-reset');
   if(!size||!vertical||!width||!depth)return;
   const base=this.dress.scaling.clone(),origin=this.dress.position.clone();
-  const factors={5:.88,6:.94,7:1,8:1.06,10:1.13};
+  const factors={2:.68,3:.74,4:.81,5:.88,6:.94,7:1,8:1.06,10:1.13};
   const update=()=>{
    const ratio=factors[size.value]||1;
-   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y,base.z*ratio*(Number(depth.value)/100));
+   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y*ratio,base.z*ratio*(Number(depth.value)/100));
    this.dress.position.copyFrom(origin);
    const parent=this.dress.parent;
    const shift=new this.B.Vector3(0,Number(vertical.value)/100,0);
@@ -196,7 +196,7 @@ class YoungExplorerWardrobe {
    if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
   };
   for(const el of [size,vertical,width,depth])el.addEventListener('input',update);
-  if(reset)reset.onclick=()=>{size.value='7';vertical.value='0';width.value='100';depth.value='100';update();};
+  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';update();};
   update();
  }
 
