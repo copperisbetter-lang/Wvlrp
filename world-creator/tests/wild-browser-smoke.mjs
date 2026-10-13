@@ -64,6 +64,33 @@ try{
     "Walker must retain adult standing eye height above visible hill mesh: "+state.renderedEyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
+  // Visit the actual rebuilt village, not just Hearthside Cabin. These checks
+  // catch missing imported modules, ungraded surfaces and lost campfire tiles.
+  await page.locator("#village").click();
+  await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===3,
+    {timeout:30000});
+  const village=await page.evaluate(()=>window.__wildDiagnostics());
+  console.log("VILLAGE_STATE",JSON.stringify(village));
+  assert.equal(village.communityBuildings,3,"All three village façades must load");
+  assert.equal(village.communityFirePits,1,"A permanent burning campfire must load");
+  assert.ok(Math.abs(village.eyeHeight-1.98)<.08,"Village walker should have adult eye height");
+  assert.ok(village.position[2]<80,"Village spawn must be out in the open plaza");
+  await page.screenshot({path:"wild-village-qa.png",fullPage:true});
+
+  // Command left movement. The camera must turn left and move in the same
+  // direction (old behavior strafed sideways with a fixed camera heading).
+  const heading=village.facingYaw;
+  await page.mouse.move(center.x,center.y);
+  await page.mouse.down();
+  await page.mouse.move(center.x-35,center.y,{steps:5});
+  await page.waitForTimeout(700);
+  const turning=await page.evaluate(()=>window.__wildDiagnostics());
+  assert.equal(turning.movementHeadingLocked,true,"Joystick must control view while held");
+  assert.ok(Math.abs(turning.facingYaw-heading)>.35,
+    "Looking direction must follow movement instead of staying fixed");
+  await page.mouse.up();
+  const released=await page.evaluate(()=>window.__wildDiagnostics());
+  assert.equal(released.movementHeadingLocked,false,"Release must restore free-look");
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
   console.log("WILD_BABYLON_BROWSER_SMOKE_PASSED");
   if(warnings.length)console.log("NONFATAL_WARNINGS",JSON.stringify(warnings.slice(0,12)));
