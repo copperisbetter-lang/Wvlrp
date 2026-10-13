@@ -1,0 +1,89 @@
+name: Build Riley Vulva 1 isolated trial
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_riley_vulva1_trial.py
+      - world-creator/assets/riley-vulva1-source.json
+      - .github/workflows/build-riley-vulva1-trial.yml
+  workflow_dispatch:
+concurrency:
+  group: wvlrp-riley-vulva1-trial
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  trial:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender python3-numpy libegl1 libgl1-mesa-dri
+      - name: Compile and fit original Vulva 1 to existing Riley Top Shelf
+        run: |
+          set -euo pipefail
+          python3 -m py_compile world-creator/scripts/build_riley_vulva1_trial.py
+          blender --background --factory-startup --python world-creator/scripts/build_riley_vulva1_trial.py 2>&1 | tee /tmp/riley-vulva1-build.log
+          grep RILEY_VULVA1_TRIAL_SUCCESS /tmp/riley-vulva1-build.log
+      - name: Validate trial GLB topology, rig, material and animations
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path('world-creator/assets/riley-top-shelf-vulva1-trial.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n,t=struct.unpack_from('<II',b,12)
+          assert t==0x4E4F534A
+          g=json.loads(b[20:20+n])
+          names=[n.get('name','') for n in g.get('nodes',[])]
+          assert any('Riley Vulva1' in s for s in names), 'Vulva 1 mesh absent'
+          assert any('Riley sculpted anatomical body' in s for s in names), 'Riley body lost'
+          assert len(g.get('skins',[]))>=1,'Riley rig lost'
+          assert len(g.get('animations',[]))>=2,'Riley animation actions lost'
+          print('RILEY_VULVA1_BINARY_VALIDATED',len(b),'skins',len(g['skins']),
+                'animations',len(g['animations']), 'named_nodes',len(names))
+          PY
+      - name: Publish only the NEW isolated Riley trial GLB
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-top-shelf-vulva1-trial.glb
+          if git diff --cached --quiet; then
+            echo "No new trial binary"
+          else
+            git commit -m "Publish reversible Riley Vulva 1 fitted skin-matched trial"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Save diagnostics for trial review
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "Riley Vulva 1 integration trial"
+            echo "source_commit: ${GITHUB_SHA}"
+            echo "status: ${{ job.status }}"
+            date -u '+checked_utc: %Y-%m-%dT%H:%M:%SZ'
+            if [ -f /tmp/riley-vulva1-build.log ]; then
+              tail -n 40 /tmp/riley-vulva1-build.log
+            fi
+            if [ -f world-creator/assets/riley-top-shelf-vulva1-trial.glb ]; then
+              echo "trial_glb_bytes: $(stat -c%s world-creator/assets/riley-top-shelf-vulva1-trial.glb)"
+            fi
+          } > world-creator/assets/riley-vulva1-build-status.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/riley-vulva1-build-status.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Riley Vulva 1 trial build diagnostics"
+            git restore -- world-creator/assets/riley-top-shelf-vulva1-trial.glb || true
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
