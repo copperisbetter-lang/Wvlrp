@@ -77,21 +77,24 @@ function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
  const normals=body.getVerticesData(B.VertexBuffer.NormalKind);
  const indices=body.getIndices();
  if(!positions||!indices||!normals)return null;
- const world=body.getWorldMatrix(),vy=new Array(positions.length/3);
+ const world=body.getWorldMatrix(),vy=new Array(positions.length/3),vx=new Array(positions.length/3);
  const tmp=new B.Vector3();
  for(let i=0;i<vy.length;i++){
   B.Vector3.TransformCoordinatesToRef(new B.Vector3(positions[i*3],positions[i*3+1],positions[i*3+2]),world,tmp);
   vy[i]=(tmp.y-measure.minY)/measure.H;
+  vx[i]=Math.abs(tmp.x-measure.cx)/measure.H;
  }
  const kept=[];
  for(let i=0;i<indices.length;i+=3){
   const a=indices[i],b=indices[i+1],c=indices[i+2];
+  const reach=id.includes('shorts')?.195:.265;
   if(vy[a]>=range[0]&&vy[b]>=range[0]&&vy[c]>=range[0]&&
-     vy[a]<=range[1]&&vy[b]<=range[1]&&vy[c]<=range[1]) kept.push(a,b,c);
+     vy[a]<=range[1]&&vy[b]<=range[1]&&vy[c]<=range[1]&&
+     vx[a]<reach&&vx[b]<reach&&vx[c]<reach) kept.push(a,b,c);
  }
  if(kept.length<15)throw Error('Outfit '+id+' has no fitted surface; check model dimensions');
  // A unique skinned shell preserves the original skeleton weights, UVs and bone motion.
- const shell=body.clone('Young Explorer wearable '+id,body.parent,false);
+ const shell=body.clone('Young Explorer wearable '+id,body.parent,true);
  shell.makeGeometryUnique();
  shell.setIndices(kept);
  const raised=Float32Array.from(positions);
@@ -186,6 +189,14 @@ class YoungExplorerWardrobe {
    const delta=this.B.Quaternion.RotationYawPitchRoll(euler[1],euler[0],euler[2]);
    this.poseTokens.push({joint,from,to:from.multiply(delta)});
   }
+  if(kind==='sit'){
+    const hips=this.boneTarget('hips');
+    if(hips){
+      const from=hips.position.clone();
+      const to=from.clone();to.y-=this.measure.H*.23;
+      this.poseTokens.push({joint:hips,fromPosition:from,toPosition:to});
+    }
+  }
   this.poseElapsed=0;this.poseTime=.35;this.activePose=kind;
   if($('pose-feedback'))$('pose-feedback').textContent=kind==='bend'?'Bend Over pose selected':'Sit Down pose selected';
  }
@@ -194,7 +205,8 @@ class YoungExplorerWardrobe {
   this.poseElapsed+=Math.min(.06,this.scene.getEngine().getDeltaTime()/1000);
   const t=clamp(this.poseElapsed/this.poseTime,0,1),smooth=t*t*(3-2*t);
   for(const item of this.poseTokens){
-   item.joint.rotationQuaternion=this.B.Quaternion.Slerp(item.from,item.to,smooth);
+   if(item.fromPosition){item.joint.position.copyFrom(this.B.Vector3.Lerp(item.fromPosition,item.toPosition,smooth));}
+   else item.joint.rotationQuaternion=this.B.Quaternion.Slerp(item.from,item.to,smooth);
    item.joint.markAsDirty?.('rotation');
   }
   if(t===1){this.poseTokens=[];this.poseTime=0;}
@@ -207,10 +219,12 @@ class YoungExplorerWardrobe {
    if(!node)continue;
    if(node.metadata?._wvlrpBaseRotation){
     node.rotationQuaternion=node.metadata._wvlrpBaseRotation.clone();
+    if(node.metadata._wvlrpBasePosition)node.position.copyFrom(node.metadata._wvlrpBasePosition);
    }else{
     node.metadata=node.metadata||{};
     node.metadata._wvlrpBaseRotation=
      (node.rotationQuaternion||this.B.Quaternion.FromEulerVector(node.rotation)).clone();
+    node.metadata._wvlrpBasePosition=node.position.clone();
    }
   }
   if($('pose-feedback'))$('pose-feedback').textContent='';
@@ -221,6 +235,7 @@ class YoungExplorerWardrobe {
    if(!node)continue;node.metadata=node.metadata||{};
    node.metadata._wvlrpBaseRotation=(node.rotationQuaternion||
      this.B.Quaternion.FromEulerVector(node.rotation)).clone();
+   node.metadata._wvlrpBasePosition=node.position.clone();
   }
  }
 }
