@@ -18,7 +18,7 @@ test("The visible mountain is fixed behind the real 3D village, not behind a mov
 test("The village plateau gives the Ranger Station an unobstructed mountain view",()=>{
   assert.match(walk,/villageGroundY:cabinGrade\(VILLAGE_CLEARING\.centerX,VILLAGE_CLEARING\.centerZ,seed\)/);
   assert.match(walk,/villageBackZ:VILLAGE_CLEARING\.centerZ\+VILLAGE_CLEARING\.halfDepth\+/);
-  assert.match(layout,/backExtension:40,transition:15/);
+  assert.match(layout,/backExtension:100,transition:18/);
   assert.match(layout,/isVillageMountainSightline/);
   assert.match(layout,/isCommunityClearing/);
   assert.match(layout,/markerX:93,markerZ:77/);
