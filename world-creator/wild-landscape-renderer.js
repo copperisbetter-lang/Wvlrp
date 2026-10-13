@@ -4,7 +4,8 @@
  * thin instances. This is an art-directed prototype, not scanned vegetation.
  */
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
-import {hash} from "./world-core.js";
+import {hash,noise} from "./world-core.js";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=investor-hero-20261013-v1";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -396,8 +397,10 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
   }
   return total;
 }
-export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
+export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
+  const textures=createForestSurfaceTextures(B,scene,track,seed);
   const soil=track(new B.StandardMaterial("Appalachian leaf litter and stone",scene));
+  soil.diffuseTexture=textures.duff;
   soil.diffuseColor=new B.Color3(1,1,1);
   soil.specularColor=new B.Color3(.015,.017,.012);
   function terrain(size,subdivisions,offset){
@@ -407,10 +410,25 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
     for(let i=0;i<positions.length;i+=3){
       const x=cx+positions[i],y=cy+positions[i+2];
       positions[i+1]=cabinGrade(x,y,seed)-offset;
-      tints.push(...earthColor(x,y,seed));
+      // Woodland duff atlas stays visible; biome-specific color and dampness
+      // tint it without turning the near ground into a flat brown carpet.
+      const earth=earthColor(x,y,seed);
+      const light=(noise(x/12,y/12,seed+918)-.5)*.22;
+      tints.push(.70+earth[0]*.42+light,
+        .69+earth[1]*.48+light*.9,
+        .62+earth[2]*.56+light*.68,1);
     }
     const normals=[];
     B.VertexData.ComputeNormals(positions,mesh.getIndices(),normals);
+    const uvs=mesh.getVerticesData(B.VertexBuffer.UVKind);
+    // World-space UVs prevent the forest-duff atlas from stretching over a
+    // whole ridge; the same 8m material scale covers near and far terrain.
+    for(let j=0;j<uvs.length;j+=2){
+      const k=j/2*3;
+      uvs[j]=(cx+positions[k])/8.5;
+      uvs[j+1]=(cy+positions[k+2])/8.5;
+    }
+    mesh.setVerticesData(B.VertexBuffer.UVKind,uvs);
     mesh.updateVerticesData(B.VertexBuffer.PositionKind,positions,true);
     mesh.updateVerticesData(B.VertexBuffer.NormalKind,normals);
     mesh.setVerticesData(B.VertexBuffer.ColorKind,new Float32Array(tints));
@@ -423,7 +441,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
   // High-resolution local terrain plus distant ridge panoramas. Far land is
   // offset very slightly beneath the local ground to avoid z-fighting.
   terrain(1100,96,.40);
-  const localWalkingGround=terrain(196,66,0);
+  const localWalkingGround=terrain(196,mobile?86:120,0);
   const waterMat=track(new B.StandardMaterial("river glints",scene));
   waterMat.diffuseColor=new B.Color3(.18,.33,.36);
   waterMat.specularColor=new B.Color3(.34,.38,.41);waterMat.specularPower=38;
@@ -455,25 +473,38 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
   const addedFar=supplementalTreesInArea(cx,cy,470,seed,33.9).filter(t=>
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
   const allTrees=near.concat(far,addedNear,addedFar);
+  // Near-camera timber is entirely re-authored: tapered buttress roots,
+  // curved trunks, irregular limb forks and diffuse-shaded native crowns.
+  // Distant groves retain inexpensive LOD prototypes for phone performance.
   const groups=new Map();
-  for(const t of allTrees){
-    if(!groups.has(t.species))groups.set(t.species,[]);
-    groups.get(t.species).push(t);
-  }
-  for(const [species,trees] of groups){
-    const model=prototype(B,scene,track,species,seed+species.length*17);
+  const heroZone=Math.hypot(cx,cy)<255;
+  const addGroup=(t,lod)=>{
+    const variant=lod==="near"?(t.variation>.51?1:0):0;
+    const key=t.species+"/"+lod+"/"+variant;
+    if(!groups.has(key))groups.set(key,{species:t.species,lod,variant,trees:[]});
+    groups.get(key).trees.push(t);
+  };
+  for(const t of near.concat(addedNear))addGroup(t,heroZone?"near":"far");
+  for(const t of far.concat(addedFar))addGroup(t,"far");
+  for(const {species,lod,variant,trees} of groups.values()){
+    const model=lod==="near"?
+      buildHeroTree(B,scene,track,species,seed+species.length*17,variant,textures):
+      prototype(B,scene,track,species,seed+species.length*17);
     setInstances(B,model.bark,trees,cx,cy);
     setInstances(B,model.foliage,trees,cx,cy);
   }
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed});
+  const heroPlants=heroZone?renderHeroUnderstory(B,scene,track,
+    {cx,cy,seed,mobile}):0;
   const addedTrees=addedNear.concat(addedFar);
   return {nearTrees:near.length+addedNear.length,
     distantTrees:far.length+addedFar.length,
     addedTrees:addedTrees.length,
     addedEvergreens:addedTrees.filter(t=>t.evergreen).length,
     elderTrees:allTrees.filter(t=>t.elder).length,
-    collidableTrees:allTrees,species:groups.size,
-    understory,forestExtentMetres:470,
+    collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
+    understory:understory+heroPlants,heroPlants,
+    heroGraphics:heroZone,forestExtentMetres:470,
     // A walker samples the same triangles the eye actually sees. The terrain
     // approximation alone can dip below an uphill triangle between vertices.
     surfaceHeight(x,z){
