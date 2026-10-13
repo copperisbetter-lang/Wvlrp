@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=level-village-forest-20261013-v4";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=level-village-forest-20261013-v5";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
 
@@ -220,6 +220,7 @@ crewButton.addEventListener("click",()=>{
 const resetToCabin=()=>{
   camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
   camera.rotation.set(0,Math.PI,0);
+  document.querySelector(".brand small").textContent="Hearthside Cabin · first-person walk";
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
