@@ -16,7 +16,7 @@ const fs=require('fs');
    await page.waitForFunction(()=>{const s=document.querySelector('#status')?.textContent||'';
      return s.includes('Realistic full body loaded')||s.includes('3D model ready')||
        s.includes('viewer unable to load')||s.includes('Model not published');
-   },{timeout:105000});
+   },null,{timeout:105000});
    rec.scene=await page.evaluate(()=>{
      const s=window.BABYLON?.EngineStore?.LastCreatedScene;
      return {status:document.querySelector('#status')?.textContent,
