@@ -47,27 +47,41 @@ export function siteDistance(x,z,site){
   const dz=Math.max(0,Math.abs(z-site.z)-site.depth*.56);
   return Math.hypot(dx,dz);
 }
+// Keep the original cabin-marker positions above unchanged. The rendered
+// village, however, shares ONE buildable bench cut into the hillside.
+// Buildings occupy the north edge, facing the broad south-facing fire circle.
+// All coordinates here are world metres relative to Hearthside (0,0).
+export const VILLAGE_CLEARING=Object.freeze({
+  centerX:93,centerZ:85,halfWidth:66,halfDepth:43,transition:15,
+  fireX:93,fireZ:65
+});
+function plateauDistance(x,z){
+  const c=VILLAGE_CLEARING;
+  return Math.hypot(Math.max(0,Math.abs(x-c.centerX)-c.halfWidth),
+                    Math.max(0,Math.abs(z-c.centerZ)-c.halfDepth));
+}
 export function isCommunityClearing(x,z){
-  if(Math.hypot((x-91)/20,(z-77)/16)<1)return true;
-  return COMMUNITY_SITES.some(site=>siteDistance(x,z,site)<4.8);
+  // Trunks cannot grow through the shared plaza, cabin walls or their stairs.
+  // Keep the native forest wall close behind the cabins and along both sides.
+  return plateauDistance(x,z)<3.7 ||
+    COMMUNITY_SITES.some(site=>siteDistance(x,z,site)<4.2);
 }
 export function isWalkableTrail(x,z){return pathDistance(x,z)<2.7;}
 export function keepForestTree(x,z){
   return !isCommunityClearing(x,z)&&pathDistance(x,z)>3.35;
 }
 export function keepUnderstory(x,z){
+  // Leave the meeting space open. Its perimeter gets natural fern/laurel
+  // masses, while tubs and planters decorate the building foundations.
   return !isCommunityClearing(x,z)&&pathDistance(x,z)>1.95;
 }
 export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
-  let height=naturalHeight;
-  for(const site of COMMUNITY_SITES){
-    const dx=Math.abs(x-site.x)/((site.width+10)*.5);
-    const dz=Math.abs(z-site.z)/((site.depth+10)*.5);
-    const d=Math.max(dx,dz);
-    if(d>=1.65)continue;
-    const t=Math.max(0,Math.min(1,(d-1.02)/.63));
-    const smooth=t*t*(3-2*t);
-    height=heightAtSite(site)*(1-smooth)+height*smooth;
-  }
-  return height;
+  const d=plateauDistance(x,z),c=VILLAGE_CLEARING;
+  if(d>=c.transition)return naturalHeight;
+  const t=Math.max(0,Math.min(1,d/c.transition));
+  const smooth=t*t*(3-2*t);
+  // Exactly one elevation for all three foundations AND the campfire.
+  // The transition outside the clearing blends into the untouched ridge.
+  const flat=heightAtSite({x:c.centerX,z:c.centerZ});
+  return flat*(1-smooth)+naturalHeight*smooth;
 }
