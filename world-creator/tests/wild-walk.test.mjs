@@ -30,3 +30,11 @@ test("First-person cabin preserves real resident models with no blob replacement
   assert.match(walk,/B\.SceneLoader\.ImportMeshAsync/);
   assert.doesNotMatch(walk,/makeFigureBuilder\(/);
 });
+
+test("Double tapping the joystick center switches between running and walking",()=>{
+  assert.match(walk,/DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27/);
+  assert.match(walk,/setRunMode\(!runMode\)/);
+  assert.match(walk,/runMode\|\|keys\.has\("shift"\)\?9\.5:5\.7/);
+  assert.match(page,/#joystick\.running/);
+  assert.match(page,/Double-tap stick center: run \/ walk/);
+});
