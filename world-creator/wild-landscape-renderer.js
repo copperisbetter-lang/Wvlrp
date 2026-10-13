@@ -6,9 +6,9 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=woodland-reference-20261013-v1";
-import {renderWildVillage} from "./wild-village.js?v=woodland-village-20261013-v1";
-import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=low-brush-run-20261013-v9";
+import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
+import {renderWildVillage} from "./wild-village.js?v=wide-plaza-campfire-20261013-v3";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=full-brush-plaza-20261013-v10";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -549,6 +549,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
     understory:understory+heroPlants,heroPlants,
      communityBuildings:community.buildings,communityPaths:community.paths,
+     communityFirePits:community.firePits,
     heroGraphics:heroZone,forestExtentMetres:470,
     // True interpolated altitude of the visible ground, including on steep
     // slopes and after streamed-tile changes. No Babylon stale height cache.
