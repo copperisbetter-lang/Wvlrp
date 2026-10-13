@@ -3,7 +3,7 @@
  * Real walkable 3D objects, not a static photo. The flame animates for the
  * lifetime of the streamed terrain tile and cleans itself up on tile unload.
  */
-import {VILLAGE_CLEARING} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
+import {VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {cabinGrade} from "./wild-nature.js";
 
 export function stageVillageCampfire(B,scene,track,{cx,cy,seed,surfaceHeight,materials}){
