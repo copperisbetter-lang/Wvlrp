@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Riley Vulva 1 Trial — The Wild</title><style>body{margin:0;background:#101c18;color:#f2f4e9;font:16px system-ui}main{max-width:960px;margin:auto;padding:12px}canvas{display:block;width:100%;height:66vh;touch-action:none;border-radius:12px;background:#243c32}label,button,a{display:inline-block;margin:6px 4px;padding:12px;background:#bce3aa;color:#14241c;border:0;border-radius:9px;font-weight:700}input{max-width:95%}#info{white-space:pre-wrap;color:#cfe4d2}small{color:#c4d2c8}</style></head><body><main><h2>🐊 Riley · Vulva 1 Trial</h2><p>Inspect the Riley's reversible Vulva 1 test build automatically. Experimental removable attachment using original MakeHuman Vulva 1 geometry. Base Riley GLB is unchanged.</p><label>Load custom Riley GLB <input id="file" type="file" accept=".glb,model/gltf-binary"></label><button id="reset">Reset camera</button><button id="detail">Focus on pelvic fit</button><div id="actions"></div><canvas id="canvas"></canvas><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to zoom. All files stay on this device in this viewer. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script src="https://cdn.babylonjs.com/babylon.js"></script><script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script><script>
+const $=id=>document.getElementById(id),canvas=$('canvas'),engine=new BABYLON.Engine(canvas,true),scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.16,.24,.20,1);
+const camera=new BABYLON.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.4,4,new BABYLON.Vector3(0,1,0),scene);camera.attachControl(canvas,true);camera.lowerRadiusLimit=.08;camera.upperRadiusLimit=20; camera.wheelPrecision=80; camera.panningSensibility=700;
+new BABYLON.HemisphericLight('ambient',new BABYLON.Vector3(0,1,0),scene).intensity=1.1;
+const key=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.7,-1,.4),scene);key.intensity=1.1;
+const ground=BABYLON.MeshBuilder.CreateGround('forest clearing',{width:20,height:20},scene);const mat=new BABYLON.StandardMaterial('earth',scene);mat.diffuseColor=new BABYLON.Color3(.25,.36,.22);ground.material=mat;
+engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());let imported=[],groups=[],objectURL=null;
+function clear(){groups.forEach(g=>g.stop());groups=[];imported.forEach(m=>m.dispose());imported=[];$('actions').replaceChildren()}
+function status(t){$('info').textContent=t}
+$('detail').onclick=()=>{camera.target=new BABYLON.Vector3(0,.868,0); camera.alpha=-Math.PI/2; camera.beta=Math.PI/2; camera.radius=.60;};\n$('reset').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.4;camera.radius=4;camera.target=new BABYLON.Vector3(0,1,0)};
+async function load(url,name){clear();status('Loading '+name+'…');try{const result=await BABYLON.SceneLoader.ImportMeshAsync('','',''+url,scene,undefined,'.glb');imported=result.meshes;groups=result.animationGroups||[];
+const real=result.meshes.filter(m=>m.getTotalVertices?.()>0);if(!real.length)throw Error('No meshes found');
+let lo=new BABYLON.Vector3(Infinity,Infinity,Infinity),hi=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
+for(const m of real){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;lo=BABYLON.Vector3.Minimize(lo,b.minimumWorld);hi=BABYLON.Vector3.Maximize(hi,b.maximumWorld)}
+const center=lo.add(hi).scale(.5);camera.target=center;camera.radius=Math.max(2,(hi.y-lo.y)*1.6);
+const skeletons=result.skeletons||[],boneCount=skeletons.reduce((n,s)=>n+s.bones.length,0);
+status(name+' loaded: '+real.length+' meshes, '+boneCount+' bones, '+groups.length+' animations. Inspect proportions, knee direction, skin, hair and clipping.');
+for(const g of groups){const b=document.createElement('button');b.textContent=g.name||'Animation';b.onclick=()=>{groups.forEach(x=>x.stop());g.start(true,1,g.from,g.to,false)};$('actions').append(b)}
+// Keep neutral rest pose on load. User chooses animations explicitly.
+const rest=document.createElement('button');rest.textContent='Riley Neutral Stand';rest.onclick=()=>{groups.forEach(g=>g.stop());for(const sk of skeletons)sk.returnToRest?.();};$('actions').prepend(rest);
+}catch(e){status('RILEY GLB LOAD FAILED: '+e.message+' — showing no mannequin. Check that the model file is publicly accessible.');console.error(e)}}
+
+// Show a visible procedural preview immediately, without requiring phone file uploads.
+// This is an inspection placeholder, NOT the Oracle-generated GLB or final Riley.
+function previewBaseline(){
+  clear();
+  const root=new BABYLON.TransformNode('baseline-preview',scene);
+  const skin=new BABYLON.StandardMaterial('baseline skin',scene);
+  skin.diffuseColor=new BABYLON.Color3(.76,.56,.45);
+  const parts=[
+    ['pelvis',0,1.02,0,.22,.18,.15],['torso',0,1.37,0,.20,.34,.14],
+    ['chest',0,1.57,0,.23,.18,.15],['neck',0,1.76,0,.075,.11,.075],
+    ['head',0,1.94,0,.12,.16,.115],
+    ['left upper arm',-.30,1.50,0,.095,.24,.095],
+    ['right upper arm',.30,1.50,0,.095,.24,.095],
+    ['left forearm',-.38,1.15,0,.075,.22,.075],
+    ['right forearm',.38,1.15,0,.075,.22,.075],
+    ['left hand',-.40,.92,0,.075,.115,.055],
+    ['right hand',.40,.92,0,.075,.115,.055],
+    ['left thigh',-.12,.77,0,.13,.29,.13],
+    ['right thigh',.12,.77,0,.13,.29,.13],
+    ['left calf',-.12,.31,0,.09,.26,.09],
+    ['right calf',.12,.31,0,.09,.26,.09],
+    ['left foot',-.12,.07,.09,.10,.07,.18],
+    ['right foot',.12,.07,.09,.10,.07,.18]
+  ];
+  for(const [name,x,y,z,rx,ry,rz] of parts){
+    const m=BABYLON.MeshBuilder.CreateSphere(name,{diameter:2,segments:16},scene);
+    m.scaling.set(rx,ry,rz);m.position.set(x,y,z);m.material=skin;m.parent=root;
+    imported.push(m);
+  }
+  camera.target.set(0,1,0);camera.radius=3.6;
+  status('PROCEDURAL BASE PREVIEW — 17 body segments. Drag to rotate; pinch to zoom. This is NOT the generated GLB, not a finished anatomical mesh, and not Riley Vulva 1 Trial.');
+  const b=document.createElement('button');b.textContent='Reset preview';
+  b.onclick=previewBaseline;$('actions').append(b);
+}
+load('./assets/riley-top-shelf-vulva1-trial.glb?v=vulva1-pelvis-fit-20261012','Riley Vulva 1 Trial Blender trial');
+
+$('file').onchange=()=>{const file=$('file').files[0];if(!file)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);load(objectURL,file.name)};
+</script></body></html>
