@@ -60,11 +60,13 @@ function applyPelvicHinge(){
   const soften=Number($('rimSmooth').value)/100, tuck=Number($('rimTuck').value)/1000;
   $('rimSmoothAmount').textContent=Math.round(soften*100)+'%';
   $('rimTuckAmount').textContent=$('rimTuck').value+' mm';
+  const rimWeights=new Array(positions.length/3).fill(0);
   if(soften||tuck){
     for(let i=0;i<positions.length;i+=3){
       const x=positions[i],y=positions[i+1],z=positions[i+2];
       const influence=Math.max(0,Math.min(1,(y-(yMax-height*.48))/(height*.31)));
       if(!influence)continue;
+      rimWeights[i/3]=influence;
       if(soften){
         let total=0,ys=0,zs=0;
         for(let j=0;j<positions.length;j+=3){
@@ -75,14 +77,13 @@ function applyPelvicHinge(){
         }
         if(total){p[i+1]+=(ys/total-y)*soften*influence*.55;p[i+2]+=(zs/total-z)*soften*influence*.35;}
       }
-      // In this viewer +Z is inward. Feather reduces the raised hard lip.
-      p[i+2]+=tuck*influence;
     }
   }
   for(let i=0;i<p.length;i+=3){
-    const dy=positions[i+1]-pivotY,dz=positions[i+2]-pivotZ;
+    const dy=p[i+1]-pivotY,dz=p[i+2]-pivotZ;
     p[i+1]=pivotY+dy*c-dz*si;
-    p[i+2]=pivotZ+dy*si+dz*c;
+    // Apply inward feather after rotation, so tuck changes depth alone.
+    p[i+2]=pivotZ+dy*si+dz*c+tuck*rimWeights[i/3];
   }
   addonMesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind,p,true);
   if(normals){
