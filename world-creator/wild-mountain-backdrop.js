@@ -143,12 +143,155 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   dome.renderingGroupId=0;
   // Fixed sky has no motion parallax; real hills and vegetation move normally.
   // Follow the player in XYZ so the ridge never intersects a streamed tile.
+
+  // The 360° sky alone is easy to hide behind actual 3D forest and high
+  // terrain. This second, transparent *mountain-only* vista is deliberately
+  // aligned with the north-facing village façades (positive world Z).
+  // It is real scene geometry behind the lodge, not the approved image pasted
+  // over the playable houses, paths or other people.
+  const vW=mobile?1024:2048,vH=mobile?512:1024;
+  const vista=new B.DynamicTexture("sunny cliff mountain above ranger station",
+    {width:vW,height:vH},scene,false,B.Texture.BILINEAR_SAMPLINGMODE);
+  const vc=vista.getContext(),factor=vW/2048;
+  vc.save();vc.scale(factor,factor);
+  const vw=2048,vh=1024;
+  function fract(n){return n-Math.floor(n);}
+  function rnd(n,k=0){return fract(Math.sin(n*127.1+k*311.7+91.713)*43758.5453);}
+  function crest(x){
+    const u=x/vw;
+    return 322-166*Math.exp(-Math.pow((u-.68)/.30,2))
+      -40*Math.exp(-Math.pow((u-.50)/.10,2))
+      +25*Math.sin(u*12.5)+14*Math.sin(u*30.1)+5*Math.sin(u*99.4);
+  }
+  // Soft blue distance behind the mountain and the atmospheric shoulder.
+  vc.beginPath();vc.moveTo(0,crest(0));
+  for(let x=4;x<=vw;x+=4)vc.lineTo(x,crest(x));
+  vc.lineTo(vw,vh);vc.lineTo(0,vh);vc.closePath();
+  const greens=vc.createLinearGradient(0,175,0,vh);
+  greens.addColorStop(0,"#6b8a50");
+  greens.addColorStop(.30,"#496e36");
+  greens.addColorStop(.65,"#254d2c");
+  greens.addColorStop(1,"#173c2b");
+  vc.fillStyle=greens;vc.fill();
+  // Irregular illuminated hardwood/tree clusters: many different scales,
+  // concentrated into natural wooded ribs and sunlit slopes.
+  for(let i=0;i<13000;i++){
+    const x=rnd(i,1)*vw,y=crest(x)+5+rnd(i,2)*550;
+    if(y>vh)continue;
+    const d=(y-crest(x))/550;
+    const sun=.38+.62*Math.max(0,Math.sin(x*.021+y*.017))**2;
+    const tone=rnd(i,3),warm=rnd(i,4)>.73;
+    const colors=warm?
+      ["#9cac47","#b1b85e","#ced174","#7c9850"]:
+      ["#365c34","#507735","#668b3f","#799442","#406d47","#224d36"];
+    vc.fillStyle=colors[Math.floor(tone*colors.length)];
+    const rad=(1.5+4*rnd(i,5))*(.74+d*.65);
+    vc.beginPath();
+    vc.ellipse(x,y,rad*(.9+rnd(i,6)),rad*(.65+sun*.32),
+      rnd(i,7),0,Math.PI*2);
+    vc.fill();
+  }
+  // The user's reference has a tall stratified Appalachian sandstone
+  // escarpment, right of center and ABOVE the village roof line.
+  // Outline includes projecting ledges and deep vertical clefts.
+  const rockTop=x=>crest(x)+14+11*Math.sin(x*.047);
+  vc.save();vc.beginPath();
+  const c0=1132,c1=1616;
+  vc.moveTo(c0,rockTop(c0)+40);
+  for(let x=c0;x<=c1;x+=7)vc.lineTo(x,rockTop(x));
+  for(let x=c1;x>=c0;x-=7){
+    const edge=330+28*Math.sin(x*.030)+18*rnd(Math.floor(x/21),33);
+    vc.lineTo(x,rockTop(x)+edge);
+  }
+  vc.closePath();vc.clip();
+  const stone=vc.createLinearGradient(c0,190,c1,520);
+  stone.addColorStop(0,"#d4d0b9");
+  stone.addColorStop(.29,"#a9b0a0");
+  stone.addColorStop(.59,"#858f82");
+  stone.addColorStop(1,"#515d52");
+  vc.fillStyle=stone;vc.fillRect(c0,140,c1-c0,650);
+  for(let i=0;i<580;i++){
+    const x=c0+rnd(i,23)*(c1-c0),y=170+rnd(i,24)*445;
+    const len=10+rnd(i,25)*115;
+    vc.strokeStyle=i%4===0?"#e2ddc594":i%3===0?"#4554478c":"#7a8476ab";
+    vc.lineWidth=.6+rnd(i,26)*3.4;
+    vc.beginPath();vc.moveTo(x,y);vc.lineTo(
+      x+len*(rnd(i,27)-.19),y+(rnd(i,28)-.42)*18);
+    vc.stroke();
+  }
+  // Tree shadows and occasional hemlocks growing across rock benches.
+  for(let i=0;i<90;i++){
+    const x=c0+rnd(i,41)*(c1-c0),y=rockTop(x)+60+rnd(i,42)*315;
+    const len=8+rnd(i,43)*40;
+    vc.strokeStyle=i%3===0?"#384e3cb9":"#5b6d4b9c";
+    vc.lineWidth=1+rnd(i,44)*3;
+    vc.beginPath();vc.moveTo(x,y);vc.lineTo(x+2,y-len);vc.stroke();
+  }
+  vc.restore();
+  // Closer wooded folds overlap the toe of the cliff naturally.
+  vc.beginPath();vc.moveTo(0,660);
+  for(let x=0;x<=vw;x+=6){
+    const y=648+52*Math.sin(x/160)+22*Math.sin(x/49)-18*Math.sin(x/313);
+    vc.lineTo(x,y);
+  }
+  vc.lineTo(vw,vh);vc.lineTo(0,vh);vc.closePath();
+  const nearGreen=vc.createLinearGradient(0,630,0,vh);
+  nearGreen.addColorStop(0,"#50783c");nearGreen.addColorStop(1,"#234a2d");
+  vc.fillStyle=nearGreen;vc.fill();
+  for(let i=0;i<1450;i++){
+    const x=rnd(i,63)*vw;
+    const y=640+52*Math.sin(x/160)+22*Math.sin(x/49)-18*Math.sin(x/313)+
+      rnd(i,64)*110;
+    const t=7+rnd(i,65)*26;
+    vc.fillStyle=["#3a653a","#436f39","#638a45","#799a43"][i%4];
+    vc.beginPath();vc.moveTo(x,y-t);vc.lineTo(x-t*.24,y+t*.2);
+    vc.lineTo(x+t*.24,y+t*.2);vc.closePath();vc.fill();
+  }
+  // Feather both lower and side edges. The foreground stays fully playable:
+  // there is never a hard image-card rectangle cutting through the forest.
+  vc.globalCompositeOperation="destination-out";
+  const bottom=vc.createLinearGradient(0,720,0,1024);
+  bottom.addColorStop(0,"rgba(0,0,0,0)");
+  bottom.addColorStop(1,"rgba(0,0,0,1)");
+  vc.fillStyle=bottom;vc.fillRect(0,720,vw,304);
+  for(const side of ["left","right"]){
+    const g=side==="left"?
+      vc.createLinearGradient(0,0,250,0):
+      vc.createLinearGradient(vw,0,vw-250,0);
+    g.addColorStop(0,"rgba(0,0,0,1)");
+    g.addColorStop(1,"rgba(0,0,0,0)");
+    vc.fillStyle=g;
+    vc.fillRect(side==="left"?0:vw-250,0,250,vh);
+  }
+  vc.restore();
+  vista.hasAlpha=true;vista.update(false);
+  const vistaMat=new B.StandardMaterial("sunlit textured Appalachian bluff",scene);
+  vistaMat.diffuseTexture=vista;
+  vistaMat.useAlphaFromDiffuseTexture=true;
+  vistaMat.disableLighting=true;
+  vistaMat.emissiveColor=new B.Color3(1,1,1);
+  vistaMat.backFaceCulling=false;
+  vistaMat.disableDepthWrite=true;
+  vistaMat.specularColor=new B.Color3(0,0,0);
+  // The cliff reaches well above the native treetops, matching the approved
+  // scene's dominant high ridge. It lives beyond all 3D village buildings.
+  const vistaWall=B.MeshBuilder.CreatePlane("VISIBLE mountain and cliff behind village",
+    {width:1470,height:480,sideOrientation:B.Mesh.DOUBLESIDE},scene);
+  vistaWall.material=vistaMat;
+  vistaWall.applyFog=false;
+  vistaWall.isPickable=false;
+  vistaWall.renderingGroupId=1;
+  // Camera-following far vista: cannot collide with paths or wander into a
+  // streamed terrain tile, but retains the same world north bearing.
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
+    vistaWall.position.set(camera.position.x,camera.position.y+125,camera.position.z+640);
   });
   dome.position.copyFrom(camera.position);
-  return {dome,dispose(){
+  vistaWall.position.set(camera.position.x,camera.position.y+125,camera.position.z+640);
+  return {dome,vistaWall,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
+    vistaWall.dispose();vistaMat.dispose();vista.dispose();
     dome.dispose();mat.dispose();texture.dispose();
   }};
 }
