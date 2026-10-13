@@ -3,7 +3,7 @@
  * Procedural woody branch frames, layered leaf/needle cards and batched GPU
  * thin instances. This is an art-directed prototype, not scanned vegetation.
  */
-import { treesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor } from "./wild-nature.js";
+import { treesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js";
 import {hash} from "./world-core.js";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
@@ -142,33 +142,122 @@ function waterRibbon(B,scene,track,name,pts,width,mat){
   mesh.material=mat;return mesh;
 }
 
+// Shared native understory prototypes: thin instances keep lush woodland
+// affordable on phones. Species and cover are placed in habitat-aware patches.
 function floorPrototype(B,scene,track,kind){
   const verts=[],ids=[],cols=[];
-  const rng=randomSeed(kind==="fern"?213:786);
-  if(kind==="fern"||kind==="laurel"){
-    const fronds=kind==="fern"?9:15;
-    for(let i=0;i<fronds;i++){
-      const a=i*2.39996,reach=(kind==="fern"?.68:.82)*(.73+rng()*.45);
-      const stalkHeight=kind==="fern"?.67:1.18;
-      const end=[Math.cos(a)*reach,stalkHeight*(.8+rng()*.3),Math.sin(a)*reach];
-      const from=[.03*Math.sin(a),.06,.03*Math.cos(a)];
-      // Fern fronds and mountain laurel leaves use shaped tapered polygons.
-      for(let k=0;k<6;k++){
-        const t=(k+.55)/6;
-        const sx=from[0]+end[0]*t,sy=from[1]+(end[1]-from[1])*t,sz=from[2]+end[2]*t;
-        const tangent=[-Math.sin(a),0,Math.cos(a)],w=(1-t)*.18*(kind==="fern"?1:1.42);
-        const index=verts.length/3;
-        verts.push(sx-tangent[0]*w,sy,sz-tangent[2]*w,
-          sx+tangent[0]*w,sy,sz+tangent[2]*w,
-          sx+Math.cos(a)*.14,sy+.13,sz+Math.sin(a)*.14);
-        ids.push(index,index+1,index+2);
-        const shade=.57+rng()*.38;
-        for(let q=0;q<3;q++)cols.push(.24*shade,.60*shade,.28*shade,1);
+  const kinds=["fern","laurel","rhododendron","spicebush","blueberry","pawpaw",
+    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall"];
+  const rng=randomSeed(213+Math.max(0,kinds.indexOf(kind))*863);
+  const leafy={
+    fern:[.27,.57,.25],laurel:[.23,.48,.23],rhododendron:[.20,.43,.27],
+    spicebush:[.40,.58,.24],blueberry:[.33,.48,.20],pawpaw:[.33,.61,.26],
+    bramble:[.27,.52,.23],sedge:[.39,.52,.23],moss:[.25,.39,.18],
+    wildflower:[.35,.58,.25]
+  };
+  function color(base){
+    const v=.73+rng()*.46;
+    return [Math.min(1,base[0]*v),Math.min(1,base[1]*v),Math.min(1,base[2]*v)];
+  }
+  function tri(a,b,c,base){
+    const at=verts.length/3;
+    verts.push(...a,...b,...c);ids.push(at,at+1,at+2);
+    const col=color(base);
+    for(let i=0;i<3;i++)cols.push(...col,1);
+  }
+  function stem(a,b,r=.018){
+    const at=verts.length/3;
+    addBranch(verts,ids,a,b,r,r*.25,5);
+    for(let i=at;i<verts.length/3;i++)cols.push(.27,.29,.17,1);
+  }
+  function leaf(a,b,w,base){
+    const dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz)||1;
+    const px=-dz/len,pz=dx/len,mid=[
+      a[0]*.43+b[0]*.57,a[1]*.43+b[1]*.57+.045,a[2]*.43+b[2]*.57];
+    const left=[mid[0]+px*w,mid[1],mid[2]+pz*w];
+    const right=[mid[0]-px*w,mid[1],mid[2]-pz*w];
+    tri(a,left,b,base);tri(a,b,right,base);
+  }
+  if(kind==="fern"){
+    // Lacy pinnate fronds, arching away from the crown rather than flat fans.
+    for(let i=0;i<13;i++){
+      const a=i*2.39996+rng()*.3,reach=.62+rng()*.45;
+      const tip=[Math.cos(a)*reach,.33+rng()*.32,Math.sin(a)*reach];
+      stem([0,.07,0],tip,.009);
+      for(let k=1;k<8;k++){
+        const t=k/8,anchor=[tip[0]*t,.07+(tip[1]-.07)*t+.20*Math.sin(t*Math.PI),
+          tip[2]*t];
+        const width=.19*Math.sin(t*Math.PI)*(.8+rng()*.4);
+        for(const sign of [-1,1]){
+          const out=[anchor[0]-Math.sin(a)*width*sign+Math.cos(a)*.07,
+            anchor[1]-.02,anchor[2]+Math.cos(a)*width*sign+Math.sin(a)*.07];
+          leaf(anchor,out,.033,leafy.fern);
+        }
+      }
+    }
+  }else if(["laurel","rhododendron","spicebush","blueberry","pawpaw","bramble"].includes(kind)){
+    const rhodo=kind==="rhododendron",pawpaw=kind==="pawpaw";
+    const count=rhodo?19:kind==="laurel"?16:kind==="bramble"?13:pawpaw?8:12;
+    const tall=rhodo?1.65:kind==="laurel"?1.23:pawpaw?1.72:
+      kind==="spicebush"?1.20:kind==="blueberry"?.83:1.09;
+    const spread=rhodo?1.12:kind==="laurel"?.91:pawpaw?.68:.78;
+    for(let i=0;i<count;i++){
+      const a=i*2.39996+rng()*.45,reach=spread*(.5+rng()*.52);
+      const tip=[Math.cos(a)*reach,tall*(.63+rng()*.42),Math.sin(a)*reach];
+      stem([0,.08,0],[tip[0]*.40,tall*.35,tip[2]*.40],.025);
+      stem([tip[0]*.40,tall*.35,tip[2]*.40],tip,.016);
+      const n=rhodo?8:kind==="laurel"?7:pawpaw?5:6;
+      for(let k=0;k<n;k++){
+        const angle=a+k*2.39996,reachLeaf=(rhodo?.36:kind==="laurel"?.28:pawpaw?.32:.20)*(.68+rng()*.4);
+        const from=[tip[0]+Math.cos(angle)*.04,tip[1]-.02,tip[2]+Math.sin(angle)*.04];
+        const to=[tip[0]+Math.cos(angle)*reachLeaf,tip[1]+(rng()-.45)*.23,
+          tip[2]+Math.sin(angle)*reachLeaf];
+        leaf(from,to,(pawpaw?.085:rhodo?.080:kind==="laurel"?.060:.050),leafy[kind]);
+      }
+    }
+  }else if(kind==="sedge"){
+    for(let i=0;i<28;i++){
+      const a=i*2.39996,lean=.26+rng()*.55;
+      const from=[(rng()-.5)*.22,.035,(rng()-.5)*.22];
+      const to=[from[0]+Math.cos(a)*lean,.27+rng()*.41,
+        from[2]+Math.sin(a)*lean];
+      leaf(from,to,.023+rng()*.022,leafy.sedge);
+    }
+  }else if(kind==="moss"){
+    for(let i=0;i<24;i++){
+      const a=rng()*Math.PI*2,r=.11+Math.sqrt(rng())*.52;
+      const x=Math.cos(a)*r,z=Math.sin(a)*r;
+      const size=.11+rng()*.18;
+      tri([x-size,.027,z-size*.38],[x+size*.8,.028,z-size*.5],
+        [x+(rng()-.5)*size,.044,z+size],leafy.moss);
+    }
+  }else if(kind==="leaflitter"){
+    const browns=[[.45,.29,.15],[.51,.34,.20],[.36,.28,.15],[.60,.43,.24]];
+    for(let i=0;i<25;i++){
+      const a=rng()*Math.PI*2,r=Math.sqrt(rng())*.78,x=Math.cos(a)*r,z=Math.sin(a)*r;
+      const turn=rng()*Math.PI*2,sz=.07+rng()*.11,c=Math.cos(turn),s=Math.sin(turn);
+      const base=browns[i%browns.length];
+      tri([x-c*sz,.031,z-s*sz],[x+s*sz*.55,.036,z-c*sz*.55],
+        [x+c*sz*.65,.033,z+s*sz],base);
+    }
+  }else if(kind==="wildflower"){
+    for(let i=0;i<16;i++){
+      const a=i*2.39996,r=.13+rng()*.44,x=Math.cos(a)*r,z=Math.sin(a)*r;
+      const top=[x,.25+rng()*.39,z];
+      stem([x,.03,z],top,.007);
+      for(let j=0;j<4;j++){
+        const p=a+j*1.57;
+        leaf([x,top[1]-.12,z],[x+Math.cos(p)*.17,top[1]-.15,z+Math.sin(p)*.17],
+          .035,leafy.wildflower);
+      }
+      if(i%3===0){
+        const petal=[.73,.70,.44];
+        tri([x-.04,top[1],z],[x+.04,top[1]+.04,z],
+          [x+.03,top[1]-.03,z+.05],petal);
       }
     }
   }else if(kind==="rock"){
-    const ringCount=9;
-    verts.push(0,.84,0);
+    const ringCount=9;verts.push(0,.84,0);
     for(let k=0;k<ringCount;k++){
       const a=k*2*Math.PI/ringCount,rr=.62+rng()*.49;
       verts.push(Math.cos(a)*rr,.27+rng()*.35,Math.sin(a)*rr);
@@ -192,41 +281,72 @@ function floorPrototype(B,scene,track,kind){
     addBranch(verts,ids,[1,.14,0],[1.44,.43,-.65],.13,.018,6);
     for(let i=0;i<verts.length/3;i++)cols.push(.43,.35,.28,1);
   }
-  const m=geometry(B,scene,track,"WV floor "+kind,verts,ids,cols);
-  const mat=track(new B.StandardMaterial("WV floor "+kind+" material",scene));
-  mat.diffuseColor=kind==="fern"?B.Color3.FromHexString("#638449"):
-    kind==="laurel"?B.Color3.FromHexString("#506d45"):
-    kind==="rock"?B.Color3.FromHexString("#a6a49a"):
-    B.Color3.FromHexString("#715a46");
-  mat.backFaceCulling=false;mat.specularColor=new B.Color3(.025,.03,.025);
-  mat.useVertexColors=true;m.material=mat;
-  return m;
+  const mesh=geometry(B,scene,track,"WV understory "+kind,verts,ids,cols);
+  const material=track(new B.StandardMaterial("WV understory "+kind+" material",scene));
+  material.diffuseColor=B.Color3.FromHexString(
+    kind==="rock"?"#aaa69a":kind==="deadfall"?"#715a46":"#a7b69a");
+  material.backFaceCulling=false;
+  material.specularColor=new B.Color3(.018,.024,.015);
+  material.useVertexColors=true;
+  mesh.material=material;
+  return mesh;
 }
 function renderForestFloor(B,scene,track,{cx,cy,seed}){
-  const types=["fern","laurel","rock","deadfall"];
-  const groups=Object.fromEntries(types.map(t=>[t,[]]));
-  const step=6.2,half=100;
+  const habitats={
+    "riparian":["fern","fern","sedge","spicebush","pawpaw","bramble","moss","leaflitter","rock","rhododendron"],
+    "moist-cove":["fern","fern","fern","rhododendron","rhododendron","laurel","spicebush","pawpaw","moss","leaflitter"],
+    "dry-ridge":["blueberry","blueberry","laurel","bramble","sedge","fern","leaflitter","leaflitter","rock","deadfall"],
+    "mixed-slope":["fern","fern","laurel","spicebush","blueberry","bramble","pawpaw","sedge","leaflitter","rhododendron"]
+  };
+  const types=["fern","laurel","rhododendron","spicebush","blueberry","pawpaw",
+    "bramble","sedge","moss","leaflitter","wildflower","rock","deadfall"];
+  const groups=Object.fromEntries(types.map(kind=>[kind,[]]));
+  // 4.65 m vs the former 6.2 m, with broader multilayered plants and
+  // occasional second clumps, delivers far fuller (not evenly carpeted) cover.
+  const step=4.65,half=101;
   const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
   const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
-  for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
-    const x=(i+(hash(i,j,seed+336)-.5)*.70)*step,
-      y=(j+(hash(i,j,seed+337)-.5)*.70)*step;
-    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<35)continue;
-    const roll=hash(i,j,seed+338);
-    let kind=roll<.46?"fern":roll<.69?"laurel":roll<.85?"rock":roll<.93?"deadfall":null;
-    if(!kind)continue;
-    const scale=kind==="rock"?.4+hash(i,j,seed+339)*1.5:
-      kind==="deadfall"?.7+hash(i,j,seed+339)*.7:
-      .46+hash(i,j,seed+339)*.9;
+  const place=(kind,x,y,i,j,salt,multiplier=1)=>{
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<25)return;
+    if(waterAt(x,y,seed))return;
+    // Keep a narrow, usable approach to the cabin steps.
+    if(Math.abs(x)<2.5&&y>0&&y<35)return;
+    const roll=hash(i,j,seed+salt);
+    const size=kind==="rock"?.37+roll*.85:kind==="deadfall"?.55+roll*.65:
+      kind==="leaflitter"?.75+roll*.5:kind==="moss"?.83+roll*.54:
+      .84+roll*.71;
     groups[kind].push({x,y,height:cabinGrade(x,y,seed)+
-      (kind==="rock"?-.09:kind==="deadfall"?-.04:0),scale,
-      variation:hash(i,j,seed+340),heading:hash(i,j,seed+341)*Math.PI*2});
+      (kind==="rock"?-.10:kind==="deadfall"?-.06:.015),
+      scale:size*multiplier,variation:hash(i,j,seed+salt+4),
+      heading:hash(i,j,seed+salt+8)*Math.PI*2});
+  };
+  for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
+    const x=(i+(hash(i,j,seed+336)-.5)*.76)*step;
+    const y=(j+(hash(i,j,seed+337)-.5)*.76)*step;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<25)continue;
+    const roll=hash(i,j,seed+338);
+    // Bare patches, stones, and woody debris still punctuate the rich floor.
+    if(roll<.07)continue;
+    const biome=biomeAt(x,y,seed),palette=habitats[biome]||habitats["mixed-slope"];
+    const index=Math.floor(hash(i,j,seed+342)*palette.length);
+    const kind=palette[index];
+    place(kind,x,y,i,j,339);
+    // Natural companion plants in irregular overlapping thickets.
+    if(hash(i,j,seed+343)<.29&&kind!=="rock"&&kind!=="deadfall"){
+      const accent=palette[Math.floor(hash(i,j,seed+344)*palette.length)];
+      if(accent!=="deadfall"&&accent!=="rock")
+        place(accent,x+(hash(i,j,seed+345)-.5)*2.5,
+          y+(hash(i,j,seed+346)-.5)*2.5,i,j,347,.68);
+    }
+    if(hash(i,j,seed+355)<.045&&biome!=="dry-ridge")
+      place("wildflower",x+1,y-1,i,j,358,.68);
   }
   let total=0;
   for(const kind of types){
     if(!groups[kind].length)continue;
     const model=floorPrototype(B,scene,track,kind);
-    setInstances(B,model,groups[kind],cx,cy);total+=groups[kind].length;
+    setInstances(B,model,groups[kind],cx,cy);
+    total+=groups[kind].length;
   }
   return total;
 }
@@ -275,10 +395,10 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed}){
       if(path.length>2)waterRibbon(B,scene,track,"flowing hollow creek",path,
         p=>2*Math.max(.65,3.5-p[3]*.0025),waterMat);
     }
-  // Dense native canopy nearby. Distant groves use fewer, spaced trunks and
-  // thinner height scaling to keep the mobile GPU cost bounded.
-  const near=treesInArea(cx,cy,102,seed,11);
-  const far=treesInArea(cx,cy,470,seed,43).filter(t=>
+  // About 60% more native trees (spacing reduced by ~sqrt(1/1.6)).
+  // Shared thin-instance tree prototypes keep the mobile GPU cost bounded.
+  const near=treesInArea(cx,cy,102,seed,8.7);
+  const far=treesInArea(cx,cy,470,seed,34).filter(t=>
     Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
   const groups=new Map();
   for(const t of near.concat(far)){
