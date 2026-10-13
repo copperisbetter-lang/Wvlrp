@@ -19,8 +19,21 @@ const crewButton=document.getElementById("crew");
 const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 // Direct link ?spawn=ranger places the walking player outside the ranger porch.
 // Hearthside remains the default on ordinary walk links; resident NPCs stay put.
-const START_AT_RANGER=new URLSearchParams(window.location.search).get("spawn")==="ranger";
+const betaParams=new URLSearchParams(window.location.search);
+const BETA_MODE=betaParams.get("mode")==="beta";
+const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const RANGER_SPAWN=Object.freeze({x:93,z:45,tileX:96,tileZ:96});
+// Disperse visitors in the open village approach to prevent overlapping
+// first-person spawns (which would conceal another visitor's body).
+const betaSpawnAngle=BETA_MODE?Math.random()*Math.PI*2:0;
+const betaSpawnRadius=BETA_MODE?3.2+Math.random()*2.3:0;
+const betaSpawnX=Math.sin(betaSpawnAngle)*betaSpawnRadius;
+const betaSpawnZ=Math.cos(betaSpawnAngle)*betaSpawnRadius;
+if(BETA_MODE){
+  document.body.classList.add("beta-game");
+  const back=document.querySelector(".actions a.link");
+  if(back){back.href="../adventure-portal.html";back.textContent="← Adventures";}
+}
 const status=s=>{message.textContent=s;};
 let world;
 try{world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY)));}
@@ -231,8 +244,8 @@ const goToRanger=()=>{
     try{habitat=addLandscape(RANGER_SPAWN.tileX,RANGER_SPAWN.tileZ);}
     catch(err){console.error(err);status("Could not load village scenery: "+err.message);}
   }
-  camera.position.set(RANGER_SPAWN.x,
-    cameraGround(RANGER_SPAWN.x,RANGER_SPAWN.z)+EYE_HEIGHT,RANGER_SPAWN.z);
+  const startX=RANGER_SPAWN.x+betaSpawnX,startZ=RANGER_SPAWN.z+betaSpawnZ;
+  camera.position.set(startX,cameraGround(startX,startZ)+EYE_HEIGHT,startZ);
   camera.rotation.set(0,0,0);
   info.textContent="Ranger Station · Laurel's Kitchen left · Mercantile right";
   status("You're standing in front of Ranger Station. Walk forward to its porch, or turn to explore both shops.");
@@ -360,6 +373,20 @@ const cameraGround=(x,z)=>{
   }
   return ground;
 };
+// Peer mode is enabled only by the public Game Beta Test entrance.
+// The local visitor stays first person and resident GLB characters are untouched.
+let multiplayer=null;
+if(BETA_MODE){
+  const playersBadge=document.getElementById("players");
+  import("./wild-multiplayer.js?v=20261013-beta1").then(({connectWildMultiplayer})=>{
+    multiplayer=connectWildMultiplayer({B,scene,
+      getCamera:()=>camera,groundAt:(x,z)=>cameraGround(x,z),
+      statusElement:playersBadge});
+  }).catch(err=>{
+    console.warn("Optional game beta multiplayer unavailable:",err);
+    if(playersBadge)playersBadge.textContent="Multiplayer unavailable · exploring solo";
+  });
+}
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
   const dt=Math.min(engine.getDeltaTime()/1000,.05);
@@ -416,6 +443,7 @@ engine.runRenderLoop(()=>{
   // of the streamed terrain or drifting as the walker leaves the cabin.
   sunDisc.position.set(camera.position.x+sunLook.x*420,
     camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
+  multiplayer?.update(dt);
   scene.render();
 });
 if(START_AT_RANGER)goToRanger();
@@ -444,6 +472,9 @@ window.__wildDiagnostics=()=>({
     communityFirePits:habitat?.communityFirePits??0,
    communityPaths:habitat?.communityPaths??0,
    spawnLocation:START_AT_RANGER?"ranger":"hearthside",
+    betaMode:BETA_MODE,
+    multiplayerPeers:multiplayer?.getPeerCount()??0,
+    multiplayerStatus:multiplayer?.getStatus()??(BETA_MODE?"connecting":"disabled"),
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
