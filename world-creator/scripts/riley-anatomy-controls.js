@@ -6,10 +6,10 @@
   'use strict';
   const q=id=>document.getElementById(id);
   const specs = [
-    ['outerLength', 'Outer labia length', 50, 280, 100, '%'],
-    ['outerThickness', 'Outer labia fullness', 40, 350, 100, '%'],
-    ['innerLength', 'Inner labia length', 50, 280, 100, '%'],
-    ['innerThickness', 'Inner labia fullness', 40, 350, 100, '%'],
+    ['outerLength', 'Outer labia length', 50, 400, 100, '%'],
+    ['outerThickness', 'Outer labia fullness', 40, 400, 100, '%'],
+    ['innerLength', 'Inner labia length', 50, 400, 100, '%'],
+    ['innerThickness', 'Inner labia fullness', 40, 400, 100, '%'],
     ['topFlapFold', 'Fold top outer flap back toward body', -30, 100, 0, ' mm'],
     ['hoodLength', 'Clitoral hood length — reserved', 65, 150, 100, '%'],
     ['hoodThickness', 'Clitoral hood thickness — reserved', 50, 175, 100, '%'],
@@ -21,7 +21,7 @@
   panel.setAttribute('aria-label','Riley independent labia and upper flap fitting controls');
   panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #93b89f;background:#254737;border-radius:12px;color:#f1f9ed';
   panel.innerHTML='<strong>Labia shape + separate top-flap fold — Riley trial</strong>'+
-    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">Increase length/fullness past 100% to make the lips visibly longer and fuller. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
+    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">Move a lip length/fullness slider above 100% for an obvious change in the attached 3D mesh (up to 400%). You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
     specs.map(([id,label,min,max,initial,unit])=>
       '<label style="display:block;margin:9px 0;'+(futureIds.has(id)?'opacity:.55;':'')+'">'+label+': <output id="'+id+'Amount">'+initial+unit+'</output>'+
       '<input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"'+(futureIds.has(id)?' disabled title="Reserved until separate clitoral and hood geometry is present"':'')+' style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>'
@@ -72,8 +72,11 @@
       // The donor has lips much closer to the midline than its broad
       // perimeter. Earlier masks at normalized x=0.55 hit the outer sheet,
       // not the labia. Keep masks soft to avoid jagged sparse topology.
-      const o=bump(nx,.29,.22)*bump(v,.53,.43);
-      const inn=bump(nx,.09,.135)*bump(v,.52,.38);
+      // Localize both lips on the central lower part of this sparse donor.
+      // The former weak morph moved only a few millimeters and was easily
+      // obscured by the full-size body and its oversized upper sheet.
+      const o=bump(nx,.29,.24)*bump(v,.48,.37);
+      const inn=bump(nx,.075,.13)*bump(v,.47,.35);
       const top=smooth((v-.69)/.28)*(.20+.80*smooth((nx-.12)/.46));
       outer[i]=o;inner[i]=inn;upperFlap[i]=top;
       if(o>.18)outerCount++;if(inn>.18)innerCount++;if(top>.18)flapCount++;
@@ -97,7 +100,11 @@
     const innerLength=(v('innerLength')-100)/100;
     const innerThickness=(v('innerThickness')-100)/100;
     const foldMM=v('topFlapFold');
-    if(!outerLength&&!outerThickness&&!innerLength&&!innerThickness&&!foldMM)return;
+    const size=v('overallSize')/100;
+    if(!outerLength&&!outerThickness&&!innerLength&&!innerThickness&&!foldMM){
+      q('rileyMorphStatus').textContent='Lip controls at their original shape (100%). Whole attachment: '+v('overallSize')+'%. Move length or fullness to see the deformation.';
+      return;
+    }
     const coords=addonMesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     if(!coords||coords.length!==mask.rest.length)return;
     const pos=Array.from(coords),a=-v('hingeFit')*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
@@ -117,10 +124,12 @@
       // Stretch ends while anchoring upper lip roots; preserve the clitoral
       // area and leave the outside sheet unaffected by length sliders.
       const extend=smooth((.88-nY)/.65);
-      const dy=-(.027*outerLength*o+.021*innerLength*inn)*extend;
-      // Labia fullness swells *outward* and spreads slightly laterally.
-      const relief=.016*outerThickness*o+.011*innerThickness*inn;
-      const lateral=Math.sign(x)*(.0032*outerThickness*o+.0019*innerThickness*inn);
+      // Physical displacements follow the enlarged insert. Longer controls
+      // stretch the lips vertically; fullness adds visible forward relief
+      // AND left/right width, without enlarging the entire upper flap.
+      const dy=-size*(.062*outerLength*o+.048*innerLength*inn)*extend;
+      const relief=size*(.032*outerThickness*o+.025*innerThickness*inn);
+      const lateral=Math.sign(x)*size*(.013*outerThickness*o+.009*innerThickness*inn);
       // Independently hinge the upper outside sheet backward toward the body.
       // The change tapers smoothly to zero below its upper attachment.
       const fold=foldMM/1000*flap;
@@ -139,7 +148,8 @@
       BABYLON.VertexData.ComputeNormals(pos,indices,out);
       addonMesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind,out,false);
     }
-    q('rileyMorphStatus').textContent='Live viewer deformation applied: lips '+v('outerLength')+'/'+v('outerThickness')+'% outer, '+v('innerLength')+'/'+v('innerThickness')+'% inner; upper flap '+foldMM+' mm. Largest edited vertex movement (depth/vertical): '+(maxChange*1000).toFixed(1)+' mm.';
+    addonMesh.refreshBoundingInfo(true);
+    q('rileyMorphStatus').textContent='Live mesh changed: whole insert '+v('overallSize')+'%, outer lip length '+v('outerLength')+'%, outer fullness '+v('outerThickness')+'%, inner lip length '+v('innerLength')+'%, inner fullness '+v('innerThickness')+'%, top flap '+foldMM+' mm. Largest movement: '+(maxChange*1000).toFixed(1)+' mm.';
   };
   q('fitReset').addEventListener('click',()=>{
     for(const [id,,,,initial,unit] of specs){
