@@ -82,7 +82,7 @@ export function waterAt(x,y,seed){
 export function biomeAt(x,y,seed){
   const height=terrainHeight(x,y,seed),d=Math.abs(y-riverY(x,seed));
   const c=nearestCreek(x,y,seed);
-  if(Math.hypot(x,y)<30)return "cabin-clearing";
+  if(Math.hypot(x,y)<20)return "cabin-clearing";
   if(d<90||c&&c.distance<25)return "riparian";
   if(height>255)return "dry-ridge";
   if(height<183||noise(x/270,y/270,seed+107)>.7)return "moist-cove";
@@ -97,7 +97,7 @@ const MIX=Object.freeze({
 export function treeAtCell(i,j,seed,spacing=9){
   const x=(i+(hash(i,j,seed+111)-.5)*.78)*spacing;
   const y=(j+(hash(i,j,seed+112)-.5)*.78)*spacing;
-  if(Math.hypot(x,y)<33)return null;
+  if(Math.hypot(x,y)<20)return null;
   const b=biomeAt(x,y,seed);
   if(b==="cabin-clearing")return null;
   // Natural gaps, sapling clusters and canopy veterans.
@@ -106,7 +106,7 @@ export function treeAtCell(i,j,seed,spacing=9){
   const species=MIX[b][Math.floor(hash(i,j,seed+113)*MIX[b].length)];
   const age=hash(i,j,seed+115);
   return {x,y,species,biome:b,height:cabinGrade(x,y,seed),
-    scale:age<.16?.42+age*1.7:age>.91?1.26+(age-.91)*2.4:.72+age*.46,
+    scale:age<.16?.68+age*1.50:age>.91?1.45+(age-.91)*2.8:.93+age*.50,
     heading:hash(i,j,seed+117)*Math.PI*2,variation:hash(i,j,seed+118),elder:age>.91};
 }
 export function treesInArea(cx,cy,halfExtent,seed,spacing=9){
@@ -144,7 +144,7 @@ export function supplementalTreesInArea(cx,cy,halfExtent,seed,spacing=9){
     const x=first.x+Math.cos(direction)*separation;
     const y=first.y+Math.sin(direction)*separation;
     if(Math.abs(x-cx)>halfExtent||Math.abs(y-cy)>halfExtent||
-      Math.hypot(x,y)<33||waterAt(x,y,seed))continue;
+      Math.hypot(x,y)<20||waterAt(x,y,seed))continue;
     const biome=biomeAt(x,y,seed);
     if(biome==="cabin-clearing")continue;
     const evergreen=hash(i,j,seed+1210)<.36;
@@ -154,8 +154,8 @@ export function supplementalTreesInArea(cx,cy,halfExtent,seed,spacing=9){
     // Existing veterans are ~9% of the canopy. Roughly 5% of half as many
     // supplemental trees provides an additional ~30% old-growth trees.
     const elder=hash(i,j,seed+1212)<.050,age=hash(i,j,seed+1213);
-    const scale=elder?1.43+.36*age:
-      age<.23?.46+age*1.38:.69+age*.47;
+    const scale=elder?1.53+.40*age:
+      age<.23?.58+age*1.37:.82+age*.53;
     list.push({x,y,species,biome,height:cabinGrade(x,y,seed),scale,
       heading:hash(i,j,seed+1214)*Math.PI*2,
       variation:hash(i,j,seed+1215),elder,evergreen,newGrowth:true});
