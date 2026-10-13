@@ -6,20 +6,20 @@
  */
 export const COMMUNITY_SITES=Object.freeze([
   Object.freeze({id:"wild-ranger-station",name:"Ranger Station",markerX:93,markerZ:77,
-    x:94,z:109,width:26,depth:18,roofHeight:10,front:"south"}),
+    x:93,z:110,width:26,depth:18,roofHeight:10,front:"south"}),
   Object.freeze({id:"wild-laurels-kitchen",name:"Laurel's Kitchen",markerX:90,markerZ:78,
-    x:55,z:91,width:25,depth:17,roofHeight:9,front:"east"}),
+    x:55,z:110,width:25,depth:17,roofHeight:9,front:"south"}),
   Object.freeze({id:"wild-mercantile",name:"Mercantile & Gift Shop",markerX:90,markerZ:75,
-    x:132,z:76,width:26,depth:18,roofHeight:10,front:"west"})
+    x:131,z:110,width:26,depth:18,roofHeight:10,front:"south"})
 ]);
 export const WILD_TRAIL_SEGMENTS=Object.freeze([
   Object.freeze([[0,17],[9,24],[19,25],[29,30],[41,42],[53,44],[65,56],[79,61],[90,77]]),
-  Object.freeze([[90,77],[91,85],[94,93],[94,98]]),
-  Object.freeze([[90,77],[79,82],[67,84],[69,91]]),
-  Object.freeze([[90,77],[105,77],[119,77]]),
+  Object.freeze([[90,77],[91,85],[93,93],[93,96]]),
+  Object.freeze([[90,77],[79,82],[67,84],[55,96]]),
+  Object.freeze([[90,77],[105,81],[119,87],[131,96]]),
   // A second winding path extends out of the village toward the hills.
-  Object.freeze([[94,98],[97,131],[110,154],[104,190],[121,229]]),
-  Object.freeze([[119,77],[149,70],[178,86],[209,76]])
+  Object.freeze([[93,96],[95,131],[110,154],[104,190],[121,229]]),
+  Object.freeze([[131,96],[149,81],[178,86],[209,76]])
 ]);
 function distSeg(x,z,a,b){
   const dx=b[0]-a[0],dz=b[1]-a[1];
