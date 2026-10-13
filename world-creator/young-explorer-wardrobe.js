@@ -1,0 +1,228 @@
+/* Young Explorer outfit fitting and safe motion controls for the actual rigged 3D character.
+   Does not replace skin, face, hairstyle, shoes, or the character skeleton. */
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+const fmt = n => Number.isFinite(n) ? (n * 100).toFixed(1) + ' cm / ' + (n * 39.37008).toFixed(1) + ' in' : 'Unavailable';
+const normalize = name => String(name || '').toLowerCase().replace(/mixamorig/g,'').replace(/[^a-z0-9]/g,'');
+const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+const shades = {
+  plaid:['#73534d','#344152','#b78c7b'],
+  floral:['#385d91','#eff2da','#dfb96e'],
+  sunflower:['#dfb94c','#f7ead6','#be773b'],
+  denim:['#416c99','#f1e6c9'],
+  hiking:['#66764c','#eacb7a'],
+  navy:['#293a61','#c995a9']
+};
+const outfits = [
+  {id:'plaid',label:'Cranberry plaid sundress',type:'dress'},
+  {id:'floral',label:'Blue floral sundress',type:'dress'},
+  {id:'sunflower',label:'Golden summer dress',type:'dress'},
+  {id:'denim',label:'Denim shorts + cream shirt',type:'shorts'},
+  {id:'hiking',label:'Forest hiking shorts + yellow shirt',type:'shorts'},
+  {id:'navy',label:'Navy shorts + rose shirt',type:'shorts'}
+];
+function clothTexture(B,scene,id,color,floral=false){
+ const tex = new B.DynamicTexture('Young Explorer fabric ' + id,{width:512,height:512},scene,false);
+ const ctx=tex.getContext();ctx.fillStyle=color;ctx.fillRect(0,0,512,512);
+ if (floral) {
+  for(let y=12;y<512;y+=55)for(let x=12;x<512;x+=55){
+   let px=x+(y%110?15:0),py=y;
+   for(let i=0;i<5;i++){
+    const t=i*Math.PI*2/5;ctx.beginPath();
+    ctx.ellipse(px+9*Math.cos(t),py+9*Math.sin(t),6,9,t,0,Math.PI*2);
+    ctx.fillStyle='#e4eace';ctx.fill();
+   }
+   ctx.beginPath();ctx.arc(px,py,3.8,0,Math.PI*2);ctx.fillStyle='#e5b954';ctx.fill();
+  }
+ }else{
+  ctx.fillStyle='rgba(255,255,255,.035)';
+  for(let i=0;i<512;i+=5){ctx.fillRect(i,0,1,512);ctx.fillRect(0,i,512,1);}
+ }
+ tex.update();tex.uScale=1;tex.vScale=1;
+ return tex;
+}
+function fabric(B,scene,id,color,floral=false){
+ const m=new B.PBRMaterial('Young Explorer fitted ' + id,scene);
+ m.albedoColor=new B.Color3(1,1,1);m.albedoTexture=clothTexture(B,scene,id,color,floral);
+ m.roughness=.96;m.metallic=0;m.backFaceCulling=false;
+ return m;
+}
+function crossSection(points,low,high,centerX,maxOffset) {
+ let min=Infinity,max=-Infinity,n=0;
+ for(const p of points){
+  if(p.y<low||p.y>high||Math.abs(p.x-centerX)>maxOffset)continue;
+  min=Math.min(min,p.x);max=Math.max(max,p.x);n++;
+ }
+ return n>=8 ? max-min : NaN;
+}
+function bodyMeasurements(B,body) {
+ body.computeWorldMatrix(true);
+ const pos=body.getVerticesData(B.VertexBuffer.PositionKind);
+ const world=body.getWorldMatrix(),pts=[],tmp=new B.Vector3();
+ for(let i=0;i<pos.length;i+=3){
+  B.Vector3.TransformCoordinatesToRef(new B.Vector3(pos[i],pos[i+1],pos[i+2]),world,tmp);
+  pts.push({x:tmp.x,y:tmp.y,z:tmp.z});
+ }
+ let minY=Infinity,maxY=-Infinity,minX=Infinity,maxX=-Infinity;
+ for(const p of pts){minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);}
+ const H=maxY-minY,cx=(minX+maxX)/2;
+ const section=(a,b,off=.22)=>crossSection(pts,minY+a*H,minY+b*H,cx,off*H);
+ return {height:H,shoulder:section(.77,.81,.33),waist:section(.60,.63,.22),
+   hip:section(.52,.56,.26),armSpan:maxX-minX,minY,maxY,H,cx,
+   modelVertexCount:body.getTotalVertices(),meshName:body.name};
+}
+function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
+ const positions=body.getVerticesData(B.VertexBuffer.PositionKind);
+ const normals=body.getVerticesData(B.VertexBuffer.NormalKind);
+ const indices=body.getIndices();
+ if(!positions||!indices||!normals)return null;
+ const world=body.getWorldMatrix(),vy=new Array(positions.length/3);
+ const tmp=new B.Vector3();
+ for(let i=0;i<vy.length;i++){
+  B.Vector3.TransformCoordinatesToRef(new B.Vector3(positions[i*3],positions[i*3+1],positions[i*3+2]),world,tmp);
+  vy[i]=(tmp.y-measure.minY)/measure.H;
+ }
+ const kept=[];
+ for(let i=0;i<indices.length;i+=3){
+  const a=indices[i],b=indices[i+1],c=indices[i+2];
+  if(vy[a]>=range[0]&&vy[b]>=range[0]&&vy[c]>=range[0]&&
+     vy[a]<=range[1]&&vy[b]<=range[1]&&vy[c]<=range[1]) kept.push(a,b,c);
+ }
+ if(kept.length<15)throw Error('Outfit '+id+' has no fitted surface; check model dimensions');
+ // A unique skinned shell preserves the original skeleton weights, UVs and bone motion.
+ const shell=body.clone('Young Explorer wearable '+id,body.parent,false);
+ shell.makeGeometryUnique();
+ shell.setIndices(kept);
+ const raised=Float32Array.from(positions);
+ for(let i=0;i<raised.length;i+=3){
+  raised[i]+=normals[i]*inflate*measure.H;
+  raised[i+1]+=normals[i+1]*inflate*measure.H;
+  raised[i+2]+=normals[i+2]*inflate*measure.H;
+ }
+ shell.updateVerticesData(B.VertexBuffer.PositionKind,raised);
+ shell.material=material;shell.skeleton=body.skeleton;
+ shell.isPickable=false;shell.setEnabled(false);shell.alwaysSelectAsActiveMesh=true;
+ return shell;
+}
+class YoungExplorerWardrobe {
+ constructor(B,scene,result){
+  this.B=B;this.scene=scene;this.model=result;
+  const ms=result.meshes||[];
+  this.body=ms.filter(x=>x.getTotalVertices?.()>10000).sort((a,b)=>b.getTotalVertices()-a.getTotalVertices())[0];
+  if(!this.body)throw Error('Real child body geometry was not found; clothing was not substituted');
+  this.measure=bodyMeasurements(B,this.body);
+  this.dress=ms.find(m=>/opaque plaid sundress/i.test(m.material?.name||'') ||
+   (m.material?.subMaterials||[]).some(n=>/opaque plaid sundress/i.test(n?.name||'')));
+  if(!this.dress)throw Error('Original fitted dress was not found');
+  this.originalDressMaterial=this.dress.material;
+  this.dressStyles={
+   plaid:this.originalDressMaterial,
+   floral:fabric(B,scene,'blue floral sundress','#385d91',true),
+   sunflower:fabric(B,scene,'golden summer dress','#dfb94c',false)
+  };
+  const create=(id,shirt,shorts)=>({
+   shirt:makeSkinnedShell(B,this.body,id+' top',[.62,.76],.008,
+        fabric(B,scene,id+' shirt',shirt),this.measure),
+   shorts:makeSkinnedShell(B,this.body,id+' shorts',[.42,.618],.011,
+        fabric(B,scene,id+' woven shorts',shorts),this.measure)
+  });
+  this.suits={
+   denim:create('denim',shades.denim[1],shades.denim[0]),
+   hiking:create('hiking',shades.hiking[1],shades.hiking[0]),
+   navy:create('navy',shades.navy[1],shades.navy[0])
+  };
+  this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
+  this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
+  this.buildMeasurements();this.bindSelector();
+  this.select('plaid');
+ }
+ buildMeasurements(){
+  const m=this.measure;
+  if(!$('model-measurements'))return;
+  $('model-measurements').innerHTML=
+   '<strong>Actual 3D body sizing (model scale)</strong>'+
+   '<span>Height: '+fmt(m.height)+'</span>'+
+   '<span>Shoulder width: '+fmt(m.shoulder)+'</span>'+
+   '<span>Waist width: '+fmt(m.waist)+'</span>'+
+   '<span>Hip width: '+fmt(m.hip)+'</span>'+
+   '<small>Widths are straight-line mesh measurements, not body circumferences. Clothing is fitted to this character\'s rigged mesh; figures are not physical measurements of a real child.</small>';
+ }
+ bindSelector(){
+  const el=$('outfit-select');if(!el)return;
+  el.innerHTML=outfits.map(o=>'<option value="'+o.id+'">'+o.label+'</option>').join('');
+  el.onchange=()=>this.select(el.value);
+ }
+ select(id){
+  if(!outfits.some(o=>o.id===id))return;
+  for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
+  const dress=id==='plaid'||id==='floral'||id==='sunflower';
+  this.dress.setEnabled(dress);
+  if(dress) this.dress.material=this.dressStyles[id];
+  else {const suit=this.suits[id];suit.shirt?.setEnabled(true);suit.shorts?.setEnabled(true);}
+  if($('outfit-select'))$('outfit-select').value=id;
+  if($('outfit-feedback'))$('outfit-feedback').textContent=
+    outfits.find(x=>x.id===id).label+' fitted to Young Explorer.';
+  this.selectedOutfit=id;
+ }
+ boneTarget(name){
+  const skel=this.model.skeletons?.[0];if(!skel)return null;
+  const b=skel.bones.find(b=>normalize(b.name)===name);
+  return b?.getTransformNode?.()||b?._linkedTransformNode||null;
+ }
+ // Animate linked skin joints, keeping clothes and body on exactly the same bones.
+ pose(kind) {
+  this.model.animationGroups?.forEach(x=>x.stop());
+  this.resetPose();
+  const angles=kind==='bend' ?
+   {hips:[.12,0,0],spine:[.70,0,0],spine1:[.33,0,0],
+    leftupleg:[-.16,0,0],rightupleg:[-.16,0,0],neck:[-.20,0,0]} :
+   {hips:[-.12,0,0],spine:[.10,0,0],leftupleg:[-1.10,0,0],rightupleg:[-1.10,0,0],
+    leftleg:[1.22,0,0],rightleg:[1.22,0,0],leftfoot:[-.14,0,0],rightfoot:[-.14,0,0]};
+  this.poseTokens=[];
+  for(const [name,euler] of Object.entries(angles)){
+   const joint=this.boneTarget(name);if(!joint)continue;
+   const from=(joint.rotationQuaternion || this.B.Quaternion.FromEulerVector(joint.rotation)).clone();
+   const delta=this.B.Quaternion.RotationYawPitchRoll(euler[1],euler[0],euler[2]);
+   this.poseTokens.push({joint,from,to:from.multiply(delta)});
+  }
+  this.poseElapsed=0;this.poseTime=.35;this.activePose=kind;
+  if($('pose-feedback'))$('pose-feedback').textContent=kind==='bend'?'Bend Over pose selected':'Sit Down pose selected';
+ }
+ stepPose(){
+  if(!this.poseTokens.length||!this.poseTime)return;
+  this.poseElapsed+=Math.min(.06,this.scene.getEngine().getDeltaTime()/1000);
+  const t=clamp(this.poseElapsed/this.poseTime,0,1),smooth=t*t*(3-2*t);
+  for(const item of this.poseTokens){
+   item.joint.rotationQuaternion=this.B.Quaternion.Slerp(item.from,item.to,smooth);
+   item.joint.markAsDirty?.('rotation');
+  }
+  if(t===1){this.poseTokens=[];this.poseTime=0;}
+ }
+ resetPose(){
+  this.poseTokens=[];this.poseTime=0;this.activePose=null;
+  const skel=this.model.skeletons?.[0];if(!skel)return;
+  for(const b of skel.bones){
+   const node=b.getTransformNode?.()||b._linkedTransformNode;
+   if(!node)continue;
+   if(node.metadata?._wvlrpBaseRotation){
+    node.rotationQuaternion=node.metadata._wvlrpBaseRotation.clone();
+   }else{
+    node.metadata=node.metadata||{};
+    node.metadata._wvlrpBaseRotation=
+     (node.rotationQuaternion||this.B.Quaternion.FromEulerVector(node.rotation)).clone();
+   }
+  }
+  if($('pose-feedback'))$('pose-feedback').textContent='';
+ }
+ rememberBindPose(){
+  for(const b of this.model.skeletons?.[0]?.bones||[]){
+   const node=b.getTransformNode?.()||b._linkedTransformNode;
+   if(!node)continue;node.metadata=node.metadata||{};
+   node.metadata._wvlrpBaseRotation=(node.rotationQuaternion||
+     this.B.Quaternion.FromEulerVector(node.rotation)).clone();
+  }
+ }
+}
+window.WVLRPYoungExplorerWardrobe=YoungExplorerWardrobe;
+})();
