@@ -3,10 +3,10 @@
  * Procedural woody branch frames, layered leaf/needle cards and batched GPU
  * thin instances. This is an art-directed prototype, not scanned vegetation.
  */
-import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
+import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=investor-hero-20261013-v2";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=preserved-forest-20261013-v7";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -55,15 +55,15 @@ function addBranch(vertices,indices,from,to,r0,r1,sides=6){
   }
 }
 function spray(vertices,indices,colors,at,dir,size,random,evergreen){
-  const count=evergreen?11:17;
+  const count=evergreen?15:19;
   for(let n=0;n<count;n++){
     const a=random()*Math.PI*2,t=random(),length=size*(.20+.80*t);
     const x=at[0]+Math.cos(a)*length,y=at[1]+(random()-.5)*size*.85,
       z=at[2]+Math.sin(a)*length;
     const axisA=a+random()*.6;
     const wx=Math.cos(axisA),wz=Math.sin(axisA);
-    const half=size*(evergreen?.064:.105)*(0.55+random()*.7);
-    const long=size*(evergreen?.27:.23)*(0.65+random()*.65);
+    const half=size*(evergreen?.19:.28)*(0.60+random()*.75);
+    const long=size*(evergreen?.46:.40)*(0.65+random()*.65);
     const offset=vertices.length/3;
     // Two irregular, double-sided tapered leaf blades. No canopy spheres.
     vertices.push(x-wx*half,y-long*.27,z-wz*half,
@@ -95,12 +95,12 @@ function prototype(B,scene,track,species,seed){
     for(let s=0;s<2;s++){
       const q=.55+s*.34,near=[elbow[0]*(1-q)+end[0]*q,
         elbow[1]*(1-q)+end[1]*q,elbow[2]*(1-q)+end[2]*q];
-      spray(leaves,lids,lcolors,near,null,conifer?.76:1.18,rng,conifer);
+      spray(leaves,lids,lcolors,near,null,conifer?1.03:1.48,rng,conifer);
     }
   }
   if(!conifer)for(let s=0;s<5;s++){
     const a=s*2.4,tip=[Math.cos(a)*r*.23,h*(.88+.09*rng()),Math.sin(a)*r*.23];
-    spray(leaves,lids,lcolors,tip,null,1.3,rng,false);
+    spray(leaves,lids,lcolors,tip,null,1.78,rng,false);
   }
   const bark=geometry(B,scene,track,species+" bark",verts,ids);
   const foliage=geometry(B,scene,track,species+" layered foliage",leaves,lids,lcolors);
@@ -329,7 +329,9 @@ function floorPrototype(B,scene,track,kind){
   mesh.material=material;
   return mesh;
 }
-function renderForestFloor(B,scene,track,{cx,cy,seed}){
+function renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight=null}){
+  const floorHeight=(x,y)=>{const h=surfaceHeight?.(x,y);
+    return Number.isFinite(h)?h:cabinGrade(x,y,seed);};
   const habitats={
     "riparian":["fern","fern","sedge","spicebush","pawpaw","bramble","moss","leaflitter","rock","rhododendron"],
     "moist-cove":["fern","fern","fern","rhododendron","rhododendron","laurel","spicebush","pawpaw","moss","leaflitter"],
@@ -346,7 +348,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
   const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
   const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
   const place=(kind,x,y,i,j,salt,multiplier=1)=>{
-    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<25)return;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17)return;
     if(waterAt(x,y,seed))return;
     // Keep a narrow, usable approach to the cabin steps.
     if(Math.abs(x)<2.5&&y>0&&y<35)return;
@@ -355,7 +357,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
       kind==="fallen-log"?.57+roll*.65:kind==="deadfall"?.55+roll*.65:
       kind==="leaflitter"?.75+roll*.5:kind==="moss"?.83+roll*.54:
       .84+roll*.71;
-    groups[kind].push({x,y,height:cabinGrade(x,y,seed)+
+    groups[kind].push({x,y,height:floorHeight(x,y)+
       (kind==="rock"||kind==="rock-cluster"?-.10:
       kind==="deadfall"||kind==="fallen-log"?-.06:.015),
       scale:size*multiplier,variation:hash(i,j,seed+salt+4),
@@ -364,7 +366,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
   for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
     const x=(i+(hash(i,j,seed+336)-.5)*.76)*step;
     const y=(j+(hash(i,j,seed+337)-.5)*.76)*step;
-    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<25)continue;
+    if(Math.abs(x-cx)>half||Math.abs(y-cy)>half||Math.hypot(x,y)<17)continue;
     const roll=hash(i,j,seed+338);
     // Bare patches, stones, and woody debris still punctuate the rich floor.
     if(roll<.07)continue;
@@ -379,8 +381,16 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
         place(accent,x+(hash(i,j,seed+345)-.5)*2.5,
           y+(hash(i,j,seed+346)-.5)*2.5,i,j,347,.68);
     }
-    if(hash(i,j,seed+355)<.045&&biome!=="dry-ridge")
-      place("wildflower",x+1,y-1,i,j,358,.68);
+    if(hash(i,j,seed+355)<.075&&biome!=="dry-ridge")
+      place("wildflower",x+1,y-1,i,j,358,.78);
+    // Layer loose duff over the brown hillside: these tiny overlapping mats
+    // stay visible among vegetation instead of a clean bare-soil blanket.
+    if(hash(i,j,seed+381)<.58)
+      place("leaflitter",x+(hash(i,j,seed+382)-.5)*1.8,
+        y+(hash(i,j,seed+383)-.5)*1.8,i,j,384,1.13);
+    if(hash(i,j,seed+385)<.22)
+      place("moss",x+(hash(i,j,seed+386)-.5)*2,
+        y+(hash(i,j,seed+387)-.5)*2,i,j,388,1.05);
     // Coarse natural deadwood and genuine clusters of sandstone boulders.
     if(hash(i,j,seed+360)<.024)
       place("fallen-log",x+(hash(i,j,seed+361)-.5)*2,
@@ -473,12 +483,29 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // evergreen additions (hemlock, white pine, Virginia pine) and +30%
   // old-growth veterans. Existing positions stay untouched.
   const near=treesInArea(cx,cy,102,seed,8.65);
+  // The old transition leapt from ~9m stands to 34m stands, producing the
+  // photographically barren hillside beyond the first line of trees.
+  // Fill that gap with mid-distance timber while retaining cheap LOD meshes.
+  const mid=treesInArea(cx,cy,255,seed,16.7).filter(t=>{
+    const d=Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy));
+    return d>104&&d<=255;
+  });
   const far=treesInArea(cx,cy,470,seed,33.9).filter(t=>
-    Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
+    Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>255);
   const addedNear=supplementalTreesInArea(cx,cy,102,seed,8.65);
+  const addedMid=supplementalTreesInArea(cx,cy,255,seed,16.7).filter(t=>{
+    const d=Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy));
+    return d>104&&d<=255;
+  });
   const addedFar=supplementalTreesInArea(cx,cy,470,seed,33.9).filter(t=>
-    Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>104);
-  const allTrees=near.concat(far,addedNear,addedFar);
+    Math.max(Math.abs(t.x-cx),Math.abs(t.y-cy))>255);
+  // Keep every trunk touching the terrain used by the CAMERA. Before this,
+  // deeply sunk shrubs and stems looked absent or needle-thin on uphill slopes.
+  for(const t of near.concat(addedNear)){
+    const y=walkSurface(t.x,t.y);
+    if(Number.isFinite(y))t.height=y+.04;
+  }
+  const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar);
   // Near-camera timber is entirely re-authored: tapered buttress roots,
   // curved trunks, irregular limb forks and diffuse-shaded native crowns.
   // Distant groves retain inexpensive LOD prototypes for phone performance.
@@ -491,7 +518,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     groups.get(key).trees.push(t);
   };
   for(const t of near.concat(addedNear))addGroup(t,heroZone?"near":"far");
-  for(const t of far.concat(addedFar))addGroup(t,"far");
+  for(const t of mid.concat(far,addedMid,addedFar))addGroup(t,"far");
   for(const {species,lod,variant,trees} of groups.values()){
     const model=lod==="near"?
       buildHeroTree(B,scene,track,species,seed+species.length*17,variant,textures):
@@ -499,12 +526,12 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     setInstances(B,model.bark,trees,cx,cy);
     setInstances(B,model.foliage,trees,cx,cy);
   }
-  const understory=renderForestFloor(B,scene,track,{cx,cy,seed});
+  const understory=renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const heroPlants=heroZone?renderHeroUnderstory(B,scene,track,
-    {cx,cy,seed,mobile}):0;
-  const addedTrees=addedNear.concat(addedFar);
+    {cx,cy,seed,mobile,surfaceHeight:walkSurface}):0;
+  const addedTrees=addedNear.concat(addedMid,addedFar);
   return {nearTrees:near.length+addedNear.length,
-    distantTrees:far.length+addedFar.length,
+    distantTrees:mid.length+far.length+addedMid.length+addedFar.length,
     addedTrees:addedTrees.length,
     addedEvergreens:addedTrees.filter(t=>t.evergreen).length,
     elderTrees:allTrees.filter(t=>t.elder).length,
