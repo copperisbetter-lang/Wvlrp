@@ -261,7 +261,9 @@ engine.runRenderLoop(()=>{
   const side=joyX+(keys.has("d")||keys.has("arrowright")?1:0)-(keys.has("a")||keys.has("arrowleft")?1:0);
   if(keys.has("q"))camera.rotation.y-=dt*1.7;
   if(keys.has("e"))camera.rotation.y+=dt*1.7;
-  const len=Math.hypot(f,side),speed=keys.has("shift")?5.1:3.0;
+  // Walk pace raised from its former 20%-feeling speed to roughly 38%.
+  // Maintain the same faster sprint-to-walk ratio for desktop users.
+  const len=Math.hypot(f,side),speed=keys.has("shift")?9.5:5.7;
   if(len>.04){
     const yaw=camera.rotation.y,forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw);
     const dx=(forwardX*f+Math.cos(yaw)*side)/Math.max(1,len)*speed*dt;
