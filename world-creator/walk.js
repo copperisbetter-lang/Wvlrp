@@ -5,10 +5,10 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=north-village-graded-valley-20261013-v3";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=rocky-cove-terrain-20261013-v4";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
-import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=open-village-mountain-sightline-20261013-v3";
-import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=world-anchored-cliff-20261013-v4";
+import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=flatter-rocky-village-cove-20261013-v4";
+import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
 import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=rocky-ridge-in-front-20261013-v1";
 
 const B=window.BABYLON;
