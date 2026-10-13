@@ -4,7 +4,7 @@
  * The real cabin and real bundled GLB avatars are preserved; no blob NPCs.
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
-import { cabinGrade } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
+import { cabinGrade, treeAtCell, waterAt } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=wild-full-landscape-20261013-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
@@ -204,10 +204,22 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur",()=>{keys.clear();joyX=joyY=0;stick.style.transform="translate(0,0)";joyPointer=null;lookPointer=null;});
 window.addEventListener("resize",()=>engine.resize());
+// First-person solid collision: wall sections, real tree-trunk placements,
+ // and water edges. Small native shrubs and fallen branches remain walkable.
 const collision=(x,z)=>{
-  if(Math.abs(x)>8.46&&Math.abs(x)<9.35&&Math.abs(z)<7.05)return true;
-  if(z>6.42&&z<7.29&&Math.abs(x)<9.05&&Math.abs(x)>1.32)return true;
-  if(z< -6.45&&z> -7.29&&Math.abs(x)<9.1)return true;
+  const closeX=Math.abs(x),closeZ=Math.abs(z);
+  if(closeX>8.36&&closeX<9.35&&closeZ<7.15)return true;
+  if(z>6.36&&z<7.30&&closeX<9.1&&closeX>1.24)return true;
+  if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
+  const water=waterAt(x,z,seed);
+  if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
+  const spacing=11,i=Math.round(x/spacing),j=Math.round(z/spacing);
+  for(let di=-2;di<=2;di++)for(let dj=-2;dj<=2;dj++){
+    const t=treeAtCell(i+di,j+dj,seed,spacing);
+    if(!t)continue;
+    const radius=.32+t.scale*.30+.24; // trunk, roots and walker shoulder
+    if(Math.hypot(x-t.x,z-t.y)<radius)return true;
+  }
   return false;
 };
 const cameraGround=(x,z)=>{
@@ -215,7 +227,7 @@ const cameraGround=(x,z)=>{
   if(Math.abs(x)<9.4&&z>=6.4&&z<=10.05)return cabinY+.36;
   return cabinGrade(x,z,seed);
 };
-let positionSync=0,seconds=0;
+let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
   const dt=Math.min(engine.getDeltaTime()/1000,.05);
   const f=(-joyY)+(keys.has("w")||keys.has("arrowup")?1:0)-(keys.has("s")||keys.has("arrowdown")?1:0);
@@ -228,10 +240,18 @@ engine.runRenderLoop(()=>{
     const dx=(forwardX*f+Math.cos(yaw)*side)/Math.max(1,len)*speed*dt;
     const dz=(forwardZ*f-Math.sin(yaw)*side)/Math.max(1,len)*speed*dt;
     let nx=camera.position.x+dx,nz=camera.position.z+dz;
+    const oldX=camera.position.x,oldZ=camera.position.z;
     if(!collision(nx,camera.position.z))camera.position.x=nx;
     if(!collision(camera.position.x,nz))camera.position.z=nz;
+    const traveled=Math.hypot(camera.position.x-oldX,camera.position.z-oldZ);
+    walkDistance+=traveled;
+    if(traveled>.0001)walkTime+=dt*8;
   }
-  const targetY=cameraGround(camera.position.x,camera.position.z)+1.68;
+  // Subtle, non-nauseating head movement. Ground-following keeps eye level
+  // consistent while approaching ridges, ravines or the cabin porch.
+  const walking=len>.04?1:0;
+  const sway=Math.sin(walkTime*1.45)*.012*walking;
+  const targetY=cameraGround(camera.position.x,camera.position.z)+1.68+sway;
   camera.position.y+=(targetY-camera.position.y)*Math.min(1,dt*8);
   // Rebuild at coarse distance intervals, never on every footstep. The source
   // procedural seed gives continuous landforms even across forest chunks.
@@ -242,9 +262,24 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`Walked ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
+    info.textContent=`${Math.round(walkDistance)}m walked · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
   }
   scene.render();
 });
 resetToCabin();
 status("You're at Hearthside Cabin. Push the left joystick forward and drag the right side to look around.");
+
+// Non-interactive read-only telemetry for repeatable browser smoke tests.
+window.__wildDiagnostics=()=>({
+  position:[camera.position.x,camera.position.y,camera.position.z],
+  meshes:scene.meshes.length,
+  nativeTrees:habitat?.nearTrees??0,
+  distantTrees:habitat?.distantTrees??0,
+  species:habitat?.species??0,
+  understory:habitat?.understory??0,
+  cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
+  crewModels:avatarRoots.size,
+  walkedMetres:walkDistance,
+  framesPerSecond:Math.round(engine.getFps()),
+  webgl:engine.webGLVersion
+});
