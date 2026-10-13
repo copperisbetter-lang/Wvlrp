@@ -118,6 +118,22 @@ class YoungExplorerWardrobe {
   this.dress=ms.find(m=>/opaque plaid sundress/i.test(m.material?.name||'') ||
    (m.material?.subMaterials||[]).some(n=>/opaque plaid sundress/i.test(n?.name||'')));
   if(!this.dress)throw Error('Original fitted dress was not found');
+  // Correct misplaced exported clothing by aligning its world-space vertical center
+  // with the child's shoulder-to-thigh region. Keep original skeleton and scale.
+  this.dress.computeWorldMatrix(true);
+  this.body.computeWorldMatrix(true);
+  const db=this.dress.getBoundingInfo().boundingBox;
+  const dressCenter=(db.minimumWorld.y+db.maximumWorld.y)/2;
+  const targetCenter=this.measure.minY+this.measure.H*.635;
+  const delta=targetCenter-dressCenter;
+  if(Math.abs(delta)>this.measure.H*.08){
+    const parent=this.dress.parent;
+    if(parent){parent.computeWorldMatrix(true);const inv=parent.getWorldMatrix().clone().invert();
+      const localShift=B.Vector3.TransformNormal(new B.Vector3(0,delta,0),inv);
+      this.dress.position.addInPlace(localShift);
+    }else this.dress.position.y+=delta;
+    this.dress.computeWorldMatrix(true);
+  }
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
   this.fitMaterial=new B.StandardMaterial('Opaque neutral fitting mannequin',scene);
@@ -141,7 +157,7 @@ class YoungExplorerWardrobe {
   };
   this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
-  this.buildMeasurements();this.bindSelector();this.bindFitControls();
+  this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
   this.select('plaid');
  }
  buildMeasurements(){
@@ -154,6 +170,17 @@ class YoungExplorerWardrobe {
    '<span>Waist width: '+fmt(m.waist)+'</span>'+
    '<span>Hip width: '+fmt(m.hip)+'</span>'+
    '<small>Widths are straight-line mesh measurements, not body circumferences. Clothing is fitted to this character\'s rigged mesh; figures are not physical measurements of a real child.</small>';
+ }
+ bindDressSizes(){
+  const el=$('dress-size-select');if(!el)return;
+  const sizes={5:.92,6:.96,7:1,8:1.045,10:1.10};
+  const original=this.dress.scaling.clone();
+  el.value='7';
+  el.onchange=()=>{
+   const ratio=sizes[el.value]||1;
+   this.dress.scaling.set(original.x*ratio,original.y,original.z*ratio);
+   if($('outfit-feedback'))$('outfit-feedback').textContent='Dress size '+el.value+' selected.';
+  };
  }
  bindSelector(){
   const el=$('outfit-select');if(!el)return;
