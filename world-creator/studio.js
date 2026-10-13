@@ -1,11 +1,11 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
   creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, resetToWildCabin, HEARTHSIDE_CABIN
-} from "./world-core.js?v=wild-full-landscape-20261013-v1";
+} from "./world-core.js?v=woodland-village-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import { makeFigureBuilder } from "./character-models.js?v=no-human-blobs-20261013-v1";
 import { terrainHeight, cabinGrade, riverY, riverWidth, riverLevel, creekPath, earthColor } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=wild-full-landscape-20261013-v1";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=woodland-village-20261013-v1";
 
 const $=id=>document.getElementById(id);
 const canvas=$("worldMap"),ctx=canvas.getContext("2d");
