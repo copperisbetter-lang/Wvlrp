@@ -9,7 +9,7 @@
 </head>
 <body>
 <header class="top">
-  <div class="branding"><div class="eyebrow">WEST VIRGINIA LIVE RESEARCH PROJECT</div><h1>World Creator <small>Studio v0.1</small></h1></div>
+  <div class="branding"><div class="eyebrow">WEST VIRGINIA LIVE RESEARCH PROJECT</div><h1>World Creator <small>The Wild · Native Appalachia preview</small></h1></div>
   <div class="actions">
     <button id="save" type="button">Save on this device</button>
     <button id="export" type="button">Export JSON</button>
@@ -44,11 +44,11 @@
       <h3>Terrain generation</h3>
       <label for="seed">World seed</label><input id="seed" maxlength="100">
       <button id="applySeed" type="button">Regenerate terrain preview</button>
-      <p class="subtle">Hills, wooded ridges and valley-bottom creeks are reproducible from the seed. Generated trails reconnect at intersections to form loops.</p>
+      <p class="subtle">Seamless ridges, foothills, hollows, valleys, winding streams, creeks and a larger river are generated from this seed. Native West Virginia tree species follow elevation and moisture habitats. This is a 3D procedural preview; individually scanned photoreal trees and LiDAR terrain are still future work.</p>
     </section>
     <section class="section" aria-label="Hearthside Cabin home base">
       <h3>Hearthside Cabin · our first home</h3>
-      <p class="subtle">An 18 × 14 m one-room log cabin, stone hearth, walnut-style plank floors, covered porch, sofa, bed, table, bookshelves and warm lamplight. Roof comes off for interior inspection. No generic sphere-trees or solid-green grass.</p>
+      <p class="subtle">The Wild now keeps only Hearthside Cabin and our seven saved 3D residents as authored world objects. Outside the cabin, native Appalachian forest, ravines, ridge lines and waterways grow procedurally from the seed. The roof comes off for inspecting the furnished interior.</p>
       <button id="buildCabin" class="primary" type="button">Gather everyone in the cabin</button>
       <button id="visitCabin" type="button">Visit cabin in 3D</button>
       <label for="cabinPerson">Inspect one of our people</label>
@@ -60,14 +60,14 @@
     </section>
     <section class="section">
       <h3>Find your way</h3>
-      <button id="home" type="button">Center Base Camp</button>
-      <button id="ranger" type="button">Center Ranger Station</button>
-      <button id="resetDemo" type="button">Reset studio data</button>
+      <button id="home" type="button">Return to Hearthside Cabin</button>
+      <button id="ranger" type="button">Explore mountain slopes</button>
+      <button id="resetDemo" type="button">Reset to cabin + wild forest</button>
     </section>
   </aside>
   <section class="workspace">
     <div class="work-head"><div><h2>Explore and place</h2><p id="coords">Map coordinates</p></div><div class="zoom-controls"><button id="zoomOut" aria-label="Zoom out" type="button">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in" type="button">+</button></div></div>
-    <div class="map-frame"><canvas id="worldMap" tabindex="0" aria-label="Zoomable West Virginia procedural game map. Tap to place or select, drag to pan, pinch or scroll to zoom."></canvas><div class="map-key"><span>● Your objects</span><span class="trail-key">━ Connected trails</span><span class="creek-key">〰 Valley creek</span></div></div>
+    <div class="map-frame"><canvas id="worldMap" tabindex="0" aria-label="Zoomable West Virginia procedural game map. Tap to place or select, drag to pan, pinch or scroll to zoom."></canvas><div class="map-key"><span>● Your objects</span><span class="trail-key">▲ Mountains &amp; native forest</span><span class="creek-key">〰 Rivers, creeks &amp; hollows</span></div></div>
     <div class="preview-head"><h2>3D terrain preview <small>Babylon.js</small></h2><div class="preview-actions"><button id="findDeer3d" type="button">Find deer in 3D / Next herd</button><button id="inspect3d" type="button">Inspect selected</button><button id="findAmy" type="button">Find Amy — 3D</button><button id="findChristy" type="button">Find Christy — 3D</button><button id="findCaitlyn" type="button">Find Caitlyn — 3D</button><button id="findSha" type="button">Find Sha — 3D</button><button id="findMason" type="button">Find Mason — male 3D</button><button id="addRiley" type="button">Add / find Riley — 3D</button><button id="toggleRileyPose" type="button">Riley: Next pose</button><button id="refresh3d" type="button">Refresh 3D</button></div></div>
     <div class="preview-zoom" role="group" aria-label="3D character zoom controls"><button id="zoom3dIn" type="button" aria-label="Zoom closer to 3D character">＋ Zoom closer</button><button id="zoom3dOut" type="button" aria-label="Back away from 3D character">− Back away</button><button id="expand3d" type="button" aria-pressed="false">Expand 3D</button></div>
     <div class="riley-motion-controls" role="group" aria-label="Riley 3D body position and turning controls"><button type="button" data-riley-pose="standing">Stand</button><button type="button" data-riley-pose="crouch">Kneel</button><button type="button" data-riley-pose="allfours">Hands &amp; knees</button><button type="button" data-riley-turn="-45">↶ Turn left</button><button type="button" data-riley-turn="45">Turn right ↷</button><button type="button" id="rileyAutoTurn" aria-pressed="false">Auto turn 360°</button></div>
@@ -76,7 +76,7 @@
     <p class="subtle" id="rileyOutfitMeasurements"><strong>Riley approved outfit baseline:</strong> Height 170 cm · Bust 112 cm · Waist 70 cm · Hips 88 cm · Shoulder width 40 cm · Inseam 78 cm. Model-designed measurements; not body-scan data. <a href="./riley-measurements.json" target="_blank" rel="noopener noreferrer">Full sizing chart</a>.</p>
     <p class="subtle">Amy, Christy, Caitlyn, and Mason are separate, editable test characters near Woodland Trail. Select a marker or use Find Amy / Find Christy / Find Caitlyn to inspect their individual 3D models. Character placements persist locally on this device; this is not yet the shared online game.</p>
     <div class="preview-frame"><canvas id="scene" aria-label="Interactive Babylon.js woodland terrain preview"></canvas><p id="threeStatus">Loading Babylon.js preview…</p></div>
-    <p id="previewCoverage" class="subtle" aria-live="polite">The 3D preview shows a small local area, not every deer on the 2D map. Use Find deer in 3D to jump to a herd.</p>
+    <p id="previewCoverage" class="subtle" aria-live="polite">Wilderness rebuild: native WV species, terrain-linked watersheds, forested valleys and distant ridges. Only the cabin and the seven residents are saved artifacts. The procedural forest extends as the camera explores.</p>
     <div class="stats"><span id="count">0 placed items</span><span id="status" role="status">Ready</span></div>
   </section>
   <aside class="panel inspector">
@@ -112,6 +112,6 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./studio.js?v=hearthside-no-blob-20261013-v1"></script>
+<script type="module" src="./studio.js?v=wild-native-appalachia-20261013-v1"></script>
 </body>
 </html>
