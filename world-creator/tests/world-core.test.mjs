@@ -1,4 +1,7 @@
 import test from "node:test";
+import { resetToWildCabin } from "../world-core.js";
+import { NATIVE_TREES,riverY,riverLevel,terrainHeight,waterAt,creekPath,treesInArea } from "../wild-nature.js";
+
 import assert from "node:assert/strict";
 import {
   CELL, seedNumber, creekY, heightAt, trailHorizontal, trailVertical,
@@ -172,4 +175,52 @@ test("Cabin gathering repositions existing people but never replaces their ident
   assert.ok(Math.abs(amy.x)<9&&Math.abs(amy.y)<7);
   assert.ok(Math.abs(w.objects.find(o=>o.id==="my-visitor").x)<9);
   assert.equal(w.objects.length,originalLength+1+6);
+});
+
+test("Wilderness reset keeps only Hearthside and seven authored GLB identities",()=>{
+  const w=newWorld();
+  w.objects.push({id:"another-house",type:"cabin",name:"Old House",x:500,y:300});
+  w.objects.push({id:"mystery-marker",type:"marker",name:"Old Quest",x:1,y:1});
+  spawnDeer(w,40,0,0,4);
+  w.objects.push({id:"custom-riley",type:"npc",name:"Customized Riley",modelKey:"riley",
+    x:100,y:200,pose:"elbows",skin:"tan"});
+  const info=resetToWildCabin(w);
+  assert.equal(info.people,7);
+  assert.equal(w.objects.length,8);
+  assert.deepEqual(new Set(w.objects.map(o=>o.type)),new Set(["cabin","npc"]));
+  assert.equal(w.objects.filter(o=>o.type==="cabin")[0].id,HEARTHSIDE_CABIN.id);
+  assert.equal(w.objects.find(o=>o.modelKey==="riley").id,"custom-riley");
+  assert.equal(w.objects.find(o=>o.modelKey==="riley").pose,"elbows");
+  assert.equal(w.objects.find(o=>o.modelKey==="riley").skin,"tan");
+  assert.ok(w.objects.filter(o=>o.type==="npc").every(o=>Math.abs(o.x)<9&&Math.abs(o.y)<7));
+  const state=JSON.stringify(w);
+  resetToWildCabin(w);
+  assert.equal(JSON.stringify(w),state,"repeat reset does not relocate or rewrite the crew");
+  assert.deepEqual(sanitizedWorld(JSON.parse(state)).objects.map(o=>o.id),w.objects.map(o=>o.id));
+});
+test("WV relief is reproducible; water follows incised river and joined tributaries",()=>{
+  const seed=seedNumber("The-Wild-WV");
+  for(const x of [-1100,-550,0,550,1100]){
+    const y=riverY(x,seed);
+    assert.equal(waterAt(x,y,seed).kind,"river");
+    assert.ok(terrainHeight(x,y,seed)<terrainHeight(x,y+190,seed),
+      "a river should lie below the nearby slopes at x="+x);
+    assert.equal(terrainHeight(x,y,seed),terrainHeight(x,y,seed));
+  }
+  const branch=creekPath(0,1,380,seed);
+  assert.equal(waterAt(branch.x,branch.y,seed).kind,"creek");
+  assert.ok(riverLevel(branch.anchorX)<riverLevel(branch.anchorX)+380*.028,
+    "tributary headwaters are higher than their mouths");
+});
+test("WV forest has fifteen native species, fixed distribution and no trees in cabin",()=>{
+  const seed=seedNumber("The-Wild-WV");
+  assert.equal(NATIVE_TREES.length,15);
+  assert.equal(new Set(NATIVE_TREES).size,15);
+  const a=treesInArea(0,0,270,seed,11),b=treesInArea(0,0,270,seed,11);
+  assert.deepEqual(a,b);
+  assert.ok(a.length>200,"a dense forest should be present");
+  assert.ok(a.every(t=>NATIVE_TREES.includes(t.species)));
+  assert.ok(a.every(t=>Math.hypot(t.x,t.y)>=33),"the cabin clearing stays open");
+  assert.ok(new Set(a.map(t=>t.species)).size>=8,"multiple WV tree species present");
+  assert.ok(a.every(t=>Number.isFinite(t.height)));
 });
