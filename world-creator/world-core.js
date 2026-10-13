@@ -223,3 +223,28 @@ export function gatherCabinCrew(world){
   }
   return {cabin, madeCabin, addedPeople, moved, totalPeople:crew.length};
 }
+
+/**
+ * Requested Wild wilderness rebuild baseline. Keep ONLY Hearthside Cabin and
+ * one real model identity per approved resident. Other saved world objects,
+ * old experimental cabins, deer, anchors, props and quest markers are purged.
+ * The landscape itself is generated deterministically, not stored as objects.
+ * Repeat calls are safe and never discard custom appearances/poses of survivors.
+ */
+export function resetToWildCabin(world){
+  if(!world||!Array.isArray(world.objects))throw Error("A valid world is required");
+  const before=world.objects.length;
+  // Ensure the cabin and all seven identities exist before cleaning.
+  gatherCabinCrew(world);
+  const cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id);
+  const residents=new Map();
+  for(const o of world.objects){
+    if(o.type==="npc"&&CABIN_CREW_KEYS.includes(o.modelKey)&&!residents.has(o.modelKey))
+      residents.set(o.modelKey,o);
+  }
+  world.objects=[cabin,...CABIN_CREW_KEYS.map(key=>residents.get(key)).filter(Boolean)];
+  // Gather again after filtering so all seven occupy the designed seats.
+  gatherCabinCrew(world);
+  return {removed:Math.max(0,before-world.objects.length),remaining:world.objects.length,
+    people:world.objects.filter(o=>o.type==="npc").length,cabinId:cabin.id};
+}
