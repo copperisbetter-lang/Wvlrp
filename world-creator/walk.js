@@ -8,7 +8,7 @@ import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-2026101
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=reference-village-backdrop-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
-import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=reference-mountain-cliff-20261013-v1";
+import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=village-visible-rocky-bluff-20261013-v2";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
