@@ -378,6 +378,22 @@ def main():
                 green=material('Young Explorer natural green iris',(.16,.36,.20),.35)
                 ob.data.materials[i]=green
     make_clips(rig)
+    # Scale the COMPLETE child, including rig, all skin and fabric meshes,
+    # BEFORE GLB export. Browser-only mesh scaling left the imported body
+    # measured at adult height (1.666m) even though the user wants age seven.
+    bpy.context.view_layer.update()
+    before_pts=[body.matrix_world@v.co for v in body.data.vertices]
+    built_height=max(p.z for p in before_pts)-min(p.z for p in before_pts)
+    if built_height<=.4:raise RuntimeError('Unable to measure complete child height')
+    scale_factor=1.22/built_height
+    root.scale=tuple(axis*scale_factor for axis in root.scale)
+    bpy.context.view_layer.update()
+    after_pts=[body.matrix_world@v.co for v in body.data.vertices]
+    scaled_height=max(p.z for p in after_pts)-min(p.z for p in after_pts)
+    if not 1.19<scaled_height<1.25:
+        raise RuntimeError('Child rig height export failed: '+str(scaled_height))
+    print('WVLRP_YOUNG_EXPLORER_EXPORTED_CHILD_HEIGHT',round(scaled_height,4),
+          'from',round(built_height,4),'uniform_factor',round(scale_factor,5))
     chosen=[root]+list(ObjectService.get_list_of_children(root))
     bpy.ops.object.select_all(action='DESELECT')
     for ob in set(chosen):ob.select_set(True)
