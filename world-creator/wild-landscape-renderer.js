@@ -3,7 +3,7 @@
  * Procedural woody branch frames, layered leaf/needle cards and batched GPU
  * thin instances. This is an art-directed prototype, not scanned vegetation.
  */
-import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js";
+import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
 import {hash} from "./world-core.js";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
@@ -340,7 +340,7 @@ function renderForestFloor(B,scene,track,{cx,cy,seed}){
   const groups=Object.fromEntries(types.map(kind=>[kind,[]]));
   // ~80% denser vegetation/forest debris than the preceding release. The
   // layered thickets, scattered logs and sandstone clusters are still batched.
-  const step=3.7,half=101;
+  const step=3.68,half=101;
   const minI=Math.floor((cx-half)/step)-1,maxI=Math.ceil((cx+half)/step)+1;
   const minJ=Math.floor((cy-half)/step)-1,maxJ=Math.ceil((cy+half)/step)+1;
   const place=(kind,x,y,i,j,salt,multiplier=1)=>{
