@@ -6,7 +6,7 @@ separate cylinder primitives. Rigged dress and shoes remain opaque.
 import bpy, math, json, zipfile, struct, sys
 import numpy as np
 from pathlib import Path
-from mathutils import Vector
+from mathutils import Vector, Euler
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from face_materials import preserve_photo_skin, verify_photo_skin_glb
 from bl_ext.wvlrp_local.mpfb.services.humanservice import HumanService
@@ -305,14 +305,34 @@ def make_clips(rig):
     nm={normalized(b.name):b for b in rig.pose.bones}
     def k(name):return nm.get(name)
     all_bones=list(rig.pose.bones)
+    # The source child is in an A-pose. Rotate the upper arms from their
+    # actual rest-bone directions toward a relaxed, downward hanging stance.
+    # Preserve a small natural gap beside the dress rather than a rigid T-pose.
+    arm_corrections={}
+    for side in ('left','right'):
+        bone=k(side+'arm')
+        if bone is None:
+            raise RuntimeError('Missing upper arm for relaxed child stance: '+side)
+        rest=bone.bone
+        original=rest.tail_local-rest.head_local
+        outward=1 if rest.tail_local.x>rest.head_local.x else -1
+        target=Vector((outward*.12,0,-.993)).normalized()
+        arm_corrections[normalized(bone.name)]=original.normalized().rotation_difference(target)
     def clip(name,frames):
         action=bpy.data.actions.new(name)
         rig.animation_data.action=action
         for frame,values in frames:
             for b in all_bones:
-                b.rotation_mode='XYZ'
-                b.rotation_euler=values.get(normalized(b.name),(0,0,0))
-                b.keyframe_insert(data_path='rotation_euler',frame=frame,group=b.name)
+                key=normalized(b.name)
+                delta=Euler(values.get(key,(0,0,0)),'XYZ')
+                if key in arm_corrections:
+                    b.rotation_mode='QUATERNION'
+                    b.rotation_quaternion=arm_corrections[key] @ delta.to_quaternion()
+                    b.keyframe_insert(data_path='rotation_quaternion',frame=frame,group=b.name)
+                else:
+                    b.rotation_mode='XYZ'
+                    b.rotation_euler=delta
+                    b.keyframe_insert(data_path='rotation_euler',frame=frame,group=b.name)
         rig.animation_data.action=None
         track=rig.animation_data.nla_tracks.new();track.name=name
         strip=track.strips.new(name,frames[0][0],action)
@@ -326,7 +346,11 @@ def make_clips(rig):
                                          'leftarm':(-.14,0,0),'rightarm':(.14,0,0)}),
                                  (25,{'leftupleg':(-.24,0,0),'rightupleg':(.24,0,0),
                                          'leftarm':(.14,0,0),'rightarm':(-.14,0,0)}),(37,{})])
-    for b in all_bones:b.rotation_euler=(0,0,0)
+    for b in all_bones:
+        if normalized(b.name) in arm_corrections:
+            b.rotation_mode='QUATERNION'
+            b.rotation_quaternion=arm_corrections[normalized(b.name)]
+        else:b.rotation_euler=(0,0,0)
     bpy.context.scene.frame_set(1)
 
 def main():
