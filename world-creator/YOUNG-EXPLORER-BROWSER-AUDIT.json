@@ -7,7 +7,7 @@
     "scene": {
       "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 440,
+      "canvasHeight": 388,
       "meshVertices": 109727,
       "skeletonBones": [
         52
@@ -92,13 +92,13 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791921294803",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791922055359",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
       "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
-      "canvasHeight": 440,
+      "canvasHeight": 388,
       "meshVertices": 109727,
       "skeletonBones": [
         52
