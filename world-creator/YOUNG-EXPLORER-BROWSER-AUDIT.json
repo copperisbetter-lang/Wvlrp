@@ -97,14 +97,14 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791922898455",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791926925268",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
       "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
       "canvasWidth": 390,
       "canvasHeight": 574,
-      "meshVertices": 169100,
+      "meshVertices": 173087,
       "skeletonBones": [
         52
       ],
@@ -129,7 +129,7 @@
         "Young Explorer fitted regular-shorts woven shorts",
         "Young Explorer fitted loose-shorts shirt",
         "Young Explorer fitted loose-shorts woven shorts",
-        "Young Explorer brown hairstyle"
+        "Young Explorer natural brown hair strands"
       ]
     },
     "wardrobe": {
