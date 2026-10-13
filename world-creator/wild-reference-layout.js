@@ -52,13 +52,17 @@ export function siteDistance(x,z,site){
 // Buildings occupy the north edge, facing the broad south-facing fire circle.
 // All coordinates here are world metres relative to Hearthside (0,0).
 export const VILLAGE_CLEARING=Object.freeze({
-  centerX:93,centerZ:85,halfWidth:66,halfDepth:43,transition:15,
+  centerX:93,centerZ:85,halfWidth:66,halfDepth:43,
+  // Extend ONLY the northern/back edge, leaving the campfire and entrances
+  // on their original ground level, and pushing the treeline behind the roofs.
+  backExtension:40,transition:15,
   fireX:93,fireZ:65
 });
 function plateauDistance(x,z){
   const c=VILLAGE_CLEARING;
   return Math.hypot(Math.max(0,Math.abs(x-c.centerX)-c.halfWidth),
-                    Math.max(0,Math.abs(z-c.centerZ)-c.halfDepth));
+    Math.max(0,c.centerZ-c.halfDepth-z,
+      z-(c.centerZ+c.halfDepth+c.backExtension)));
 }
 export function isCommunityClearing(x,z){
   // Trunks cannot grow through the shared plaza, cabin walls or their stairs.
@@ -67,8 +71,24 @@ export function isCommunityClearing(x,z){
     COMMUNITY_SITES.some(site=>siteDistance(x,z,site)<4.2);
 }
 export function isWalkableTrail(x,z){return pathDistance(x,z)<2.7;}
+// A deliberately opened natural valley behind all three buildings. Without
+// this sightline, hundreds of instanced trees physically cover the distant
+// mountain panorama even if the 360-degree sky texture loads correctly.
+export const VILLAGE_MOUNTAIN_VIEW=Object.freeze({
+  centerX:93,fromZ:160,toZ:510,nearHalfWidth:73,farHalfWidth:42
+});
+export function isVillageMountainSightline(x,z){
+  const v=VILLAGE_MOUNTAIN_VIEW;
+  if(z<v.fromZ||z>v.toZ)return false;
+  const t=(z-v.fromZ)/(v.toZ-v.fromZ);
+  // Wooded shoulders frame the ridge; no perfect rectangular wall-cut.
+  const edge=(v.nearHalfWidth*(1-t)+v.farHalfWidth*t)
+    *(1+.10*Math.sin(z*.047+x*.018));
+  return Math.abs(x-v.centerX)<edge;
+}
 export function keepForestTree(x,z){
-  return !isCommunityClearing(x,z)&&pathDistance(x,z)>3.35;
+  return !isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
+    &&pathDistance(x,z)>3.35;
 }
 export function keepUnderstory(x,z){
   // Leave the meeting space open. Its perimeter gets natural fern/laurel
@@ -77,11 +97,19 @@ export function keepUnderstory(x,z){
 }
 export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
   const d=plateauDistance(x,z),c=VILLAGE_CLEARING;
-  if(d>=c.transition)return naturalHeight;
-  const t=Math.max(0,Math.min(1,d/c.transition));
-  const smooth=t*t*(3-2*t);
+  const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+  const blend=ease(d/c.transition);
   // Exactly one elevation for all three foundations AND the campfire.
-  // The transition outside the clearing blends into the untouched ridge.
   const flat=heightAtSite({x:c.centerX,z:c.centerZ});
-  return flat*(1-smooth)+naturalHeight*smooth;
+  const graded=flat*(1-blend)+naturalHeight*blend;
+  // Cut a broad, shallow *northward* cove behind the buildings so a natural
+  // foothill cannot climb in front of the distant Appalachian cliff. Both
+  // shoulders and the far end ease back into untouched terrain. This grades
+  // BOTH distant and local ground meshes using the same deterministic sampler.
+  if(z<147||z>645)return graded;
+  const north=ease((z-147)/66)*(1-ease((z-450)/195));
+  const sides=1-ease((Math.abs(x-c.centerX)-53)/105);
+  const weight=north*sides;
+  const valley=flat-Math.max(0,z-155)*.083;
+  return graded*(1-weight)+valley*weight;
 }
