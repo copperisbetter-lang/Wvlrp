@@ -178,7 +178,7 @@ let bounds=null, center=null, model=null;
  const dresser=new window.WVLRPYoungExplorerWardrobe(B,scene,result);
  window.youngExplorerWardrobe=dresser;
  dresser.rememberBindPose();
- play('Idle');
+ dresser.naturalStand();
  status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
 }).catch(e=>{console.error(e);status.textContent='Young Explorer viewer unable to load: '+e.message;});
 function play(name){if(!groups.length)return;
@@ -187,7 +187,7 @@ function play(name){if(!groups.length)return;
  const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
  if(clip){clip.start(true,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
 }
-document.getElementById('idle').onclick=()=>play('Idle');
+document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
 document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
 document.getElementById('walk').onclick=()=>play('Walk');
 document.getElementById('bend').onclick=()=>window.youngExplorerWardrobe?.pose('bend');
