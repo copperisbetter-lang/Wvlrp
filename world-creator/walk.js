@@ -19,7 +19,7 @@ const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 // Direct link ?spawn=ranger places the walking player outside the ranger porch.
 // Hearthside remains the default on ordinary walk links; resident NPCs stay put.
 const START_AT_RANGER=new URLSearchParams(window.location.search).get("spawn")==="ranger";
-const RANGER_SPAWN=Object.freeze({x:93,z:87,tileX:96,tileZ:96});
+const RANGER_SPAWN=Object.freeze({x:93,z:45,tileX:96,tileZ:96});
 const status=s=>{message.textContent=s;};
 let world;
 try{world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY)));}
@@ -237,6 +237,9 @@ const goToRanger=()=>{
 };
 document.getElementById("village")?.addEventListener("click",goToRanger);
 let joyX=0,joyY=0,joyPointer=null;
+// Capture the facing direction at the start of a joystick gesture, so a
+// held LEFT/RIGHT command turns toward a stable heading instead of spinning.
+let moveReferenceHeading=null;
 let runMode=false,lastCenterTap=-Infinity,tapStartAt=0,tapStartRadius=Infinity,tapMaxRadius=0;
 const DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27;
 function joystickCenterRadius(e){
@@ -265,6 +268,7 @@ function joyPosition(e){
 joystick.addEventListener("pointerdown",e=>{
   if(joyPointer!==null)return;
   e.preventDefault();e.stopPropagation();joyPointer=e.pointerId;
+  moveReferenceHeading=camera.rotation.y;
   tapStartAt=performance.now();tapStartRadius=joystickCenterRadius(e);
   tapMaxRadius=tapStartRadius;
   joystick.setPointerCapture(e.pointerId);joyPosition(e);
@@ -278,7 +282,7 @@ const resetStick=e=>{
   const centerTap=e.type==="pointerup"&&now-tapStartAt<260&&
     tapStartRadius<CENTER_TAP_RADIUS&&tapMaxRadius<CENTER_TAP_RADIUS&&
     joystickCenterRadius(e)<CENTER_TAP_RADIUS;
-  joyPointer=null;joyX=joyY=0;
+  joyPointer=null;joyX=joyY=0;moveReferenceHeading=null;
   stick.style.transform="translate(0,0)";
   if(centerTap){
     if(now-lastCenterTap<=DOUBLE_TAP_MS){
@@ -311,7 +315,7 @@ document.addEventListener("keydown",e=>{
   }
 });
 document.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
-window.addEventListener("blur",()=>{keys.clear();joyX=joyY=0;stick.style.transform="translate(0,0)";joyPointer=null;lookPointer=null;});
+window.addEventListener("blur",()=>{keys.clear();joyX=joyY=0;stick.style.transform="translate(0,0)";joyPointer=null;lookPointer=null;moveReferenceHeading=null;});
 window.addEventListener("resize",()=>engine.resize());
 // First-person solid collision: wall sections, real tree-trunk placements,
  // and water edges. Small native shrubs and fallen branches remain walkable.
@@ -352,9 +356,19 @@ engine.runRenderLoop(()=>{
   // Maintain the same faster sprint-to-walk ratio for desktop users.
   const len=Math.hypot(f,side),speed=runMode||keys.has("shift")?9.5:5.7;
   if(len>.04){
-    const yaw=camera.rotation.y,forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw);
-    const dx=(forwardX*f+Math.cos(yaw)*side)/Math.max(1,len)*speed*dt;
-    const dz=(forwardZ*f-Math.sin(yaw)*side)/Math.max(1,len)*speed*dt;
+    // Free-look when still; when moving, the joystick steers the player's
+    // entire facing direction. Base the target on the heading when movement
+    // began, not the continually updating camera heading: otherwise holding
+    // the stick to the left causes an endless spin.
+    if(moveReferenceHeading===null)moveReferenceHeading=camera.rotation.y;
+    const target=moveReferenceHeading+Math.atan2(side,f);
+    const delta=Math.atan2(Math.sin(target-camera.rotation.y),
+                           Math.cos(target-camera.rotation.y));
+    const maxTurn=dt*9.0; // smooth, responsive <= ~0.18s for a 90-degree turn
+    camera.rotation.y+=Math.max(-maxTurn,Math.min(maxTurn,delta));
+    const yaw=camera.rotation.y;
+    const pace=Math.min(1,len)*speed*dt;
+    const dx=Math.sin(yaw)*pace,dz=Math.cos(yaw)*pace;
     let nx=camera.position.x+dx,nz=camera.position.z+dz;
     const oldX=camera.position.x,oldZ=camera.position.z;
     if(!collision(nx,camera.position.z))camera.position.x=nx;
@@ -362,7 +376,7 @@ engine.runRenderLoop(()=>{
     const traveled=Math.hypot(camera.position.x-oldX,camera.position.z-oldZ);
     walkDistance+=traveled;
     if(traveled>.0001)walkTime+=dt*8;
-  }
+  }else moveReferenceHeading=null;
   // Subtle, non-nauseating head movement. Ground-following keeps eye level
   // consistent while approaching ridges, ravines or the cabin porch.
   const walking=len>.04?1:0;
@@ -427,6 +441,8 @@ window.__wildDiagnostics=()=>({
   daylightExposure:scene.imageProcessingConfiguration.exposure,
   sunDiscVisible:sunDisc.isEnabled(),
   eyeHeight:camera.position.y-cameraGround(camera.position.x,camera.position.z),
+  facingYaw:camera.rotation.y,
+  movementHeadingLocked:moveReferenceHeading!==null,
   // This reference is independent of GroundMesh.getHeightAtCoordinates.
   renderedSurfaceHeight:habitat?.surfaceHeight?.(camera.position.x,camera.position.z)??null,
   renderedEyeHeight:(()=>{const y=habitat?.surfaceHeight?.(camera.position.x,camera.position.z);return Number.isFinite(y)?camera.position.y-y:null;})(),
