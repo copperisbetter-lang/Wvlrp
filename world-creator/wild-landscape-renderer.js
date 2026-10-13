@@ -5,6 +5,7 @@
  */
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
 import {hash,noise} from "./world-core.js";
+import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=investor-hero-20261013-v2";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
@@ -442,6 +443,11 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // offset very slightly beneath the local ground to avoid z-fighting.
   terrain(1100,96,.40);
   const localWalkingGround=terrain(196,mobile?86:120,0);
+  // The previous GroundMesh height cache was not guaranteed to match the
+  // reshaped mountain mesh. Read its finished triangles directly instead.
+  const walkSurface=makeGroundHeightSampler(
+    localWalkingGround.getVerticesData(B.VertexBuffer.PositionKind),
+    localWalkingGround.getIndices(),196,mobile?86:120,cx,cy);
   const waterMat=track(new B.StandardMaterial("river glints",scene));
   waterMat.diffuseColor=new B.Color3(.18,.33,.36);
   waterMat.specularColor=new B.Color3(.34,.38,.41);waterMat.specularPower=38;
@@ -505,11 +511,9 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
     understory:understory+heroPlants,heroPlants,
     heroGraphics:heroZone,forestExtentMetres:470,
-    // A walker samples the same triangles the eye actually sees. The terrain
-    // approximation alone can dip below an uphill triangle between vertices.
+    // True interpolated altitude of the visible ground, including on steep
+    // slopes and after streamed-tile changes. No Babylon stale height cache.
     surfaceHeight(x,z){
-      if(Math.abs(x-cx)>97||Math.abs(z-cy)>97)return null;
-      const y=localWalkingGround.getHeightAtCoordinates?.(x,z);
-      return Number.isFinite(y)?y:null;
+      return walkSurface(x,z);
     }};
 }
