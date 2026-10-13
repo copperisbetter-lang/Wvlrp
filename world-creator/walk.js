@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { cabinGrade, treeAtCell, waterAt } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=forest-density-understory-20261013-v3";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=walking-height-surface-20261013-v4";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -248,7 +248,11 @@ const collision=(x,z)=>{
 const cameraGround=(x,z)=>{
   if(Math.abs(x)<8.5&&Math.abs(z)<6.4)return cabinY+.38;
   if(Math.abs(x)<9.4&&z>=6.4&&z<=10.05)return cabinY+.36;
-  return cabinGrade(x,z,seed);
+  const estimated=cabinGrade(x,z,seed);
+  // Use the actual visible triangulated ground, not just the mathematical
+  // height field: sharp Appalachian slopes can diverge between vertices.
+  const rendered=habitat?.surfaceHeight?.(x,z);
+  return Number.isFinite(rendered)&&Math.abs(rendered-estimated)<10?rendered:estimated;
 };
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
@@ -275,7 +279,10 @@ engine.runRenderLoop(()=>{
   const walking=len>.04?1:0;
   const sway=Math.sin(walkTime*1.45)*.012*walking;
   const targetY=cameraGround(camera.position.x,camera.position.z)+1.68+sway;
-  camera.position.y+=(targetY-camera.position.y)*Math.min(1,dt*8);
+  // Stay 1.68 m above the surface on EVERY frame. Slow Y interpolation let
+  // steep terrain overtake the camera, making the adult walker appear short.
+  // Following the ground directly also avoids a dive on chunk transitions.
+  camera.position.y=targetY;
   // Rebuild at coarse distance intervals, never on every footstep. The source
   // procedural seed gives continuous landforms even across forest chunks.
   if(Math.max(Math.abs(camera.position.x-tileCx),Math.abs(camera.position.z-tileCy))>84){
@@ -304,6 +311,8 @@ window.__wildDiagnostics=()=>({
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
   walkedMetres:walkDistance,
+  groundAltitude:cameraGround(camera.position.x,camera.position.z),
+  eyeHeight:camera.position.y-cameraGround(camera.position.x,camera.position.z),
   framesPerSecond:Math.round(engine.getFps()),
   webgl:engine.webGLVersion
 });
