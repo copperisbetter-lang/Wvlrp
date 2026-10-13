@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
 import { cabinGrade, treeAtCell, waterAt } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=wild-full-landscape-20261013-v2";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=forest-density-understory-20261013-v3";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
