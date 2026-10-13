@@ -16,6 +16,10 @@ const joystick=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 const crewButton=document.getElementById("crew");
 const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+// Direct link ?spawn=ranger places the walking player outside the ranger porch.
+// Hearthside remains the default on ordinary walk links; resident NPCs stay put.
+const START_AT_RANGER=new URLSearchParams(window.location.search).get("spawn")==="ranger";
+const RANGER_SPAWN=Object.freeze({x:93,z:87,tileX:96,tileZ:96});
 const status=s=>{message.textContent=s;};
 let world;
 try{world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY)));}
@@ -56,10 +60,12 @@ const sun=new B.DirectionalLight("bright Appalachian afternoon sun",sunLook.scal
 sun.diffuse=new B.Color3(1,.96,.85);
 sun.intensity=1.55;
 const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
-const camera=new B.FreeCamera("first person at Hearthside",
-  new B.Vector3(0,cabinY+EYE_HEIGHT,16),scene);
+const camera=new B.FreeCamera("first-person explorer",
+  new B.Vector3(START_AT_RANGER?RANGER_SPAWN.x:0,
+    START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
+    START_AT_RANGER?RANGER_SPAWN.z:16),scene);
 camera.minZ=.07;camera.maxZ=900;camera.fov=1.13;
-camera.rotation.set(0,Math.PI,0);
+camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
 scene.activeCamera=camera;
 // A small, softly glowing visible sun follows the camera's *position*, not
 // its rotation, so its direction stays fixed in the real 3D sky while walking.
@@ -135,7 +141,8 @@ function addLandscape(x,z){
   return result;
 }
 let habitat;
-try{habitat=addLandscape(0,0);}
+try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:0,
+    START_AT_RANGER?RANGER_SPAWN.tileZ:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
 const names=[];
 function addNamePlate(o){
@@ -215,17 +222,20 @@ const resetToCabin=()=>{
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
-document.getElementById("village")?.addEventListener("click",()=>{
-  // Arrive at the front of the approved three-building clearing: Ranger
-  // Station centered ahead, Laurel's Kitchen left, Mercantile right.
-  const x=93,z=73;
-  try{habitat=addLandscape(96,72);}
-  catch(err){console.error(err);status("Could not load village scenery: "+err.message);}
-  camera.position.set(x,cameraGround(x,z)+EYE_HEIGHT,z);
+const goToRanger=()=>{
+  // The entrance faces south (-Z). Player faces north (+Z), standing on the
+  // central woodland footpath, far enough from the steps for a full façade view.
+  if(Math.max(Math.abs(tileCx-RANGER_SPAWN.x),Math.abs(tileCy-RANGER_SPAWN.z))>48){
+    try{habitat=addLandscape(RANGER_SPAWN.tileX,RANGER_SPAWN.tileZ);}
+    catch(err){console.error(err);status("Could not load village scenery: "+err.message);}
+  }
+  camera.position.set(RANGER_SPAWN.x,
+    cameraGround(RANGER_SPAWN.x,RANGER_SPAWN.z)+EYE_HEIGHT,RANGER_SPAWN.z);
   camera.rotation.set(0,0,0);
-  info.textContent="Woodland village · Ranger Station ahead, Kitchen left, Gift Shop right";
-  status("Explore the woodland village. Drag to turn and walk to each building.");
-});
+  info.textContent="Ranger Station · Laurel's Kitchen left · Mercantile right";
+  status("You're standing in front of Ranger Station. Walk forward to its porch, or turn to explore both shops.");
+};
+document.getElementById("village")?.addEventListener("click",goToRanger);
 let joyX=0,joyY=0,joyPointer=null;
 let runMode=false,lastCenterTap=-Infinity,tapStartAt=0,tapStartRadius=Infinity,tapMaxRadius=0;
 const DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27;
@@ -379,8 +389,14 @@ engine.runRenderLoop(()=>{
     camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
   scene.render();
 });
-resetToCabin();
-status("You're at Hearthside Cabin. Push the joystick to walk, double-tap its center to run, and drag right to look.");
+if(START_AT_RANGER)goToRanger();
+else{
+  resetToCabin();
+  status("You're at Hearthside Cabin. Push the joystick to walk, double-tap its center to run, and drag right to look.");
+}
+if(START_AT_RANGER){
+  document.querySelector(".brand small").textContent="Ranger Station · first-person walk";
+}
 
 // Non-interactive read-only telemetry for repeatable browser smoke tests.
 window.__wildDiagnostics=()=>({
@@ -397,6 +413,7 @@ window.__wildDiagnostics=()=>({
   heroGraphics:habitat?.heroGraphics??false,
    communityBuildings:habitat?.communityBuildings??0,
    communityPaths:habitat?.communityPaths??0,
+   spawnLocation:START_AT_RANGER?"ranger":"hearthside",
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
