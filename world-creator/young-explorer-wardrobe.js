@@ -137,7 +137,7 @@ class YoungExplorerWardrobe {
   };
   this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
-  this.buildMeasurements();this.bindSelector();
+  this.buildMeasurements();this.bindSelector();this.bindFitControls();
   this.select('plaid');
  }
  buildMeasurements(){
@@ -155,6 +155,24 @@ class YoungExplorerWardrobe {
   const el=$('outfit-select');if(!el)return;
   el.innerHTML=outfits.map(o=>'<option value="'+o.id+'">'+o.label+'</option>').join('');
   el.onchange=()=>this.select(el.value);
+ }
+ bindFitControls(){
+  const remove=$('remove-all'),hair=$('hair-select');
+  if(remove)remove.onclick=()=>{
+   this.dress.setEnabled(false);
+   for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
+   this.selectedOutfit='fit-test';
+   if($('outfit-feedback'))$('outfit-feedback').textContent='Clothing hidden for non-anatomical mannequin fit inspection. Select an outfit to restore.';
+  };
+  if(hair){
+   const original=this.model.meshes.filter(m=>/hair/i.test(m.name||''));
+   const B=this.B,scene=this.scene;
+   const strands=[];
+   const mat=new B.StandardMaterial('Young Explorer brown hairstyle',scene);mat.diffuseColor=new B.Color3(.19,.105,.07);mat.specularColor=new B.Color3(.035,.025,.02);
+   const make=(name,x)=>{const mesh=B.MeshBuilder.CreateSphere(name,{diameter:.13,segments:12},scene);mesh.scaling.set(.65,1.4,.7);mesh.position.set(x,this.measure.maxY-.19,-.09);mesh.material=mat;mesh.setEnabled(false);strands.push(mesh);};
+   make('ponytail',0);make('left pigtail',-.12);make('right pigtail',.12);
+   hair.onchange=()=>{strands.forEach(m=>m.setEnabled(false));original.forEach(m=>m.setEnabled(hair.value==='original'));if(hair.value==='ponytail')strands[0].setEnabled(true);if(hair.value==='pigtails'){strands[1].setEnabled(true);strands[2].setEnabled(true);}};
+  }
  }
  select(id){
   if(!outfits.some(o=>o.id===id))return;
