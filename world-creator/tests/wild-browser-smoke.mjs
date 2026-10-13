@@ -27,6 +27,11 @@ try{
   assert.ok(state.distantTrees>0,"Distant forests must exist");
   assert.ok(state.species>=5,"Distinct WV native species should be present");
   assert.ok(state.understory>0,"Native ground cover must exist");
+  assert.equal(state.heroGraphics,true,"Hearthside must load investor-grade visual mode");
+  assert.ok(state.heroPlants>7000,
+    "Cabin underbrush must form a dense layered forest, not sparse props");
+  assert.ok(state.nativeTrees>0&&state.distantTrees>0,
+    "Improved graphics must keep the full native forest");
   assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
     "Walker should spawn at adult eye height above ground: "+state.eyeHeight);
   const before=state.position.slice();
