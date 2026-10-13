@@ -27,6 +27,8 @@ try{
   assert.ok(state.distantTrees>0,"Distant forests must exist");
   assert.ok(state.species>=5,"Distinct WV native species should be present");
   assert.ok(state.understory>0,"Native ground cover must exist");
+  assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
+    "Walker should spawn at adult eye height above ground: "+state.eyeHeight);
   const before=state.position.slice();
   const center={x:joystick.x+joystick.width/2,y:joystick.y+joystick.height/2};
   await page.mouse.move(center.x,center.y);
@@ -38,6 +40,8 @@ try{
   console.log("AFTER_WALK_STATE",JSON.stringify(state));
   assert.ok(state.walkedMetres>.12,
     "Joystick must actually move camera: "+JSON.stringify(before)+" => "+JSON.stringify(state.position));
+  assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
+    "Walk camera must follow the rendered terrain without sinking: "+state.eyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
