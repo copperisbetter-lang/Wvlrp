@@ -106,10 +106,13 @@ export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
   // foothill cannot climb in front of the distant Appalachian cliff. Both
   // shoulders and the far end ease back into untouched terrain. This grades
   // BOTH distant and local ground meshes using the same deterministic sampler.
-  if(z<147||z>645)return graded;
-  const north=ease((z-147)/66)*(1-ease((z-450)/195));
-  const sides=1-ease((Math.abs(x-c.centerX)-53)/105);
+  // Preserve the level shared plaza, then continue as a broad shallow cove
+  // beyond the roofs. The previous sharp up-slope was in the viewing ray and
+  // hid distant cliffs even when their backdrop loaded successfully.
+  if(z<138||z>615)return graded;
+  const north=ease((z-138)/42)*(1-ease((z-410)/205));
+  const sides=1-ease((Math.abs(x-c.centerX)-58)/85);
   const weight=north*sides;
-  const valley=flat-Math.max(0,z-155)*.083;
+  const valley=flat-Math.max(0,z-138)*.037;
   return graded*(1-weight)+valley*weight;
 }
