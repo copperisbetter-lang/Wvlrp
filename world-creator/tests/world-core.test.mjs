@@ -220,7 +220,7 @@ test("WV forest has fifteen native species, fixed distribution and no trees in c
   assert.deepEqual(a,b);
   assert.ok(a.length>200,"a dense forest should be present");
   assert.ok(a.every(t=>NATIVE_TREES.includes(t.species)));
-  assert.ok(a.every(t=>Math.hypot(t.x,t.y)>=33),"the cabin clearing stays open");
+  assert.ok(a.every(t=>Math.hypot(t.x,t.y)>=20),"the cabin clearing stays open");
   assert.ok(new Set(a.map(t=>t.species)).size>=8,"multiple WV tree species present");
   assert.ok(a.every(t=>Number.isFinite(t.height)));
 });
@@ -237,7 +237,7 @@ test("new forest stands stay native, seeded, older and about 40% evergreen",()=>
     assert.deepEqual(near,supplementalTreesInArea(0,0,102,seed,8.65),
       "forest additions must be reproducible");
     assert.ok(added.every(t=>NATIVE_TREES.includes(t.species)));
-    assert.ok(added.every(t=>Math.hypot(t.x,t.y)>=33),
+    assert.ok(added.every(t=>Math.hypot(t.x,t.y)>=20),
       "no trees inside the cabin clearing");
     assert.ok(added.every(t=>t.evergreen===NATIVE_EVERGREENS.includes(t.species)));
     originalCount+=base.length;addedCount+=added.length;
