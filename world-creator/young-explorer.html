@@ -15,7 +15,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </style></head>
 <body><main>
 <header><div><h1>Young Explorer · 3D model</h1><div class="tiny">Girl · about 7 · brown hair · green eyes · full-body olive complexion · short plaid sundress</div></div><a href="./">World Creator</a></header>
-<div id="view"><canvas id="scene" aria-label="Rotate and zoom the actual 3D child character by dragging or pinching"></canvas><div id="status" role="status">Loading independent 3D child model…</div></div>
+<div id="view"><canvas id="scene" aria-label="Rotate and zoom the actual 3D child character by dragging or pinching"></canvas><div id="status" role="status">Loading independent 3D child model (with GitHub fallback)…</div></div>
 <div id="controls" aria-label="3D model controls">
 <button id="front">Front view</button><button id="back">Back view</button><button id="face">Face close-up</button>
 <button id="full">Full body</button><button id="closer">Zoom +</button><button id="farther">Zoom −</button>
@@ -39,7 +39,22 @@ floor.rotation.x=Math.PI/2;floor.position.y=-.011;
 const ground=new B.StandardMaterial('forest floor',scene);ground.diffuseColor=new B.Color3(.13,.23,.17);ground.specularColor=new B.Color3(.05,.06,.04);floor.material=ground;
 const groups=[];
 let bounds=null, center=null, model=null;
-B.SceneLoader.ImportMeshAsync(null,'','./assets/young-explorer-olive-plaid.glb?v=olive-plaid-child-v1',scene,undefined,'.glb').then(result=>{
+(async()=>{
+ const sources=[
+  './assets/young-explorer-olive-plaid.glb?v=olive-plaid-child-v2',
+  'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@a0e2544169901ef12bef222a67410b69a53698dc/world-creator/assets/young-explorer-olive-plaid.glb',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/a0e2544169901ef12bef222a67410b69a53698dc/world-creator/assets/young-explorer-olive-plaid.glb'
+ ];
+ let lastError;
+ for(let i=0;i<sources.length;i++){
+  try{
+   status.textContent=i===0?'Loading the 3D girl from WVLRP…':'WVLRP file not available yet · trying verified GitHub model source '+i+' of 2…';
+   const model=await B.SceneLoader.ImportMeshAsync(null,'',sources[i],scene,undefined,'.glb');
+   return model;
+  }catch(err){lastError=err;console.warn('Young Explorer model source unavailable',i,err);}
+ }
+ throw new Error('All model sources were unavailable. Last error: '+(lastError?.message||String(lastError)));
+})().then(result=>{
  const meshes=result.meshes||[];
  if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=15))throw Error('Missing articulated skeleton');
