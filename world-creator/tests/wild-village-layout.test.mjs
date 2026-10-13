@@ -41,6 +41,9 @@ test("Behind the village, an uninterrupted northward mountain view opens",()=>{
   assert.equal(isVillageMountainSightline(93,100),false);
   assert.equal(isVillageMountainSightline(280,300),false);
   assert.equal(keepForestTree(93,300),false);
+  assert.equal(keepForestTree(93,140),false,"no near tree wall may block the mountain");
+  assert.equal(keepUnderstory(93,240),false,"no grass silhouettes across the ridge");
+  assert.equal(keepUnderstory(0,330),true,"dense native forest remains on the sides");
   assert.equal(keepForestTree(0,330),true);
 });
 test("Northern backland grades smoothly into a lower valley without moving foundations",()=>{
@@ -48,6 +51,8 @@ test("Northern backland grades smoothly into a lower valley without moving found
   const ground=(x,z)=>gradeCommunityGround(x,z,natural(x,z),p=>natural(p.x,p.z));
   const base=natural(93,85);
   assert.equal(ground(93,110),base);
+  assert.equal(ground(93,195),base,"flat rear clearing should stay level");
+  assert.equal(ground(93,215),base,"extend level ground behind the village");
   assert.ok(Math.abs(ground(93,160)-base)<.1,"back edge should grade almost level");
   assert.ok(ground(93,270)<base-5,"mountain window should be below village level");
   assert.ok(ground(93,400)<base-15,"rear ground must not hide mountain");
