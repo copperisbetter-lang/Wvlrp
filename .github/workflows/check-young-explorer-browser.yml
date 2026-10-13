@@ -1,0 +1,53 @@
+name: Smoke-test Young Explorer in real browser
+on:
+  push:
+    paths:
+      - '.github/workflows/check-young-explorer-browser.yml'
+      - '.github/scripts/young-explorer-browser-audit.cjs'
+      - 'world-creator/young-explorer.html'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install actual browser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serve repository and test local + deployed viewer on Android screen
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/wvlrp-young-web.log 2>&1 &
+          sleep 2
+          node .github/scripts/young-explorer-browser-audit.cjs
+      - name: Publish browser QA report even on failure
+        if: always()
+        run: |
+          if [ ! -f world-creator/YOUNG-EXPLORER-BROWSER-AUDIT.json ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/YOUNG-EXPLORER-BROWSER-AUDIT.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record real browser Young Explorer load status"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: young-explorer-browser-test
+          path: |
+            world-creator/YOUNG-EXPLORER-BROWSER-AUDIT.json
+            /tmp/young-explorer-local.png
+            /tmp/young-explorer-live.png
+          if-no-files-found: ignore
+          retention-days: 7
