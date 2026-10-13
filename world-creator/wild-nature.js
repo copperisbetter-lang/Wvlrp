@@ -138,7 +138,7 @@ export function supplementalTreesInArea(cx,cy,halfExtent,seed,spacing=9){
   for(let i=minI;i<=maxI;i++)for(let j=minJ;j<=maxJ;j++){
     const first=treeAtCell(i,j,seed,spacing);
     // Fixed world-grid hash means all forest streaming tiles match seamlessly.
-    if(!first||hash(i,j,seed+1207)>=.54)continue;
+    if(!first||hash(i,j,seed+1207)>=.53)continue;
     const direction=hash(i,j,seed+1208)*Math.PI*2;
     const separation=spacing*(.32+.24*hash(i,j,seed+1209));
     const x=first.x+Math.cos(direction)*separation;
@@ -147,13 +147,13 @@ export function supplementalTreesInArea(cx,cy,halfExtent,seed,spacing=9){
       Math.hypot(x,y)<33||waterAt(x,y,seed))continue;
     const biome=biomeAt(x,y,seed);
     if(biome==="cabin-clearing")continue;
-    const evergreen=hash(i,j,seed+1210)<.40;
+    const evergreen=hash(i,j,seed+1210)<.36;
     const candidates=evergreen?EXTRA_CONIFERS[biome]:
       MIX[biome].filter(name=>!NATIVE_EVERGREENS.includes(name));
     const species=candidates[Math.floor(hash(i,j,seed+1211)*candidates.length)];
-    // Existing veterans are ~9% of the canopy. About 5.5% of half as many
+    // Existing veterans are ~9% of the canopy. Roughly 5% of half as many
     // supplemental trees provides an additional ~30% old-growth trees.
-    const elder=hash(i,j,seed+1212)<.055,age=hash(i,j,seed+1213);
+    const elder=hash(i,j,seed+1212)<.050,age=hash(i,j,seed+1213);
     const scale=elder?1.43+.36*age:
       age<.23?.46+age*1.38:.69+age*.47;
     list.push({x,y,species,biome,height:cabinGrade(x,y,seed),scale,
