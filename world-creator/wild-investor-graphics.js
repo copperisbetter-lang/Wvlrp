@@ -6,7 +6,7 @@
  */
 import { hash, noise } from "./world-core.js";
 import { cabinGrade, biomeAt, waterAt } from "./wild-nature.js";
-import {keepUnderstory} from "./wild-reference-layout.js";
+import {keepUnderstory} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
 
 const TAU=Math.PI*2;
 const speciesColor={
@@ -211,7 +211,7 @@ export function buildHeroTree(B,scene,track,species,seed,variant,textures){
        start[1]+(end[1]-start[1])*f,
        start[2]+(end[2]-start[2])*f
      ];
-     const leaves=conifer?9:8;
+     const leaves=conifer?11:12;
      for(let j=0;j<leaves;j++){
        const phase=TAU*(j/leaves)+rand()*.30;
        const spread=conifer?1.14:1.62,dist=(.30+rand()*.85)*spread;
@@ -288,8 +288,9 @@ function detailMatrices(B,model,placements,cx,cy){
  const q=new B.Quaternion(),pos=new B.Vector3(),sc=new B.Vector3(),matrix=new B.Matrix();
  for(let i=0;i<placements.length;i++){
    const t=placements[i];
-   // Preserve dense brush spread but keep it below the eye line.
-   sc.set(t.sx,t.sy*.26,t.sz);
+   // Restore full, layered native understory instead of flattening shrubs
+    // into a carpet. Ferns remain short; laurel/rhodo can approach waist-high.
+   sc.set(t.sx,t.sy*.64,t.sz);
    B.Quaternion.RotationAxisToRef(B.Axis.Y,t.yaw,q);
    pos.set(t.x-cx,t.h,t.y-cy);
    B.Matrix.ComposeToRef(sc,q,pos,matrix);matrix.copyToArray(data,i*16);
@@ -305,7 +306,7 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surf
  const kinds=["fern-field","rhododendron-mass","stiltgrass","sapling","briar-tangle"];
  const groups=Object.fromEntries(kinds.map(k=>[k,[]]));
  // Four-fold visually layered forest floor within the investor walk zone.
- const step=mobile?1.60:1.48,half=89;
+ const step=mobile?1.48:1.38,half=89;
  const xmin=Math.floor((cx-half)/step)-1,xmax=Math.ceil((cx+half)/step)+1;
  const ymin=Math.floor((cy-half)/step)-1,ymax=Math.ceil((cy+half)/step)+1;
  for(let i=xmin;i<=xmax;i++)for(let j=ymin;j<=ymax;j++){
@@ -316,7 +317,7 @@ export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surf
      waterAt(x,y,seed)||!keepUnderstory(x,y))continue;
    // Organic gaps and dense colonies are controlled by a low-frequency patch.
    const patch=noise(x/26,y/27,seed+2021);
-   const chance=.74+patch*.22;
+   const chance=.80+patch*.18;
    if(hash(i,j,seed+924)>chance)continue;
    const b=biomeAt(x,y,seed),sample=hash(i,j,seed+925);
    const kind=b==="moist-cove"||b==="riparian"?
