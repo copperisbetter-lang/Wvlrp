@@ -741,16 +741,19 @@ function refresh3d() {
   $("previewCoverage").textContent=cabin
     ? "Hearthside Cabin · one furnished room · "+world.objects.filter(o=>o.type==="npc"&&Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7).length+
       " people inside · roof "+(cabinRoofVisible?"on":"hidden")+
-      ". "+habitat.nearTrees+" native trees nearby · "+habitat.distantTrees+" on outer slopes. "+
+      ". "+habitat.nearTrees+" native trees nearby · "+habitat.distantTrees+" on outer slopes · "+habitat.understory+" undergrowth/rock/deadfall patches. "+
       (cabinFullCrew?"All real 3D models requested.":"Two real avatars loaded in mobile mode; others named.")
-    : "Wild terrain: "+habitat.nearTrees+" native trees nearby · "+habitat.distantTrees+
+    : "Wild terrain: "+habitat.nearTrees+" native trees nearby · "+habitat.understory+" ground-cover patches · "+habitat.distantTrees+
       " distant trees · "+habitat.species+" species · mountain relief, streams and river.";
 }
 function init3D(){
   if(!window.BABYLON){show3DMessage("Babylon.js could not load. The 2D map and world data editor still work.");return;}
   try{
     engine=new BABYLON.Engine($("scene"),true,{antialias:true,preserveDrawingBuffer:false});
-    scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.65,.79,.86,1);
+    scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.64,.76,.79,1);
+    scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;
+    scene.fogColor=new BABYLON.Color3(.63,.73,.75);
+    scene.fogDensity=.00115;
     camera=new BABYLON.ArcRotateCamera("orbit",-Math.PI/2.5,1.02,165,new BABYLON.Vector3(0,8,0),scene);
     const firstCabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id&&
       Math.abs(o.x-view.x)<70&&Math.abs(o.y-view.y)<70);
@@ -766,7 +769,14 @@ function init3D(){
     camera.wheelPrecision=14;
     camera.pinchPrecision=55;
     camera.useNaturalPinchZoom=true;
-    new BABYLON.HemisphericLight("daylight",new BABYLON.Vector3(.5,1,.2),scene);
+    const skyLight=new BABYLON.HemisphericLight("soft forest daylight",
+      new BABYLON.Vector3(.35,1,.24),scene);
+    skyLight.intensity=.85;
+    skyLight.groundColor=new BABYLON.Color3(.24,.22,.18);
+    const sun=new BABYLON.DirectionalLight("mountain sun",
+      new BABYLON.Vector3(-.45,-.9,-.32),scene);
+    sun.diffuse=new BABYLON.Color3(1,.92,.79);
+    sun.intensity=.64;
     refresh3d();engine.runRenderLoop(()=>{animateRiley(Date.now());scene.render();});
   }catch(e){show3DMessage("3D initialization error: "+e.message);}
 }
