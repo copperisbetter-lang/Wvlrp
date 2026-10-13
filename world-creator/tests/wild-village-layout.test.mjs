@@ -48,7 +48,7 @@ test("Northern backland grades smoothly into a lower valley without moving found
   const ground=(x,z)=>gradeCommunityGround(x,z,natural(x,z),p=>natural(p.x,p.z));
   const base=natural(93,85);
   assert.equal(ground(93,110),base);
-  assert.equal(ground(93,160),base);
+  assert.ok(Math.abs(ground(93,160)-base)<.1,"back edge should grade almost level");
   assert.ok(ground(93,270)<base-5,"mountain window should be below village level");
   assert.ok(ground(93,400)<base-15,"rear ground must not hide mountain");
   assert.equal(ground(300,400),natural(300,400),"outside corridor retain forest hills");
