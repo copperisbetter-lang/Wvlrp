@@ -57,7 +57,7 @@ const fs=require('fs');
        (['plaid','floral','sunflower'].includes(o.name)?o.dressEnabled:
          !o.dressEnabled&&o.shirtEnabled&&o.shortsEnabled))&&
      rec.wardrobe.bendBones>=3&&rec.wardrobe.sitBones>=3&&
-     rec.wardrobe.restoredPose&&rec.wardrobe.measurements.heightMeters>.5;
+     rec.wardrobe.restoredPose&&Math.abs(rec.wardrobe.measurements.heightMeters-1.22)<.025;
    await page.screenshot({path:'/tmp/young-explorer-'+name+'.png',fullPage:true});
   }catch(err){
    rec.error=String(err).slice(0,800);
