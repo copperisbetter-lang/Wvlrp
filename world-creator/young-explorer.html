@@ -97,6 +97,20 @@ let bounds=null, center=null, model=null;
  throw new Error('Could not load the verified 52-joint Young Explorer model. '+(lastError?.message||String(lastError)));
 })().then(result=>{
  const meshes=result.meshes||[];
+ // Render both sides of the imported body surface. Some glTF exports contain
+ // reversed/open triangles around shoulders and torso; one-sided rendering
+ // makes those regions look like empty holes at close camera distances.
+ // Keep skin UVs, skeletal weights, and the original material textures.
+ for(const mesh of meshes){
+   if(!(mesh.getTotalVertices?.()>0))continue;
+   const materials=mesh.material?.subMaterials?.length
+     ? mesh.material.subMaterials : [mesh.material];
+   for(const mat of materials){
+     if(!mat)continue;
+     mat.backFaceCulling=false;
+     if('twoSidedLighting' in mat)mat.twoSidedLighting=true;
+   }
+ }
  if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
  // The CC0 child morph in the original GLB is 1.666m tall on export.
  // Normalize the ENTIRE skinned character to a believable age-seven game height,
