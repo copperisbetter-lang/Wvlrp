@@ -6,7 +6,7 @@
  */
 import { hash, noise } from "./world-core.js";
 import { cabinGrade, biomeAt, waterAt } from "./wild-nature.js";
-import {keepUnderstory} from "./wild-reference-layout.js?v=wide-plaza-20261013-v2";
+import {keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 
 const TAU=Math.PI*2;
 const speciesColor={
