@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CELL, seedNumber, creekY, heightAt, trailHorizontal, trailVertical,
-  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER
+  newWorld, sanitizedWorld, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, gatherCabinCrew, HEARTHSIDE_CABIN, CABIN_CREW_KEYS
 } from "../world-core.js";
 
 test("world seed makes terrain deterministic",()=>{
@@ -135,4 +135,41 @@ test("A personally placed Mason is not duplicated or moved",()=>{
   assert.equal(addMason(world).length,0);
   const person=sanitizedWorld(JSON.parse(JSON.stringify(world))).objects[0];
   assert.deepEqual([person.x,person.y,person.modelKey,person.pose],[400,234,"mason","elbows"]);
+});
+
+test("A one-room cabin gathers our seven built-in avatars without deleting the world's wildlife",()=>{
+  const w=newWorld();
+  const deer=spawnDeer(w,24,300,200,4);
+  w.objects.push({id:"old-cabin",type:"cabin",name:"Old Forest Cabin",x:980,y:300});
+  w.objects.push({id:"quest-important",type:"marker",name:"Find a pawpaw",x:72,y:88});
+  const originals=w.objects.map(o=>[o.id,o.x,o.y,o.type]);
+  const made=gatherCabinCrew(w);
+  assert.equal(made.madeCabin,true);
+  assert.equal(made.totalPeople,7);
+  assert.equal(new Set(w.objects.filter(o=>o.type==="npc").map(o=>o.modelKey)).size,7);
+  assert.deepEqual(w.objects.filter(o=>o.type==="npc").map(o=>o.modelKey).sort(),[...CABIN_CREW_KEYS].sort());
+  assert.deepEqual(w.objects.slice(0,originals.length).map(o=>[o.id,o.x,o.y,o.type]),originals);
+  assert.ok(w.objects.find(o=>o.id===HEARTHSIDE_CABIN.id));
+  assert.equal(w.objects.filter(o=>o.type==="deer").length,deer.length);
+  const cabin=w.objects.find(o=>o.id===HEARTHSIDE_CABIN.id);
+  assert.ok(w.objects.filter(o=>o.type==="npc").every(o=>Math.abs(o.x-cabin.x)<9&&Math.abs(o.y-cabin.y)<7));
+  assert.equal(gatherCabinCrew(w).addedPeople,0);
+  assert.equal(w.objects.filter(o=>o.id===HEARTHSIDE_CABIN.id).length,1);
+  const saved=sanitizedWorld(JSON.parse(JSON.stringify(w)));
+  assert.ok(saved.objects.some(o=>o.modelKey==="sav"),"Sav must survive reload");
+  assert.equal(saved.objects.filter(o=>o.type==="deer").length,24);
+});
+test("Cabin gathering repositions existing people but never replaces their identities or pose",()=>{
+  const w=newWorld();
+  w.objects.push({id:"my-amy",type:"npc",modelKey:"amy",name:"Customized Amy",x:852,y:-200,pose:"elbows"});
+  w.objects.push({id:"my-visitor",type:"npc",name:"Visitor",x:-500,y:600,pose:"standing"});
+  const originalLength=w.objects.length;
+  const result=gatherCabinCrew(w);
+  assert.equal(result.totalPeople,8);
+  const amy=w.objects.find(o=>o.id==="my-amy");
+  assert.equal(amy.name,"Customized Amy");
+  assert.equal(amy.pose,"elbows");
+  assert.ok(Math.abs(amy.x)<9&&Math.abs(amy.y)<7);
+  assert.ok(Math.abs(w.objects.find(o=>o.id==="my-visitor").x)<9);
+  assert.equal(w.objects.length,originalLength+1+6);
 });
