@@ -191,16 +191,24 @@ class YoungExplorerWardrobe {
   const originalVertices=this.dress.getVerticesData(this.B.VertexBuffer.PositionKind)?.slice();
   const bounds=this.dress.getBoundingInfo().boundingBox;
   const low=bounds.minimum.y,high=bounds.maximum.y,span=Math.max(.001,high-low);
-  const topWidth=$('dress-top-width'),topDepth=$('dress-top-depth');
+  const topWidth=$('dress-top-width'),topDepth=$('dress-top-depth'),rim=$('dress-rim-diameter');
+  const saveKey='wvlrp-young-explorer-wardrobe-v1';
+  const controls={size,vertical,width,depth,topWidth,topDepth,rim};
+  try{
+    const saved=JSON.parse(localStorage.getItem(saveKey)||'{}');
+    for(const [key,el] of Object.entries(controls))if(el&&saved[key]!=null)el.value=String(saved[key]);
+  }catch(_){}
+  const save=()=>{try{localStorage.setItem(saveKey,JSON.stringify(Object.fromEntries(Object.entries(controls).filter(([,el])=>el).map(([key,el])=>[key,el.value]))));}catch(_){}};
   const adjustBodice=()=>{
     if(!originalVertices)return;
     const updated=originalVertices.slice();
-    const wx=Number(topWidth?.value||75)/100,dz=Number(topDepth?.value||75)/100;
+    const wx=Number(topWidth?.value||75)/100,dz=Number(topDepth?.value||75)/100, rimRatio=Number(rim?.value||100)/100;
     for(let i=0;i<updated.length;i+=3){
       const t=(originalVertices[i+1]-low)/span;
       const blend=Math.max(0,Math.min(1,(t-.48)/.32));
-      updated[i]=originalVertices[i]*(1-blend*(1-wx));
-      updated[i+2]=originalVertices[i+2]*(1-blend*(1-dz));
+      const rimBlend=Math.max(0,Math.min(1,(t-.67)/.27));
+      updated[i]=originalVertices[i]*(1-blend*(1-wx))*(1-rimBlend*(1-rimRatio));
+      updated[i+2]=originalVertices[i+2]*(1-blend*(1-dz))*(1-rimBlend*(1-rimRatio));
     }
     this.dress.updateVerticesData(this.B.VertexBuffer.PositionKind,updated,true);
     this.dress.refreshBoundingInfo();
@@ -231,9 +239,11 @@ class YoungExplorerWardrobe {
    if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
    if($('dress-top-width-value'))$('dress-top-width-value').textContent=(topWidth?.value||75)+'%';
    if($('dress-top-depth-value'))$('dress-top-depth-value').textContent=(topDepth?.value||75)+'%';
+   if($('dress-rim-diameter-value'))$('dress-rim-diameter-value').textContent=(rim?.value||100)+'%';
+   save();
   };
-  for(const el of [size,vertical,width,depth,topWidth,topDepth].filter(Boolean))el.addEventListener('input',update);
-  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='75';if(topDepth)topDepth.value='75';update();};
+  for(const el of [size,vertical,width,depth,topWidth,topDepth,rim].filter(Boolean))el.addEventListener('input',update);
+  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='75';if(topDepth)topDepth.value='75';if(rim)rim.value='100';update();};
   update();
  }
 
