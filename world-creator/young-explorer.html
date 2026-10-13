@@ -97,6 +97,22 @@ let bounds=null, center=null, model=null;
 })().then(result=>{
  const meshes=result.meshes||[];
  if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
+ // The CC0 child morph in the original GLB is 1.666m tall on export.
+ // Normalize the ENTIRE skinned character to a believable age-seven game height,
+ // not merely the visible body mesh (which would break clothing, bones and shoes).
+ const bodyMesh=meshes.filter(m=>m.getTotalVertices?.()>10000)
+   .sort((a,b)=>b.getTotalVertices()-a.getTotalVertices())[0];
+ if(bodyMesh){
+   bodyMesh.computeWorldMatrix(true);
+   const bb0=bodyMesh.getBoundingInfo().boundingBox;
+   const rawHeight=bb0.maximumWorld.y-bb0.minimumWorld.y;
+   const rootMesh=meshes.find(m=>!m.parent && (m.getTotalVertices?.()||0)===0);
+   if(Number.isFinite(rawHeight)&&rawHeight>1.36&&rootMesh){
+     rootMesh.scaling.scaleInPlace(1.22/rawHeight);
+     meshes.forEach(m=>m.computeWorldMatrix(true));
+     console.info('Young Explorer child-sized world scale',{rawHeight,displayHeight:1.22});
+   }
+ }
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
  groups.push(...result.animationGroups);
  if(groups.length<3)throw Error('Missing movement clips');
