@@ -127,7 +127,8 @@ class YoungExplorerWardrobe {
   const db=this.dress.getBoundingInfo().boundingBox;
   const dressCenter=(db.minimumWorld.y+db.maximumWorld.y)/2;
   const targetCenter=this.measure.minY+this.measure.H*.665;
-  const delta=targetCenter-dressCenter;
+  const targetTop=this.measure.minY+this.measure.H*.805;
+  const delta=targetTop-db.maximumWorld.y;
   if(Math.abs(delta)>this.measure.H*.08){
     const parent=this.dress.parent;
     if(parent){parent.computeWorldMatrix(true);const inv=parent.getWorldMatrix().clone().invert();
@@ -191,6 +192,17 @@ class YoungExplorerWardrobe {
    const shift=new this.B.Vector3(0,Number(vertical.value)/100,0);
    if(parent){parent.computeWorldMatrix(true);const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(shift,inverse));}
    else this.dress.position.addInPlace(shift);
+   // Re-anchor the garment AFTER resizing: scaling around the imported origin
+   // otherwise raises it over the child's head on some GLB exports.
+   this.dress.computeWorldMatrix(true);
+   const top=this.dress.getBoundingInfo().boundingBox.maximumWorld.y;
+   const shoulderY=this.measure.minY+this.measure.H*.805+Number(vertical.value)/100;
+   const correction=shoulderY-top;
+   if(Math.abs(correction)>0.001){
+     if(parent){const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(new this.B.Vector3(0,correction,0),inverse));}
+     else this.dress.position.y+=correction;
+     this.dress.computeWorldMatrix(true);
+   }
    if($('dress-position-value'))$('dress-position-value').textContent=vertical.value+' cm';
    if($('dress-width-value'))$('dress-width-value').textContent=width.value+'%';
    if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
