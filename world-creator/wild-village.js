@@ -31,12 +31,13 @@ function structure(B,scene,track,materials){
    const dx=bx-ax,dy=by-ay,dz=bz-az,length=Math.hypot(dx,dy,dz);
    const m=track(B.MeshBuilder.CreateCylinder(name,{diameter:r*2,height:length,tessellation:8},scene));
    m.position.set((ax+bx)/2,(ay+by)/2,(az+bz)/2);
-   m.rotationQuaternion=B.Quaternion.FromUnitVectorsToRef?
-     B.Quaternion.FromUnitVectorsToRef(new B.Vector3(0,1,0),new B.Vector3(dx/length,dy/length,dz/length),new B.Quaternion()):
-     null;
-   if(!m.rotationQuaternion){
-     const up=new B.Vector3(0,1,0),vec=new B.Vector3(dx,dy,dz);
-     m.rotationQuaternion=B.Quaternion.RotationAxis(new B.Vector3(-dz,0,dx).normalize(),Math.acos(Math.max(-1,Math.min(1,dy/length))));
+   // A vertical cylinder already points along +Y; rotate only for braces.
+   if(Math.hypot(dx,dz)>1e-6){
+     const axis=new B.Vector3(dz,0,-dx).normalize();
+     m.rotationQuaternion=B.Quaternion.RotationAxis(axis,
+       Math.acos(Math.max(-1,Math.min(1,dy/length))));
+   }else if(dy<0){
+     m.rotationQuaternion=B.Quaternion.RotationAxis(B.Axis.X,Math.PI);
    }
    m.material=mat;m.isPickable=false;return m;
  }
