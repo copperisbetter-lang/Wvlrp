@@ -273,24 +273,27 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   vistaMat.backFaceCulling=false;
   vistaMat.disableDepthWrite=true;
   vistaMat.specularColor=new B.Color3(0,0,0);
-  // The cliff reaches well above the native treetops, matching the approved
-  // scene's dominant high ridge. It lives beyond all 3D village buildings.
+  // Horizon-scale mountain occupies the opening beyond the village roofs.
+  // Use the same apparent angular scale at a nearer depth, so the real distant
+  // forest no longer occludes it. The sky and bottom edges remain transparent.
   const vistaWall=B.MeshBuilder.CreatePlane("VISIBLE mountain and cliff behind village",
     // A near horizon-scale backdrop, with rock skyline clearly above the
     // 10m Ranger Station roof when seen from the south-side spawn.
-    {width:1150,height:530,sideOrientation:B.Mesh.DOUBLESIDE},scene);
+    {width:500,height:230,sideOrientation:B.Mesh.DOUBLESIDE},scene);
   vistaWall.material=vistaMat;
   vistaWall.applyFog=false;
   vistaWall.isPickable=false;
   vistaWall.renderingGroupId=0;
-  // Camera-following far vista: cannot collide with paths or wander into a
-  // streamed terrain tile, but retains the same world north bearing.
+  // The mountain wall is 200m north of each camera viewpoint, always behind
+  // the 110m-north buildings and beyond their open valley, but in FRONT of
+  // distant 3D forest sprites which otherwise conceal every cliff pixel.
+  // It is noncollidable and follows the view without changing level geometry.
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
-    vistaWall.position.set(camera.position.x-112,camera.position.y+54,camera.position.z+460);
+    vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
   });
   dome.position.copyFrom(camera.position);
-  vistaWall.position.set(camera.position.x-112,camera.position.y+54,camera.position.z+460);
+  vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
   return {dome,vistaWall,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
     vistaWall.dispose();vistaMat.dispose();vista.dispose();
