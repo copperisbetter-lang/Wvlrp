@@ -34,6 +34,10 @@ try{
     "Improved graphics must keep the full native forest");
   assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
     "Walker should spawn at adult eye height above ground: "+state.eyeHeight);
+  assert.ok(state.renderedSurfaceHeight!==null,
+    "Ground mesh should expose real triangle altitude");
+  assert.ok(Math.abs(state.renderedEyeHeight-1.68)<.08,
+    "Camera must be ~1.68m above VISIBLE ground triangles at spawn: "+state.renderedEyeHeight);
   const before=state.position.slice();
   const center={x:joystick.x+joystick.width/2,y:joystick.y+joystick.height/2};
   await page.mouse.move(center.x,center.y);
@@ -47,6 +51,8 @@ try{
     "Joystick must actually move camera: "+JSON.stringify(before)+" => "+JSON.stringify(state.position));
   assert.ok(Math.abs(state.eyeHeight-1.68)<.045,
     "Walk camera must follow the rendered terrain without sinking: "+state.eyeHeight);
+  assert.ok(Math.abs(state.renderedEyeHeight-1.68)<.08,
+    "Walker must retain adult standing eye height above visible hill mesh: "+state.renderedEyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
