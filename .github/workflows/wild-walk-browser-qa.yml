@@ -6,6 +6,8 @@ on:
       - "world-creator/walk.html"
       - "world-creator/wild-nature.js"
       - "world-creator/wild-landscape-renderer.js"
+      - "world-creator/wild-reference-layout.js"
+      - "world-creator/wild-mountain-backdrop.js"
       - "world-creator/tests/wild-browser-smoke.mjs"
       - ".github/workflows/wild-walk-browser-qa.yml"
   workflow_dispatch:
