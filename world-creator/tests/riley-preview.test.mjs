@@ -66,3 +66,17 @@ test("Riley's rigged body uses a natural flesh shader without painting her face"
   assert.match(studio,/const sampledSkin=/);
   assert.match(studio,/Keep exported body and neck hue matched to original face texture/);
 });
+
+test("World Creator never generates blob humans as stand-ins for detailed GLBs",()=>{
+  const figures=readFileSync(new URL("../character-models.js",import.meta.url),"utf8");
+  assert.doesNotMatch(figures,/function person\(/);
+  assert.match(figures,/return \{ deer \}/);
+  assert.doesNotMatch(studio,/figures\.person\(/);
+  assert.doesNotMatch(studio,/fallback\.setEnabled\(/);
+  assert.doesNotMatch(studio,/fallback\.dispose\(/);
+  assert.doesNotMatch(studio,/importCharacterGlb\(file,o,x,h,z,fallback/);
+  for (const key of ["riley","amy","chrissy","caitlyn","mason","sha","sav"]){
+    assert.match(studio,new RegExp("\\b"+key+":"));
+  }
+  assert.match(page,/No more blob people/);
+});
