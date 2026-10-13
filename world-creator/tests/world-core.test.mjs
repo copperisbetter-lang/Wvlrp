@@ -1,6 +1,6 @@
 import test from "node:test";
 import { resetToWildCabin } from "../world-core.js";
-import { NATIVE_TREES,riverY,riverLevel,terrainHeight,waterAt,creekPath,treesInArea } from "../wild-nature.js";
+import { NATIVE_TREES,NATIVE_EVERGREENS,riverY,riverLevel,terrainHeight,waterAt,creekPath,treesInArea,supplementalTreesInArea } from "../wild-nature.js";
 
 import assert from "node:assert/strict";
 import {
@@ -223,4 +223,32 @@ test("WV forest has fifteen native species, fixed distribution and no trees in c
   assert.ok(a.every(t=>Math.hypot(t.x,t.y)>=33),"the cabin clearing stays open");
   assert.ok(new Set(a.map(t=>t.species)).size>=8,"multiple WV tree species present");
   assert.ok(a.every(t=>Number.isFinite(t.height)));
+});
+
+test("new forest stands stay native, seeded, older and about 40% evergreen",()=>{
+  let originalCount=0,addedCount=0,addedEvergreen=0,oldCount=0,addedOld=0;
+  for(const seed of [12345,230115,99991,20261013,301,708]){
+    const base=treesInArea(0,0,102,seed,8.65).concat(
+      treesInArea(0,0,470,seed,33.9).filter(t=>Math.max(Math.abs(t.x),Math.abs(t.y))>104));
+    const near=supplementalTreesInArea(0,0,102,seed,8.65);
+    const far=supplementalTreesInArea(0,0,470,seed,33.9).filter(t=>
+      Math.max(Math.abs(t.x),Math.abs(t.y))>104);
+    const added=near.concat(far);
+    assert.deepEqual(near,supplementalTreesInArea(0,0,102,seed,8.65),
+      "forest additions must be reproducible");
+    assert.ok(added.every(t=>NATIVE_TREES.includes(t.species)));
+    assert.ok(added.every(t=>Math.hypot(t.x,t.y)>=33),
+      "no trees inside the cabin clearing");
+    assert.ok(added.every(t=>t.evergreen===NATIVE_EVERGREENS.includes(t.species)));
+    originalCount+=base.length;addedCount+=added.length;
+    addedEvergreen+=added.filter(t=>t.evergreen).length;
+    oldCount+=base.filter(t=>t.elder).length;
+    addedOld+=added.filter(t=>t.elder).length;
+  }
+  assert.ok(addedCount/originalCount>.45&&addedCount/originalCount<.60,
+    "aim for roughly 50% additional trees");
+  assert.ok(addedEvergreen/addedCount>.33&&addedEvergreen/addedCount<.47,
+    "aim for 40% native evergreens among additions");
+  assert.ok(addedOld/oldCount>.23&&addedOld/oldCount<.43,
+    "aim for 30% more established old-growth trees");
 });
