@@ -170,6 +170,7 @@ class YoungExplorerWardrobe {
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
   this.select('plaid');
+  this.bindLayers();
  }
  buildMeasurements(){
   const m=this.measure;
@@ -299,6 +300,19 @@ class YoungExplorerWardrobe {
    };
   }
  }
+ bindLayers(){
+  const box=$('layer-shorts'),kind=$('layer-shorts-style'),key='wvlrp-young-explorer-shorts-layer-v1';
+  if(!box||!kind)return;
+  try{const saved=JSON.parse(localStorage.getItem(key)||'{}');box.checked=!!saved.enabled;if(saved.style&&this.suits[saved.style])kind.value=saved.style;}catch(_){}
+  const apply=()=>{
+    for(const suit of Object.values(this.suits))suit.shorts?.setEnabled(false);
+    if(box.checked&&this.suits[kind.value])this.suits[kind.value].shorts?.setEnabled(true);
+    else if(!box.checked&&this.selectedOutfit&&!['plaid','floral','sunflower'].includes(this.selectedOutfit))
+      this.suits[this.selectedOutfit]?.shorts?.setEnabled(true);
+    try{localStorage.setItem(key,JSON.stringify({enabled:box.checked,style:kind.value}));}catch(_){}
+  };
+  box.addEventListener('change',apply);kind.addEventListener('change',apply);this.applyShortsLayer=apply;apply();
+ }
  select(id){
   if(!outfits.some(o=>o.id===id))return;
   this.body.material=this.originalBodyMaterial;
@@ -311,6 +325,7 @@ class YoungExplorerWardrobe {
   if($('outfit-feedback'))$('outfit-feedback').textContent=
     outfits.find(x=>x.id===id).label+' fitted to Young Explorer.';
   this.selectedOutfit=id;
+  this.applyShortsLayer?.();
  }
  boneTarget(name){
   const skel=this.model.skeletons?.[0];if(!skel)return null;
