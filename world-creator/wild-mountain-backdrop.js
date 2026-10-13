@@ -362,11 +362,11 @@ export function installWildMountainBackdrop(B,scene,camera,{mobile=false}={}){
   const obs=scene.onBeforeRenderObservable.add(()=>{
     dome.position.copyFrom(camera.position);
     vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
-  solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
     solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
   });
   dome.position.copyFrom(camera.position);
   vistaWall.position.set(camera.position.x-49,camera.position.y-5,camera.position.z+200);
+  solidCliff.position.set(camera.position.x,camera.position.y,camera.position.z+174);
   return {dome,vistaWall,solidCliff,dispose(){
     scene.onBeforeRenderObservable.remove(obs);
     solidCliff.dispose();cliffMaterial.dispose();cliffTexture.dispose();
