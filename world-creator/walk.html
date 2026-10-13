@@ -24,8 +24,11 @@ button:active,.link:active{background:#467052}button:focus-visible,.link:focus-v
 #joystick::after{content:"MOVE";position:absolute;top:9px;left:0;right:0;text-align:center;font:700 10px system-ui;letter-spacing:.12em;color:#ddebcfa8;pointer-events:none}
 #stick{position:absolute;left:40px;top:40px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 36% 31%,#c9d9b5,#4e805f);border:2px solid #f0f7e2bb;box-shadow:0 3px 12px #000a;pointer-events:none;transform:translate(0,0)}
 #reticle{position:fixed;left:50%;top:50%;width:7px;height:7px;border:1px solid #fcfcf6aa;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+#players{display:none;top:calc(72px + env(safe-area-inset-top));right:12px;max-width:40vw;padding:8px 10px;border-radius:9px;border:1px solid #9dbda77e;background:#0b251bdc;color:#f4f2df;font:600 11px/1.4 system-ui;text-align:right}
+.beta-game #players{display:block}
+#players[data-online="true"]{border-color:#c5de92}
 #info{position:fixed;z-index:5;right:12px;bottom:calc(15px + env(safe-area-inset-bottom));color:#e9e8dbd6;background:#11251cbd;padding:7px 10px;border-radius:9px;font:11px system-ui;pointer-events:none}
-@media(max-width:550px){.top{padding:7px;gap:5px}.brand{padding:8px;max-width:49%}.brand strong{font-size:12px}.brand small{font-size:10px}.actions{max-width:50%}.actions button,.actions .link{padding:8px;font-size:11px}#message{top:70px;font-size:11px}#help{font-size:11px;max-width:42vw;bottom:calc(20px + env(safe-area-inset-bottom))}#info{bottom:calc(166px + env(safe-area-inset-bottom));right:8px}}
+@media(max-width:550px){.top{padding:7px;gap:5px}.brand{padding:8px;max-width:49%}.brand strong{font-size:12px}.brand small{font-size:10px}.actions{max-width:50%}.actions button,.actions .link{padding:8px;font-size:11px}#message{top:70px;font-size:11px}#help{font-size:11px;max-width:42vw;bottom:calc(20px + env(safe-area-inset-bottom))}#info{bottom:calc(166px + env(safe-area-inset-bottom));right:8px}#players{top:calc(80px + env(safe-area-inset-top));right:8px;max-width:46vw;font-size:10px}}
 </style>
 </head>
 <body>
@@ -35,12 +38,13 @@ button:active,.link:active{background:#467052}button:focus-visible,.link:focus-v
  <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="village" type="button">Village</button><button id="crew" type="button">Load crew</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
 </div>
 <div id="message" class="hud" role="status" aria-live="polite">Loading West Virginia forest and Hearthside Cabin…</div>
+<div id="players" class="hud" role="status" aria-live="polite">Game Beta Test · connecting explorers…</div>
 <div id="joystick" role="group" aria-label="Movement joystick. Steer where you want to go. Double tap center to run."><div id="stick"></div></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="help">Left thumb: steer & move<br>Double-tap stick center: run / walk<br>Release stick, drag right: look</div>
 <div id="info">Starting at Hearthside Cabin</div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./walk.js?v=level-campfire-face-steering-20261013-v6"></script>
+<script type="module" src="./walk.js?v=multiplayer-beta-20261013-v1"></script>
 </body>
 </html>
