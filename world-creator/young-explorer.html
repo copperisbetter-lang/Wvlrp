@@ -101,30 +101,9 @@ let bounds=null, center=null, model=null;
  // The CC0 child morph in the original GLB is 1.666m tall on export.
  // Normalize the ENTIRE skinned character to a believable age-seven game height,
  // not merely the visible body mesh (which would break clothing, bones and shoes).
- const bodyMesh=meshes.filter(m=>m.getTotalVertices?.()>10000)
-   .sort((a,b)=>b.getTotalVertices()-a.getTotalVertices())[0];
- if(bodyMesh){
-   bodyMesh.computeWorldMatrix(true);
-   const bb0=bodyMesh.getBoundingInfo().boundingBox;
-   const rawHeight=bb0.maximumWorld.y-bb0.minimumWorld.y;
-   if(Number.isFinite(rawHeight)&&rawHeight>1.36){
-     // GLB loading doesn't always include its synthetic root in result.meshes.
-     // Place ALL imported top-level scene nodes (including skeletal armature
-     // parents) under one new pivot, rather than scaling only the skin mesh.
-     const pivot=new B.TransformNode('Young Explorer unified child-size pivot',scene);
-     const imported=[...(result.meshes||[]),...(result.transformNodes||[])];
-     const roots=imported.filter(n=>n!==pivot&&!n.parent);
-     if(!roots.length)throw Error('Cannot safely scale complete child rig');
-     for(const node of roots)node.parent=pivot;
-     pivot.scaling.setAll(1.22/rawHeight);
-     pivot.computeWorldMatrix(true);
-     for(const m of meshes)m.computeWorldMatrix(true);
-     const scaledBounds=bodyMesh.getBoundingInfo().boundingBox;
-     const resultingHeight=scaledBounds.maximumWorld.y-scaledBounds.minimumWorld.y;
-     console.info('Young Explorer rig and garments normalized to age-seven height',{
-       rawHeight,displayHeight:resultingHeight,originalTopLevelNodes:roots.map(x=>x.name)});
-   }
- }
+ // The current Blender GLB is already exported at age-seven 122 cm with its
+ // body, 52-bone armature, and measured clothing scaled as one hierarchy.
+ // Do NOT apply a second browser-side scale (which shrank her to 89.3cm).
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
  groups.push(...result.animationGroups);
  if(groups.length<3)throw Error('Missing movement clips');
