@@ -7,7 +7,7 @@ on:
   # The character builder commits its GLB using GITHUB_TOKEN; that push does
   # not trigger a new push workflow. Redeploy after the GLB build finishes.
   workflow_run:
-    workflows: ["Build Riley rigged game character", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype"]
+    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype"]
     types: [completed]
     branches: ["main"]
 
