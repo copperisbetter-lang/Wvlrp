@@ -3,9 +3,9 @@
  * Lower-left virtual joystick, touch-look on right, and WASD/mouse controls.
  * The real cabin and real bundled GLB avatars are preserved; no blob NPCs.
  */
-import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
+import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=low-brush-run-20261013-v9";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=woodland-village-20261013-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -215,6 +215,17 @@ const resetToCabin=()=>{
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
+document.getElementById("village")?.addEventListener("click",()=>{
+  // Arrive at the front of the approved three-building clearing: Ranger
+  // Station centered ahead, Laurel's Kitchen left, Mercantile right.
+  const x=93,z=73;
+  try{habitat=addLandscape(96,72);}
+  catch(err){console.error(err);status("Could not load village scenery: "+err.message);}
+  camera.position.set(x,cameraGround(x,z)+EYE_HEIGHT,z);
+  camera.rotation.set(0,0,0);
+  info.textContent="Woodland village · Ranger Station ahead, Kitchen left, Gift Shop right";
+  status("Explore the woodland village. Drag to turn and walk to each building.");
+});
 let joyX=0,joyY=0,joyPointer=null;
 let runMode=false,lastCenterTap=-Infinity,tapStartAt=0,tapStartRadius=Infinity,tapMaxRadius=0;
 const DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27;
@@ -384,6 +395,8 @@ window.__wildDiagnostics=()=>({
   elderTrees:habitat?.elderTrees??0,
   heroPlants:habitat?.heroPlants??0,
   heroGraphics:habitat?.heroGraphics??false,
+   communityBuildings:habitat?.communityBuildings??0,
+   communityPaths:habitat?.communityPaths??0,
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
