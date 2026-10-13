@@ -1,8 +1,8 @@
 import {
   CELL, STORAGE_KEY, newWorld, sanitizedWorld, seedNumber, hash, heightAt,
   creekY, trailHorizontal, trailVertical, spawnDeer, addTestCharacters, TEST_CHARACTER_STARTERS, addCaitlyn, CAITLYN_STARTER, addMason, MASON_STARTER, addSha, SHA_STARTER, gatherCabinCrew, HEARTHSIDE_CABIN
-} from "./world-core.js";
-import { buildHearthsideCabin } from "./cabin-builder.js";
+} from "./world-core.js?v=hearthside-cabin-v5";
+import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import { makeFigureBuilder } from "./character-models.js?v=mason-fallback-v1";
 
 const $=id=>document.getElementById(id);
