@@ -6,10 +6,10 @@
   'use strict';
   const q=id=>document.getElementById(id);
   const specs = [
-    ['outerLength', 'Outer labia length', 50, 400, 400, '%'],
-    ['outerThickness', 'Outer labia fullness', 40, 400, 400, '%'],
-    ['innerLength', 'Inner labia length', 50, 400, 400, '%'],
-    ['innerThickness', 'Inner labia fullness', 40, 400, 400, '%'],
+    ['outerLength', 'Outer labia length', 50, 400, 175, '%'],
+    ['outerThickness', 'Outer labia fullness', 40, 400, 185, '%'],
+    ['innerLength', 'Inner labia length', 50, 400, 160, '%'],
+    ['innerThickness', 'Inner labia fullness', 40, 400, 170, '%'],
     ['topFlapFold', 'Fold top outer flap back toward body', -30, 100, 0, ' mm'],
     ['hoodLength', 'Clitoral hood length — reserved', 65, 150, 100, '%'],
     ['hoodThickness', 'Clitoral hood thickness — reserved', 50, 175, 100, '%'],
@@ -20,8 +20,8 @@
   const panel=document.createElement('section');
   panel.setAttribute('aria-label','Riley independent labia and upper flap fitting controls');
   panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #93b89f;background:#254737;border-radius:12px;color:#f1f9ed';
-  panel.innerHTML='<strong>MAX-size revised anatomy — inner/outer lip controls</strong>'+
-    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">Move a lip length/fullness slider above 100% for an obvious change in the attached 3D mesh (up to 400%). You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
+  panel.innerHTML='<strong>Body-matched anatomy — inner/outer lip controls</strong>'+
+    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">The detailed anatomy starts at moderate independent lengths/fullness; the extreme 400% values remain available if needed. You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
     specs.map(([id,label,min,max,initial,unit])=>
       '<label style="display:block;margin:9px 0;'+(futureIds.has(id)?'opacity:.55;':'')+'">'+label+': <output id="'+id+'Amount">'+initial+unit+'</output>'+
       '<input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"'+(futureIds.has(id)?' disabled title="Reserved until separate clitoral and hood geometry is present"':'')+' style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>'
