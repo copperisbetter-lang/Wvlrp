@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Young Explorer — The Wild 3D Character Viewer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:15px system-ui,-apple-system,sans-serif;background:#0e1c16;color:#f5f5e9}
+main{display:flex;flex-direction:column;height:100dvh;min-height:440px}
+header{padding:12px 14px;background:#223b2b;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header a{color:#cbf4d1}h1{margin:0;font-size:19px}.tiny{font-size:12px;color:#d6ead6}
+#view{position:relative;flex:1;min-height:200px;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:absolute;left:10px;top:10px;right:10px;background:#13231edc;border:1px solid #6c8e79;padding:9px 12px;border-radius:8px;font-size:13px;pointer-events:none}
+#controls{padding:10px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;background:#1c3227}
+button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6e4;font-size:14px;padding:10px 12px;min-height:44px;touch-action:manipulation}button:focus-visible{outline:3px solid #e0c786}
+#caption{padding:9px 14px;font-size:12px;text-align:center;color:#d6dfcd}
+</style></head>
+<body><main>
+<header><div><h1>Young Explorer · 3D model</h1><div class="tiny">Girl · about 7 · brown hair · green eyes · full-body olive complexion · short plaid sundress</div></div><a href="./">World Creator</a></header>
+<div id="view"><canvas id="scene" aria-label="Rotate and zoom the actual 3D child character by dragging or pinching"></canvas><div id="status" role="status">Loading independent 3D child model…</div></div>
+<div id="controls" aria-label="3D model controls">
+<button id="front">Front view</button><button id="back">Back view</button><button id="face">Face close-up</button>
+<button id="full">Full body</button><button id="closer">Zoom +</button><button id="farther">Zoom −</button>
+<button id="idle">Stand</button><button id="wave">Wave</button><button id="walk">Walk</button>
+</div>
+<div id="caption">Drag to rotate · pinch to zoom · genuine armature-skinned model, not a still picture. Clothing stays opaque in every pose.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script>
+const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
+const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
+const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.065,.13,.10,1);
+const camera=new B.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.12,2.4,new B.Vector3(0,.70,0),scene);
+camera.attachControl(canvas,true);camera.wheelDeltaPercentage=.08;camera.pinchDeltaPercentage=.01;
+camera.lowerRadiusLimit=.28;camera.upperRadiusLimit=8;camera.lowerBetaLimit=.13;camera.upperBetaLimit=Math.PI-.10;
+scene.createDefaultLight();new B.HemisphericLight('fill',new B.Vector3(-.4,1,-.6),scene).intensity=.70;
+const key=new B.DirectionalLight('sun',new B.Vector3(-.4,-1,.65),scene);key.intensity=.85;
+const floor=B.MeshBuilder.CreateDisc('forest display floor',{radius:1.75,tessellation:64},scene);
+floor.rotation.x=Math.PI/2;floor.position.y=-.011;
+const ground=new B.StandardMaterial('forest floor',scene);ground.diffuseColor=new B.Color3(.13,.23,.17);ground.specularColor=new B.Color3(.05,.06,.04);floor.material=ground;
+const groups=[];
+let bounds=null, center=null, model=null;
+B.SceneLoader.ImportMeshAsync(null,'','./assets/young-explorer-olive-plaid.glb?v=olive-plaid-child-v1',scene,undefined,'.glb').then(result=>{
+ const meshes=result.meshes||[];
+ if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
+ if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=15))throw Error('Missing articulated skeleton');
+ groups.push(...result.animationGroups);
+ if(groups.length<3)throw Error('Missing movement clips');
+ let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
+ for(const m of meshes){if(!m.getTotalVertices?.())continue;m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
+ bounds={min,max,span:Math.max(max.y-min.y,.2)};center=min.add(max).scale(.5);
+ camera.setTarget(new B.Vector3(center.x,min.y+bounds.span*.54,center.z));
+ camera.radius=bounds.span*1.7;camera.lowerRadiusLimit=.24;camera.upperRadiusLimit=9;
+ // Use imported textures and true exposed-skin PBR materials unmodified.
+ const skins=scene.materials.filter(m=>m.name.startsWith('Olive child skin'));
+ if(skins.length!==1)throw Error('Skin material audit failed');
+ model=result;play('Idle');
+ status.textContent='3D model loaded · '+(result.skeletons[0].bones?.length||0)+' rig bones · '+groups.length+' animation clips · one matching olive skin material';
+}).catch(e=>{console.error(e);status.textContent='Model not published or unable to load: '+e.message;});
+function play(name){if(!groups.length)return;
+ groups.forEach(g=>g.stop());
+ const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
+ if(clip){clip.start(true,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
+}
+document.getElementById('idle').onclick=()=>play('Idle');
+document.getElementById('wave').onclick=()=>play('Wave');
+document.getElementById('walk').onclick=()=>play('Walk');
+document.getElementById('front').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.12;};
+document.getElementById('back').onclick=()=>{camera.alpha=Math.PI/2;camera.beta=Math.PI/2.12;};
+document.getElementById('full').onclick=()=>{if(!bounds)return;camera.setTarget(new B.Vector3(center.x,bounds.min.y+bounds.span*.54,center.z));camera.radius=bounds.span*1.7;};
+document.getElementById('face').onclick=()=>{if(!bounds)return;camera.setTarget(new B.Vector3(center.x,bounds.min.y+bounds.span*.90,center.z));camera.radius=.46;camera.alpha=-Math.PI/2;};
+document.getElementById('closer').onclick=()=>{camera.radius=Math.max(camera.lowerRadiusLimit,camera.radius*.7);};
+document.getElementById('farther').onclick=()=>{camera.radius=Math.min(camera.upperRadiusLimit,camera.radius*1.35);};
+engine.runRenderLoop(()=>scene.render());window.addEventListener('resize',()=>engine.resize());
+</script></body></html>
