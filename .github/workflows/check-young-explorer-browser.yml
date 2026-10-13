@@ -5,6 +5,7 @@ on:
       - '.github/workflows/check-young-explorer-browser.yml'
       - '.github/scripts/young-explorer-browser-audit.cjs'
       - 'world-creator/young-explorer.html'
+      - 'world-creator/assets/young-explorer-olive-plaid.glb'
   workflow_dispatch:
 permissions:
   contents: write
