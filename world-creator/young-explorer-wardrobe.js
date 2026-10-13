@@ -119,6 +119,10 @@ class YoungExplorerWardrobe {
    (m.material?.subMaterials||[]).some(n=>/opaque plaid sundress/i.test(n?.name||'')));
   if(!this.dress)throw Error('Original fitted dress was not found');
   this.originalDressMaterial=this.dress.material;
+  this.originalBodyMaterial=this.body.material;
+  this.fitMaterial=new B.StandardMaterial('Opaque neutral fitting mannequin',scene);
+  this.fitMaterial.diffuseColor=new B.Color3(.46,.57,.49);
+  this.fitMaterial.backFaceCulling=false;
   this.dressStyles={
    plaid:this.originalDressMaterial,
    floral:fabric(B,scene,'blue floral sundress','#385d91',true),
@@ -161,6 +165,7 @@ class YoungExplorerWardrobe {
   if(remove)remove.onclick=()=>{
    this.dress.setEnabled(false);
    for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
+   this.body.material=this.fitMaterial;
    this.selectedOutfit='fit-test';
    if($('outfit-feedback'))$('outfit-feedback').textContent='Clothing hidden for non-anatomical mannequin fit inspection. Select an outfit to restore.';
   };
@@ -176,6 +181,7 @@ class YoungExplorerWardrobe {
  }
  select(id){
   if(!outfits.some(o=>o.id===id))return;
+  this.body.material=this.originalBodyMaterial;
   for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
   const dress=id==='plaid'||id==='floral'||id==='sunflower';
   this.dress.setEnabled(dress);
@@ -195,7 +201,8 @@ class YoungExplorerWardrobe {
  pose(kind) {
   this.model.animationGroups?.forEach(x=>x.stop());
   this.resetPose();
-  const angles=kind==='bend' ?
+  const angles=kind==='wave' ?
+   {rightarm:[0,0,-1.55],rightforearm:[0,0,-.45],rightshoulder:[0,0,-.18]} : kind==='bend' ?
    {hips:[.12,0,0],spine:[.70,0,0],spine1:[.33,0,0],
     leftupleg:[-.16,0,0],rightupleg:[-.16,0,0],neck:[-.20,0,0]} :
    {hips:[-.12,0,0],spine:[.10,0,0],leftupleg:[-1.10,0,0],rightupleg:[-1.10,0,0],
@@ -216,6 +223,17 @@ class YoungExplorerWardrobe {
     }
   }
   this.poseElapsed=0;this.poseTime=.35;this.activePose=kind;
+  if(kind==='wave'){
+   this.waveElapsed=0;
+   this.waveObserver&&this.scene.onBeforeRenderObservable.remove(this.waveObserver);
+   this.waveObserver=this.scene.onBeforeRenderObservable.add(()=>{
+    if(this.activePose!=='wave'){this.scene.onBeforeRenderObservable.remove(this.waveObserver);this.waveObserver=null;return;}
+    this.waveElapsed+=this.scene.getEngine().getDeltaTime()/1000;
+    const forearm=this.boneTarget('rightforearm');
+    if(forearm&&this.poseTime===0){const base=forearm.metadata?._wvlrpBaseRotation;
+     if(base)forearm.rotationQuaternion=base.multiply(this.B.Quaternion.RotationAxis(this.B.Axis.Z,-.45+.22*Math.sin(this.waveElapsed*7)));}
+   });
+  }
   if($('pose-feedback'))$('pose-feedback').textContent=kind==='bend'?'Bend Over pose selected':'Sit Down pose selected';
  }
  stepPose(){
