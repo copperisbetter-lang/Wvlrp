@@ -3,16 +3,16 @@
 <p style="margin:6px 0 10px;color:#d6ecd9;font-size:14px">Riley’s proportion-matched starting size is computed on first load and can be recalculated anytime using the Match Riley button. The attachment starts against its original fitted area, not floating away or enlarged to maximum. Use Float in front for examination and Return to body for placement. Sliders and pose controls are preserved.</p>
 <div style="display:grid;gap:10px">
 <label style="margin:0">Entire attachment size — width, length &amp; depth: <output id="overallSizeAmount">110%</output><input id="overallSize" type="range" min="70" max="300" value="110" step="5" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Rotate lower tip back &amp; up (keep upper edge fixed): <output id="hingeAmount">0°</output><input id="hingeFit" type="range" min="-180" max="145" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Slide farther under: <output id="backAmount">0 mm</output><input id="backFit" type="range" min="-40" max="100" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Rotate lower tip inward &amp; up (upper edge stays fixed): <output id="hingeAmount">0°</output><input id="hingeFit" type="range" min="-95" max="95" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Move LEFT / RIGHT only: <output id="backAmount">0 mm</output><input id="backFit" type="range" min="-100" max="100" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 <label style="margin:0">Move up / down: <output id="upAmount">0 mm</output><input id="upFit" type="range" min="-70" max="70" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Closer to body / outward (inspection gap): <output id="inAmount">0 mm</output><input id="inFit" type="range" min="-450" max="90" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Round top rim only: <output id="rimSmoothAmount">45%</output><input id="rimSmooth" type="range" min="0" max="100" value="45" step="5" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
-<label style="margin:0">Tuck top edge into skin (trial): <output id="rimTuckAmount">2 mm</output><input id="rimTuck" type="range" min="0" max="18" value="2" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Closer to body (+) / float outward (−): <output id="inAmount">0 mm</output><input id="inFit" type="range" min="-450" max="90" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Round top rim only: <output id="rimSmoothAmount">0%</output><input id="rimSmooth" type="range" min="0" max="100" value="0" step="5" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
+<label style="margin:0">Tuck top edge into skin (trial): <output id="rimTuckAmount">0 mm</output><input id="rimTuck" type="range" min="0" max="18" value="0" step="1" style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>
 </div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="rileyAutoMatch" type="button">Match Riley’s anatomy size</button><button id="fitReset" type="button">Original size &amp; placement (100%)</button><button id="fitFloat" type="button">Float in front (keep sizes)</button><button id="fitSuggested" type="button">Return to body (keep sizes)</button><button id="rimOff" type="button">Compare: rim original</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="rileyAutoMatch" type="button">Match Riley’s anatomy size</button><button id="fitReset" type="button">RESET ALL — untwist &amp; center</button><button id="fitFloat" type="button">Float in front (keep sizes)</button><button id="fitSuggested" type="button">Return to body (keep sizes)</button><button id="rimOff" type="button">Compare: rim original</button></div>
 <p style="font-size:13px;margin:5px 0;color:#d4eadd" id="fitStatus">Waiting for the model...</p><p id="rileyProportions" style="font-size:13px;margin:5px 0;color:#d4eadd" role="status">Riley anatomy size: measuring...</p>
-</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. Use Elbows & knees then Rear inspection to check the underside. Floor poses hold their final skeletal keyframes rather than looping. The hinge swings the attachment as one rigid piece about its upper edge. Optional rounding and tuck affect only the upper mesh band. The body-matched starting scale leaves the attachment near Riley’s skin. Move it out to inspect the geometry, then Return to body to fit it back. The other three sliders translate the full attachment for final fine tuning. Nothing here changes the approved base Riley GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script>
+</div><div class="viewport"><canvas id="canvas"></canvas><div class="zoom-panel" aria-label="Precise zoom controls"><button id="zoomIn" type="button" aria-label="Zoom in by eight percent">+</button><input type="range" id="zoom" min="0" max="100" step="1" value="65" aria-label="Fine zoom distance"><button id="zoomOut" type="button" aria-label="Zoom out by eight percent">−</button><output id="zoomLabel">100%</output></div></div><p id="info">Loading the Riley's reversible Vulva 1 test build for inspection. This is not a certified final model.</p><small>Use one finger to rotate, two fingers to slowly zoom. The + / − buttons change distance by only 8% per tap. Use Elbows & knees then Rear inspection to check the underside. Floor poses hold their final skeletal keyframes rather than looping. The hinge rotates around the upper-edge pivot without translating the attachment. Optional rounding and tuck affect only the upper mesh band. The body-matched starting scale leaves the attachment near Riley’s skin, with zero hinge, zero top tuck, and no stale settings from the older control layout. Move it out to inspect the geometry, then Return to body to fit it back. The three placement sliders are independent: LEFT/RIGHT changes X only, UP/DOWN changes Y only, and CLOSER/OUTWARD changes Z only. RESET ALL clears the orientation and morphs without altering Riley’s base body. Nothing here changes the approved base Riley GLB. Tell us the values that look best. A successful load does not prove seam, skin tone, or animation deformation quality.</small><p><a href="../avatar-forge/">Avatar Forge</a> <a href="./">World Creator</a></p></main><script>
 window.addEventListener('error',function(e){
   var info=document.getElementById('info');
   if(info) info.textContent='RILEY LOAD ERROR: '+(e.message||'A required 3D resource failed to load')+
@@ -31,7 +31,7 @@ const ground=BABYLON.MeshBuilder.CreateGround('forest clearing',{width:20,height
 engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());let imported=[],groups=[],objectURL=null,activePose=null;
 let addonMesh=null,originalAddonWorld=null,hingeOriginal=null;
 const fitIds=['overallSize','hingeFit','backFit','upFit','inFit','rimSmooth','rimTuck'];
-const fitStore='wvlrp-riley-anatomy-size-match-20261012-v1';
+const fitStore='wvlrp-riley-anatomy-independent-axes-v2';
 const noPriorFit=(()=>{try{return !localStorage.getItem(fitStore)}catch(_){return true}})();
 function saveFit(){try{localStorage.setItem(fitStore,JSON.stringify(Object.fromEntries(fitIds.map(id=>[id,$(id).value]))));}catch(_){}}
 function restoreFit(){try{const stored=JSON.parse(localStorage.getItem(fitStore)||'null');if(!stored)return;for(const id of fitIds){if(stored[id]!==undefined){const input=$(id),v=Number(stored[id]);if(Number.isFinite(v))input.value=Math.min(Number(input.max),Math.max(Number(input.min),v));}}}catch(_){}}
@@ -64,7 +64,7 @@ function applyPelvicHinge(){
   if(!addonMesh||!hingeOriginal)return;
   // Apply the signed user-selected rotation around the fixed top-edge X pivot.
   // Range includes the negative direction requested from the -20 degree limit.
-  const a=-degrees*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
+  const a=degrees*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
   const {positions,normals,pivotY,pivotZ,yMax,height}=hingeOriginal;
   const p=positions.slice();
   // Experimental non-destructive upper-edge rounding and skinward feather.
@@ -101,7 +101,7 @@ function applyPelvicHinge(){
     const dy=(p[i+1]-pivotY)*scale,dz=(p[i+2]-pivotZ)*scale;
     p[i+1]=pivotY+dy*c-dz*si;
     // Independent top rim feather stays in millimeters rather than scaling.
-    p[i+2]=pivotZ+dy*si+dz*c+tuck*rimWeights[i/3];
+    p[i+2]=pivotZ+dy*si+dz*c-tuck*rimWeights[i/3];
   }
   addonMesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind,p,true);
   if(normals){
@@ -121,8 +121,8 @@ function signedLabel(mm,directions){
 function applyPelvicFit(){
  $('overallSizeAmount').textContent=$('overallSize').value+'%';
  applyPelvicHinge();
- const back=Number($('backFit').value),up=Number($('upFit').value),inward=Number($('inFit').value);
- $('backAmount').textContent=signedLabel(back,['under','forward']);
+ const side=Number($('backFit').value),up=Number($('upFit').value),inward=Number($('inFit').value);
+ $('backAmount').textContent=signedLabel(side,['right','left']);
  $('upAmount').textContent=signedLabel(up,['up','down']);
  $('inAmount').textContent=signedLabel(inward,['in','out']);
  $('rimSmoothAmount').textContent=$('rimSmooth').value+'%';
@@ -131,18 +131,17 @@ function applyPelvicFit(){
  if(!addonMesh||!originalAddonWorld){
    $('fitStatus').textContent='Waiting for the Riley attachment to load…';return;
  }
- // Trial-only transforms. +Z is posterior in this Babylon viewer. The
- // under-body control follows a shallow upward path; the inward control
- // shifts only depth, and the up/down control shifts only height.
- const underRise=.30*back;
+ // Orthogonal world-space controls in the neutral pose. +Z is OUTWARD from
+ // Riley's front-facing surface after Blender -> glTF conversion. Each slider
+ // changes exactly one axis; no hidden diagonal or shared depth movements.
  const nextPosition=new BABYLON.Vector3(
-   originalAddonWorld.x,
-   originalAddonWorld.y+(up+underRise)/1000,
-   originalAddonWorld.z+(back+inward)/1000
+   originalAddonWorld.x+side/1000,
+   originalAddonWorld.y+up/1000,
+   originalAddonWorld.z-inward/1000
  );
  addonMesh.setAbsolutePosition(nextPosition);
  addonMesh.computeWorldMatrix(true);
- $('fitStatus').textContent='Trial: whole attachment '+$('overallSize').value+'% / upper-edge hinge '+$('hingeFit').value+'° / '+back+' mm under / '+up+' mm vertical / '+inward+' mm inward / top rim rounding '+$('rimSmooth').value+'% / upper-edge tuck '+$('rimTuck').value+' mm. Viewer-only fit: no mesh welding or GLB export yet.';
+ $('fitStatus').textContent='Trial: whole attachment '+$('overallSize').value+'% / upper-edge hinge '+$('hingeFit').value+'° / '+side+' mm right / '+up+' mm up / '+inward+' mm inward / top rim rounding '+$('rimSmooth').value+'% / upper-edge tuck '+$('rimTuck').value+' mm. Viewer-only fit: no mesh welding or GLB export yet.';
 }
 $('overallSize').oninput=applyPelvicFit;
 $('hingeFit').oninput=applyPelvicFit;
@@ -234,7 +233,7 @@ function previewBaseline(){
   const b=document.createElement('button');b.textContent='Reset preview';
   b.onclick=previewBaseline;$('actions').append(b);
 }
-load('./assets/riley-top-shelf-vulva1-trial.glb?v=riley-anatomy-scale-match-20261012-v1','Riley Vulva 1 Trial Blender trial');
+load('./assets/riley-top-shelf-vulva1-trial.glb?v=riley-controls-axes-v2','Riley Vulva 1 Trial Blender trial');
 
 $('file').onchange=()=>{const file=$('file').files[0];if(!file)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);load(objectURL,file.name)};
-</script><script src="scripts/riley-anatomy-controls.js?v=20261012-match-r1"></script><script src="scripts/riley-proportion-fit.js?v=20261012-match-r1"></script></body></html>
+</script><script src="scripts/riley-anatomy-controls.js?v=20261012-axes-v2"></script><script src="scripts/riley-proportion-fit.js?v=20261012-axes-v2"></script></body></html>
