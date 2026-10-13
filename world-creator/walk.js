@@ -4,8 +4,8 @@
  * The real cabin and real bundled GLB avatars are preserved; no blob NPCs.
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=wild-full-landscape-20261013-v1";
-import { cabinGrade, treeAtCell, waterAt } from "./wild-nature.js?v=wild-full-landscape-20261013-v1";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=walking-height-surface-20261013-v4";
+import { cabinGrade, waterAt } from "./wild-nature.js?v=oldgrowth-cover-20261013-v6";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=oldgrowth-cover-20261013-v6";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 
 const B=window.BABYLON;
@@ -236,12 +236,13 @@ const collision=(x,z)=>{
   if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
   const water=waterAt(x,z,seed);
   if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
-  const spacing=11,i=Math.round(x/spacing),j=Math.round(z/spacing);
-  for(let di=-2;di<=2;di++)for(let dj=-2;dj<=2;dj++){
-    const t=treeAtCell(i+di,j+dj,seed,spacing);
-    if(!t)continue;
-    const radius=.32+t.scale*.30+.24; // trunk, roots and walker shoulder
-    if(Math.hypot(x-t.x,z-t.y)<radius)return true;
+  // Test actual rendered trunks, including the new evergreen and old-growth
+  // additions. The former separate 11m collision grid blocked invisible trees.
+  for(const tree of habitat?.collidableTrees||[]){
+    const dx=Math.abs(x-tree.x),dz=Math.abs(z-tree.y);
+    if(dx>2.3||dz>2.3)continue;
+    const radius=.32+tree.scale*.30+.24; // roots + shoulder width
+    if(dx*dx+dz*dz<radius*radius)return true;
   }
   return false;
 };
@@ -309,6 +310,9 @@ window.__wildDiagnostics=()=>({
   distantTrees:habitat?.distantTrees??0,
   species:habitat?.species??0,
   understory:habitat?.understory??0,
+  addedTrees:habitat?.addedTrees??0,
+  addedEvergreens:habitat?.addedEvergreens??0,
+  elderTrees:habitat?.elderTrees??0,
   cabin:scene.meshes.some(m=>m.name.includes("Hearthside")),
   crewModels:avatarRoots.size,
   combinedCabinMeshes,
