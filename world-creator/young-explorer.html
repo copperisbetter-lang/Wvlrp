@@ -59,8 +59,9 @@ let bounds=null, center=null, model=null;
    const joints=Math.max(0,...rigSizes);
    const hasDetailedBody=totalVertices>=10000;
    const isRealRig=joints>=25;
-   const realSkin=model.meshes.some(m=>m.material?.name?.includes('Young Explorer real CC0 face and body skin UV'));
-   const hasDress=model.meshes.some(m=>m.material?.name?.toLowerCase().includes('plaid'));
+   const allMaterials=[...scene.materials,...(model.meshes||[]).flatMap(m=>m.material?.subMaterials||[])];
+   const realSkin=allMaterials.some(m=>m?.name?.includes('Young Explorer real CC0 face and body skin UV'));
+   const hasDress=allMaterials.some(m=>m?.name?.toLowerCase().includes('plaid'));
    console.info('Young Explorer imported geometry audit',{source:sources[i],totalVertices,joints,realSkin,hasDress,pieceSizes});
    if(!hasDetailedBody||!isRealRig||!realSkin||!hasDress){
      const why='needs realistic 3D geometry, complete skeleton, textured skin and plaid dress; source '+(i+1)+' reported '+totalVertices+' vertices, '+joints+' bones, skin '+realSkin+', dress '+hasDress;
