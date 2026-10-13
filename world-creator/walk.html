@@ -27,6 +27,20 @@ button:active,.link:active{background:#467052}button:focus-visible,.link:focus-v
 #players{display:none;top:calc(72px + env(safe-area-inset-top));right:12px;max-width:40vw;padding:8px 10px;border-radius:9px;border:1px solid #9dbda77e;background:#0b251bdc;color:#f4f2df;font:600 11px/1.4 system-ui;text-align:right}
 .beta-game #players{display:block}
 #players[data-online="true"]{border-color:#c5de92}
+#playerMapToggle{display:none}
+.beta-game #playerMapToggle{display:inline-flex}
+#playerMapPanel{position:fixed;z-index:20;top:112px;right:8px;width:min(470px,calc(100vw - 16px));
+max-height:calc(100dvh - 130px);overflow:auto;padding:12px;border-radius:14px;
+background:#0d251df5;color:#f5f3dd;border:2px solid #a7b996;
+box-shadow:0 10px 32px #000b;touch-action:pan-y}
+#playerMapPanel[hidden]{display:none}
+#playerMapPanel header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+#playerMapPanel header strong{font-size:16px}
+#playerMapCanvas{display:block;width:100%;height:auto;aspect-ratio:1;background:#182f25;
+border:1px solid #74957a;border-radius:9px}
+#playerMapMessage,#playerMapCoords{font-size:12px;line-height:1.35;margin:7px 0}
+#playerMapContacts{font-size:12px;line-height:1.35}
+#playerMapContacts p{margin:5px 0;padding:5px 6px;background:#284735;border-radius:6px}
 #info{position:fixed;z-index:5;right:12px;bottom:calc(15px + env(safe-area-inset-bottom));color:#e9e8dbd6;background:#11251cbd;padding:7px 10px;border-radius:9px;font:11px system-ui;pointer-events:none}
 @media(max-width:550px){.top{padding:7px;gap:5px}.brand{padding:8px;max-width:49%}.brand strong{font-size:12px}.brand small{font-size:10px}.actions{max-width:50%}.actions button,.actions .link{padding:8px;font-size:11px}#message{top:70px;font-size:11px}#help{font-size:11px;max-width:42vw;bottom:calc(20px + env(safe-area-inset-bottom))}#info{bottom:calc(166px + env(safe-area-inset-bottom));right:8px}#players{top:calc(80px + env(safe-area-inset-top));right:8px;max-width:46vw;font-size:10px}}
 </style>
@@ -35,16 +49,24 @@ button:active,.link:active{background:#467052}button:focus-visible,.link:focus-v
 <canvas id="world" tabindex="0" aria-label="First-person playable Appalachian wilderness near Hearthside Cabin. Left-hand touch joystick to walk. Drag on the right to look. WASD and mouse work on desktop."></canvas>
 <div class="hud top">
  <div class="brand"><strong>THE WILD</strong><small>Hearthside Cabin · first-person walk · Oct 13 Mountain-View Edition</small></div>
- <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="village" type="button">Village</button><button id="crew" type="button">Load crew</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
+ <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="village" type="button">Village</button><button id="crew" type="button">Load crew</button><button id="playerMapToggle" type="button" aria-controls="playerMapPanel" aria-expanded="false">🗺 Players Map</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
 </div>
 <div id="message" class="hud" role="status" aria-live="polite">Loading West Virginia forest and Hearthside Cabin…</div>
 <div id="players" class="hud" role="status" aria-live="polite">Game Beta Test · connecting explorers…</div>
+<section id="playerMapPanel" hidden aria-label="Live connected explorer map">
+ <header><strong>Live Players Map</strong><button id="playerMapClose" type="button">✕ Close</button></header>
+ <canvas id="playerMapCanvas" width="640" height="640" role="img" aria-label="North-up game-coordinate map showing your position and connected explorers"></canvas>
+ <div id="playerMapCoords" aria-live="polite">Your in-game coordinates</div>
+ <div id="playerMapMessage" role="status" aria-live="polite">Looking for connected players…</div>
+ <div id="playerMapContacts"></div>
+ <p style="font-size:11px;opacity:.78">Only connected Game Beta players appear. This is an in-game map, not your phone's GPS position.</p>
+</section>
 <div id="joystick" role="group" aria-label="Movement joystick. Steer where you want to go. Double tap center to run."><div id="stick"></div></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="help">Left thumb: steer & move<br>Double-tap stick center: run / walk<br>Release stick, drag right: look</div>
 <div id="info">Starting at Hearthside Cabin</div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./walk.js?v=actual-game-mountain-view-20261013-v9"></script>
+<script type="module" src="./walk.js?v=live-players-map-20261013-v10"></script>
 </body>
 </html>
