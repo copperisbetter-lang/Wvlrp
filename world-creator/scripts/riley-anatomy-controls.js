@@ -10,7 +10,7 @@
     ['outerThickness', 'Outer labia fullness', 40, 400, 185, '%'],
     ['innerLength', 'Inner labia length', 50, 400, 160, '%'],
     ['innerThickness', 'Inner labia fullness', 40, 400, 170, '%'],
-    ['topFlapFold', 'Fold top outer flap back toward body', -30, 100, 0, ' mm'],
+    ['topFlapFold', 'Fold top outer flap inward', -25, 45, 0, ' mm'],
     ['hoodLength', 'Clitoral hood length — reserved', 65, 150, 100, '%'],
     ['hoodThickness', 'Clitoral hood thickness — reserved', 50, 175, 100, '%'],
     ['clitLength', 'Clitoris length — reserved', 60, 180, 100, '%'],
@@ -21,7 +21,7 @@
   panel.setAttribute('aria-label','Riley independent labia and upper flap fitting controls');
   panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #93b89f;background:#254737;border-radius:12px;color:#f1f9ed';
   panel.innerHTML='<strong>Body-matched anatomy — inner/outer lip controls</strong>'+
-    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">The detailed anatomy starts at moderate independent lengths/fullness; the extreme 400% values remain available if needed. You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values push ONLY the upper flap toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
+    '<p style="font-size:13px;margin:7px 0;color:#e0f1e2">The detailed anatomy starts at moderate independent lengths/fullness; the extreme 400% values remain available if needed. You can enlarge the whole insert separately in the panel below. The top outer flap has its own fold-back control; 0 mm is its original position, and positive values tuck ONLY the upper flap inward toward the body. Negative values pull it outward for comparison. These controls never translate the entire insert.</p>'+
     specs.map(([id,label,min,max,initial,unit])=>
       '<label style="display:block;margin:9px 0;'+(futureIds.has(id)?'opacity:.55;':'')+'">'+label+': <output id="'+id+'Amount">'+initial+unit+'</output>'+
       '<input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="1" value="'+initial+'"'+(futureIds.has(id)?' disabled title="Reserved until separate clitoral and hood geometry is present"':'')+' style="display:block;width:100%;max-width:none;accent-color:#bce3aa"></label>'
@@ -118,7 +118,7 @@
     }
     const coords=addonMesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     if(!coords||coords.length!==mask.rest.length)return;
-    const pos=Array.from(coords),a=-v('hingeFit')*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
+    const pos=Array.from(coords),a=v('hingeFit')*Math.PI/180,c=Math.cos(a),sin=Math.sin(a);
     // Translate surface relief along WORLD depth (rather than assuming the
     // imported Blender/skinned mesh's local Z has the same sign). This fixes
     // the old 'tuck makes the flap stick out farther' direction error.
@@ -149,9 +149,9 @@
       const localY=dy*c;
       const localZ=dy*sin;
       const beforeZ=pos[i+2];
-      pos[i]+=lateral+frontBack.x*(fold-relief);
-      pos[i+1]+=localY+frontBack.y*(fold-relief);
-      pos[i+2]+=localZ+frontBack.z*(fold-relief);
+      pos[i]+=lateral+frontBack.x*(relief-fold);
+      pos[i+1]+=localY+frontBack.y*(relief-fold);
+      pos[i+2]+=localZ+frontBack.z*(relief-fold);
       maxChange=Math.max(maxChange,Math.abs(pos[i+2]-beforeZ),Math.abs(localY));
     }
     addonMesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind,pos,true);
@@ -165,8 +165,9 @@
     q('rileyMorphStatus').textContent='Live mesh changed: whole insert '+v('overallSize')+'%, outer lip length '+v('outerLength')+'%, outer fullness '+v('outerThickness')+'%, inner lip length '+v('innerLength')+'%, inner fullness '+v('innerThickness')+'%, top flap '+foldMM+' mm. Largest movement: '+(maxChange*1000).toFixed(1)+' mm.';
   };
   q('fitReset').addEventListener('click',()=>{
-    for(const [id,,,,initial,unit] of specs){
-      q(id).value=initial;q(id+'Amount').textContent=initial+unit;
+    for(const [id,,min,max,initial,unit] of specs){
+      const original = futureIds.has(id) ? initial : (id==='topFlapFold' ? 0 : 100);
+      q(id).value=original;q(id+'Amount').textContent=original+unit;
     }
     applyPelvicFit();
   });
