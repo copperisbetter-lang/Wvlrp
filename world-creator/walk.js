@@ -8,7 +8,7 @@ import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-2026101
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=north-village-graded-valley-20261013-v3";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=open-village-mountain-sightline-20261013-v3";
-import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=closer-sunlit-bluff-20261013-v3";
+import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=world-anchored-cliff-20261013-v4";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -84,7 +84,13 @@ camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
 scene.activeCamera=camera;
 // October-approved distant sunlit Appalachian ridge: real 360-degree skyline,
 // behind the actual navigable buildings and forest. No panorama cabin cutouts.
-installWildMountainBackdrop(B,scene,camera,{mobile});
+installWildMountainBackdrop(B,scene,camera,{
+  mobile,
+  villageX:VILLAGE_CLEARING.centerX,
+  villageBackZ:VILLAGE_CLEARING.centerZ+VILLAGE_CLEARING.halfDepth+
+    VILLAGE_CLEARING.backExtension+4,
+  villageGroundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
+});
 // A small, softly glowing visible sun follows the camera's *position*, not
 // its rotation, so its direction stays fixed in the real 3D sky while walking.
 // The quad is behind nearby trees, has no fog, and costs only one draw call.
