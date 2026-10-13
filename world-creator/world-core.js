@@ -210,9 +210,9 @@ export function gatherCabinCrew(world){
   // Furnishings leave the cabin center open. All positions fit inside its
   // 18m by 14m footprint. The player can later move anyone back outside.
   const seats=[
-    [-5.4,3.0],[-2.5,3.0],[.4,3.0],[3.3,3.0],[5.8,3.0],
+    [-6,3.0],[-3.3,3.0],[-.6,3.0],[2.1,3.0],[4,3.0],
     [-5.4,-1.7],[-2.5,-1.7],[.4,-1.7],[3.3,-1.7],[5.8,-1.7],
-    [-5.4,0.65],[-2.5,.65],[.4,.65],[3.3,.65],[5.8,.65]
+    [-5.4,.65],[-2.5,.65],[.4,.65],[3.3,.65],[4,.65]
   ];
   for(let i=0;i<crew.length;i++){
     const [dx,dy]=seats[i%seats.length],ring=Math.floor(i/seats.length);
