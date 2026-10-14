@@ -403,6 +403,21 @@ class YoungExplorerWardrobe {
   const holdFraction=(kind==='bend'||kind==='pickup')?.92:((kind==='hands-knees'||kind==='elbows-knees')?.65:.82);
   const frame=clip.from+(clip.to-clip.from)*holdFraction;
   clip.goToFrame(frame);clip.pause();
+  // Ground the knee joints by lowering the animated pelvis, not by
+  // rotating knees backwards or shifting the camera/floor.
+  if(kind==='hands-knees'||kind==='elbows-knees'){
+   const hips=this.boneTarget('hips')||this.boneTarget('pelvis');
+   const knees=[this.boneTarget('leftleg'),this.boneTarget('rightleg')].filter(Boolean);
+   if(hips&&knees.length===2){
+    this.scene.getTransformMatrix();
+    const kneeY=knees.map(k=>{k.computeWorldMatrix(true);return k.getAbsolutePosition().y;});
+    const targetY=this.measure.minY+this.measure.H*.055;
+    const drop=Math.max(0,Math.min(this.measure.H*.36,Math.min(...kneeY)-targetY));
+    hips.position.y-=drop;
+    hips.computeWorldMatrix(true);
+    this.floorPoseDrop=drop;
+   }
+  }
   const targeted=clip.targetedAnimations||[];
   const rotationTracks=targeted.filter(t=>/rotation/i.test(t.animation?.targetProperty||''));
   const activeTracks=rotationTracks.filter(t=>{
