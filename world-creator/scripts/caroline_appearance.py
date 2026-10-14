@@ -30,22 +30,23 @@ def reshape_adult_body(body):
         lobes=math.exp(-((abs(x)-.068)/.057)**2)
         butt=math.exp(-((z-.53)/.074)**2)
         lift=math.exp(-((z-.575)/.055)**2)
-        delta=height*(.014*butt*lobes+.0035*lift*lobes)*rear
+        delta=height*(.006*butt*lobes+.0015*lift*lobes)*rear
         p.y+=delta
         # Hip contour kept narrow/toned; garment must be tailored afterward.
-        p.x=cx+(p.x-cx)*(1+.007*butt*rear)
+        p.x=cx+(p.x-cx)*(1+.003*butt*rear)
         changed+=1
     body.data.update()
-    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3),"profile","reduced-natural-v2")
+    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3),"profile","reduced-natural-v3")
 
 
 def add_caroline_adult_pelvic_morph(body):
     """Reversible, covered external anatomy contour on Carol's OWN adult body.
 
-    No donor mesh, no detached overlay, no rig edits. Keep the underlying
-    continuous CC0 basemesh, UVs, skin and clothing attachment compatible.
-    This is a preliminary topology-limited anatomical shape study; inspect
-    deformation during movement before approving as final geometry.
+    No donor mesh, no detached overlay, no rig edits. The neutral contour
+    must be PRESENT IN THE BASE MESH: a GLB renderer must not have to turn on
+    a shape key to display it. An optional rollback key keeps it reversible.
+    Preserve UVs, rig weights, and the garment attachment coordinates.
+    Inspect clothing penetration and deformation before approving.
     """
     if body.type != "MESH" or len(body.data.vertices) < 10000:
         raise RuntimeError("Carol adult anatomy: original body basemesh is missing")
@@ -65,13 +66,12 @@ def add_caroline_adult_pelvic_morph(body):
     if len(anterior) < 35:
         raise RuntimeError("Carol adult anatomy: pelvic surface insufficient")
     front_ref = anterior[max(0, int(len(anterior)*.18))]
-    if not body.data.shape_keys:
-        body.shape_key_add(name="Basis", from_mix=False)
-    key_name = "Carol adult external pelvic contour - reversible"
-    if key_name in body.data.shape_keys.key_blocks:
-        raise RuntimeError("Carol anatomy morph already exists")
-    key = body.shape_key_add(name=key_name, from_mix=False)
-    key.value = 1.0
+    # Store original coordinates so the Blender source remains reversible.
+    # First sculpt the actual base mesh, rather than relying on a GLB viewer
+    # to honor nonzero default morph weights (the previous preview did not).
+    original = [v.co.copy() for v in verts]
+    if body.data.shape_keys:
+        raise RuntimeError("Carol pelvic contour must be baked before face keys")
 
     def gaussian(value, center, radius):
         return math.exp(-((value-center)/radius)**2)
@@ -95,25 +95,32 @@ def add_caroline_adult_pelvic_morph(body):
         outer = gaussian(ax,.018,.016)*gaussian(nz,.475,.039)
         central_cleft = gaussian(ax,0.,.007)*gaussian(nz,.472,.030)
         low_fold = gaussian(ax,.013,.015)*gaussian(nz,.443,.022)
-        front_projection = (.0035*pubis + .0115*outer +
-                            .008*low_fold - .004*central_cleft)
-        dz = -.0075*low_fold
+        front_projection = (.004*pubis + .015*outer +
+                            .012*low_fold - .0045*central_cleft)
+        dz = -.0105*low_fold
         new = Vector((p.x, p.y-h*front_weight*front_projection,
                       p.z+h*front_weight*dz))
         shift = (new-p).length
-        if shift > .022*h:
+        if shift > .030*h:
             raise RuntimeError("Carol anatomy contour exceeds safe shape range")
-        key.data[i].co = new
+        vertex.co = new
         if shift > .00015*h:
             moved += 1
             max_shift = max(max_shift, shift)
     if moved < 35:
         raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
     body.data.update()
+    body.shape_key_add(name="Basis", from_mix=False)
+    key = body.shape_key_add(name="Carol pelvic contour OFF - inspection rollback", from_mix=False)
+    for i, old in enumerate(original):
+        key.data[i].co = old
+    key.value = 0.0  # Render the actual sculpted base by default.
+    body["wvlrp_carol_pelvic_contour_baked"] = True
+    body["wvlrp_carol_pelvic_contour_vertices"] = moved
     print("WVLRP_CAROLINE_ANATOMY_MORPH_SUCCESS",
-          "shape_key", key.name, "vertices", moved,
-          "max_displacement_mm", round(max_shift*1000,2),
-          "reversible", True, "external_under_clothing", True)
+          "baked_into_base", True, "rollback_key", key.name,
+          "vertices", moved, "max_displacement_mm", round(max_shift*1000,2),
+          "external_under_clothing", True)
     return key
 
 def add_period_updo(export_root, body, rig):
