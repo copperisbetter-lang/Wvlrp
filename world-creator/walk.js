@@ -5,11 +5,11 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=actual-distant-mountain-valley-20261013-v9";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=full-village-75m-20261014-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
-import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=visible-appalachian-cliff-v9";
+import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=nonstriped-sandstone-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=live-peer-map-20261013-v1";
 
 const B=window.BABYLON;
@@ -511,6 +511,9 @@ window.__wildDiagnostics=()=>({
   addedEvergreens:habitat?.addedEvergreens??0,
   elderTrees:habitat?.elderTrees??0,
   heroPlants:habitat?.heroPlants??0,
+  villageDetailDiameterMetres:habitat?.villageDetailDiameterMetres??0,
+  villageGroundDetails:habitat?.villageGroundDetails??0,
+  villageEdgeTrees:habitat?.villageEdgeTrees??0,
   heroGraphics:habitat?.heroGraphics??false,
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,
