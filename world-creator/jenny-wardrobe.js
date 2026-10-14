@@ -149,25 +149,27 @@ class YoungExplorerWardrobe {
    'regular-shorts':create('regular-shorts','#f1e6c9','#64809a'),
    'loose-shorts':create('loose-shorts','#f1e6c9','#64809a')
   };
-  // Loose shorts need a free-hanging silhouette, not a second skin.
-  // Expand horizontally from the garment's own centerline, without following
-  // tiny surface-normal changes that reproduce underlying body contours.
+  // Give loose shorts a real outer silhouette instead of reproducing skin contours.
   const loose=this.suits['loose-shorts']?.shorts;
   if(loose){
    const p=loose.getVerticesData(B.VertexBuffer.PositionKind);
    if(p){
-    const q=Float32Array.from(p), ys=[];
-    let cx=0,cz=0,count=0;
-    for(let i=0;i<p.length;i+=3){cx+=p[i];cz+=p[i+2];ys.push(p[i+1]);count++;}
-    cx/=count;cz/=count;
-    const ymin=Math.min(...ys),ymax=Math.max(...ys),span=Math.max(.001,ymax-ymin);
+    const q=Float32Array.from(p);
+    let ymin=Infinity,ymax=-Infinity,cx=0,cz=0,n=0;
+    for(let i=0;i<p.length;i+=3){ymin=Math.min(ymin,p[i+1]);ymax=Math.max(ymax,p[i+1]);cx+=p[i];cz+=p[i+2];n++;}
+    cx/=n;cz/=n;
+    const span=Math.max(.001,ymax-ymin),radial=.08*this.measure.H;
     for(let i=0;i<q.length;i+=3){
      const t=(p[i+1]-ymin)/span;
-     const ease=Math.min(1,Math.max(0,(t-.10)/.45));
-     // Wide, relaxed leg openings with a slightly narrower waistband.
-     const width=1.20-.07*ease,depth=1.24-.09*ease;
-     q[i]=cx+(p[i]-cx)*width;
-     q[i+2]=cz+(p[i+2]-cz)*depth;
+     const ease=Math.min(1,Math.max(0,(t-.72)/.28));
+     const dx=p[i]-cx,dz=p[i+2]-cz;
+     const theta=Math.atan2(dz,dx);
+     // Smooth the fabric silhouette across the rear and sides while retaining
+     // separate leg geometry from the imported skinned mesh.
+     const rx=Math.max(Math.abs(dx),.12*this.measure.H)+radial*(1-.7*ease);
+     const rz=Math.max(Math.abs(dz),.09*this.measure.H)+radial*(1-.7*ease);
+     q[i]=cx+Math.sign(dx||1)*rx;
+     q[i+2]=cz+Math.sign(dz||1)*rz;
     }
     loose.updateVerticesData(B.VertexBuffer.PositionKind,q,true);
     loose.refreshBoundingInfo();
