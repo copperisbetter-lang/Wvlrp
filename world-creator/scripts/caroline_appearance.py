@@ -118,8 +118,11 @@ def add_caroline_adult_pelvic_morph(body):
     def influence(vertex, ids):
         return max((w.weight for w in vertex.groups if w.group in ids), default=0.0)
     def is_pelvis(vertex):
-        return (influence(vertex, pelvis_ids) >= .30 and
-                influence(vertex, thigh_ids) <= .32)
+        hip = influence(vertex, pelvis_ids)
+        leg = influence(vertex, thigh_ids)
+        # At the crotch the hips/upper-leg weights blend together. Keep
+        # vertices only when pelvis influence is clearly dominant.
+        return hip >= .15 and hip >= leg*1.20
     print("WVLRP_CAROL_PELVIS_V8_GROUPS",sorted(pelvis_ids),sorted(thigh_ids))
     PELVIC_VISIBILITY_TEST_SCALE = 1.40
     target_y = [0.0] * len(verts)
@@ -127,15 +130,13 @@ def add_caroline_adult_pelvic_morph(body):
         p = vertex.co
         nz = (p.z-lo)/h
         ax = abs((p.x-cx)/h)
-        # Below z=.498, there is no reliable midline pelvis surface:
-        # MakeHuman supplies two separate inner-thigh surfaces there.
-        # Restrict width to the central ~43 mm (not 73 mm each side)
-        # and NEVER select any vertex primarily bound to the leg.
-        if not (.498 < nz < .550) or ax >= .025 or not is_pelvis(vertex):
+        # Include enough actual pelvis geometry for a smooth continuous
+        # sculpt, but exclude all upper-leg-dominant vertices independently.
+        if not (.490 < nz < .575) or ax >= .036 or not is_pelvis(vertex):
             continue
 
-        height_fade = smoothstep((nz-.498)/.012) * smoothstep((.550-nz)/.014)
-        side_fade = smoothstep((.025-ax)/.010)
+        height_fade = smoothstep((nz-.490)/.015) * smoothstep((.575-nz)/.019)
+        side_fade = smoothstep((.036-ax)/.013)
         ahead = (front_ref + .035*h - p.y)/(.067*h)
         front_weight = smoothstep(ahead)
         if front_weight < .015:
@@ -143,10 +144,10 @@ def add_caroline_adult_pelvic_morph(body):
 
         # Two close, soft contours about 10 mm either side of center,
         # ABOVE the thigh split, blended into the central pubic mound.
-        pubis = gaussian(ax, 0.0, .021)*gaussian(nz, .532, .028)
-        outer = gaussian(ax, .0058, .008)*gaussian(nz, .520, .019)
-        central_cleft = gaussian(ax, 0.0, .0037)*gaussian(nz, .517, .017)
-        low_fold = gaussian(ax, .0062, .0075)*gaussian(nz, .510, .016)
+        pubis = gaussian(ax, 0.0, .021)*gaussian(nz, .542, .030)
+        outer = gaussian(ax, .0058, .008)*gaussian(nz, .529, .024)
+        central_cleft = gaussian(ax, 0.0, .0037)*gaussian(nz, .525, .020)
+        low_fold = gaussian(ax, .0062, .0075)*gaussian(nz, .517, .018)
 
         projection = PELVIC_VISIBILITY_TEST_SCALE * (
             .0060*pubis + .0130*outer + .0040*low_fold
@@ -177,7 +178,7 @@ def add_caroline_adult_pelvic_morph(body):
         p = verts[i].co
         nz = (p.z-lo)/h
         ax = abs((p.x-cx)/h)
-        if not (.498 < nz < .550) or ax >= .025 or not is_pelvis(verts[i]):
+        if not (.490 < nz < .575) or ax >= .036 or not is_pelvis(verts[i]):
             continue
         shift = abs(dy)
         if shift < .00015*h:
@@ -192,6 +193,10 @@ def add_caroline_adult_pelvic_morph(body):
             verts[i].co += displacement
         moved += 1
         max_shift = max(max_shift, shift)
+    print("WVLRP_CAROL_PELVIS_V8_SCULPT_COUNTS", "pelvis_candidates",
+          sum(1 for v in verts if .490 < (v.co.z-lo)/h < .575
+              and abs((v.co.x-cx)/h) < .036 and is_pelvis(v)),
+          "sculpted", moved)
     if moved < 35:
         raise RuntimeError("Carol central pelvis sculpt selected too few pelvis-weighted vertices; not falling back to thigh geometry")
     body.data.update()
