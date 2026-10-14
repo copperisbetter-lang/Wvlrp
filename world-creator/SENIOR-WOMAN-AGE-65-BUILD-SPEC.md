@@ -4,6 +4,7 @@ Status: specification committed; model, rig, animations and viewer NOT YET built
 
 ## Identity and appearance
 - Independent adult female avatar, age approximately 65; realistic, continuous solid human mesh, age-appropriate face, hands and body proportions.
+- Hair: natural mixed gray and white strands (salt-and-pepper silver), not a solid uniform gray or white cap; age-appropriate realistic hair geometry and movement.
 - Fully clothed; independently fitted clothing with proper drape and skinning, not painted-on textures or resized child outfits.
 - Do not modify Jenny, Penny, or the five-year-old explorer.
 
