@@ -150,7 +150,12 @@ class YoungExplorerWardrobe {
   // Preserve the imported skinned mesh transform and bind pose.
   this.dress.computeWorldMatrix(true);
   this.body.computeWorldMatrix(true);
-  this.alignImportedDress();
+  // The imported dress is visibly displaced in the source asset. Hide it and
+  // use a separate rigged garment generated at Jenny's measured torso instead.
+  this.dress.setEnabled(false);
+  const fittedDress=makeSkinnedShell(B,this.body,'plaid dress',[.49,.81],.022,this.dress.material,this.measure);
+  this.importedDress=this.dress;
+  this.dress=fittedDress;
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
   // The imported continuous skin must render from both sides, including at the neckline.
