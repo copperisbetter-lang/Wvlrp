@@ -60,7 +60,7 @@ const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,a
 const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.065,.13,.10,1);
 const camera=new B.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.12,2.4,new B.Vector3(0,.70,0),scene);
 camera.attachControl(canvas,true);camera.wheelDeltaPercentage=.08;camera.pinchDeltaPercentage=.01;
-camera.fov=.64;camera.lowerRadiusLimit=.28;camera.upperRadiusLimit=8;camera.lowerBetaLimit=.13;camera.upperBetaLimit=Math.PI-.10;
+camera.fov=.64;camera.minZ=.005;camera.lowerRadiusLimit=.55;camera.upperRadiusLimit=8;camera.lowerBetaLimit=.13;camera.upperBetaLimit=Math.PI-.10;
 scene.createDefaultLight();new B.HemisphericLight('fill',new B.Vector3(-.4,1,-.6),scene).intensity=.70;
 const key=new B.DirectionalLight('sun',new B.Vector3(-.4,-1,.65),scene);key.intensity=.85;
 const floor=B.MeshBuilder.CreateDisc('forest display floor',{radius:1.75,tessellation:64},scene);
@@ -170,7 +170,7 @@ let bounds=null, center=null, model=null;
  for(const m of meshes){if(!m.getTotalVertices?.())continue;m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
  bounds={min,max,span:Math.max(max.y-min.y,.2)};center=min.add(max).scale(.5);
  camera.setTarget(new B.Vector3(center.x,min.y+bounds.span*.54,center.z));
- camera.radius=bounds.span*2.3;camera.lowerRadiusLimit=.24;camera.upperRadiusLimit=9;
+ camera.radius=bounds.span*2.3;camera.lowerRadiusLimit=.55;camera.upperRadiusLimit=9;
  // Use imported textures and true exposed-skin PBR materials unmodified.
  const skins=scene.materials.filter(m=>m.name.includes('Jenny real CC0 face and body skin UV'));
  if(!skins.length)throw Error('Real textured human skin material not found');
