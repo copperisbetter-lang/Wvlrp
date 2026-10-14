@@ -2,39 +2,111 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Carrie Ingalls — 3D inspection</title>
+<title>Carrie Ingalls — 3D motion and clothing inspection</title>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 <style>
-:root{color-scheme:dark}body{margin:0;background:#101913;color:#f0eadd;font:16px system-ui, sans-serif}
-header{padding:14px 18px;background:#19261e}h1{font-size:1.25rem;margin:0 0 3px}p{margin:4px 0;font-size:.86rem}
-main{max-width:1100px;margin:auto}model-viewer{display:block;height:min(73vh,780px);min-height:400px;width:100%;background:radial-gradient(ellipse at center,#526252,#202920 74%);--poster-color:#252e26}
-.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px}
-button,select{border:1px solid #849887;background:#23352b;color:white;border-radius:8px;font:inherit;padding:10px}
-#status{padding:12px 16px;color:#e5e4cb;font-size:.91rem}
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#101913;color:#f0eadd;font:15px system-ui,sans-serif}
+main{max-width:1120px;margin:auto}
+header{padding:14px 18px;background:#19261e}
+h1{font-size:1.26rem;margin:0 0 4px}p{margin:5px 0;font-size:.86rem;line-height:1.5}
+model-viewer{display:block;height:63dvh;min-height:370px;max-height:790px;width:100%;background:radial-gradient(ellipse at center,#526252,#202920 74%);--poster-color:#252e26}
+.toolbar,.motions{padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.motions{background:#1b2a21}
+button,select{border:1px solid #91a997;background:#2b4433;color:white;border-radius:8px;font:inherit;padding:10px 12px;min-height:44px;touch-action:manipulation}
+button:disabled{opacity:.45;cursor:not-allowed}
+button[aria-pressed="true"]{background:#e4d5a7;color:#223528;border-color:#e4d5a7;font-weight:700}
+button:focus-visible,select:focus-visible{outline:2px solid #f5df91;outline-offset:2px}
+h2{font-size:1rem;margin:12px 14px 2px}
+#status{margin:0;padding:11px 14px;color:#e5e4cb;font-size:.9rem;background:#15241a}
+#readiness{padding:9px 14px;font-size:.85rem}
+#readiness[data-state="ready"]{color:#c9e5cd}
+#readiness[data-state="missing"]{color:#ffcaab}
 small{opacity:.82}a{color:#d5ead0}
 </style></head><body><main>
-<header><h1>Carrie Ingalls — Season 3</h1><p>Real MakeHuman photographic skin prototype • rotate with finger • pinch to zoom</p></header>
-<model-viewer id="viewer" src="./world-creator/assets/carrie-ingalls-s3.glb" camera-controls shadow-intensity=".6" exposure="1.15"
-    camera-orbit="0deg 75deg auto" field-of-view="32deg" min-field-of-view="10deg" max-field-of-view="55deg" interaction-prompt="auto"></model-viewer>
-<div class="controls"><label for="animation">Motion</label><select id="animation"><option value="">Neutral stance</option></select>
-<button id="play">Play motion</button><button id="stop">Stop</button><button id="reset">Reset view</button></div>
-<div id="status" role="status">Checking Carrie's model…</div>
-<div class="controls"><small>This is an inspection-only character. The actual model must finish building and pass checks before being marked ready.</small></div>
+<header><h1>Carrie Ingalls — Season 3</h1>
+<p>Separate child-size MakeHuman model. Turn with one finger, pinch to zoom. Compare the face, medium chestnut-brown hair and fitted period clothing from every angle.</p></header>
+<model-viewer id="viewer" src="./world-creator/assets/carrie-ingalls-s3.glb?v=carrie-motion-2"
+ camera-controls shadow-intensity=".6" exposure="1.15"
+ camera-orbit="0deg 75deg auto" field-of-view="32deg"
+ min-field-of-view="9deg" max-field-of-view="55deg" interaction-prompt="auto"
+ alt="Interactive full-body 3D model of Carrie Ingalls"></model-viewer>
+<div class="toolbar"><button id="reset" type="button">Reset view</button>
+<button id="front" type="button">Front</button><button id="side" type="button">Side</button><button id="back" type="button">Back</button>
+<button id="stop" type="button">Pause</button>
+<label for="animation">All motions:</label><select id="animation" disabled><option>Loading clips…</option></select>
+<button id="play" type="button" disabled>Play selected</button></div>
+<h2>Movement controls</h2>
+<div class="motions" id="motions" aria-label="Carrie motion inspection buttons">
+<button type="button" data-motion="Idle" disabled>Stand / Idle</button>
+<button type="button" data-motion="Walk" disabled>Walk</button>
+<button type="button" data-motion="Run" disabled>Run</button>
+<button type="button" data-motion="Wave" disabled>Wave</button>
+<button type="button" data-motion="Sit" disabled>Sit</button>
+<button type="button" data-motion="Crouch" disabled>Crouch</button>
+<button type="button" data-motion="Bend Over" disabled>Bend Over</button>
+<button type="button" data-motion="Touch Toes" disabled>Touch Toes</button>
+<button type="button" data-motion="Pick Up" disabled>Pick Up</button>
+<button type="button" data-motion="Kneel" disabled>Kneel</button>
+<button type="button" data-motion="Hands and Knees" disabled>Hands &amp; Knees</button>
+<button type="button" data-motion="Elbows and Knees" disabled>Elbows &amp; Knees</button>
+<button type="button" data-motion="Crawl" disabled>Crawl</button>
+<button type="button" data-motion="Lie Down" disabled>Lie Down</button>
+</div>
+<div id="status" role="status">Checking Carrie's new motion library…</div>
+<div id="readiness" data-state="missing" role="status">Waiting for validated animation clips. No placeholder poses will be substituted.</div>
+<div class="toolbar"><small>The buttons operate actual GLB animation clips; missing movements are disabled instead of pretending to animate. Final pose, foot contact, cloth fit and facial likeness still require visual review.</small></div>
 </main>
 <script>
-const mv=document.getElementById('viewer'),status=document.getElementById('status'),select=document.getElementById('animation');
-const setStatus=s=>{status.textContent=s;};
+const mv=document.getElementById('viewer');
+const status=document.getElementById('status');
+const readiness=document.getElementById('readiness');
+const select=document.getElementById('animation');
+const buttons=[...document.querySelectorAll('[data-motion]')];
+const required=buttons.map(b=>'Carrie '+b.dataset.motion);
+const cyclic=new Set(['Carrie Idle','Carrie Walk','Carrie Run','Carrie Crawl','Carrie Wave']);
+let clips=[];
+const report=text=>{status.textContent=text;};
+function playClip(name){
+ if(!clips.includes(name)){report('Unavailable animation: '+name+'. Rebuild required.');return;}
+ try{
+  mv.pause();
+  mv.animationName=name;
+  mv.currentTime=0;
+  mv.loop=cyclic.has(name);
+  mv.play();
+  select.value=name;
+  buttons.forEach(b=>b.setAttribute('aria-pressed',String('Carrie '+b.dataset.motion===name)));
+  report('Playing '+name.replace(/^Carrie /,'')+' — rotate to inspect knee, elbow, hands, fabric and feet.');
+ }catch(err){report('Animation failed: '+(err?.message||String(err)));}
+}
 mv.addEventListener('load',()=>{
- const list=mv.availableAnimations||[];
- select.replaceChildren(new Option('Neutral stance',''));
- for(const name of list) select.add(new Option(name,name));
- setStatus("Carrie's separate 3D model loaded. Inspect her face, skin, hair and fabric fit from all angles. "+list.length+" animation clips available.");
+ clips=[...(mv.availableAnimations||[])];
+ const missing=required.filter(name=>!clips.includes(name));
+ select.replaceChildren(new Option('Choose a movement',''));
+ for(const name of clips)select.add(new Option(name.replace(/^Carrie /,''),name));
+ select.disabled=clips.length===0;
+ document.getElementById('play').disabled=clips.length===0;
+ buttons.forEach(b=>{
+  b.disabled=!clips.includes('Carrie '+b.dataset.motion);
+  b.setAttribute('aria-pressed','false');
+ });
+ if(missing.length){
+   readiness.dataset.state='missing';
+   readiness.textContent=missing.length+' missing movement(s): '+missing.map(n=>n.replace(/^Carrie /,'')).join(', ')+'. The build is not motion-complete.';
+   report('Carrie model loaded, but some requested animation clips are absent. Available: '+clips.length+'.');
+ }else{
+   readiness.dataset.state='ready';
+   readiness.textContent='All 14 named movement clips found in the loaded 3D model. Inspect their motion visually before approving.';
+   playClip('Carrie Idle');
+ }
 });
-mv.addEventListener('error',()=>setStatus("Carrie's GLB is not published or could not load yet. Check the GitHub build before reviewing her."));
-document.getElementById('play').onclick=()=>{
- const name=select.value;if(!name){setStatus('Select a motion first.');return;}
- mv.animationName=name;mv.play();setStatus('Playing '+name);
-};
-document.getElementById('stop').onclick=()=>{mv.pause();setStatus('Motion paused.');};
-document.getElementById('reset').onclick=()=>{mv.pause();mv.animationName='';mv.resetTurntableRotation?.();mv.cameraOrbit='0deg 75deg auto';mv.fieldOfView='32deg';setStatus('Camera reset.');};
+mv.addEventListener('error',()=>{readiness.dataset.state='missing';readiness.textContent='3D model unavailable; no movement buttons are active.';report('Carrie GLB could not be loaded. Check her GitHub build or Pages deployment.');});
+buttons.forEach(b=>b.addEventListener('click',()=>playClip('Carrie '+b.dataset.motion)));
+document.getElementById('play').addEventListener('click',()=>{if(select.value)playClip(select.value);});
+document.getElementById('stop').addEventListener('click',()=>{mv.pause();report('Animation paused for frame inspection.');});
+document.getElementById('reset').addEventListener('click',()=>{if(clips.includes('Carrie Idle'))playClip('Carrie Idle');mv.cameraOrbit='0deg 75deg auto';mv.fieldOfView='32deg';report('Front view reset to standing idle.');});
+document.getElementById('front').addEventListener('click',()=>{mv.cameraOrbit='0deg 75deg auto';report('Front angle.');});
+document.getElementById('side').addEventListener('click',()=>{mv.cameraOrbit='90deg 75deg auto';report('Side angle: check knee bending direction.');});
+document.getElementById('back').addEventListener('click',()=>{mv.cameraOrbit='180deg 75deg auto';report('Back angle.');});
 </script></body></html>
