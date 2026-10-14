@@ -157,3 +157,24 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+
+      - name: Verify Carolyn 3D viewer is live
+        env:
+          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${LIVE_URL%/}"
+          echo "Checking viewer at $base/carolyn-viewer.html"
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/carolyn-viewer.html" -o /tmp/carolyn-viewer-live.html
+          grep -q "Carolyn" /tmp/carolyn-viewer-live.html
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/caroline-inspection.glb" -o /tmp/carolyn-model-live.glb
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          p=Path('/tmp/carolyn-model-live.glb')
+          b=p.read_bytes()
+          assert len(b)>100000, "Published Carolyn 3D model missing or too small"
+          magic,version,length=struct.unpack_from('<4sII',b)
+          assert magic==b'glTF' and version==2 and length==len(b), "Published GLB invalid"
+          print('LIVE Carolyn viewer:',len(b),'bytes: OK')
+          PY
