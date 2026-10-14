@@ -1,4 +1,4 @@
-"""Reversible adult Caroline Ingalls (Karen Grassle, season-three era) face study.
+"""Reversible adult Carol / Caroline Ingalls (Karen Grassle, season-three era) face study.
 
 A hand-tuned, reversible Blender shape key, not photogrammetry or automatic photo matching.
 Modify only existing FACE vertices: no detached facial shell, rig edits, or
@@ -15,23 +15,28 @@ import math
 from mathutils import Vector
 
 PRESET = {
-    "name": "Carolyn S3 facial likeness study v5 - cheekbone and under-eye fullness, delicate nose, tapered jaw, more natural lips",
+    "name": "Carol S3 facial likeness study v6 - mature cheekbones, less round lower cheek, longer defined nose, adult jaw and subtler mouth",
     # Subtle changes scaled by actual body height; do not shrink face to a point.
-    "cheek_width": 0.0065,
-    "cheek_forward": 0.0045,
-    "jaw_taper": -0.0050,
-    "chin_forward": 0.0016,
-    "nose_width": -0.0019,
-    "nose_projection": 0.0035,
-    "nose_bridge_projection": 0.0021,
-    "mouth_width": 0.0004,
-    "brow_softening": 0.0014,
-    "temple_width": 0.0020,
-    "under_eye_fullness": 0.0023,
-    "mouth_corner_lift": 0.0013,
-    "lip_recession": 0.0020,
-    "cheek_lift": 0.0017,
-    "jaw_lift": 0.0011,
+    "cheek_width": 0.0068,
+    "cheek_forward": 0.0057,
+    "jaw_taper": 0.0011,
+    "chin_forward": 0.0028,
+    "nose_width": -0.0008,
+    "nose_projection": 0.0042,
+    "nose_bridge_projection": 0.0048,
+    "mouth_width": 0.0022,
+    "brow_softening": 0.0018,
+    "temple_width": 0.0023,
+    "under_eye_fullness": 0.0008,
+    "mouth_corner_lift": 0.0007,
+    "lip_recession": 0.0050,
+    "cheek_lift": 0.0008,
+    "jaw_lift": 0.0001,
+    "cheek_hollow": 0.0033,
+    "cheek_hollow_recede": 0.0018,
+    "nose_length": 0.0024,
+    "chin_rounding": 0.0013,
+    "nasolabial_soften": 0.0008,
 }
 # Preset numbers are fractions of actual MPFB adult body height.
 
@@ -104,13 +109,20 @@ def apply_caroline_face_morph(root, body):
         under_eye = bell(ax,.045,.034)*bell(dz,-.018,.019)
         mouth_corner = bell(ax,.057,.015)*bell(dz,-.093,.019)
         lip_body = bell(ax,.027,.028)*bell(dz,-.094,.017)
+        # Remove stock youthful cheek puffiness beneath the cheekbones.
+        # Keep these weights localized so the smile, ears and rig stay intact.
+        cheek_hollow = bell(ax,.075,.032)*bell(dz,-.069,.024)
+        chin_round = bell(ax,.039,.033)*bell(dz,-.123,.020)
+        nasolabial = bell(ax,.046,.014)*bell(dz,-.077,.027)
         # Keep the bone/eye sockets and mouth opening essentially unmoved.
         shift_x = side*h*front_weight*(
             PRESET["cheek_width"]*cheek +
             PRESET["jaw_taper"]*jaw +
             PRESET["nose_width"]*nose +
             PRESET["mouth_width"]*lip +
-            PRESET["temple_width"]*temple)
+            PRESET["temple_width"]*temple -
+            PRESET["cheek_hollow"]*cheek_hollow +
+            PRESET["chin_rounding"]*chin_round)
         shift_y = -h*front_weight*(
             PRESET["cheek_forward"]*cheek +
             PRESET["chin_forward"]*chin +
@@ -118,25 +130,31 @@ def apply_caroline_face_morph(root, body):
             PRESET["nose_bridge_projection"]*straight_bridge +
             PRESET["brow_softening"]*brow +
             PRESET["under_eye_fullness"]*under_eye -
-            PRESET["lip_recession"]*lip_body)
+            PRESET["lip_recession"]*lip_body -
+            PRESET["cheek_hollow_recede"]*cheek_hollow -
+            PRESET["nasolabial_soften"]*nasolabial)
         shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner +
                                    PRESET["cheek_lift"]*cheek +
-                                   PRESET["jaw_lift"]*jaw)
-        # The first study changed no vertex by more than ~3 mm, barely
-        # perceptible in a mobile face close-up. Intensify the *face-only*
-        # displacement while retaining smooth feathering and the safety cap.
-        likeness_strength = 2.6
+                                   PRESET["jaw_lift"]*jaw -
+                                   PRESET["nose_length"]*tip)
+        # Deliberately stronger sculpt than v5: adult rather than doll-like
+        # planes. Bone rig, eyes, skin UV and lips' opening stay original.
+        likeness_strength = 3.25
         old = Vector((p.x,p.y,p.z))
         new = old+Vector((shift_x,shift_y,shift_z))*likeness_strength
         distance = (new-old).length
-        if distance > .014*h:
-            raise RuntimeError("Carolyn facial sculpt exceeds safe deformation range")
+        # Fail rather than exporting a badly pinched face if landmark weights
+        # are accidentally changed too far in a later revision.
+        if distance > .027*h:
+            raise RuntimeError("Carol facial sculpt exceeds safe deformation range")
         key.data[i].co = new
         if distance > .00001*h:
             modified += 1
             peak = max(peak,distance)
     if modified < 150:
         raise RuntimeError("Carolyn facial study affected too few face vertices")
+    if peak < .008*h:
+        raise RuntimeError("Carol v6 adult facial sculpt too small to show")
     body.data.update()
     print("WVLRP_CAROLINE_FACE_MORPH_SUCCESS",
           key.name, "vertices", modified,
