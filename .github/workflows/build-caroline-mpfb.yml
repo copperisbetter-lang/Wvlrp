@@ -14,6 +14,12 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - name: Restore MakeHuman system assets cache
+        id: mh-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/mh-system.zip
+          key: makehuman-system-assets-cc0-v1
       - name: Set up Blender and MPFB
         run: |
           set -euo pipefail
@@ -26,7 +32,13 @@ jobs:
           mkdir -p /tmp/wvlrp_blender_ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/mpfb.zip
-          curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          if [ ! -s /tmp/mh-system.zip ]; then
+            echo 'Downloading MakeHuman system assets (first run only; subsequent runs use cache)'
+            curl -fL --retry 4 --connect-timeout 30 --speed-time 120 --speed-limit 1024 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          else
+            echo 'Using cached MakeHuman system assets'
+          fi
+          unzip -tq /tmp/mh-system.zip >/dev/null
       - name: Build Caroline foundation
         run: |
           set -euo pipefail
