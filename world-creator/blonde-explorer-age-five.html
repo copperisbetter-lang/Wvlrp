@@ -40,7 +40,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <strong>Move and resize dress</strong>
 <label>Up / down: <output id="dress-position-value">0 cm</output><input id="dress-position" type="range" min="-65" max="65" value="0" style="width:100%"></label>
 <label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="100" style="width:100%"></label>
-<label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="100" style="width:100%"></label>
 <label>Top width (bodice only): <output id="dress-top-width-value">75%</output><input id="dress-top-width" type="range" min="45" max="120" value="65" style="width:100%"></label>
 <label>Top depth (bodice only): <output id="dress-top-depth-value">75%</output><input id="dress-top-depth" type="range" min="45" max="120" value="65" style="width:100%"></label>
 <label>Top opening diameter: <output id="dress-rim-diameter-value">100%</output><input id="dress-rim-diameter" type="range" min="40" max="120" value="65" style="width:100%"></label>
@@ -72,7 +72,7 @@ let bounds=null, center=null, model=null;
  // Load the rebuilt dress measured against the REAL body first. The 2026-10-13
  // snapshot was fitted to the old test figure; NEVER put it on the new child.
  const sources=[
-  './assets/blonde-explorer-age-five.glb?v=child-tailored-20261013-v3-122cm',
+  './assets/blonde-explorer-age-five.glb?v=20261014-blonde-fit-2',
   'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/blonde-explorer-age-five.glb?v=child-tailored-20261013-v3-122cm',
   'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/blonde-explorer-age-five.glb'
  ];
@@ -90,7 +90,7 @@ let bounds=null, center=null, model=null;
    const joints=Math.max(0,...rigSizes);
    const hasDetailedBody=totalVertices>=10000;
    const isRealRig=joints>=25;
-   const allMaterials=[...scene.materials,...(model.meshes||[]).flatMap(m=>m.material?.subMaterials||[])];
+   const allMaterials=[...scene.materials,...(model.meshes||[]).map(m=>m.material),...(model.meshes||[]).flatMap(m=>m.material?.subMaterials||[])].filter(Boolean);
     // The exported brown hair texture overrides the shader tint on some devices.
     // Remove that texture only from hair materials, retaining the photographic skin.
     for(const mat of allMaterials){
@@ -99,6 +99,8 @@ let bounds=null, center=null, model=null;
       if('diffuseTexture' in mat)mat.diffuseTexture=null;
       if('albedoColor' in mat)mat.albedoColor=new B.Color3(.87,.69,.35);
       if('diffuseColor' in mat)mat.diffuseColor=new B.Color3(.87,.69,.35);
+      if('emissiveColor' in mat)mat.emissiveColor=new B.Color3(.10,.075,.025);
+      if('baseColor' in mat)mat.baseColor=new B.Color3(.87,.69,.35);
     }
    const realSkin=allMaterials.some(m=>m?.name?.includes('Young Explorer real CC0 face and body skin UV'));
    const hasDress=allMaterials.some(m=>m?.name?.toLowerCase().includes('plaid'));
@@ -184,7 +186,26 @@ let bounds=null, center=null, model=null;
  const skins=scene.materials.filter(m=>m.name.includes('Young Explorer real CC0 face and body skin UV'));
  if(!skins.length)throw Error('Real textured human skin material not found');
  model=result;
- const dresser=new window.WVLRPYoungExplorerWardrobe(B,scene,result);
+ // Fix the five-year-old's imported adult-shaped rigid dress shell before
+  // handing it to the wardrobe controls. Preserve its skin weights.
+  const dressMesh=result.meshes.find(m=>/opaque plaid sundress/i.test(m.material?.name||'') ||
+    (m.material?.subMaterials||[]).some(x=>/opaque plaid sundress/i.test(x?.name||'')));
+  if(dressMesh){
+    const bodyMesh=result.meshes.find(m=>/human|body/i.test(m.name||'') && m!==dressMesh && m.getTotalVertices()>1000);
+    if(bodyMesh){
+      bodyMesh.computeWorldMatrix(true);dressMesh.computeWorldMatrix(true);
+      const bb=bodyMesh.getBoundingInfo().boundingBox;
+      const db=dressMesh.getBoundingInfo().boundingBox;
+      const bh=Math.max(.01,bb.maximumWorld.y-bb.minimumWorld.y);
+      const dh=Math.max(.01,db.maximumWorld.y-db.minimumWorld.y);
+      // Dress should span shoulders to just above the knee, not neck to ankles.
+      const targetHeight=bh*.49;
+      const yFactor=Math.min(1,targetHeight/dh);
+      dressMesh.scaling.y*=yFactor;
+      dressMesh.computeWorldMatrix(true);
+    }
+  }
+  const dresser=new window.WVLRPYoungExplorerWardrobe(B,scene,result);
  window.youngExplorerWardrobe=dresser;
  dresser.rememberBindPose();
  dresser.naturalStand();
