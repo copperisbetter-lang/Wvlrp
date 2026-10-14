@@ -113,7 +113,17 @@ function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
      const p=worldPts[i],d=(p[0]-x)**2+(p[1]-y)**2+(p[2]-z)**2;
      if(d<best){best=d;closest=i;}
     }
-    for(let n=0;n<4;n++){bones.push(bi[closest*4+n]);weights.push(bw[closest*4+n]);}
+    // Dresses must not inherit nearby arm/head/leg skin weights: those weights
+    // were pulling the skirt over Jenny's head in articulated poses.
+    if(!isShorts && id.includes('dress')){
+      const skeleton=body.skeleton;
+      const findBone=(names)=>skeleton?.bones?.findIndex(b=>names.includes(normalize(b.name)))??-1;
+      const pelvis=findBone(['hips','pelvis']);
+      const spine=findBone(['spine','spine1','spine2','chest']);
+      const anchor=spine>=0?spine:pelvis;
+      if(anchor>=0){bones.push(anchor,0,0,0);weights.push(1,0,0,0);}
+      else for(let n=0;n<4;n++){bones.push(bi[closest*4+n]);weights.push(bw[closest*4+n]);}
+    } else for(let n=0;n<4;n++){bones.push(bi[closest*4+n]);weights.push(bw[closest*4+n]);}
    }
   }
   for(let j=0;j<rings-1;j++)for(let k=0;k<segments;k++){
