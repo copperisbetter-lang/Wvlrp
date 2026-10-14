@@ -149,7 +149,10 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    ready=true;let d=v.getDimensions(),c=v.getBoundingBoxCenter();height=Math.max(.1,d.y);
    center={x:c.x,y:c.y,z:c.z};baseRadius=Math.max(d.x*2.5,d.y*1.45,d.z*3,1.3);
    v.minCameraOrbit='auto auto 0.12m';v.maxCameraOrbit='auto auto '+(baseRadius*6).toFixed(2)+'m';
-   focus('full');clips=Array.from(v.availableAnimations||[]);
+   // The ?view=face link opens directly on the head instead of requiring a tap.
+   const initialView=new URLSearchParams(location.search).get('view');
+   focus(initialView==='face'?'face':initialView==='torso'?'torso':'full');
+   clips=Array.from(v.availableAnimations||[]);
    checkGarments();
    select.replaceChildren(new Option(clips.length?'Choose a built-in animation':'No animation clips in this model',''));
    clips.forEach(a=>select.add(new Option(a,a)));updateButtons();
