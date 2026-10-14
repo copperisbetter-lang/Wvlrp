@@ -70,8 +70,8 @@ def add_caroline_adult_pelvic_morph(body):
     # First sculpt the actual base mesh, rather than relying on a GLB viewer
     # to honor nonzero default morph weights (the previous preview did not).
     original = [v.co.copy() for v in verts]
-    if body.data.shape_keys:
-        raise RuntimeError("Carol pelvic contour must be baked before face keys")
+    if body.data.shape_keys and len(body.data.shape_keys.key_blocks) > 1:
+        raise RuntimeError("Carol pelvic contour must be baked before other morphs")
 
     def gaussian(value, center, radius):
         return math.exp(-((value-center)/radius)**2)
@@ -110,7 +110,8 @@ def add_caroline_adult_pelvic_morph(body):
     if moved < 35:
         raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
     body.data.update()
-    body.shape_key_add(name="Basis", from_mix=False)
+    if not body.data.shape_keys:
+        body.shape_key_add(name="Basis", from_mix=False)
     key = body.shape_key_add(name="Carol pelvic contour OFF - inspection rollback", from_mix=False)
     for i, old in enumerate(original):
         key.data[i].co = old
