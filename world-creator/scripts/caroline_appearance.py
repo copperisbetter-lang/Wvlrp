@@ -97,49 +97,79 @@ def add_caroline_adult_pelvic_morph(body):
 
     def gaussian(value, center, radius):
         return math.exp(-((value-center)/radius)**2)
-    moved = 0
-    max_shift = 0.
+
+    def smoothstep(value):
+        value = max(0.0, min(1.0, value))
+        return value*value*(3.0-2.0*value)
+
+    # The ×10 test exported ten times the *already ×4* sculpt (effective
+    # scale 40). Its long downward needles came chiefly from multiplying
+    # a Z-axis pull. Sculpt a softened intermediate contour on Carol's OWN
+    # continuous adult basemesh; never lengthen the topology vertically.
+    # Controlled convexity in -Y, a broad falloff, and capped projection
+    # give the underlying folds rounded curves instead of sharp points.
+    PELVIC_VISIBILITY_TEST_SCALE = 6.0
+    target_y = [0.0] * len(verts)
     for i, vertex in enumerate(verts):
         p = vertex.co
         nz = (p.z-lo)/h
-        if nz < .394 or nz > .568:
-            continue
         ax = abs((p.x-cx)/h)
-        if ax > .091:
+        if not (.405 < nz < .562) or ax >= .089:
             continue
-        ahead = max(0., min(1., (front_ref + .035*h - p.y)/(.067*h)))
-        front_weight = ahead*ahead*(3.-2.*ahead)
-        if front_weight < .025:
+
+        # Smoothly feather ALL boundaries, including into the inner thighs.
+        height_fade = smoothstep((nz-.405)/.032) * smoothstep((.562-nz)/.030)
+        side_fade = smoothstep((.089-ax)/.028)
+        ahead = (front_ref + .035*h - p.y)/(.067*h)
+        front_weight = smoothstep(ahead)
+        if front_weight < .015:
             continue
-        # Fuller soft external folds and lower relaxed contour; dimensions
-        # are fractions of stature and feather into the original pelvic skin.
-        pubis = gaussian(ax,.0,.048)*gaussian(nz,.516,.044)
-        outer = gaussian(ax,.019,.019)*gaussian(nz,.468,.047)
-        central_cleft = gaussian(ax,0.,.008)*gaussian(nz,.470,.037)
-        low_fold = gaussian(ax,.016,.018)*gaussian(nz,.429,.032)
-        # Exaggerated ADULT BODY inspection stage: make the anatomical
-        # landmark unambiguously visible in the neutral exported mesh.
-        # Change this single multiplier back toward 1.0 after visual QA.
-        # Kept on Carol's own mesh and covered by garments during gameplay.
-        PELVIC_VISIBILITY_TEST_SCALE = 4.0
-        front_projection = PELVIC_VISIBILITY_TEST_SCALE * (
-            .0045*pubis + .024*outer +
-            .015*low_fold - .0095*central_cleft)
-        dz = PELVIC_VISIBILITY_TEST_SCALE * (-.010*low_fold)
-        new = Vector((p.x, p.y-h*front_weight*front_projection,
-                      p.z+h*front_weight*dz))
-        shift = (new-p).length
-        if shift > .085*h:
-            raise RuntimeError("Carol anatomy contour exceeds safe shape range")
+
+        pubis = gaussian(ax, .0, .046)*gaussian(nz, .513, .045)
+        outer = gaussian(ax, .020, .020)*gaussian(nz, .472, .045)
+        central_cleft = gaussian(ax, .0, .012)*gaussian(nz, .466, .037)
+        low_fold = gaussian(ax, .019, .020)*gaussian(nz, .444, .031)
+
+        projection = PELVIC_VISIBILITY_TEST_SCALE * (
+            .0048*pubis + .017*outer + .0085*low_fold
+            - .0042*central_cleft)
+        projection *= front_weight*side_fade*height_fade
+        # Cap the entire outward movement to ~5.8 cm on a 1.7 m figure.
+        # This is a diagnostic/fit contour, not a stretched appendage.
+        projection = min(.034, max(0.0, projection))
+        target_y[i] = -h*projection
+
+    # Smooth the actual displacement over the existing quad topology.
+    # Unlike scaling selected vertices downward, this creates no isolated
+    # sharp tips; it also preserves the mesh's skinning and UV coordinates.
+    neighbors = [[] for _ in verts]
+    for edge in body.data.edges:
+        a, b = edge.vertices
+        neighbors[a].append(b)
+        neighbors[b].append(a)
+    for _ in range(2):
+        target_y = [
+            .68*value + .32*(sum(target_y[j] for j in neighbors[i]) /
+                                 len(neighbors[i]) if neighbors[i] else value)
+            for i, value in enumerate(target_y)
+        ]
+
+    moved = 0
+    max_shift = 0.0
+    for i, dy in enumerate(target_y):
+        shift = abs(dy)
+        if shift < .00015*h:
+            continue
+        # Y-only projection: prohibit the long Z-down spikes from the ×40
+        # diagnostic while leaving the legs, skeleton and posture untouched.
+        displacement = Vector((0.0, dy, 0.0))
         if existing_keys:
-            displacement = new - p
             for key_block in existing_keys:
                 key_block.data[i].co += displacement
         else:
-            vertex.co = new
-        if shift > .00015*h:
-            moved += 1
-            max_shift = max(max_shift, shift)
+            verts[i].co += displacement
+        moved += 1
+        max_shift = max(max_shift, shift)
     if moved < 75:
         raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
     body.data.update()
@@ -154,8 +184,8 @@ def add_caroline_adult_pelvic_morph(body):
     print("WVLRP_CAROLINE_ANATOMY_MORPH_SUCCESS",
           "baked_into_base", True, "rollback_key", key.name,
           "vertices", moved, "max_displacement_mm", round(max_shift*1000,2),
-          "visibility_test_scale", 4.0,
-          "external_under_clothing", True)
+          "visibility_test_scale", PELVIC_VISIBILITY_TEST_SCALE,
+          "external_under_clothing", True,\n          "curve", "smoothed-y-only-no-downward-spikes")
     return key
 
 def add_period_updo(export_root, body, rig):
