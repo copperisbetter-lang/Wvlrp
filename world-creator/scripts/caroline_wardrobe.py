@@ -10,6 +10,8 @@ MATERIALS={
     "skirt": ("WVLRP Wardrobe Skirt",(.21,.29,.26,1.0)),
     "apron": ("WVLRP Wardrobe Apron",(.86,.81,.69,1.0)),
     "boots": ("WVLRP Wardrobe Boots",(.25,.17,.115,1.0)),
+    "sweater": ("WVLRP Wardrobe Sweater",(.37,.43,.34,1.0)),
+    "pants": ("WVLRP Wardrobe Pants",(.36,.32,.29,1.0)),
 }
 
 def add_caroline_wardrobe(root,body,rig):
@@ -86,6 +88,52 @@ def add_caroline_wardrobe(root,body,rig):
     if len(faces)<100:raise RuntimeError('Blouse mesh selection too small')
     create('blouse','Blouse',points,faces,source_for=sources)
 
+
+    # Casual wardrobe: separate fitted sweater and trousers, on Carolyn's OWN
+    # skinned body topology. Preserve vertex weights and an independent fabric
+    # stand-off. Sleeves come from the existing upper-/forearm skin vertices.
+    group_names={g.index:norm(g.name) for g in body.vertex_groups}
+    def weighted_for(v,fragments,min_weight=.12):
+        return any(a.weight>=min_weight and any(fragment in group_names.get(a.group,"")
+                   for fragment in fragments) for a in v.groups)
+    arm_fragments=("leftarm","rightarm","leftforearm","rightforearm",
+                   "leftupperarm","rightupperarm")
+    leg_fragments=("hips","pelvis","leftupleg","rightupleg","leftthigh","rightthigh",
+                   "leftleg","rightleg","leftshin","rightshin")
+    # A fitted but visibly separate fabric shell (not a painted texture).
+    def garment_from_base(key,name,predicate,clearance):
+        accepted={i for i,v in enumerate(verts) if predicate(v)}
+        if not accepted:
+            raise RuntimeError(name+" could not select any body topology")
+        mapping={};points=[];sources=[];faces=[]
+        for poly in body.data.polygons:
+            face=list(poly.vertices)
+            if len(face)<3 or any(i not in accepted for i in face):continue
+            newface=[]
+            for idx in face:
+                if idx not in mapping:
+                    v=verts[idx]; mapping[idx]=len(points)
+                    points.append(tuple(v.co+v.normal*(h*clearance)))
+                    sources.append(idx)
+                newface.append(mapping[idx])
+            faces.append(newface)
+        if len(faces)<200:
+            raise RuntimeError(name+" needs more skinned surface faces")
+        return create(key,name,points,faces,source_for=sources)
+
+    garment_from_base("sweater","Sweater",
+        lambda v: (lo+.527*h<=v.co.z<=lo+.87*h and abs(v.co.x-cx)<.252*h)
+            or (lo+.385*h<=v.co.z<=lo+.87*h and
+                weighted_for(v,arm_fragments) and
+                abs(v.co.x-cx)<.42*h),
+        .024)
+    # Trouser legs are derived from pelvis and leg-weighted vertices, NOT from
+    # a skirt cylinder (which would bind both legs together on walk/run).
+    garment_from_base("pants","Pants",
+        lambda v: lo+.082*h<=v.co.z<=lo+.61*h and
+                  weighted_for(v,leg_fragments,.28) and abs(v.co.x-cx)<.33*h,
+        .019)
+
     # A roomier long skirt made as actual surface loops, attached at the pelvis.
     # Unlike painted-on clothing this has independent stand-off around both legs.
     n=48;rows=16
@@ -136,4 +184,4 @@ def add_caroline_wardrobe(root,body,rig):
             for i in range(ns):
                 k=(i+1)%ns;quads.append((j*ns+i,j*ns+k,(j+1)*ns+k,(j+1)*ns+i))
         create('boots',side+' Boot',pts,quads,weight_for=foot)
-    print('WVLRP_CAROLINE_WARDROBE_SUCCESS',len(MATERIALS),'garment materials, five skinned objects')
+    print('WVLRP_CAROLINE_WARDROBE_SUCCESS',len(MATERIALS),'garment materials, seven skinned objects')
