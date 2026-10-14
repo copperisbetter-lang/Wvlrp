@@ -1,0 +1,106 @@
+{
+  "season": 3,
+  "sourceEra": "1976-1977 original television series, NOT 2026 reboot",
+  "status": "wardrobe definitions; no garments generated or fitted yet",
+  "referenceUrls": [
+    "https://littlehouseontheprairie.com/little-house-on-the-prairie-episode-guide-season-3/",
+    "https://edelweisspatterns.com/blog/caroline-ingalls-pioneer-dresses-from-little-house-on-the-prairie/"
+  ],
+  "characters": {
+    "charles-ingalls-s3": {
+      "everyday": [
+        "rust-red work shirt",
+        "dark suspenders",
+        "brown work trousers",
+        "leather boots"
+      ],
+      "sunday": [
+        "clean collared shirt",
+        "dark vest",
+        "dress trousers",
+        "boots"
+      ]
+    },
+    "caroline-ingalls-s3": {
+      "everyday": [
+        "brown wool fitted bodice",
+        "gathered brown skirt",
+        "floral calico blouse",
+        "work apron",
+        "boots"
+      ],
+      "sunday": [
+        "dress bodice",
+        "full skirt",
+        "bonnet",
+        "boots"
+      ]
+    },
+    "mary-ingalls-s3": {
+      "everyday": [
+        "calico day dress",
+        "pinafore",
+        "boots"
+      ],
+      "sunday": [
+        "purple Sunday dress",
+        "bonnet",
+        "boots"
+      ]
+    },
+    "laura-ingalls-s3": {
+      "everyday": [
+        "pink everyday dress",
+        "pinafore",
+        "boots"
+      ],
+      "sunday": [
+        "blue Sunday dress",
+        "bonnet",
+        "boots"
+      ]
+    },
+    "carrie-ingalls-s3": {
+      "everyday": [
+        "small calico dress",
+        "pinafore",
+        "child boots"
+      ],
+      "sunday": [
+        "Sunday dress",
+        "bonnet",
+        "child boots"
+      ]
+    },
+    "isaiah-edwards-s3": {
+      "everyday": [
+        "work shirt",
+        "vest",
+        "trousers",
+        "worn boots",
+        "battered hat"
+      ],
+      "sunday": [
+        "clean shirt",
+        "vest",
+        "trousers",
+        "boots",
+        "hat"
+      ]
+    },
+    "jack-ingalls-dog-s3": {
+      "everyday": [
+        "natural fur coat"
+      ],
+      "sunday": [
+        "natural fur coat"
+      ]
+    }
+  },
+  "productionRules": [
+    "Every outfit is a separate skinned garment, not painted on body",
+    "Fit per character proportions; validate rest and all motion poses",
+    "Do not claim episode-exact color until checked against original Season 3 still",
+    "No model or viewer is ready merely because wardrobe JSON exists"
+  ]
+}
