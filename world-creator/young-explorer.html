@@ -39,11 +39,11 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <section style="padding:12px;background:#263e30;display:grid;gap:10px" aria-label="Dress fitting controls">
 <strong>Move and resize dress</strong>
 <label>Up / down: <output id="dress-position-value">0 cm</output><input id="dress-position" type="range" min="-65" max="65" value="0" style="width:100%"></label>
-<label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="100" style="width:100%"></label>
-<label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="100" style="width:100%"></label>
-<label>Top width (bodice only): <output id="dress-top-width-value">75%</output><input id="dress-top-width" type="range" min="45" max="120" value="75" style="width:100%"></label>
-<label>Top depth (bodice only): <output id="dress-top-depth-value">75%</output><input id="dress-top-depth" type="range" min="45" max="120" value="75" style="width:100%"></label>
-<label>Top opening diameter: <output id="dress-rim-diameter-value">100%</output><input id="dress-rim-diameter" type="range" min="40" max="120" value="100" style="width:100%"></label>
+<label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Top width (bodice only): <output id="dress-top-width-value">75%</output><input id="dress-top-width" type="range" min="45" max="120" value="65" style="width:100%"></label>
+<label>Top depth (bodice only): <output id="dress-top-depth-value">75%</output><input id="dress-top-depth" type="range" min="45" max="120" value="65" style="width:100%"></label>
+<label>Top opening diameter: <output id="dress-rim-diameter-value">100%</output><input id="dress-rim-diameter" type="range" min="40" max="120" value="65" style="width:100%"></label>
 <button id="dress-reset" type="button">Reset dress fit</button>
 <button id="save-young-explorer" type="button">Save Character</button><span id="save-young-explorer-status" role="status"></span>
 </section><details id="measure-panel" open><summary>Young Explorer · body sizing</summary>
@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./young-explorer-wardrobe.js?v=torso-dress-rebind-20261014-2"></script>
+<script src="./young-explorer-wardrobe.js?v=neckline-fit-20261014-3"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
