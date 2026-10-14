@@ -250,18 +250,38 @@ def make_dress(body,rig,root):
         face.use_smooth=True
     obj=bpy.data.objects.new('Young Explorer body-fitted opaque plaid sundress',mesh)
     bpy.context.collection.objects.link(obj)
+    # Transfer the real body's rig weights to the fitted fabric. The previous
+    # three-bone assignment moved the bodice independently of the torso.
+    from mathutils.kdtree import KDTree
+    kd=KDTree(len(body.data.vertices))
+    for vi,vertex in enumerate(body.data.vertices):
+        kd.insert(body.matrix_world @ vertex.co,vi)
+    kd.balance()
+    bone_names={g.index:g.name for g in body.vertex_groups}
+    dress_groups={}
     hip=get_bone(rig,'hips','pelvis')
-    spine=get_bone(rig,'spine','spine1')
-    chest=get_bone(rig,'spine2','chest','upperchest') or spine
-    if not hip or not spine:raise RuntimeError('Young Explorer bone groups missing')
-    groups={name:obj.vertex_groups.new(name=name) for name in {hip,spine,chest}}
-    for i,(_,_,z) in enumerate(v):
-        l=(z-z0)/h
-        if l<.61: weights={hip:1.}
-        elif l<.69:weights={hip:(.69-l)/.08,spine:(l-.61)/.08}
-        else:weights={spine:max(0,(.79-l)/.10),chest:min(1,max(0,(l-.69)/.10))}
-        for name,w in weights.items():
-            if w>0:groups[name].add([i],w,'REPLACE')
+    if not hip:raise RuntimeError('Child hips bone missing for skirt')
+    for i,coordinate in enumerate(v):
+        l=(coordinate[2]-z0)/h
+        if l<.595:
+            weights={hip:1.0}  # hanging skirt follows pelvis, not individual legs
+        else:
+            weights={}
+            neighbors=kd.find_n(Vector(coordinate),4)
+            for _,idx,distance in neighbors:
+                strength=1/max(distance,.002*h)**2
+                for assignment in body.data.vertices[idx].groups:
+                    bone=bone_names.get(assignment.group)
+                    if bone and bone in rig.data.bones:
+                        weights[bone]=weights.get(bone,0)+assignment.weight*strength
+            total=sum(weights.values())
+            if total>0:weights={bone:weight/total for bone,weight in weights.items()}
+            else:weights={hip:1.0}
+        for bone,weight in weights.items():
+            if weight<=.0001:continue
+            if bone not in dress_groups:
+                dress_groups[bone]=obj.vertex_groups.new(name=bone)
+            dress_groups[bone].add([i],weight,'REPLACE')
     obj.modifiers.new('Dress follows child armature','ARMATURE').object=rig
     world=obj.matrix_world.copy();obj.parent=root;obj.matrix_world=world
     print('WVLRP_CHILD_DRESS_FITTED_TO_REAL_BODY',json.dumps(fitted,sort_keys=True),
