@@ -6,6 +6,7 @@
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=full-village-75m-20261014-v1";
+import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=cc0-oak-20261014-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
@@ -194,6 +195,11 @@ let habitat;
 try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:0,
     START_AT_RANGER?RANGER_SPAWN.tileZ:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
+// This is ONE imported GLB, not the procedural tree prototypes in the forest.
+// It stays at village world coordinates as terrain tiles stream in and out.
+const villageOak=installVillageOak(B,scene,{
+  groundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
+});
 const names=[];
 function addNamePlate(o){
   const ground=cabinY+.38;
@@ -377,6 +383,8 @@ const collision=(x,z)=>{
   if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
   // Keep walkers out of the permanent village flames.
   if(Math.hypot(x-VILLAGE_CLEARING.fireX,z-VILLAGE_CLEARING.fireZ)<2.30)return true;
+  // One real village oak: its substantial root flare and trunk are solid.
+  if(Math.hypot(x-VILLAGE_OAK.x,z-VILLAGE_OAK.z)<VILLAGE_OAK.collisionRadius)return true;
   const water=waterAt(x,z,seed);
   if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
   // Test actual rendered trunks, including the new evergreen and old-growth
@@ -514,6 +522,10 @@ window.__wildDiagnostics=()=>({
   villageDetailDiameterMetres:habitat?.villageDetailDiameterMetres??0,
   villageGroundDetails:habitat?.villageGroundDetails??0,
   villageEdgeTrees:habitat?.villageEdgeTrees??0,
+   importedVillageOakStatus:villageOak.status,
+   importedVillageOakMeshes:villageOak.meshCount,
+   importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
+   importedVillageOakError:villageOak.error,
   heroGraphics:habitat?.heroGraphics??false,
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,
