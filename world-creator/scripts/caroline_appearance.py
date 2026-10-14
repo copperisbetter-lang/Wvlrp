@@ -38,6 +38,84 @@ def reshape_adult_body(body):
     body.data.update()
     print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3),"profile","reduced-natural-v2")
 
+
+def add_caroline_adult_pelvic_morph(body):
+    """Reversible, covered external anatomy contour on Carol's OWN adult body.
+
+    No donor mesh, no detached overlay, no rig edits. Keep the underlying
+    continuous CC0 basemesh, UVs, skin and clothing attachment compatible.
+    This is a preliminary topology-limited anatomical shape study; inspect
+    deformation during movement before approving as final geometry.
+    """
+    if body.type != "MESH" or len(body.data.vertices) < 10000:
+        raise RuntimeError("Carol adult anatomy: original body basemesh is missing")
+    verts = body.data.vertices
+    lo = min(v.co.z for v in verts)
+    hi = max(v.co.z for v in verts)
+    h = hi - lo
+    if not 1.0 < h < 3.0:
+        raise RuntimeError("Carol adult anatomy: invalid adult body scale")
+    cx = (min(v.co.x for v in verts) + max(v.co.x for v in verts)) * .5
+
+    # The MakeHuman model faces -Y. Identify its existing anterior pelvis,
+    # rather than selecting the posterior surface or changing the thighs.
+    anterior = sorted(v.co.y for v in verts
+        if lo + .445*h < v.co.z < lo + .545*h
+        and abs(v.co.x - cx) < .055*h)
+    if len(anterior) < 35:
+        raise RuntimeError("Carol adult anatomy: pelvic surface insufficient")
+    front_ref = anterior[max(0, int(len(anterior)*.18))]
+    if not body.data.shape_keys:
+        body.shape_key_add(name="Basis", from_mix=False)
+    key_name = "Carol adult external pelvic contour - reversible"
+    if key_name in body.data.shape_keys.key_blocks:
+        raise RuntimeError("Carol anatomy morph already exists")
+    key = body.shape_key_add(name=key_name, from_mix=False)
+    key.value = 1.0
+
+    def gaussian(value, center, radius):
+        return math.exp(-((value-center)/radius)**2)
+    moved = 0
+    max_shift = 0.
+    for i, vertex in enumerate(verts):
+        p = vertex.co
+        nz = (p.z-lo)/h
+        if nz < .408 or nz > .568:
+            continue
+        ax = abs((p.x-cx)/h)
+        if ax > .087:
+            continue
+        ahead = max(0., min(1., (front_ref + .026*h - p.y)/(.056*h)))
+        front_weight = ahead*ahead*(3.-2.*ahead)
+        if front_weight < .025:
+            continue
+        # Fuller soft external folds and lower relaxed contour; dimensions
+        # are fractions of stature and feather into the original pelvic skin.
+        pubis = gaussian(ax,.0,.047)*gaussian(nz,.517,.042)
+        outer = gaussian(ax,.018,.016)*gaussian(nz,.475,.039)
+        central_cleft = gaussian(ax,0.,.007)*gaussian(nz,.472,.030)
+        low_fold = gaussian(ax,.013,.015)*gaussian(nz,.443,.022)
+        front_projection = (.0035*pubis + .0115*outer +
+                            .008*low_fold - .004*central_cleft)
+        dz = -.0075*low_fold
+        new = Vector((p.x, p.y-h*front_weight*front_projection,
+                      p.z+h*front_weight*dz))
+        shift = (new-p).length
+        if shift > .022*h:
+            raise RuntimeError("Carol anatomy contour exceeds safe shape range")
+        key.data[i].co = new
+        if shift > .00015*h:
+            moved += 1
+            max_shift = max(max_shift, shift)
+    if moved < 35:
+        raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
+    body.data.update()
+    print("WVLRP_CAROLINE_ANATOMY_MORPH_SUCCESS",
+          "shape_key", key.name, "vertices", moved,
+          "max_displacement_mm", round(max_shift*1000,2),
+          "reversible", True, "external_under_clothing", True)
+    return key
+
 def add_period_updo(export_root, body, rig):
     """Build a fitted, rounded swept-back period hairdo with low nape chignon.
 
