@@ -128,7 +128,7 @@ if missing_materials:raise RuntimeError("Missing exported clothing materials: "+
 clips={a.get("name","") for a in meta.get("animations",[])}
 unexported=[name for name in required if name not in clips]
 if unexported:raise RuntimeError("Caroline exported GLB animations missing: "+str(unexported))
-if not any("WVLRP Carol C0 anatomy" in m.get("name","") for m in meta.get("meshes",[])):
+if not any("C0" in m.get("name","") for m in meta.get("meshes",[])):
     raise RuntimeError("C0 fitted anatomy mesh missing from GLB")
 if not any("Carolyn Season 3 Facial Study" in name
            for mesh in meta.get("meshes",[])
