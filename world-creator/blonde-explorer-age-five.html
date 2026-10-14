@@ -39,7 +39,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <section style="padding:12px;background:#263e30;display:grid;gap:10px" aria-label="Dress fitting controls">
 <strong>Move and resize dress</strong>
 <label>Up / down: <output id="dress-position-value">0 cm</output><input id="dress-position" type="range" min="-65" max="65" value="0" style="width:100%"></label>
-<label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="100" style="width:100%"></label>
 <label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="65" style="width:100%"></label>
 <label>Top width (bodice only): <output id="dress-top-width-value">75%</output><input id="dress-top-width" type="range" min="45" max="120" value="65" style="width:100%"></label>
 <label>Top depth (bodice only): <output id="dress-top-depth-value">75%</output><input id="dress-top-depth" type="range" min="45" max="120" value="65" style="width:100%"></label>
@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./young-explorer-wardrobe.js?v=neckline-fit-20261014-3"></script>
+<script src="./blonde-explorer-wardrobe.js?v=age-five-fix-1"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
@@ -91,6 +91,15 @@ let bounds=null, center=null, model=null;
    const hasDetailedBody=totalVertices>=10000;
    const isRealRig=joints>=25;
    const allMaterials=[...scene.materials,...(model.meshes||[]).flatMap(m=>m.material?.subMaterials||[])];
+    // The exported brown hair texture overrides the shader tint on some devices.
+    // Remove that texture only from hair materials, retaining the photographic skin.
+    for(const mat of allMaterials){
+      if(!mat || !/hair/i.test(mat.name||''))continue;
+      if('albedoTexture' in mat)mat.albedoTexture=null;
+      if('diffuseTexture' in mat)mat.diffuseTexture=null;
+      if('albedoColor' in mat)mat.albedoColor=new B.Color3(.87,.69,.35);
+      if('diffuseColor' in mat)mat.diffuseColor=new B.Color3(.87,.69,.35);
+    }
    const realSkin=allMaterials.some(m=>m?.name?.includes('Young Explorer real CC0 face and body skin UV'));
    const hasDress=allMaterials.some(m=>m?.name?.toLowerCase().includes('plaid'));
    const fittedDress=pieceSizes.some(m=>/body.fitted opaque plaid sundress|measured, fitted child sundress/i.test(m.name||''));
@@ -158,7 +167,7 @@ let bounds=null, center=null, model=null;
    const roots=imported.filter(n=>n!==scaleNode&&!n.parent);
    if(!roots.length)throw Error('No rig roots available for uniform child height correction');
    for(const n of roots)n.parent=scaleNode;
-   scaleNode.scaling.setAll(1.22/measured);
+   scaleNode.scaling.setAll(1.08/measured);
    scaleNode.computeWorldMatrix(true);
    for(const m of meshes)m.computeWorldMatrix(true);
  }
