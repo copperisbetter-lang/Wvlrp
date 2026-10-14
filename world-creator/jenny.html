@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./jenny-wardrobe.js?v=jenny-floor-diagnostic-20261014-v11"></script>
+<script src="./jenny-wardrobe.js?v=jenny-knee-ground-20261014-v12"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
@@ -72,8 +72,8 @@ let bounds=null, center=null, model=null;
  // Load the rebuilt dress measured against the REAL body first. The 2026-10-13
  // snapshot was fitted to the old test figure; NEVER put it on the new child.
  const sources=[
-  './assets/jenny-olive-plaid.glb?v=jenny-floor-diagnostic-20261014-v11',
-  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/jenny-olive-plaid.glb?v=jenny-floor-diagnostic-20261014-v11',
+  './assets/jenny-olive-plaid.glb?v=jenny-knee-ground-20261014-v12',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/jenny-olive-plaid.glb?v=jenny-knee-ground-20261014-v12',
   './assets/jenny-olive-plaid.glb'
  ];
  let lastError;
