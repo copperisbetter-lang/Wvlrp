@@ -343,27 +343,34 @@ class YoungExplorerWardrobe {
   return b?.getTransformNode?.()||b?._linkedTransformNode||null;
  }
  // Animate linked skin joints, keeping clothes and body on exactly the same bones.
- pose(kind) {
-  // Use Blender-exported skeletal animation, rather than ad-hoc browser joint
-  // rotations whose axes differ from the rig's local bone orientations.
-  const match={wave:'wave',bend:'bend',pickup:'pick up',sit:'sit',
-    'hands-knees':'hands and knees','elbows-knees':'elbows and knees'}[kind];
+ pose(kind){
+  this.stopLocomotion();
   const clips=this.model.animationGroups||[];
-  const clip=clips.find(g=>g.name.toLowerCase().includes(match||kind));
   clips.forEach(g=>g.stop());
   this.resetPose();
-  if(!clip){
-   if($('pose-feedback'))$('pose-feedback').textContent='Missing animation: '+kind;
-   return;
-  }
+  const matches={wave:/wave/i,bend:/bend/i,pickup:/pick.?up/i,sit:/sit/i,
+    'hands-knees':/hands.?and.?knees/i,'elbows-knees':/elbows.?and.?knees/i};
+  const clip=clips.find(g=>matches[kind]?.test(g.name));
+  if(!clip){if($('pose-feedback'))$('pose-feedback').textContent='Missing saved skeleton movement: '+kind;return;}
   clip.start(false,1,clip.from,clip.to,false);
-  // Hold the authored pose near the middle of its action. The final frames
-  // intentionally return to standing, which made button presses appear inert.
-  const hold=clip.from+(clip.to-clip.from)*.67;
-  clip.goToFrame(hold);
-  clip.pause();
+  // Bend and floor movements must reach their maximum authored articulation.
+  const holdFraction=kind==='bend'||kind==='pickup'?.88:.78;
+  const frame=clip.from+(clip.to-clip.from)*holdFraction;
+  clip.goToFrame(frame);clip.pause();
   this.activePose=kind;
-  if($('pose-feedback'))$('pose-feedback').textContent=kind+' pose (authored animation)';
+  this.savePoseSnapshot(kind,frame);
+  if($('pose-feedback'))$('pose-feedback').textContent=kind+' · saved skeletal pose';
+ }
+ savePoseSnapshot(kind,frame){
+  // Persist per-character bone transforms; never overwrite Penny or another avatar.
+  const bones=this.model.skeletons?.[0]?.bones||[];
+  const rotations={};
+  for(const b of bones){
+   const n=b.getTransformNode?.()||b._linkedTransformNode;
+   if(n){const q=n.rotationQuaternion||this.B.Quaternion.FromEulerVector(n.rotation);
+    rotations[b.name]=[q.x,q.y,q.z,q.w];}
+  }
+  try{localStorage.setItem('wvlrp-jenny-skeleton-'+kind,JSON.stringify({version:1,frame,rotations}));}catch(_){}
  }
 
  stepPose(){
