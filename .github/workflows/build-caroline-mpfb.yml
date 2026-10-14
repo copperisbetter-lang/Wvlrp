@@ -5,6 +5,9 @@ on:
     paths:
       - 'world-creator/scripts/build_caroline_mpfb.py'
       - 'world-creator/scripts/export_caroline_glb.py'
+      - 'world-creator/scripts/caroline_appearance.py'
+      - 'world-creator/scripts/caroline_motions.py'
+      - 'world-creator/scripts/face_materials.py'
       - '.github/workflows/build-caroline-mpfb.yml'
 permissions:
   contents: read
