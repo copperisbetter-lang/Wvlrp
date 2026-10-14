@@ -1,0 +1,44 @@
+name: Install the Village Square CC0 HD oak
+on:
+  push:
+    paths:
+      - .github/workflows/install-village-oak.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download CC0 detailed-leaf oak GLB from Innerscene
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/assets
+          curl --fail --location --retry 4 --retry-delay 3 --connect-timeout 25 --max-time 300 \
+            -H 'Accept: application/octet-stream' \
+            -o world-creator/assets/village-oak-detailed.glb \
+            'https://www.innerscene.com/api/library/oak-street-tree-detailed-leaves-a273fef9/download'
+          python3 - <<'PY'
+          from pathlib import Path
+          data=Path("world-creator/assets/village-oak-detailed.glb").read_bytes()
+          assert len(data)>1_000_000, f"Downloaded tree too small: {len(data)}"
+          assert data[:4]==b"glTF", "Not a GLB binary"
+          assert int.from_bytes(data[8:12],"little")==len(data), "Broken GLB length"
+          print("One licensed detailed oak downloaded and validated",len(data))
+          PY
+      - name: Commit the real local tree model used by The Wild
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/village-oak-detailed.glb
+          if git diff --cached --quiet; then
+            echo 'Village oak GLB already installed.'
+          else
+            git commit -m "Install locally hosted CC0 detailed-leaf oak for village square"
+            git push origin HEAD:main
+          fi
