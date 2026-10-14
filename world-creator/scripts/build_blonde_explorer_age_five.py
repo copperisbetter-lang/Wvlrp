@@ -30,7 +30,7 @@ if "(.82,.64,.31,1)" not in source and "(.68,.49,.20,1)" not in source:
 skin_call="    olive_skin(body)\n"
 if source.count(skin_call)!=1:
     raise RuntimeError("Skin preservation patch did not find exactly one call")
-source=source.replace(skin_call,"    preserve_five_year_old_skin(body)\\n")
+source=source.replace(skin_call,"    preserve_five_year_old_skin(body)\n")
 # Require facial macro patch to be inserted exactly once.
 macro_anchor="    TargetService.reapply_macro_details(h)"
 if source.count(macro_anchor)!=1:
