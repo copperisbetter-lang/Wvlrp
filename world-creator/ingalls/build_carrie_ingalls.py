@@ -11,7 +11,9 @@ import struct
 from pathlib import Path
 from mathutils import Vector
 import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from carrie_motions import build_carrie_motions, EXPECTED as CARRIE_MOTIONS
 import build_young_explorer_real as shared
 from bl_ext.wvlrp_local.mpfb.services.humanservice import HumanService
 from bl_ext.wvlrp_local.mpfb.services.targetservice import TargetService
@@ -186,7 +188,10 @@ def main():
         if not ma or not ma.use_nodes:continue
         for n in ma.node_tree.nodes:
             if n.type=="BSDF_PRINCIPLED":
-                n.inputs["Base Color"].default_value=(.45,.30,.17,1)
+                # Season 3 reference: natural medium chestnut brown with subdued
+                # warm highlights, rather than the current golden/copper shade.
+                n.inputs["Base Color"].default_value=(.24,.14,.09,1)
+                n.inputs["Roughness"].default_value=.78
     root=ExportService.create_character_copy(human,name_suffix="_carrie_only")
     relatives=[root]+list(ObjectService.get_list_of_children(root))
     body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
@@ -201,7 +206,7 @@ def main():
     rig=next((o for o in relatives if o.type=="ARMATURE"),None)
     if not rig:raise RuntimeError("Carrie unique humanoid rig missing")
     outfit_fit(body,rig,root)
-    shared.make_clips(rig)
+    build_carrie_motions(rig)
     bpy.context.view_layer.update()
     points=[body.matrix_world @ v.co for v in body.data.vertices]
     original=max(p.z for p in points)-min(p.z for p in points)
@@ -228,8 +233,10 @@ def main():
     joint_count=len(meta["skins"][0]["joints"])
     if joint_count<50:
         raise RuntimeError("Incomplete humanoid rig: " + str(joint_count))
-    if len(meta.get("animations",[]))<5:
-        raise RuntimeError("Carrie motion clips missing")
+    exported = {a["name"] for a in meta.get("animations", [])}
+    missing = {"Carrie " + n for n in CARRIE_MOTIONS} - exported
+    if missing:
+        raise RuntimeError("Carrie motion clips missing: " + ", ".join(sorted(missing)))
     if not any("Carrie woven faded floral" in m.get("name","")
                for m in meta.get("materials",[])):
         raise RuntimeError("Carrie calico cloth missing from export")
