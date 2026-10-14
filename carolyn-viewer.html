@@ -10,7 +10,13 @@ model-viewer{display:block;width:100%;height:65dvh;min-height:350px;background:#
 main{padding:10px 12px 26px;max-width:960px;margin:auto}h2{font-size:1rem;margin:14px 0 9px}
 .controls{display:flex;flex-wrap:wrap;gap:8px}button,select{font:inherit;padding:10px 12px;border:1px solid #8fae9a;border-radius:10px;background:#26503d;color:#fff;min-height:45px}
 button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria-pressed=true]{border-color:#f3d48b;background:#3a6143}
-#animList{max-width:100%;width:100%;background:#19392e}.note{font-size:.86rem;line-height:1.5}#zoomval{font-variant-numeric:tabular-nums}
+#animList{max-width:100%;width:100%;background:#19392e}
+.c0-label{border:2px solid #ffe28b;background:#49381b;color:#fff7c8;border-radius:16px;padding:4px 9px;
+  font:700 13px system-ui;box-shadow:0 2px 8px #0009;white-space:nowrap;pointer-events:none}
+#c0table{width:100%;border-collapse:collapse;font-size:.82rem}
+#c0table th,#c0table td{padding:6px 5px;border-bottom:1px solid #456c56;text-align:left}
+#c0table td:not(:nth-child(2)){font-variant-numeric:tabular-nums}
+#c0-state{font-size:.84rem;color:#ffe2ad}.note{font-size:.86rem;line-height:1.5}#zoomval{font-variant-numeric:tabular-nums}
 </style>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 </head><body>
@@ -18,16 +24,24 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <model-viewer id="viewer"  camera-controls
  touch-action="none" interaction-prompt="none" shadow-intensity="0.8" exposure="1.1"
  camera-orbit="0deg 80deg 0.65m" camera-target="0m 1.55m 0m" min-field-of-view="10deg" max-field-of-view="55deg"
- alt="Carol's actual rigged model; not a substitute"></model-viewer>
+ alt="Carol's actual rigged model; not a substitute">
+  <button id="c0Hotspot" slot="hotspot-c0" class="c0-label" data-position="0m 0m 0m" data-normal="0m 0m 1m" style="display:none" aria-label="C0 model centerline landmark">● C0</button>
+</model-viewer>
 <div id="status" role="status" aria-live="polite">Loading Carol's 3D model…</div>
 <main>
 <h2>Camera and close inspection</h2>
 <div class="controls">
 <a href="/carolyn-viewer.html?model=pelvic-x10" style="color:#fff;background:#72512e;padding:10px;border:1px solid #e0b66a;border-radius:10px;text-decoration:none">Older ×10 spike test</a><a href="/carolyn-viewer.html?view=pelvis" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Updated smooth Carol</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button><button id="pelvis">Pelvis</button>
 <button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
-<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
+<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="toggleC0" type="button">Hide C0 label</button>
 </div>
 <p class="note" id="zoomval">Camera focus and distance will be available when the model loads.</p>
+<h2>C0 — marked pelvis centerline</h2>
+<p class="note">The C0 marker is placed at the precise build coordinate, not estimated from this screenshot. Offsets below are in millimetres: X moves left/right, Z moves upward, and relief moves outward from the existing body surface.</p>
+<p id="c0-state">Waiting for the C0-anchored build and coordinate file…</p>
+<table id="c0table" aria-label="C0 body sculpt offsets">
+<thead><tr><th>Point</th><th>Feature</th><th>X</th><th>Up</th><th>Out</th></tr></thead><tbody id="c0rows"></tbody>
+</table>
 <h2>Body motion controls</h2>
 <div class="controls" id="poses">
 <button data-pose="Stand">Stand</button>
@@ -66,6 +80,40 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  const v=document.querySelector('#viewer'),status=document.querySelector('#status');
  const motionStatus=document.querySelector('#motionStatus'),select=document.querySelector('#animList');
  let height=1.7,center={x:0,y:.85,z:0},baseRadius=3,ready=false,current='',clips=[];
+ let c0Visible=true;
+ const c0Hotspot=document.querySelector('#c0Hotspot'),c0State=document.querySelector('#c0-state');
+ const c0Toggle=document.querySelector('#toggleC0');
+ function showC0(){c0Hotspot.style.display=(!isPelvicX10&&c0Visible&&c0Hotspot.dataset.verified==='yes')?'':'none';
+   c0Toggle.textContent=c0Visible?'Hide C0 label':'Show C0 label';}
+ c0Toggle.onclick=()=>{c0Visible=!c0Visible;showC0();};
+ async function readC0(){
+   if(isPelvicX10){c0State.textContent='Old ×10 model has no C0 anchor. Open Updated smooth Carol.';showC0();return;}
+   try{
+     const r=await fetch('/world-creator/assets/carol-anatomy-landmarks.json?fresh='+Date.now(),{cache:'no-store'});
+     if(!r.ok)throw Error('coordinate file not published yet');
+     const data=await r.json(),p=data.model_coordinates_m;
+     if(!p||!Array.isArray(data.features)||data.features.length!==8)throw Error('C0 data incomplete');
+     const pos=[p.x,p.y,p.z].map(n=>Number(n).toFixed(5)+'m').join(' ');
+     c0Hotspot.dataset.position=pos;
+     c0Hotspot.dataset.verified='yes';
+     v.updateHotspot?.({name:'hotspot-c0',position:pos});
+     const rows=document.querySelector('#c0rows');rows.replaceChildren();
+     for(const item of data.features){
+       const tr=document.createElement('tr');
+       for(const key of ['id','name','x','z','relief']){
+         const td=document.createElement('td');
+         td.textContent=['x','z','relief'].includes(key)?Math.round(item[key]*1000)+' mm':item[key];
+         tr.append(td);
+       }
+       rows.append(tr);
+     }
+     c0State.textContent='C0 label aligned to exported model; '+data.features.length+' feature positions in build table.';
+     showC0();
+   }catch(err){
+     c0Hotspot.dataset.verified='no';showC0();
+     c0State.textContent='New C0 geometry and coordinates not live yet: '+err.message;
+   }
+ }
  const garmentNames={blouse:'WVLRP Wardrobe Blouse',skirt:'WVLRP Wardrobe Skirt',apron:'WVLRP Wardrobe Apron',boots:'WVLRP Wardrobe Boots',
    sweater:'WVLRP Wardrobe Sweater',pants:'WVLRP Wardrobe Pants'};
  const garmentState={blouse:true,skirt:true,apron:false,boots:true,sweater:false,pants:false};
@@ -163,6 +211,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    v.jumpCameraToGoal?.();
    clips=Array.from(v.availableAnimations||[]);
    checkGarments();
+   readC0();
    select.replaceChildren(new Option(clips.length?'Choose a built-in animation':'No animation clips in this model',''));
    clips.forEach(a=>select.add(new Option(a,a)));updateButtons();
    const materialNames=(v.model?.materials||[]).map(x=>String(x.name||''));
@@ -177,6 +226,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  v.addEventListener('error',()=>{status.textContent='The Carol model failed to load. The exported GLB may need rebuilding or publishing.';});
  document.querySelector('#reload').onclick=()=>{
    ready=false;status.textContent='Reloading Carol from the latest published model…';
+   c0Hotspot.dataset.verified='no';showC0();
    loadUncached();
  };
  document.querySelector('#full').onclick=()=>focus('full');
