@@ -124,8 +124,14 @@ jobs:
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export
           test -s /tmp/carolyn-export/caroline-inspection.glb
           cp /tmp/carolyn-export/caroline-inspection.glb world-creator/assets/caroline-inspection.glb
-          test -s /tmp/carolyn-export/carol-anatomy-landmarks.json
-          cp /tmp/carolyn-export/carol-anatomy-landmarks.json world-creator/assets/carol-anatomy-landmarks.json
+          if [ -s /tmp/carolyn-export/carol-anatomy-landmarks.json ]; then
+            cp /tmp/carolyn-export/carol-anatomy-landmarks.json world-creator/assets/carol-anatomy-landmarks.json
+          else
+            # Previous successful Caroline artifact predates C0. Do not break
+            # the whole website while the new character is building.
+            rm -f world-creator/assets/carol-anatomy-landmarks.json
+            echo "C0 model still building; publishing last known working Carol GLB."
+          fi
           if [ -s /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb ]; then
             cp /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb world-creator/assets/caroline-pelvic-x10-inspection.glb
           fi
