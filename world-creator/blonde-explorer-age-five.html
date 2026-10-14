@@ -155,6 +155,8 @@ let bounds=null, center=null, model=null;
  // Do NOT apply a second browser-side scale (which shrank her to 89.3cm).
  if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
  groups.push(...result.animationGroups);
+ // Imported idle/action clips must not auto-loop over the manual standing pose.
+ for(const clip of groups)clip.stop();
  if(groups.length<3)throw Error('Missing movement clips');
  // Measure the displayed world-space human vertices, NOT an unscaled glTF
  // bounding-box proxy. glTF exporters may apply parent scaling at import.
@@ -221,13 +223,14 @@ let bounds=null, center=null, model=null;
  window.youngExplorerWardrobe=dresser;
  dresser.rememberBindPose();
  dresser.naturalStand();
+ for(const clip of groups)clip.stop();
  status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
 }).catch(e=>{console.error(e);status.textContent='Young Explorer viewer unable to load: '+e.message;});
 function play(name){if(!groups.length)return;
  groups.forEach(g=>g.stop());
  window.youngExplorerWardrobe?.resetPose();
  const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
- if(clip){clip.start(true,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
+ if(clip){clip.start(false,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
 }
 document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
 document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
