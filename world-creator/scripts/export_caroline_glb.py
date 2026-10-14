@@ -80,7 +80,11 @@ def repair_hip_translation(glb_path):
                 samples.append((at,values))
             if furthest>1.5:
                 for at,values in samples:
-                    corrected=[baseline[j]+(values[j]-baseline[j])*0.0310 for j in range(3)]
+                    # glTF Y is UP and is already the correct 0.44m downward motion.
+                    # Only X and Z contain the unscaled sideways/backward drift.
+                    corrected=[baseline[0]+(values[0]-baseline[0])*0.0310,
+                               values[1],
+                               baseline[2]+(values[2]-baseline[2])*0.0310]
                     struct.pack_into("<3f",raw,at,*corrected)
                 furthest*=0.0310
                 repaired.append(anim.get("name","unnamed"))
