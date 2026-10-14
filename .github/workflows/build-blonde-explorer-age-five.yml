@@ -45,8 +45,21 @@ jobs:
         if: steps.mh_cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          curl -fL --retry 2 --retry-delay 3 --connect-timeout 12 --max-time 150 \
-            'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          # The primary host has repeatedly stalled; try the official independent mirror.
+          # Keep the successful ZIP in Actions cache for future characters.
+          for url in \
+            'https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' \
+            'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip'; do
+            rm -f /tmp/mh-system.zip
+            if curl -fL --retry 1 --retry-delay 3 --connect-timeout 15 --max-time 420 \
+                "$url" -o /tmp/mh-system.zip && unzip -tq /tmp/mh-system.zip >/dev/null; then
+              echo "MakeHuman assets downloaded and verified from $url"
+              break
+            fi
+            echo "::warning::MakeHuman asset download failed from $url; trying alternate host"
+          done
+          test -s /tmp/mh-system.zip
+          unzip -tq /tmp/mh-system.zip
       - name: Verify MakeHuman asset archive
         run: |
           set -euo pipefail
