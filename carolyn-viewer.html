@@ -40,16 +40,19 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 </div>
 <div class="controls" style="margin-top:10px"><button id="play" disabled>Play motion</button><button id="pause" disabled>Pause</button><button id="hold" disabled>Hold last frame</button></div>
 <h2>Carolyn's Clothes Rack</h2>
-<p class="note">Choose an outfit or add and remove individual garments. A garment can only be changed when the exported 3D model contains its actual fitted mesh.</p>
+<p class="note">Choose prairie clothes or the sweater-and-pants set, or toggle garments individually. Only actual fitted meshes in the current 3D model can be selected.</p>
 <div class="controls" id="outfits">
 <button data-outfit="everyday" disabled>Everyday outfit</button>
 <button data-outfit="work" disabled>Apron / chores</button>
+<button data-outfit="casual" disabled>Sweater + Pants</button>
 <button data-outfit="clear" disabled>Remove outfit for fitting</button>
 </div>
 <div class="controls" id="wardrobe" style="margin-top:10px">
 <button data-garment="blouse" disabled>Blouse</button>
 <button data-garment="skirt" disabled>Long skirt</button>
 <button data-garment="apron" disabled>Apron</button>
+<button data-garment="sweater" disabled>Sweater</button>
+<button data-garment="pants" disabled>Pants</button>
 <button data-garment="boots" disabled>Boots</button>
 </div>
 <p id="wardrobeStatus" class="note" role="status" aria-live="polite">Checking garments in the model…</p>
@@ -63,8 +66,9 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  const v=document.querySelector('#viewer'),status=document.querySelector('#status');
  const motionStatus=document.querySelector('#motionStatus'),select=document.querySelector('#animList');
  let height=1.7,center={x:0,y:.85,z:0},baseRadius=3,ready=false,current='',clips=[];
- const garmentNames={blouse:'WVLRP Wardrobe Blouse',skirt:'WVLRP Wardrobe Skirt',apron:'WVLRP Wardrobe Apron',boots:'WVLRP Wardrobe Boots'};
- const garmentState={blouse:true,skirt:true,apron:false,boots:true};
+ const garmentNames={blouse:'WVLRP Wardrobe Blouse',skirt:'WVLRP Wardrobe Skirt',apron:'WVLRP Wardrobe Apron',boots:'WVLRP Wardrobe Boots',
+   sweater:'WVLRP Wardrobe Sweater',pants:'WVLRP Wardrobe Pants'};
+ const garmentState={blouse:true,skirt:true,apron:false,boots:true,sweater:false,pants:false};
  let garmentMaterials={};
  const wardrobeStatus=document.querySelector('#wardrobeStatus');
  try {const saved=JSON.parse(localStorage.getItem('wvlrp-carolyn-wardrobe-v1')||'null');
@@ -82,11 +86,11 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    document.querySelectorAll('[data-garment]').forEach(b=>{
      const k=b.dataset.garment;b.disabled=!garmentMaterials[k];
      b.setAttribute('aria-pressed',String(Boolean(garmentMaterials[k]&&garmentState[k])));
-     b.textContent=(garmentMaterials[k]&&garmentState[k]?'✓ ':'')+({blouse:'Blouse',skirt:'Long skirt',apron:'Apron',boots:'Boots'}[k]);
+     b.textContent=(garmentMaterials[k]&&garmentState[k]?'✓ ':'')+({blouse:'Blouse',skirt:'Long skirt',apron:'Apron',boots:'Boots',sweater:'Sweater',pants:'Pants'}[k]);
    });
    document.querySelectorAll('[data-outfit]').forEach(b=>b.disabled!==undefined&&(b.disabled=available.length===0));
    wardrobeStatus.textContent=available.length
-      ?'Fitted clothing available: '+available.map(k=>({blouse:'blouse',skirt:'skirt',apron:'apron',boots:'boots'}[k])).join(', ')+
+      ?'Fitted clothing available: '+available.map(k=>({blouse:'blouse',skirt:'skirt',apron:'apron',boots:'boots',sweater:'sweater',pants:'pants'}[k])).join(', ')+
        (available.length<4?'. Missing items are disabled.':'.')
       :'No fitted garment meshes found in this model yet. Clothing buttons are disabled until the new build is published.';
  }
@@ -101,12 +105,18 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  document.querySelectorAll('[data-garment]').forEach(b=>b.onclick=()=>{
    const key=b.dataset.garment;if(!garmentMaterials[key])return;
    garmentState[key]=!garmentState[key];if(key==='skirt'&&!garmentState.skirt)garmentState.apron=false;
+   if(key==='pants'&&garmentState.pants){garmentState.skirt=false;garmentState.apron=false;}
+   if(key==='skirt'&&garmentState.skirt)garmentState.pants=false;
+   if(key==='sweater'&&garmentState.sweater)garmentState.blouse=false;
+   if(key==='blouse'&&garmentState.blouse)garmentState.sweater=false;
    saveGarments();showGarments();
  });
  document.querySelectorAll('[data-outfit]').forEach(b=>b.onclick=()=>{
    const kind=b.dataset.outfit;
    for(const key of Object.keys(garmentNames)){
-      if(garmentMaterials[key]) garmentState[key]=kind==='clear'?false:(key==='apron'?kind==='work':true);
+      if(garmentMaterials[key]) garmentState[key]=kind==='clear'?false:
+       kind==='casual'?(['sweater','pants','boots'].includes(key)):
+       (key==='apron'?kind==='work':!['sweater','pants'].includes(key));
    }
    saveGarments();showGarments();
  });
