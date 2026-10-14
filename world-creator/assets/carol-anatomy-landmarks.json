@@ -1,0 +1,67 @@
+{
+  "version": "c0-fit-v1",
+  "model_coordinates_m": {
+    "x": 0.0,
+    "y": 0.8257,
+    "z": 0.13307
+  },
+  "features": [
+    {
+      "id": "C0",
+      "name": "Central pelvic origin",
+      "x": 0.0,
+      "z": 0.0,
+      "relief": 0.0
+    },
+    {
+      "id": "P1",
+      "name": "Pubic mound",
+      "x": 0.0,
+      "z": 0.069,
+      "relief": 0.006
+    },
+    {
+      "id": "H1",
+      "name": "Upper central fold",
+      "x": 0.0,
+      "z": 0.053,
+      "relief": 0.008
+    },
+    {
+      "id": "L1",
+      "name": "Left inner fold",
+      "x": -0.01,
+      "z": 0.036,
+      "relief": 0.011
+    },
+    {
+      "id": "R1",
+      "name": "Right inner fold",
+      "x": 0.01,
+      "z": 0.036,
+      "relief": 0.011
+    },
+    {
+      "id": "L2",
+      "name": "Left outer fold",
+      "x": -0.022,
+      "z": 0.039,
+      "relief": 0.017
+    },
+    {
+      "id": "R2",
+      "name": "Right outer fold",
+      "x": 0.022,
+      "z": 0.039,
+      "relief": 0.017
+    },
+    {
+      "id": "B1",
+      "name": "Lower central blend",
+      "x": 0.0,
+      "z": 0.012,
+      "relief": 0.003
+    }
+  ],
+  "note": "Offsets are metres from C0; anatomy is still an inspection trial."
+}
