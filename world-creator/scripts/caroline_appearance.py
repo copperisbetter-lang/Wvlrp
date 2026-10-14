@@ -70,8 +70,12 @@ def add_caroline_adult_pelvic_morph(body):
     # First sculpt the actual base mesh, rather than relying on a GLB viewer
     # to honor nonzero default morph weights (the previous preview did not).
     original = [v.co.copy() for v in verts]
-    if body.data.shape_keys and len(body.data.shape_keys.key_blocks) > 1:
-        raise RuntimeError("Carol pelvic contour must be baked before other morphs")
+    # MPFB's source body can already contain MakeHuman shape keys. Apply the
+    # same additive displacement to Basis AND EVERY existing target so each
+    # expression keeps its original delta and no shape key cancels the sculpt.
+    existing_keys = list(body.data.shape_keys.key_blocks) if body.data.shape_keys else []
+    original_basis = ([kb.co.copy() for kb in existing_keys[0].data]
+                      if existing_keys else original)
 
     def gaussian(value, center, radius):
         return math.exp(-((value-center)/radius)**2)
@@ -103,7 +107,12 @@ def add_caroline_adult_pelvic_morph(body):
         shift = (new-p).length
         if shift > .030*h:
             raise RuntimeError("Carol anatomy contour exceeds safe shape range")
-        vertex.co = new
+        if existing_keys:
+            displacement = new - p
+            for key_block in existing_keys:
+                key_block.data[i].co += displacement
+        else:
+            vertex.co = new
         if shift > .00015*h:
             moved += 1
             max_shift = max(max_shift, shift)
@@ -113,7 +122,7 @@ def add_caroline_adult_pelvic_morph(body):
     if not body.data.shape_keys:
         body.shape_key_add(name="Basis", from_mix=False)
     key = body.shape_key_add(name="Carol pelvic contour OFF - inspection rollback", from_mix=False)
-    for i, old in enumerate(original):
+    for i, old in enumerate(original_basis):
         key.data[i].co = old
     key.value = 0.0  # Render the actual sculpted base by default.
     body["wvlrp_carol_pelvic_contour_baked"] = True
