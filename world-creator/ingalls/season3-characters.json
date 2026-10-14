@@ -1,0 +1,80 @@
+{
+  "project": "The Wild — Little House on the Prairie Season 3",
+  "status": "character definitions only; GLBs not yet built",
+  "characters": [
+    {
+      "id": "charles-ingalls-s3",
+      "name": "Charles Ingalls",
+      "actor": "Michael Landon",
+      "role": "adult",
+      "appearance": {
+        "hair": "dark wavy",
+        "face": "individual likeness reference required",
+        "build": "lean working adult"
+      },
+      "wardrobe": [
+        "earth-tone work shirt",
+        "suspenders",
+        "trousers",
+        "leather boots"
+      ],
+      "asset": "world-creator/assets/charles-ingalls-s3.glb",
+      "rig": "human-56-functional",
+      "qa": "pending"
+    },
+    {
+      "id": "caroline-ingalls-s3",
+      "name": "Caroline Ingalls",
+      "actor": "Karen Grassle",
+      "role": "adult",
+      "qa": "pending"
+    },
+    {
+      "id": "mary-ingalls-s3",
+      "name": "Mary Ingalls",
+      "actor": "Melissa Sue Anderson",
+      "role": "child",
+      "qa": "pending"
+    },
+    {
+      "id": "laura-ingalls-s3",
+      "name": "Laura Ingalls",
+      "actor": "Melissa Gilbert",
+      "role": "child",
+      "qa": "pending"
+    },
+    {
+      "id": "carrie-ingalls-s3",
+      "name": "Carrie Ingalls",
+      "actor": "Lindsay and Sidney Greenbush",
+      "role": "young child",
+      "qa": "pending"
+    },
+    {
+      "id": "isaiah-edwards-s3",
+      "name": "Isaiah Edwards",
+      "actor": "Victor French",
+      "role": "adult",
+      "qa": "pending"
+    },
+    {
+      "id": "jack-ingalls-dog-s3",
+      "name": "Jack",
+      "role": "dog",
+      "rig": "canine-quadruped",
+      "qa": "pending"
+    }
+  ],
+  "requiredHumanAnimations": [
+    "idle",
+    "walk",
+    "run",
+    "sit",
+    "wave",
+    "bend-pick-up",
+    "crouch",
+    "hands-and-knees",
+    "elbows-and-knees"
+  ],
+  "publishGate": "No live viewer until GLB exists and passes visual and animation QA"
+}
