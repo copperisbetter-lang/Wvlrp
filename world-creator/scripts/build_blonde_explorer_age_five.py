@@ -27,7 +27,7 @@ for old,new in changes.items():
 source=source.replace("(.205,.107,.065,1)","(.82,.64,.31,1)")
 if "(.82,.64,.31,1)" not in source and "(.68,.49,.20,1)" not in source:
     raise RuntimeError("Blonde hair shader patch missing: upstream hair material layout changed")
-skin_call="    olive_skin(body)\\n"
+skin_call="    olive_skin(body)\n"
 if source.count(skin_call)!=1:
     raise RuntimeError("Skin preservation patch did not find exactly one call")
 source=source.replace(skin_call,"    preserve_five_year_old_skin(body)\\n")
