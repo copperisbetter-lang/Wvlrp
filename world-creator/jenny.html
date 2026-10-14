@@ -43,7 +43,7 @@ if(!B||!canvas)return;
 const engine=new B.Engine(canvas,true,{adaptToDeviceRatio:true});
 const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.075,.14,.11,1);
 const camera=new B.ArcRotateCamera('Jenny orbit',-Math.PI/2,1.35,3.1,new B.Vector3(0,.72,0),scene);
-camera.attachControl(canvas,true);camera.lowerRadiusLimit=.72;camera.upperRadiusLimit=8;camera.minZ=.03;camera.wheelDeltaPercentage=.06;
+camera.attachControl(canvas,true);camera.setTarget(new B.Vector3(0,.88,0));camera.radius=2.7;camera.lowerRadiusLimit=.72;camera.upperRadiusLimit=8;camera.minZ=.03;camera.wheelDeltaPercentage=.06;
 new B.HemisphericLight('soft light',new B.Vector3(0,1,0),scene).intensity=.85;
 const sun=new B.DirectionalLight('sun',new B.Vector3(-1,-2,-1),scene);sun.intensity=.7;
 const mat=(n,c)=>{const m=new B.StandardMaterial(n,scene);m.diffuseColor=B.Color3.FromHexString(c);m.backFaceCulling=false;return m;};
@@ -78,7 +78,7 @@ ball('Jenny shin '+side,knee,skin,0,-.155,0,.085,.18,.083);
 ball('Jenny shoe '+side,knee,shoes,0,-.33,-.065,.102,.07,.18);
 legs.push({hip,knee,side});
 }
-const ground=part('floor','CreateDisc',{radius:2,tessellation:48},null,mat('forest','#304b36'),0,-.012,0);ground.rotation.x=Math.PI/2;
+
 let active='stand',t=0;
 function pose(name){active=name;t=0;root.rotation.set(0,0,0);root.position.set(0,0,0);
 for(const a of arms){a.shoulder.rotation.set(0,0,0);a.elbow.rotation.set(0,0,0);}
@@ -109,7 +109,7 @@ wire('full',()=>{camera.setTarget(new B.Vector3(0,.8,0));camera.radius=3.1;});
 wire('closer',()=>camera.radius=Math.max(camera.lowerRadiusLimit,camera.radius*.8));
 wire('farther',()=>camera.radius=Math.min(camera.upperRadiusLimit,camera.radius*1.2));
 const status=document.getElementById('status');if(status)status.textContent='Jenny independent closed-mesh preview loaded';
-engine.runRenderLoop(()=>{tick();scene.render();});window.addEventListener('resize',()=>engine.resize());
+engine.resize();engine.runRenderLoop(()=>{tick();scene.render();});window.addEventListener('resize',()=>engine.resize());
 })();
 </script>
 </body></html>
