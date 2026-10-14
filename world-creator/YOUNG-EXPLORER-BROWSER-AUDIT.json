@@ -5,17 +5,15 @@
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
-      "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
+      "status": "Realistic full body loaded · 20131 vertices · 52 rig bones · 5 animations",
       "canvasWidth": 390,
       "canvasHeight": 574,
-      "meshVertices": 173087,
+      "meshVertices": 170659,
       "skeletonBones": [
         52
       ],
       "materialNames": [
         "Young Explorer woven opaque plaid sundress",
-        "Young Explorer trail shoes muted green",
-        "Young Explorer flexible shoe soles",
         "Young Explorer realistic continuous child basemesh.eyebrow001",
         "Young Explorer realistic continuous child basemesh.eyelashes01",
         "Young Explorer realistic continuous child basemesh.high-poly",
@@ -97,21 +95,19 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791928280799",
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791950577530",
     "consoleErrors": [],
     "pageErrors": [],
     "scene": {
-      "status": "Realistic full body loaded · 22559 vertices · 52 rig bones · 3 animations",
+      "status": "Realistic full body loaded · 20131 vertices · 52 rig bones · 5 animations",
       "canvasWidth": 390,
       "canvasHeight": 574,
-      "meshVertices": 173087,
+      "meshVertices": 170659,
       "skeletonBones": [
         52
       ],
       "materialNames": [
         "Young Explorer woven opaque plaid sundress",
-        "Young Explorer trail shoes muted green",
-        "Young Explorer flexible shoe soles",
         "Young Explorer realistic continuous child basemesh.eyebrow001",
         "Young Explorer realistic continuous child basemesh.eyelashes01",
         "Young Explorer realistic continuous child basemesh.high-poly",
