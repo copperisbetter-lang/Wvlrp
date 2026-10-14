@@ -120,29 +120,9 @@ class YoungExplorerWardrobe {
   this.dress=ms.find(m=>/opaque plaid sundress/i.test(m.material?.name||'') ||
    (m.material?.subMaterials||[]).some(n=>/opaque plaid sundress/i.test(n?.name||'')));
   if(!this.dress)throw Error('Original fitted dress was not found');
-  // Correct misplaced exported clothing by aligning its world-space vertical center
-  // with the child's shoulder-to-thigh region. Keep original skeleton and scale.
+  // Preserve the imported skinned mesh transform and bind pose.
   this.dress.computeWorldMatrix(true);
   this.body.computeWorldMatrix(true);
-  const db=this.dress.getBoundingInfo().boundingBox;
-  const dressCenter=(db.minimumWorld.y+db.maximumWorld.y)/2;
-  const targetCenter=this.measure.minY+this.measure.H*.665;
-  const targetTop=this.measure.minY+this.measure.H*.805;
-  const delta=targetTop-db.maximumWorld.y;
-  if(Math.abs(delta)>this.measure.H*.08){
-    const parent=this.dress.parent;
-    if(parent){parent.computeWorldMatrix(true);const inv=parent.getWorldMatrix().clone().invert();
-      const localShift=B.Vector3.TransformNormal(new B.Vector3(0,delta,0),inv);
-      this.dress.position.addInPlace(localShift);
-    }else this.dress.position.y+=delta;
-    this.dress.computeWorldMatrix(true);
-  }
-  // Rebind the garment to the torso, not to the leg joints. The imported
-  // dress previously stretched into a long spike when hips/knees rotated.
-  // Keep the original plaid geometry/UVs and the character's 52-bone rig.
-  // Jenny garment retains the Blender-authored body-derived skin weights.
-  // Never replace them with the old three-bone browser hack.
-
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
   // The imported continuous skin must render from both sides, including at the neckline.
@@ -217,75 +197,10 @@ class YoungExplorerWardrobe {
    '<small>Widths are straight-line mesh measurements, not body circumferences. Clothing is fitted to this character\'s rigged mesh; figures are not physical measurements of a real child.</small>';
  }
  bindDressSizes(){
-  const size=$('dress-size-select'),vertical=$('dress-position'),width=$('dress-width'),depth=$('dress-depth'),reset=$('dress-reset');
-  if(!size||!vertical||!width||!depth)return;
-  const base=this.dress.scaling.clone(),origin=this.dress.position.clone();
-  // Upper bodice needs its own fit: whole-dress width/depth also changes the skirt.
-  this.dress.makeGeometryUnique();
-  const originalVertices=this.dress.getVerticesData(this.B.VertexBuffer.PositionKind)?.slice();
-  const bounds=this.dress.getBoundingInfo().boundingBox;
-  const low=bounds.minimum.y,high=bounds.maximum.y,span=Math.max(.001,high-low);
-  const topWidth=$('dress-top-width'),topDepth=$('dress-top-depth'),rim=$('dress-rim-diameter');
-  const saveKey='wvlrp-young-explorer-wardrobe-v1';
-  const controls={size,vertical,width,depth,topWidth,topDepth,rim};
-  try{
-    const saved=JSON.parse(localStorage.getItem(saveKey)||'{}');
-    for(const [key,el] of Object.entries(controls))if(el&&saved[key]!=null)el.value=String(saved[key]);
-  }catch(_){}
-  const save=()=>{try{localStorage.setItem(saveKey,JSON.stringify(Object.fromEntries(Object.entries(controls).filter(([,el])=>el).map(([key,el])=>[key,el.value]))));}catch(_){}};
-  const adjustBodice=()=>{
-    if(!originalVertices)return;
-    const updated=originalVertices.slice();
-    const wx=Number(topWidth?.value||75)/100,dz=Number(topDepth?.value||75)/100, rimRatio=Number(rim?.value||100)/100;
-    for(let i=0;i<updated.length;i+=3){
-      const t=(originalVertices[i+1]-low)/span;
-      const blend=Math.max(0,Math.min(1,(t-.48)/.32));
-      const rimBlend=Math.max(0,Math.min(1,(t-.67)/.27));
-      updated[i]=originalVertices[i]*(1-blend*(1-wx))*(1-rimBlend*(1-rimRatio));
-      // Side-view correction: the imported skirt balloons in depth around the
-      // waist/seat even when the front silhouette is already right. Reduce only
-      // front-to-back skirt volume; leave X (front-view width) untouched.
-      // Smooth falloff avoids a sharp crease at the bodice and hem.
-      const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
-      const skirtWeight=(1-smooth((t-.49)/.16))*smooth((t-.04)/.19);
-      const profileFactor=1-.23*skirtWeight;
-      updated[i+2]=originalVertices[i+2]*profileFactor*(1-blend*(1-dz))*(1-rimBlend*(1-rimRatio));
-    }
-    this.dress.updateVerticesData(this.B.VertexBuffer.PositionKind,updated,true);
-    this.dress.refreshBoundingInfo();
-  };
-  const factors={2:.88,3:.91,4:.94,5:.97,6:1,7:1.03,8:1.06,10:1.10};
-  const update=()=>{
-   const ratio=factors[size.value]||1;
-   adjustBodice();
-   this.dress.scaling.set(base.x*ratio*(Number(width.value)/100),base.y,base.z*ratio*(Number(depth.value)/100));
-   this.dress.position.copyFrom(origin);
-   const parent=this.dress.parent;
-   const shift=new this.B.Vector3(0,Number(vertical.value)/100,0);
-   if(parent){parent.computeWorldMatrix(true);const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(shift,inverse));}
-   else this.dress.position.addInPlace(shift);
-   // Re-anchor the garment AFTER resizing: scaling around the imported origin
-   // otherwise raises it over the child's head on some GLB exports.
-   this.dress.computeWorldMatrix(true);
-   const top=this.dress.getBoundingInfo().boundingBox.maximumWorld.y;
-   const shoulderY=this.measure.minY+this.measure.H*.805+Number(vertical.value)/100;
-   const correction=shoulderY-top;
-   if(Math.abs(correction)>0.001){
-     if(parent){const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(new this.B.Vector3(0,correction,0),inverse));}
-     else this.dress.position.y+=correction;
-     this.dress.computeWorldMatrix(true);
-   }
-   if($('dress-position-value'))$('dress-position-value').textContent=vertical.value+' cm';
-   if($('dress-width-value'))$('dress-width-value').textContent=width.value+'%';
-   if($('dress-depth-value'))$('dress-depth-value').textContent=depth.value+'%';
-   if($('dress-top-width-value'))$('dress-top-width-value').textContent=(topWidth?.value||75)+'%';
-   if($('dress-top-depth-value'))$('dress-top-depth-value').textContent=(topDepth?.value||75)+'%';
-   if($('dress-rim-diameter-value'))$('dress-rim-diameter-value').textContent=(rim?.value||100)+'%';
-   save();
-  };
-  for(const el of [size,vertical,width,depth,topWidth,topDepth,rim].filter(Boolean))el.addEventListener('input',update);
-  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='75';if(topDepth)topDepth.value='75';if(rim)rim.value='100';update();};
-  update();
+  // Imported clothing is rigged at authoring time; runtime resizing invalidates its bind pose.
+  for(const id of ['dress-size-select','dress-position','dress-width','dress-depth','dress-top-width','dress-top-depth','dress-rim-diameter','dress-reset']){
+   const el=$(id);if(el){el.disabled=true;el.title='Fit is controlled by the imported rigged garment';}
+  }
  }
 
  bindSelector(){
