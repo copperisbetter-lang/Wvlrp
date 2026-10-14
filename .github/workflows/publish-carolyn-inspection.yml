@@ -4,6 +4,9 @@ on:
     workflows: ["Build Caroline adult foundation"]
     types: [completed]
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/publish-carolyn-inspection.yml'
 permissions:
   actions: read
   contents: write
@@ -12,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +37,7 @@ jobs:
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-artifact
           model="$(find /tmp/carolyn-artifact -name caroline-inspection.glb -type f -print -quit)"
           test -n "$model" && test -s "$model"
-          mkdir -p world-creator/assets
-          cp "$model" world-creator/assets/caroline-inspection.glb
-          test -s world-creator/assets/caroline-inspection.glb
+          echo "Selected completed Carol GLB artifact: $model"
       - name: Publish current model to website repository
         env:
           BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -48,6 +49,11 @@ jobs:
           # character edit can land between that checkout and the final push.
           # Never overwrite it with an older exported avatar.
           git fetch origin main
+          # Checkout is shallow. Without fetching the build commit, diff
+          # fails and incorrectly classifies a current model as stale.
+          if [ -n "${BUILD_SHA:-}" ]; then
+            git fetch --no-tags origin "$BUILD_SHA"
+          fi
           source_paths=(
             world-creator/scripts/build_caroline_mpfb.py
             world-creator/scripts/export_caroline_glb.py
@@ -62,6 +68,11 @@ jobs:
             exit 0
           fi
           git rebase origin/main
+          model="$(find /tmp/carolyn-artifact -name caroline-inspection.glb -type f -print -quit)"
+          test -n "$model" && test -s "$model"
+          mkdir -p world-creator/assets
+          cp "$model" world-creator/assets/caroline-inspection.glb
+          test -s world-creator/assets/caroline-inspection.glb
           git add -f world-creator/assets/caroline-inspection.glb
           if git diff --cached --quiet; then
             echo "Carol model already current"
