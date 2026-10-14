@@ -91,7 +91,7 @@ jobs:
           assert len(doc.get('animations',[]))>=3, 'stand, wave, walk missing'
           assert doc.get('textures') and doc.get('images'), 'real skin and plaid required'
           mats=doc.get('materials',[])
-          assert any('Blonde Explorer Age Five real CC0 face and body skin UV' in m.get('name','') and m.get('pbrMetallicRoughness',{}).get('baseColorTexture') for m in mats), 'real photographic UV skin lost'
+          assert any('Young Explorer real CC0 face and body skin UV' in m.get('name','') and m.get('pbrMetallicRoughness',{}).get('baseColorTexture') for m in mats), 'real photographic UV skin lost'
           assert any('opaque plaid sundress' in m.get('name','') for m in mats), 'dress lost'
           assert f.stat().st_size>200000, 'real human body not exported'
           print('WVLRP_REAL_CHILD_GLB_VERIFIED',f.stat().st_size,'joints',len(doc['skins'][0]['joints']))
