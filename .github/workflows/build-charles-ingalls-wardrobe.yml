@@ -1,0 +1,44 @@
+name: Build Charles Ingalls Season 3 wardrobe staging
+on:
+  push:
+    paths:
+      - 'world-creator/ingalls/build_charles_wardrobe.py'
+      - '.github/workflows/build-charles-ingalls-wardrobe.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender
+      - name: Generate Charles wardrobe meshes
+        run: |
+          blender --background --python world-creator/ingalls/build_charles_wardrobe.py 2>&1 | tee /tmp/charles-wardrobe.log
+          grep -F 'WVLRP_CHARLES_WARDROBE_STAGING_SAVED' /tmp/charles-wardrobe.log
+          test -s world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+      - name: Commit generated staging file
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate Charles Ingalls Season 3 wardrobe staging blend"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Preserve build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: charles-ingalls-wardrobe-staging
+          path: |
+            world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+            /tmp/charles-wardrobe.log
+          retention-days: 7
