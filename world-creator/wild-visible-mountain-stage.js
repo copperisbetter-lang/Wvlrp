@@ -46,7 +46,7 @@ export function installVisibleVillageMountains(B,scene,camera,{
       const p=palette[Math.floor(random(i,4)*palette.length)];
       c.globalAlpha=(lighten?.28:.46)+random(i,5)*.30;
       c.fillStyle=p;c.beginPath();
-      c.ellipse(x,y,r*(1.5+random(i,6)),r*(.50+random(i,7)*.5),
+      c.ellipse(x,y,r*(.76+random(i,6)*.66),r*(.74+random(i,7)*.68),
         (random(i,8)-.5)*.9,0,Math.PI*2);
       c.fill();
     }
@@ -63,46 +63,48 @@ export function installVisibleVillageMountains(B,scene,camera,{
   }
   function paintedStone(){
     const w=1024,h=512;
-    const t=new B.DynamicTexture("village visible sandstone cliff strata",
+    const t=new B.DynamicTexture("weathered WV layered sandstone face",
       {width:w,height:h},scene,false,B.Texture.BILINEAR_SAMPLINGMODE);
-    textures.push(t);const c=t.getContext();
-    const g=c.createLinearGradient(0,0,w,h);
-    g.addColorStop(0,"#d0cab5");
-    g.addColorStop(.43,"#a8aea0");
-    g.addColorStop(.8,"#8b9889");
-    g.addColorStop(1,"#6c8172");
-    c.fillStyle=g;c.fillRect(0,0,w,h);
-    for(let i=0;i<30;i++){
-      const y=i*19-6+random(i,31)*6;
-      c.fillStyle=["#d7cfb9","#b6b2a1","#8b9386","#6d8172"][i%4];
-      c.globalAlpha=.32+random(i,32)*.40;
-      c.fillRect(0,y,w,7+random(i,33)*12);
-      c.fillStyle="#4f6358";c.fillRect(0,y+13,w,1.3);
+    textures.push(t);const c=t.getContext(),pixels=c.createImageData(w,h);
+    // A gently stratified *rock* field, not the repeated high-contrast
+    // horizontal bars which made the village mountain appear striped.
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const k=(y*w+x)*4;
+      const warp=18*Math.sin(x*.010)+7*Math.sin(x*.034+y*.008);
+      const fine=Math.sin(x*.14+y*.11)*6+Math.cos(x*.052-y*.087)*7;
+      const coarse=Math.sin(x*.017+y*.028)*13+
+        Math.cos(x*.025-y*.018)*12;
+      const strata=Math.sin((y+warp)*.069)*7;
+      const grit=(((x*73856093)^(y*19349663))&255)/255*15-7.5;
+      const fault=Math.abs(Math.sin(x*.031+y*.014+Math.sin(y*.016)*1.4));
+      const fissure=fault<.028?-30:0;
+      const moss=Math.max(0,Math.sin(x*.018+y*.035)*
+        Math.cos(y*.022-x*.014)-.44)*29;
+      const v=fine+coarse+strata+grit+fissure;
+      pixels.data[k]=Math.max(0,Math.min(255,144+v-moss*.58));
+      pixels.data[k+1]=Math.max(0,Math.min(255,145+v-moss*.08));
+      pixels.data[k+2]=Math.max(0,Math.min(255,132+v-moss*.67));
+      pixels.data[k+3]=255;
     }
-    for(let i=0;i<2600;i++){
+    c.putImageData(pixels,0,0);
+    // Discontinuous natural ledges and shadow cracks, not parallel bands.
+    for(let i=0;i<125;i++){
       const x=random(i,40)*w,y=random(i,41)*h;
-      c.strokeStyle=i%5===0?"#e7ddc7":"#52675b";
-      c.globalAlpha=.22+random(i,42)*.46;
-      c.lineWidth=.7+random(i,43)*2;
+      const length=8+random(i,42)*66,drop=(random(i,43)-.5)*16;
+      c.globalAlpha=.12+random(i,44)*.28;
+      c.strokeStyle=i%4?"#24352e":"#e3dac3";
+      c.lineWidth=.7+random(i,45)*3;
       c.beginPath();c.moveTo(x,y);
-      const run=(random(i,44)-.27)*35;
-      c.lineTo(x+run,y+random(i,45)*8-4);c.stroke();
-    }
-    // Pale exposed ledges, broken horizontal beds and shadowed cracks.
-    for(let i=0;i<70;i++){
-      const x=random(i,50)*w,y=random(i,51)*h;
-      c.globalAlpha=.3+random(i,52)*.35;
-      c.strokeStyle=i%3?"#435b50":"#e7dcc7";
-      c.lineWidth=1.1+random(i,53)*4;c.beginPath();c.moveTo(x,y);
-      c.lineTo(x+random(i,54)*15-7,y+13+random(i,55)*36);
-      c.stroke();
+      c.lineTo(x+length*.33,y-3+drop*.45);
+      c.lineTo(x+length*.70,y+2+drop*.8);
+      c.lineTo(x+length,y+drop);c.stroke();
     }
     c.globalAlpha=1;t.update(false);return t;
   }
   function material(name,texture){
     const m=new B.StandardMaterial(name,scene);materials.push(m);
     m.diffuseTexture=texture;m.diffuseColor=new B.Color3(1,1,1);
-    m.emissiveColor=new B.Color3(.22,.23,.17);
+    m.emissiveColor=name.includes("stone")?new B.Color3(.055,.058,.049):new B.Color3(.13,.16,.12);
     m.specularColor=new B.Color3(.025,.029,.020);
     m.backFaceCulling=false;
     return m;
@@ -121,7 +123,7 @@ export function installVisibleVillageMountains(B,scene,camera,{
         // These are actual vertices at varying depths, not a billboard.
         verts.push(villageX+x,villageY+base+(top-base)*f,
           z+.8*Math.sin(x*.028+seedOffset)+.27*Math.sin(x*.15+j));
-        uvs.push(i/steps*3.5,f);
+        uvs.push(i/steps*(mat===rockMat?1.4:3.1),f);
         if(i>0&&j>0){
           const a=(i-1)*rows+j-1,b=i*rows+j-1;
           ids.push(a,b,a+1,b,b+1,a+1);
