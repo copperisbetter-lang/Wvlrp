@@ -90,5 +90,13 @@ for i in range(5):
     bpy.context.object.data.materials.append(buttons)
 
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT))
+GLB = OUT.with_suffix(".glb")
+bpy.ops.object.select_all(action="DESELECT")
+for obj in bpy.context.scene.objects:
+    if obj.type == "MESH":
+        obj.select_set(True)
+bpy.ops.export_scene.gltf(filepath=str(GLB), export_format="GLB", use_selection=True,
+                          export_animations=False, export_materials="EXPORT")
+print("WVLRP_CHARLES_WARDROBE_GLB_STAGING_SAVED", GLB)
 print("WVLRP_CHARLES_WARDROBE_STAGING_SAVED", OUT)
 print("NOT A RIGGED CHARACTER; must be fitted to real Charles body and inspected")
