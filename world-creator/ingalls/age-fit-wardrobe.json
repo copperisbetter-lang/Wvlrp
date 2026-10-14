@@ -1,0 +1,78 @@
+{
+  "schema": "wvlrp-wardrobe-candidates-v1",
+  "note": "Age ranges are in-game FIT TARGETS, not seller-supplied sizes or proof of fit; each GLB must pass mesh and motion QA before use.",
+  "source": "https://static.makehumancommunity.org/assets/assetpacks/index.html",
+  "packs": [
+    {
+      "id": "dress01",
+      "license": "CC0",
+      "site": "https://static.makehumancommunity.org/assets/assetpacks/dress01.html"
+    },
+    {
+      "id": "dress02",
+      "license": "CC-BY",
+      "site": "https://static.makehumancommunity.org/assets/assetpacks/dress02.html",
+      "credit": "Elvaerwyn"
+    },
+    {
+      "id": "shoes03",
+      "license": "CC-BY",
+      "site": "https://static.makehumancommunity.org/assets/assetpacks/shoes03.html"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "carrie-sunday",
+      "avatar": "carrie-ingalls-s3",
+      "ageTargetYears": [
+        3,
+        6
+      ],
+      "pieces": [
+        "elvs_frilled_party_dress",
+        "elvs_ladies_apron",
+        "scailman_low-heeled_boots"
+      ],
+      "eraFit": "requires period tailoring, modest collar/sleeves, resizing",
+      "fitStatus": "NOT TESTED"
+    },
+    {
+      "id": "laura-day",
+      "avatar": "laura-ingalls-s3",
+      "ageTargetYears": [
+        7,
+        12
+      ],
+      "pieces": [
+        "toigo_camisole_dress_with_full_skirt",
+        "elvs_ladies_apron",
+        "scailman_low-heeled_boots"
+      ],
+      "eraFit": "requires sleeves and prairie fabric",
+      "fitStatus": "NOT TESTED"
+    },
+    {
+      "id": "mary-day",
+      "avatar": "mary-ingalls-s3",
+      "ageTargetYears": [
+        11,
+        16
+      ],
+      "pieces": [
+        "toigo_bodice_dress_with_lace_ruffle_skirt",
+        "elvs_ladies_apron",
+        "scailman_low-heeled_boots"
+      ],
+      "eraFit": "requires neckline and period customization",
+      "fitStatus": "NOT TESTED"
+    }
+  ],
+  "releaseChecks": [
+    "measure wearer height shoulder chest waist hip and sleeves",
+    "refit selected garment to this wearer's basemesh before skin transfer",
+    "verify garment has material and compatible deform bone weights",
+    "render front side back and bend walk crouch before publishing",
+    "record CC-BY credits for any used item",
+    "no adult garment merely uniformly scaled onto a young child"
+  ]
+}
