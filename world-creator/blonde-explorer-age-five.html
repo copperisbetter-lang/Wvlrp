@@ -102,6 +102,18 @@ let bounds=null, center=null, model=null;
       if('emissiveColor' in mat)mat.emissiveColor=new B.Color3(.10,.075,.025);
       if('baseColor' in mat)mat.baseColor=new B.Color3(.87,.69,.35);
     }
+   // Material names can be generic even when the mesh is clearly hair.
+   for(const mesh of model.meshes||[]){
+     if(!/hair|scalp|strand/i.test(mesh.name||''))continue;
+     const mats=mesh.material?.subMaterials?.length?mesh.material.subMaterials:[mesh.material];
+     for(const mat of mats){
+       if(!mat)continue;
+       if('albedoTexture' in mat)mat.albedoTexture=null;
+       if('diffuseTexture' in mat)mat.diffuseTexture=null;
+       if('albedoColor' in mat)mat.albedoColor=new B.Color3(.88,.71,.37);
+       if('diffuseColor' in mat)mat.diffuseColor=new B.Color3(.88,.71,.37);
+     }
+   }
    const realSkin=allMaterials.some(m=>m?.name?.includes('Young Explorer real CC0 face and body skin UV'));
    const hasDress=allMaterials.some(m=>m?.name?.toLowerCase().includes('plaid'));
    const fittedDress=pieceSizes.some(m=>/body.fitted opaque plaid sundress|measured, fitted child sundress/i.test(m.name||''));
@@ -163,7 +175,7 @@ let bounds=null, center=null, model=null;
  };
  const measured=vertexHeight();
  if(!(measured>.4&&measured<2.2))throw Error('Invalid imported child body height '+measured);
- if(Math.abs(measured-1.22)>.012){
+ if(Math.abs(measured-1.08)>.012){
    const scaleNode=new B.TransformNode('Young Explorer full-rig height calibration',scene);
    const imported=[...(result.meshes||[]),...(result.transformNodes||[])];
    const roots=imported.filter(n=>n!==scaleNode&&!n.parent);
@@ -174,7 +186,7 @@ let bounds=null, center=null, model=null;
    for(const m of meshes)m.computeWorldMatrix(true);
  }
  const verifiedHeight=vertexHeight();
- if(Math.abs(verifiedHeight-1.22)>.025)
+ if(Math.abs(verifiedHeight-1.08)>.025)
    throw Error('Child clothing and rig failed unified height check: '+verifiedHeight.toFixed(3)+'m');
  console.info('Young Explorer precise clothed child display height',verifiedHeight);
  let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
@@ -199,7 +211,7 @@ let bounds=null, center=null, model=null;
       const bh=Math.max(.01,bb.maximumWorld.y-bb.minimumWorld.y);
       const dh=Math.max(.01,db.maximumWorld.y-db.minimumWorld.y);
       // Dress should span shoulders to just above the knee, not neck to ankles.
-      const targetHeight=bh*.49;
+      const targetHeight=bh*.43;
       const yFactor=Math.min(1,targetHeight/dh);
       dressMesh.scaling.y*=yFactor;
       dressMesh.computeWorldMatrix(true);
