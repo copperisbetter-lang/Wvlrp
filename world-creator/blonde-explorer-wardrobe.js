@@ -374,7 +374,9 @@ class YoungExplorerWardrobe {
  pose(kind) {
   this.model.animationGroups?.forEach(x=>x.stop());
   this.resetPose();
-  const angles=kind==='wave' ?
+  const angles=kind==='crawl' ?
+   {hips:[.10,0,0],spine:[.75,0,0],leftupleg:[1.1,0,0],rightupleg:[1.1,0,0],leftleg:[-1.4,0,0],rightleg:[-1.4,0,0],leftarm:[.9,0,0],rightarm:[.9,0,0],leftforearm:[.8,0,0],rightforearm:[.8,0,0]} : kind==='lie-down' ?
+   {hips:[.15,0,0],spine:[1.25,0,0],spine1:[.35,0,0],leftupleg:[.25,0,0],rightupleg:[.25,0,0],leftarm:[1.0,0,0],rightarm:[1.0,0,0]} : kind==='wave' ?
    {rightarm:[0,0,-1.55],rightforearm:[0,0,-.45],rightshoulder:[0,0,-.18]} : kind==='pickup' ?
    {hips:[.10,0,0],spine:[1.0,0,0],spine1:[.42,0,0],leftarm:[.55,0,0],rightarm:[.55,0,0],leftupleg:[0,0,0],rightupleg:[0,0,0]} : kind==='hands-knees' ?
    {hips:[.15,0,0],spine:[.75,0,0],leftupleg:[1.15,0,0],rightupleg:[1.15,0,0],leftleg:[-1.35,0,0],rightleg:[-1.35,0,0],leftarm:[.85,0,0],rightarm:[.85,0,0]} : kind==='elbows-knees' ?
@@ -390,11 +392,11 @@ class YoungExplorerWardrobe {
    const delta=this.B.Quaternion.RotationYawPitchRoll(euler[1],euler[0],euler[2]);
    this.poseTokens.push({joint,from,to:from.multiply(delta)});
   }
-  if(kind==='sit'){
+  if(kind==='sit'||kind==='lie-down'||kind==='crawl'){
     const hips=this.boneTarget('hips');
     if(hips){
       const from=hips.position.clone();
-      const to=from.clone();to.y-=this.measure.H*.23;
+      const to=from.clone();to.y-=this.measure.H*(kind==='sit'?.23:kind==='crawl'?.32:.48);
       this.poseTokens.push({joint:hips,fromPosition:from,toPosition:to});
     }
   }
@@ -410,7 +412,7 @@ class YoungExplorerWardrobe {
      if(base)forearm.rotationQuaternion=base.multiply(this.B.Quaternion.RotationAxis(this.B.Axis.Z,-.45+.22*Math.sin(this.waveElapsed*7)));}
    });
   }
-  if($('pose-feedback'))$('pose-feedback').textContent=({bend:'Bend Over pose selected',pickup:'Straight-legged reach to ground selected','hands-knees':'Hands and knees selected','elbows-knees':'Elbows and knees selected',sit:'Sit Down pose selected',wave:'Wave selected'})[kind]||'Pose selected';
+  if($('pose-feedback'))$('pose-feedback').textContent=({bend:'Bend Over pose selected',pickup:'Straight-legged reach to ground selected','hands-knees':'Hands and knees selected','elbows-knees':'Elbows and knees selected',sit:'Sit Down pose selected',crawl:'Crawl pose selected','lie-down':'Lay Down pose selected',wave:'Wave selected'})[kind]||'Pose selected';
  }
  stepPose(){
   if(!this.poseTokens.length||!this.poseTime)return;
