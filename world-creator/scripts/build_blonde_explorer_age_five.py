@@ -23,7 +23,15 @@ for old,new in changes.items():
         raise RuntimeError('Upstream character generator changed: '+old)
     source=source.replace(old,new)
 # Avoid replacing the olive_skin function declaration: change only its call.
-source=source.replace("    olive_skin(body)\n","    preserve_five_year_old_skin(body)\n")
+# Explicitly recolor the actual hair shader, rather than relying on a name change.
+source=source.replace("(.205,.107,.065,1)","(.82,.64,.31,1)")
+source=source.replace("    olive_skin(body)\\n","    preserve_five_year_old_skin(body)\n")
+# Set East Asian face macro before MakeHuman recalculates the child mesh.
+source=source.replace("    TargetService.reapply_macro_details(h)", """    # MakeHuman ethnicity blend: East Asian 1, other ancestry components 0.
+    HumanObjectProperties.set_value('asian',1.0,entity_reference=h)
+    HumanObjectProperties.set_value('african',0.0,entity_reference=h)
+    HumanObjectProperties.set_value('caucasian',0.0,entity_reference=h)
+    TargetService.reapply_macro_details(h)""")
 source=source.replace("young-explorer-real-full-body-preview.png","blonde-explorer-age-five-preview.png")
 source=source.replace("def olive_skin(body):","def preserve_five_year_old_skin(body):")
 # Preserve source UV photographic skin instead of applying the original olive tint.
