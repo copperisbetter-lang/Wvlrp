@@ -64,7 +64,16 @@ def add_light_blue_eyes(export_root, body, rig):
             tex.interpolation = "Linear"
             for l in list(shader.inputs["Base Color"].links):
                 links.remove(l)
-            links.new(tex.outputs["Color"], shader.inputs["Base Color"])
+            # Make the original high-resolution blue iris natural rather
+            # than the neon cyan seen in close-up. Use no extra eye geometry.
+            # Hue/saturation affects the stock UV texture, not the sclera mesh.
+            iris_color = nodes.new("ShaderNodeHueSaturation")
+            iris_color.label = "Carol muted natural blue irises"
+            iris_color.inputs["Hue"].default_value = .5
+            iris_color.inputs["Saturation"].default_value = .56
+            iris_color.inputs["Value"].default_value = .91
+            links.new(tex.outputs["Color"], iris_color.inputs["Color"])
+            links.new(iris_color.outputs["Color"], shader.inputs["Base Color"])
             shader.inputs["Base Color"].default_value = (1., 1., 1., 1.)
             mat.diffuse_color = (1., 1., 1., 1.)
             obj.data.materials[idx] = mat
