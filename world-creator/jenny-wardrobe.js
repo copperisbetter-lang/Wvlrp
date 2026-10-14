@@ -95,14 +95,14 @@ function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
   const rings=13,segments=28;
   for(let j=0;j<rings;j++){
    const t=j/(rings-1),y=y0+(y1-y0)*t;
-   const band=worldPts.filter(p=>Math.abs(p[1]-y)<H*.028 && (side===0?Math.abs(p[0]-measure.cx)<H*.21:(p[0]-measure.cx)*side>H*.014 && Math.abs(p[0]-measure.cx)<H*.18));
+   const band=worldPts.filter(p=>Math.abs(p[1]-y)<H*.018 && (side===0?Math.abs(p[0]-measure.cx)<H*.115:(p[0]-measure.cx)*side>H*.018 && Math.abs(p[0]-measure.cx)<H*.135));
    const xcenter=side===0?measure.cx:measure.cx+side*H*.077;
    const zcenter=band.length?band.reduce((a,p)=>a+p[2],0)/band.length:0;
    const radiusX=band.length?Math.max(...band.map(p=>Math.abs(p[0]-xcenter))):H*(side===0?.105:.060);
    const radiusZ=band.length?Math.max(...band.map(p=>Math.abs(p[2]-zcenter))):H*(side===0?.085:.060);
-   const ease=isShorts?1-.15*t:1-.10*t;
-   const rx=Math.max(radiusX,H*(side===0?.105:.060))*1.035*ease+H*.008;
-   const rz=Math.max(radiusZ,H*(side===0?.085:.060))*1.035*ease+H*.008;
+   const ease=isShorts?1-.08*t:1-.06*t;
+   const rx=Math.max(radiusX,H*(side===0?.080:.042))*1.015*ease+H*.004;
+   const rz=Math.max(radiusZ,H*(side===0?.070:.042))*1.015*ease+H*.004;
    for(let k=0;k<segments;k++){
     const theta=2*Math.PI*k/segments;
     const x=xcenter+rx*Math.cos(theta),z=zcenter+rz*Math.sin(theta);
@@ -384,9 +384,20 @@ class YoungExplorerWardrobe {
   if(!clip){if($('pose-feedback'))$('pose-feedback').textContent='Missing saved skeleton movement: '+kind;return;}
   clip.start(false,1,clip.from,clip.to,false);
   // Bend and floor movements must reach their maximum authored articulation.
-  const holdFraction=kind==='bend'||kind==='pickup'?.88:.78;
+  const holdFraction=(kind==='bend'||kind==='pickup')?.92:.82;
   const frame=clip.from+(clip.to-clip.from)*holdFraction;
   clip.goToFrame(frame);clip.pause();
+  // Imported clips may contain reversed knee flexion. Keep both knees in the
+  // anatomically correct local flexion direction after sampling the pose.
+  if(['bend','pickup','sit','hands-knees','elbows-knees'].includes(kind)){
+    const B=this.B;
+    for(const side of ['left','right']){
+      const knee=this.boneTarget(side+'leg');
+      if(!knee)continue;
+      const base=knee.metadata?._wvlrpBaseRotation;
+      if(base)knee.rotationQuaternion=base.multiply(B.Quaternion.RotationAxis(B.Axis.X,-(kind==='bend'?.18:kind==='pickup'?.45:kind==='sit'?1.25:1.45)));
+    }
+  }
   this.activePose=kind;
   this.savePoseSnapshot(kind,frame);
   if($('pose-feedback'))$('pose-feedback').textContent=kind+' · saved skeletal pose';
@@ -448,7 +459,7 @@ class YoungExplorerWardrobe {
     const hip=joints[side],knee=joints[side+2],arm=joints[side+4];
     if(hip&&bases[side])hip.rotationQuaternion=bases[side].multiply(B.Quaternion.RotationAxis(B.Axis.X,step*stride));
     // Knee flexion is one-directional; never hyperextend backward during stride.
-    if(knee&&bases[side+2])knee.rotationQuaternion=bases[side+2].multiply(B.Quaternion.RotationAxis(B.Axis.X,Math.max(0,-Math.sin(phase))*(run?.95:.65)));
+    if(knee&&bases[side+2])knee.rotationQuaternion=bases[side+2].multiply(B.Quaternion.RotationAxis(B.Axis.X,-Math.max(0,-Math.sin(phase))*(run?.95:.65)));
     if(arm&&bases[side+4])arm.rotationQuaternion=bases[side+4].multiply(B.Quaternion.RotationAxis(B.Axis.X,-step*(run?.38:.22)));
    }
   });
