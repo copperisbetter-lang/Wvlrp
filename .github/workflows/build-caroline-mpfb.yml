@@ -31,6 +31,11 @@ jobs:
           set -euo pipefail
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_caroline_mpfb.py 2>&1 | tee /tmp/caroline.log
           grep WVLRP_CAROLINE_SOURCE_SUCCESS /tmp/caroline.log
+      - name: Verify Caroline source for finish pass
+        run: |
+          set -euo pipefail
+          test -s world-creator/assets/caroline-source-validation.blend
+          echo "Caroline finished model pass is unblocked; source foundation verified."
       - name: Save private build artifact
         uses: actions/upload-artifact@v4
         with:
