@@ -8,6 +8,9 @@ on:
       - '.github/workflows/build-caroline-mpfb.yml'
 permissions:
   contents: read
+concurrency:
+  group: caroline-adult-foundation
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
