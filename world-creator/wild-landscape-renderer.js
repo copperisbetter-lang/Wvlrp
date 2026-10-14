@@ -489,6 +489,13 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   soil.diffuseTexture=textures.duff;
   soil.diffuseColor=new B.Color3(1,1,1);
   soil.specularColor=new B.Color3(.015,.017,.012);
+  // Far hills must NOT repeat an 8-metre leaf texture hundreds of times.
+  // On a distant sloping mesh those repeating texels became the broad
+  // striped/zebra bands visible behind the Ranger Station on Android.
+  const farSoil=track(new B.StandardMaterial("smooth native far hills",scene));
+  farSoil.diffuseColor=new B.Color3(.57,.72,.49);
+  farSoil.specularColor=new B.Color3(.012,.018,.011);
+  farSoil.useVertexColors=true;
   function terrain(size,subdivisions,offset){
     const mesh=track(B.MeshBuilder.CreateGround("Appalachian terrain "+size,
       {width:size,height:size,subdivisions,updatable:true},scene));
@@ -519,7 +526,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     mesh.updateVerticesData(B.VertexBuffer.PositionKind,positions,true);
     mesh.updateVerticesData(B.VertexBuffer.NormalKind,normals);
     mesh.setVerticesData(B.VertexBuffer.ColorKind,new Float32Array(tints));
-    mesh.useVertexColors=true;mesh.material=soil;
+    mesh.useVertexColors=true;mesh.material=offset>0?farSoil:soil;
     // GroundMesh altitude lookup must use the UPDATED geometry, not its old
     // flat construction heights. Rebuild its per-cell collision surface once.
     if(typeof mesh.updateCoordinateHeights==="function")mesh.updateCoordinateHeights();
@@ -527,7 +534,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   }
   // High-resolution local terrain plus distant ridge panoramas. Far land is
   // offset very slightly beneath the local ground to avoid z-fighting.
-  terrain(1100,96,.40);
+  terrain(1100,mobile?104:128,.40);
   const localWalkingGround=terrain(196,mobile?86:120,0);
   // The previous GroundMesh height cache was not guaranteed to match the
   // reshaped mountain mesh. Read its finished triangles directly instead.
