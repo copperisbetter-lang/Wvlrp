@@ -523,15 +523,20 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // curved trunks, irregular limb forks and diffuse-shaded native crowns.
   // Distant groves retain inexpensive LOD prototypes for phone performance.
   const groups=new Map();
-  const heroZone=Math.hypot(cx,cy)<255;
+  // Approved village pilot: higher-detail existing tree meshes only within
+  // 50 world metres of the Ranger Station village centre (93,85).
+  // Keep the rest of the streamed world on the existing inexpensive LOD.
+  const pilotX=93,pilotZ=85,pilotRadius=50;
+  const insidePilot=t=>Math.hypot(t.x-pilotX,t.y-pilotZ)<=pilotRadius;
+  const heroZone=Math.hypot(cx-pilotX,cy-pilotZ)<255;
   const addGroup=(t,lod)=>{
     const variant=lod==="near"?(t.variation>.51?1:0):0;
     const key=t.species+"/"+lod+"/"+variant;
     if(!groups.has(key))groups.set(key,{species:t.species,lod,variant,trees:[]});
     groups.get(key).trees.push(t);
   };
-  for(const t of near.concat(addedNear))addGroup(t,heroZone?"near":"far");
-  for(const t of mid.concat(far,addedMid,addedFar))addGroup(t,"far");
+  for(const t of near.concat(addedNear))addGroup(t,heroZone&&insidePilot(t)?"near":"far");
+  for(const t of mid.concat(far,addedMid,addedFar))addGroup(t,heroZone&&insidePilot(t)?"near":"far");
   for(const {species,lod,variant,trees} of groups.values()){
     const model=lod==="near"?
       buildHeroTree(B,scene,track,species,seed+species.length*17,variant,textures):
