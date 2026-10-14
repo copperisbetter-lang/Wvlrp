@@ -344,7 +344,10 @@ class YoungExplorerWardrobe {
   this.model.animationGroups?.forEach(x=>x.stop());
   this.resetPose();
   const angles=kind==='wave' ?
-   {rightarm:[0,0,-1.55],rightforearm:[0,0,-.45],rightshoulder:[0,0,-.18]} : kind==='bend' ?
+   {rightarm:[0,0,-1.55],rightforearm:[0,0,-.45],rightshoulder:[0,0,-.18]} : kind==='pickup' ?
+   {hips:[.10,0,0],spine:[1.0,0,0],spine1:[.42,0,0],leftarm:[.55,0,0],rightarm:[.55,0,0],leftupleg:[0,0,0],rightupleg:[0,0,0]} : kind==='hands-knees' ?
+   {hips:[.15,0,0],spine:[.75,0,0],leftupleg:[-1.15,0,0],rightupleg:[-1.15,0,0],leftleg:[1.35,0,0],rightleg:[1.35,0,0],leftarm:[.85,0,0],rightarm:[.85,0,0]} : kind==='elbows-knees' ?
+   {hips:[.15,0,0],spine:[.9,0,0],leftupleg:[-1.15,0,0],rightupleg:[-1.15,0,0],leftleg:[1.35,0,0],rightleg:[1.35,0,0],leftarm:[.9,0,0],rightarm:[.9,0,0],leftforearm:[-1.0,0,0],rightforearm:[-1.0,0,0]} : kind==='bend' ?
    {hips:[.12,0,0],spine:[.70,0,0],spine1:[.33,0,0],
     leftupleg:[-.16,0,0],rightupleg:[-.16,0,0],neck:[-.20,0,0]} :
    {hips:[-.12,0,0],spine:[.10,0,0],leftupleg:[-1.10,0,0],rightupleg:[-1.10,0,0],
@@ -364,7 +367,7 @@ class YoungExplorerWardrobe {
       this.poseTokens.push({joint:hips,fromPosition:from,toPosition:to});
     }
   }
-  this.poseElapsed=0;this.poseTime=.35;this.activePose=kind;
+  this.poseElapsed=0;this.poseTime=kind==='pickup'?.8:.35;this.activePose=kind;
   if(kind==='wave'){
    this.waveElapsed=0;
    this.waveObserver&&this.scene.onBeforeRenderObservable.remove(this.waveObserver);
@@ -376,7 +379,7 @@ class YoungExplorerWardrobe {
      if(base)forearm.rotationQuaternion=base.multiply(this.B.Quaternion.RotationAxis(this.B.Axis.Z,-.45+.22*Math.sin(this.waveElapsed*7)));}
    });
   }
-  if($('pose-feedback'))$('pose-feedback').textContent=kind==='bend'?'Bend Over pose selected':'Sit Down pose selected';
+  if($('pose-feedback'))$('pose-feedback').textContent=({bend:'Bend Over pose selected',pickup:'Straight-legged reach to ground selected','hands-knees':'Hands and knees selected','elbows-knees':'Elbows and knees selected',sit:'Sit Down pose selected',wave:'Wave selected'})[kind]||'Pose selected';
  }
  stepPose(){
   if(!this.poseTokens.length||!this.poseTime)return;
