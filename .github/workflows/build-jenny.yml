@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'world-creator/scripts/build_jenny_real.py'
+      - 'world-creator/jenny.html'
       - 'world-creator/scripts/face_materials.py'
       - '.github/workflows/build-jenny.yml'
   workflow_dispatch:
