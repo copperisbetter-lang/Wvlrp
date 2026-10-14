@@ -63,9 +63,9 @@ def build_carrie_motions(rig):
         for sign in (-1, 1):
             neutral()
             b = find(pivot)
-            if raise_arm:
+            if pivot.endswith("arm") and not pivot.endswith("forearm"):
                 side = "left" if pivot.startswith("left") else "right"
-                b.rotation_quaternion = upper_arm_base[side][1]
+                b.rotation_quaternion = upper_arm_base[side][1 if raise_arm else 0] @ Euler((sign * magnitude, 0, 0), "XYZ").to_quaternion()
             else:
                 b.rotation_euler.x = sign * magnitude
             bpy.context.view_layer.update()
