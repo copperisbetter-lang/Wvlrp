@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blonde Explorer Age Five — The Wild 3D Viewer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font:15px system-ui,-apple-system,sans-serif;background:#0e1c16;color:#f5f5e9}
+main{display:flex;flex-direction:column;min-height:100dvh}
+header{padding:12px 14px;background:#223b2b;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header a{color:#cbf4d1}h1{margin:0;font-size:19px}.tiny{font-size:12px;color:#d6ead6}
+#view{position:relative;height:68dvh;min-height:420px;max-height:950px;flex:none;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{display:none}
+#controls{padding:10px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;background:#1c3227}
+button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6e4;font-size:14px;padding:10px 12px;min-height:44px;touch-action:manipulation}button:focus-visible{outline:3px solid #e0c786}
+#wardrobe{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#263e30;border-top:1px solid #53795b}
+#wardrobe label{font-weight:700;font-size:14px}
+#outfit-select,#hair-select,#dress-size-select{background:#f4f2e7;color:#193324;border:1px solid #88a58d;border-radius:8px;padding:10px;font-size:14px;min-height:44px;max-width:100%}
+#outfit-feedback,#pose-feedback{font-size:12px;color:#c5e7c7}
+#measure-panel{padding:8px 14px;background:#142a1f;border-top:1px solid #496954}
+#measure-panel summary{font-size:13px;cursor:pointer;font-weight:700}
+#model-measurements{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:7px;font-size:12px}
+#model-measurements strong{width:100%}#model-measurements small{width:100%;color:#bccdc0}
+#caption{padding:9px 14px;font-size:12px;text-align:center;color:#d6dfcd}
+</style></head>
+<body><main>
+<header><div><h1>Blonde Explorer · Age Five</h1><div class="tiny">Girl · age 5 · blonde hair · East Asian features · dedicated 3D character viewer</div></div><a href="./">World Creator</a></header>
+<div id="view"><canvas id="scene" aria-label="Rotate and zoom the actual 3D child character by dragging or pinching"></canvas><div id="status" role="status">Loading realistic full-body Young Explorer…</div></div>
+<div id="controls" aria-label="3D model controls">
+<button id="front">Front view</button><button id="back">Back view</button><button id="face">Face close-up</button>
+<button id="full">Full body</button><button id="closer">Zoom +</button><button id="farther">Zoom −</button>
+<button id="idle">Stand</button><button id="wave">Wave</button><button id="walk">Walk</button>
+<button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button>
+</div>
+<div id="wardrobe" aria-label="Try on Young Explorer clothing">
+ <label for="outfit-select">Clothing:</label><select id="outfit-select" aria-label="Automatically put an outfit on Young Explorer"><option>Loading outfits…</option></select>
+ <label for="dress-size-select">Dress size:</label><select id="dress-size-select" data-child-sizes="2-10"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="10">10</option></select><button id="remove-all" type="button">Remove All</button><label for="hair-select">Hair:</label><select id="hair-select" aria-label="Young Explorer hairstyle"><option value="original">Original</option><option value="ponytail">Ponytail</option><option value="pigtails">Pigtails</option></select><label style="display:flex;align-items:center;gap:7px"><input id="layer-shorts" type="checkbox"> Shorts underneath</label>
+<select id="layer-shorts-style" aria-label="Shorts layer style"><option value="regular-shorts">Regular shorts</option><option value="loose-shorts">Loose shorts</option><option value="denim">Denim shorts</option><option value="hiking">Hiking shorts</option><option value="navy">Navy shorts</option></select>
+<span id="outfit-feedback" role="status"></span><span id="pose-feedback" role="status"></span>
+</div>
+<section style="padding:12px;background:#263e30;display:grid;gap:10px" aria-label="Dress fitting controls">
+<strong>Move and resize dress</strong>
+<label>Up / down: <output id="dress-position-value">0 cm</output><input id="dress-position" type="range" min="-65" max="65" value="0" style="width:100%"></label>
+<label>Width: <output id="dress-width-value">100%</output><input id="dress-width" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Depth: <output id="dress-depth-value">100%</output><input id="dress-depth" type="range" min="65" max="150" value="65" style="width:100%"></label>
+<label>Top width (bodice only): <output id="dress-top-width-value">75%</output><input id="dress-top-width" type="range" min="45" max="120" value="65" style="width:100%"></label>
+<label>Top depth (bodice only): <output id="dress-top-depth-value">75%</output><input id="dress-top-depth" type="range" min="45" max="120" value="65" style="width:100%"></label>
+<label>Top opening diameter: <output id="dress-rim-diameter-value">100%</output><input id="dress-rim-diameter" type="range" min="40" max="120" value="65" style="width:100%"></label>
+<button id="dress-reset" type="button">Reset dress fit</button>
+<button id="save-young-explorer" type="button">Save Character</button><span id="save-young-explorer-status" role="status"></span>
+</section><details id="measure-panel" open><summary>Young Explorer · body sizing</summary>
+ <div id="model-measurements">Measuring her actual full-body 3D mesh…</div>
+</details>
+<div id="caption">Drag to rotate · pinch to zoom · choose an outfit to put it on her immediately. Garments stay opaque through poses.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script src="./young-explorer-wardrobe.js?v=neckline-fit-20261014-3"></script>
+<script>
+const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
+const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
+const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.065,.13,.10,1);
+const camera=new B.ArcRotateCamera('orbit',-Math.PI/2,Math.PI/2.12,2.4,new B.Vector3(0,.70,0),scene);
+camera.attachControl(canvas,true);camera.wheelDeltaPercentage=.08;camera.pinchDeltaPercentage=.01;
+camera.fov=.64;camera.minZ=.025;camera.lowerRadiusLimit=.68;camera.upperRadiusLimit=8;camera.lowerBetaLimit=.13;camera.upperBetaLimit=Math.PI-.10;
+scene.createDefaultLight();new B.HemisphericLight('fill',new B.Vector3(-.4,1,-.6),scene).intensity=.70;
+const key=new B.DirectionalLight('sun',new B.Vector3(-.4,-1,.65),scene);key.intensity=.85;
+const floor=B.MeshBuilder.CreateDisc('forest display floor',{radius:1.75,tessellation:64},scene);
+floor.rotation.x=Math.PI/2;floor.position.y=-.011;
+const ground=new B.StandardMaterial('forest floor',scene);ground.diffuseColor=new B.Color3(.13,.23,.17);ground.specularColor=new B.Color3(.05,.06,.04);floor.material=ground;
+const groups=[];
+let bounds=null, center=null, model=null;
+(async()=>{
+ // Load the rebuilt dress measured against the REAL body first. The 2026-10-13
+ // snapshot was fitted to the old test figure; NEVER put it on the new child.
+ const sources=[
+  './assets/blonde-explorer-age-five.glb?v=child-tailored-20261013-v3-122cm',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/blonde-explorer-age-five.glb?v=child-tailored-20261013-v3-122cm',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/blonde-explorer-age-five.glb'
+ ];
+ let lastError;
+ for(let i=0;i<sources.length;i++){
+  try{
+   status.textContent=i===0?'Loading verified realistic 3D Young Explorer…':'Trying rebuilt fitted model mirror '+(i+1)+' of 3…';
+   const model=await B.SceneLoader.ImportMeshAsync(null,'',sources[i],scene,undefined,'.glb');
+   // glTF splits a continuous human mesh into several Babylon meshes when
+   // material primitives or nodes are partitioned. The previous "one mesh
+   // >=10,000 vertices" test rejected valid photoreal humans. Sum geometry.
+   const pieceSizes=(model.meshes||[]).map(m=>({name:m.name,vertices:m.getTotalVertices?.()||0}));
+   const totalVertices=pieceSizes.reduce((sum,m)=>sum+m.vertices,0);
+   const rigSizes=(model.skeletons||[]).map(s=>s.bones?.length||0);
+   const joints=Math.max(0,...rigSizes);
+   const hasDetailedBody=totalVertices>=10000;
+   const isRealRig=joints>=25;
+   const allMaterials=[...scene.materials,...(model.meshes||[]).flatMap(m=>m.material?.subMaterials||[])];
+   const realSkin=allMaterials.some(m=>m?.name?.includes('Young Explorer real CC0 face and body skin UV'));
+   const hasDress=allMaterials.some(m=>m?.name?.toLowerCase().includes('plaid'));
+   const fittedDress=pieceSizes.some(m=>/body.fitted opaque plaid sundress|measured, fitted child sundress/i.test(m.name||''));
+   console.info('Young Explorer imported geometry audit',{source:sources[i],totalVertices,joints,realSkin,hasDress,fittedDress,pieceSizes});
+   if(!hasDetailedBody||!isRealRig||!realSkin||!hasDress||!fittedDress){
+     const why='needs realistic 3D geometry, complete skeleton, textured skin and plaid dress; source '+(i+1)+' reported '+totalVertices+' vertices, '+joints+' bones, skin '+realSkin+', dress '+hasDress+', real-child-fit '+fittedDress;
+     (model.animationGroups||[]).forEach(g=>g.dispose());
+     (model.meshes||[]).forEach(m=>m.dispose());
+     (model.skeletons||[]).forEach(s=>s.dispose());
+     throw Error(why);
+   }
+   model.modelAudit={totalVertices,joints,source:i+1,realSkin,hasDress,fittedDress};
+   return model;
+  }catch(err){lastError=err;console.warn('Young Explorer model source unavailable',i,err);}
+ }
+ throw new Error('Could not load the verified 52-joint Young Explorer model. '+(lastError?.message||String(lastError)));
+})().then(result=>{
+ const meshes=result.meshes||[];
+ // Render both sides of the imported body surface. Some glTF exports contain
+ // reversed/open triangles around shoulders and torso; one-sided rendering
+ // makes those regions look like empty holes at close camera distances.
+ // Keep skin UVs, skeletal weights, and the original material textures.
+ for(const mesh of meshes){
+   if(!(mesh.getTotalVertices?.()>0))continue;
+   const materials=mesh.material?.subMaterials?.length
+     ? mesh.material.subMaterials : [mesh.material];
+   for(const mat of materials){
+     if(!mat)continue;
+     mat.backFaceCulling=false;
+     if('twoSidedLighting' in mat)mat.twoSidedLighting=true;
+   }
+ }
+ if(!meshes.some(m=>m.getTotalVertices?.()>0))throw Error('No 3D geometry in file');
+ // The CC0 child morph in the original GLB is 1.666m tall on export.
+ // Normalize the ENTIRE skinned character to a believable age-seven game height,
+ // not merely the visible body mesh (which would break clothing, bones and shoes).
+ // The current Blender GLB is already exported at age-seven 122 cm with its
+ // body, 52-bone armature, and measured clothing scaled as one hierarchy.
+ // Do NOT apply a second browser-side scale (which shrank her to 89.3cm).
+ if(!(result.skeletons||[]).some(s=>(s.bones?.length||0)>=25))throw Error('Missing realistic articulated skeleton');
+ groups.push(...result.animationGroups);
+ if(groups.length<3)throw Error('Missing movement clips');
+ // Measure the displayed world-space human vertices, NOT an unscaled glTF
+ // bounding-box proxy. glTF exporters may apply parent scaling at import.
+ // Use the same measurement technique as the garment fitter.
+ const human=meshes.filter(m=>(m.getTotalVertices?.()||0)>10000)
+   .sort((a,b)=>b.getTotalVertices()-a.getTotalVertices())[0];
+ if(!human)throw Error('Full body missing for precise child-scale calibration');
+ const vertexHeight=()=>{
+   human.computeWorldMatrix(true);
+   const xyz=human.getVerticesData(B.VertexBuffer.PositionKind);
+   const transform=human.getWorldMatrix(),v=new B.Vector3();
+   let lo=Infinity,hi=-Infinity;
+   for(let k=0;k<xyz.length;k+=3){
+     B.Vector3.TransformCoordinatesToRef(new B.Vector3(xyz[k],xyz[k+1],xyz[k+2]),transform,v);
+     lo=Math.min(lo,v.y);hi=Math.max(hi,v.y);
+   }
+   return hi-lo;
+ };
+ const measured=vertexHeight();
+ if(!(measured>.4&&measured<2.2))throw Error('Invalid imported child body height '+measured);
+ if(Math.abs(measured-1.22)>.012){
+   const scaleNode=new B.TransformNode('Young Explorer full-rig height calibration',scene);
+   const imported=[...(result.meshes||[]),...(result.transformNodes||[])];
+   const roots=imported.filter(n=>n!==scaleNode&&!n.parent);
+   if(!roots.length)throw Error('No rig roots available for uniform child height correction');
+   for(const n of roots)n.parent=scaleNode;
+   scaleNode.scaling.setAll(1.22/measured);
+   scaleNode.computeWorldMatrix(true);
+   for(const m of meshes)m.computeWorldMatrix(true);
+ }
+ const verifiedHeight=vertexHeight();
+ if(Math.abs(verifiedHeight-1.22)>.025)
+   throw Error('Child clothing and rig failed unified height check: '+verifiedHeight.toFixed(3)+'m');
+ console.info('Young Explorer precise clothed child display height',verifiedHeight);
+ let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
+ for(const m of meshes){if(!m.getTotalVertices?.())continue;m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
+ bounds={min,max,span:Math.max(max.y-min.y,.2)};center=min.add(max).scale(.5);
+ camera.setTarget(new B.Vector3(center.x,min.y+bounds.span*.54,center.z));
+ camera.radius=bounds.span*2.3;camera.lowerRadiusLimit=.68;camera.upperRadiusLimit=9;
+ // Use imported textures and true exposed-skin PBR materials unmodified.
+ const skins=scene.materials.filter(m=>m.name.includes('Young Explorer real CC0 face and body skin UV'));
+ if(!skins.length)throw Error('Real textured human skin material not found');
+ model=result;
+ const dresser=new window.WVLRPYoungExplorerWardrobe(B,scene,result);
+ window.youngExplorerWardrobe=dresser;
+ dresser.rememberBindPose();
+ dresser.naturalStand();
+ status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
+}).catch(e=>{console.error(e);status.textContent='Young Explorer viewer unable to load: '+e.message;});
+function play(name){if(!groups.length)return;
+ groups.forEach(g=>g.stop());
+ window.youngExplorerWardrobe?.resetPose();
+ const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
+ if(clip){clip.start(true,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
+}
+document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
+document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
+document.getElementById('walk').onclick=()=>play('Walk');
+document.getElementById('bend').onclick=()=>window.youngExplorerWardrobe?.pose('bend');
+document.getElementById('sit').onclick=()=>window.youngExplorerWardrobe?.pose('sit');
+for(const name of ['pickup','hands-knees','elbows-knees'])document.getElementById(name).onclick=()=>window.youngExplorerWardrobe?.pose(name);
+document.getElementById('front').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.12;};
+document.getElementById('back').onclick=()=>{camera.alpha=Math.PI/2;camera.beta=Math.PI/2.12;};
+document.getElementById('full').onclick=()=>{if(!bounds)return;camera.setTarget(new B.Vector3(center.x,bounds.min.y+bounds.span*.54,center.z));camera.radius=bounds.span*2.3;};
+document.getElementById('face').onclick=()=>{if(!bounds)return;camera.setTarget(new B.Vector3(center.x,bounds.min.y+bounds.span*.90,center.z));camera.radius=.78;camera.alpha=-Math.PI/2;};
+document.getElementById('closer').onclick=()=>{camera.radius=Math.max(camera.lowerRadiusLimit,camera.radius*.7);};
+// Keep the orbit camera outside the body when zooming/pinching; otherwise
+// Babylon renders the back of the shell as if the character were hollow.
+scene.onBeforeRenderObservable.add(()=>{if(camera.radius<camera.lowerRadiusLimit)camera.radius=camera.lowerRadiusLimit;});
+document.getElementById('farther').onclick=()=>{camera.radius=Math.min(camera.upperRadiusLimit,camera.radius*1.35);};
+engine.runRenderLoop(()=>scene.render());window.addEventListener('resize',()=>engine.resize());
+</script>
+<script>
+document.getElementById('save-young-explorer')?.addEventListener('click',()=>{
+ const ids=['outfit-select','dress-size-select','dress-position','dress-width','dress-depth','dress-top-width','dress-top-depth','dress-rim-diameter','hair-select','layer-shorts-style'];
+ const data={character:'Young Explorer',version:1,savedAt:new Date().toISOString()};
+ for(const id of ids){const el=document.getElementById(id);if(el)data[id]=el.value;}
+ data['layer-shorts']=!!document.getElementById('layer-shorts')?.checked;
+ try{
+  localStorage.setItem('wvlrp-blonde-explorer-age-five-character-v1',JSON.stringify(data));
+  document.getElementById('save-young-explorer-status').textContent='Character saved on this device.';
+ }catch(e){document.getElementById('save-young-explorer-status').textContent='Could not save on this device.';}
+});
+</script></body></html>
