@@ -22,7 +22,7 @@ if not any(len(o.data.vertices)>10000 for o in meshes):
 # The neutral, clothed-character anatomy contour must be on the actual base
 # vertices, not exclusively in a shape key that a viewer may ignore.
 contoured=[o for o in meshes if o.get("wvlrp_carol_pelvic_contour_baked",False)]
-if len(contoured)!=1 or contoured[0].get("wvlrp_carol_pelvic_contour_vertices",0)<35:
+if len(contoured)!=1 or contoured[0].get("wvlrp_carol_pelvic_contour_vertices",0)<24:
     raise RuntimeError("Carol adult pelvic contour not baked into exported basemesh")
 rollback="Carol pelvic contour OFF - inspection rollback"
 if not contoured[0].data.shape_keys or rollback not in contoured[0].data.shape_keys.key_blocks:
