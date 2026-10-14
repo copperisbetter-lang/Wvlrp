@@ -43,6 +43,56 @@ bpy.ops.export_scene.gltf(filepath=str(output),export_format="GLB",
     export_nla_strips=True,export_materials="EXPORT")
 if not output.exists() or output.stat().st_size<100000:
     raise RuntimeError("Caroline GLB missing or suspiciously small")
+
+# Repair the known Mixamo pelvis-scale mismatch IN THE GLB, not in the
+# viewer. Blender ground-fit logs show a 14.145-unit local hip adjustment
+# corresponds to only 0.439m of body movement; the uncorrected exporter
+# encodes the raw 14m and causes flight during Crawl and kneeling poses.
+def repair_hip_translation(glb_path):
+    raw=bytearray(glb_path.read_bytes())
+    json_len,json_type=struct.unpack_from("<II",raw,12)
+    if json_type!=0x4e4f534a:raise RuntimeError("GLB JSON chunk invalid")
+    doc=json.loads(raw[20:20+json_len].decode("utf-8"))
+    bin_at=20+json_len
+    bin_size,bin_type=struct.unpack_from("<II",raw,bin_at)
+    if bin_type!=0x004e4942:raise RuntimeError("GLB binary chunk invalid")
+    bin_start=bin_at+8
+    repaired=[]
+    for anim in doc.get("animations",[]):
+        for channel in anim.get("channels",[]):
+            target=channel.get("target",{})
+            if target.get("path")!="translation":continue
+            node=doc["nodes"][target["node"]]
+            if not node.get("name","").lower().endswith("hips"):continue
+            accessor=doc["accessors"][anim["samplers"][channel["sampler"]]["output"]]
+            if accessor["componentType"]!=5126 or accessor["type"]!="VEC3":
+                raise RuntimeError("Unexpected exported hip translation format")
+            view=doc["bufferViews"][accessor["bufferView"]]
+            offset=bin_start+view.get("byteOffset",0)+accessor.get("byteOffset",0)
+            stride=view.get("byteStride",12)
+            baseline=node.get("translation",[0,0,0])
+            samples=[]
+            furthest=0.
+            for i in range(accessor["count"]):
+                at=offset+i*stride
+                values=struct.unpack_from("<3f",raw,at)
+                furthest=max(furthest,max(abs(values[j]-baseline[j]) for j in range(3)))
+                samples.append((at,values))
+            if furthest>1.5:
+                for at,values in samples:
+                    corrected=[baseline[j]+(values[j]-baseline[j])*0.0310 for j in range(3)]
+                    struct.pack_into("<3f",raw,at,*corrected)
+                furthest*=0.0310
+                repaired.append(anim.get("name","unnamed"))
+            if furthest>.85:
+                raise RuntimeError(anim.get("name","?")+" exported hip travel unsafe: "+
+                                   str(round(furthest,3))+"m")
+    if len(repaired)<3:
+        raise RuntimeError("Expected to repair hip tracks for 3 grounded animations: "+str(repaired))
+    glb_path.write_bytes(raw)
+    print("WVLRP_CAROLINE_HIP_EXPORT_REPAIRED",repaired)
+
+repair_hip_translation(output)
 data=output.read_bytes()
 if data[:4]!=b"glTF":raise RuntimeError("Caroline invalid GLB magic")
 chunk_len,chunk_type=struct.unpack_from("<II",data,12)

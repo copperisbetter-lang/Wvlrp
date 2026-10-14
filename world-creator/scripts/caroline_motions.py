@@ -50,6 +50,7 @@ def add_caroline_animations(rig):
         if not rig.animation_data: rig.animation_data_create()
         action=bpy.data.actions.new(name)
         rig.animation_data.action=action
+        crawl_seed=None
         for frame,angles,hip_drop in keys:
             for pb in rig.pose.bones:
                 pb.rotation_mode="XYZ"
@@ -60,6 +61,27 @@ def add_caroline_animations(rig):
                 pb=bones.get(kind)
                 if pb is not None:
                     pb.rotation_euler[axis]=math.radians(degrees)
+            # Use a single anchored four-point stance for Crawl, then cycle
+            # opposite arms and knees without translating the character away.
+            if name=="Caroline Crawl" and frame>1:
+                if crawl_seed is None:raise RuntimeError("Crawl gait missing initial grounded key")
+                for pb in rig.pose.bones:
+                    rot,loc=crawl_seed[pb.name]
+                    pb.rotation_euler=rot
+                    pb.location=loc
+                phase={10:1,19:-1,28:1,37:0}.get(frame,0)
+                for kind,amount in (("larm",7),("rarm",-7),
+                                     ("lthigh",-6),("rthigh",6),
+                                     ("lforearm",-4),("rforearm",4)):
+                    bones[kind].rotation_euler.x+=math.radians(amount*phase)
+            # Earlier positive shin X angles caused knees to bend anteriorly.
+            # This particular MakeHuman/Mixamo rig uses NEGATIVE shin X for
+            # normal backward knee folding in walk/run/pick-up/lying poses.
+            if name in ("Caroline Walk","Caroline Run","Caroline PickUp","Caroline LieDown") and frame>1:
+                for side in ("lshin","rshin"):
+                    bones[side].rotation_euler.x=-abs(bones[side].rotation_euler.x)
+            solve_ground=(name in ("Caroline HandsAndKnees","Caroline ElbowsAndKnees")
+                          and frame>1) or (name=="Caroline Crawl" and frame==1)
             # Correct the two most noticeable FK posing errors from the first
             # live 3D review: knees folding the wrong way, and the neck/head
             # tipping around when the torso is pitched forward on all fours.
@@ -68,7 +90,7 @@ def add_caroline_animations(rig):
             # Select knee bend from the *evaluated joint positions*, not from
             # an assumed sign. In Caroline's Blender coordinates the back of
             # the body is +Y; knees should flex with the ankles behind them.
-            if name in ("Caroline Kneel", "Caroline HandsAndKnees", "Caroline ElbowsAndKnees", "Caroline Crawl") and frame > 1:
+            if solve_ground or (name=="Caroline Kneel" and frame>1):
                 back_world=Vector((0,1,0))
                 original_shin_angles={side:abs(math.degrees(bones[side].rotation_euler.x)) for side in ("lshin","rshin")}
                 for part in ("lshin","rshin"):
@@ -128,7 +150,7 @@ def add_caroline_animations(rig):
                           "forward",round(forward,3))
                     if upright<0.25 or forward<-.35:
                         raise RuntimeError("Caroline head still twists outside safe forward/up pose")
-            if name in ("Caroline HandsAndKnees", "Caroline ElbowsAndKnees", "Caroline Crawl") and frame>1:
+            if solve_ground:
                 # The older pose was a collection of hand-authored Euler angles.
                 # It rotated the torso but left palms, elbows and knees in free air.
                 # Fit the articulated limb angles against anatomical ground-support
@@ -443,6 +465,8 @@ def add_caroline_animations(rig):
                       ("elbows" if use_elbows else "hands")+
                       " are not individually grounded: "+
                       str([round(z-rest_ground,3) for z in contact_heights]))
+            if name=="Caroline Crawl" and frame==1:
+                crawl_seed={pb.name:(tuple(pb.rotation_euler),tuple(pb.location)) for pb in rig.pose.bones}
             for pb in rig.pose.bones:
                 pb.keyframe_insert(data_path="rotation_euler",frame=frame,group=pb.name)
             bones["hips"].keyframe_insert(data_path="location",frame=frame,group=bones["hips"].name)
@@ -502,12 +526,13 @@ def add_caroline_animations(rig):
                           ("lshin",0,38),("rshin",0,38),("larm",0,-35),("rarm",0,-35)],-.20),
         (70,[],0)])
     build_pose("Caroline Crawl", [
-        (1,[],0),(32,[("hips",0,70),("spine",0,15),("chest",0,6),
-                       ("lthigh",0,-75),("rthigh",0,-75),
-                       ("lshin",0,98),("rshin",0,98),
-                       ("larm",0,-75),("rarm",0,-75),
-                       ("lforearm",0,6),("rforearm",0,6),
-                       ("neck",0,-12),("head",0,7)],-.34)])
+        (1,[("hips",0,70),("spine",0,15),("chest",0,6),
+             ("lthigh",0,-75),("rthigh",0,-75),
+             ("lshin",0,98),("rshin",0,98),
+             ("larm",0,-75),("rarm",0,-75),
+             ("lforearm",0,6),("rforearm",0,6),
+             ("neck",0,-12),("head",0,7)],-.34),
+        (10,[],0),(19,[],0),(28,[],0),(37,[],0)])
     build_pose("Caroline LieDown", [
         (1,[],0),(44,[("hips",0,89),("spine",0,9),("chest",0,5),
                        ("lthigh",0,-42),("rthigh",0,-42),
