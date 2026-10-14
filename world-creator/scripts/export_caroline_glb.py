@@ -19,6 +19,8 @@ if len(rigs)!=1:
     raise RuntimeError("Caroline export has "+str(len(rigs))+" armatures; expected exactly one")
 if not any(len(o.data.vertices)>10000 for o in meshes):
     raise RuntimeError("Caroline export has no intact continuous adult basemesh")
+if not any("Caroline light blue eyes" in o.name for o in meshes):
+    raise RuntimeError("Carolyn natural blue iris meshes are missing")
 if not any("period swept back hair" in o.name for o in meshes):
     raise RuntimeError("Caroline updo not on inspected copy")
 rig=rigs[0]
@@ -107,6 +109,8 @@ meta=json.loads(data[20:20+chunk_len].decode("utf-8"))
 verify_photo_skin_glb(meta,"Caroline")
 wardrobe_materials={"WVLRP Wardrobe Blouse","WVLRP Wardrobe Skirt","WVLRP Wardrobe Apron","WVLRP Wardrobe Boots","WVLRP Wardrobe Sweater","WVLRP Wardrobe Pants"}
 existing_materials={m.get("name","") for m in meta.get("materials",[])}
+if not any("Caroline light blue iris" in m for m in existing_materials):
+    raise RuntimeError("Carolyn blue-iris material missing from GLB")
 missing_materials=wardrobe_materials-existing_materials
 if missing_materials:raise RuntimeError("Missing exported clothing materials: "+str(sorted(missing_materials)))
 clips={a.get("name","") for a in meta.get("animations",[])}
