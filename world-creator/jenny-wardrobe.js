@@ -291,46 +291,28 @@ class YoungExplorerWardrobe {
  }
  // Animate linked skin joints, keeping clothes and body on exactly the same bones.
  pose(kind) {
-  this.model.animationGroups?.forEach(x=>x.stop());
+  // Use Blender-exported skeletal animation, rather than ad-hoc browser joint
+  // rotations whose axes differ from the rig's local bone orientations.
+  const match={wave:'wave',bend:'bend',pickup:'pick up',sit:'sit',
+    'hands-knees':'hands and knees','elbows-knees':'elbows and knees'}[kind];
+  const clips=this.model.animationGroups||[];
+  const clip=clips.find(g=>g.name.toLowerCase().includes(match||kind));
+  clips.forEach(g=>g.stop());
   this.resetPose();
-  const angles=kind==='wave' ?
-   {rightarm:[0,0,-1.55],rightforearm:[0,0,-.45],rightshoulder:[0,0,-.18]} : kind==='pickup' ?
-   {hips:[.10,0,0],spine:[1.0,0,0],spine1:[.42,0,0],leftarm:[.55,0,0],rightarm:[.55,0,0],leftupleg:[0,0,0],rightupleg:[0,0,0]} : kind==='hands-knees' ?
-   {hips:[.15,0,0],spine:[.75,0,0],leftupleg:[1.15,0,0],rightupleg:[1.15,0,0],leftleg:[-1.35,0,0],rightleg:[-1.35,0,0],leftarm:[.85,0,0],rightarm:[.85,0,0]} : kind==='elbows-knees' ?
-   {hips:[.15,0,0],spine:[.9,0,0],leftupleg:[1.15,0,0],rightupleg:[1.15,0,0],leftleg:[-1.35,0,0],rightleg:[-1.35,0,0],leftarm:[.9,0,0],rightarm:[.9,0,0],leftforearm:[1.0,0,0],rightforearm:[1.0,0,0]} : kind==='bend' ?
-   {hips:[.12,0,0],spine:[.70,0,0],spine1:[.33,0,0],
-    leftupleg:[-.16,0,0],rightupleg:[-.16,0,0],neck:[-.20,0,0]} :
-   {hips:[-.12,0,0],spine:[.10,0,0],leftupleg:[-1.10,0,0],rightupleg:[-1.10,0,0],
-    leftleg:[1.22,0,0],rightleg:[1.22,0,0],leftfoot:[-.14,0,0],rightfoot:[-.14,0,0]};
-  this.poseTokens=[];
-  for(const [name,euler] of Object.entries(angles)){
-   const joint=this.boneTarget(name);if(!joint)continue;
-   const from=(joint.rotationQuaternion || this.B.Quaternion.FromEulerVector(joint.rotation)).clone();
-   const delta=this.B.Quaternion.RotationYawPitchRoll(euler[1],euler[0],euler[2]);
-   this.poseTokens.push({joint,from,to:from.multiply(delta)});
+  if(!clip){
+   if($('pose-feedback'))$('pose-feedback').textContent='Missing animation: '+kind;
+   return;
   }
-  if(kind==='sit'){
-    const hips=this.boneTarget('hips');
-    if(hips){
-      const from=hips.position.clone();
-      const to=from.clone();to.y-=this.measure.H*.23;
-      this.poseTokens.push({joint:hips,fromPosition:from,toPosition:to});
-    }
-  }
-  this.poseElapsed=0;this.poseTime=kind==='pickup'?.8:.35;this.activePose=kind;
-  if(kind==='wave'){
-   this.waveElapsed=0;
-   this.waveObserver&&this.scene.onBeforeRenderObservable.remove(this.waveObserver);
-   this.waveObserver=this.scene.onBeforeRenderObservable.add(()=>{
-    if(this.activePose!=='wave'){this.scene.onBeforeRenderObservable.remove(this.waveObserver);this.waveObserver=null;return;}
-    this.waveElapsed+=this.scene.getEngine().getDeltaTime()/1000;
-    const forearm=this.boneTarget('rightforearm');
-    if(forearm&&this.poseTime===0){const base=forearm.metadata?._wvlrpBaseRotation;
-     if(base)forearm.rotationQuaternion=base.multiply(this.B.Quaternion.RotationAxis(this.B.Axis.Z,-.45+.22*Math.sin(this.waveElapsed*7)));}
-   });
-  }
-  if($('pose-feedback'))$('pose-feedback').textContent=({bend:'Bend Over pose selected',pickup:'Straight-legged reach to ground selected','hands-knees':'Hands and knees selected','elbows-knees':'Elbows and knees selected',sit:'Sit Down pose selected',wave:'Wave selected'})[kind]||'Pose selected';
+  clip.start(false,1,clip.from,clip.to,false);
+  // Hold the authored pose near the middle of its action. The final frames
+  // intentionally return to standing, which made button presses appear inert.
+  const hold=clip.from+(clip.to-clip.from)*.67;
+  clip.goToFrame(hold);
+  clip.pause();
+  this.activePose=kind;
+  if($('pose-feedback'))$('pose-feedback').textContent=kind+' pose (authored animation)';
  }
+
  stepPose(){
   if(!this.poseTokens.length||!this.poseTime)return;
   this.poseElapsed+=Math.min(.06,this.scene.getEngine().getDeltaTime()/1000);
