@@ -38,107 +38,161 @@ def reshape_adult_body(body):
     body.data.update()
     print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3))
 
-def add_period_updo(export_root,body,rig):
-    """Build swept-back honey/light brown hair with a small rear chignon.
-    Replaces the front-covering stock hair curtain; face stays unobstructed.
+def add_period_updo(export_root, body, rig):
+    """Build a fitted, rounded swept-back period hairdo with low nape chignon.
+
+    Avoid a flat disc/helmet scalp (shown in Carolyn's mobile screenshot).
+    The actual eye line anchors forehead clearance. This is a trial hairstyle,
+    not a screen-accurate hand-sculpted likeness of Karen Grassle.
     """
-    members=[export_root]+list(export_root.children_recursive)
-    eyes=[o for o in members if o.type=="MESH" and
-          ("high-poly" in o.name.lower() or
-           ("eye" in o.name.lower() and not any(w in o.name.lower() for w in
-                 ("eyebrow","eyelash","hair","eyelid","iris"))))]
-    eye_pts=[o.matrix_world@v.co for o in eyes for v in o.data.vertices]
-    if len(eye_pts)<28:
-        raise RuntimeError("Caroline hairstyle: eye landmarks missing; refuse floating wig")
-    eye_z=sum(p.z for p in eye_pts)/len(eye_pts)
-    x=sum(p.x for p in eye_pts)/len(eye_pts)
-    y=sum(p.y for p in eye_pts)/len(eye_pts)
-    body_pts=[body.matrix_world@v.co for v in body.data.vertices]
-    h=max(p.z for p in body_pts)-min(p.z for p in body_pts)
-    if not (1<h<3):raise RuntimeError("Caroline hair landmarks: invalid height")
-    head=next((b.name for b in rig.data.bones if b.name.lower().split(":")[-1]=="head"),None)
-    if not head:raise RuntimeError("Caroline hairstyle requires a Head bone")
-    # The visible eye plane anchors the hairline; the old stock long01 cape
-    # ran directly down the FRONT of her face and torso.
-    z0=eye_z+.049*h
-    ztop=eye_z+.085*h
-    yc=y+.043*h
-    r_x=.071*h;r_y=.069*h
-    vertices=[];faces=[];ids=[]
-    def vert(v):vertices.append(tuple(v));return len(vertices)-1
-    def quad(q,material=0):faces.append(q);ids.append(material)
-    # Upper scalp cap only: z is always above eye level.
-    rings=[];sides=48
-    for j in range(16):
-        t=(j+.001)/15.001
-        theta=(math.pi/2)*t
-        ring=[]
-        for i in range(sides):
-            az=2*math.pi*i/sides
-            ring.append(vert((x+r_x*math.sin(theta)*math.cos(az),
-                              yc+r_y*math.sin(theta)*math.sin(az),
-                              z0+(ztop-z0)*math.cos(theta))))
+    members = [export_root] + list(export_root.children_recursive)
+    eyes = [o for o in members if o.type == "MESH" and
+            ("high-poly" in o.name.lower() or
+             ("eye" in o.name.lower() and not any(w in o.name.lower() for w in
+              ("eyebrow", "eyelash", "hair", "eyelid", "iris"))))]
+    eye_pts = [o.matrix_world @ v.co for o in eyes for v in o.data.vertices]
+    if len(eye_pts) < 28:
+        raise RuntimeError("Caroline hair: missing eyes; cannot fit to head")
+
+    eye_z = sum(p.z for p in eye_pts) / len(eye_pts)
+    cx = sum(p.x for p in eye_pts) / len(eye_pts)
+    ey = sum(p.y for p in eye_pts) / len(eye_pts)
+    body_pts = [body.matrix_world @ v.co for v in body.data.vertices]
+    h = max(p.z for p in body_pts) - min(p.z for p in body_pts)
+    if not (1 < h < 3):
+        raise RuntimeError("Caroline hair: invalid human stature")
+
+    # The eyes are in front of the skull. Body front is local -Y.
+    # The previous cap used rx=.071*h, ry=.069*h with an extremely
+    # shallow .036*h rise. That created the hovering parasol in the photo.
+    cy = ey + .039*h
+    rx, ry = .054*h, .055*h
+    crown_z = eye_z + .081*h
+    sides = 64
+    rows = 24
+    head_bone = next((b.name for b in rig.data.bones
+                      if b.name.lower().split(":")[-1] == "head"), None)
+    if not head_bone:
+        raise RuntimeError("Caroline period hair requires head rig bone")
+
+    def surface(az, theta, shell=0):
+        # Higher forehead hairline; sides cover the temples, rear reaches
+        # nape. No curtain crosses the eyes or mouth.
+        towards_front = (1-math.sin(az))/2
+        towards_back = 1-towards_front
+        edge = eye_z + h*(.010 + .025*towards_front-.019*towards_back)
+        curve = math.sin(theta)
+        soft_volume = 1 + .009*math.cos(7*az+3*theta)
+        r = curve*soft_volume + shell
+        return (cx+rx*r*math.cos(az),
+                cy+ry*r*math.sin(az),
+                edge+(crown_z-edge)*max(0,math.cos(theta))**.9+
+                shell*.018*h)
+
+    front_edge = surface(-math.pi/2, math.pi/2)[2]
+    back_edge = surface(math.pi/2, math.pi/2)[2]
+    if crown_z-front_edge < .035*h or crown_z-back_edge < .055*h:
+        raise RuntimeError("Caroline hair became a flat plate again")
+    if front_edge <= eye_z+.027*h:
+        raise RuntimeError("Caroline hairline crosses eye level")
+
+    verts,faces,material_ids = [],[],[]
+    def point(p):
+        verts.append(tuple(p))
+        return len(verts)-1
+    def polygon(indices, mat=0):
+        faces.append(tuple(indices))
+        material_ids.append(mat)
+
+    # Sculpted volumetric scalp dome, not a flattened ring/saucer.
+    rings = []
+    for j in range(rows):
+        theta = .002 + (math.pi/2-.002)*j/(rows-1)
+        ring = [point(surface(2*math.pi*i/sides,theta))
+                for i in range(sides)]
         if rings:
-            prev=rings[-1]
-            for i in range(sides):
-                k=(i+1)%sides
-                quad((prev[i],ring[i],ring[k],prev[k]),i%3)
+            prev = rings[-1]
+            for k in range(sides):
+                nxt = (k+1)%sides
+                polygon((prev[k], ring[k], ring[nxt], prev[nxt]), (k//4)%3)
         rings.append(ring)
-    # Side-swept lock ribbons end at the nape; no sheet crossing the eyes.
+
+    # Hair fibers swept from the center/front part over both temples to the
+    # rear of the head. Every lock follows the dome; there is no floating cap
+    # or free-standing noodle/pendant at the forehead.
     for side in (-1,1):
-        for strip in range(9):
-            sections=11;prev=None
-            for j in range(sections):
-                t=j/(sections-1)
-                z=eye_z+h*(.065-.13*t)
-                xx=x+side*h*(.055+.009*strip/9+.011*t)
-                yy=yc+h*(-.018+.037*t+.003*strip/9)
-                width=.0033*h*(1-.4*t)
-                a=vert((xx-side*width,yy,z))
-                b=vert((xx+side*width,yy,z))
-                if prev:quad((prev[0],prev[1],b,a),strip%3)
-                prev=(a,b)
-    # Coiled bun on the back of the head.
-    origin=Vector((x,yc+.064*h,eye_z+.041*h))
-    for strand in range(5):
-        previous=None
-        for i in range(65):
-            a=2*math.pi*i/64
-            radius=h*(.022+.003*strand)
-            center=origin+Vector((radius*math.cos(a),h*.007*math.sin(2*a+strand),
-                                   radius*math.sin(a)))
-            ring=[]
-            for k in range(5):
-                b=2*math.pi*k/5
-                ring.append(vert(center+Vector((h*.004*math.cos(b),
-                             h*.004*math.sin(b),0))))
-            if previous:
-                for k in range(5):
-                    n=(k+1)%5
-                    quad((previous[k],ring[k],ring[n],previous[n]),strand%3)
-            previous=ring
-    mesh=bpy.data.meshes.new("Caroline authentic-light-hair updo preview mesh")
-    mesh.from_pydata(vertices,[],faces);mesh.update()
-    material_colors=[(.72,.55,.36),(.63,.47,.30),(.78,.62,.43)]
-    for i,rgb in enumerate(material_colors):
-        mat=bpy.data.materials.new("Caroline honey light-brown hair "+str(i))
-        mat.use_nodes=True;mat.diffuse_color=(*rgb,1)
-        bs=mat.node_tree.nodes.get("Principled BSDF")
-        bs.inputs["Base Color"].default_value=(*rgb,1)
-        bs.inputs["Roughness"].default_value=.78
-        bs.inputs["Metallic"].default_value=0
-        mesh.materials.append(mat)
-    for poly,mat in zip(mesh.polygons,ids):
-        poly.material_index=mat;poly.use_smooth=True
-    ob=bpy.data.objects.new("Caroline period swept back hair (face clear)",mesh)
-    bpy.context.collection.objects.link(ob)
-    # Mesh coordinates above were built in world coordinates.
-    ob.parent=export_root
-    ob.matrix_world=rig.matrix_world.copy()
-    transform=ob.matrix_world.inverted_safe()
-    for v in ob.data.vertices:v.co=transform@v.co
-    vg=ob.vertex_groups.new(name=head);vg.add(list(range(len(vertices))),1.0,"REPLACE")
-    ob.modifiers.new("Caroline hair follows head","ARMATURE").object=rig
-    print("WVLRP_CAROLINE_PERIOD_UPDO",len(vertices),len(faces),"hairline",round(z0,3),
-          "eye_level",round(eye_z,3),"head_bone",head)
-    return ob
+        for strand in range(24):
+            previous = None
+            root_az = -math.pi/2 + side*(.10+.040*strand)
+            travel = side*(1.12+.026*strand)
+            for step in range(19):
+                t = step/18
+                az = root_az + travel*t
+                theta = .36 + 1.11*t
+                width = .050*(1-.50*t)
+                p1 = point(surface(az-width,theta,.020))
+                p2 = point(surface(az+width,theta,.020))
+                if previous:
+                    polygon((previous[0],p1,p2,previous[1]), strand%3)
+                previous = (p1,p2)
+
+    # Compact low chignon overlapping the back/nape instead of the old
+    # detached five-ring coil. Low bun belongs on the rear surface of head.
+    bun_c = Vector((cx, cy+ry*.88, eye_z-.010*h))
+    bun_rx,bun_ry,bun_rz = .022*h,.014*h,.023*h
+    bun_rows,bun_sides = 16,40
+    previous = None
+    for i in range(bun_rows+1):
+        theta = .002 + (math.pi-.004)*i/bun_rows
+        ring = []
+        for j in range(bun_sides):
+            az = 2*math.pi*j/bun_sides
+            ring.append(point((
+                bun_c.x + bun_rx*math.sin(theta)*math.cos(az),
+                bun_c.y + bun_ry*math.sin(theta)*math.sin(az),
+                bun_c.z + bun_rz*math.cos(theta))))
+        if previous:
+            for j in range(bun_sides):
+                k = (j+1)%bun_sides
+                polygon((previous[j],ring[j],ring[k],previous[k]), j//8%3)
+        previous = ring
+
+    hair_mesh = bpy.data.meshes.new("Caroline curved period hair, swept updo")
+    hair_mesh.from_pydata(verts,[],faces)
+    hair_mesh.update()
+    colors = [(0.56,0.40,0.25),(0.64,0.48,0.31),(0.50,0.36,0.23)]
+    for i,rgb in enumerate(colors):
+        mat = bpy.data.materials.new("Caroline warm light blonde hair shade "+str(i))
+        mat.use_nodes = True
+        mat.diffuse_color = (*rgb,1)
+        mat.use_backface_culling = False
+        bs = next((n for n in mat.node_tree.nodes if n.type=="BSDF_PRINCIPLED"),None)
+        bs.inputs["Base Color"].default_value = (*rgb,1)
+        bs.inputs["Roughness"].default_value = .84
+        bs.inputs["Metallic"].default_value = 0
+        hair_mesh.materials.append(mat)
+    for face, mat_index in zip(hair_mesh.polygons,material_ids):
+        face.material_index = mat_index
+        face.use_smooth = True
+
+    hair = bpy.data.objects.new("Caroline period swept back hair (face clear)",hair_mesh)
+    bpy.context.collection.objects.link(hair)
+    hair.parent = export_root
+    # The geometry was authored in world coordinates. Convert to
+    # armature-local before assigning the Head vertex group.
+    hair.matrix_world = rig.matrix_world.copy()
+    to_local = hair.matrix_world.inverted_safe()
+    for v in hair_mesh.vertices:
+        v.co = to_local @ v.co
+    group = hair.vertex_groups.new(name=head_bone)
+    group.add(list(range(len(verts))),1.0,"REPLACE")
+    hair.modifiers.new("Caroline hairstyle follows head","ARMATURE").object = rig
+
+    print("WVLRP_CAROLINE_HAIR_FIT",
+          "dome_rise_front_m",round(crown_z-front_edge,4),
+          "dome_rise_back_m",round(crown_z-back_edge,4),
+          "eye_clearance_m",round(front_edge-eye_z,4),
+          "bun_center_z",round(bun_c.z,4),
+          "vertices",len(verts),"faces",len(faces),
+          "head_bone",head_bone)
+    return hair
