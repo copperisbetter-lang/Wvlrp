@@ -3,6 +3,7 @@ Reject missing facial diffuse textures, body skin, skeletal animations and rigs.
 The exported GLB is a QA artifact; public character approval is separate.
 """
 import bpy, json, struct, sys, os
+from mathutils import Vector
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from face_materials import verify_photo_skin_glb
@@ -19,16 +20,15 @@ if len(rigs)!=1:
     raise RuntimeError("Caroline export has "+str(len(rigs))+" armatures; expected exactly one")
 if not any(len(o.data.vertices)>10000 for o in meshes):
     raise RuntimeError("Caroline export has no intact continuous adult basemesh")
-# The neutral, clothed-character anatomy contour must be on the actual base
-# vertices, not exclusively in a shape key that a viewer may ignore.
-contoured=[o for o in meshes if o.get("wvlrp_carol_pelvic_contour_baked",False)]
-if len(contoured)!=1 or contoured[0].get("wvlrp_carol_pelvic_contour_vertices",0)<24:
-    raise RuntimeError("Carol adult pelvic contour not baked into exported basemesh")
-rollback="Carol pelvic contour OFF - inspection rollback"
-if not contoured[0].data.shape_keys or rollback not in contoured[0].data.shape_keys.key_blocks:
-    raise RuntimeError("Carol anatomical fit rollback shape key missing")
-if contoured[0].data.shape_keys.key_blocks[rollback].value != 0.0:
-    raise RuntimeError("Carol contour unexpectedly disabled in preview")
+# The C0-origin fitted overlay must be present, independently skinned to Hips.
+# Do not mistake the old coarse 31-vertex source-body bump for valid anatomy.
+attached=[o for o in meshes if o.get("wvlrp_carol_c0_anatomy",False)]
+if len(attached)!=1 or len(attached[0].data.vertices)<1200:
+    raise RuntimeError("C0 anatomical geometry not fitted into exported Carol model")
+if not attached[0].get("wvlrp_carol_c0_local"):
+    raise RuntimeError("C0 origin missing from anatomy object")
+if not any(m.type=="ARMATURE" and m.object==rigs[0] for m in attached[0].modifiers):
+    raise RuntimeError("C0 anatomical attachment not bound to Carol rig")
 if not any("Caroline light blue eyes original MPFB UV" in o.name for o in meshes):
     raise RuntimeError("Carolyn original MakeHuman blue eyes are missing")
 if any("iris geometry" in o.name.lower() for o in meshes):
@@ -128,10 +128,8 @@ if missing_materials:raise RuntimeError("Missing exported clothing materials: "+
 clips={a.get("name","") for a in meta.get("animations",[])}
 unexported=[name for name in required if name not in clips]
 if unexported:raise RuntimeError("Caroline exported GLB animations missing: "+str(unexported))
-if not any("Carol pelvic contour OFF - inspection rollback" in name
-           for mesh in meta.get("meshes",[])
-           for name in mesh.get("extras",{}).get("targetNames",[]) if isinstance(name,str)):
-    raise RuntimeError("Carol pelvis revert shape key not exported to GLB")
+if not any("WVLRP Carol C0 anatomy" in m.get("name","") for m in meta.get("meshes",[])):
+    raise RuntimeError("C0 fitted anatomy mesh missing from GLB")
 if not any("Carolyn Season 3 Facial Study" in name
            for mesh in meta.get("meshes",[])
            for name in mesh.get("extras",{}).get("targetNames",[]) if isinstance(name,str)):
@@ -142,5 +140,17 @@ if joints<25:raise RuntimeError("Caroline GLB rig has too few joints: "+str(join
 names=[n.get("name","") for n in meta.get("nodes",[])]
 if any("original human" in n.lower() for n in names):
     raise RuntimeError("Caroline source-copy contamination")
+# Publish the REAL landmark used by the sculpt so model-viewer can place
+# a C0 hotspot exactly, not with a guessed screenshot pixel coordinate.
+c0_obj=attached[0]
+world=c0_obj.matrix_world @ Vector(c0_obj["wvlrp_carol_c0_local"])
+sidecar=output.with_name("carol-anatomy-landmarks.json")
+sidecar.write_text(json.dumps({
+    "version":"c0-fit-v1",
+    "model_coordinates_m":{"x":round(world.x,5),"y":round(world.z,5),"z":round(-world.y,5)},
+    "features":json.loads(c0_obj["wvlrp_carol_c0_table"]),
+    "note":"Offsets are metres from C0; anatomy is still an inspection trial."
+},indent=2))
+print("WVLRP_CAROL_C0_LANDMARKS_WRITTEN",str(sidecar))
 print("WVLRP_CAROLINE_GLB_SUCCESS",output,output.stat().st_size,
       "joints",joints,"animations",len(clips),"mesh_count",len(meta.get("meshes",[])))
