@@ -149,9 +149,30 @@ class YoungExplorerWardrobe {
    'regular-shorts':create('regular-shorts','#f1e6c9','#64809a'),
    'loose-shorts':create('loose-shorts','#f1e6c9','#64809a')
   };
-  // Loose shorts use a roomier outward normal offset without altering the body.
+  // Loose shorts need a free-hanging silhouette, not a second skin.
+  // Expand horizontally from the garment's own centerline, without following
+  // tiny surface-normal changes that reproduce underlying body contours.
   const loose=this.suits['loose-shorts']?.shorts;
-  if(loose){const p=loose.getVerticesData(B.VertexBuffer.PositionKind);const n=loose.getVerticesData(B.VertexBuffer.NormalKind);if(p&&n){const q=Float32Array.from(p);for(let i=0;i<q.length;i++)q[i]+=n[i]*this.measure.H*.018;loose.updateVerticesData(B.VertexBuffer.PositionKind,q);}}
+  if(loose){
+   const p=loose.getVerticesData(B.VertexBuffer.PositionKind);
+   if(p){
+    const q=Float32Array.from(p), ys=[];
+    let cx=0,cz=0,count=0;
+    for(let i=0;i<p.length;i+=3){cx+=p[i];cz+=p[i+2];ys.push(p[i+1]);count++;}
+    cx/=count;cz/=count;
+    const ymin=Math.min(...ys),ymax=Math.max(...ys),span=Math.max(.001,ymax-ymin);
+    for(let i=0;i<q.length;i+=3){
+     const t=(p[i+1]-ymin)/span;
+     const ease=Math.min(1,Math.max(0,(t-.10)/.45));
+     // Wide, relaxed leg openings with a slightly narrower waistband.
+     const width=1.20-.07*ease,depth=1.24-.09*ease;
+     q[i]=cx+(p[i]-cx)*width;
+     q[i+2]=cz+(p[i+2]-cz)*depth;
+    }
+    loose.updateVerticesData(B.VertexBuffer.PositionKind,q,true);
+    loose.refreshBoundingInfo();
+   }
+  }
   this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
