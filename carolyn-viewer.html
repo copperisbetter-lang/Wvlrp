@@ -23,7 +23,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <main>
 <h2>Camera and close inspection</h2>
 <div class="controls">
-<a href="/carolyn-viewer.html?model=pelvic-x10" style="color:#fff;background:#72512e;padding:10px;border:1px solid #e0b66a;border-radius:10px;text-decoration:none">Pelvis ×10 diagnostic</a><a href="/carolyn-viewer.html" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Normal Carol model</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
+<a href="/carolyn-viewer.html?model=pelvic-x10" style="color:#fff;background:#72512e;padding:10px;border:1px solid #e0b66a;border-radius:10px;text-decoration:none">Pelvis ×10 diagnostic</a><a href="/carolyn-viewer.html" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Normal Carol model</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button><button id="pelvis">Pelvis</button>
 <button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
 </div>
@@ -135,8 +135,8 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  const label=(s)=>String(s||'').replace(/[^a-zA-Z]/g,'').toLowerCase();
  function orbit(azimuth=0,r=baseRadius,polar=80){v.cameraOrbit=azimuth+'deg '+polar+'deg '+Math.max(.12,r).toFixed(3)+'m';}
  function target(y){v.cameraTarget=center.x.toFixed(3)+'m '+y.toFixed(3)+'m '+center.z.toFixed(3)+'m';}
- function focus(kind){if(!ready)return; const frac=kind==='face'?.91:kind==='torso'?.72:.52;
-   target(center.y+(frac-.5)*height);orbit(0,baseRadius*(kind==='face'?.25:kind==='torso'?.52:1));}
+ function focus(kind){if(!ready)return; const frac=kind==='face'?.91:kind==='torso'?.72:kind==='pelvis'?.475:.52;
+   target(center.y+(frac-.5)*height);orbit(0,baseRadius*(kind==='face'?.25:kind==='torso'?.52:kind==='pelvis'?.65:1));}
  function zoom(mult){if(!ready)return;const o=v.getCameraOrbit();orbit(o.theta*180/Math.PI,Math.max(.12,Math.min(baseRadius*5,o.radius*mult)),o.phi*180/Math.PI);document.querySelector('#zoomval').textContent='Zoom distance: '+Math.max(.12,Math.min(baseRadius*5,o.radius*mult)).toFixed(2)+' m';}
  const matching=(pose)=>clips.find(x=>{const norm=label(x); const wanted=label(pose);
    return norm===wanted||norm.endsWith(wanted)||norm.includes('caroline'+wanted)||norm.includes('carolyn'+wanted);
@@ -156,7 +156,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    // in-app browser strips the ?view=face query or serves a cached link.
    // The Full body and Upper body controls still work normally.
    const initialView=new URLSearchParams(location.search).get('view');
-   const startView=initialView==='full'?'full':initialView==='torso'?'torso':'face';
+   const startView=isPelvicX10?'pelvis':initialView==='pelvis'?'pelvis':initialView==='full'?'full':initialView==='torso'?'torso':'face';
    focus(startView);
    // Prevent a delayed model-viewer auto-frame animation from making the
    // newly loaded close-up look as if it had opened on the whole body.
@@ -182,6 +182,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  document.querySelector('#full').onclick=()=>focus('full');
  document.querySelector('#face').onclick=()=>focus('face');
  document.querySelector('#torso').onclick=()=>focus('torso');
+ document.querySelector('#pelvis').onclick=()=>focus('pelvis');
  document.querySelector('#zoomIn').onclick=()=>zoom(.65);
  document.querySelector('#zoomOut').onclick=()=>zoom(1.5);
  document.querySelector('#front').onclick=()=>{const o=v.getCameraOrbit();orbit(0,o.radius);};
