@@ -7,6 +7,8 @@ on:
       - 'world-creator/scripts/export_caroline_glb.py'
       - 'world-creator/scripts/export_caroline_pelvic_x10.py'
       - 'world-creator/scripts/caroline_appearance.py'
+      - 'world-creator/scripts/carol_pelvis_c0.py'
+      - 'world-creator/assets/riley-vulva1-source.json'
       - 'world-creator/scripts/caroline_face_morph.py'
       - 'world-creator/scripts/caroline_eyes.py'
       - 'world-creator/scripts/caroline_wardrobe.py'
@@ -72,6 +74,7 @@ jobs:
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background world-creator/assets/caroline-source-validation.blend --python world-creator/scripts/export_caroline_glb.py 2>&1 | tee /tmp/caroline-export.log
           grep WVLRP_CAROLINE_GLB_SUCCESS /tmp/caroline-export.log
           test -s world-creator/assets/caroline-inspection.glb
+          test -s world-creator/assets/carol-anatomy-landmarks.json
       - name: Save private build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -79,4 +82,5 @@ jobs:
           path: |
             world-creator/assets/caroline-source-validation.blend
             world-creator/assets/caroline-inspection.glb
+            world-creator/assets/carol-anatomy-landmarks.json
           retention-days: 7
