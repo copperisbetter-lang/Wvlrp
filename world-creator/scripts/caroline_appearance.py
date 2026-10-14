@@ -6,38 +6,56 @@ import bpy, math
 from mathutils import Vector
 
 def reshape_adult_body(body):
-    """Moderate posterior contour on Carol's original continuous adult basemesh."""
-    if not body or body.type!="MESH" or len(body.data.vertices)<10000:
-        raise RuntimeError("Caroline shape: continuous basemesh not available")
-    verts=body.data.vertices
-    xmin=min(v.co.x for v in verts);xmax=max(v.co.x for v in verts)
-    zmin=min(v.co.z for v in verts);zmax=max(v.co.z for v in verts)
-    ymin=min(v.co.y for v in verts);ymax=max(v.co.y for v in verts)
-    height=zmax-zmin
-    cx=(xmin+xmax)/2;cy=(ymin+ymax)/2
-    if height<.8 or height>3:
-        raise RuntimeError("Caroline proportions: invalid human scale")
-    changed=0
-    for v in verts:
-        p=v.co
-        z=(p.z-zmin)/height;x=(p.x-cx)/height
-        # MPFB adults face Blender -Y; only the posterior half is affected.
-        rear=max(0.,min(1.,(p.y-cy)/(.08*height)))
-        rear=rear*rear*(3-2*rear)
-        if rear<.001:continue
-        # Lift and round both glute lobes while preserving the continuous
-        # source pelvis and thigh topology.  No separate mesh attachments.
-        lobes=math.exp(-((abs(x)-.068)/.057)**2)
-        butt=math.exp(-((z-.53)/.074)**2)
-        lift=math.exp(-((z-.575)/.055)**2)
-        delta=height*(.006*butt*lobes+.0015*lift*lobes)*rear
-        p.y+=delta
-        # Hip contour kept narrow/toned; garment must be tailored afterward.
-        p.x=cx+(p.x-cx)*(1+.003*butt*rear)
-        changed+=1
-    body.data.update()
-    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3),"profile","reduced-natural-v3")
+    """Reduce Carol's prominent posterior *in the actual exported mesh*.
 
+    Use a soft bilateral deformation that leaves hip joints and upper thighs
+    alone. MPFB export copies can retain source shape keys, so the same delta
+    must be written into Basis and existing targets or the viewer can restore
+    the old oversized silhouette.
+    """
+    if not body or body.type != "MESH" or len(body.data.vertices) < 10000:
+        raise RuntimeError("Carol posterior: continuous basemesh not available")
+    verts = body.data.vertices
+    xmin = min(v.co.x for v in verts); xmax = max(v.co.x for v in verts)
+    ymin = min(v.co.y for v in verts); ymax = max(v.co.y for v in verts)
+    zmin = min(v.co.z for v in verts); zmax = max(v.co.z for v in verts)
+    h = zmax - zmin
+    if not 1.0 < h < 3.0:
+        raise RuntimeError("Carol posterior: invalid human stature")
+    cx, cy = (xmin+xmax)*.5, (ymin+ymax)*.5
+    old_keys = list(body.data.shape_keys.key_blocks) if body.data.shape_keys else []
+    changed, peak = 0, 0.0
+    for i,v in enumerate(verts):
+        p = v.co
+        nx = abs((p.x-cx)/h)
+        nz = (p.z-zmin)/h
+        # Rear half only (MakeHuman faces Blender -Y).
+        rear = max(0.0,min(1.0,(p.y-cy)/(.070*h)))
+        rear = rear*rear*(3-2*rear)
+        cheek = math.exp(-((nx-.069)/.064)**2)
+        glute = math.exp(-((nz-.523)/.079)**2)
+        upper = math.exp(-((nz-.568)/.057)**2)
+        # Negative is inward: approximately 2-4 cm less rear projection.
+        # Prior "reduced" pass instead ADDED volume here.
+        inward = h*(.0195*glute*cheek+.0045*upper*cheek)*rear
+        narrow = (p.x-cx)*(-.0095*glute*rear)
+        displacement = Vector((narrow,-inward,0.0))
+        if displacement.length < .00005*h:
+            continue
+        if old_keys:
+            for kb in old_keys:
+                kb.data[i].co += displacement
+        else:
+            v.co += displacement
+        changed += 1
+        peak = max(peak, displacement.length)
+    if changed < 250:
+        raise RuntimeError("Carol posterior: reduction missed target surface")
+    body.data.update()
+    body["wvlrp_carol_posterior_reduction_baked"] = True
+    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(h,3),
+          "max_reduction_mm",round(peak*1000,2),
+          "profile","toned-natural-v4-INWARD")
 
 def add_caroline_adult_pelvic_morph(body):
     """Reversible, covered external anatomy contour on Carol's OWN adult body.
@@ -62,10 +80,10 @@ def add_caroline_adult_pelvic_morph(body):
     # rather than selecting the posterior surface or changing the thighs.
     anterior = sorted(v.co.y for v in verts
         if lo + .445*h < v.co.z < lo + .545*h
-        and abs(v.co.x - cx) < .055*h)
+        and abs(v.co.x - cx) < .065*h)
     if len(anterior) < 35:
         raise RuntimeError("Carol adult anatomy: pelvic surface insufficient")
-    front_ref = anterior[max(0, int(len(anterior)*.18))]
+    front_ref = anterior[max(0, int(len(anterior)*.31))]
     # Store original coordinates so the Blender source remains reversible.
     # First sculpt the actual base mesh, rather than relying on a GLB viewer
     # to honor nonzero default morph weights (the previous preview did not).
@@ -84,28 +102,28 @@ def add_caroline_adult_pelvic_morph(body):
     for i, vertex in enumerate(verts):
         p = vertex.co
         nz = (p.z-lo)/h
-        if nz < .408 or nz > .568:
+        if nz < .394 or nz > .568:
             continue
         ax = abs((p.x-cx)/h)
-        if ax > .087:
+        if ax > .091:
             continue
-        ahead = max(0., min(1., (front_ref + .026*h - p.y)/(.056*h)))
+        ahead = max(0., min(1., (front_ref + .035*h - p.y)/(.067*h)))
         front_weight = ahead*ahead*(3.-2.*ahead)
         if front_weight < .025:
             continue
         # Fuller soft external folds and lower relaxed contour; dimensions
         # are fractions of stature and feather into the original pelvic skin.
-        pubis = gaussian(ax,.0,.047)*gaussian(nz,.517,.042)
-        outer = gaussian(ax,.018,.016)*gaussian(nz,.475,.039)
-        central_cleft = gaussian(ax,0.,.007)*gaussian(nz,.472,.030)
-        low_fold = gaussian(ax,.013,.015)*gaussian(nz,.443,.022)
-        front_projection = (.004*pubis + .015*outer +
-                            .012*low_fold - .0045*central_cleft)
-        dz = -.0105*low_fold
+        pubis = gaussian(ax,.0,.048)*gaussian(nz,.516,.044)
+        outer = gaussian(ax,.019,.019)*gaussian(nz,.468,.047)
+        central_cleft = gaussian(ax,0.,.008)*gaussian(nz,.470,.037)
+        low_fold = gaussian(ax,.016,.018)*gaussian(nz,.429,.032)
+        front_projection = (.0045*pubis + .024*outer +
+                            .015*low_fold - .0095*central_cleft)
+        dz = -.010*low_fold
         new = Vector((p.x, p.y-h*front_weight*front_projection,
                       p.z+h*front_weight*dz))
         shift = (new-p).length
-        if shift > .030*h:
+        if shift > .040*h:
             raise RuntimeError("Carol anatomy contour exceeds safe shape range")
         if existing_keys:
             displacement = new - p
@@ -116,7 +134,7 @@ def add_caroline_adult_pelvic_morph(body):
         if shift > .00015*h:
             moved += 1
             max_shift = max(max_shift, shift)
-    if moved < 35:
+    if moved < 75:
         raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
     body.data.update()
     if not body.data.shape_keys:
