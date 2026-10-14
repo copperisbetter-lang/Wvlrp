@@ -35,12 +35,29 @@ jobs:
           mkdir -p /tmp/wvlrp_blender_ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
-      - name: Install official MakeHuman realistic model assets
+      - name: Restore previously downloaded MakeHuman assets
+        id: mh_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mh-system.zip
+          key: wvlrp-makehuman-system-assets-cc0-v1
+      - name: Download MakeHuman assets only when not cached
+        if: steps.mh_cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          curl -fL --retry 4 --retry-delay 6 --connect-timeout 40 \
+          curl -fL --retry 2 --retry-delay 3 --connect-timeout 12 --max-time 150 \
             'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+      - name: Verify MakeHuman asset archive
+        run: |
+          set -euo pipefail
+          test -s /tmp/mh-system.zip
           unzip -t /tmp/mh-system.zip | tail -n 2
+      - name: Cache validated MakeHuman assets for subsequent builds
+        if: steps.mh_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/mh-system.zip
+          key: wvlrp-makehuman-system-assets-cc0-v1
       - name: Build complete human character and clothing
         run: |
           set -euo pipefail
