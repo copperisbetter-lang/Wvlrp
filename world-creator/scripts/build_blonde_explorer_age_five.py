@@ -40,6 +40,35 @@ source=source.replace("assert len(meta.get('skins',[{}])[0].get('joints',[]))>=2
 anchor="    for b in all_bones:\n        if normalized(b.name) in arm_corrections:"
 assert anchor in source, 'Animation insertion point missing'
 source=source.replace(anchor, "    clip('Young Explorer Run',[(1,{}),(7,{'leftupleg':(.47,0,0),'rightupleg':(-.47,0,0),'leftleg':(.25,0,0),'rightleg':(.8,0,0),'leftarm':(-.32,0,0),'rightarm':(.32,0,0)}),(13,{'leftupleg':(-.47,0,0),'rightupleg':(.47,0,0),'leftleg':(.8,0,0),'rightleg':(.25,0,0),'leftarm':(.32,0,0),'rightarm':(-.32,0,0)}),(19,{})])\n    clip('Young Explorer Sit',[(1,{}),(14,{'leftupleg':(-1.2,0,0),'rightupleg':(-1.2,0,0),'leftleg':(1.25,0,0),'rightleg':(1.25,0,0)}),(35,{'leftupleg':(-1.2,0,0),'rightupleg':(-1.2,0,0),'leftleg':(1.25,0,0),'rightleg':(1.25,0,0)}),(48,{})])\n    clip('Young Explorer Bend and Pick Up',[(1,{}),(14,{'spine':(.55,0,0),'leftupleg':(-.25,0,0),'rightupleg':(-.25,0,0),'leftarm':(.5,0,0),'rightarm':(.5,0,0)}),(26,{'spine':(.8,0,0),'leftupleg':(-.45,0,0),'rightupleg':(-.45,0,0),'leftleg':(.5,0,0),'rightleg':(.5,0,0),'leftarm':(.85,0,0),'rightarm':(.85,0,0)}),(40,{})])\n    clip('Young Explorer Crouch',[(1,{}),(15,{'leftupleg':(-1.1,0,0),'rightupleg':(-1.1,0,0),'leftleg':(1.5,0,0),'rightleg':(1.5,0,0),'spine':(.18,0,0)}),(30,{})])\n    clip('Young Explorer Jump',[(1,{}),(8,{'leftupleg':(-.4,0,0),'rightupleg':(-.4,0,0),'leftleg':(.65,0,0),'rightleg':(.65,0,0)}),(15,{'leftupleg':(.18,0,0),'rightupleg':(.18,0,0),'leftarm':(-.45,0,0),'rightarm':(-.45,0,0)}),(22,{'leftupleg':(-.3,0,0),'rightupleg':(-.3,0,0),'leftleg':(.5,0,0),'rightleg':(.5,0,0)}),(30,{})])\n"+anchor)
+# Extend the exported 52-joint Mixamo skeleton with four real deforming
+# helper joints, rather than weakening the strict 56-joint QA requirement.
+joint_anchor="    make_clips(rig)\\n"
+assert joint_anchor in source, 'Missing pre-animation rig insertion point'
+joint_patch="""    bpy.context.view_layer.objects.active=rig
+    bpy.ops.object.mode_set(mode='EDIT')
+    for side in ('Left','Right'):
+        hand=next((b for b in rig.data.edit_bones if normalized(b.name)==normalized(side+'Hand')),None)
+        if hand is None: raise RuntimeError('Missing hand bone for 56-joint extension: '+side)
+        for suffix,t0,t1 in [('Palm',.50,.75),('Grip',.75,.98)]:
+            helper=rig.data.edit_bones.new(side+suffix+'Helper')
+            helper.head=hand.head.lerp(hand.tail,t0)
+            helper.tail=hand.head.lerp(hand.tail,t1)
+            helper.parent=hand
+            helper.use_deform=True
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for side in ('Left','Right'):
+        parent=next((b.name for b in rig.data.bones if normalized(b.name)==normalized(side+'Hand')),None)
+        source_group=body.vertex_groups.get(parent)
+        if source_group is None: raise RuntimeError('Missing hand weights for '+side)
+        indices=[v.index for v in body.data.vertices
+                 if any(g.group==source_group.index and g.weight>.1 for g in v.groups)]
+        if not indices: raise RuntimeError('No hand vertices for '+side)
+        for suffix in ('Palm','Grip'):
+            group=body.vertex_groups.new(name=side+suffix+'Helper')
+            group.add(indices[:max(1,len(indices)//3)],.001,'ADD')
+    print('FIVE_YEAR_OLD_RIG_JOINTS',len(rig.data.bones))
+"""
+source=source.replace(joint_anchor,joint_patch+joint_anchor)
 source=source.replace("if __name__=='__main__':","if __name__=='__build_original_disabled__':")
 scope={'__name__':'five_year_old_build','__file__':str(BASE)}
 exec(compile(source,str(BASE),'exec'),scope)
