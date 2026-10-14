@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -108,6 +109,46 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Prepare Carolyn model for inspection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/assets
+          run_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-caroline-mpfb.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id')"
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "No successful Caroline model build is available"
+            exit 0
+          fi
+          mkdir -p /tmp/carolyn-export
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export
+          test -s /tmp/carolyn-export/caroline-inspection.glb
+          cp /tmp/carolyn-export/caroline-inspection.glb world-creator/assets/caroline-inspection.glb
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path("world-creator/assets/caroline-inspection.glb")
+          d=p.read_bytes()
+          magic,version,total=struct.unpack_from("<4sII",d)
+          assert magic==b"glTF" and version==2 and total==len(d)
+          json_len,json_type=struct.unpack_from("<I4s",d,12)
+          assert json_type==b"JSON"
+          start=20
+          obj=json.loads(d[start:start+json_len])
+          roots=obj["scenes"][obj.get("scene",0)]["nodes"]
+          if len(roots)>1:
+              # Blender's original rig and its exported copy occupy the same place.
+              # Only show the final _caroline_source tree in the inspection preview.
+              final=[i for i in roots if "caroline_source" in obj["nodes"][i].get("name","")]
+              assert len(final)==1, "Cannot safely select the finished Carolyn rig"
+              obj["scenes"][obj.get("scene",0)]["nodes"]=final
+              encoded=json.dumps(obj,separators=(",",":")).encode()
+              padded=encoded+b" "*((-len(encoded))%4)
+              rest=d[start+json_len:]
+              p.write_bytes(struct.pack("<4sII",b"glTF",2,12+8+len(padded)+len(rest))+struct.pack("<I4s",len(padded),b"JSON")+padded+rest)
+          assert p.stat().st_size>100000
+          print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
+          PY
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
