@@ -11,14 +11,21 @@ Status: **reference and build acceptance specification; no finished GLBs yet.** 
 
 References are specifically **television Season 3**, not historic photos, later-season designs, or generic frontier characters. Face shapes must be distinct and independently reviewed against licensed/authorized reference stills; do not label a generic MakeHuman preset as an actor likeness.
 
+## Additional Season 3 characters
+- **Jack**: the Ingalls family's scruffy little dog; build a distinct four-legged canine model, period-accurate coat and markings based on Season 3 stills, quadruped skeleton, idle, walk, trot, run, sit, lie down, bark, and follow-family behavior. Do not use a human rig.
+- **Isaiah Edwards / Mr. Edwards (Victor French)**: sturdy adult man, bushy beard, weathered face, broad-brimmed hat, frontier shirt, vest, trousers and boots. Distinct realistic facial likeness and separate 56-joint human rig, with his own viewer and GLB.
+
 ## Build order
 1. Charles prototype, own character definition, rig, clothes and viewer route.
 2. Caroline.
 3. Mary.
 4. Laura.
 5. Carrie.
+6. Mr. Edwards.
+7. Jack (dedicated quadruped pipeline).
 
 ## Per-character deliverables
+Human 56-joint requirement applies to humans only; Jack needs a proper canine quadruped rig.
 - Separate full-body opaque GLB and standalone viewer entry, distinct asset filename and identity; no fallback silently substituting Jenny.
 - Anatomically coherent proportions, natural face, realistic textured skin and hair.
 - Full-body rig with 56 functional deform joints (or report precise deviation rather than padding joints for a numerical pass).
