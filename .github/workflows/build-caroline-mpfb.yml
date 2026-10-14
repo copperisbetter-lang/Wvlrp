@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'world-creator/scripts/build_caroline_mpfb.py'
+      - 'world-creator/scripts/export_caroline_glb.py'
       - '.github/workflows/build-caroline-mpfb.yml'
 permissions:
   contents: read
@@ -36,9 +37,17 @@ jobs:
           set -euo pipefail
           test -s world-creator/assets/caroline-source-validation.blend
           echo "Caroline finished model pass is unblocked; source foundation verified."
+      - name: Export Caroline inspection GLB
+        run: |
+          set -euo pipefail
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background world-creator/assets/caroline-source-validation.blend --python world-creator/scripts/export_caroline_glb.py 2>&1 | tee /tmp/caroline-export.log
+          grep WVLRP_CAROLINE_GLB_SUCCESS /tmp/caroline-export.log
+          test -s world-creator/assets/caroline-inspection.glb
       - name: Save private build artifact
         uses: actions/upload-artifact@v4
         with:
           name: caroline-adult-foundation
-          path: world-creator/assets/caroline-source-validation.blend
+          path: |
+            world-creator/assets/caroline-source-validation.blend
+            world-creator/assets/caroline-inspection.glb
           retention-days: 7
