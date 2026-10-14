@@ -19,6 +19,20 @@ const info=document.getElementById("info");
 const joystick=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 const crewButton=document.getElementById("crew");
+// Jenny is the first quest guide, but cannot spawn publicly before model QA.
+const jennyQuestButton=document.getElementById("jennyQuest");
+const jennyQuestPanel=document.getElementById("jennyQuestPanel");
+if(jennyQuestButton&&jennyQuestPanel){
+  jennyQuestButton.addEventListener("click",()=>{
+    jennyQuestPanel.hidden=!jennyQuestPanel.hidden;
+    jennyQuestButton.setAttribute("aria-expanded",String(!jennyQuestPanel.hidden));
+  });
+  document.getElementById("jennyQuestClose")?.addEventListener("click",()=>{
+    jennyQuestPanel.hidden=true;
+    jennyQuestButton.setAttribute("aria-expanded","false");
+  });
+}
+
 const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 // Direct link ?spawn=ranger places the walking player outside the ranger porch.
 // Hearthside remains the default on ordinary walk links; resident NPCs stay put.
