@@ -15,7 +15,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 </head><body>
 <header><h1>Carolyn — 3D body and motion inspection</h1><small>Drag to rotate • pinch or use Zoom buttons • inspect actual exported clips</small></header>
-<model-viewer id="viewer" src="/world-creator/assets/caroline-inspection.glb" camera-controls
+<model-viewer id="viewer" src="/world-creator/assets/caroline-inspection.glb?v=662d5ed1c538" camera-controls
  touch-action="none" interaction-prompt="none" shadow-intensity="0.8" exposure="1.1"
  camera-orbit="0deg 80deg auto" camera-target="auto auto auto" min-field-of-view="10deg" max-field-of-view="55deg"
  alt="Carolyn's actual rigged model; not a substitute"></model-viewer>
@@ -23,7 +23,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <main>
 <h2>Camera and close inspection</h2>
 <div class="controls">
-<button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
+<button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
 <button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
 </div>
@@ -77,6 +77,10 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    motionStatus.textContent=clips.length?'Select a motion below or use an enabled pose button.':'No skeletal motion clips in this GLB yet. Blender must build and export them.';
  });
  v.addEventListener('error',()=>{status.textContent='The Carolyn model failed to load. The exported GLB may need rebuilding or publishing.';});
+ document.querySelector('#reload').onclick=()=>{
+   ready=false;status.textContent='Reloading Carolyn from the latest published model…';
+   v.src='/world-creator/assets/caroline-inspection.glb?v=662d5ed1c538&refresh='+Date.now();
+ };
  document.querySelector('#full').onclick=()=>focus('full');
  document.querySelector('#face').onclick=()=>focus('face');
  document.querySelector('#torso').onclick=()=>focus('torso');
