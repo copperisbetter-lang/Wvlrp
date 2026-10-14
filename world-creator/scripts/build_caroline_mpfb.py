@@ -38,7 +38,7 @@ def add(h,sub,names,kind):
 bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=False)
 install_assets()
 h=HumanService.create_human(); h.name="Caroline Ingalls adult source body"
-# Adult female foundation. Cup/firmness target is a natural 36C-like silhouette with softer gravity.\n# Garments must be fitted to this final body, never globally scaled from another avatar.
+# Adult female foundation. Cup/firmness target is a natural 36C-like silhouette with softer gravity.# Garments must be fitted to this final body, never globally scaled from another avatar.
 for key,val in [("gender",0.0),("age",.52),("weight",.50),("muscle",.34),("height",.48),("proportions",.50),("cupsize",.58),("firmness",.32)]:
     HumanObjectProperties.set_value(key,val,entity_reference=h)
 TargetService.reapply_macro_details(h)
@@ -75,4 +75,5 @@ for ob in [root]+list(ObjectService.get_list_of_children(root)):
                     bs.inputs["Base Color"].default_value=(.30,.20,.12,1); bs.inputs["Roughness"].default_value=.78
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT))
-print("WVLRP_CAROLINE_BODY_TARGET","36C-like","natural_gravity",True,"clothes_fit_after_body",True)\nprint("WVLRP_CAROLINE_SOURCE_SUCCESS",len(body.data.vertices),len(body.data.polygons),len(rigs[0].data.bones),OUT)
+print("WVLRP_CAROLINE_BODY_TARGET","36C-like","natural_gravity",True,"clothes_fit_after_body",True)
+print("WVLRP_CAROLINE_SOURCE_SUCCESS",len(body.data.vertices),len(body.data.polygons),len(rigs[0].data.bones),OUT)
