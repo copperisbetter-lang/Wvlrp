@@ -108,20 +108,38 @@ jobs:
           if joints!=56:
             print("::warning::Carrie export has",joints,"deform joints, not the approved 56-joint production master. Experimental preview only.")
           PY
-      - name: Publish Carrie asset on main only after GLB verification
+      - name: Publish validated Carrie binaries without rebasing binary conflicts
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/carrie-ingalls-s3.glb
-          if [ -s world-creator/assets/carrie-ingalls-s3-preview.png ]; then
-            git add world-creator/assets/carrie-ingalls-s3-preview.png
-          fi
-          if ! git diff --cached --quiet; then
-            git commit -m "Publish Carrie child prototype after mesh and texture checks"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
+          cp world-creator/assets/carrie-ingalls-s3.glb /tmp/wvlrp-carrie-validated.glb
+          cp world-creator/assets/carrie-ingalls-s3-preview.png /tmp/wvlrp-carrie-validated.png
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            # Never publish a binary made from obsolete character source.
+            if ! git diff --quiet "$GITHUB_SHA" origin/main --               world-creator/ingalls/build_carrie_ingalls.py               world-creator/ingalls/carrie_motions.py               world-creator/scripts/build_young_explorer_real.py               .github/workflows/build-carrie-ingalls.yml; then
+              echo "::warning::New Carrie builder commit exists. Leaving publication to newer workflow."
+              exit 0
+            fi
+            # Sync before staging; rebasing committed PNG/GLB files conflicts.
+            git reset --hard origin/main
+            cp /tmp/wvlrp-carrie-validated.glb world-creator/assets/carrie-ingalls-s3.glb
+            cp /tmp/wvlrp-carrie-validated.png world-creator/assets/carrie-ingalls-s3-preview.png
+            git add world-creator/assets/carrie-ingalls-s3.glb world-creator/assets/carrie-ingalls-s3-preview.png
+            if git diff --cached --quiet; then
+              echo "Carrie binaries already current."
+              exit 0
+            fi
+            git commit -m "Publish validated Carrie animation and hair update"
+            if git push origin HEAD:main; then
+              echo "WVLRP_CARRIE_PUBLISHED"
+              exit 0
+            fi
+            echo "Race with another commit; retrying binary-safe publication $attempt."
+          done
+          echo "::error::Carrie asset publication did not succeed after retries."
+          exit 1
       - name: Preserve build output and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
