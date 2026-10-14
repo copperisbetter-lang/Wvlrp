@@ -15,7 +15,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
 </head><body>
 <header><h1>Carolyn — 3D body and motion inspection</h1><small>Drag to rotate • pinch or use Zoom buttons • inspect actual exported clips</small></header>
-<model-viewer id="viewer" src="/world-creator/assets/caroline-inspection.glb?v=662d5ed1c538" camera-controls
+<model-viewer id="viewer"  camera-controls
  touch-action="none" interaction-prompt="none" shadow-intensity="0.8" exposure="1.1"
  camera-orbit="0deg 80deg auto" camera-target="auto auto auto" min-field-of-view="10deg" max-field-of-view="55deg"
  alt="Carolyn's actual rigged model; not a substitute"></model-viewer>
@@ -49,6 +49,9 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  const v=document.querySelector('#viewer'),status=document.querySelector('#status');
  const motionStatus=document.querySelector('#motionStatus'),select=document.querySelector('#animList');
  let height=1.7,center={x:0,y:.85,z:0},baseRadius=3,ready=false,current='',clips=[];
+ const MODEL_PATH='/world-creator/assets/caroline-inspection.glb';
+ const loadUncached=()=>{ v.src=MODEL_PATH+'?fresh='+Date.now(); };
+ loadUncached();
  const label=(s)=>String(s||'').replace(/[^a-zA-Z]/g,'').toLowerCase();
  function orbit(azimuth=0,r=baseRadius,polar=80){v.cameraOrbit=azimuth+'deg '+polar+'deg '+Math.max(.12,r).toFixed(3)+'m';}
  function target(y){v.cameraTarget=center.x.toFixed(3)+'m '+y.toFixed(3)+'m '+center.z.toFixed(3)+'m';}
@@ -72,14 +75,19 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    focus('full');clips=Array.from(v.availableAnimations||[]);
    select.replaceChildren(new Option(clips.length?'Choose a built-in animation':'No animation clips in this model',''));
    clips.forEach(a=>select.add(new Option(a,a)));updateButtons();
-   status.textContent='Carolyn loaded · '+clips.length+' exported motion clip(s). Drag to rotate; Zoom + allows much closer inspection.';
+   const materialNames=(v.model?.materials||[]).map(x=>String(x.name||''));
+   const isRounded=materialNames.some(x=>x.includes('Caroline warm light blonde hair shade'));
+   const isOldFlat=materialNames.some(x=>x.includes('Caroline honey light-brown hair'));
+   status.textContent='Carolyn loaded · '+clips.length+' exported motion clip(s). '+
+      (isRounded?'Rounded hairstyle build detected.':isOldFlat?'OLDER FLAT HAIR BUILD still loaded.':'Hair version unverified.')+
+      ' Drag to rotate; use Zoom + for close inspection.';
    document.querySelector('#zoomval').textContent='Camera supports close-up focus and 0.12 m minimum distance.';
    motionStatus.textContent=clips.length?'Select a motion below or use an enabled pose button.':'No skeletal motion clips in this GLB yet. Blender must build and export them.';
  });
  v.addEventListener('error',()=>{status.textContent='The Carolyn model failed to load. The exported GLB may need rebuilding or publishing.';});
  document.querySelector('#reload').onclick=()=>{
    ready=false;status.textContent='Reloading Carolyn from the latest published model…';
-   v.src='/world-creator/assets/caroline-inspection.glb?v=662d5ed1c538&refresh='+Date.now();
+   loadUncached();
  };
  document.querySelector('#full').onclick=()=>focus('full');
  document.querySelector('#face').onclick=()=>focus('face');
