@@ -39,6 +39,20 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <button data-pose="Crawl">Crawl</button><button data-pose="LieDown">Lie down</button>
 </div>
 <div class="controls" style="margin-top:10px"><button id="play" disabled>Play motion</button><button id="pause" disabled>Pause</button><button id="hold" disabled>Hold last frame</button></div>
+<h2>Carolyn's Clothes Rack</h2>
+<p class="note">Choose an outfit or add and remove individual garments. A garment can only be changed when the exported 3D model contains its actual fitted mesh.</p>
+<div class="controls" id="outfits">
+<button data-outfit="everyday" disabled>Everyday outfit</button>
+<button data-outfit="work" disabled>Apron / chores</button>
+<button data-outfit="clear" disabled>Remove outfit for fitting</button>
+</div>
+<div class="controls" id="wardrobe" style="margin-top:10px">
+<button data-garment="blouse" disabled>Blouse</button>
+<button data-garment="skirt" disabled>Long skirt</button>
+<button data-garment="apron" disabled>Apron</button>
+<button data-garment="boots" disabled>Boots</button>
+</div>
+<p id="wardrobeStatus" class="note" role="status" aria-live="polite">Checking garments in the model…</p>
 <h2>Exported animation clips</h2>
 <select id="animList" aria-label="Available animation clips"><option value="">Waiting for model…</option></select>
 <p id="motionStatus" class="note">Only animations actually present in Carolyn's GLB can move her. A missing motion will be labeled unavailable rather than pretending it worked.</p>
@@ -49,6 +63,53 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  const v=document.querySelector('#viewer'),status=document.querySelector('#status');
  const motionStatus=document.querySelector('#motionStatus'),select=document.querySelector('#animList');
  let height=1.7,center={x:0,y:.85,z:0},baseRadius=3,ready=false,current='',clips=[];
+ const garmentNames={blouse:'WVLRP Wardrobe Blouse',skirt:'WVLRP Wardrobe Skirt',apron:'WVLRP Wardrobe Apron',boots:'WVLRP Wardrobe Boots'};
+ const garmentState={blouse:true,skirt:true,apron:false,boots:true};
+ let garmentMaterials={};
+ const wardrobeStatus=document.querySelector('#wardrobeStatus');
+ try {const saved=JSON.parse(localStorage.getItem('wvlrp-carolyn-wardrobe-v1')||'null');
+   if(saved && typeof saved==='object') for(const k of Object.keys(garmentNames)) if(typeof saved[k]==='boolean')garmentState[k]=saved[k];
+ }catch(e){}
+ function saveGarments(){try{localStorage.setItem('wvlrp-carolyn-wardrobe-v1',JSON.stringify(garmentState));}catch(e){}}
+ function showGarments(){
+   const available=Object.keys(garmentMaterials);
+   for(const k of available){
+     const material=garmentMaterials[k];
+     material.setAlphaMode('BLEND');
+     const rgba=[...material.pbrMetallicRoughness.baseColorFactor];
+     material.pbrMetallicRoughness.setBaseColorFactor([rgba[0],rgba[1],rgba[2],garmentState[k]?1:0]);
+   }
+   document.querySelectorAll('[data-garment]').forEach(b=>{
+     const k=b.dataset.garment;b.disabled=!garmentMaterials[k];
+     b.setAttribute('aria-pressed',String(Boolean(garmentMaterials[k]&&garmentState[k])));
+     b.textContent=(garmentMaterials[k]&&garmentState[k]?'✓ ':'')+({blouse:'Blouse',skirt:'Long skirt',apron:'Apron',boots:'Boots'}[k]);
+   });
+   document.querySelectorAll('[data-outfit]').forEach(b=>b.disabled!==undefined&&(b.disabled=available.length===0));
+   wardrobeStatus.textContent=available.length
+      ?'Fitted clothing available: '+available.map(k=>({blouse:'blouse',skirt:'skirt',apron:'apron',boots:'boots'}[k])).join(', ')+
+       (available.length<4?'. Missing items are disabled.':'.')
+      :'No fitted garment meshes found in this model yet. Clothing buttons are disabled until the new build is published.';
+ }
+ function checkGarments(){
+   garmentMaterials={};
+   for(const [key,name] of Object.entries(garmentNames)){
+     const mat=v.model?.getMaterialByName?.(name);
+     if(mat)garmentMaterials[key]=mat;
+   }
+   showGarments();
+ }
+ document.querySelectorAll('[data-garment]').forEach(b=>b.onclick=()=>{
+   const key=b.dataset.garment;if(!garmentMaterials[key])return;
+   garmentState[key]=!garmentState[key];if(key==='skirt'&&!garmentState.skirt)garmentState.apron=false;
+   saveGarments();showGarments();
+ });
+ document.querySelectorAll('[data-outfit]').forEach(b=>b.onclick=()=>{
+   const kind=b.dataset.outfit;
+   for(const key of Object.keys(garmentNames)){
+      if(garmentMaterials[key]) garmentState[key]=kind==='clear'?false:(key==='apron'?kind==='work':true);
+   }
+   saveGarments();showGarments();
+ });
  const MODEL_PATH='/world-creator/assets/caroline-inspection.glb';
  const loadUncached=()=>{ v.src=MODEL_PATH+'?fresh='+Date.now(); };
  loadUncached();
@@ -73,6 +134,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    center={x:c.x,y:c.y,z:c.z};baseRadius=Math.max(d.x*2.5,d.y*1.45,d.z*3,1.3);
    v.minCameraOrbit='auto auto 0.12m';v.maxCameraOrbit='auto auto '+(baseRadius*6).toFixed(2)+'m';
    focus('full');clips=Array.from(v.availableAnimations||[]);
+   checkGarments();
    select.replaceChildren(new Option(clips.length?'Choose a built-in animation':'No animation clips in this model',''));
    clips.forEach(a=>select.add(new Option(a,a)));updateButtons();
    const materialNames=(v.model?.materials||[]).map(x=>String(x.name||''));

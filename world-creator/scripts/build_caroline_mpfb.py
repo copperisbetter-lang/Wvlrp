@@ -16,6 +16,7 @@ from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectPropert
 from face_materials import preserve_photo_skin
 from caroline_appearance import reshape_adult_body, add_period_updo
 from caroline_motions import add_caroline_animations
+from caroline_wardrobe import add_caroline_wardrobe
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"assets"/"caroline-source-validation.blend"
@@ -76,6 +77,7 @@ for ob in [root]+list(root.children_recursive):
     if ob.type=="MESH" and "long01" in ob.name.lower():
         bpy.data.objects.remove(ob,do_unlink=True)
 add_period_updo(root,body,rigs[0])
+add_caroline_wardrobe(root,body,rigs[0])
 add_caroline_animations(rigs[0])
 # Explicit selection marker: the Blender source retains BOTH source and
 # duplicate for editing, but GLB export must include exactly one avatar.

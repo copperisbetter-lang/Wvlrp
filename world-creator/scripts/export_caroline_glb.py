@@ -22,6 +22,9 @@ if not any(len(o.data.vertices)>10000 for o in meshes):
 if not any("period swept back hair" in o.name for o in meshes):
     raise RuntimeError("Caroline updo not on inspected copy")
 rig=rigs[0]
+wardrobe_names=("WVLRP WARDROBE Blouse","WVLRP WARDROBE Skirt","WVLRP WARDROBE Apron","WVLRP WARDROBE Left Boot","WVLRP WARDROBE Right Boot")
+missing_clothes=[name for name in wardrobe_names if not any(o.name==name and o.type=="MESH" and any(m.type=="ARMATURE" and m.object==rig for m in o.modifiers) for o in meshes)]
+if missing_clothes:raise RuntimeError("Carolyn wardrobe meshes missing or unrigged: "+str(missing_clothes))
 nla=[t.name for t in rig.animation_data.nla_tracks] if rig.animation_data else []
 required=["Caroline Stand","Caroline Walk","Caroline Run","Caroline Bend",
           "Caroline TouchToes","Caroline Sit","Caroline PickUp",
@@ -45,6 +48,10 @@ if data[:4]!=b"glTF":raise RuntimeError("Caroline invalid GLB magic")
 chunk_len,chunk_type=struct.unpack_from("<II",data,12)
 meta=json.loads(data[20:20+chunk_len].decode("utf-8"))
 verify_photo_skin_glb(meta,"Caroline")
+wardrobe_materials={"WVLRP Wardrobe Blouse","WVLRP Wardrobe Skirt","WVLRP Wardrobe Apron","WVLRP Wardrobe Boots"}
+existing_materials={m.get("name","") for m in meta.get("materials",[])}
+missing_materials=wardrobe_materials-existing_materials
+if missing_materials:raise RuntimeError("Missing exported clothing materials: "+str(sorted(missing_materials)))
 clips={a.get("name","") for a in meta.get("animations",[])}
 unexported=[name for name in required if name not in clips]
 if unexported:raise RuntimeError("Caroline exported GLB animations missing: "+str(unexported))
