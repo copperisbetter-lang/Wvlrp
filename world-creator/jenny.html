@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./jenny-wardrobe.js?v=jenny-coverage-fa297ed"></script>
+<script src="./jenny-wardrobe.js?v=jenny-fit-97b29ae"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
@@ -190,7 +190,7 @@ function play(name){if(!groups.length)return;
 document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
 document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
 document.getElementById('walk').onclick=()=>play('Walk');
-document.getElementById('run').onclick=()=>play('Run');
+document.getElementById('run').onclick=()=>{play('Run');const clip=groups.find(g=>/run/i.test(g.name));if(clip)clip.speedRatio=.82;};
 document.getElementById('bend').onclick=()=>window.youngExplorerWardrobe?.pose('bend');
 document.getElementById('sit').onclick=()=>window.youngExplorerWardrobe?.pose('sit');
 for(const name of ['pickup','hands-knees','elbows-knees'])document.getElementById(name).onclick=()=>window.youngExplorerWardrobe?.pose(name);
