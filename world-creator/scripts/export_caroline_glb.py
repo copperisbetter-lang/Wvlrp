@@ -19,8 +19,10 @@ if len(rigs)!=1:
     raise RuntimeError("Caroline export has "+str(len(rigs))+" armatures; expected exactly one")
 if not any(len(o.data.vertices)>10000 for o in meshes):
     raise RuntimeError("Caroline export has no intact continuous adult basemesh")
-if not any("Caroline light blue eyes" in o.name for o in meshes):
-    raise RuntimeError("Carolyn natural blue iris meshes are missing")
+if not any("Caroline light blue eyes original MPFB UV" in o.name for o in meshes):
+    raise RuntimeError("Carolyn original MakeHuman blue eyes are missing")
+if any("iris geometry" in o.name.lower() for o in meshes):
+    raise RuntimeError("Carolyn: fake overlay iris mesh detected")
 if not any("period swept back hair" in o.name for o in meshes):
     raise RuntimeError("Caroline updo not on inspected copy")
 rig=rigs[0]

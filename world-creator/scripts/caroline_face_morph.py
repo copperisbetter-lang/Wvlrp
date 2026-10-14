@@ -1,6 +1,6 @@
 """Reversible adult Caroline Ingalls (Karen Grassle, season-three era) face study.
 
-A hand-tuned Blender shape key, not photogrammetry or automatic photo matching.
+A hand-tuned, reversible Blender shape key, not photogrammetry or automatic photo matching.
 Modify only existing FACE vertices: no detached facial shell, rig edits, or
 replacement eyes. The underlying MPFB body and original skin UV stay intact.
 
@@ -15,20 +15,23 @@ import math
 from mathutils import Vector
 
 PRESET = {
-    "name": "Carolyn S3 facial likeness study v3 - fuller cheeks, softer tapered jaw and straight nose",
+    "name": "Carolyn S3 facial likeness study v4 - cheekbone and under-eye fullness, delicate nose, tapered jaw, more natural lips",
     # Subtle changes scaled by actual body height; do not shrink face to a point.
-    "cheek_width": 0.0037,
-    "cheek_forward": 0.0028,
-    "jaw_taper": -0.0016,
-    "chin_forward": 0.0011,
-    "nose_width": -0.0004,
-    "nose_projection": 0.0018,
-    "nose_bridge_projection": 0.0010,
-    "mouth_width": 0.0012,
-    "brow_softening": 0.0008,
-    "temple_width": 0.0022,
-    "under_eye_fullness": 0.0015,
-    "mouth_corner_lift": 0.0008,
+    "cheek_width": 0.0065,
+    "cheek_forward": 0.0045,
+    "jaw_taper": -0.0050,
+    "chin_forward": 0.0016,
+    "nose_width": -0.0019,
+    "nose_projection": 0.0035,
+    "nose_bridge_projection": 0.0021,
+    "mouth_width": 0.0004,
+    "brow_softening": 0.0014,
+    "temple_width": 0.0020,
+    "under_eye_fullness": 0.0023,
+    "mouth_corner_lift": 0.0013,
+    "lip_recession": 0.0020,
+    "cheek_lift": 0.0017,
+    "jaw_lift": 0.0011,
 }
 # Preset numbers are fractions of actual MPFB adult body height.
 
@@ -100,6 +103,7 @@ def apply_caroline_face_morph(root, body):
         temple = bell(ax,.072,.023)*bell(dz,.025,.030)
         under_eye = bell(ax,.045,.034)*bell(dz,-.018,.019)
         mouth_corner = bell(ax,.057,.015)*bell(dz,-.093,.019)
+        lip_body = bell(ax,.027,.028)*bell(dz,-.094,.017)
         # Keep the bone/eye sockets and mouth opening essentially unmoved.
         shift_x = side*h*front_weight*(
             PRESET["cheek_width"]*cheek +
@@ -113,8 +117,11 @@ def apply_caroline_face_morph(root, body):
             PRESET["nose_projection"]*tip +
             PRESET["nose_bridge_projection"]*straight_bridge +
             PRESET["brow_softening"]*brow +
-            PRESET["under_eye_fullness"]*under_eye)
-        shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner)
+            PRESET["under_eye_fullness"]*under_eye -
+            PRESET["lip_recession"]*lip_body)
+        shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner +
+                                   PRESET["cheek_lift"]*cheek +
+                                   PRESET["jaw_lift"]*jaw)
         old = Vector((p.x,p.y,p.z))
         new = old+Vector((shift_x,shift_y,shift_z))
         distance = (new-old).length
