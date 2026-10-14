@@ -4,24 +4,30 @@ A hand-tuned Blender shape key, not photogrammetry or automatic photo matching.
 Modify only existing FACE vertices: no detached facial shell, rig edits, or
 replacement eyes. The underlying MPFB body and original skin UV stay intact.
 
-Reference study: oval/tapered jawline, gently defined cheekbones, narrow
-straight nose, soft natural chin and mid-face contours. Review against licensed
-or browser-viewed period reference photographs before claiming resemblance.
+Reference study: Karen Grassle, Little House on the Prairie season 3.
+Fuller adult upper-cheeks/temples, expressive mature lower-eye transition,
+soft oval jaw, characteristic long straight nose, and naturally lifted mouth
+corners. This remains a manually tuned likeness study, not photo-matched data;
+compare rendered face and profile against season-three reference images.
 """
 import bpy
 import math
 from mathutils import Vector
 
 PRESET = {
-    "name": "Carolyn S3 facial likeness study v1",
-    "cheek_width": -0.0040,
-    "cheek_forward": 0.0023,
-    "jaw_taper": -0.0051,
-    "chin_forward": 0.0026,
-    "nose_width": -0.0020,
-    "nose_projection": 0.0018,
-    "mouth_width": 0.0011,
-    "brow_softening": 0.0013,
+    "name": "Carolyn S3 facial likeness study v2 - adult reference",
+    # Subtle changes scaled by actual body height; do not shrink face to a point.
+    "cheek_width": 0.0025,
+    "cheek_forward": 0.0030,
+    "jaw_taper": 0.0008,
+    "chin_forward": 0.0014,
+    "nose_width": 0.0005,
+    "nose_projection": 0.0016,
+    "mouth_width": 0.0021,
+    "brow_softening": 0.0008,
+    "temple_width": 0.0018,
+    "under_eye_fullness": 0.0013,
+    "mouth_corner_lift": 0.0011,
 }
 # Preset numbers are fractions of actual MPFB adult body height.
 
@@ -89,19 +95,25 @@ def apply_caroline_face_morph(root, body):
         tip = bell(ax,0,.018)*bell(dz,-.072,.023)
         lip = bell(ax,.034,.027)*bell(dz,-.094,.019)
         brow = bell(ax,.045,.038)*bell(dz,.013,.016)
+        temple = bell(ax,.072,.023)*bell(dz,.025,.030)
+        under_eye = bell(ax,.045,.034)*bell(dz,-.018,.019)
+        mouth_corner = bell(ax,.057,.015)*bell(dz,-.093,.019)
         # Keep the bone/eye sockets and mouth opening essentially unmoved.
         shift_x = side*h*front_weight*(
             PRESET["cheek_width"]*cheek +
             PRESET["jaw_taper"]*jaw +
             PRESET["nose_width"]*nose +
-            PRESET["mouth_width"]*lip)
+            PRESET["mouth_width"]*lip +
+            PRESET["temple_width"]*temple)
         shift_y = -h*front_weight*(
             PRESET["cheek_forward"]*cheek +
             PRESET["chin_forward"]*chin +
             PRESET["nose_projection"]*tip +
-            PRESET["brow_softening"]*brow)
+            PRESET["brow_softening"]*brow +
+            PRESET["under_eye_fullness"]*under_eye)
+        shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner)
         old = Vector((p.x,p.y,p.z))
-        new = old+Vector((shift_x,shift_y,0))
+        new = old+Vector((shift_x,shift_y,shift_z))
         distance = (new-old).length
         if distance > .014*h:
             raise RuntimeError("Carolyn facial sculpt exceeds safe deformation range")
