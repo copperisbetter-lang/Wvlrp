@@ -160,7 +160,7 @@ def add_period_updo(export_root, body, rig):
     hair_mesh = bpy.data.meshes.new("Caroline curved period hair, swept updo")
     hair_mesh.from_pydata(verts,[],faces)
     hair_mesh.update()
-    colors = [(0.56,0.40,0.25),(0.64,0.48,0.31),(0.50,0.36,0.23)]
+    colors = [(0.40,0.29,0.18),(0.47,0.34,0.22),(0.36,0.26,0.16)]
     for i,rgb in enumerate(colors):
         mat = bpy.data.materials.new("Caroline warm light blonde hair shade "+str(i))
         mat.use_nodes = True
