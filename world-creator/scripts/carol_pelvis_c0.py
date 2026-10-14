@@ -66,24 +66,50 @@ def make_c0_anatomy(root, body, rig):
             Vector((x, front_y-.3*h, z)), Vector((0,1,0)), distance=2*h)
         return (hit.y,face) if ok else (None,None)
 
-    # Low centerline point (not the deepest downward-facing thigh vertex).
+    # IMPORTANT: The old C0 search started inside the .485-.540 body-height
+    # band and moved UP until it found a hip-weighted face. That put the
+    # entire anatomical patch on the LOWER ABDOMEN (reported in viewer).
+    #
+    # Instead find the low, FRONT, CENTRAL skin surface immediately above
+    # the leg fork. Raycasts must be on x=center, never on an inner thigh.
+    # We probe upward from below the fork, accepting only outward-facing
+    # pelvic/between-leg faces; the first verified contact is the junction.
     zs = sorted(v.co.z for v in candidates)
-    base_z = zs[max(0, int(len(zs)*.14))]
-    c0z, c0y = None, None
-    for delta in (0., .006*h, .012*h, .018*h, .026*h):
-        trial_z = base_z + delta
+    old_high_anchor = zs[max(0, int(len(zs)*.14))]
+    step = .0025*h
+    probe_low = zmin + .405*h
+    probe_high = old_high_anchor + .012*h
+    center_hits = []
+    for i in range(int((probe_high-probe_low)/step)+1):
+        trial_z = probe_low+i*step
         hit_y, face = cast_front(cx,trial_z)
         if hit_y is None: continue
-        face_verts = [body.data.vertices[i] for i in body.data.polygons[face].vertices]
+        polygon = body.data.polygons[face]
+        if polygon.normal.y > -.20: continue  # not a front-facing body surface
+        face_verts = [body.data.vertices[j] for j in polygon.vertices]
         hip_avg = sum(weight(v, hips) for v in face_verts)/len(face_verts)
         leg_avg = sum(weight(v, legs) for v in face_verts)/len(face_verts)
-        if hip_avg >= leg_avg:
-            c0z,c0y = trial_z,hit_y
-            break
-    if c0z is None:
-        raise RuntimeError("C0: failed to raycast front midline pelvis; refusing leg anchor")
+        if hip_avg >= .08 and hip_avg >= .40*leg_avg:
+            center_hits.append((trial_z,hit_y,hip_avg,leg_avg))
+    if not center_hits:
+        raise RuntimeError("C0: cannot find front centerline at leg junction; refusing abdominal attachment")
+
+    # A one-centimetre skin margin above the lowest verified central
+    # contact keeps the base of the donor attached without lifting it
+    # onto the pubic mound. Both the mesh AND the viewer marker use C0.
+    first_contact = center_hits[0][0]
+    c0z = first_contact + .010
+    c0y, center_face = cast_front(cx,c0z)
+    if c0y is None:
+        c0z,c0y=center_hits[0][:2]
+    if c0z >= old_high_anchor-.025:
+        raise RuntimeError("C0: low-pelvis anchor still near abdomen; refusing misplaced model")
+    if c0z < zmin+.40*h or c0z > zmin+.49*h:
+        raise RuntimeError("C0: low-pelvis anchor outside expected leg-junction band")
     print("CAROL_C0_FOUND", "x",round(cx,4), "y",round(c0y,4),
-          "z",round(c0z,4),"hip_candidates",len(candidates))
+          "z",round(c0z,4),"previous_high_z",round(old_high_anchor,4),
+          "lowered_m",round(old_high_anchor-c0z,4),
+          "low_centerline_hits",len(center_hits),"hip_candidates",len(candidates))
 
     raw_verts = [tuple(v) for v in source["vertices"]]
     faces = [tuple(f) for f in source["faces"]]
