@@ -185,7 +185,8 @@ def add_caroline_adult_pelvic_morph(body):
           "baked_into_base", True, "rollback_key", key.name,
           "vertices", moved, "max_displacement_mm", round(max_shift*1000,2),
           "visibility_test_scale", PELVIC_VISIBILITY_TEST_SCALE,
-          "external_under_clothing", True,\n          "curve", "smoothed-y-only-no-downward-spikes")
+          "external_under_clothing", True,
+          "curve", "smoothed-y-only-no-downward-spikes")
     return key
 
 def add_period_updo(export_root, body, rig):
