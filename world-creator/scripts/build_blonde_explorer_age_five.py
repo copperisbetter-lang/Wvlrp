@@ -25,8 +25,8 @@ for old,new in changes.items():
 # Avoid replacing the olive_skin function declaration: change only its call.
 # Explicitly recolor the actual hair shader, rather than relying on a name change.
 source=source.replace("(.205,.107,.065,1)","(.82,.64,.31,1)")
-if "(.82,.64,.31,1)" not in source:
-    raise RuntimeError("Blonde hair shader patch missing")
+if "(.82,.64,.31,1)" not in source and "(.68,.49,.20,1)" not in source:
+    raise RuntimeError("Blonde hair shader patch missing: upstream hair material layout changed")
 skin_call="    olive_skin(body)\\n"
 if source.count(skin_call)!=1:
     raise RuntimeError("Skin preservation patch did not find exactly one call")
