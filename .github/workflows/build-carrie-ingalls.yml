@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'world-creator/ingalls/build_carrie_ingalls.py'
+      - 'world-creator/ingalls/carrie_motions.py'
       - 'world-creator/ingalls/download_makehuman_wardrobe.py'
       - 'world-creator/ingalls/age-fit-wardrobe.json'
       - '.github/workflows/build-carrie-ingalls.yml'
@@ -79,6 +80,7 @@ jobs:
           set -euo pipefail
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/ingalls/build_carrie_ingalls.py 2>&1 | tee /tmp/carrie-build.log
           grep WVLRP_CARRIE_GLB_BUILT /tmp/carrie-build.log
+          grep WVLRP_CARRIE_MOTIONS_VERIFIED /tmp/carrie-build.log
       - name: Validate exported Carrie GLB rather than trusting script output
         run: |
           python3 - <<'PY'
@@ -92,7 +94,11 @@ jobs:
           assert len(doc.get("skins",[]))==1
           joints=len(doc["skins"][0]["joints"])
           assert joints>=50, "Nonfunctional/primitive rig rejected"
-          assert len(doc.get("animations",[]))>=5
+          required={"Carrie "+s for s in (
+            "Idle","Walk","Run","Wave","Sit","Crouch","Bend Over","Touch Toes",
+            "Pick Up","Hands and Knees","Elbows and Knees","Crawl","Lie Down","Kneel")}
+          names={a.get("name") for a in doc.get("animations",[])}
+          assert required <= names, "Missing/incorrect Carrie motions: "+str(sorted(required-names))
           mats=doc.get("materials",[])
           assert doc.get("textures") and doc.get("images")
           assert any("Carrie Ingalls real CC0 face and body skin UV" in m.get("name","") and "baseColorTexture" in m.get("pbrMetallicRoughness",{}) for m in mats), "Real skin was not exported"
