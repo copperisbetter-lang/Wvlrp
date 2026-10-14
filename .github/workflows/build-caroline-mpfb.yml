@@ -72,12 +72,6 @@ jobs:
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background world-creator/assets/caroline-source-validation.blend --python world-creator/scripts/export_caroline_glb.py 2>&1 | tee /tmp/caroline-export.log
           grep WVLRP_CAROLINE_GLB_SUCCESS /tmp/caroline-export.log
           test -s world-creator/assets/caroline-inspection.glb
-      - name: Export separate 10x pelvic contour diagnostic
-        run: |
-          set -euo pipefail
-          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background world-creator/assets/caroline-source-validation.blend --python world-creator/scripts/export_caroline_pelvic_x10.py 2>&1 | tee /tmp/carol-pelvic-x10.log
-          grep WVLRP_CAROL_PELVIC_X10_READY /tmp/carol-pelvic-x10.log
-          test -s world-creator/assets/caroline-pelvic-x10-inspection.glb
       - name: Save private build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -85,5 +79,4 @@ jobs:
           path: |
             world-creator/assets/caroline-source-validation.blend
             world-creator/assets/caroline-inspection.glb
-            world-creator/assets/caroline-pelvic-x10-inspection.glb
           retention-days: 7
