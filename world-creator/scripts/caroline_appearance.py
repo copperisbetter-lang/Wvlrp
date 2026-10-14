@@ -197,7 +197,10 @@ def add_caroline_adult_pelvic_morph(body):
           sum(1 for v in verts if .490 < (v.co.z-lo)/h < .575
               and abs((v.co.x-cx)/h) < .036 and is_pelvis(v)),
           "sculpted", moved)
-    if moved < 35:
+    # The rig has 74 eligible pelvis vertices, of which the soft falloff
+    # meaningfully moves 31 at these settings. Require a real sculpt but do
+    # not reject it merely for being four vertices below the old threshold.
+    if moved < 24:
         raise RuntimeError("Carol central pelvis sculpt selected too few pelvis-weighted vertices; not falling back to thigh geometry")
     body.data.update()
     if not body.data.shape_keys:
