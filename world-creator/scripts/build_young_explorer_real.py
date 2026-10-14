@@ -342,6 +342,8 @@ def make_clips(rig):
     clip('Young Explorer Wave',[(1,{}),(12,{'rightarm':(0,-.85,0),'rightforearm':(.25,0,0)}),
                                 (21,{'rightarm':(0,-.85,0),'rightforearm':(-.16,0,.2)}),
                                 (30,{'rightarm':(0,-.85,0),'rightforearm':(.23,0,-.2)}),(41,{})])
+    clip('Young Explorer Hands and Knees',[(1,{}),(16,{'spine':(.42,0,0),'leftupleg':(-.65,0,0),'rightupleg':(-.65,0,0),'leftleg':(1.1,0,0),'rightleg':(1.1,0,0),'leftarm':(.65,0,0),'rightarm':(.65,0,0)}),(32,{'spine':(.62,0,0),'leftupleg':(-1.0,0,0),'rightupleg':(-1.0,0,0),'leftleg':(1.35,0,0),'rightleg':(1.35,0,0),'leftarm':(.95,0,0),'rightarm':(.95,0,0)}),(48,{})])
+    clip('Young Explorer Elbows and Knees',[(1,{}),(16,{'spine':(.45,0,0),'leftupleg':(-.75,0,0),'rightupleg':(-.75,0,0),'leftleg':(1.15,0,0),'rightleg':(1.15,0,0),'leftarm':(.75,0,0),'rightarm':(.75,0,0),'leftforearm':(-.8,0,0),'rightforearm':(-.8,0,0)}),(32,{'spine':(.68,0,0),'leftupleg':(-1.0,0,0),'rightupleg':(-1.0,0,0),'leftleg':(1.35,0,0),'rightleg':(1.35,0,0),'leftarm':(.9,0,0),'rightarm':(.9,0,0),'leftforearm':(-1.1,0,0),'rightforearm':(-1.1,0,0)}),(48,{})])
     clip('Young Explorer Walk',[(1,{}),(13,{'leftupleg':(.24,0,0),'rightupleg':(-.24,0,0),
                                          'leftarm':(-.14,0,0),'rightarm':(.14,0,0)}),
                                  (25,{'leftupleg':(-.24,0,0),'rightupleg':(.24,0,0),
@@ -393,7 +395,8 @@ def main():
     rig=next((obj for obj in relatives if obj.type=='ARMATURE'),None)
     if rig is None or len(rig.data.bones)<25:raise RuntimeError('Complete skeleton missing')
     make_dress(body,rig,root)
-    make_shoes(body,rig,root)
+    # Keep the child's modeled bare feet; the old oversized ellipsoid shoes
+    # looked like detached objects on both sides of the character.
     # Recolor original iris material only, never the eye whites.
     for ob in relatives:
         if ob.type!='MESH' or 'eye' not in ob.name.lower():continue
