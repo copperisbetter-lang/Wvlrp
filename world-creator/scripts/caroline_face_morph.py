@@ -15,7 +15,7 @@ import math
 from mathutils import Vector
 
 PRESET = {
-    "name": "Carolyn S3 facial likeness study v4 - cheekbone and under-eye fullness, delicate nose, tapered jaw, more natural lips",
+    "name": "Carolyn S3 facial likeness study v5 - cheekbone and under-eye fullness, delicate nose, tapered jaw, more natural lips",
     # Subtle changes scaled by actual body height; do not shrink face to a point.
     "cheek_width": 0.0065,
     "cheek_forward": 0.0045,
@@ -122,8 +122,12 @@ def apply_caroline_face_morph(root, body):
         shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner +
                                    PRESET["cheek_lift"]*cheek +
                                    PRESET["jaw_lift"]*jaw)
+        # The first study changed no vertex by more than ~3 mm, barely
+        # perceptible in a mobile face close-up. Intensify the *face-only*
+        # displacement while retaining smooth feathering and the safety cap.
+        likeness_strength = 2.6
         old = Vector((p.x,p.y,p.z))
-        new = old+Vector((shift_x,shift_y,shift_z))
+        new = old+Vector((shift_x,shift_y,shift_z))*likeness_strength
         distance = (new-old).length
         if distance > .014*h:
             raise RuntimeError("Carolyn facial sculpt exceeds safe deformation range")
