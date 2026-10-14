@@ -264,11 +264,32 @@ class YoungExplorerWardrobe {
  bindFitControls(){
   const remove=$('remove-all'),hair=$('hair-select');
   if(remove)remove.onclick=()=>{
-   this.dress.setEnabled(false);
+   // Fitting inspection uses an abstract opaque mannequin, never an undressed child.
+   if(!this.fittingMannequin){
+    const B=this.B, scene=this.scene, m=this.measure;
+    const mat=new B.StandardMaterial('opaque fitting mannequin material',scene);
+    mat.diffuseColor=new B.Color3(.42,.52,.48);
+    const root=new B.TransformNode('abstract fitting mannequin',scene);
+    const part=(name,y,height,diameter)=>{
+      const mesh=B.MeshBuilder.CreateCylinder(name,{height,diameter,tessellation:24},scene);
+      mesh.parent=root;mesh.position.set(m.cx,y,0);mesh.material=mat;
+    };
+    part('neutral torso',m.minY+m.H*.65,m.H*.32,m.H*.23);
+    part('neutral head',m.minY+m.H*.89,m.H*.16,m.H*.15);
+    for(const s of [-1,1]){
+      const leg=B.MeshBuilder.CreateCapsule('neutral leg',{height:m.H*.43,radius:m.H*.055},scene);
+      leg.parent=root;leg.position.set(m.cx+s*m.H*.09,m.minY+m.H*.22,0);leg.material=mat;
+      const arm=B.MeshBuilder.CreateCapsule('neutral arm',{height:m.H*.32,radius:m.H*.035},scene);
+      arm.parent=root;arm.position.set(m.cx+s*m.H*.18,m.minY+m.H*.62,0);arm.material=mat;
+    }
+    this.fittingMannequin=root;root.setEnabled(false);
+   }
+   this.fittingVisibility=this.model.meshes.map(mesh=>[mesh,mesh.isEnabled()]);
+   for(const [mesh] of this.fittingVisibility)mesh.setEnabled(false);
    for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
-   this.body.material=this.fitMaterial;
+   this.fittingMannequin.setEnabled(true);
    this.selectedOutfit='fit-test';
-   if($('outfit-feedback'))$('outfit-feedback').textContent='Clothing hidden for non-anatomical mannequin fit inspection. Select an outfit to restore.';
+   if($('outfit-feedback'))$('outfit-feedback').textContent='Opaque fitting mannequin active. Select an outfit to restore Jenny.';
   };
   if(hair){
    const B=this.B,scene=this.scene;
@@ -325,6 +346,8 @@ class YoungExplorerWardrobe {
  }
  select(id){
   if(!outfits.some(o=>o.id===id))return;
+  if(this.fittingMannequin)this.fittingMannequin.setEnabled(false);
+  if(this.fittingVisibility){for(const [mesh,enabled] of this.fittingVisibility)mesh.setEnabled(enabled);this.fittingVisibility=null;}
   this.body.material=this.originalBodyMaterial;
   for(const suit of Object.values(this.suits)){suit.shirt?.setEnabled(false);suit.shorts?.setEnabled(false);}
   const dress=id==='plaid'||id==='floral'||id==='sunflower';
