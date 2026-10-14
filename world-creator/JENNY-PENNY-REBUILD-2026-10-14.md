@@ -17,3 +17,9 @@
 
 ## Current status
 - Specification recorded only. Existing live Young Explorer is NOT corrected by this document; separate Penny/Jenny assets and routing still require implementation and verification.
+
+## Hair system — required for new Jenny
+- Existing wardrobe code in `young-explorer-wardrobe.js` uses `MeshBuilder.CreateTube` for 18 locks per hairstyle and explicitly leaves all original hair enabled. This explains the tube-like "lobster" appearance and stacked hairstyles.
+- Do not carry this code into Jenny. Use authored tapered hair cards/meshes with natural strand flow and scalp coverage, weighted or parented correctly to the head.
+- Hair-down, ponytail, and two pigtails must be mutually exclusive COMPLETE hairstyle sets. Disable all previous hair meshes, including long loose sections, before enabling the selected hairstyle; retain only a compatible scalp cap where needed.
+- Validate silhouette and absence of overlap from front, side, back and during every pose. Hair follows head without clipping the face or dress.
