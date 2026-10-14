@@ -133,6 +133,7 @@ def add_period_updo(export_root,body,rig):
     ob=bpy.data.objects.new("Caroline period swept back hair (face clear)",mesh)
     bpy.context.collection.objects.link(ob)
     # Mesh coordinates above were built in world coordinates.
+    ob.parent=export_root
     ob.matrix_world=rig.matrix_world.copy()
     transform=ob.matrix_world.inverted_safe()
     for v in ob.data.vertices:v.co=transform@v.co
