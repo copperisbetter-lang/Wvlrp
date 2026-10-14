@@ -6,7 +6,7 @@ import bpy, math
 from mathutils import Vector
 
 def reshape_adult_body(body):
-    """Subtle lifted rounded posterior shaping on continuous existing vertices."""
+    """Moderate posterior contour on Carol's original continuous adult basemesh."""
     if not body or body.type!="MESH" or len(body.data.vertices)<10000:
         raise RuntimeError("Caroline shape: continuous basemesh not available")
     verts=body.data.vertices
@@ -30,13 +30,13 @@ def reshape_adult_body(body):
         lobes=math.exp(-((abs(x)-.068)/.057)**2)
         butt=math.exp(-((z-.53)/.074)**2)
         lift=math.exp(-((z-.575)/.055)**2)
-        delta=height*(.022*butt*lobes+.006*lift*lobes)*rear
+        delta=height*(.014*butt*lobes+.0035*lift*lobes)*rear
         p.y+=delta
         # Hip contour kept narrow/toned; garment must be tailored afterward.
-        p.x=cx+(p.x-cx)*(1+.012*butt*rear)
+        p.x=cx+(p.x-cx)*(1+.007*butt*rear)
         changed+=1
     body.data.update()
-    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3))
+    print("WVLRP_CAROLINE_GLUTE_SCULPT",changed,"height",round(height,3),"profile","reduced-natural-v2")
 
 def add_period_updo(export_root, body, rig):
     """Build a fitted, rounded swept-back period hairdo with low nape chignon.
