@@ -15,6 +15,7 @@ from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
 from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectProperties
 from face_materials import preserve_photo_skin
 from caroline_appearance import reshape_adult_body, add_period_updo
+from caroline_face_morph import apply_caroline_face_morph
 from caroline_motions import add_caroline_animations
 from caroline_wardrobe import add_caroline_wardrobe
 
@@ -71,6 +72,7 @@ if not rigs or len(rigs[0].data.bones)<25: raise RuntimeError("Caroline humanoid
 # rather than a uniform tan material that erases realistic facial features.
 preserve_photo_skin(body,"Caroline")
 reshape_adult_body(body)
+apply_caroline_face_morph(root,body)
 # The old dark stock long01 cape concealed her face and upper torso. Remove
 # that hair ONLY from the inspection COPY, not the original MPFB human.
 for ob in [root]+list(root.children_recursive):
