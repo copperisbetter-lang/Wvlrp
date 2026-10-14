@@ -384,7 +384,7 @@ const collision=(x,z)=>{
   // Keep walkers out of the permanent village flames.
   if(Math.hypot(x-VILLAGE_CLEARING.fireX,z-VILLAGE_CLEARING.fireZ)<2.30)return true;
   // One real village oak: its substantial root flare and trunk are solid.
-  if(Math.hypot(x-VILLAGE_OAK.x,z-VILLAGE_OAK.z)<VILLAGE_OAK.collisionRadius)return true;
+  if(villageOak.status==="loaded"&&Math.hypot(x-VILLAGE_OAK.x,z-VILLAGE_OAK.z)<VILLAGE_OAK.collisionRadius)return true;
   const water=waterAt(x,z,seed);
   if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
   // Test actual rendered trunks, including the new evergreen and old-growth
