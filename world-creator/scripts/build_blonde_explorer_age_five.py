@@ -46,4 +46,5 @@ exec(compile(source,str(BASE),'exec'),scope)
 scope['main']()
 print('FIVE_YEAR_OLD_EXPLORER_GLB_BUILT',scope['OUT'])
 
+# Rebuild request: validate the separate age-five 56-joint GLB and publish only after workflow QA passes.
 # A push to this script triggers the dedicated GitHub Actions Blender build.
