@@ -1,1 +1,94 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Carolyn 3D Inspection — WVLRP</title><style>body{margin:0;background:#10211b;color:#fff;font:16px system-ui}header{padding:12px 16px}model-viewer{display:block;width:100%;height:75vh;background:#b8c3be}a{color:#b8e6d4}#status{padding:12px 16px}.controls{display:flex;gap:8px;flex-wrap:wrap;padding:12px}button{padding:12px;border:1px solid #9ebdad;border-radius:8px;background:#254b3a;color:white}</style><script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script></head><body><header><strong>Carolyn — 3D inspection</strong></header><model-viewer id="viewer" src="/world-creator/assets/caroline-inspection.glb" camera-controls touch-action="pan-y" auto-rotate shadow-intensity="0.8" exposure="1" camera-orbit="0deg 80deg auto" camera-target="auto auto auto" alt="Carolyn's actual exported 3D model"></model-viewer><div id="status">Loading Carolyn's actual model…</div><div class="controls"><button onclick="v.cameraOrbit='0deg 80deg auto';v.fieldOfView='45deg'">Full body</button><button onclick="v.cameraOrbit='0deg 80deg auto';v.fieldOfView='20deg'">Zoom in</button><button onclick="v.cameraOrbit='90deg 80deg auto'">Side</button><button onclick="v.cameraOrbit='180deg 80deg auto'">Back</button><button onclick="v.cameraOrbit='0deg 80deg auto'">Front</button></div><script>const v=document.getElementById('viewer'),s=document.getElementById('status');v.addEventListener('load',()=>s.textContent='Carolyn loaded. Drag to rotate; pinch to zoom.');v.addEventListener('error',()=>{s.innerHTML='Carolyn’s model has not been published yet. The build artifact must finish and be copied to the website. <a href="https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/build-caroline-mpfb.yml">Check Carolyn build</a>.'});</script></body></html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carolyn — 3D body and motion inspection</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#10211b;color:#f2f5f0;font:16px system-ui,sans-serif}
+header{padding:12px 16px;background:#10211b}h1{font-size:1.15rem;margin:0 0 4px}header small,.note{color:#c7d9cb}
+model-viewer{display:block;width:100%;height:65dvh;min-height:350px;background:#b8c3be;touch-action:none}
+#status{padding:10px 16px;background:#19392e;min-height:42px;font-size:.93rem}
+main{padding:10px 12px 26px;max-width:960px;margin:auto}h2{font-size:1rem;margin:14px 0 9px}
+.controls{display:flex;flex-wrap:wrap;gap:8px}button,select{font:inherit;padding:10px 12px;border:1px solid #8fae9a;border-radius:10px;background:#26503d;color:#fff;min-height:45px}
+button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria-pressed=true]{border-color:#f3d48b;background:#3a6143}
+#animList{max-width:100%;width:100%;background:#19392e}.note{font-size:.86rem;line-height:1.5}#zoomval{font-variant-numeric:tabular-nums}
+</style>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
+</head><body>
+<header><h1>Carolyn — 3D body and motion inspection</h1><small>Drag to rotate • pinch or use Zoom buttons • inspect actual exported clips</small></header>
+<model-viewer id="viewer" src="/world-creator/assets/caroline-inspection.glb" camera-controls
+ touch-action="none" interaction-prompt="none" shadow-intensity="0.8" exposure="1.1"
+ camera-orbit="0deg 80deg auto" camera-target="auto auto auto" min-field-of-view="10deg" max-field-of-view="55deg"
+ alt="Carolyn's actual rigged model; not a substitute"></model-viewer>
+<div id="status" role="status" aria-live="polite">Loading Carolyn's 3D model…</div>
+<main>
+<h2>Camera and close inspection</h2>
+<div class="controls">
+<button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
+<button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
+<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
+</div>
+<p class="note" id="zoomval">Camera focus and distance will be available when the model loads.</p>
+<h2>Body motion controls</h2>
+<div class="controls" id="poses">
+<button data-pose="Stand">Stand</button>
+<button data-pose="Walk">Walk</button><button data-pose="Run">Run</button>
+<button data-pose="Bend">Bend over</button><button data-pose="TouchToes">Touch toes</button>
+<button data-pose="Sit">Sit</button><button data-pose="PickUp">Pick up</button>
+<button data-pose="HandsAndKnees">Hands &amp; knees</button>
+<button data-pose="ElbowsAndKnees">Elbows &amp; knees</button>
+<button data-pose="Crawl">Crawl</button><button data-pose="LieDown">Lie down</button>
+</div>
+<div class="controls" style="margin-top:10px"><button id="play" disabled>Play motion</button><button id="pause" disabled>Pause</button><button id="hold" disabled>Hold last frame</button></div>
+<h2>Exported animation clips</h2>
+<select id="animList" aria-label="Available animation clips"><option value="">Waiting for model…</option></select>
+<p id="motionStatus" class="note">Only animations actually present in Carolyn's GLB can move her. A missing motion will be labeled unavailable rather than pretending it worked.</p>
+<p class="note">If a pose is unavailable, the Blender build must export its skeleton keyframes before this control can work. The viewer cannot invent missing rig motion or repair a broken face, hair, or body mesh.</p>
+</main>
+<script>
+(() => {
+ const v=document.querySelector('#viewer'),status=document.querySelector('#status');
+ const motionStatus=document.querySelector('#motionStatus'),select=document.querySelector('#animList');
+ let height=1.7,center={x:0,y:.85,z:0},baseRadius=3,ready=false,current='',clips=[];
+ const label=(s)=>String(s||'').replace(/[^a-zA-Z]/g,'').toLowerCase();
+ function orbit(azimuth=0,r=baseRadius,polar=80){v.cameraOrbit=azimuth+'deg '+polar+'deg '+Math.max(.12,r).toFixed(3)+'m';}
+ function target(y){v.cameraTarget=center.x.toFixed(3)+'m '+y.toFixed(3)+'m '+center.z.toFixed(3)+'m';}
+ function focus(kind){if(!ready)return; const frac=kind==='face'?.91:kind==='torso'?.72:.52;
+   target(center.y+(frac-.5)*height);orbit(0,baseRadius*(kind==='face'?.25:kind==='torso'?.52:1));}
+ function zoom(mult){if(!ready)return;const o=v.getCameraOrbit();orbit(o.theta*180/Math.PI,Math.max(.12,Math.min(baseRadius*5,o.radius*mult)),o.phi*180/Math.PI);document.querySelector('#zoomval').textContent='Zoom distance: '+Math.max(.12,Math.min(baseRadius*5,o.radius*mult)).toFixed(2)+' m';}
+ const matching=(pose)=>clips.find(x=>{const norm=label(x); const wanted=label(pose);
+   return norm===wanted||norm.endsWith(wanted)||norm.includes('caroline'+wanted)||norm.includes('carolyn'+wanted);
+ });
+ function updateButtons(){document.querySelectorAll('[data-pose]').forEach(b=>{const clip=matching(b.dataset.pose);
+   b.disabled=!clip;b.title=clip?'Play '+clip:'Unavailable: clip not exported in GLB';});}
+ function chooseClip(clip){if(!clip)return;current=clip;v.pause();v.animationName=clip;v.currentTime=0;v.play();
+   document.querySelector('#play').disabled=false;document.querySelector('#pause').disabled=false;document.querySelector('#hold').disabled=false;
+   motionStatus.textContent='Playing actual GLB animation: '+clip;
+   document.querySelectorAll('[data-pose]').forEach(b=>b.setAttribute('aria-pressed',String(matching(b.dataset.pose)===clip)));
+ }
+ v.addEventListener('load',()=>{
+   ready=true;let d=v.getDimensions(),c=v.getBoundingBoxCenter();height=Math.max(.1,d.y);
+   center={x:c.x,y:c.y,z:c.z};baseRadius=Math.max(d.x*2.5,d.y*1.45,d.z*3,1.3);
+   v.minCameraOrbit='auto auto 0.12m';v.maxCameraOrbit='auto auto '+(baseRadius*6).toFixed(2)+'m';
+   focus('full');clips=Array.from(v.availableAnimations||[]);
+   select.replaceChildren(new Option(clips.length?'Choose a built-in animation':'No animation clips in this model',''));
+   clips.forEach(a=>select.add(new Option(a,a)));updateButtons();
+   status.textContent='Carolyn loaded · '+clips.length+' exported motion clip(s). Drag to rotate; Zoom + allows much closer inspection.';
+   document.querySelector('#zoomval').textContent='Camera supports close-up focus and 0.12 m minimum distance.';
+   motionStatus.textContent=clips.length?'Select a motion below or use an enabled pose button.':'No skeletal motion clips in this GLB yet. Blender must build and export them.';
+ });
+ v.addEventListener('error',()=>{status.textContent='The Carolyn model failed to load. The exported GLB may need rebuilding or publishing.';});
+ document.querySelector('#full').onclick=()=>focus('full');
+ document.querySelector('#face').onclick=()=>focus('face');
+ document.querySelector('#torso').onclick=()=>focus('torso');
+ document.querySelector('#zoomIn').onclick=()=>zoom(.65);
+ document.querySelector('#zoomOut').onclick=()=>zoom(1.5);
+ document.querySelector('#front').onclick=()=>{const o=v.getCameraOrbit();orbit(0,o.radius);};
+ document.querySelector('#side').onclick=()=>{const o=v.getCameraOrbit();orbit(90,o.radius);};
+ document.querySelector('#back').onclick=()=>{const o=v.getCameraOrbit();orbit(180,o.radius);};
+ document.querySelectorAll('[data-pose]').forEach(b=>{b.disabled=true;b.onclick=()=>chooseClip(matching(b.dataset.pose));});
+ select.onchange=()=>chooseClip(select.value);
+ document.querySelector('#play').onclick=()=>{if(current){v.animationName=current;v.play();motionStatus.textContent='Playing '+current;}};
+ document.querySelector('#pause').onclick=()=>{v.pause();motionStatus.textContent='Paused '+current;};
+ document.querySelector('#hold').onclick=()=>{if(current){v.pause();v.currentTime=Math.max(0,(v.duration||0)-.01);motionStatus.textContent='Holding last frame: '+current;}};
+})();
+</script></body></html>
