@@ -30,7 +30,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <button id="idle">Stand</button><button id="wave">Wave</button><button id="walk">Walk</button>
 <button id="run">Run</button><button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script>
 window.addEventListener('error',function(e){const x=document.getElementById('status');if(x)x.textContent='Jenny render error: '+e.message;});
 </script>
@@ -39,7 +39,7 @@ window.addEventListener('error',function(e){const x=document.getElementById('sta
 (function(){
 'use strict';
 const B=window.BABYLON,canvas=document.getElementById('scene');
-if(!B||!canvas)return;
+if(!B||!canvas){document.getElementById('status').textContent='Babylon rendering library unavailable';return;}
 const engine=new B.Engine(canvas,true,{adaptToDeviceRatio:true});
 const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.075,.14,.11,1);
 const camera=new B.ArcRotateCamera('Jenny orbit',-Math.PI/2,1.35,3.1,new B.Vector3(0,.72,0),scene);
@@ -62,7 +62,7 @@ ball('Jenny hair side '+side,root,hair,side*.19,1.42,.035,.065,.19,.12);
 }
 const garment=ball('Jenny fitted tank top',root,top,0,1.055,0,.238,.255,.155);
 const neckline=ball('Jenny skin neckline',root,skin,0,1.276,-.004,.115,.032,.092);
-const skirtMesh=part('Jenny closed mini skirt','CreateCylinder',{height:.29,diameterTop:.38,diameterBottom:.57,tessellation:36,cap:B.Mesh.CAP_ALL},root,skirt,0,.72,0);
+const skirtMesh=part('Jenny closed skirt','CreateCylinder',{height:.29,diameterTop:.38,diameterBottom:.57,tessellation:36,cap:B.Mesh.CAP_ALL},root,skirt,0,.72,0);
 const arms=[],legs=[];
 for(const side of [-1,1]){
 const shoulder=new B.TransformNode('Jenny shoulder '+side,scene);shoulder.parent=root;shoulder.position.set(side*.225,1.215,0);
