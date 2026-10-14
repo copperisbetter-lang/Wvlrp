@@ -24,6 +24,7 @@ for old,new in changes.items():
     source=source.replace(old,new)
 # Avoid replacing the olive_skin function declaration: change only its call.
 source=source.replace("    olive_skin(body)\n","    preserve_five_year_old_skin(body)\n")
+source=source.replace("young-explorer-real-full-body-preview.png","blonde-explorer-age-five-preview.png")
 source=source.replace("def olive_skin(body):","def preserve_five_year_old_skin(body):")
 # Preserve source UV photographic skin instead of applying the original olive tint.
 start=source.index("def preserve_five_year_old_skin(body):")
@@ -41,3 +42,5 @@ scope={'__name__':'five_year_old_build','__file__':str(BASE)}
 exec(compile(source,str(BASE),'exec'),scope)
 scope['main']()
 print('FIVE_YEAR_OLD_EXPLORER_GLB_BUILT',scope['OUT'])
+
+# A push to this script triggers the dedicated GitHub Actions Blender build.
