@@ -23,11 +23,12 @@ jobs:
           blender --background --python world-creator/ingalls/build_charles_wardrobe.py 2>&1 | tee /tmp/charles-wardrobe.log
           grep -F 'WVLRP_CHARLES_WARDROBE_STAGING_SAVED' /tmp/charles-wardrobe.log
           test -s world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+          test -s world-creator/assets/charles-ingalls-s3-wardrobe-staging.glb
       - name: Commit generated staging file
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+          git add world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend world-creator/assets/charles-ingalls-s3-wardrobe-staging.glb
           if ! git diff --cached --quiet; then
             git commit -m "Generate Charles Ingalls Season 3 wardrobe staging blend"
             git pull --rebase origin main
@@ -40,5 +41,6 @@ jobs:
           name: charles-ingalls-wardrobe-staging
           path: |
             world-creator/assets/charles-ingalls-s3-wardrobe-staging.blend
+            world-creator/assets/charles-ingalls-s3-wardrobe-staging.glb
             /tmp/charles-wardrobe.log
           retention-days: 7
