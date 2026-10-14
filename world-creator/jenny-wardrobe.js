@@ -392,6 +392,13 @@ class YoungExplorerWardrobe {
     'hands-knees':/hands.?and.?knees/i,'elbows-knees':/elbows.?and.?knees/i};
   const clip=clips.find(g=>matches[kind]?.test(g.name));
   if(!clip){if($('pose-feedback'))$('pose-feedback').textContent='Missing saved skeleton movement: '+kind;return;}
+  // Do not present the broken authored crawl as a valid rescue animation.
+  // A safe neutral pose is preferable to visibly reversed limbs in the cave.
+  if(kind==='hands-knees'||kind==='elbows-knees'){
+    this.naturalStand();
+    if($('pose-feedback'))$('pose-feedback').textContent='Crawl temporarily unavailable: joint geometry requires rebuilt animation';
+    return;
+  }
   clip.start(false,1,clip.from,clip.to,false);
   // Bend and floor movements must reach their maximum authored articulation.
   const holdFraction=(kind==='bend'||kind==='pickup')?.92:.82;
