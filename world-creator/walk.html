@@ -49,7 +49,7 @@ border:1px solid #74957a;border-radius:9px}
 <canvas id="world" tabindex="0" aria-label="First-person playable Appalachian wilderness near Hearthside Cabin. Left-hand touch joystick to walk. Drag on the right to look. WASD and mouse work on desktop."></canvas>
 <div class="hud top">
  <div class="brand"><strong>THE WILD</strong><small>Hearthside Cabin · first-person walk · Oct 13 Mountain-View Edition</small></div>
- <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="village" type="button">Village</button><button id="crew" type="button">Load crew</button><button id="playerMapToggle" type="button" aria-controls="playerMapPanel" aria-expanded="false">🗺 Players Map</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
+ <div class="actions"><button id="home" type="button">⌂ Cabin</button><button id="village" type="button">Village</button><button id="crew" type="button">Load crew</button><button id="jennyQuest" type="button" aria-controls="jennyQuestPanel" aria-expanded="false">Jenny’s Quest</button><button id="playerMapToggle" type="button" aria-controls="playerMapPanel" aria-expanded="false">🗺 Players Map</button><a class="link" href="./?focus=cabin">Builder ↗</a></div>
 </div>
 <div id="message" class="hud" role="status" aria-live="polite">Loading West Virginia forest and Hearthside Cabin…</div>
 <div id="players" class="hud" role="status" aria-live="polite">Game Beta Test · connecting explorers…</div>
@@ -61,12 +61,13 @@ border:1px solid #74957a;border-radius:9px}
  <div id="playerMapContacts"></div>
  <p style="font-size:11px;opacity:.78">Only connected Game Beta players appear. This is an in-game map, not your phone's GPS position.</p>
 </section>
+<section id="jennyQuestPanel" hidden aria-label="Jenny woodland quest" style="position:fixed;z-index:22;top:110px;left:12px;width:min(340px,calc(100vw - 24px));padding:15px;background:#183628f5;border:1px solid #a6c2a5;border-radius:12px;color:#fff8e5;box-shadow:0 8px 28px #0008"><strong>The Woodland Discovery Trail</strong><p id="jennyQuestText">Jenny’s first adventure begins at the Ranger Station. Meet her, follow the trail, and learn to identify an oak and a maple before returning.</p><p id="jennyQuestReady" style="font-size:12px;color:#f0dba5">Jenny is still in character testing. Her quest will open when her finished model and movements are approved.</p><button id="jennyQuestClose" type="button">Close</button></section>
 <div id="joystick" role="group" aria-label="Movement joystick. Steer where you want to go. Double tap center to run."><div id="stick"></div></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="help">Left thumb: steer & move<br>Double-tap stick center: run / walk<br>Release stick, drag right: look</div>
 <div id="info">Starting at Hearthside Cabin</div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script type="module" src="./walk.js?v=live-players-map-20261013-v10"></script>
+<script type="module" src="./walk.js?v=jenny-quest-intro-20261014-v1"></script>
 </body>
 </html>
