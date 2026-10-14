@@ -403,13 +403,24 @@ class YoungExplorerWardrobe {
   const holdFraction=(kind==='bend'||kind==='pickup')?.92:((kind==='hands-knees'||kind==='elbows-knees')?.65:.82);
   const frame=clip.from+(clip.to-clip.from)*holdFraction;
   clip.goToFrame(frame);clip.pause();
+  const targeted=clip.targetedAnimations||[];
+  const rotationTracks=targeted.filter(t=>/rotation/i.test(t.animation?.targetProperty||''));
+  const activeTracks=rotationTracks.filter(t=>{
+   const keys=t.animation?.getKeys?.()||[];
+   if(keys.length<2)return false;
+   const a=keys[0].value,b=keys[Math.floor(keys.length/2)].value;
+   return a&&b&&['x','y','z','w'].some(k=>Math.abs((a[k]||0)-(b[k]||0))>.015);
+  });
+  if((kind==='hands-knees'||kind==='elbows-knees')&&$('pose-feedback')){
+   $('pose-feedback').textContent='Floor pose diagnostic: '+clip.name+' | '+targeted.length+' targets, '+rotationTracks.length+' rotation tracks, '+activeTracks.length+' moving joints';
+  }
   // Preserve authored knee rotations. The former hard-coded X-axis override
   // inverted knee flexion on this rig and broke floor poses.
   // Until hinge axes are calibrated from the actual GLB, do not overwrite
   // the animation clip's joint rotations with guessed local rotations.
   this.activePose=kind;
   this.savePoseSnapshot(kind,frame);
-  if($('pose-feedback'))$('pose-feedback').textContent=kind+' · saved skeletal pose';
+  if(kind!=='hands-knees'&&kind!=='elbows-knees'&&$('pose-feedback'))$('pose-feedback').textContent=kind+' · saved skeletal pose';
  }
  savePoseSnapshot(kind,frame){
   // Persist per-character bone transforms; never overwrite Penny or another avatar.
