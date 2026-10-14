@@ -123,6 +123,7 @@ class YoungExplorerWardrobe {
   // Preserve the imported skinned mesh transform and bind pose.
   this.dress.computeWorldMatrix(true);
   this.body.computeWorldMatrix(true);
+  this.alignImportedDress();
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
   // The imported continuous skin must render from both sides, including at the neckline.
@@ -180,6 +181,35 @@ class YoungExplorerWardrobe {
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
   this.select('plaid');
   this.bindLayers();
+ }
+ alignImportedDress(){
+  // Align the imported garment's actual bounding box with the torso, not the head.
+  const B=this.B,body=this.body,dress=this.dress;
+  body.refreshBoundingInfo();dress.refreshBoundingInfo();
+  const bb=body.getBoundingInfo().boundingBox,db=dress.getBoundingInfo().boundingBox;
+  const h=bb.maximumWorld.y-bb.minimumWorld.y;
+  const desiredTop=bb.minimumWorld.y+h*.81;
+  const desiredBottom=bb.minimumWorld.y+h*.49;
+  const actualHeight=Math.max(.001,db.maximumWorld.y-db.minimumWorld.y);
+  const desiredHeight=desiredTop-desiredBottom;
+  const factor=clamp(desiredHeight/actualHeight,.35,2.4);
+  dress.scaling.scaleInPlace(factor);
+  dress.computeWorldMatrix(true);dress.refreshBoundingInfo();
+  const adjusted=dress.getBoundingInfo().boundingBox;
+  const centerX=(bb.minimumWorld.x+bb.maximumWorld.x)/2;
+  const centerZ=(bb.minimumWorld.z+bb.maximumWorld.z)/2;
+  const dressX=(adjusted.minimumWorld.x+adjusted.maximumWorld.x)/2;
+  const dressZ=(adjusted.minimumWorld.z+adjusted.maximumWorld.z)/2;
+  const desiredY=bb.minimumWorld.y+h*.65;
+  const dressY=(adjusted.minimumWorld.y+adjusted.maximumWorld.y)/2;
+  const offset=new B.Vector3(centerX-dressX,desiredY-dressY,centerZ-dressZ);
+  const parent=dress.parent;
+  if(parent){
+   const inverse=parent.getWorldMatrix().clone().invert();
+   B.Vector3.TransformNormalToRef(offset,inverse,offset);
+  }
+  dress.position.addInPlace(offset);
+  dress.computeWorldMatrix(true);
  }
  rebindDressToTorso(){
   const B=this.B, dress=this.dress, skel=this.model.skeletons?.[0];
