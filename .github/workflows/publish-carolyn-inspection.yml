@@ -37,15 +37,49 @@ jobs:
           mkdir -p world-creator/assets
           cp "$model" world-creator/assets/caroline-inspection.glb
           test -s world-creator/assets/caroline-inspection.glb
-      - name: Publish model to website repository
+      - name: Publish current model to website repository
+        env:
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f world-creator/assets/caroline-inspection.glb
-          if git diff --cached --quiet; then
-            echo "Carolyn model already current"
+          # This job begins from the workflow_run's last checkout. A newer
+          # character edit can land between that checkout and the final push.
+          # Never overwrite it with an older exported avatar.
+          git fetch origin main
+          source_paths=(
+            world-creator/scripts/build_caroline_mpfb.py
+            world-creator/scripts/export_caroline_glb.py
+            world-creator/scripts/caroline_appearance.py
+            world-creator/scripts/caroline_face_morph.py
+            world-creator/scripts/caroline_wardrobe.py
+            world-creator/scripts/caroline_eyes.py
+            world-creator/scripts/caroline_motions.py
+          )
+          if [ -n "${BUILD_SHA:-}" ] && ! git diff --quiet "$BUILD_SHA" origin/main -- "${source_paths[@]}"; then
+            echo "Newer Carol source edits exist. Skipping stale model publication."
             exit 0
           fi
-          git commit -m "Publish Carolyn inspection GLB for web viewer"
-          git push
+          git rebase origin/main
+          git add -f world-creator/assets/caroline-inspection.glb
+          if git diff --cached --quiet; then
+            echo "Carol model already current"
+            exit 0
+          fi
+          git commit -m "Publish current Carol inspection GLB for web viewer"
+          # Retry if unrelated site changes raced the push. Abort if Carol's
+          # own source advanced, since this exported binary would be stale.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            if [ -n "${BUILD_SHA:-}" ] && ! git diff --quiet "$BUILD_SHA" origin/main -- "${source_paths[@]}"; then
+              echo "Newer Carol source detected after push race; dropping stale GLB."
+              exit 0
+            fi
+            git rebase origin/main || {
+              echo "Concurrent model binary change prevents safe rebase."
+              exit 1
+            }
+          done
+          exit 1
