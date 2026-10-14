@@ -101,8 +101,8 @@ function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
    const radiusX=band.length?Math.max(...band.map(p=>Math.abs(p[0]-xcenter))):H*(side===0?.105:.060);
    const radiusZ=band.length?Math.max(...band.map(p=>Math.abs(p[2]-zcenter))):H*(side===0?.085:.060);
    const ease=isShorts?1-.08*t:1-.06*t;
-   const rx=Math.max(radiusX,H*(side===0?.080:.042))*1.015*ease+H*.004;
-   const rz=Math.max(radiusZ,H*(side===0?.070:.042))*1.015*ease+H*.004;
+   const rx=Math.max(radiusX,H*(side===0?.080:.042))*(1+(isShorts?.10:.16))*ease+H*(inflate+.008);
+   const rz=Math.max(radiusZ,H*(side===0?.070:.042))*(1+(isShorts?.10:.16))*ease+H*(inflate+.008);
    for(let k=0;k<segments;k++){
     const theta=2*Math.PI*k/segments;
     const x=xcenter+rx*Math.cos(theta),z=zcenter+rz*Math.sin(theta);
@@ -181,7 +181,7 @@ class YoungExplorerWardrobe {
    sunflower:fabric(B,scene,'golden summer dress','#dfb94c',false)
   };
   const create=(id,shirt,shorts)=>({
-   shirt:makeSkinnedShell(B,this.body,id+' top',[.62,.76],.008,
+   shirt:makeSkinnedShell(B,this.body,id+' top',[.62,.79],.025,
         fabric(B,scene,id+' shirt',shirt),this.measure),
    shorts:makeSkinnedShell(B,this.body,id+' shorts',[.42,.618],.011,
         fabric(B,scene,id+' woven shorts',shorts),this.measure)
