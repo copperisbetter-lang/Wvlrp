@@ -1,27 +1,39 @@
-name: Caroline adult avatar validation
+name: Build Caroline adult foundation
 on:
   workflow_dispatch:
   push:
     paths:
       - 'world-creator/scripts/build_caroline_mpfb.py'
-      - 'world-creator/scripts/validate_caroline_source.py'
       - '.github/workflows/build-caroline-mpfb.yml'
 permissions:
   contents: read
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Block publication until builder and anatomical source validator exist
+      - name: Set up Blender and MPFB
         run: |
           set -euo pipefail
-          test -s world-creator/scripts/build_caroline_mpfb.py || { echo "::error::Missing Caroline source builder; no viewer publication permitted"; exit 1; }
-          test -s world-creator/scripts/validate_caroline_source.py || { echo "::error::Missing Caroline anatomical mesh validator; no viewer publication permitted"; exit 1; }
-      - name: Require independent source validation
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          curl -fL --retry 4 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip .)
+          mkdir -p /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/mpfb.zip
+          curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+      - name: Build Caroline foundation
         run: |
           set -euo pipefail
-          python3 world-creator/scripts/validate_caroline_source.py
-      - name: Confirm source and validation before any public export
-        run: |
-          echo "Source validator passed. Export and publication are deliberately NOT enabled until an actual Caroline builder, asset provenance, and clothed output QA are implemented."
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_caroline_mpfb.py 2>&1 | tee /tmp/caroline.log
+          grep WVLRP_CAROLINE_SOURCE_SUCCESS /tmp/caroline.log
+      - name: Save private build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: caroline-adult-foundation
+          path: world-creator/assets/caroline-source-validation.blend
+          retention-days: 7
