@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Carrie Ingalls — 3D inspection</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
+<style>
+:root{color-scheme:dark}body{margin:0;background:#101913;color:#f0eadd;font:16px system-ui, sans-serif}
+header{padding:14px 18px;background:#19261e}h1{font-size:1.25rem;margin:0 0 3px}p{margin:4px 0;font-size:.86rem}
+main{max-width:1100px;margin:auto}model-viewer{display:block;height:min(73vh,780px);min-height:400px;width:100%;background:radial-gradient(ellipse at center,#526252,#202920 74%);--poster-color:#252e26}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px}
+button,select{border:1px solid #849887;background:#23352b;color:white;border-radius:8px;font:inherit;padding:10px}
+#status{padding:12px 16px;color:#e5e4cb;font-size:.91rem}
+small{opacity:.82}a{color:#d5ead0}
+</style></head><body><main>
+<header><h1>Carrie Ingalls — Season 3</h1><p>Real MakeHuman photographic skin prototype • rotate with finger • pinch to zoom</p></header>
+<model-viewer id="viewer" src="./world-creator/assets/carrie-ingalls-s3.glb" camera-controls shadow-intensity=".6" exposure="1.15"
+    camera-orbit="0deg 75deg auto" field-of-view="32deg" min-field-of-view="10deg" max-field-of-view="55deg" interaction-prompt="auto"></model-viewer>
+<div class="controls"><label for="animation">Motion</label><select id="animation"><option value="">Neutral stance</option></select>
+<button id="play">Play motion</button><button id="stop">Stop</button><button id="reset">Reset view</button></div>
+<div id="status" role="status">Checking Carrie's model…</div>
+<div class="controls"><small>This is an inspection-only character. The actual model must finish building and pass checks before being marked ready.</small></div>
+</main>
+<script>
+const mv=document.getElementById('viewer'),status=document.getElementById('status'),select=document.getElementById('animation');
+const setStatus=s=>{status.textContent=s;};
+mv.addEventListener('load',()=>{
+ const list=mv.availableAnimations||[];
+ select.replaceChildren(new Option('Neutral stance',''));
+ for(const name of list) select.add(new Option(name,name));
+ setStatus("Carrie's separate 3D model loaded. Inspect her face, skin, hair and fabric fit from all angles. "+list.length+" animation clips available.");
+});
+mv.addEventListener('error',()=>setStatus("Carrie's GLB is not published or could not load yet. Check the GitHub build before reviewing her."));
+document.getElementById('play').onclick=()=>{
+ const name=select.value;if(!name){setStatus('Select a motion first.');return;}
+ mv.animationName=name;mv.play();setStatus('Playing '+name);
+};
+document.getElementById('stop').onclick=()=>{mv.pause();setStatus('Motion paused.');};
+document.getElementById('reset').onclick=()=>{mv.pause();mv.animationName='';mv.resetTurntableRotation?.();mv.cameraOrbit='0deg 75deg auto';mv.fieldOfView='32deg';setStatus('Camera reset.');};
+</script></body></html>
