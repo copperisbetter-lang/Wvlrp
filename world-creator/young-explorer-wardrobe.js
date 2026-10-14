@@ -127,7 +127,7 @@ class YoungExplorerWardrobe {
   const db=this.dress.getBoundingInfo().boundingBox;
   const dressCenter=(db.minimumWorld.y+db.maximumWorld.y)/2;
   const targetCenter=this.measure.minY+this.measure.H*.665;
-  const targetTop=this.measure.minY+this.measure.H*.805;
+  const targetTop=this.measure.minY+this.measure.H*.845;
   const delta=targetTop-db.maximumWorld.y;
   if(Math.abs(delta)>this.measure.H*.08){
     const parent=this.dress.parent;
@@ -224,7 +224,7 @@ class YoungExplorerWardrobe {
   const bounds=this.dress.getBoundingInfo().boundingBox;
   const low=bounds.minimum.y,high=bounds.maximum.y,span=Math.max(.001,high-low);
   const topWidth=$('dress-top-width'),topDepth=$('dress-top-depth'),rim=$('dress-rim-diameter');
-  const saveKey='wvlrp-young-explorer-wardrobe-v1';
+  const saveKey='wvlrp-young-explorer-wardrobe-v2';
   const controls={size,vertical,width,depth,topWidth,topDepth,rim};
   try{
     const saved=JSON.parse(localStorage.getItem(saveKey)||'{}');
@@ -234,7 +234,7 @@ class YoungExplorerWardrobe {
   const adjustBodice=()=>{
     if(!originalVertices)return;
     const updated=originalVertices.slice();
-    const wx=Number(topWidth?.value||75)/100,dz=Number(topDepth?.value||75)/100, rimRatio=Number(rim?.value||100)/100;
+    const wx=Number(topWidth?.value||65)/100,dz=Number(topDepth?.value||65)/100, rimRatio=Number(rim?.value||65)/100;
     for(let i=0;i<updated.length;i+=3){
       const t=(originalVertices[i+1]-low)/span;
       const blend=Math.max(0,Math.min(1,(t-.48)/.32));
@@ -266,7 +266,7 @@ class YoungExplorerWardrobe {
    // otherwise raises it over the child's head on some GLB exports.
    this.dress.computeWorldMatrix(true);
    const top=this.dress.getBoundingInfo().boundingBox.maximumWorld.y;
-   const shoulderY=this.measure.minY+this.measure.H*.805+Number(vertical.value)/100;
+   const shoulderY=this.measure.minY+this.measure.H*.845+Number(vertical.value)/100;
    const correction=shoulderY-top;
    if(Math.abs(correction)>0.001){
      if(parent){const inverse=parent.getWorldMatrix().clone().invert();this.dress.position.addInPlace(this.B.Vector3.TransformNormal(new this.B.Vector3(0,correction,0),inverse));}
@@ -282,7 +282,7 @@ class YoungExplorerWardrobe {
    save();
   };
   for(const el of [size,vertical,width,depth,topWidth,topDepth,rim].filter(Boolean))el.addEventListener('input',update);
-  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='75';if(topDepth)topDepth.value='75';if(rim)rim.value='100';update();};
+  if(reset)reset.onclick=()=>{size.value='4';vertical.value='0';width.value='100';depth.value='100';if(topWidth)topWidth.value='65';if(topDepth)topDepth.value='65';if(rim)rim.value='65';update();};
   update();
  }
 
