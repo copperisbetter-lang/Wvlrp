@@ -124,30 +124,35 @@ jobs:
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export
           test -s /tmp/carolyn-export/caroline-inspection.glb
           cp /tmp/carolyn-export/caroline-inspection.glb world-creator/assets/caroline-inspection.glb
+          if [ -s /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb ]; then
+            cp /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb world-creator/assets/caroline-pelvic-x10-inspection.glb
+          fi
           python3 - <<'PY'
           import json,struct
           from pathlib import Path
-          p=Path("world-creator/assets/caroline-inspection.glb")
-          d=p.read_bytes()
-          magic,version,total=struct.unpack_from("<4sII",d)
-          assert magic==b"glTF" and version==2 and total==len(d)
-          json_len,json_type=struct.unpack_from("<I4s",d,12)
-          assert json_type==b"JSON"
-          start=20
-          obj=json.loads(d[start:start+json_len])
-          roots=obj["scenes"][obj.get("scene",0)]["nodes"]
-          if len(roots)>1:
-              # Blender's original rig and its exported copy occupy the same place.
-              # Only show the final _caroline_source tree in the inspection preview.
-              final=[i for i in roots if "caroline_source" in obj["nodes"][i].get("name","")]
-              assert len(final)==1, "Cannot safely select the finished Carolyn rig"
-              obj["scenes"][obj.get("scene",0)]["nodes"]=final
-              encoded=json.dumps(obj,separators=(",",":")).encode()
-              padded=encoded+b" "*((-len(encoded))%4)
-              rest=d[start+json_len:]
-              p.write_bytes(struct.pack("<4sII",b"glTF",2,12+8+len(padded)+len(rest))+struct.pack("<I4s",len(padded),b"JSON")+padded+rest)
-          assert p.stat().st_size>100000
-          print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
+          for name in ('caroline-inspection.glb', 'caroline-pelvic-x10-inspection.glb'):
+              p=Path("world-creator/assets") / name
+              if not p.exists(): continue
+              d=p.read_bytes()
+              magic,version,total=struct.unpack_from("<4sII",d)
+              assert magic==b"glTF" and version==2 and total==len(d)
+              json_len,json_type=struct.unpack_from("<I4s",d,12)
+              assert json_type==b"JSON"
+              start=20
+              obj=json.loads(d[start:start+json_len])
+              roots=obj["scenes"][obj.get("scene",0)]["nodes"]
+              if len(roots)>1:
+                  # Blender's original rig and its exported copy occupy the same place.
+                  # Only show the final _caroline_source tree in the inspection preview.
+                  final=[i for i in roots if "caroline_source" in obj["nodes"][i].get("name","")]
+                  assert len(final)==1, "Cannot safely select the finished Carolyn rig"
+                  obj["scenes"][obj.get("scene",0)]["nodes"]=final
+                  encoded=json.dumps(obj,separators=(",",":")).encode()
+                  padded=encoded+b" "*((-len(encoded))%4)
+                  rest=d[start+json_len:]
+                  p.write_bytes(struct.pack("<4sII",b"glTF",2,12+8+len(padded)+len(rest))+struct.pack("<I4s",len(padded),b"JSON")+padded+rest)
+              assert p.stat().st_size>100000
+              print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
           PY
       - name: Upload website
         uses: actions/upload-pages-artifact@v3

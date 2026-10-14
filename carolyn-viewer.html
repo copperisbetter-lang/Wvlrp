@@ -23,7 +23,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <main>
 <h2>Camera and close inspection</h2>
 <div class="controls">
-<button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
+<a href="/carolyn-viewer.html?model=pelvic-x10" style="color:#fff;background:#72512e;padding:10px;border:1px solid #e0b66a;border-radius:10px;text-decoration:none">Pelvis ×10 diagnostic</a><a href="/carolyn-viewer.html" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Normal Carol model</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button>
 <button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
 </div>
@@ -126,7 +126,10 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    }
    saveGarments();showGarments();
  });
- const MODEL_PATH='/world-creator/assets/caroline-inspection.glb';
+ const isPelvicX10=new URLSearchParams(location.search).get('model')==='pelvic-x10';
+ const MODEL_PATH=isPelvicX10
+   ?'/world-creator/assets/caroline-pelvic-x10-inspection.glb'
+   :'/world-creator/assets/caroline-inspection.glb';
  const loadUncached=()=>{ v.src=MODEL_PATH+'?fresh='+Date.now(); };
  loadUncached();
  const label=(s)=>String(s||'').replace(/[^a-zA-Z]/g,'').toLowerCase();
@@ -165,7 +168,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    const materialNames=(v.model?.materials||[]).map(x=>String(x.name||''));
    const isRounded=materialNames.some(x=>x.includes('Caroline warm light blonde hair shade'));
    const isOldFlat=materialNames.some(x=>x.includes('Caroline honey light-brown hair'));
-   status.textContent='Carol loaded · '+clips.length+' exported motion clip(s). '+
+   status.textContent=(isPelvicX10?'PELVIC ×10 DIAGNOSTIC — exaggerated geometry, NOT the normal avatar. ':'Carol loaded · ')+clips.length+' exported motion clip(s). '+
       (isRounded?'Rounded hairstyle build detected.':isOldFlat?'OLDER FLAT HAIR BUILD still loaded.':'Hair version unverified.')+
       ' Drag to rotate; use Zoom + for close inspection.';
    document.querySelector('#zoomval').textContent='Camera supports close-up focus and 0.12 m minimum distance.';

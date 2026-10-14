@@ -2,12 +2,12 @@
 Reject missing facial diffuse textures, body skin, skeletal animations and rigs.
 The exported GLB is a QA artifact; public character approval is separate.
 """
-import bpy, json, struct, sys
+import bpy, json, struct, sys, os
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from face_materials import verify_photo_skin_glb
 root_path=Path(__file__).resolve().parents[1]
-output=root_path/"assets"/"caroline-inspection.glb"
+output=root_path/"assets"/os.environ.get("CAROL_GLTF_OUTPUT", "caroline-inspection.glb")
 marked=[o for o in bpy.data.objects if o.get("wvlrp_caroline_export_root",False)]
 if len(marked)!=1:
     raise RuntimeError("Caroline export requires exactly one marked inspected character copy, got "+str(len(marked)))
