@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./jenny-wardrobe.js?v=jenny-fit-97b29ae"></script>
+<script src="./jenny-wardrobe.js?v=jenny-gait-b9fb346"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
@@ -182,17 +182,18 @@ let bounds=null, center=null, model=null;
  status.textContent='Realistic full body loaded · '+(model.modelAudit?.totalVertices||'many')+' vertices · '+(model.modelAudit?.joints||0)+' rig bones · '+groups.length+' animations';
 }).catch(e=>{console.error(e);status.textContent='Jenny viewer unable to load: '+e.message;});
 function play(name){if(!groups.length)return;
+ window.youngExplorerWardrobe?.stopLocomotion();
  groups.forEach(g=>g.stop());
  window.youngExplorerWardrobe?.resetPose();
  const clip=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()));
  if(clip){clip.start(true,1,clip.from,clip.to,false);status.textContent='3D model ready · '+clip.name+' · olive skin across entire body';}
 }
 document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
-document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
-document.getElementById('walk').onclick=()=>play('Walk');
-document.getElementById('run').onclick=()=>{play('Run');const clip=groups.find(g=>/run/i.test(g.name));if(clip)clip.speedRatio=.82;};
-document.getElementById('bend').onclick=()=>window.youngExplorerWardrobe?.pose('bend');
-document.getElementById('sit').onclick=()=>window.youngExplorerWardrobe?.pose('sit');
+document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;window.youngExplorerWardrobe.stopLocomotion();groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
+document.getElementById('walk').onclick=()=>window.youngExplorerWardrobe?.startLocomotion('walk');
+document.getElementById('run').onclick=()=>window.youngExplorerWardrobe?.startLocomotion('run');
+document.getElementById('bend').onclick=()=>{window.youngExplorerWardrobe?.stopLocomotion();window.youngExplorerWardrobe?.pose('bend');};
+document.getElementById('sit').onclick=()=>{window.youngExplorerWardrobe?.stopLocomotion();window.youngExplorerWardrobe?.pose('sit');};
 for(const name of ['pickup','hands-knees','elbows-knees'])document.getElementById(name).onclick=()=>window.youngExplorerWardrobe?.pose(name);
 document.getElementById('front').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.12;};
 document.getElementById('back').onclick=()=>{camera.alpha=Math.PI/2;camera.beta=Math.PI/2.12;};
