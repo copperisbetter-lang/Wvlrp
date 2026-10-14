@@ -28,7 +28,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <button id="front">Front view</button><button id="back">Back view</button><button id="face">Face close-up</button>
 <button id="full">Full body</button><button id="closer">Zoom +</button><button id="farther">Zoom −</button>
 <button id="idle">Stand</button><button id="wave">Wave</button><button id="walk">Walk</button>
-<button id="run">Run</button><button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button>
+<button id="run">Run</button><button id="crawl" type="button">Crawl</button><button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button>
 </div>
 <div id="wardrobe" aria-label="Try on Jenny clothing">
  <label for="outfit-select">Clothing:</label><select id="outfit-select" aria-label="Automatically put an outfit on Jenny"><option>Loading outfits…</option></select>
@@ -53,7 +53,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
-<script src="./jenny-wardrobe.js?v=jenny-floorpose-20261014-v5"></script>
+<script src="./jenny-wardrobe.js?v=jenny-crawl-control-20261014-v6"></script>
 <script>
 const B=window.BABYLON,canvas=document.getElementById('scene'),status=document.getElementById('status');
 const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true,adaptToDeviceRatio:true});
@@ -72,8 +72,8 @@ let bounds=null, center=null, model=null;
  // Load the rebuilt dress measured against the REAL body first. The 2026-10-13
  // snapshot was fitted to the old test figure; NEVER put it on the new child.
  const sources=[
-  './assets/jenny-olive-plaid.glb?v=jenny-floorpose-20261014-v5',
-  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/jenny-olive-plaid.glb?v=jenny-floorpose-20261014-v5',
+  './assets/jenny-olive-plaid.glb?v=jenny-crawl-control-20261014-v6',
+  'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/jenny-olive-plaid.glb?v=jenny-crawl-control-20261014-v6',
   './assets/jenny-olive-plaid.glb'
  ];
  let lastError;
@@ -192,6 +192,7 @@ document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.natura
 document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;window.youngExplorerWardrobe.stopLocomotion();groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
 document.getElementById('walk').onclick=()=>window.youngExplorerWardrobe?.startLocomotion('walk');
 document.getElementById('run').onclick=()=>window.youngExplorerWardrobe?.startLocomotion('run');
+document.getElementById('crawl').onclick=()=>{const w=window.youngExplorerWardrobe;if(!w)return;w.pose('hands-knees');document.getElementById('pose-feedback').textContent='Crawl animation not ready: requires corrected rig and alternating ground-contact motion';};
 document.getElementById('bend').onclick=()=>{window.youngExplorerWardrobe?.stopLocomotion();window.youngExplorerWardrobe?.pose('bend');};
 document.getElementById('sit').onclick=()=>{window.youngExplorerWardrobe?.stopLocomotion();window.youngExplorerWardrobe?.pose('sit');};
 for(const name of ['pickup','hands-knees','elbows-knees'])document.getElementById(name).onclick=()=>window.youngExplorerWardrobe?.pose(name);
