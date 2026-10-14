@@ -25,9 +25,17 @@ for old,new in changes.items():
 # Avoid replacing the olive_skin function declaration: change only its call.
 # Explicitly recolor the actual hair shader, rather than relying on a name change.
 source=source.replace("(.205,.107,.065,1)","(.82,.64,.31,1)")
-source=source.replace("    olive_skin(body)\\n","    preserve_five_year_old_skin(body)\n")
-# Set East Asian face macro before MakeHuman recalculates the child mesh.
-source=source.replace("    TargetService.reapply_macro_details(h)", """    # MakeHuman ethnicity blend: East Asian 1, other ancestry components 0.
+if "(.82,.64,.31,1)" not in source:
+    raise RuntimeError("Blonde hair shader patch missing")
+skin_call="    olive_skin(body)\\n"
+if source.count(skin_call)!=1:
+    raise RuntimeError("Skin preservation patch did not find exactly one call")
+source=source.replace(skin_call,"    preserve_five_year_old_skin(body)\\n")
+# Require facial macro patch to be inserted exactly once.
+macro_anchor="    TargetService.reapply_macro_details(h)"
+if source.count(macro_anchor)!=1:
+    raise RuntimeError("Expected exactly one MakeHuman ancestry macro insertion point")
+source=source.replace(macro_anchor, """    # Set East Asian ancestry before rebuilding the mesh.
     HumanObjectProperties.set_value('asian',1.0,entity_reference=h)
     HumanObjectProperties.set_value('african',0.0,entity_reference=h)
     HumanObjectProperties.set_value('caucasian',0.0,entity_reference=h)
