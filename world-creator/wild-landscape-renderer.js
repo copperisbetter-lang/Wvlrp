@@ -9,6 +9,7 @@ import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-2
 import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=mountain-sightline-v9";
+import {VILLAGE_DETAIL_ZONE,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=75m-village-20261014-v1";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -413,6 +414,75 @@ function renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight=null}){
   }
   return total;
 }
+
+/**
+ * A complete 75 m-diameter village floor pass, independent of the old
+ * exclusion mask for forest thickets. Thin instances paint mixed duff,
+ * moss, short native grass, fernlets, small sandstone, and leaf patches
+ * directly over the previously empty soil. No colliders, no obstruction
+ * of the fire ring, shop entrances, or pedestrian trails.
+ */
+function renderVillageGroundDetail(B,scene,track,{cx,cy,seed,mobile,surfaceHeight}){
+  const v=VILLAGE_DETAIL_ZONE;
+  // Do not construct the same decoration on far-away streamed tiles.
+  if(Math.hypot(cx-v.centerX,cy-v.centerZ)>85)return 0;
+  const kinds=["leaflitter","moss","sedge","fern","wildflower",
+    "rock","rock-cluster","fallen-log"];
+  const groups=Object.fromEntries(kinds.map(kind=>[kind,[]]));
+  const step=mobile?1.66:1.46;
+  const firstX=Math.floor((v.centerX-v.radiusMetres)/step)-1;
+  const lastX=Math.ceil((v.centerX+v.radiusMetres)/step)+1;
+  const firstZ=Math.floor((v.centerZ-v.radiusMetres)/step)-1;
+  const lastZ=Math.ceil((v.centerZ+v.radiusMetres)/step)+1;
+  for(let i=firstX;i<=lastX;i++)for(let j=firstZ;j<=lastZ;j++){
+    const x=(i+(hash(i,j,seed+4101)-.5)*.65)*step;
+    const z=(j+(hash(i,j,seed+4102)-.5)*.65)*step;
+    if(!insideVillageDetail(x,z))continue;
+    const patch=noise(x/11,z/13,seed+4110);
+    const r=hash(i,j,seed+4111);
+    let kind=r<.27?"leaflitter":r<.50?"moss":
+      r<.78?"sedge":r<.87?"fern":
+      r<.925?"wildflower":r<.967?"rock":
+      r<.991?"rock-cluster":"fallen-log";
+    if(!allowVillageGroundDetail(x,z,kind)){
+      // Between trees, paths and the fire circle, fallen leaves and moss
+      // remain where larger objects cannot grow.
+      kind=hash(i,j,seed+4112)<.60?"leaflitter":"moss";
+      if(!allowVillageGroundDetail(x,z,kind))continue;
+    }
+    const level=surfaceHeight?.(x,z);
+    const h=Number.isFinite(level)?level:cabinGrade(x,z,seed);
+    // Low mixed vegetation avoids the former head-high foreground weeds.
+    const size=kind==="rock"?.21+hash(i,j,seed+4113)*.16:
+      kind==="rock-cluster"?.19+hash(i,j,seed+4113)*.17:
+      kind==="fallen-log"?.29+hash(i,j,seed+4113)*.18:
+      kind==="sedge"?.38+hash(i,j,seed+4113)*.22:
+      kind==="fern"?.39+hash(i,j,seed+4113)*.20:
+      .43+hash(i,j,seed+4113)*.30;
+    groups[kind].push({x,y:z,height:h+(kind==="leaflitter"?.048:
+      kind==="moss"?.041:kind==="rock"||kind==="rock-cluster"?-.028:.018),
+      scale:size*(patch>.60?1.14:.87),heading:hash(i,j,seed+4114)*Math.PI*2,
+      variation:hash(i,j,seed+4115)});
+    // Independent second thin carpet layer builds a lived-in leaf floor.
+    if(kind!=="leaflitter"&&hash(i,j,seed+4116)<.46){
+      const x2=x+(hash(i,j,seed+4117)-.5)*.96;
+      const z2=z+(hash(i,j,seed+4118)-.5)*.96;
+      if(allowVillageGroundDetail(x2,z2,"leaflitter"))
+        groups.leaflitter.push({x:x2,y:z2,height:h+.058,
+          scale:.48+hash(i,j,seed+4119)*.25,
+          heading:hash(i,j,seed+4120)*Math.PI*2,variation:.35});
+    }
+  }
+  let total=0;
+  for(const kind of kinds){
+    if(!groups[kind].length)continue;
+    const m=floorPrototype(B,scene,track,kind);
+    setInstances(B,m,groups[kind],cx,cy,1);
+    total+=groups[kind].length;
+  }
+  return total;
+}
+
 export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   const textures=createForestSurfaceTextures(B,scene,track,seed);
   const soil=track(new B.StandardMaterial("Appalachian leaf litter and stone",scene));
@@ -512,7 +582,17 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // Anchor every trunk to the exact reshaped terrain, including trees along
   // the shoulder of the new mountain-view valley (not just near-camera ones).
   // The previous natural-only heights would leave distant trunks floating.
-  const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar);
+  const heroZone=Math.hypot(cx-VILLAGE_DETAIL_ZONE.centerX,
+    cy-VILLAGE_DETAIL_ZONE.centerZ)<255;
+  // Preserve natural forest everywhere else. Add just a ring of correctly
+  // grounded shade trees within the approved circular 75 m village zone.
+  // The mountain vista, paths, three foundations and fireplace stay open.
+  const villageEdgeTrees=heroZone?
+    treesInArea(VILLAGE_DETAIL_ZONE.centerX,VILLAGE_DETAIL_ZONE.centerZ,
+      VILLAGE_DETAIL_ZONE.radiusMetres,seed,8.25)
+      .filter(t=>allowVillageEdgeTree(t.x,t.y))
+      .map(t=>({...t,scale:t.scale*(t.elder?.84:.70)})):[];
+  const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar,villageEdgeTrees);
   const flatHeight=cabinGrade(93,85,seed);
   for(const t of allTrees){
     const y=walkSurface(t.x,t.y);
@@ -523,12 +603,9 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // curved trunks, irregular limb forks and diffuse-shaded native crowns.
   // Distant groves retain inexpensive LOD prototypes for phone performance.
   const groups=new Map();
-  // Approved village pilot: higher-detail existing tree meshes only within
-  // 50 world metres of the Ranger Station village centre (93,85).
-  // Keep the rest of the streamed world on the existing inexpensive LOD.
-  const pilotX=93,pilotZ=85,pilotRadius=50;
-  const insidePilot=t=>Math.hypot(t.x-pilotX,t.y-pilotZ)<=pilotRadius;
-  const heroZone=Math.hypot(cx-pilotX,cy-pilotZ)<255;
+  // The full approved 75 m DIAMETER village detail pass has a 37.5 m
+  // radius; trees outside remain inexpensive native forest prototypes.
+  const insidePilot=t=>insideVillageDetail(t.x,t.y);
   const addGroup=(t,lod)=>{
     const variant=lod==="near"?(t.variation>.51?1:0):0;
     const key=t.species+"/"+lod+"/"+variant;
@@ -536,7 +613,8 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     groups.get(key).trees.push(t);
   };
   for(const t of near.concat(addedNear))addGroup(t,heroZone&&insidePilot(t)?"near":"far");
-  for(const t of mid.concat(far,addedMid,addedFar))addGroup(t,heroZone&&insidePilot(t)?"near":"far");
+  for(const t of mid.concat(far,addedMid,addedFar,villageEdgeTrees))
+    addGroup(t,heroZone&&insidePilot(t)?"near":"far");
   for(const {species,lod,variant,trees} of groups.values()){
     const model=lod==="near"?
       buildHeroTree(B,scene,track,species,seed+species.length*17,variant,textures):
@@ -547,7 +625,9 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const heroPlants=heroZone?renderHeroUnderstory(B,scene,track,
     {cx,cy,seed,mobile,surfaceHeight:walkSurface}):0;
-   const community=renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
+  const villageGroundDetails=renderVillageGroundDetail(B,scene,track,
+    {cx,cy,seed,mobile,surfaceHeight:walkSurface});
+  const community=renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const addedTrees=addedNear.concat(addedMid,addedFar);
   return {nearTrees:near.length+addedNear.length,
     distantTrees:mid.length+far.length+addedMid.length+addedFar.length,
@@ -555,7 +635,9 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
     addedEvergreens:addedTrees.filter(t=>t.evergreen).length,
     elderTrees:allTrees.filter(t=>t.elder).length,
     collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
-    understory:understory+heroPlants,heroPlants,
+    villageDetailDiameterMetres:VILLAGE_DETAIL_ZONE.diameterMetres,
+    villageGroundDetails,villageEdgeTrees:villageEdgeTrees.length,
+    understory:understory+heroPlants+villageGroundDetails,heroPlants,
      communityBuildings:community.buildings,communityPaths:community.paths,
      communityFirePits:community.firePits,
     heroGraphics:heroZone,forestExtentMetres:470,
