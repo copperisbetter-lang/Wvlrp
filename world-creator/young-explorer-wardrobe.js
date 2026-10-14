@@ -137,6 +137,10 @@ class YoungExplorerWardrobe {
     }else this.dress.position.y+=delta;
     this.dress.computeWorldMatrix(true);
   }
+  // Rebind the garment to the torso, not to the leg joints. The imported
+  // dress previously stretched into a long spike when hips/knees rotated.
+  // Keep the original plaid geometry/UVs and the character's 52-bone rig.
+  this.rebindDressToTorso();
   this.originalDressMaterial=this.dress.material;
   this.originalBodyMaterial=this.body.material;
   // The imported continuous skin must render from both sides, including at the neckline.
@@ -171,6 +175,33 @@ class YoungExplorerWardrobe {
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
   this.select('plaid');
   this.bindLayers();
+ }
+ rebindDressToTorso(){
+  const B=this.B, dress=this.dress, skel=this.model.skeletons?.[0];
+  if(!skel||!dress.getVerticesData(B.VertexBuffer.MatricesIndicesKind))return;
+  const find=(...names)=>skel.bones.findIndex(b=>names.includes(normalize(b.name)));
+  const hip=find('hips','pelvis'),spine=find('spine'),chest=find('spine1','spine2','chest');
+  if(hip<0||spine<0)return;
+  dress.makeGeometryUnique();
+  const pos=dress.getVerticesData(B.VertexBuffer.PositionKind);
+  const oldIndices=dress.getVerticesData(B.VertexBuffer.MatricesIndicesKind);
+  const oldWeights=dress.getVerticesData(B.VertexBuffer.MatricesWeightsKind);
+  if(!pos||!oldIndices||!oldWeights)return;
+  const indices=new Float32Array(oldIndices.length),weights=new Float32Array(oldWeights.length);
+  let low=Infinity,high=-Infinity;
+  for(let i=1;i<pos.length;i+=3){low=Math.min(low,pos[i]);high=Math.max(high,pos[i]);}
+  const n=Math.min(pos.length/3,Math.floor(indices.length/4));
+  for(let i=0;i<n;i++){
+   const t=clamp((pos[i*3+1]-low)/Math.max(.001,high-low),0,1);
+   // Skirt hangs from pelvis; upper dress follows the spine and chest.
+   const upper=clamp((t-.42)/.36,0,1);
+   const top=chest>=0?clamp((t-.72)/.24,0,1):0;
+   indices[i*4]=hip;indices[i*4+1]=spine;indices[i*4+2]=chest>=0?chest:spine;
+   weights[i*4]=1-upper;weights[i*4+1]=upper*(1-top);weights[i*4+2]=upper*top;
+  }
+  dress.setVerticesData(B.VertexBuffer.MatricesIndicesKind,indices,false);
+  dress.setVerticesData(B.VertexBuffer.MatricesWeightsKind,weights,false);
+  dress.skeleton=skel;
  }
  buildMeasurements(){
   const m=this.measure;
