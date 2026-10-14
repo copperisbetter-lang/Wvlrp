@@ -387,17 +387,10 @@ class YoungExplorerWardrobe {
   const holdFraction=(kind==='bend'||kind==='pickup')?.92:.82;
   const frame=clip.from+(clip.to-clip.from)*holdFraction;
   clip.goToFrame(frame);clip.pause();
-  // Imported clips may contain reversed knee flexion. Keep both knees in the
-  // anatomically correct local flexion direction after sampling the pose.
-  if(['bend','pickup','sit','hands-knees','elbows-knees'].includes(kind)){
-    const B=this.B;
-    for(const side of ['left','right']){
-      const knee=this.boneTarget(side+'leg');
-      if(!knee)continue;
-      const base=knee.metadata?._wvlrpBaseRotation;
-      if(base)knee.rotationQuaternion=base.multiply(B.Quaternion.RotationAxis(B.Axis.X,-(kind==='bend'?.18:kind==='pickup'?.45:kind==='sit'?1.25:1.45)));
-    }
-  }
+  // Preserve authored knee rotations. The former hard-coded X-axis override
+  // inverted knee flexion on this rig and broke floor poses.
+  // Until hinge axes are calibrated from the actual GLB, do not overwrite
+  // the animation clip's joint rotations with guessed local rotations.
   this.activePose=kind;
   this.savePoseSnapshot(kind,frame);
   if($('pose-feedback'))$('pose-feedback').textContent=kind+' · saved skeletal pose';
@@ -459,7 +452,7 @@ class YoungExplorerWardrobe {
     const hip=joints[side],knee=joints[side+2],arm=joints[side+4];
     if(hip&&bases[side])hip.rotationQuaternion=bases[side].multiply(B.Quaternion.RotationAxis(B.Axis.X,step*stride));
     // Knee flexion is one-directional; never hyperextend backward during stride.
-    if(knee&&bases[side+2])knee.rotationQuaternion=bases[side+2].multiply(B.Quaternion.RotationAxis(B.Axis.X,-Math.max(0,-Math.sin(phase))*(run?.95:.65)));
+    if(knee&&bases[side+2])knee.rotationQuaternion=bases[side+2].clone(); // no uncalibrated backward knee flexion
     if(arm&&bases[side+4])arm.rotationQuaternion=bases[side+4].multiply(B.Quaternion.RotationAxis(B.Axis.X,-step*(run?.38:.22)));
    }
   });
