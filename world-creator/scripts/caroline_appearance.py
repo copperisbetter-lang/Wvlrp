@@ -102,49 +102,62 @@ def add_caroline_adult_pelvic_morph(body):
         value = max(0.0, min(1.0, value))
         return value*value*(3.0-2.0*value)
 
-    # Carol central adult pelvic contour v7. The previous bilateral peaks
-    # were centered 0.020 * body height from the axis (about 34 mm each
-    # way on a 1.7 m body), landing on the inner thigh surfaces. Keep
-    # the visible volume closer to the center, give it a longer rounded
-    # vertical profile, and fade before the upper thigh geometry begins.
-    # Geometry stays integral to the original continuous body mesh.
-    PELVIC_VISIBILITY_TEST_SCALE = 1.75
+    # v8: Only deform the RIGGED CENTRAL PELVIS. The earlier radius- and
+    # height-only filters still deformed inner-thigh skin beside the crotch.
+    # MakeHuman/Mixamo vertex weights distinguish the Hips from UpLegs.
+    # Refuse a blind thigh-area sculpt if the source rig has no such weights.
+    def normalized_group_name(name):
+        return name.lower().split(":")[-1].replace("_", "").replace("-", "").replace(" ", "")
+    pelvis_ids = {group.index for group in body.vertex_groups
+                  if normalized_group_name(group.name) in {"hips", "pelvis"}}
+    thigh_ids = {group.index for group in body.vertex_groups
+                 if any(term in normalized_group_name(group.name)
+                        for term in ("upleg", "upperleg", "thigh"))}
+    if not pelvis_ids or not thigh_ids:
+        raise RuntimeError("Carol v8 central-pelvis sculpt requires Hips and upper-leg rig vertex weights")
+    def influence(vertex, ids):
+        return max((w.weight for w in vertex.groups if w.group in ids), default=0.0)
+    def is_pelvis(vertex):
+        return (influence(vertex, pelvis_ids) >= .30 and
+                influence(vertex, thigh_ids) <= .32)
+    print("WVLRP_CAROL_PELVIS_V8_GROUPS",sorted(pelvis_ids),sorted(thigh_ids))
+    PELVIC_VISIBILITY_TEST_SCALE = 1.40
     target_y = [0.0] * len(verts)
     for i, vertex in enumerate(verts):
         p = vertex.co
         nz = (p.z-lo)/h
         ax = abs((p.x-cx)/h)
-        # The old 0.405-0.562 height range sculpted far down both legs.
-        # The narrower, raised region includes central lower pelvis only.
-        if not (.445 < nz < .538) or ax >= .043:
+        # Below z=.498, there is no reliable midline pelvis surface:
+        # MakeHuman supplies two separate inner-thigh surfaces there.
+        # Restrict width to the central ~43 mm (not 73 mm each side)
+        # and NEVER select any vertex primarily bound to the leg.
+        if not (.498 < nz < .550) or ax >= .025 or not is_pelvis(vertex):
             continue
 
-        height_fade = smoothstep((nz-.445)/.017) * smoothstep((.538-nz)/.020)
-        side_fade = smoothstep((.043-ax)/.015)
+        height_fade = smoothstep((nz-.498)/.012) * smoothstep((.550-nz)/.014)
+        side_fade = smoothstep((.025-ax)/.010)
         ahead = (front_ref + .035*h - p.y)/(.067*h)
         front_weight = smoothstep(ahead)
         if front_weight < .015:
             continue
 
-        # Paired peaks about 14.5 mm from the axis at 1.7 m, not 34 mm.
-        # Distinct rounded contours, softened central depression and
-        # an upper transition over the pubis, all on the existing skin.
-        pubis = gaussian(ax, .0, .031)*gaussian(nz, .511, .032)
-        outer = gaussian(ax, .0085, .011)*gaussian(nz, .487, .033)
-        central_cleft = gaussian(ax, .0, .0045)*gaussian(nz, .477, .032)
-        low_fold = gaussian(ax, .009, .011)*gaussian(nz, .471, .028)
+        # Two close, soft contours about 10 mm either side of center,
+        # ABOVE the thigh split, blended into the central pubic mound.
+        pubis = gaussian(ax, 0.0, .021)*gaussian(nz, .532, .028)
+        outer = gaussian(ax, .0058, .008)*gaussian(nz, .520, .019)
+        central_cleft = gaussian(ax, 0.0, .0037)*gaussian(nz, .517, .017)
+        low_fold = gaussian(ax, .0062, .0075)*gaussian(nz, .510, .016)
 
         projection = PELVIC_VISIBILITY_TEST_SCALE * (
-            .0054*pubis + .0150*outer + .0090*low_fold
-            - .0035*central_cleft)
+            .0060*pubis + .0130*outer + .0040*low_fold
+            - .0030*central_cleft)
         projection *= front_weight*side_fade*height_fade
-        # Larger yet smoothly bounded volume; no downward Z pulling.
-        projection = min(.041, max(0.0, projection))
+        # Small and continuous; no long downward spikes, no leg morphing.
+        projection = min(.028, max(0.0, projection))
         target_y[i] = -h*projection
 
-    # Smooth the actual displacement over the existing quad topology.
-    # Unlike scaling selected vertices downward, this creates no isolated
-    # sharp tips; it also preserves the mesh's skinning and UV coordinates.
+    # Smooth over the quad topology, but REAPPLY the anatomical mask below.
+    # Previous smoothing leaked into the very thigh vertices we excluded.
     neighbors = [[] for _ in verts]
     for edge in body.data.edges:
         a, b = edge.vertices
@@ -160,6 +173,12 @@ def add_caroline_adult_pelvic_morph(body):
     moved = 0
     max_shift = 0.0
     for i, dy in enumerate(target_y):
+        # Hard stop: smoothing cannot leak back across the thigh boundary.
+        p = verts[i].co
+        nz = (p.z-lo)/h
+        ax = abs((p.x-cx)/h)
+        if not (.498 < nz < .550) or ax >= .025 or not is_pelvis(verts[i]):
+            continue
         shift = abs(dy)
         if shift < .00015*h:
             continue
@@ -173,8 +192,8 @@ def add_caroline_adult_pelvic_morph(body):
             verts[i].co += displacement
         moved += 1
         max_shift = max(max_shift, shift)
-    if moved < 75:
-        raise RuntimeError("Carol adult anatomy: inadequate sculpt vertices")
+    if moved < 35:
+        raise RuntimeError("Carol central pelvis sculpt selected too few pelvis-weighted vertices; not falling back to thigh geometry")
     body.data.update()
     if not body.data.shape_keys:
         body.shape_key_add(name="Basis", from_mix=False)
@@ -189,7 +208,7 @@ def add_caroline_adult_pelvic_morph(body):
           "vertices", moved, "max_displacement_mm", round(max_shift*1000,2),
           "visibility_test_scale", PELVIC_VISIBILITY_TEST_SCALE,
           "external_under_clothing", True,
-          "curve", "smoothed-y-only-no-downward-spikes")
+          "curve", "v8-hips-only-midline-no-thigh-weight-or-smoothing-bleed")
     return key
 
 def add_period_updo(export_root, body, rig):
