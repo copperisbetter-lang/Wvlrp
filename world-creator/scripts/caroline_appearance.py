@@ -102,41 +102,44 @@ def add_caroline_adult_pelvic_morph(body):
         value = max(0.0, min(1.0, value))
         return value*value*(3.0-2.0*value)
 
-    # The ×10 test exported ten times the *already ×4* sculpt (effective
-    # scale 40). Its long downward needles came chiefly from multiplying
-    # a Z-axis pull. Sculpt a softened intermediate contour on Carol's OWN
-    # continuous adult basemesh; never lengthen the topology vertically.
-    # Controlled convexity in -Y, a broad falloff, and capped projection
-    # give the underlying folds rounded curves instead of sharp points.
-    PELVIC_VISIBILITY_TEST_SCALE = 6.0
+    # Carol central adult pelvic contour v7. The previous bilateral peaks
+    # were centered 0.020 * body height from the axis (about 34 mm each
+    # way on a 1.7 m body), landing on the inner thigh surfaces. Keep
+    # the visible volume closer to the center, give it a longer rounded
+    # vertical profile, and fade before the upper thigh geometry begins.
+    # Geometry stays integral to the original continuous body mesh.
+    PELVIC_VISIBILITY_TEST_SCALE = 1.75
     target_y = [0.0] * len(verts)
     for i, vertex in enumerate(verts):
         p = vertex.co
         nz = (p.z-lo)/h
         ax = abs((p.x-cx)/h)
-        if not (.405 < nz < .562) or ax >= .089:
+        # The old 0.405-0.562 height range sculpted far down both legs.
+        # The narrower, raised region includes central lower pelvis only.
+        if not (.445 < nz < .538) or ax >= .043:
             continue
 
-        # Smoothly feather ALL boundaries, including into the inner thighs.
-        height_fade = smoothstep((nz-.405)/.032) * smoothstep((.562-nz)/.030)
-        side_fade = smoothstep((.089-ax)/.028)
+        height_fade = smoothstep((nz-.445)/.017) * smoothstep((.538-nz)/.020)
+        side_fade = smoothstep((.043-ax)/.015)
         ahead = (front_ref + .035*h - p.y)/(.067*h)
         front_weight = smoothstep(ahead)
         if front_weight < .015:
             continue
 
-        pubis = gaussian(ax, .0, .046)*gaussian(nz, .513, .045)
-        outer = gaussian(ax, .020, .020)*gaussian(nz, .472, .045)
-        central_cleft = gaussian(ax, .0, .012)*gaussian(nz, .466, .037)
-        low_fold = gaussian(ax, .019, .020)*gaussian(nz, .444, .031)
+        # Paired peaks about 14.5 mm from the axis at 1.7 m, not 34 mm.
+        # Distinct rounded contours, softened central depression and
+        # an upper transition over the pubis, all on the existing skin.
+        pubis = gaussian(ax, .0, .031)*gaussian(nz, .511, .032)
+        outer = gaussian(ax, .0085, .011)*gaussian(nz, .487, .033)
+        central_cleft = gaussian(ax, .0, .0045)*gaussian(nz, .477, .032)
+        low_fold = gaussian(ax, .009, .011)*gaussian(nz, .471, .028)
 
         projection = PELVIC_VISIBILITY_TEST_SCALE * (
-            .0048*pubis + .017*outer + .0085*low_fold
-            - .0042*central_cleft)
+            .0054*pubis + .0150*outer + .0090*low_fold
+            - .0035*central_cleft)
         projection *= front_weight*side_fade*height_fade
-        # Cap the entire outward movement to ~5.8 cm on a 1.7 m figure.
-        # This is a diagnostic/fit contour, not a stretched appendage.
-        projection = min(.034, max(0.0, projection))
+        # Larger yet smoothly bounded volume; no downward Z pulling.
+        projection = min(.041, max(0.0, projection))
         target_y[i] = -h*projection
 
     # Smooth the actual displacement over the existing quad topology.
