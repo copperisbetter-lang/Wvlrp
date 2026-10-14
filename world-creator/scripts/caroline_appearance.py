@@ -117,13 +117,19 @@ def add_caroline_adult_pelvic_morph(body):
         outer = gaussian(ax,.019,.019)*gaussian(nz,.468,.047)
         central_cleft = gaussian(ax,0.,.008)*gaussian(nz,.470,.037)
         low_fold = gaussian(ax,.016,.018)*gaussian(nz,.429,.032)
-        front_projection = (.0045*pubis + .024*outer +
-                            .015*low_fold - .0095*central_cleft)
-        dz = -.010*low_fold
+        # Exaggerated ADULT BODY inspection stage: make the anatomical
+        # landmark unambiguously visible in the neutral exported mesh.
+        # Change this single multiplier back toward 1.0 after visual QA.
+        # Kept on Carol's own mesh and covered by garments during gameplay.
+        PELVIC_VISIBILITY_TEST_SCALE = 4.0
+        front_projection = PELVIC_VISIBILITY_TEST_SCALE * (
+            .0045*pubis + .024*outer +
+            .015*low_fold - .0095*central_cleft)
+        dz = PELVIC_VISIBILITY_TEST_SCALE * (-.010*low_fold)
         new = Vector((p.x, p.y-h*front_weight*front_projection,
                       p.z+h*front_weight*dz))
         shift = (new-p).length
-        if shift > .040*h:
+        if shift > .085*h:
             raise RuntimeError("Carol anatomy contour exceeds safe shape range")
         if existing_keys:
             displacement = new - p
@@ -148,6 +154,7 @@ def add_caroline_adult_pelvic_morph(body):
     print("WVLRP_CAROLINE_ANATOMY_MORPH_SUCCESS",
           "baked_into_base", True, "rollback_key", key.name,
           "vertices", moved, "max_displacement_mm", round(max_shift*1000,2),
+          "visibility_test_scale", 4.0,
           "external_under_clothing", True)
     return key
 
