@@ -75,40 +75,67 @@ function bodyMeasurements(B,body) {
    modelVertexCount:body.getTotalVertices(),meshName:body.name};
 }
 function makeSkinnedShell(B,body,id,range,inflate,material,measure) {
- const positions=body.getVerticesData(B.VertexBuffer.PositionKind);
- const normals=body.getVerticesData(B.VertexBuffer.NormalKind);
- const indices=body.getIndices();
- if(!positions||!indices||!normals)return null;
- const world=body.getWorldMatrix(),vy=new Array(positions.length/3),vx=new Array(positions.length/3);
- const tmp=new B.Vector3();
- for(let i=0;i<vy.length;i++){
-  B.Vector3.TransformCoordinatesToRef(new B.Vector3(positions[i*3],positions[i*3+1],positions[i*3+2]),world,tmp);
-  vy[i]=(tmp.y-measure.minY)/measure.H;
-  vx[i]=Math.abs(tmp.x-measure.cx)/measure.H;
+ // Independent sewn-like garment surface: NOT a copy of the character's skin.
+ // Ring vertices form a roomy shirt or two distinct shorts legs.
+ const src=body.getVerticesData(B.VertexBuffer.PositionKind);
+ const bi=body.getVerticesData(B.VertexBuffer.MatricesIndicesKind);
+ const bw=body.getVerticesData(B.VertexBuffer.MatricesWeightsKind);
+ if(!src||!bi||!bw)throw Error('Rigged source vertex data missing for garments');
+ const H=measure.H, world=body.getWorldMatrix(), inv=world.clone().invert();
+ const worldPts=[], tmp=new B.Vector3();
+ for(let i=0;i<src.length;i+=3){
+  B.Vector3.TransformCoordinatesToRef(B.Vector3.FromArray(src,i),world,tmp);
+  worldPts.push([tmp.x,tmp.y,tmp.z]);
  }
- const kept=[];
- for(let i=0;i<indices.length;i+=3){
-  const a=indices[i],b=indices[i+1],c=indices[i+2];
-  const reach=id.includes('shorts')?.195:.265;
-  if(vy[a]>=range[0]&&vy[b]>=range[0]&&vy[c]>=range[0]&&
-     vy[a]<=range[1]&&vy[b]<=range[1]&&vy[c]<=range[1]&&
-     vx[a]<reach&&vx[b]<reach&&vx[c]<reach) kept.push(a,b,c);
+ const sections=[],isShorts=id.includes('shorts');
+ const y0=measure.minY+range[0]*H,y1=measure.minY+range[1]*H;
+ const groups=isShorts?[-1,1]:[0];
+ for(const side of groups){
+  const verts=[],indices=[],normals=[],uv=[],weights=[],bones=[];
+  const rings=13,segments=28;
+  for(let j=0;j<rings;j++){
+   const t=j/(rings-1),y=y0+(y1-y0)*t;
+   const band=worldPts.filter(p=>Math.abs(p[1]-y)<H*.028 && (side===0?Math.abs(p[0]-measure.cx)<H*.21:(p[0]-measure.cx)*side>H*.014 && Math.abs(p[0]-measure.cx)<H*.18));
+   const xcenter=side===0?measure.cx:measure.cx+side*H*.077;
+   const zcenter=band.length?band.reduce((a,p)=>a+p[2],0)/band.length:0;
+   const radiusX=band.length?Math.max(...band.map(p=>Math.abs(p[0]-xcenter))):H*(side===0?.16:.075);
+   const radiusZ=band.length?Math.max(...band.map(p=>Math.abs(p[2]-zcenter))):H*(side===0?.105:.072);
+   const ease=isShorts?1-.15*t:1-.10*t;
+   const rx=Math.max(radiusX,H*(side===0?.15:.072))*1.14*ease+H*.018;
+   const rz=Math.max(radiusZ,H*(side===0?.105:.075))*1.14*ease+H*.018;
+   for(let k=0;k<segments;k++){
+    const theta=2*Math.PI*k/segments;
+    const x=xcenter+rx*Math.cos(theta),z=zcenter+rz*Math.sin(theta);
+    B.Vector3.TransformCoordinatesToRef(new B.Vector3(x,y,z),inv,tmp);
+    verts.push(tmp.x,tmp.y,tmp.z);uv.push(k/segments,t);
+    let closest=0,best=Infinity;
+    for(let i=0;i<worldPts.length;i++){
+     const p=worldPts[i],d=(p[0]-x)**2+(p[1]-y)**2+(p[2]-z)**2;
+     if(d<best){best=d;closest=i;}
+    }
+    for(let n=0;n<4;n++){bones.push(bi[closest*4+n]);weights.push(bw[closest*4+n]);}
+   }
+  }
+  for(let j=0;j<rings-1;j++)for(let k=0;k<segments;k++){
+   const a=j*segments+k,b=j*segments+(k+1)%segments,c=(j+1)*segments+k,d=(j+1)*segments+(k+1)%segments;
+   indices.push(a,c,b,b,c,d);
+  }
+  const mesh=new B.Mesh('Young Explorer independent garment '+id+' '+side,body.getScene());
+  const data=new B.VertexData();
+  data.positions=verts;data.indices=indices;data.uvs=uv;
+  data.matricesIndices=bones;data.matricesWeights=weights;
+  B.VertexData.ComputeNormals(verts,indices,normals);data.normals=normals;
+  data.applyToMesh(mesh);
+  mesh.parent=body.parent;mesh.position.copyFrom(body.position);
+  mesh.rotationQuaternion=body.rotationQuaternion?.clone()||null;
+  mesh.rotation.copyFrom(body.rotation);mesh.scaling.copyFrom(body.scaling);
+  mesh.skeleton=body.skeleton;mesh.material=material;mesh.isPickable=false;
+  mesh.alwaysSelectAsActiveMesh=true;mesh.setEnabled(false);sections.push(mesh);
  }
- if(kept.length<15)throw Error('Outfit '+id+' has no fitted surface; check model dimensions');
- // A unique skinned shell preserves the original skeleton weights, UVs and bone motion.
- const shell=body.clone('Young Explorer wearable '+id,body.parent,true);
- shell.makeGeometryUnique();
- shell.setIndices(kept);
- const raised=Float32Array.from(positions);
- for(let i=0;i<raised.length;i+=3){
-  raised[i]+=normals[i]*inflate*measure.H;
-  raised[i+1]+=normals[i+1]*inflate*measure.H;
-  raised[i+2]+=normals[i+2]*inflate*measure.H;
- }
- shell.updateVerticesData(B.VertexBuffer.PositionKind,raised);
- shell.material=material;shell.skeleton=body.skeleton;
- shell.isPickable=false;shell.setEnabled(false);shell.alwaysSelectAsActiveMesh=true;
- return shell;
+ // Wrapper allows the existing outfit controls to toggle both leg panels together.
+ const group=new B.TransformNode('Young Explorer outfit '+id,body.getScene());
+ group.setEnabled=function(value){sections.forEach(m=>m.setEnabled(value));};
+ return group;
 }
 class YoungExplorerWardrobe {
  constructor(B,scene,result){
@@ -150,32 +177,6 @@ class YoungExplorerWardrobe {
    'regular-shorts':create('regular-shorts','#f1e6c9','#64809a'),
    'loose-shorts':create('loose-shorts','#f1e6c9','#64809a')
   };
-  // Give loose shorts a real outer silhouette instead of reproducing skin contours.
-  const loose=this.suits['loose-shorts']?.shorts;
-  if(loose){
-   const p=loose.getVerticesData(B.VertexBuffer.PositionKind);
-   if(p){
-    const q=Float32Array.from(p);
-    let ymin=Infinity,ymax=-Infinity,cx=0,cz=0,n=0;
-    for(let i=0;i<p.length;i+=3){ymin=Math.min(ymin,p[i+1]);ymax=Math.max(ymax,p[i+1]);cx+=p[i];cz+=p[i+2];n++;}
-    cx/=n;cz/=n;
-    const span=Math.max(.001,ymax-ymin),radial=.08*this.measure.H;
-    for(let i=0;i<q.length;i+=3){
-     const t=(p[i+1]-ymin)/span;
-     const ease=Math.min(1,Math.max(0,(t-.72)/.28));
-     const dx=p[i]-cx,dz=p[i+2]-cz;
-     const theta=Math.atan2(dz,dx);
-     // Smooth the fabric silhouette across the rear and sides while retaining
-     // separate leg geometry from the imported skinned mesh.
-     const rx=Math.max(Math.abs(dx),.12*this.measure.H)+radial*(1-.7*ease);
-     const rz=Math.max(Math.abs(dz),.09*this.measure.H)+radial*(1-.7*ease);
-     q[i]=cx+Math.sign(dx||1)*rx;
-     q[i+2]=cz+Math.sign(dz||1)*rz;
-    }
-    loose.updateVerticesData(B.VertexBuffer.PositionKind,q,true);
-    loose.refreshBoundingInfo();
-   }
-  }
   this.poseTokens=[];this.poseTime=0;this.poseElapsed=0;
   this.poseObserver=scene.onBeforeRenderObservable.add(()=>this.stepPose());
   this.buildMeasurements();this.bindSelector();this.bindFitControls();this.bindDressSizes();
