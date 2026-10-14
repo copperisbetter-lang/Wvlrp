@@ -28,7 +28,7 @@ button{border:1px solid #97b89e;border-radius:8px;background:#335b43;color:#fff6
 <button id="front">Front view</button><button id="back">Back view</button><button id="face">Face close-up</button>
 <button id="full">Full body</button><button id="closer">Zoom +</button><button id="farther">Zoom −</button>
 <button id="idle">Stand</button><button id="wave">Wave</button><button id="walk">Walk</button>
-<button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button>
+<button id="bend">Bend Over</button><button id="sit">Sit Down</button><button id="pickup">Pick Up</button><button id="hands-knees">Hands &amp; Knees</button><button id="elbows-knees">Elbows &amp; Knees</button><button id="crawl">Crawl</button><button id="lie-down">Lay Down</button>
 </div>
 <div id="wardrobe" aria-label="Try on Young Explorer clothing">
  <label for="outfit-select">Clothing:</label><select id="outfit-select" aria-label="Automatically put an outfit on Young Explorer"><option>Loading outfits…</option></select>
@@ -235,9 +235,17 @@ function play(name){if(!groups.length)return;
 document.getElementById('idle').onclick=()=>window.youngExplorerWardrobe?.naturalStand();
 document.getElementById('wave').onclick=()=>{if(!window.youngExplorerWardrobe)return;groups.forEach(g=>g.stop());window.youngExplorerWardrobe.pose('wave');};
 document.getElementById('walk').onclick=()=>play('Walk');
-document.getElementById('bend').onclick=()=>window.youngExplorerWardrobe?.pose('bend');
-document.getElementById('sit').onclick=()=>window.youngExplorerWardrobe?.pose('sit');
-for(const name of ['pickup','hands-knees','elbows-knees'])document.getElementById(name).onclick=()=>window.youngExplorerWardrobe?.pose(name);
+document.getElementById('bend').onclick=()=>{groups.forEach(g=>g.stop());window.youngExplorerWardrobe?.pose('bend');};
+document.getElementById('sit').onclick=()=>{groups.forEach(g=>g.stop());window.youngExplorerWardrobe?.pose('sit');};
+for(const name of ['pickup','hands-knees','elbows-knees','crawl','lie-down']){
+ document.getElementById(name).onclick=()=>{
+   const wardrobe=window.youngExplorerWardrobe;
+   if(!wardrobe){status.textContent='Character is still loading; controls are not ready';return;}
+   groups.forEach(g=>g.stop());
+   wardrobe.pose(name);
+   status.textContent='Pose selected: '+name.replaceAll('-',' ');
+ };
+}
 document.getElementById('front').onclick=()=>{camera.alpha=-Math.PI/2;camera.beta=Math.PI/2.12;};
 document.getElementById('back').onclick=()=>{camera.alpha=Math.PI/2;camera.beta=Math.PI/2.12;};
 document.getElementById('full').onclick=()=>{if(!bounds)return;camera.setTarget(new B.Vector3(center.x,bounds.min.y+bounds.span*.54,center.z));camera.radius=bounds.span*2.3;};
