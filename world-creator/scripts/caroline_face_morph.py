@@ -29,8 +29,8 @@ def apply_caroline_face_morph(root, body):
     """Create editable facial shape key on Carolyn's inspected body only."""
     if body.type != "MESH" or len(body.data.vertices) < 10000:
         raise RuntimeError("Carolyn facial morph needs the original continuous MPFB basemesh")
-    if body.data.shape_keys and len(body.data.shape_keys.key_blocks) > 1:
-        raise RuntimeError("Carolyn facial study refuses to overwrite existing shape keys")
+    if body.data.shape_keys and "Carolyn Season 3 Facial Study" in body.data.shape_keys.key_blocks:
+        raise RuntimeError("Carolyn facial study shape key already exists; will not overwrite it")
     members = [root] + list(root.children_recursive)
     eyes = [o for o in members if o.type == "MESH"
             and ("high-poly" in o.name.lower() or (
@@ -60,7 +60,8 @@ def apply_caroline_face_morph(root, body):
         raise RuntimeError("Carolyn facial morph: cannot locate existing head surface")
     # MPFB looks toward -Y. A front-side weight keeps ears/scalp/neck untouched.
     front_mid = head_band[int(len(head_band)*.47)]
-    basis = body.shape_key_add(name="Basis", from_mix=False)
+    if not body.data.shape_keys:
+        body.shape_key_add(name="Basis", from_mix=False)
     key = body.shape_key_add(name="Carolyn Season 3 Facial Study", from_mix=False)
     key.value = 1.0
 
