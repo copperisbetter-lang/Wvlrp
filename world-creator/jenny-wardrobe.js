@@ -395,9 +395,34 @@ class YoungExplorerWardrobe {
   }
   if($('pose-feedback'))$('pose-feedback').textContent='';
  }
+ startLocomotion(kind){
+  this.model.animationGroups?.forEach(g=>g.stop());
+  this.resetPose();
+  if(this.locomotionObserver)this.scene.onBeforeRenderObservable.remove(this.locomotionObserver);
+  const B=this.B,run=kind==='run',rate=run?8.2:5.1,stride=run?.48:.32;
+  const parts=['leftupleg','rightupleg','leftleg','rightleg','leftarm','rightarm'];
+  const joints=parts.map(n=>this.boneTarget(n));
+  const bases=joints.map(j=>j?(j.rotationQuaternion||B.Quaternion.FromEulerVector(j.rotation)).clone():null);
+  const begun=performance.now();
+  this.locomotionObserver=this.scene.onBeforeRenderObservable.add(()=>{
+   const t=(performance.now()-begun)/1000*rate;
+   for(let side=0;side<2;side++){
+    const phase=t+side*Math.PI,step=Math.sin(phase);
+    const hip=joints[side],knee=joints[side+2],arm=joints[side+4];
+    if(hip&&bases[side])hip.rotationQuaternion=bases[side].multiply(B.Quaternion.RotationAxis(B.Axis.X,step*stride));
+    // Knee flexion is one-directional; never hyperextend backward during stride.
+    if(knee&&bases[side+2])knee.rotationQuaternion=bases[side+2].multiply(B.Quaternion.RotationAxis(B.Axis.X,Math.max(0,-Math.sin(phase))*(run?.95:.65)));
+    if(arm&&bases[side+4])arm.rotationQuaternion=bases[side+4].multiply(B.Quaternion.RotationAxis(B.Axis.X,-step*(run?.38:.22)));
+   }
+  });
+ }
+ stopLocomotion(){
+  if(this.locomotionObserver){this.scene.onBeforeRenderObservable.remove(this.locomotionObserver);this.locomotionObserver=null;}
+ }
  naturalStand(){
   // A relaxed standing pose instead of the exported wide A-pose.
   // Rotate the actual upper-arm joints, so skin and sleeves follow the rig.
+  this.stopLocomotion();
   this.model.animationGroups?.forEach(g=>g.stop());
   this.resetPose();
   for(const [name,angle] of [['leftarm',-.48],['rightarm',.48]]){
