@@ -13,6 +13,9 @@ from bl_ext.wvlrp_local.mpfb.services.locationservice import LocationService
 from bl_ext.wvlrp_local.mpfb.services.exportservice import ExportService
 from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
 from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectProperties
+from face_materials import preserve_photo_skin
+from caroline_appearance import reshape_adult_body, add_period_updo
+from caroline_motions import add_caroline_animations
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"assets"/"caroline-source-validation.blend"
@@ -39,7 +42,7 @@ bpy.ops.object.select_all(action="SELECT"); bpy.ops.object.delete(use_global=Fal
 install_assets()
 h=HumanService.create_human(); h.name="Caroline Ingalls adult source body"
 # Adult female foundation. Cup/firmness target is a natural 36C-like silhouette with softer gravity.# Garments must be fitted to this final body, never globally scaled from another avatar.
-for key,val in [("gender",0.0),("age",.52),("weight",.50),("muscle",.34),("height",.48),("proportions",.50),("cupsize",.58),("firmness",.32)]:
+for key,val in [("gender",0.0),("age",.52),("weight",.50),("muscle",.34),("height",.48),("proportions",.50),("cupsize",.78),("firmness",.32)]:
     HumanObjectProperties.set_value(key,val,entity_reference=h)
 TargetService.reapply_macro_details(h)
 skin=AssetService.find_asset_absolute_path("young_caucasian_female.mhmat",asset_subdir="skins")
@@ -63,17 +66,23 @@ if len(body.data.vertices)<10000 or len(body.data.polygons)<10000:
     raise RuntimeError("Caroline body incomplete")
 rigs=[o for o in [root]+list(ObjectService.get_list_of_children(root)) if o.type=="ARMATURE"]
 if not rigs or len(rigs[0].data.bones)<25: raise RuntimeError("Caroline humanoid rig incomplete")
-# Warm medium/light brown hair target matching Caroline's Season-3 screen appearance.
-for ob in [root]+list(ObjectService.get_list_of_children(root)):
+# Preserve the actual MakeHuman UV photographic face and body skin,
+# rather than a uniform tan material that erases realistic facial features.
+preserve_photo_skin(body,"Caroline")
+reshape_adult_body(body)
+# The old dark stock long01 cape concealed her face and upper torso. Remove
+# that hair ONLY from the inspection COPY, not the original MPFB human.
+for ob in [root]+list(root.children_recursive):
     if ob.type=="MESH" and "long01" in ob.name.lower():
-        for mat in ob.data.materials:
-            if mat and mat.use_nodes:
-                bs=mat.node_tree.nodes.get("Principled BSDF")
-                if bs:
-                    for link in list(mat.node_tree.links):
-                        if link.to_node==bs and link.to_socket.name=="Base Color": mat.node_tree.links.remove(link)
-                    bs.inputs["Base Color"].default_value=(.30,.20,.12,1); bs.inputs["Roughness"].default_value=.78
+        bpy.data.objects.remove(ob,do_unlink=True)
+add_period_updo(root,body,rigs[0])
+add_caroline_animations(rigs[0])
+# Explicit selection marker: the Blender source retains BOTH source and
+# duplicate for editing, but GLB export must include exactly one avatar.
+root["wvlrp_caroline_export_root"]=True
+bpy.context.view_layer.update()
+if not body.data.uv_layers: raise RuntimeError("Caroline photographic facial UV missing")
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT))
-print("WVLRP_CAROLINE_BODY_TARGET","36C-like","natural_gravity",True,"clothes_fit_after_body",True)
+print("WVLRP_CAROLINE_BODY_TARGET","fuller adult silhouette","natural_gravity",True,"clothes_fit_after_body",True)
 print("WVLRP_CAROLINE_SOURCE_SUCCESS",len(body.data.vertices),len(body.data.polygons),len(rigs[0].data.bones),OUT)
