@@ -6,8 +6,8 @@ replacement eyes. The underlying MPFB body and original skin UV stay intact.
 
 Reference study: Karen Grassle, Little House on the Prairie season 3.
 Fuller adult upper-cheeks/temples, expressive mature lower-eye transition,
-soft oval jaw, characteristic long straight nose, and naturally lifted mouth
-corners. This remains a manually tuned likeness study, not photo-matched data;
+a gently tapered soft oval jaw (not a broad stock jaw), characteristic long
+straight nose with a defined bridge, and softly lifted resting mouth corners. This remains a manually tuned likeness study, not photo-matched data;
 compare rendered face and profile against season-three reference images.
 """
 import bpy
@@ -15,19 +15,20 @@ import math
 from mathutils import Vector
 
 PRESET = {
-    "name": "Carolyn S3 facial likeness study v2 - adult reference",
+    "name": "Carolyn S3 facial likeness study v3 - fuller cheeks, softer tapered jaw and straight nose",
     # Subtle changes scaled by actual body height; do not shrink face to a point.
-    "cheek_width": 0.0025,
-    "cheek_forward": 0.0030,
-    "jaw_taper": 0.0008,
-    "chin_forward": 0.0014,
-    "nose_width": 0.0005,
-    "nose_projection": 0.0016,
-    "mouth_width": 0.0021,
+    "cheek_width": 0.0037,
+    "cheek_forward": 0.0028,
+    "jaw_taper": -0.0016,
+    "chin_forward": 0.0011,
+    "nose_width": -0.0004,
+    "nose_projection": 0.0018,
+    "nose_bridge_projection": 0.0010,
+    "mouth_width": 0.0012,
     "brow_softening": 0.0008,
-    "temple_width": 0.0018,
-    "under_eye_fullness": 0.0013,
-    "mouth_corner_lift": 0.0011,
+    "temple_width": 0.0022,
+    "under_eye_fullness": 0.0015,
+    "mouth_corner_lift": 0.0008,
 }
 # Preset numbers are fractions of actual MPFB adult body height.
 
@@ -93,6 +94,7 @@ def apply_caroline_face_morph(root, body):
         chin = bell(ax,0,.040)*bell(dz,-.119,.025)
         nose = bell(ax,.016,.020)*bell(dz,-.050,.046)
         tip = bell(ax,0,.018)*bell(dz,-.072,.023)
+        straight_bridge = bell(ax,.011,.016)*bell(dz,-.037,.032)
         lip = bell(ax,.034,.027)*bell(dz,-.094,.019)
         brow = bell(ax,.045,.038)*bell(dz,.013,.016)
         temple = bell(ax,.072,.023)*bell(dz,.025,.030)
@@ -109,6 +111,7 @@ def apply_caroline_face_morph(root, body):
             PRESET["cheek_forward"]*cheek +
             PRESET["chin_forward"]*chin +
             PRESET["nose_projection"]*tip +
+            PRESET["nose_bridge_projection"]*straight_bridge +
             PRESET["brow_softening"]*brow +
             PRESET["under_eye_fullness"]*under_eye)
         shift_z = h*front_weight*(PRESET["mouth_corner_lift"]*mouth_corner)
