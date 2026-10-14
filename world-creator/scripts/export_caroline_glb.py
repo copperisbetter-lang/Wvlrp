@@ -19,6 +19,16 @@ if len(rigs)!=1:
     raise RuntimeError("Caroline export has "+str(len(rigs))+" armatures; expected exactly one")
 if not any(len(o.data.vertices)>10000 for o in meshes):
     raise RuntimeError("Caroline export has no intact continuous adult basemesh")
+# The neutral, clothed-character anatomy contour must be on the actual base
+# vertices, not exclusively in a shape key that a viewer may ignore.
+contoured=[o for o in meshes if o.get("wvlrp_carol_pelvic_contour_baked",False)]
+if len(contoured)!=1 or contoured[0].get("wvlrp_carol_pelvic_contour_vertices",0)<35:
+    raise RuntimeError("Carol adult pelvic contour not baked into exported basemesh")
+rollback="Carol pelvic contour OFF - inspection rollback"
+if not contoured[0].data.shape_keys or rollback not in contoured[0].data.shape_keys.key_blocks:
+    raise RuntimeError("Carol anatomical fit rollback shape key missing")
+if contoured[0].data.shape_keys.key_blocks[rollback].value != 0.0:
+    raise RuntimeError("Carol contour unexpectedly disabled in preview")
 if not any("Caroline light blue eyes original MPFB UV" in o.name for o in meshes):
     raise RuntimeError("Carolyn original MakeHuman blue eyes are missing")
 if any("iris geometry" in o.name.lower() for o in meshes):
@@ -118,6 +128,10 @@ if missing_materials:raise RuntimeError("Missing exported clothing materials: "+
 clips={a.get("name","") for a in meta.get("animations",[])}
 unexported=[name for name in required if name not in clips]
 if unexported:raise RuntimeError("Caroline exported GLB animations missing: "+str(unexported))
+if not any("Carol pelvic contour OFF - inspection rollback" in name
+           for mesh in meta.get("meshes",[])
+           for name in mesh.get("extras",{}).get("targetNames",[]) if isinstance(name,str)):
+    raise RuntimeError("Carol pelvis revert shape key not exported to GLB")
 if not any("Carolyn Season 3 Facial Study" in name
            for mesh in meta.get("meshes",[])
            for name in mesh.get("extras",{}).get("targetNames",[]) if isinstance(name,str)):
