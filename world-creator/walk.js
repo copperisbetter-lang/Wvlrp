@@ -48,6 +48,7 @@ const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
+const START_AT_COMPARE=betaParams.get("compare")==="1";
 const RANGER_SPAWN=Object.freeze({x:NORTH_RANGER_STATION.x,z:NORTH_RANGER_STATION.z-13,
   tileX:NORTH_RANGER_STATION.x,tileZ:NORTH_RANGER_STATION.z});
 // Disperse visitors in the open village approach to prevent overlapping
@@ -107,10 +108,11 @@ sun.intensity=1.55;
 const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
 const camera=new B.FreeCamera("first-person explorer",
   new B.Vector3(START_AT_RANGER?RANGER_SPAWN.x:0,
-    START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
-    START_AT_RANGER?RANGER_SPAWN.z:16),scene);
+    START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:
+      START_AT_COMPARE?cabinGrade(0,274,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
+    START_AT_RANGER?RANGER_SPAWN.z:START_AT_COMPARE?274:16),scene);
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
-camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
+camera.rotation.set(0,START_AT_RANGER||START_AT_COMPARE?0:Math.PI,0);
 scene.activeCamera=camera;
 // Clean photographic landscape test: retire every blocky distant ridge,
 // rock wall and skyline mesh. Keep only the real sky, photographic ground,
@@ -191,7 +193,7 @@ function addLandscape(x,z){
 }
 let habitat;
 try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:0,
-    START_AT_RANGER?RANGER_SPAWN.tileZ:0);}
+    START_AT_RANGER?RANGER_SPAWN.tileZ:START_AT_COMPARE?314:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
 // Greenfield rebuild: retire every old forest/village tree and forest-floor
 // prop from the LIVE scene, not from the source library. They can be reused
@@ -434,7 +436,7 @@ document.getElementById("cabinCompare")?.addEventListener("click",()=>{
   cabinComparison.show();
   if(cabinComparison.jump())status("Showing imported real cabin meshes; empty comparison positions are hidden.");
 });
-if(betaParams.get("compare")==="1"){
+if(START_AT_COMPARE){
   cabinComparison.show();cabinComparison.jump();
 }
 // Peer mode is enabled only by the public Game Beta Test entrance.
@@ -525,7 +527,11 @@ engine.runRenderLoop(()=>{
   playerMap?.update(performance.now());
   scene.render();
 });
-if(START_AT_RANGER)goToRanger();
+if(START_AT_COMPARE){
+  // The comparison entry already teleported the player to its field.
+  // Do NOT reset to Hearthside Cabin after the first render.
+  document.querySelector(".brand small").textContent="Four-cabin test field · north of Hearthside";
+}else if(START_AT_RANGER)goToRanger();
 else{
   resetToCabin();
   status("You're at Hearthside Cabin. Push the joystick to walk, double-tap its center to run, and drag right to look.");
