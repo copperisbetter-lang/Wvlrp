@@ -1,9 +1,9 @@
 /**
- * The Wild — actual village-facing mountain scenery, October 13, 2026.
+ * The Wild — distant Appalachian ridges for clean-slate flatland, October 15, 2026.
  *
  * Previous distant panorama/rock meshes were hidden behind the 1.1 km
  * streamed terrain. These lightweight real 3D surfaces stand in the opened
- * valley immediately BEHIND the three walkable buildings. The wooded
+ * valley well BEYOND the playable valley and build-pad reserves. The wooded
  * mountains, long exposed sandstone escarpment and near forest layer have
  * different depths (parallax), irregular ridgelines, and no collisions.
  * Terrain, character placement, multiplayer and original map markers
@@ -146,11 +146,11 @@ export function installVisibleVillageMountains(B,scene,camera,{
   // the entire central phone viewport instead of a flat nearby green slope.
   const farTop=x=>108+28*Math.exp(-Math.pow((x-28)/118,2))+
     11*Math.sin(x*.014+1.5)+4*Math.sin(x*.071+.8);
-  surface("BACK Appalachian blue-green mountain ridge",245,-325,325,-62,
+  surface("BACK Appalachian blue-green mountain ridge",1700,-900,900,-62,
     x=>farTop(x)-14,farMat,1);
   const woodedTop=x=>78+22*Math.exp(-Math.pow((x-5)/110,2))+
     8*Math.sin(x*.017+.7)+4*Math.sin(x*.073);
-  surface("MID real wooded mountain hillside",205,-278,278,-48,
+  surface("MID real wooded mountain hillside",1450,-750,750,-48,
     woodedTop,woodsMat,2);
   // Pale exposed sedimentary cliffs rise above Ranger Station's roof while
   // retaining forest both below and beyond the rock face.
@@ -158,13 +158,13 @@ export function installVisibleVillageMountains(B,scene,camera,{
     6*Math.sin(x*.020+1)+3*Math.sin(x*.11);
   const rockBase=x=>25+4*Math.sin(x*.026+2)+
     6*Math.exp(-Math.pow((x+35)/87,2));
-  surface("VISIBLE sunlit rocky cliff above Ranger Station",176,-202,202,
+  surface("VISIBLE distant sunlit rocky Appalachian escarpment",1290,-640,640,
     rockBase,rockTop,rockMat,3);
   // Low wooded feet of the ridge stay below the sandstone ledges, so the
   // scene reads as a distant Appalachian mountain instead of tall grass.
   const nearTop=x=>10+5*Math.exp(-Math.pow(x/118,2))+
     2.5*Math.sin(x*.046+.7)+1.5*Math.sin(x*.15);
-  surface("LOW green wooded foothill behind all village shops",153,-236,236,-40,
+  surface("LOW green foothill beyond cabin/camp land",1090,-610,610,-40,
     nearTop,woodsMat,4);
 
   // The new view is anchored to the world. Its four depths introduce genuine
@@ -172,7 +172,7 @@ export function installVisibleVillageMountains(B,scene,camera,{
   // it fades rather than forming an invisible/unwalkable wall.
   const observer=scene.onBeforeRenderObservable.add(()=>{
     const dz=camera.position.z;
-    const alpha=clamp((153-dz)/30,0,1);
+    const alpha=clamp((1010-dz)/180,0,1);
     for(const m of meshes)m.visibility=alpha;
   });
   return {
