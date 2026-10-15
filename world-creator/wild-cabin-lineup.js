@@ -1,15 +1,15 @@
 /**
- * The Wild - temporary four-cabin comparison, October 2026.
- * The files are NOT included: Sketchfab requires an authenticated download.
- * Accepts creator-provided .glb or Sketchfab glTF .zip, imports at real walk scale,
- * and remembers each import locally on the tester's device (IndexedDB).
- * Do not replace/alter the protected Hearthside cabin or North Ranger Station.
+ * The Wild: photoreal cabin comparison, October 2026.
+ * Sources are three real photogrammetry scans and a detailed PBR building.
+ * Sketchfab downloads require authorization; no model geometry is bundled yet.
+ * Never render a sign at an empty slot as if a cabin is installed.
+ * Preserve Hearthside Cabin and the North Ranger Station unchanged.
  */
 export const CABIN_CANDIDATES = Object.freeze([
-  {id:"donnichols",name:"Wooden Log Cabin",author:"donnichols",uid:"21bf3df011b147598cdb43fea839cef7",triangles:8800},
-  {id:"kless",name:"Log Cabin",author:"Kless Gyzen",uid:"2657189dbdff49fdb20ba33d6ebd5c52",triangles:585300},
-  {id:"luis",name:"Log Cabin",author:"Luis Gustavo",uid:"07363bec96644674baa5877b63268e50",triangles:7400},
-  {id:"helindu",name:"Wooden House",author:"Helindu",uid:"2b90d4b8ffa64ace97c293b770d00e48",triangles:22000}
+  {id:"old-cabin-scan",name:"Old Cabin (photo scan)",author:"Phil Devine",uid:"b94dff1a8d6b4e0c9248831ca772f19a",triangles:531800},
+  {id:"canadian-cabin-scan",name:"Canadian Cabin (photo scan)",author:"Air Digital",uid:"866032439f7344efa6d1155ade2435fe",triangles:998900},
+  {id:"winter-house-scan",name:"Winter House (photo scan)",author:"Shahriar Shahrabi",uid:"05e24d513635445380813a3ce15206db",triangles:144000},
+  {id:"pbr-log-cabin",name:"Log Cabin (high-detail PBR)",author:"Kless Gyzen",uid:"2657189dbdff49fdb20ba33d6ebd5c52",triangles:585300}
 ].map(o=>Object.freeze({...o,source:"https://sketchfab.com/3d-models/"+o.uid,license:"CC BY 4.0"})));
 export const CABIN_TEST_SLOTS=Object.freeze(CABIN_CANDIDATES.map((o,i)=>
   Object.freeze({...o,x:(i-1.5)*27,z:314})));
@@ -114,17 +114,21 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   const close=document.createElement("button");close.type="button";close.textContent="✕";close.onclick=()=>panel.hidden=true;
   header.append(close);panel.append(header);
   const intro=document.createElement("p");
-  intro.textContent="Four source models, 27m apart south of the Ranger Station. Sketchfab requires free sign-in to download the glTF ZIP. Choose each ZIP below after downloading; it loads into the real walking world, not a picture.";
+  intro.textContent="Photoreal comparison: three genuine photo scans and one detailed PBR cabin. Sketchfab requires a free sign-in to download each glTF ZIP. No files have been installed on the game server yet; import the real model below. Empty slots will not show fake cabin signs. Large scans need optimization before mobile release.";
   panel.append(intro);
   const allButton=document.createElement("button");allButton.type="button";allButton.textContent="Show all loaded cabins";
   allButton.onclick=()=>{solo=-1;syncVisibility();onStatus("Showing all imported cabin models.");};
   panel.append(allButton);
   const foot=document.createElement("p");
   foot.style.cssText="font-size:11px;opacity:.78";
-  foot.textContent="Models remain on this device only until published as licensed game assets. CC BY 4.0: credit each creator and source. The 585k-triangle Kless model may slow phones; use the Solo buttons.";
+  foot.textContent="Imports stay on this device until genuinely published to WVLRP. CC BY 4.0: credit each creator and source. These high-detail scans may slow a phone — use Solo to inspect.";
   function syncVisibility(){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
-      const m=assigned.get(i);m?.node.setEnabled(visible&&(solo<0||solo===i));
+      const m=assigned.get(i);
+      const showMesh=!!m&&visible&&(solo<0||solo===i);
+      m?.node.setEnabled(showMesh);
+      // Show an attribution sign only if its real 3D model exists.
+      for(const marker of labels[i]||[])marker.setEnabled(showMesh);
     }
   }
   for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
@@ -134,29 +138,33 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     sign.position.set(c.x,ground+2.75,c.z-8.8);
     sign.rotation.y=Math.PI; // Face south toward players arriving from the test entrance.
     sign.material=textureLabel(B,scene,i,c.name);
-    sign.isPickable=false;sign.parent=root;labels.push(sign);
+    sign.isPickable=false;sign.parent=root;sign.setEnabled(false);
     const marker=B.MeshBuilder.CreateCylinder("Cabin "+(i+1)+" signpost",{diameter:.16,height:2.1,tessellation:8},scene);
     marker.position.set(c.x,ground+1.06,c.z-8.8);
     const material=new B.StandardMaterial("signpost wood "+i,scene);
     material.diffuseColor=B.Color3.FromHexString("#65452f");
-    marker.material=material;marker.parent=root;labels.push(marker);
+    marker.material=material;marker.parent=root;marker.setEnabled(false);
+    labels.push([sign,marker]);
     const row=document.createElement("div");
     row.style.cssText="padding:9px 0;border-bottom:1px solid #a3a98c55";
     const heading=document.createElement("div");
     heading.innerHTML='<strong>'+String(i+1)+'. '+c.name+'</strong> · '+c.author;
     row.append(heading);
-    const status=document.createElement("div");status.textContent="Not imported";status.style.cssText="color:#eddda5;margin:5px 0";
+    const status=document.createElement("div");status.textContent="No 3D model installed";status.style.cssText="color:#eddda5;margin:5px 0";
     row.append(status);
     const open=document.createElement("a");
     open.href=c.source;open.target="_blank";open.rel="noopener noreferrer";
-    open.textContent="Get model ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
+    open.textContent="View photoreal model source ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
     row.append(open);
     const pick=document.createElement("input");pick.type="file";pick.accept=".glb,.zip,model/gltf-binary,application/zip";
     pick.setAttribute("aria-label","Import downloaded model "+(i+1));
     pick.style.cssText="display:block;max-width:100%;font-size:11px;margin:6px 0";
     row.append(pick);
     const soloButton=document.createElement("button");soloButton.type="button";soloButton.textContent="Solo cabin "+(i+1);
-    soloButton.onclick=()=>{solo=i;syncVisibility();panel.hidden=true;onJump(c.x,c.z-24);};
+    soloButton.onclick=()=>{
+      if(!assigned.has(i)){onStatus("Cabin "+(i+1)+" not installed yet — import its actual 3D file below.");return;}
+      solo=i;syncVisibility();panel.hidden=true;onJump(c.x,c.z-24);
+    };
     row.append(soloButton);
     rows.push({status,pick});
     panel.append(row);
@@ -193,7 +201,8 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       if(previous){previous.node.dispose(false,true);previous.urls.forEach(URL.revokeObjectURL);}
       assigned.set(i,{node,urls:sceneFile.urls});
       syncVisibility();
-      line.status.textContent="✓ In the world: "+file.name+" · "+Math.round(unitScale*100)/100+"× scale";
+      if(visible&&assigned.size===1)onJump(0,274);
+      line.status.textContent="✓ Real 3D model loaded: "+file.name+" · "+Math.round(unitScale*100)/100+"× scale";
       onStatus("Cabin "+(i+1)+" installed for this browser. Walk around it.");
       if(persist)try{await rememberModel(slot.id,file);}catch(err){
         line.status.textContent+=" (not saved on device: storage full)";
@@ -217,7 +226,14 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   return {
     show(){visible=true;root.setEnabled(true);syncVisibility();panel.hidden=false;restore().catch(console.error);},
     hidePanel(){panel.hidden=true;},
-    jump(){onJump(0,274);},
+    jump(){
+      if(!assigned.size){
+        panel.hidden=false;
+        onStatus("No photoreal models installed yet. Select real downloaded 3D files in the comparison panel.");
+        return false;
+      }
+      onJump(0,274);return true;
+    },
     stats(){return CABIN_TEST_SLOTS.map((s,i)=>({id:s.id,loaded:assigned.has(i),solo:solo===i,x:s.x,z:s.z}));}
   };
 }
