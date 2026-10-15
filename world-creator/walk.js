@@ -15,6 +15,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
+import {createFourCabinTest} from "./wild-cabin-lineup.js?v=four-real-cabin-test-20261015-v1";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -414,6 +415,28 @@ const cameraGround=(x,z)=>{
   // The former village porches and steps were cleared; no invisible stairs.
   return ground;
 };
+// Four official CC-BY Sketchfab models can be compared in the real walking world.
+// Only user-authorized glTF ZIP/GLB files are imported: never pretend a mockup
+// or an embedded image is the full 3D cabin. Hearthside and Ranger stay intact.
+const cabinComparison=createFourCabinTest({
+  B,scene,camera,groundAt:(x,z)=>cameraGround(x,z),onStatus:status,
+  onJump:(x,z)=>{
+    if(Math.max(Math.abs(tileCx-x),Math.abs(tileCy-z))>70){
+      try{habitat=addLandscape(0,314);}catch(err){console.error(err);}
+    }
+    camera.position.set(x,cameraGround(x,z)+EYE_HEIGHT,z);
+    camera.rotation.set(0,0,0);
+    document.querySelector(".brand small").textContent="Four-cabin walking comparison";
+    info.textContent="CABIN TEST · models placed 27m apart south of Ranger Station";
+  }
+});
+document.getElementById("cabinCompare")?.addEventListener("click",()=>{
+  cabinComparison.show();cabinComparison.jump();
+  status("Four-cabin test area. Choose each downloaded real 3D file in the comparison panel.");
+});
+if(betaParams.get("compare")==="1"){
+  cabinComparison.show();cabinComparison.jump();
+}
 // Peer mode is enabled only by the public Game Beta Test entrance.
 // The local visitor stays first person and resident GLB characters are untouched.
 let multiplayer=null;
@@ -512,6 +535,7 @@ if(START_AT_RANGER){
 }
 
 // Non-interactive read-only telemetry for repeatable browser smoke tests.
+window.__wildCabinLineupDiagnostics=()=>cabinComparison.stats();
 window.__wildDiagnostics=()=>({
   position:[camera.position.x,camera.position.y,camera.position.z],
   meshes:scene.meshes.length,
