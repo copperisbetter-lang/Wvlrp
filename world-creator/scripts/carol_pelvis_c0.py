@@ -212,6 +212,8 @@ def make_c0_anatomy(root, body, rig):
         raise RuntimeError("C0: Hips rig bone unavailable")
     transferred_skin=[]
     max_boundary_gap=0.
+    worst_rim=None
+    sampled_midline=[]
     max_support_distance=0.
     center_relief=0.
     max_depth_correction=0.
@@ -301,8 +303,14 @@ def make_c0_anatomy(root, body, rig):
         # quads back over one another, creating the visible angular shards.
         # Offset anterior (-Y) with a smooth taper at the true mesh rim.
         v.co=Vector((x,nearest.y-(relief+normal_lift)*.73-anterior_lift-.0004,z))
+        if i%cols==cols//2 and (i//cols)%5==0:
+            sampled_midline.append((i//cols,round(x,4),round(z,4),tuple(round(t,4) for t in nearest),round(distance,4)))
         if edge_dist[i]<.0005:
-            max_boundary_gap=max(max_boundary_gap,(v.co-nearest).length)
+            gap=(v.co-nearest).length
+            if gap>max_boundary_gap:
+                max_boundary_gap=gap
+                worst_rim=(i//cols,i%cols,round(x,4),round(z,4),
+                           tuple(round(t,4) for t in nearest),round(distance,4))
     mesh.update()
     offsets=[v.co.z-c0z for v in mesh.vertices]
     # Test that no regular-grid faces have folded in their X/Z mapping.
@@ -319,6 +327,8 @@ def make_c0_anatomy(root, body, rig):
         min_cell=min(min_cell,abs(area))
     if inverted:
         raise RuntimeError("C0: projected patch has folded or inverted quads: "+str(inverted))
+    print("WVLRP_CAROL_C0_RIM_DIAG",worst_rim,
+          "midline",sampled_midline)
     if max_boundary_gap>.060:
         raise RuntimeError("C0: patch rim is unsupported by pelvis: "+str(round(max_boundary_gap,4)))
     print("WVLRP_CAROL_C0_GRID_QA","quads",len(mesh.polygons),
