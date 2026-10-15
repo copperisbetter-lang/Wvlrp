@@ -24,7 +24,7 @@ const MIN_MODELS=7;
 // Decode smaller authored GLBs on phones; uncompressed 30MB source trees can
 // consume much more GPU/JS memory than their download size suggests.
 const MOBILE_SOURCE_MAX_BYTES=8*1024*1024;
-const LITE_SOURCE_MAX_BYTES=7*1024*1024;
+const LITE_SOURCE_MAX_BYTES=6*1024*1024;
 
 // Visually plausible but not botanically exact substitutions are *not*
 // documented as a matched species. The native species list is an art target.
