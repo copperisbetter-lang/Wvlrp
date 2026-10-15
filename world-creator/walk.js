@@ -6,7 +6,7 @@
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=one-hd-oak-20261014-v2";
-import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=cc0-oak-20261014-v1";
+import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
@@ -491,7 +491,7 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps`;
+    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "");
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
@@ -528,6 +528,7 @@ window.__wildDiagnostics=()=>({
    villageTreesEnabled:VILLAGE_SQUARE_TREES_ENABLED,
   villageHDOakEnabled:VILLAGE_HD_OAK_ENABLED,
   importedVillageOakStatus:villageOak.status,
+  importedVillageOakSource:VILLAGE_OAK.model,
    importedVillageOakMeshes:villageOak.meshCount,
    importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
    importedVillageOakError:villageOak.error,
