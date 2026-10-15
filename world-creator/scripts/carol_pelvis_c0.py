@@ -10,6 +10,7 @@ import json
 import math
 from pathlib import Path
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 DATA = Path(__file__).resolve().parents[1] / "assets" / "riley-vulva1-source.json"
 # From C0: X = left/right; Z = upward; forward is negative body-local Y.
@@ -132,108 +133,127 @@ def make_c0_anatomy(root, body, rig):
     if len(mesh.vertices) < 1200:
         raise RuntimeError("C0: subdivision insufficient for two distinct folds")
 
+    # Fit the real source topology to Carol's OWN pelvic skin. The previous
+    # method used a fixed +Y hinge and a guessed below-fork surface when no
+    # raycast hit; this left a suspended paper-like flap in front and on the
+    # elbows-and-knees pose. Never extend skin into unoccupied space.
     low=min(v[2] for v in raw_verts)
-    scale=.076  # ~8.7 cm wide, 7.8 cm tall total
-    # Previous build placed the ENTIRE donor from +3 mm to +81 mm ABOVE
-    # the lower-pelvis C0 junction, producing the visible upper-abdomen wedge.
-    # Keep C0 on the actual pelvis, but shift the donor 45 mm DOWN: its
-    # lower half now extends below C0, between the upper thighs.
-    down_from_high_fit_m=.045
-    # The last trial moved the whole feature down but left its inferior edge
-    # hanging in FRONT of the leg fork. Hinge only that lower ~3.6 cm back
-    # toward the body (+Y), while bringing the tip UP (+Z). Keeping the
-    # displacement monotone avoids folding mesh rows back through themselves.
-    hinge_start_z=-.004      # begin bottom lift 4 mm below C0
-    hinge_end_z=-.043        # original lower edge zone
-    hinge_lift_m=.025        # lift the lower rear 25 mm toward the body
-    hinge_tuck_m=.037        # tuck the lower rear 37 mm toward the skin
+    scale=.076
+    positions=[v.co.copy() for v in body.data.vertices]
+    # Exclude leg-only faces. An inferior pelvic face often points DOWN, not
+    # forward; keep these for the wrap underneath the crotch.
+    pelvic_faces=[]
+    for poly in body.data.polygons:
+        if abs(poly.center.x-cx)>.100*h:
+            continue
+        if not zmin+.390*h < poly.center.z < zmin+.550*h:
+            continue
+        if poly.normal.y >= -.06 and poly.normal.z >= -.18:
+            continue
+        support=[body.data.vertices[j] for j in poly.vertices]
+        hip_avg=sum(weight(p,hips) for p in support)/len(support)
+        leg_avg=sum(weight(p,legs) for p in support)/len(support)
+        if hip_avg>=.075 and hip_avg>=.40*leg_avg:
+            pelvic_faces.append(tuple(poly.vertices))
+    if len(pelvic_faces)<12:
+        raise RuntimeError("C0: insufficient hip-attached pelvic surface for conformal fit")
+    skin_bvh=BVHTree.FromPolygons(positions,pelvic_faces,all_triangles=False)
+
+    # Fade on the ACTUAL donor mesh boundary, not on an arbitrary X/Z box.
+    # The older rectangular taper left diagonal / folded donor edges exposed.
+    bm=bmesh.new()
+    bm.from_mesh(mesh)
+    boundary=[vert.co.copy() for vert in bm.verts
+              if any(edge.is_boundary for edge in vert.link_edges)]
+    bm.free()
+    if len(boundary)<4:
+        raise RuntimeError("C0: licensed donor needs an open attachment rim")
+    raw_positions=[v.co.copy() for v in mesh.vertices]
+    edge_dist=[min((p-b).length for b in boundary)*scale
+               for p in raw_positions]
+
     def clamp01(t):
         return max(0.,min(1.,t))
     def smoothstep(t):
         t=clamp01(t)
         return t*t*(3.-2.*t)
-    if 1.5*hinge_lift_m >= hinge_start_z-hinge_end_z:
-        raise RuntimeError("C0: hinge would invert inferior mesh rows")
-    # Avoid extrapolating a skin projection onto the thigh. Every point
-    # follows the nearest front BODY surface, tapering into existing skin.
     def gauss(a,center,r):
         return math.exp(-((a-center)/r)**2)
-    total_hits=0
-    supported_upper=0
+
+    max_boundary_gap=0.
+    max_support_distance=0.
+    center_relief=0.
     upper_count=0
-    for v in mesh.vertices:
-        src_x,src_y,src_z = v.co.x,v.co.y,v.co.z
-        # Taper broad upper attachment so its silhouette no longer forms a
-        # triangular wedge above the groin; preserve natural lower fullness.
-        raw_offset=.003+(src_z-low)*scale-down_from_high_fit_m
-        top_narrow=clamp01((raw_offset-.013)/.024)
-        hinge=smoothstep((hinge_start_z-raw_offset)/(hinge_start_z-hinge_end_z))
-        x = cx+src_x*scale*(1.0-.22*top_narrow)
-        # Sculpted upward/inward bend below C0; upper attachment unchanged.
-        z = c0z + raw_offset + hinge_lift_m*hinge
-        if z >= c0z+.010: upper_count+=1
-        surface,face=cast_front(x,z)
-        # Never follow the inner thigh. Below the fork a ray may hit a leg
-        # behind the intended pelvic contour; use the centered pelvis surface
-        # instead of skinning this attachment to that leg.
-        if surface is not None and z < c0z+.010:
-            polygon=body.data.polygons[face]
-            face_verts=[body.data.vertices[j] for j in polygon.vertices]
-            hip_avg=sum(weight(p,hips) for p in face_verts)/len(face_verts)
-            leg_avg=sum(weight(p,legs) for p in face_verts)/len(face_verts)
-            if polygon.normal.y > -.15 or hip_avg < .10 or hip_avg < .80*leg_avg:
-                surface=None
-        if surface is not None:
-            total_hits+=1
-            if z >= c0z+.010: supported_upper+=1
-        else:
-            # A below-fork CENTERLINE has no body face to raycast into.
-            # Project that lower section from the nearest genuine pelvic skin
-            # row, not from the front of the left/right inner thighs.
-            sample_x=cx+max(-.014,min(.014,x-cx))
-            surface,_=cast_front(sample_x,max(z,c0z+.004))
-            if surface is None: surface=c0y
-        dx,dz=x-cx,z-c0z
-        # The source licensed mesh provides natural surface topology.
-        # Landmark table provides symmetric, measured displacement targets.
+    supported_upper=0
+    total_hits=0
+    for i,v in enumerate(mesh.vertices):
+        src_x,src_y,src_z=raw_positions[i]
+        # A continuous, strictly monotone roll from anterior to inferior.
+        # This is only a SEARCH position; actual vertices are snapped to the
+        # original pelvic skin, including its underside, before adding detail.
+        raw_offset=.003+(src_z-low)*scale-.045
+        roll=smoothstep((.010-raw_offset)/.055)
+        x=cx+src_x*scale*(1.-.12*smoothstep((raw_offset-.013)/.024))
+        z=c0z+raw_offset+.023*roll
+        nearest,normal,face,distance=skin_bvh.find_nearest(Vector((x,c0y,z)))
+        if nearest is None or normal.length < .1:
+            raise RuntimeError("C0: no real pelvis contact for donor vertex")
+        # A vertex may travel a little along the body as the front rolls
+        # underneath, but it must never be supported by an imaginary plane.
+        if distance>.082*h:
+            raise RuntimeError("C0: donor too far from genuine pelvic skin")
+        max_support_distance=max(max_support_distance,distance)
+        total_hits+=1
+        if z>=c0z+.010:
+            upper_count+=1
+            front,frontface=cast_front(x,z)
+            if front is not None and abs(nearest.y-front)<.030:
+                supported_upper+=1
+        # Symmetric outward relief follows the local BODY normal rather
+        # than world -Y, which would peel the inferior edge off in kneeling.
+        dx=nearest.x-cx
+        dz=nearest.z-c0z
         inner=sum(f["relief"]*gauss(dx,f["x"],.009)*gauss(dz,f["z"],.027)
                   for f in LANDMARKS if f["id"] in ("L1","R1"))
         outer=sum(f["relief"]*gauss(dx,f["x"],.014)*gauss(dz,f["z"],.029)
                   for f in LANDMARKS if f["id"] in ("L2","R2"))
         top=sum(f["relief"]*gauss(dx,f["x"],.012)*gauss(dz,f["z"],.018)
                 for f in LANDMARKS if f["id"] in ("P1","H1","B1"))
-        # Smoothly hide the attachment edges inside Carol's existing skin.
-        lateral = max(0.,min(1.,(.045-abs(dx))/.011))
-        # Fade by the ORIGINAL edge distance, not raised Z: otherwise the
-        # folded tip wrongly gains full relief and becomes a dangling spike.
-        bottom = clamp01((raw_offset-hinge_end_z)/.012)
-        upper = max(0.,min(1.,(.037-dz)/.013))
-        fade=lateral*lateral*(3-2*lateral) * bottom*bottom*(3-2*bottom) * upper*upper*(3-2*upper)
-        donor=max(-.004,min(.004,(src_y+.52)*.010))
-        projection=min(.051,max(0., .003+inner+outer+top+donor))
-        # +Y is backward/inward for the front-facing (-Y) MPFB body.
-        # This pulls the inferior end between the legs; don't create a new
-        # outward hump while lifting the bottom. Rig remains 100% Hips.
-        y = surface+.001 - projection*fade + hinge_tuck_m*hinge
-        v.co=(x, y, z)
-    # Require a real pelvic-skin attachment in the UPPER portion; the lower
-    # portion is intentionally suspended at the leg junction, not on thighs.
+        donor=max(-.005,min(.007,(-src_y-.49)*scale*.24))
+        # Zero detail on ALL mesh perimeter edges. Pull the perimeter onto
+        # Carol's existing surface, preventing visible folded-paper flaps.
+        rim_fade=smoothstep(edge_dist[i]/.013)
+        lower_fade=smoothstep((raw_offset+.042)/.014)
+        upper_fade=smoothstep((.036-raw_offset)/.012)
+        fade=rim_fade*lower_fade*upper_fade
+        relief=max(0.,min(.034,.002+inner+outer+top+donor))*fade
+        center_relief=max(center_relief,relief)
+        # 0.4 mm stand-off avoids texture z-fighting. At the rim this is
+        # sub-millimetre, effectively flush with the native body.
+        v.co=nearest+normal.normalized()*(relief+.0004)
+        if edge_dist[i]<.0005:
+            max_boundary_gap=max(max_boundary_gap,(v.co-nearest).length)
+    mesh.update()
     offsets=[v.co.z-c0z for v in mesh.vertices]
-    # A 25 mm rear hinge lift draws the former dangling inferior edge upward,
-    # while a deeper inward tuck seats it between the upper legs.
-    if not -.030 < min(offsets) < -.012 or max(offsets)>.042:
-        raise RuntimeError("C0: failed inferior hinge placement check")
-    if not .015 <= hinge_lift_m <= .028 or not .020 <= hinge_tuck_m <= .045:
-        raise RuntimeError("C0: inferior hinge displacement out of range")
-    if upper_count < 50 or supported_upper < upper_count*.60:
-        raise RuntimeError("C0: insufficient upper pelvic-skin support; refusing detached patch")
+    if max_boundary_gap>.002:
+        raise RuntimeError("C0: attachment boundary not flush with pelvis")
+    if center_relief<.012:
+        raise RuntimeError("C0: contour flattened during skin conformity")
+    if upper_count<50 or supported_upper<upper_count*.40:
+        raise RuntimeError("C0: upper attachment cannot be verified on torso")
+    if not -.055<min(offsets)<.020 or not -.010<max(offsets)<.085:
+        raise RuntimeError("C0: abnormal vertical position after conformal fit")
     if any(f["z"]>=0 for f in LANDMARKS if f["id"] in ("L1","R1","L2","R2")):
-        raise RuntimeError("C0: folds must sit BELOW the central pelvic reference")
-    print("WVLRP_CAROL_LOWER_FIT", "vertical_min_mm",round(min(offsets)*1000,1),
+        raise RuntimeError("C0: lower contour landmarks above pelvic origin")
+    print("WVLRP_CAROL_LOWER_FIT",
+          "surface_following",True,
+          "edge_gap_mm",round(max_boundary_gap*1000,2),
+          "relief_mm",round(center_relief*1000,1),
+          "max_support_distance_mm",round(max_support_distance*1000,1),
+          "vertical_min_mm",round(min(offsets)*1000,1),
           "vertical_max_mm",round(max(offsets)*1000,1),
-          "hinge_lift_mm",round(hinge_lift_m*1000,1),
-          "hinge_tuck_mm",round(hinge_tuck_m*1000,1),
-          "supported_upper",supported_upper,"upper_total",upper_count)
+          "supported_upper",supported_upper,"upper_total",upper_count,
+          "pelvic_surface_faces",len(pelvic_faces))
     for poly in mesh.polygons:
         poly.use_smooth=True
     obj=bpy.data.objects.new("WVLRP Carol C0 anatomy | inspection overlay",mesh)
