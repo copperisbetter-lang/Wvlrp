@@ -44,6 +44,19 @@ test("Assets chosen by type, never substitute conifer for missing native hardwoo
  assert.match(chooseGroveAsset(conifer,all).id,/fir|pine/);
  assert.equal(chooseGroveAsset(hardwood,[{id:"fir_tree_01"}]),null);
 });
+test("New photo-textured crown shapes and summer leaf palettes are configured",()=>{
+ const grove=read("../wild-village-pbr-grove.js");
+ const recolor=read("../scripts/recolor_village_foliage.py");
+ assert.match(installer,/"tree_small_02","jacaranda_tree"/);
+ assert.match(grove,/"tree_small_02","island_tree_01"/);
+ assert.match(grove,/jacaranda_tree/);
+ assert.match(grove,/MAX_PER_ASSET_MOBILE=14/);
+ assert.match(recolor,/"tree_small_02":/);
+ assert.match(recolor,/"jacaranda_tree":/);
+ assert.match(installer,/recolor_village_foliage.py/);
+ assert.match(recolor,/No leaf materials identified/);
+});
+
 test("Three acres stay populated without per-tile recreation",()=>{
  assert.ok(isNearVillageGrove(93,65));
  assert.ok(isNearVillageGrove(55,110));
