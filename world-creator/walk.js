@@ -15,7 +15,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
-import {createFourCabinTest} from "./wild-cabin-lineup.js?v=photoreal-only-20261015-v3";
+import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cabin-compare-spawn-fix-20261015-v4";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
