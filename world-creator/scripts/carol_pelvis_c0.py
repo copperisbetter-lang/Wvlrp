@@ -155,20 +155,24 @@ def make_c0_anatomy(root, body, rig):
     low=min(v[2] for v in raw_verts)
     scale=.076
     positions=[v.co.copy() for v in body.data.vertices]
-    # Exclude leg-only faces. An inferior pelvic face often points DOWN, not
-    # forward; keep these for the wrap underneath the crotch.
+    # The old weight filter excluded ALL polygons below z=.777m
+    # even though C0 is z=.744m, so the nearest-point snap lifted
+    # the entire lower patch about seven centimetres. Keep center
+    # pelvic and adjacent upper-leg transition faces for SURFACE support.
+    # Their rig weights are not copied wholesale: the overlay remains
+    # predominantly Hips-skinned toward its contour center.
     pelvic_faces=[]
     for poly in body.data.polygons:
-        if abs(poly.center.x-cx)>.100*h:
+        if abs(poly.center.x-cx)>.075*h:
             continue
         if not zmin+.390*h < poly.center.z < zmin+.550*h:
             continue
-        if poly.normal.y >= -.06 and poly.normal.z >= -.18:
+        if poly.normal.y >= .18 and poly.normal.z >= .15:
             continue
         support=[body.data.vertices[j] for j in poly.vertices]
         hip_avg=sum(weight(p,hips) for p in support)/len(support)
         leg_avg=sum(weight(p,legs) for p in support)/len(support)
-        if hip_avg>=.075 and hip_avg>=.40*leg_avg:
+        if hip_avg>=.025 or leg_avg>=.08:
             pelvic_faces.append(tuple(poly.vertices))
     if len(pelvic_faces)<12:
         raise RuntimeError("C0: insufficient hip-attached pelvic surface for conformal fit")
