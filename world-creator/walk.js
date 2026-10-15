@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=photographic-ground-debanded-20261015-v4";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=photographic-ground-sharp-20261015-v5";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -582,6 +582,8 @@ window.__wildDiagnostics=()=>({
   photographicTerrainStatus:habitat?.villageRealTerrain?.status??"not-loaded",
   photographicTerrainError:habitat?.villageRealTerrain?.error??"",
   photographicTerrainSource:habitat?.villageRealTerrain?.sourceIds??[],
+  photographicNearDetailMetres:habitat?.villageRealTerrain?.nearDetailMetres??0,
+  photographicFarDetailDisabled:habitat?.villageRealTerrain?.farDetailDisabled??false,
   villageMountainLayers:villageMountains.meshes.length,
   mountainTopVisible:villageMountains.meshes.some(m=>m.isEnabled()&&m.visibility>.01),
   webgl:engine.webGLVersion
