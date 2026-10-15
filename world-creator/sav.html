@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sav | WVLRP Character QA</title>
-<style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style></head>
+<style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style><script defer src="/world-creator/shared-character-inspector.js?v=20261015-remove-all-v3"></script></head>
 <body><header><strong>Sav — independent character QA</strong> <small>Human shell inspection build; verify anatomy and reference likeness</small></header>
 <main id="stage"><div id="status">Loading Sav prototype…</div></main>
 <footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button> <button id="wire">Wireframe off</button> <button id="bones">Joint markers off</button><p id="jointstatus"></p></section>
@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const stage=document.getElementById('stage'),status=document.getElementById('status');
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x15201d);
+const scene=new THREE.Scene();window.wvlrpSavScene=scene;scene.background=new THREE.Color(0x15201d);
 scene.add(new THREE.HemisphereLight(0xffffff,0x52665c,2));
 const light=new THREE.DirectionalLight(0xfff1d8,2);light.position.set(2,4,4);scene.add(light);
 const grid=new THREE.GridHelper(5,10,0x648071,0x30433b);scene.add(grid);
