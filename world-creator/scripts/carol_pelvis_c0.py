@@ -290,7 +290,12 @@ def make_c0_anatomy(root, body, rig):
         lower_fade=smoothstep((raw_offset+.042)/.014)
         upper_fade=smoothstep((.036-raw_offset)/.012)
         fade=rim_fade*lower_fade*upper_fade
-        relief=max(0.,min(.034,.002+inner+outer+top+donor))*fade
+        # Two independent nested folds on each side, separated by a soft
+        # depression. Without these valley terms the Gaussian peaks blended
+        # into the single blocky lobe reported in the viewer.
+        valley=.009*gauss(abs(dx),.016,.0042)*gauss(dz,-.008,.024)
+        center_groove=.006*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
+        relief=max(0.,min(.034,.002+inner+outer+top+donor-valley-center_groove))*fade
         center_relief=max(center_relief,relief)
         # The earlier full conformal snap recessed the center into the groin
         # crease. Preserve the conformal BODY contact and all fitted rig
@@ -364,8 +369,46 @@ def make_c0_anatomy(root, body, rig):
           "vertical_max_mm",round(max(offsets)*1000,1),
           "supported_upper",supported_upper,"upper_total",upper_count,
           "pelvic_surface_faces",len(pelvic_faces))
-    for poly in mesh.polygons:
+    # The original patch exported as a one-sided sheet: its inferior rim
+    # was visibly sharp and open when seen from below. Close it with an
+    # inward-facing, fully skinned reverse surface and rounded side walls.
+    # This avoids a paper-thin edge without changing the established front
+    # quad parameterization, armature or body skin material.
+    front_count=len(mesh.vertices)
+    front_positions=[v.co.copy() for v in mesh.vertices]
+    front_faces=[tuple(p.vertices) for p in mesh.polygons]
+    back_positions=[p+Vector((0.,.0075,0.)) for p in front_positions]
+    outline=(list(range(cols))
+            +[r*cols+cols-1 for r in range(1,rows)]
+            +[(rows-1)*cols+c for c in range(cols-2,-1,-1)]
+            +[r*cols for r in range(rows-2,0,-1)])
+    reverse_faces=[tuple(front_count+k for k in reversed(f)) for f in front_faces]
+    rim_faces=[]
+    for i,k in enumerate(outline):
+        nxt=outline[(i+1)%len(outline)]
+        rim_faces.append((k,front_count+k,front_count+nxt,nxt))
+    full_faces=front_faces+reverse_faces+rim_faces
+    sealed=bpy.data.meshes.new("Carol C0 smooth sealed anatomy volume")
+    sealed.from_pydata([tuple(p) for p in front_positions+back_positions],[],full_faces)
+    sealed.update()
+    sealed.materials.append(body.data.materials[0])
+    skin_uv=sealed.uv_layers.new(name="MakeHuman skin UV")
+    for poly in sealed.polygons:
+        for li in poly.loop_indices:
+            idx=sealed.loops[li].vertex_index%front_count
+            skin_uv.data[li].uv=texcoords[idx]
         poly.use_smooth=True
+    check=bmesh.new()
+    check.from_mesh(sealed)
+    open_edges=sum(1 for edge in check.edges if edge.is_boundary)
+    check.free()
+    if open_edges:
+        raise RuntimeError("C0: unsealed boundary on anatomical volume: "+str(open_edges))
+    mesh=sealed
+    transferred_skin.extend([dict(weights) for weights in transferred_skin])
+    print("WVLRP_CAROL_C0_VOLUME_QA","vertices",len(mesh.vertices),
+          "faces",len(mesh.polygons),"unsealed_edges",open_edges,
+          "inner_outer_valleys",True,"wall_depth_mm",7.5)
     obj=bpy.data.objects.new("WVLRP Carol C0 anatomy | inspection overlay",mesh)
     bpy.context.collection.objects.link(obj)
     obj.parent=root
