@@ -14,10 +14,11 @@ import {gradeCommunityGround} from "./wild-reference-layout.js";
 const MANIFEST_URL="./assets/village-grove-sources.json";
 const VALID_ASSETS=Object.freeze(new Set([
   "fir_tree_01","pine_tree_01","fir_sapling_medium",
-  "pine_sapling_medium","island_tree_01","island_tree_02","island_tree_03"
+  "pine_sapling_medium","pine_sapling_small","fir_sapling",
+  "island_tree_01","island_tree_02","island_tree_03"
 ]));
 const CONIFERS=new Set(["eastern-hemlock","eastern-white-pine","virginia-pine"]);
-const MAX_PER_ASSET_MOBILE=23;
+const MAX_PER_ASSET_MOBILE=30;
 const MIN_MODELS=3;
 
 // Visually plausible but not botanically exact substitutions are *not*
@@ -27,8 +28,8 @@ export function chooseGroveAsset(tree,available){
   const young=tree.age==="young";
   let preference;
   if(CONIFERS.has(tree.species)){
-    preference=young?["fir_sapling_medium","pine_sapling_medium","fir_tree_01","pine_tree_01"]:
-      ["fir_tree_01","pine_tree_01","fir_sapling_medium","pine_sapling_medium"];
+    preference=young?["fir_sapling_medium","pine_sapling_medium","fir_sapling","pine_sapling_small","fir_tree_01","pine_tree_01"]:
+      ["fir_tree_01","pine_tree_01","fir_sapling_medium","pine_sapling_medium","fir_sapling","pine_sapling_small"];
   }else{
     preference=young?["island_tree_02","island_tree_03","island_tree_01"]:
       ["island_tree_01","island_tree_02","island_tree_03"];
