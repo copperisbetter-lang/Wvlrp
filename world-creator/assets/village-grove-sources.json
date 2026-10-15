@@ -54,5 +54,19 @@
     "source": "https://polyhaven.com/a/island_tree_03",
     "license": "CC0",
     "bytes": 6700476
+  },
+  {
+    "id": "tree_small_02",
+    "url": "./assets/village-pbr-tree_small_02.glb",
+    "source": "https://polyhaven.com/a/tree_small_02",
+    "license": "CC0",
+    "bytes": 5403644
+  },
+  {
+    "id": "jacaranda_tree",
+    "url": "./assets/village-pbr-jacaranda_tree.glb",
+    "source": "https://polyhaven.com/a/jacaranda_tree",
+    "license": "CC0",
+    "bytes": 14137844
   }
 ]
