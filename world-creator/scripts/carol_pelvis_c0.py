@@ -199,6 +199,7 @@ def make_c0_anatomy(root, body, rig):
     max_boundary_gap=0.
     max_support_distance=0.
     center_relief=0.
+    max_depth_correction=0.
     upper_count=0
     supported_upper=0
     total_hits=0
@@ -270,9 +271,20 @@ def make_c0_anatomy(root, body, rig):
         fade=rim_fade*lower_fade*upper_fade
         relief=max(0.,min(.034,.002+inner+outer+top+donor))*fade
         center_relief=max(center_relief,relief)
-        # 0.4 mm stand-off avoids texture z-fighting. At the rim this is
-        # sub-millimetre, effectively flush with the native body.
-        v.co=nearest+normal.normalized()*(relief+.0004)
+        # The earlier full conformal snap recessed the center into the groin
+        # crease. Preserve the conformal BODY contact and all fitted rig
+        # weights, but restore a shallow anterior projection inside the patch.
+        # Forward is -Y; this is NOT a vertical move back onto the abdomen.
+        # Both corrections decay completely at the donor's attachment rim,
+        # which must stay flush during bent-leg animation.
+        interior_fade=rim_fade*lower_fade*upper_fade
+        anterior_lift=(.014-.003*roll)*interior_fade
+        normal_lift=.003*interior_fade
+        max_depth_correction=max(max_depth_correction,anterior_lift)
+        # The existing surface normal also supplies the inferior wrap.
+        # 0.4 mm stand-off avoids texture z-fighting at the sealed rim.
+        v.co=nearest+normal.normalized()*(relief+normal_lift+.0004)
+        v.co.y-=anterior_lift
         if edge_dist[i]<.0005:
             max_boundary_gap=max(max_boundary_gap,(v.co-nearest).length)
     mesh.update()
@@ -283,10 +295,13 @@ def make_c0_anatomy(root, body, rig):
           "rim_span_mm",round(rim_span*1000,2),
           "rim_width_mm",round(rim_width*1000,2),
           "peak_relief_mm",round(center_relief*1000,2),
+          "max_anterior_lift_mm",round(max_depth_correction*1000,2),
           "body_support_mm",round(max_support_distance*1000,2),
           "upper_sample",upper_count,"upper_supported",supported_upper)
     if center_relief<.012:
         raise RuntimeError("C0: contour flattened during skin conformity")
+    if max_depth_correction<.008:
+        raise RuntimeError("C0: inward-depth correction missed central donor profile")
     if upper_count<50 or supported_upper<upper_count*.40:
         raise RuntimeError("C0: upper attachment cannot be verified on torso")
     if not -.055<min(offsets)<.020 or not -.010<max(offsets)<.085:
