@@ -32,7 +32,8 @@ test("First-person cabin preserves real resident models with no blob replacement
 });
 
 test("Double tapping the joystick center switches between running and walking",()=>{
-  assert.match(walk,/DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27/);
+  assert.match(walk,/DOUBLE_TAP_MS=800,CENTER_TAP_RADIUS=27,CENTER_TAP_MAX_MS=500/);
+  assert.match(walk,/betaParams\.get\("lite"\)==="1"/);
   assert.match(walk,/setRunMode\(!runMode\)/);
   assert.match(walk,/runMode\|\|keys\.has\("shift"\)\?9\.5:5\.7/);
   assert.match(page,/#joystick\.running/);
