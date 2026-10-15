@@ -14,7 +14,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
 import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=nonstriped-sandstone-20261014-v1";
-import {createWildPlayerMap} from "./wild-player-map.js?v=live-peer-map-20261013-v1";
+import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
