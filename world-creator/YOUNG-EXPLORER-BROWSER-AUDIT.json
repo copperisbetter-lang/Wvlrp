@@ -6,7 +6,7 @@
       "Failed to load resource: the server responded with a status of 404 (File not found)",
       "Failed to load resource: the server responded with a status of 404 (File not found)",
       "Failed to load resource: the server responded with a status of 404 ()",
-      "TypeError: window.WVLRPYoungExplorerWardrobe is not a constructor\n    at http://127.0.0.1:8765/world-creator/young-explorer.html?v=ci-real:178:16"
+      "TypeError: window.WVLRPYoungExplorerWardrobe is not a constructor\n    at http://127.0.0.1:8765/world-creator/young-explorer.html?v=ci-real:179:16"
     ],
     "pageErrors": [],
     "scene": {
@@ -36,96 +36,37 @@
   },
   {
     "name": "live",
-    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1791997403136",
-    "consoleErrors": [],
+    "url": "https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1792073642165",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "TypeError: window.WVLRPYoungExplorerWardrobe is not a constructor\n    at https://wvlrp.com/world-creator/young-explorer.html?v=ci-real-1792073642165:178:16"
+    ],
     "pageErrors": [],
     "scene": {
-      "status": "Realistic full body loaded · 20131 vertices · 52 rig bones · 5 animations",
+      "status": "Young Explorer viewer unable to load: window.WVLRPYoungExplorerWardrobe is not a constructor",
       "canvasWidth": 390,
       "canvasHeight": 574,
-      "meshVertices": 170659,
+      "meshVertices": 22625,
       "skeletonBones": [
         52
       ],
       "materialNames": [
         "Young Explorer woven opaque plaid sundress",
+        "Young Explorer trail shoes muted green",
+        "Young Explorer flexible shoe soles",
         "Young Explorer realistic continuous child basemesh.eyebrow001",
         "Young Explorer realistic continuous child basemesh.eyelashes01",
         "Young Explorer realistic continuous child basemesh.high-poly",
         "Young Explorer naturally brown hair 0",
-        "Young Explorer real CC0 face and body skin UV 0",
-        "Young Explorer fitted blue floral sundress",
-        "Young Explorer fitted golden summer dress",
-        "Young Explorer fitted denim shirt",
-        "Young Explorer fitted denim woven shorts",
-        "Young Explorer fitted hiking shirt",
-        "Young Explorer fitted hiking woven shorts",
-        "Young Explorer fitted navy shirt",
-        "Young Explorer fitted navy woven shorts",
-        "Young Explorer fitted regular-shorts shirt",
-        "Young Explorer fitted regular-shorts woven shorts",
-        "Young Explorer fitted loose-shorts shirt",
-        "Young Explorer fitted loose-shorts woven shorts",
-        "Young Explorer natural brown hair strands"
+        "Young Explorer real CC0 face and body skin UV 0"
       ]
     },
     "wardrobe": {
-      "ready": true,
-      "measurements": {
-        "heightMeters": 1.2200000339071266,
-        "shoulderWidthMeters": 0.3806416988372803,
-        "waistWidthMeters": 0.21580632030963898,
-        "hipWidthMeters": 0.2512955963611603,
-        "bodyVertices": 14517
-      },
-      "outfits": [
-        {
-          "name": "plaid",
-          "selected": "plaid",
-          "dressEnabled": true,
-          "shirtEnabled": false,
-          "shortsEnabled": false
-        },
-        {
-          "name": "floral",
-          "selected": "floral",
-          "dressEnabled": true,
-          "shirtEnabled": false,
-          "shortsEnabled": false
-        },
-        {
-          "name": "sunflower",
-          "selected": "sunflower",
-          "dressEnabled": true,
-          "shirtEnabled": false,
-          "shortsEnabled": false
-        },
-        {
-          "name": "denim",
-          "selected": "denim",
-          "dressEnabled": false,
-          "shirtEnabled": true,
-          "shortsEnabled": true
-        },
-        {
-          "name": "hiking",
-          "selected": "hiking",
-          "dressEnabled": false,
-          "shirtEnabled": true,
-          "shortsEnabled": true
-        },
-        {
-          "name": "navy",
-          "selected": "navy",
-          "dressEnabled": false,
-          "shirtEnabled": true,
-          "shortsEnabled": true
-        }
-      ],
-      "bendBones": 6,
-      "sitBones": 9,
-      "restoredPose": true
+      "ready": false,
+      "error": "Wardrobe not initialized"
     },
-    "pass": true
+    "pass": false
   }
 ]
