@@ -17,50 +17,50 @@
       "id": "P1",
       "name": "Pubic mound",
       "x": 0.0,
-      "z": 0.024,
-      "relief": 0.003
+      "z": 0.022,
+      "relief": 0.002
     },
     {
       "id": "H1",
       "name": "Upper central fold",
       "x": 0.0,
       "z": 0.008,
-      "relief": 0.006
+      "relief": 0.003
     },
     {
       "id": "L1",
       "name": "Left inner fold",
-      "x": -0.01,
+      "x": -0.009,
       "z": -0.009,
-      "relief": 0.017
+      "relief": 0.01
     },
     {
       "id": "R1",
       "name": "Right inner fold",
-      "x": 0.01,
+      "x": 0.009,
       "z": -0.009,
-      "relief": 0.017
+      "relief": 0.01
     },
     {
       "id": "L2",
       "name": "Left outer fold",
-      "x": -0.022,
+      "x": -0.019,
       "z": -0.006,
-      "relief": 0.025
+      "relief": 0.014
     },
     {
       "id": "R2",
       "name": "Right outer fold",
-      "x": 0.022,
+      "x": 0.019,
       "z": -0.006,
-      "relief": 0.025
+      "relief": 0.014
     },
     {
       "id": "B1",
       "name": "Lower central blend",
       "x": 0.0,
       "z": -0.02,
-      "relief": 0.003
+      "relief": 0.002
     }
   ],
   "note": "Offsets are metres from C0; anatomy is still an inspection trial."
