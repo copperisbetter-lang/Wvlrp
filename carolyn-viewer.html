@@ -176,6 +176,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
  });
  // Always show the actual latest inspection GLB. The obsolete ×10
  // diagnostic spike model produced misleading screenshots of detached mesh.
+ const isPelvicX10=false; // Legacy diagnostic mode retired; preserved as false to keep inspection event handlers stable.
  const MODEL_PATH='/world-creator/assets/caroline-inspection.glb';
  const loadUncached=()=>{ v.src=MODEL_PATH+'?fresh='+Date.now(); };
  loadUncached();
