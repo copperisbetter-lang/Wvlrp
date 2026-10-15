@@ -180,6 +180,15 @@ def make_c0_anatomy(root, body, rig):
     def gauss(a,center,r):
         return math.exp(-((a-center)/r)**2)
 
+    # At the rim, copy nearby BODY deformation weights to prevent seams when
+    # the legs bend. Toward the sculpt center blend smoothly to Hips; this is
+    # still ONE pelvis-centered patch, never a left/right-thigh attachment.
+    rig_bones={bone.name for bone in rig.data.bones}
+    hipbone=next((bone.name for bone in rig.data.bones
+                  if norm(bone.name) in ("hips","pelvis")),None)
+    if not hipbone:
+        raise RuntimeError("C0: Hips rig bone unavailable")
+    transferred_skin=[]
     max_boundary_gap=0.
     max_support_distance=0.
     center_relief=0.
@@ -196,8 +205,30 @@ def make_c0_anatomy(root, body, rig):
         x=cx+src_x*scale*(1.-.12*smoothstep((raw_offset-.013)/.024))
         z=c0z+raw_offset+.023*roll
         nearest,normal,face,distance=skin_bvh.find_nearest(Vector((x,c0y,z)))
-        if nearest is None or normal.length < .1:
+        if nearest is None or normal.length < .1 or face is None:
             raise RuntimeError("C0: no real pelvis contact for donor vertex")
+        if not 0<=face<len(pelvic_faces):
+            raise RuntimeError("C0: BVH face mapping unavailable")
+        poly_ids=pelvic_faces[face]
+        proximity=[1./max(1.e-8,(positions[j]-nearest).length_squared)
+                   for j in poly_ids]
+        proximity_total=sum(proximity)
+        nearby={}
+        for source_idx,proximity_weight in zip(poly_ids,proximity):
+            for channel in body.data.vertices[source_idx].groups:
+                group_name=body.vertex_groups[channel.group].name
+                if group_name in rig_bones:
+                    nearby[group_name]=nearby.get(group_name,0.) + channel.weight*proximity_weight/proximity_total
+        weight_sum=sum(nearby.values())
+        if weight_sum<.01:
+            nearby={hipbone:1.}
+        else:
+            nearby={name:weight/weight_sum for name,weight in nearby.items()}
+        pelvis_center_blend=smoothstep(edge_dist[i]/.016)
+        fit_weights={name:weight*(1.-pelvis_center_blend)
+                     for name,weight in nearby.items()}
+        fit_weights[hipbone]=fit_weights.get(hipbone,0.)+pelvis_center_blend
+        transferred_skin.append(fit_weights)
         # A vertex may travel a little along the body as the front rolls
         # underneath, but it must never be supported by an imaginary plane.
         if distance>.082*h:
@@ -260,12 +291,17 @@ def make_c0_anatomy(root, body, rig):
     bpy.context.collection.objects.link(obj)
     obj.parent=root
     obj.matrix_world=body.matrix_world.copy()
-    # Same hips bone used by the adult's actual pelvis; no weight on thighs.
-    hipbone=next((bone.name for bone in rig.data.bones if norm(bone.name) in ("hips","pelvis")),None)
-    if not hipbone:
-        raise RuntimeError("C0: Hips rig bone unavailable")
-    grp=obj.vertex_groups.new(name=hipbone)
-    grp.add(list(range(len(mesh.vertices))),1.0,"REPLACE")
+    # Match Carol's existing body's deformation at the PERIMETER in elbow/
+    # knee poses. Hips becomes dominant inside; no independently leg-rigged
+    # halves. This is what fixed rigid-Hips skinning couldn't guarantee.
+    groups={}
+    for vertex_index,row in enumerate(transferred_skin):
+        for joint_name,joint_weight in row.items():
+            if joint_weight<.0001:
+                continue
+            if joint_name not in groups:
+                groups[joint_name]=obj.vertex_groups.new(name=joint_name)
+            groups[joint_name].add([vertex_index],joint_weight,"REPLACE")
     obj.modifiers.new("Carol C0 follows hip rig","ARMATURE").object=rig
     obj["wvlrp_carol_c0_anatomy"]=True
     obj["wvlrp_carol_c0_local"]=list((cx,c0y-.010,c0z))
@@ -275,5 +311,6 @@ def make_c0_anatomy(root, body, rig):
     body["wvlrp_carol_pelvic_contour_vertices"]=len(mesh.vertices)
     print("WVLRP_CAROL_C0_ANATOMY_READY", "vertices",len(mesh.vertices),
           "surface_hits",total_hits,"landmarks",len(LANDMARKS),
-          "rig_bone",hipbone,"no_thigh_weight",True)
+          "rig_bone",hipbone,"perimeter_weights_follow_body",True,
+          "rig_groups",len(groups))
     return obj
