@@ -1,0 +1,129 @@
+name: Install real CC0 Appalachian village forest-floor models
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/install-wild-village-forest-floor.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: install-wild-village-forest-floor
+  cancel-in-progress: false
+
+jobs:
+  install:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download actual licensed ferns, rocks, stumps and fallen wood
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import urllib.request,hashlib,json,time,shutil
+          names=["fern_02","rock_moss_set_01","tree_stump_01","dead_tree_trunk"]
+          base=Path("/tmp/wild-authentic-floor")
+          base.mkdir(parents=True,exist_ok=True)
+          headers={"User-Agent":"WVLRP-Wild-CC0-forest-floor/1.0"}
+          def download(url,path,expected_md5=None):
+              path.parent.mkdir(parents=True,exist_ok=True)
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=150) as r,path.open("wb") as f:
+                          shutil.copyfileobj(r,f,1024*1024)
+                      if expected_md5 and hashlib.md5(path.read_bytes()).hexdigest()!=expected_md5:
+                          raise ValueError("checksum error: "+str(path))
+                      return
+                  except Exception:
+                      path.unlink(missing_ok=True)
+                      if attempt==2: raise
+                      time.sleep(3*(attempt+1))
+          ready=[]
+          for name in names:
+              folder=base/name
+              try:
+                  with urllib.request.urlopen(urllib.request.Request("https://api.polyhaven.com/files/"+name,headers=headers),timeout=45) as resp:
+                      catalog=json.load(resp)
+                  variant=catalog["gltf"]["1k"]["gltf"]
+                  source=folder/(name+"_1k.gltf")
+                  download(variant["url"],source,variant.get("md5"))
+                  for rel,item in variant.get("include",{}).items():
+                      download(item["url"],folder/rel,item.get("md5"))
+                  obj=json.loads(source.read_text())
+                  if not obj.get("meshes") or not obj.get("images"):
+                      raise ValueError("Not a genuinely textured model")
+                  ready.append({"id":name,"sourcefile":str(source),"source":"https://polyhaven.com/a/"+name,"license":"CC0"})
+              except Exception as err:
+                  print("WARNING model skipped",name,str(err),flush=True)
+          if len(ready)<2:
+              raise RuntimeError("At least two real textured CC0 forest-floor models required")
+          (base/"sources.json").write_text(json.dumps(ready,indent=2))
+          PY
+      - name: Optimize models for mobile and check actual GLB geometry
+        run: |
+          set -euo pipefail
+          npm install --global @gltf-transform/cli@4.5.1
+          mkdir -p world-creator/assets
+          python3 - <<'PY'
+          import os,json,subprocess,struct
+          from pathlib import Path
+          base=Path("/tmp/wild-authentic-floor")
+          sources=json.loads((base/"sources.json").read_text())
+          installed=[]
+          for item in sources:
+              path=Path("world-creator/assets/village-floor-"+item["id"]+".glb")
+              cmd=["gltf-transform","optimize",item["sourcefile"],str(path),
+                   "--simplify-ratio","0.20","--simplify-error","0.05",
+                   "--compress","quantize","--texture-compress","webp",
+                   "--texture-size","1024"]
+              env={**os.environ,"NODE_OPTIONS":"--max-old-space-size=4096"}
+              try:
+                  subprocess.run(cmd,check=True,timeout=420,env=env)
+                  data=path.read_bytes()
+                  magic,version,size=struct.unpack_from("<4sII",data,0)
+                  assert magic==b"glTF" and version==2 and size==len(data)
+                  assert size>25000 and size<18000000
+                  length,kind=struct.unpack_from("<I4s",data,12)
+                  assert kind==b"JSON"
+                  doc=json.loads(data[20:20+length])
+                  assert doc.get("meshes") and doc.get("materials") and doc.get("images")
+                  assert not set(doc.get("extensionsRequired",[]))&{"KHR_draco_mesh_compression","EXT_meshopt_compression"}
+                  installed.append({"id":item["id"],"url":"./assets/"+path.name,
+                    "source":item["source"],"license":"CC0","bytes":size})
+                  print("REAL PBR FLOOR INSTALLED",item["id"],size,flush=True)
+              except Exception as exc:
+                  path.unlink(missing_ok=True)
+                  print("WARNING no installation",item["id"],str(exc),flush=True)
+          if len(installed)<2:
+              raise RuntimeError("Not enough real forest-floor model GLBs passed quality checks")
+          Path("world-creator/assets/village-floor-sources.json").write_text(json.dumps(installed,indent=2)+"\n")
+          PY
+      - name: Check spatial placement and protected plaza
+        run: |
+          cd world-creator
+          node --test tests/wild-village-pbr-floor.test.mjs
+      - name: Commit and publish licensed local model binaries
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/village-floor-*.glb world-creator/assets/village-floor-sources.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Install CC0 high-fidelity forest-floor GLB models'
+          BRANCH="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${BRANCH}"; then exit 0; fi
+            git fetch origin "${BRANCH}"
+            git rebase "origin/${BRANCH}"
+            sleep 3
+          done
+          exit 1
