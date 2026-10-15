@@ -1,0 +1,37 @@
+[
+  {
+    "id": "fir_tree_01",
+    "url": "./assets/village-pbr-fir_tree_01.glb",
+    "source": "https://polyhaven.com/a/fir_tree_01",
+    "license": "CC0",
+    "bytes": 30224784
+  },
+  {
+    "id": "fir_sapling_medium",
+    "url": "./assets/village-pbr-fir_sapling_medium.glb",
+    "source": "https://polyhaven.com/a/fir_sapling_medium",
+    "license": "CC0",
+    "bytes": 7199688
+  },
+  {
+    "id": "pine_sapling_medium",
+    "url": "./assets/village-pbr-pine_sapling_medium.glb",
+    "source": "https://polyhaven.com/a/pine_sapling_medium",
+    "license": "CC0",
+    "bytes": 18025200
+  },
+  {
+    "id": "island_tree_01",
+    "url": "./assets/village-pbr-island_tree_01.glb",
+    "source": "https://polyhaven.com/a/island_tree_01",
+    "license": "CC0",
+    "bytes": 5300860
+  },
+  {
+    "id": "island_tree_02",
+    "url": "./assets/village-pbr-island_tree_02.glb",
+    "source": "https://polyhaven.com/a/island_tree_02",
+    "license": "CC0",
+    "bytes": 3913236
+  }
+]
