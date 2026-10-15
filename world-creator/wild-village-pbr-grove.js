@@ -21,6 +21,10 @@ const VALID_ASSETS=Object.freeze(new Set([
 const CONIFERS=new Set(["eastern-hemlock","eastern-white-pine","virginia-pine"]);
 const MAX_PER_ASSET_MOBILE=14;
 const MIN_MODELS=7;
+// Decode smaller authored GLBs on phones; uncompressed 30MB source trees can
+// consume much more GPU/JS memory than their download size suggests.
+const MOBILE_SOURCE_MAX_BYTES=8*1024*1024;
+const LITE_SOURCE_MAX_BYTES=7*1024*1024;
 
 // Visually plausible but not botanically exact substitutions are *not*
 // documented as a matched species. The native species list is an art target.
@@ -101,9 +105,11 @@ function showError(state,err){
   console.warn("Realistic village grove unavailable:",err);
 }
 
-export function installVillageGrove(B,scene,{seed,mobile=false}={}){
+export function installVillageGrove(B,scene,{seed,mobile=false,lite=false}={}){
+  const trees=lite?VILLAGE_PROPOSED_TREES.filter((_,i)=>i%2===0):VILLAGE_PROPOSED_TREES;
+  const minimum=lite?5:MIN_MODELS;
   const state={
-    status:"loading-manifest",error:"",requested:VILLAGE_PROPOSED_TREES.length,
+    status:"loading-manifest",error:"",requested:trees.length,
     planted:0,loadedModels:0,skippedNoModel:0,collidableTrees:[],sourceIds:[],
     roots:[],group:null,
     broadleafModelsLoaded:0,evergreenModelsLoaded:0,plantedBySource:{},
@@ -120,8 +126,9 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
       manifest=await reply.json();
       if(!Array.isArray(manifest))throw Error("Invalid licensed-model manifest");
       manifest=manifest.filter(m=>VALID_ASSETS.has(m.id)&&m.license==="CC0"&&
-        m.url===`./assets/village-pbr-${m.id}.glb`);
-      if(manifest.length<MIN_MODELS)throw Error("Not enough independent real models: "+manifest.length);
+        m.url===`./assets/village-pbr-${m.id}.glb`&&
+        (!mobile||m.bytes<= (lite?LITE_SOURCE_MAX_BYTES:MOBILE_SOURCE_MAX_BYTES)));
+      if(manifest.length<minimum)throw Error("Not enough independent real models: "+manifest.length);
     }catch(err){
       state.status="awaiting-real-assets";
       state.error=String(err?.message||err);
@@ -139,7 +146,7 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
         state.sourceIds.push(m.id);
       }catch(err){console.warn("Grove GLB not loaded:",m.id,err);}
     }
-    if(sources.size<MIN_MODELS){
+    if(sources.size<minimum){
       state.status="insufficient-models";
       state.error="Only "+sources.size+" independently modeled source trees available";
       return;
@@ -149,7 +156,7 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
     state.evergreenModelsLoaded=available.filter(m=>/^(fir|pine)/.test(m.id)).length;
     const usage=new Map();
     const placed=[];
-    for(const tree of VILLAGE_PROPOSED_TREES){
+    for(const tree of trees){
       // Cap duplicates: genuine model variety rather than one tree pasted 30x.
       const choices=available.filter(m=>(usage.get(m.id)||0)<
         (m.id==="jacaranda_tree"?4:mobile?MAX_PER_ASSET_MOBILE:15));
