@@ -13,7 +13,7 @@ test("The actual first-person walk scene instantiates real 3D PBR grove",()=>{
  assert.match(walk,/villageGrove\.collidableTrees/);
  assert.match(walk,/villageGrove\.setNear\(isNearVillageGrove/);
  assert.match(walk,/villageGroveTreesPlanted:villageGrove\.planted/);
- assert.match(read("../walk.html"),/diverse-green-pbr-grove-20261014-v2/);
+ assert.match(read("../walk.html"),/diverse-green-pbr-grove-20261014-v3/);
 });
 test("Old generic/procedural tree models are disabled within the three-acre grove",()=>{
  assert.match(renderer,/import \{VILLAGE_SECTION\} from/);
