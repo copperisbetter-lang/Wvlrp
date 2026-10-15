@@ -5,7 +5,7 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=full-village-75m-20261014-v1";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=tree-free-square-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=cc0-oak-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
@@ -525,7 +525,8 @@ window.__wildDiagnostics=()=>({
   villageDetailDiameterMetres:habitat?.villageDetailDiameterMetres??0,
   villageGroundDetails:habitat?.villageGroundDetails??0,
   villageEdgeTrees:habitat?.villageEdgeTrees??0,
-   importedVillageOakStatus:villageOak.status,
+   villageTreesEnabled:VILLAGE_SQUARE_TREES_ENABLED,
+  importedVillageOakStatus:villageOak.status,
    importedVillageOakMeshes:villageOak.meshCount,
    importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
    importedVillageOakError:villageOak.error,
