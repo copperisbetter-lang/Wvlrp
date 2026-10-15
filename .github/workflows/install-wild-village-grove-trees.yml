@@ -109,6 +109,10 @@ jobs:
                   out.unlink(missing_ok=True)
                   print("WARNING: asset optimization did not pass:",m["id"],str(exc),flush=True)
           if len(installed)<7:raise RuntimeError("Insufficient independently modeled PBR tree assets passed mobile optimization")
+          mandatory={"tree_small_02","jacaranda_tree"}
+          have={m["id"] for m in installed}
+          if not mandatory.issubset(have):
+              raise RuntimeError("New distinct broadleaf models were not installed: "+str(sorted(mandatory-have)))
           Path("world-creator/assets/village-grove-sources.json").write_text(json.dumps(installed,indent=2)+"\n")
           PY
       - name: Validate self-contained textured glTF binaries
@@ -130,6 +134,11 @@ jobs:
               assert not set(doc.get("extensionsRequired",[])).intersection(forbidden)
               print("VERIFIED_TEXTURED_CC0_GROVE",item["id"],len(blob),"bytes",len(doc["meshes"]),"meshes")
           PY
+      - name: Run village realism and asset-selection regression tests
+        run: |
+          cd world-creator
+          node --test tests/wild-village-pbr-grove.test.mjs
+
       - name: Commit independent model files to this feature branch only
         run: |
           set -euo pipefail
