@@ -17,6 +17,87 @@ export const VILLAGE_TERRAIN_SURFACES=Object.freeze([
 ]);
 const MANIFEST="./assets/village-terrain-sources.json";
 const PRIMARY_SURFACE="forest_leaves_02";
+
+/**
+ * A 32-metre seamless photographic macro tile. The old 4-metre repeat
+ * produced long, unmistakable rows in open areas. All three downloaded
+ * CC0 photographs are blended with soft, wraparound patches; no synthetic
+ * ground photograph is substituted. Drawing once into a shared atlas keeps
+ * the normal walking/render loop cheap even on mobile.
+ */
+export const PHOTO_TILE_METRES=32;
+function photoImage(url){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(Error("Cannot load terrain photograph "+url));
+    img.src=url;
+  });
+}
+function tileSeed(x,y,salt=0){
+  let n=Math.imul(x+41,374761393)^Math.imul(y+97,668265263)^Math.imul(salt+7,2246822519);
+  n=Math.imul(n^(n>>>13),1274126177);
+  return ((n^(n>>>16))>>>0)/4294967296;
+}
+function blendedPhotoAtlas(B,scene,photos,{mobile,lite}){
+  const size=lite?1024:2048;
+  const macro=document.createElement("canvas");
+  macro.width=macro.height=size;
+  const ctx=macro.getContext("2d",{alpha:false});
+  if(!ctx)throw Error("Canvas unavailable for photographic ground");
+  // Eight actual-photo repeats under the varied broad-scale patches.
+  const repeat=Math.round(size*4/PHOTO_TILE_METRES);
+  const imageTiles=photos.map(photo=>{
+    const tile=document.createElement("canvas");
+    tile.width=tile.height=repeat;
+    tile.getContext("2d").drawImage(photo,0,0,repeat,repeat);
+    return tile;
+  });
+  const base=ctx.createPattern(imageTiles[0],"repeat");
+  ctx.fillStyle=base;
+  ctx.fillRect(0,0,size,size);
+
+  const cells=4,spacing=size/cells,radius=Math.ceil(spacing*.78);
+  const extent=radius*2;
+  for(let cy=0;cy<cells;cy++)for(let cx=0;cx<cells;cx++){
+    const selection=tileSeed(cx,cy,1);
+    // Primary leafy ground remains dominant; the other genuine forest
+    // photographs break up the repeated horizontal/diagonal stripes.
+    const source=selection<.48?0:selection<.77?1:2;
+    const patch=document.createElement("canvas");
+    patch.width=patch.height=extent;
+    const p=patch.getContext("2d");
+    p.save();
+    p.translate(radius,radius);
+    p.rotate(Math.floor(tileSeed(cx,cy,2)*4)*Math.PI/2);
+    p.scale(tileSeed(cx,cy,3)<.5?-1:1,1);
+    p.fillStyle=p.createPattern(imageTiles[source],"repeat");
+    p.fillRect(-extent,-extent,extent*2,extent*2);
+    p.restore();
+    p.globalCompositeOperation="destination-in";
+    const fade=p.createRadialGradient(radius,radius,radius*.28,radius,radius,radius);
+    fade.addColorStop(0,"rgba(0,0,0,1)");
+    fade.addColorStop(.68,"rgba(0,0,0,.88)");
+    fade.addColorStop(1,"rgba(0,0,0,0)");
+    p.fillStyle=fade;
+    p.fillRect(0,0,extent,extent);
+    p.globalCompositeOperation="source-over";
+    const x=(cx+.5+(tileSeed(cx,cy,4)-.5)*.36)*spacing-radius;
+    const y=(cy+.5+(tileSeed(cx,cy,5)-.5)*.36)*spacing-radius;
+    // Wrap any patch extending over an atlas edge, making both opposite
+    // edges pixel-identical and avoiding seams when a player streams tiles.
+    for(const dx of [-size,0,size])for(const dy of [-size,0,size])
+      if(x+dx< size&&x+dx+extent>0&&y+dy<size&&y+dy+extent>0)
+        ctx.drawImage(patch,x+dx,y+dy);
+  }
+  const atlas=new B.DynamicTexture(
+    "seamless mixed CC0 photographic forest floor",macro,scene,true);
+  atlas.wrapU=atlas.wrapV=B.Texture.WRAP_ADDRESSMODE;
+  atlas.anisotropicFilteringLevel=mobile?4:8;
+  atlas.update(false);
+  return atlas;
+}
+
 const SCENE_MATERIALS=new WeakMap();
 
 function sharedPhotographicMaterial(B,scene,{mobile,lite}){
@@ -59,10 +140,27 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
         texture.wrapV=B.Texture.WRAP_ADDRESSMODE;
         texture.anisotropicFilteringLevel=mobile?4:8;
       });
-      diffuse=await image(file.diffuse);
-      // Bump mapping can be left out on low-memory phones. Diffuse still
-      // always comes from the real downloaded photographic JPEG.
-      if(!lite)normal=await image(file.normal);
+      // Composite from all three verified local photographs, once per scene.
+      // Gracefully retain the original photo if a browser forbids the canvas.
+      try{
+        const photos=await Promise.all(VILLAGE_TERRAIN_SURFACES.map(id=>
+          photoImage(entries.get(id).files[resolution].diffuse)));
+        diffuse=blendedPhotoAtlas(B,scene,photos,{mobile,lite});
+        state.blendMode="seamless-photographic-atlas";
+        state.sourceIds=VILLAGE_TERRAIN_SURFACES.slice();
+      }catch(blendError){
+        console.warn("Seamless ground blending unavailable; using source JPEG",blendError);
+        diffuse=await image(file.diffuse);
+        diffuse.uScale=diffuse.vScale=PHOTO_TILE_METRES/4;
+        state.blendMode="original-photographic-fallback";
+        state.sourceIds=[PRIMARY_SURFACE];
+      }
+      // The subtle normal map stays at its real ~4 m detail scale while the
+      // photographic diffuse has a much larger, blended 32 m repeat.
+      if(!lite){
+        normal=await image(file.normal);
+        normal.uScale=normal.vScale=PHOTO_TILE_METRES/4;
+      }
       if(scene.isDisposed===true)return;
       mat=new B.StandardMaterial("CC0 photographic Appalachian forest-floor",scene);
       mat.diffuseTexture=diffuse;
@@ -75,7 +173,6 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
         mat.bumpTexture=normal;
       }
       entry.material=mat;
-      state.sourceIds=[PRIMARY_SURFACE];
       state.materials=1;
       state.status="ready";
     }catch(err){
