@@ -1,0 +1,117 @@
+name: Download CC0 Appalachian building assets
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/download-wild-building-assets.yml'
+permissions:
+  contents: write
+concurrency:
+  group: wvlrp-building-assets
+  cancel-in-progress: false
+jobs:
+  download:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch authentic Poly Haven PBR building materials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,hashlib,urllib.request,shutil,time
+          from pathlib import Path
+          ids=['wood_trunk_wall','weathered_plank_siding','distressed_painted_planks','mossy_stone_wall','rough_pine_door','roof_slates_02','corrugated_iron']
+          out=Path('world-creator/assets/building');out.mkdir(parents=True,exist_ok=True)
+          tmp=Path('/tmp/wild-firepit');tmp.mkdir(exist_ok=True)
+          headers={'User-Agent':'WVLRP-TheWild-CC0-Assets/1.0'}
+          def openurl(url):
+              for attempt in range(4):
+                  try:return urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=180)
+                  except Exception:
+                      if attempt==3:raise
+                      time.sleep((attempt+1)*4)
+          def getdoc(id):
+              with openurl('https://api.polyhaven.com/files/'+id) as res:return json.load(res)
+          def download(item,path):
+              path.parent.mkdir(parents=True,exist_ok=True)
+              with openurl(item['url']) as inp,path.open('wb') as dest:shutil.copyfileobj(inp,dest,1024*1024)
+              if path.stat().st_size<10000:raise ValueError('Too small: '+str(path))
+              if item.get('md5'):
+                  h=hashlib.md5()
+                  with path.open('rb') as stream:
+                      for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
+                  if h.hexdigest()!=item['md5']:raise ValueError('Checksum mismatch: '+str(path))
+          manifest=[]
+          for id in ids:
+              doc=getdoc(id);sizes={}
+              for size in ('1k','2k'):
+                  maps={}
+                  for kind,keys in [('diffuse',['diffuse','albedo','basecolor']),('normal',['nor_gl','normal_gl','normal']),('arm',['arm'])]:
+                      key=next((k for k in doc if k.lower() in keys),None)
+                      if not key:raise ValueError('Missing '+kind+' on '+id)
+                      variant=doc[key][size]
+                      ext='jpg' if 'jpg' in variant else 'png'
+                      if ext not in variant:raise ValueError('Missing JPG/PNG on '+id)
+                      file=out/(id+'_'+kind+'_'+size+'.'+ext)
+                      download(variant[ext],file)
+                      with file.open('rb') as f:magic=f.read(8)
+                      if (ext=='jpg' and magic[:2]!=b'\xff\xd8') or (ext=='png' and magic!=b'\x89PNG\r\n\x1a\n'):raise ValueError('Invalid image '+str(file))
+                      maps[kind]='./assets/building/'+file.name
+                  sizes[size]=maps
+                  print('Verified',id,size,flush=True)
+              manifest.append({'id':id,'type':'texture','license':'CC0','source':'https://polyhaven.com/a/'+id,'resolutions':sizes})
+          fire=getdoc('stone_fire_pit')['gltf']['1k']['gltf']
+          source=tmp/'stone_fire_pit.gltf'
+          download(fire,source)
+          for rel,item in fire.get('include',{}).items():
+              target=(tmp/rel).resolve()
+              if not target.is_relative_to(tmp.resolve()):raise ValueError('Unsafe dependency')
+              download(item,target)
+          obj=json.loads(source.read_text())
+          assert obj.get('meshes') and obj.get('materials'),'Fire pit missing textured geometry'
+          (tmp/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print('Seven complete PBR sets and textured fire-pit GLTF downloaded',flush=True)
+          PY
+      - name: Convert stone fire pit to game-ready GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global @gltf-transform/cli@4.5.1
+          gltf-transform optimize /tmp/wild-firepit/stone_fire_pit.gltf world-creator/assets/building/stone_fire_pit.glb --compress quantize --texture-compress webp --texture-size 1024
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          out=Path('world-creator/assets/building')
+          path=out/'stone_fire_pit.glb'
+          with path.open('rb') as f:magic,version,size=struct.unpack('<4sII',f.read(12))
+          assert magic==b'glTF' and version==2 and size==path.stat().st_size and 15000<size<30000000
+          records=json.loads(Path('/tmp/wild-firepit/manifest.json').read_text())
+          records.append({'id':'stone_fire_pit','type':'model','license':'CC0','source':'https://polyhaven.com/a/stone_fire_pit','url':'./assets/building/stone_fire_pit.glb','bytes':size})
+          assert len(records)==8
+          (out/'building-sources.json').write_text(json.dumps(records,indent=2)+'\n')
+          print('ALL 8 AUTHENTIC CC0 BUILDING ASSETS VERIFIED',flush=True)
+          PY
+      - name: Commit downloaded assets without altering live game
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/building
+          if git diff --cached --quiet;then echo 'Already downloaded';exit 0;fi
+          git commit -m 'Download verified CC0 building materials and fire pit for The Wild'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main;then exit 0;fi
+            git fetch origin main
+            git rebase origin/main
+            sleep 3
+          done
+          exit 1
