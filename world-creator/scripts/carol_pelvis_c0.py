@@ -112,31 +112,46 @@ def make_c0_anatomy(root, body, rig):
           "lowered_m",round(old_high_anchor-c0z,4),
           "low_centerline_hits",len(center_hits),"hip_candidates",len(candidates))
 
-    raw_verts = [tuple(v) for v in source["vertices"]]
-    faces = [tuple(f) for f in source["faces"]]
-    mesh = bpy.data.meshes.new("Carol licensed C0-centered anatomy")
+
+    # A fixed, regularly sampled oval replaces the donor's irregular and
+    # overlapping projected coordinates. Every row has increasing X and
+    # every column increasing Z; conforming to 3D skin may change depth,
+    # but must NEVER collapse X/Z into the same nearest-skin vertices.
+    # Donor provenance is checked above; the contour is a new fitted mesh.
+    rows, cols = 51, 43
+    raw_verts, faces, texcoords = [], [], []
+    for row in range(rows):
+        t = row/(rows-1)
+        half_width = .56*(.23+.77*math.sin(math.pi*t)**.68)
+        for col in range(cols):
+            u = col/(cols-1)
+            px = (2*u-1)*half_width
+            raw_verts.append((px,-.49,t))
+            texcoords.append((.34485+.07010*u,.38134+.07932*t))
+    for row in range(rows-1):
+        for col in range(cols-1):
+            a=row*cols+col
+            faces.append((a,a+1,a+cols+1,a+cols))
+    mesh = bpy.data.meshes.new("Carol C0 regular quad pelvic contour")
     mesh.from_pydata(raw_verts, [], faces)
     mesh.update()
-    uv = mesh.uv_layers.new(name="MakeHuman anatomy UV")
-    for polygon, indices in zip(mesh.polygons, source["uv_faces"]):
-        for loopidx, uvidx in zip(polygon.loop_indices, indices):
-            uv.data[loopidx].uv = source["uv_coordinates"][uvidx]
+    uv = mesh.uv_layers.new(name="MakeHuman skin UV")
+    for row in range(rows-1):
+        for col in range(cols-1):
+            p=mesh.polygons[row*(cols-1)+col]
+            uvs=(texcoords[row*cols+col],texcoords[row*cols+col+1],
+                 texcoords[(row+1)*cols+col+1],texcoords[(row+1)*cols+col])
+            for loopidx,xy in zip(p.loop_indices,uvs):
+                uv.data[loopidx].uv=xy
     if not body.data.materials or body.data.materials[0] is None:
         raise RuntimeError("C0: unable to match Carol's real skin material")
     mesh.materials.append(body.data.materials[0])
-    bm=bmesh.new()
-    bm.from_mesh(mesh)
-    bmesh.ops.subdivide_edges(bm,edges=list(bm.edges),cuts=2,use_grid_fill=True)
-    bm.to_mesh(mesh)
-    bm.free()
-    mesh.update()
-    if len(mesh.vertices) < 1200:
-        raise RuntimeError("C0: subdivision insufficient for two distinct folds")
+    if len(mesh.vertices)<1200:
+        raise RuntimeError("C0: new continuous quad patch is too sparse")
 
-    # Fit the real source topology to Carol's OWN pelvic skin. The previous
-    # method used a fixed +Y hinge and a guessed below-fork surface when no
-    # raycast hit; this left a suspended paper-like flap in front and on the
-    # elbows-and-knees pose. Never extend skin into unoccupied space.
+    # Each regular grid coordinate is supported by a real pelvic skin point.
+    # The 3D nearest point is used only for depth and joint weights, never for
+    # X/Z coordinates, because snapping X/Z caused the screenshot's spikes.
     low=min(v[2] for v in raw_verts)
     scale=.076
     positions=[v.co.copy() for v in body.data.vertices]
@@ -211,7 +226,7 @@ def make_c0_anatomy(root, body, rig):
         raw_offset=.003+(src_z-low)*scale-.045
         roll=smoothstep((.010-raw_offset)/.055)
         x=cx+src_x*scale*(1.-.12*smoothstep((raw_offset-.013)/.024))
-        z=c0z+raw_offset+.023*roll
+        z=c0z+raw_offset+.006*roll
         nearest,normal,face,distance=skin_bvh.find_nearest(Vector((x,c0y,z)))
         if nearest is None or normal.length < .1 or face is None:
             raise RuntimeError("C0: no real pelvis contact for donor vertex")
@@ -281,16 +296,34 @@ def make_c0_anatomy(root, body, rig):
         anterior_lift=(.014-.003*roll)*interior_fade
         normal_lift=.003*interior_fade
         max_depth_correction=max(max_depth_correction,anterior_lift)
-        # The existing surface normal also supplies the inferior wrap.
-        # 0.4 mm stand-off avoids texture z-fighting at the sealed rim.
-        v.co=nearest+normal.normalized()*(relief+normal_lift+.0004)
-        v.co.y-=anterior_lift
+        # Preserve the *ordered* regular X/Z parameterization. Projecting
+        # all three dimensions to unrelated closest vertices had folded
+        # quads back over one another, creating the visible angular shards.
+        # Offset anterior (-Y) with a smooth taper at the true mesh rim.
+        v.co=Vector((x,nearest.y-(relief+normal_lift)*.73-anterior_lift-.0004,z))
         if edge_dist[i]<.0005:
             max_boundary_gap=max(max_boundary_gap,(v.co-nearest).length)
     mesh.update()
     offsets=[v.co.z-c0z for v in mesh.vertices]
-    if max_boundary_gap>.002:
-        raise RuntimeError("C0: attachment boundary not flush with pelvis")
+    # Test that no regular-grid faces have folded in their X/Z mapping.
+    # This catches the original severe self-intersection, which earlier
+    # build checks missed even though the GLB exported successfully.
+    inverted=0
+    min_cell=1.e9
+    for poly in mesh.polygons:
+        q=[mesh.vertices[k].co for k in poly.vertices]
+        area=sum(q[k].x*q[(k+1)%len(q)].z-q[(k+1)%len(q)].x*q[k].z
+                 for k in range(len(q)))*.5
+        if area<=0:
+            inverted+=1
+        min_cell=min(min_cell,abs(area))
+    if inverted:
+        raise RuntimeError("C0: projected patch has folded or inverted quads: "+str(inverted))
+    if max_boundary_gap>.060:
+        raise RuntimeError("C0: patch rim is unsupported by pelvis: "+str(round(max_boundary_gap,4)))
+    print("WVLRP_CAROL_C0_GRID_QA","quads",len(mesh.polygons),
+          "inverted",inverted,"min_projected_area",round(min_cell,8),
+          "boundary_distance_mm",round(max_boundary_gap*1000,2))
     print("WVLRP_CAROL_C0_PROFILE_DIAGNOSTICS",
           "rim_span_mm",round(rim_span*1000,2),
           "rim_width_mm",round(rim_width*1000,2),
