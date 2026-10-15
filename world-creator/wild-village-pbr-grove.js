@@ -15,11 +15,12 @@ const MANIFEST_URL="./assets/village-grove-sources.json";
 const VALID_ASSETS=Object.freeze(new Set([
   "fir_tree_01","pine_tree_01","fir_sapling_medium",
   "pine_sapling_medium","pine_sapling_small","fir_sapling",
-  "island_tree_01","island_tree_02","island_tree_03"
+  "island_tree_01","island_tree_02","island_tree_03",
+  "tree_small_02","jacaranda_tree"
 ]));
 const CONIFERS=new Set(["eastern-hemlock","eastern-white-pine","virginia-pine"]);
-const MAX_PER_ASSET_MOBILE=30;
-const MIN_MODELS=3;
+const MAX_PER_ASSET_MOBILE=14;
+const MIN_MODELS=7;
 
 // Visually plausible but not botanically exact substitutions are *not*
 // documented as a matched species. The native species list is an art target.
@@ -31,8 +32,18 @@ export function chooseGroveAsset(tree,available){
     preference=young?["fir_sapling_medium","pine_sapling_medium","fir_sapling","pine_sapling_small","fir_tree_01","pine_tree_01"]:
       ["fir_tree_01","pine_tree_01","fir_sapling_medium","pine_sapling_medium","fir_sapling","pine_sapling_small"];
   }else{
-    preference=young?["island_tree_02","island_tree_03","island_tree_01"]:
-      ["island_tree_01","island_tree_02","island_tree_03"];
+    // DISTINCT, genuinely photo-textured author-built crown silhouettes.
+    // The imported models are anatomical *stand-ins* for the WV species
+    // blueprint, not verified oak/maple/beech botanical scans. Avoid promising
+    // accurate species until actual native tree assets have been sourced.
+    const edge=tree.x<46||tree.x>141;
+    const broadleaf=young?
+      ["tree_small_02","island_tree_02","island_tree_03","island_tree_01"]:
+      ["tree_small_02","island_tree_01","island_tree_03","island_tree_02"];
+    // Wide jacaranda silhouette appears VERY sparingly on the distant outside
+    // edge only, never beside roofs/fire ring or in the village square.
+    if(edge && !young) broadleaf.splice(2,0,"jacaranda_tree");
+    preference=broadleaf;
   }
   const offset=(Math.floor(tree.x*37+tree.z*17)>>>0)%Math.max(1,preference.length);
   for(let i=0;i<preference.length;i++){
@@ -107,7 +118,9 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
     const available=manifest.filter(m=>sources.has(m.id));
     const usage=new Map();
     for(const tree of VILLAGE_PROPOSED_TREES){
-      const choices=available.filter(m=>(usage.get(m.id)||0)<(mobile?MAX_PER_ASSET_MOBILE:20));
+      // Cap duplicates: genuine model variety rather than one tree pasted 30x.
+      const choices=available.filter(m=>(usage.get(m.id)||0)<
+        (m.id==="jacaranda_tree"?4:mobile?MAX_PER_ASSET_MOBILE:15));
       const asset=chooseGroveAsset(tree,choices);
       if(!asset){state.skippedNoModel++;continue;}
       const container=sources.get(asset.id);
