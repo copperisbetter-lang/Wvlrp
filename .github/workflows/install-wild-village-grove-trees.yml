@@ -32,7 +32,7 @@ jobs:
           from pathlib import Path
           names=["fir_tree_01","pine_tree_01","fir_sapling_medium",
                  "pine_sapling_medium","pine_sapling_small","fir_sapling",
-                 "island_tree_01","island_tree_02","island_tree_03"]
+                 "island_tree_01","island_tree_02","island_tree_03",\n                 "tree_small_02","jacaranda_tree"]
           headers={"User-Agent":"WVLRP-Wild-license-respecting-grove/1.0"}
           base=Path("/tmp/wvlrp-pbr-grove");base.mkdir(parents=True,exist_ok=True)
           manifest=[]
@@ -72,8 +72,8 @@ jobs:
                   print(name,"ready; meshes:",len(doc["meshes"]),flush=True)
               except Exception as err:
                   print("WARNING: model unavailable:",name,str(err),flush=True)
-          if len(manifest)<3:
-              raise RuntimeError("Need at least 3 independent real CC0 source meshes, not one tree cloned into a whole forest")
+          if len(manifest)<7:
+              raise RuntimeError("Need at least 7 independent real CC0 source meshes, not one tree cloned into a whole forest")
           (base/"source-manifest.json").write_text(json.dumps(manifest,indent=2))
           PY
       - name: Repair autumn-brown leaf colors (preserve bark and PBR detail)
@@ -108,7 +108,7 @@ jobs:
               except Exception as exc:
                   out.unlink(missing_ok=True)
                   print("WARNING: asset optimization did not pass:",m["id"],str(exc),flush=True)
-          if len(installed)<3:raise RuntimeError("Insufficient independently modeled PBR tree assets passed mobile optimization")
+          if len(installed)<7:raise RuntimeError("Insufficient independently modeled PBR tree assets passed mobile optimization")
           Path("world-creator/assets/village-grove-sources.json").write_text(json.dumps(installed,indent=2)+"\n")
           PY
       - name: Validate self-contained textured glTF binaries
