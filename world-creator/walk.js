@@ -88,7 +88,8 @@ const scene=new B.Scene(engine);
 // beneath the dense native canopy, without making all foliage fluorescent.
 scene.clearColor=new B.Color4(.67,.82,.95,1);
 scene.fogMode=B.Scene.FOGMODE_EXP2;
-scene.fogDensity=.00125;
+// Let players see real ridgelines roughly 1–2 km beyond the flat valley.
+scene.fogDensity=.00038;
 scene.fogColor=new B.Color3(.67,.79,.87);
 scene.skipPointerMovePicking=true;
 scene.imageProcessingConfiguration.exposure=1.14;
@@ -106,7 +107,7 @@ const camera=new B.FreeCamera("first-person explorer",
   new B.Vector3(START_AT_RANGER?RANGER_SPAWN.x:0,
     START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
     START_AT_RANGER?RANGER_SPAWN.z:16),scene);
-camera.minZ=.07;camera.maxZ=900;camera.fov=1.13;
+camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
 camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
 scene.activeCamera=camera;
 // October-approved distant sunlit Appalachian ridge: real 360-degree skyline,
@@ -198,7 +199,7 @@ function addLandscape(x,z){
   }
   const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed,mobile,lite:LITE_MODE});
   tileCx=x;tileCy=z;loadedTiles++;
-  status(loadedTiles===1?"Explore Hearthside Cabin and the West Virginia mountains.":"The Wild continues beyond the cabin clearing.");
+  status(loadedTiles===1?"Fresh valley loaded: follow interconnected dirt trails to cabin lots, campsites and lookouts.":"The Wild continues into new lowland trails.");
   return result;
 }
 let habitat;
@@ -292,7 +293,7 @@ crewButton.addEventListener("click",()=>{
 const resetToCabin=()=>{
   camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
   camera.rotation.set(0,Math.PI,0);
-  document.querySelector(".brand small").textContent="Hearthside Cabin · first-person walk";
+  document.querySelector(".brand small").textContent="Hearthside Cabin · protected crew in the new valley";
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
