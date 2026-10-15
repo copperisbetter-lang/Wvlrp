@@ -15,7 +15,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
-import {createFourCabinTest} from "./wild-cabin-lineup.js?v=sketchfab-two-selections-20261015-v7";
+import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cgtrader-two-private-tests-20261015-v8";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -419,9 +419,11 @@ const cameraGround=(x,z)=>{
   // The former village porches and steps were cleared; no invisible stairs.
   return ground;
 };
-// Four official CC-BY Sketchfab models can be compared in the real walking world.
-// Only user-authorized glTF ZIP/GLB files are imported: never pretend a mockup
-// or an embedded image is the full 3D cabin. Hearthside and Ranger stay intact.
+// Eight licensed cabin candidates can be compared in the walking world.
+// CGTrader Royalty Free (No AI) geometry is LOCAL PRIVATE IMPORT ONLY:
+// never host its stand-alone source GLB on a public site.
+// Real user-authorized GLB/glTF imports only; no mockups or fake placeholders.
+// Hearthside and Ranger remain intact.
 const cabinComparison=createFourCabinTest({
   B,scene,camera,groundAt:(x,z)=>cameraGround(x,z),onStatus:status,
   onJump:(x,z)=>{
@@ -430,8 +432,8 @@ const cabinComparison=createFourCabinTest({
     }
     camera.position.set(x,cameraGround(x,z)+EYE_HEIGHT,z);
     camera.rotation.set(0,0,0);
-    document.querySelector(".brand small").textContent="Four-cabin walking comparison";
-    info.textContent="CABIN TEST · models placed 27m apart south of Ranger Station";
+    document.querySelector(".brand small").textContent="Eight-cabin walking comparison";
+    info.textContent="CABIN TEST · six first-row models plus two private CGTrader tests behind";
   }
 });
 document.getElementById("cabinCompare")?.addEventListener("click",()=>{
@@ -533,7 +535,7 @@ engine.runRenderLoop(()=>{
 if(START_AT_COMPARE){
   // The comparison entry already teleported the player to its field.
   // Do NOT reset to Hearthside Cabin after the first render.
-  document.querySelector(".brand small").textContent="Four-cabin test field · north of Hearthside";
+  document.querySelector(".brand small").textContent="Eight-cabin test field · north of Hearthside";
 }else if(START_AT_RANGER)goToRanger();
 else{
   resetToCabin();
