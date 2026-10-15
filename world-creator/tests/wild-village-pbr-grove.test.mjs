@@ -91,3 +91,25 @@ test("Installed licensed binary source assets cover every one of the 59 peripher
  }
  assert.equal([...allocated.values()].reduce((a,b)=>a+b,0),59);
 });
+
+test("PBR trees vary across nearby village placements without fake species",()=>{
+ const models=[{id:"tree_small_02"},{id:"island_tree_01"},
+   {id:"island_tree_02"},{id:"island_tree_03"}];
+ const target={x:42,z:80,species:"white-oak",age:"mature"};
+ const placed=[{x:42.5,z:80.5,sourceId:"island_tree_01"},
+   {x:43,z:81,sourceId:"tree_small_02"},
+   {x:40,z:80,sourceId:"island_tree_03"}];
+ assert.equal(chooseGroveAsset(target,models,placed).id,"island_tree_02",
+   "Pick the one truly different nearby source instead of a clone");
+ const assignments=[];
+ for(const tree of VILLAGE_PROPOSED_TREES){
+   if(["eastern-hemlock","eastern-white-pine","virginia-pine"].includes(tree.species))continue;
+   const model=chooseGroveAsset(tree,models,assignments);
+   assert.ok(model);
+   assignments.push({x:tree.x,z:tree.z,sourceId:model.id});
+ }
+ assert.equal(new Set(assignments.map(a=>a.sourceId)).size,4);
+ const counts=models.map(model=>assignments.filter(a=>a.sourceId===model.id).length);
+ assert.ok(Math.max(...counts)-Math.min(...counts)<=4,
+   "Model usage should be fairly balanced across the grove");
+});
