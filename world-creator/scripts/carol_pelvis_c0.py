@@ -156,7 +156,7 @@ def make_c0_anatomy(root, body, rig):
     # A compact skin inset. Separate horizontal/vertical scales prevent the
     # lower rim from dropping into empty space between the thighs.
     x_scale=.050
-    z_scale=.042
+    z_scale=.037
     positions=[v.co.copy() for v in body.data.vertices]
     # The old weight filter excluded ALL polygons below z=.777m
     # even though C0 is z=.744m, so the nearest-point snap lifted
@@ -232,10 +232,12 @@ def make_c0_anatomy(root, body, rig):
     fallback_support_hits=0
     for i,v in enumerate(mesh.vertices):
         src_x,src_y,src_z=raw_positions[i]
-        # A continuous, strictly monotone roll from anterior to inferior.
+        # A compact, strictly monotone roll from anterior to inferior.
         # This is only a SEARCH position; actual vertices are snapped to the
         # original pelvic skin, including its underside, before adding detail.
-        raw_offset=.006+(src_z-low)*z_scale-.021
+        # Begin just ABOVE the first verified skin contact. The earlier
+        # low tip hung 4 cm below genuine skin and could never be seamless.
+        raw_offset=(first_contact-c0z)+.007+(src_z-low)*z_scale
         roll=smoothstep((.008-raw_offset)/.040)
         x=cx+src_x*x_scale*(1.-.10*smoothstep((raw_offset-.010)/.022))
         z=c0z+raw_offset+.002*roll
