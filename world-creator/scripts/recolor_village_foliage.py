@@ -8,6 +8,8 @@ PALETTES = {
     "island_tree_01": (49, 118, 49),  # dark summer green
     "island_tree_02": (66, 135, 52),  # medium summer green
     "island_tree_03": (85, 142, 59),  # sunlit yellow-green
+    "tree_small_02": (57, 127, 56),  # layered bright canopy
+    "jacaranda_tree": (74, 135, 68),  # airy high-branched canopy
 }
 
 def recolor(root: Path):
