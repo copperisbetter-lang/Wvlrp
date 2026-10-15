@@ -10,6 +10,7 @@ import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-referen
 import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=mountain-sightline-v9";
 import {VILLAGE_DETAIL_ZONE,VILLAGE_SQUARE_TREES_ENABLED,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
+import {VILLAGE_SECTION} from "./wild-acre-regions.js";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -601,7 +602,13 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
       .map(t=>({...t,scale:t.scale*(t.elder?.84:.70)})):[];
   // Filter all existing and supplemental tree sources, not only the special edge ring.
   // No procedural trunk can appear in the 75 m diameter village square.
-  const squareAllowsTree=t=>VILLAGE_SQUARE_TREES_ENABLED||!insideVillageDetail(t.x,t.y);
+  // The entire three-acre village is reserved for real, independent PBR GLB
+  // grove models. No old procedural trees may grow among its planned trunks.
+  // Outside this section the existing wilderness remains untouched.
+  const inVillageGrove=t=>t.x>=VILLAGE_SECTION.minX&&t.x<=VILLAGE_SECTION.maxX&&
+    t.y>=VILLAGE_SECTION.minZ&&t.y<=VILLAGE_SECTION.maxZ;
+  const squareAllowsTree=t=>!inVillageGrove(t)&&
+    (VILLAGE_SQUARE_TREES_ENABLED||!insideVillageDetail(t.x,t.y));
   const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar,villageEdgeTrees).filter(squareAllowsTree);
   const flatHeight=cabinGrade(93,85,seed);
   for(const t of allTrees){

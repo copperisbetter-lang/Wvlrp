@@ -5,7 +5,8 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=one-hd-oak-20261014-v2";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=three-acre-pbr-grove-20261014-v1";
+import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=three-acre-pbr-grove-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
@@ -203,6 +204,9 @@ const villageOak=VILLAGE_HD_OAK_ENABLED
       groundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
     })
   : {status:"disabled-for-clear-square",meshCount:0,error:"",root:null};
+// Real imported PBR trees around the 3-acre village, on individual permanent
+// nodes. They are NOT owned by the periodically replaced wilderness tile.
+const villageGrove=installVillageGrove(B,scene,{seed,mobile});
 const names=[];
 function addNamePlate(o){
   const ground=cabinY+.38;
@@ -390,6 +394,11 @@ const collision=(x,z)=>{
   if(villageOak.status==="loaded"&&Math.hypot(x-VILLAGE_OAK.x,z-VILLAGE_OAK.z)<VILLAGE_OAK.collisionRadius)return true;
   const water=waterAt(x,z,seed);
   if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
+  // Installed PBR grove trunks remain solid even when the distant landscape
+  // tile has been replaced for a roaming player.
+  for(const t of villageGrove.collidableTrees){
+    if(Math.hypot(x-t.x,z-t.y)<t.radius+.25)return true;
+  }
   // Test actual rendered trunks, including the new evergreen and old-growth
   // additions. The former separate 11m collision grid blocked invisible trees.
   for(const tree of habitat?.collidableTrees||[]){
@@ -491,12 +500,15 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "");
+    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "") + (isNearVillageGrove(camera.position.x,camera.position.z,25) ? ` · GROVE: ${villageGrove.planted}/${villageGrove.requested} (${villageGrove.status})` : "");
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
   sunDisc.position.set(camera.position.x+sunLook.x*420,
     camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
+  // Hide complete imported PBR grove batches only when well outside village.
+  // Never unload/recreate the full 3D village while guests cross the square.
+  villageGrove.setNear(isNearVillageGrove(camera.position.x,camera.position.z));
   multiplayer?.update(dt);
   playerMap?.update(performance.now());
   scene.render();
@@ -532,6 +544,13 @@ window.__wildDiagnostics=()=>({
    importedVillageOakMeshes:villageOak.meshCount,
    importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
    importedVillageOakError:villageOak.error,
+   villageGroveStatus:villageGrove.status,
+   villageGroveModelSources:villageGrove.sourceIds,
+   villageGroveModelsLoaded:villageGrove.loadedModels,
+   villageGroveTreesPlanted:villageGrove.planted,
+   villageGroveTreesRequested:villageGrove.requested,
+   villageGroveTreesSkipped:villageGrove.skippedNoModel,
+   villageGroveError:villageGrove.error,
   heroGraphics:habitat?.heroGraphics??false,
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,

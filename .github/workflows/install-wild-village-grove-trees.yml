@@ -1,0 +1,142 @@
+name: Install licensed PBR grove tree assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-wild-village-grove-trees.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: install-wild-village-grove-trees
+  cancel-in-progress: false
+
+jobs:
+  grove:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Obtain independent CC0 glTF trees and metadata
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,hashlib,shutil,time
+          from pathlib import Path
+          names=["fir_tree_01","pine_tree_01","fir_sapling_medium",
+                 "pine_sapling_medium","pine_sapling_small","fir_sapling",
+                 "island_tree_01","island_tree_02","island_tree_03"]
+          headers={"User-Agent":"WVLRP-Wild-license-respecting-grove/1.0"}
+          base=Path("/tmp/wvlrp-pbr-grove");base.mkdir(parents=True,exist_ok=True)
+          manifest=[]
+          def fetch(url,dst,expected):
+              dst.parent.mkdir(parents=True,exist_ok=True)
+              for attempt in range(4):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=180) as src,dst.open("wb") as out:
+                          shutil.copyfileobj(src,out,1024*1024)
+                      if expected:
+                          actual=hashlib.md5(dst.read_bytes()).hexdigest()
+                          if actual!=expected:raise ValueError(f"checksum error: {dst}")
+                      return
+                  except Exception:
+                      dst.unlink(missing_ok=True)
+                      if attempt==3:raise
+                      time.sleep(4*(attempt+1))
+          for name in names:
+              folder=base/name;folder.mkdir(parents=True,exist_ok=True)
+              url=f"https://api.polyhaven.com/files/{name}"
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=40) as resp:
+                      catalog=json.load(resp)
+                  variants=catalog["gltf"]
+                  variant=next((v for k,v in variants.items() if k=="1k"),None)
+                  if not variant: raise RuntimeError(f"no 1k glTF for {name}")
+                  item=variant["gltf"]
+                  src=folder/(name+"_1k.gltf")
+                  fetch(item["url"],src,item.get("md5"))
+                  for rel,obj in item.get("include",{}).items():
+                      fetch(obj["url"],folder/rel,obj.get("md5"))
+                  doc=json.loads(src.read_text())
+                  if not doc.get("meshes") or len(doc.get("images",[]))<1:
+                      raise ValueError(f"{name} source lacks textured geometry")
+                  manifest.append({"id":name,"source":f"https://polyhaven.com/a/{name}",
+                     "license":"CC0","sourcefile":str(src),"images":len(doc["images"]),"meshes":len(doc["meshes"])})
+                  print(name,"ready; meshes:",len(doc["meshes"]),flush=True)
+              except Exception as err:
+                  print("WARNING: model unavailable:",name,str(err),flush=True)
+          if len(manifest)<3:
+              raise RuntimeError("Need at least 3 independent real CC0 source meshes, not one tree cloned into a whole forest")
+          (base/"source-manifest.json").write_text(json.dumps(manifest,indent=2))
+          PY
+      - name: Optimize real models for phone rendering
+        run: |
+          set -euo pipefail
+          npm install --global @gltf-transform/cli@4.5.1
+          mkdir -p world-creator/assets
+          python3 - <<'PY'
+          import json,subprocess,os
+          from pathlib import Path
+          root=Path("/tmp/wvlrp-pbr-grove")
+          models=json.loads((root/"source-manifest.json").read_text())
+          installed=[]
+          for m in models:
+              out=Path("world-creator/assets")/("village-pbr-"+m["id"]+".glb")
+              env={**os.environ,"NODE_OPTIONS":"--max-old-space-size=6144"}
+              cmd=["gltf-transform","optimize",m["sourcefile"],str(out),
+                 "--simplify-ratio","0.06","--simplify-error","0.09",
+                 "--compress","quantize","--texture-compress","webp","--texture-size","1024"]
+              try:
+                  subprocess.run(cmd,env=env,check=True,timeout=460)
+                  if out.stat().st_size>45_000_000: raise ValueError("over 45 MB mobile budget")
+                  installed.append({"id":m["id"],"url":"./assets/"+out.name,
+                     "source":m["source"],"license":"CC0","bytes":out.stat().st_size})
+                  print("Optimized:",m["id"],out.stat().st_size,flush=True)
+              except Exception as exc:
+                  out.unlink(missing_ok=True)
+                  print("WARNING: asset optimization did not pass:",m["id"],str(exc),flush=True)
+          if len(installed)<3:raise RuntimeError("Insufficient independently modeled PBR tree assets passed mobile optimization")
+          Path("world-creator/assets/village-grove-sources.json").write_text(json.dumps(installed,indent=2)+"\n")
+          PY
+      - name: Validate self-contained textured glTF binaries
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          manifest=json.loads(Path("world-creator/assets/village-grove-sources.json").read_text())
+          for item in manifest:
+              path=Path("world-creator")/item["url"].removeprefix("./")
+              blob=path.read_bytes()
+              magic,version,size=struct.unpack_from("<4sII",blob)
+              assert magic==b"glTF" and version==2 and size==len(blob)
+              length,chunk=struct.unpack_from("<I4s",blob,12)
+              assert chunk==b"JSON"
+              doc=json.loads(blob[20:20+length])
+              assert doc.get("meshes") and doc.get("images") and doc.get("materials"),str(path)
+              forbidden={"EXT_meshopt_compression","KHR_draco_mesh_compression"}
+              assert not set(doc.get("extensionsRequired",[])).intersection(forbidden)
+              print("VERIFIED_TEXTURED_CC0_GROVE",item["id"],len(blob),"bytes",len(doc["meshes"]),"meshes")
+          PY
+      - name: Commit independent model files to this feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/village-pbr-*.glb world-creator/assets/village-grove-sources.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Install several licensed independent PBR grove tree meshes'
+          BRANCH="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${BRANCH}"; then exit 0; fi
+            git fetch origin "${BRANCH}"
+            git rebase "origin/${BRANCH}"
+            sleep 3
+          done
+          exit 1
