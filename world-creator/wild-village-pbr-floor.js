@@ -71,8 +71,9 @@ function modelBounds(root){
     span:Math.max(maxX-minX,maxY-minY,maxZ-minZ)};
 }
 
-export function installVillageForestFloor(B,scene,{seed,mobile=false,startAfter}={}){
-  const plan=planVillageForestFloor(seed,mobile);
+export function installVillageForestFloor(B,scene,{seed,mobile=false,lite=false,startAfter}={}){
+  const fullPlan=planVillageForestFloor(seed,mobile);
+  const plan=lite?fullPlan.filter((_,i)=>i%3===0):fullPlan;
   const state={status:"waiting",requested:plan.length,planted:0,sourceIds:[],
     counts:{fern:0,rock:0,stump:0,log:0},error:"",roots:[]};
   const group=new B.TransformNode("VILLAGE THREE ACRES: licensed PBR native forest floor",scene);
