@@ -5,7 +5,8 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=photographic-ground-sharp-20261015-v5";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=north-ranger-cc0-20261015-v1";
+import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=first-cc0-ranger-20261015-v1";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -46,7 +47,8 @@ const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
-const RANGER_SPAWN=Object.freeze({x:93,z:45,tileX:96,tileZ:96});
+const RANGER_SPAWN=Object.freeze({x:NORTH_RANGER_STATION.x,z:NORTH_RANGER_STATION.z-13,
+  tileX:NORTH_RANGER_STATION.x,tileZ:NORTH_RANGER_STATION.z});
 // Disperse visitors in the open village approach to prevent overlapping
 // first-person spawns (which would conceal another visitor's body).
 const betaSpawnAngle=BETA_MODE?Math.random()*Math.PI*2:0;
@@ -291,8 +293,8 @@ const goToRanger=()=>{
   const startX=RANGER_SPAWN.x+betaSpawnX,startZ=RANGER_SPAWN.z+betaSpawnZ;
   camera.position.set(startX,cameraGround(startX,startZ)+EYE_HEIGHT,startZ);
   camera.rotation.set(0,0,0);
-  info.textContent="Former village location · cleared photographic field";
-  status("Former village cleared. Photographic terrain and the cabin are the only landscape features.");
+  info.textContent="North Ranger Station · 350m north of Hearthside";
+  status("North Ranger Station · real CC0 log walls, pine door, and tin roof.");
 };
 document.getElementById("village")?.addEventListener("click",goToRanger);
 let joyX=0,joyY=0,joyPointer=null;
@@ -384,8 +386,9 @@ const collision=(x,z)=>{
   if(closeX>8.36&&closeX<9.35&&closeZ<7.15)return true;
   if(z>6.36&&z<7.30&&closeX<9.1&&closeX>1.24)return true;
   if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
-  // No old village fires, trees, rivers or buildings exist in the clean-slate
-  // terrain. Only physical Hearthside cabin walls and future tested assets block.
+  // The rebuilt northern Ranger Station has an actual solid wall perimeter.
+  // Hearthside Cabin, its people and remaining photographic landscape stay intact.
+  if(rangerWallCollision(x,z))return true;
   // Installed PBR grove trunks remain solid even when the distant landscape
   // tile has been replaced for a roaming player.
   for(const t of villageGrove.collidableTrees){
