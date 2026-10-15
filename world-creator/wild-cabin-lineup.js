@@ -1,7 +1,8 @@
 /**
- * The Wild: six licensed textured 3D buildings (four CC0, two CC BY).
- * Models are served from our own WVLRP assets/cabins after CI verifies GLB
- * geometry. Never render empty building placeholders; preserved cabins and NPCs
+ * The Wild: eight licensed textured 3D comparison candidates.
+ * Public CC0/CC BY files may be served from WVLRP after verification.
+ * CGTrader Royalty-Free models are PRIVATE IMPORT ONLY: never redistribute
+ * source GLB files or textures as public downloadable website assets. Never render empty building placeholders; preserved cabins and NPCs
  * are not modified. All displayed geometry comes from licensed source GLBs.
  */
 export const CABIN_CANDIDATES=Object.freeze([
@@ -25,10 +26,19 @@ export const CABIN_CANDIDATES=Object.freeze([
    author:"donnichols",license:"CC BY 4.0",asset:"sketchfab-weathered-log-cabin.glb",requiresLogin:true},
   {id:"sketchfab-forest-cabin",name:"Forest Cabin",
    source:"https://sketchfab.com/3d-models/forest-cabin-game-ready-3d-environment-asset-6549da49369145cf852b2d4e7554b176",
-   author:"Sampreeth Yadav",license:"CC BY 4.0",asset:"sketchfab-forest-cabin.glb",requiresLogin:true}
+   author:"Sampreeth Yadav",license:"CC BY 4.0",asset:"sketchfab-forest-cabin.glb",requiresLogin:true},
+  // Licensed Royalty Free (No AI), NOT public-domain/open models.
+  // CGTrader requires protected incorporation in released software. Only
+  // private local import here. An optimized GLB must be provided by its licensee.
+  {id:"cgtrader-wood-cabin-pack",name:"Wood Cabin (CGTrader pack)",
+   source:"https://www.cgtrader.com/free-3d-models/exterior/house/medieval-house-and-wood-cabin-pack",
+   author:"Jfcl",license:"Royalty Free (No AI)",asset:"cgtrader-wood-cabin.glb",privateImportOnly:true},
+  {id:"cgtrader-forest-cabin-porch",name:"Forest Cabin with Porch",
+   source:"https://www.cgtrader.com/free-3d-models/exterior/house/forest-cabin-with-porch",
+   author:"Jfcl",license:"Royalty Free (No AI)",asset:"cgtrader-forest-cabin-porch.glb",privateImportOnly:true}
 ].map(o=>Object.freeze(o)));
 export const CABIN_TEST_SLOTS=Object.freeze(CABIN_CANDIDATES.map((o,i)=>
-  Object.freeze({...o,x:(i-1.5)*27,z:314})));
+  Object.freeze({...o,x:i<6?(i-1.5)*27:(i-6.5)*27,z:i<6?314:350})));
 const storeName="wvlrp-four-cabins";
 function openDb(){
   return new Promise((resolve,reject)=>{
@@ -117,27 +127,27 @@ function meshLimits(meshes){
   return {min,max};
 }
 export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
-  const root=new B.TransformNode("six real cabin tests - only loaded source files",scene);
+  const root=new B.TransformNode("eight real cabin tests - only loaded source files",scene);
   const assigned=new Map(),labels=[],rows=[];
   let visible=false,solo=-1;
   root.setEnabled(false);
   const panel=document.createElement("section");
-  panel.id="fourCabinPanel";panel.hidden=true;panel.setAttribute("aria-label","Six cabin comparisons");
+  panel.id="fourCabinPanel";panel.hidden=true;panel.setAttribute("aria-label","Eight cabin comparisons");
   panel.style.cssText="position:fixed;z-index:22;top:100px;right:8px;width:min(330px,calc(100vw - 16px));max-height:calc(100dvh - 126px);overflow:auto;background:#122e24f5;border:1px solid #bdbe9b;border-radius:12px;color:#fff8df;font:12px/1.4 system-ui;padding:12px;box-shadow:0 8px 30px #0009;touch-action:pan-y";
   const header=document.createElement("div");
   header.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px";
-  header.innerHTML='<strong style="font-size:16px">Compare six cabins</strong>';
+  header.innerHTML='<strong style="font-size:16px">Compare eight cabins</strong>';
   const close=document.createElement("button");close.type="button";close.textContent="✕";close.onclick=()=>panel.hidden=true;
   header.append(close);panel.append(header);
   const intro=document.createElement("p");
-  intro.textContent="The original four CC0 cabins load from WVLRP. Your two selected Sketchfab cabins are CC BY models. To see their actual 3D geometry here, sign in at Sketchfab, download each in glTF ZIP format, then choose its ZIP below. Imported models are saved on this device; no fake cabin placeholders are shown.";
+  intro.textContent="Four CC0 models load from WVLRP. Sketchfab models (5–6) are CC BY and can be imported as downloaded glTF ZIPs. CGTrader models (7–8) are Royalty Free (No AI) and must be imported privately as optimized GLB files, NOT served publicly as stand-alone model downloads. Large original downloads (831MB–1.09GB) are not phone-ready. No fake placeholders.";
   panel.append(intro);
   const allButton=document.createElement("button");allButton.type="button";allButton.textContent="Show all loaded cabins";
   allButton.onclick=()=>{solo=-1;syncVisibility();onStatus("Showing all imported cabin models.");};
   panel.append(allButton);
   const foot=document.createElement("p");
   foot.style.cssText="font-size:11px;opacity:.78";
-  foot.textContent="Original model sources and creators are linked above. Four CC0 cabins and two Sketchfab CC BY cabins (attribution required if published). Missing 3D geometry leaves a slot empty; never fake a building with a sign or picture.";
+  foot.textContent="Original sources and author/license info appear above. CGTrader Royalty Free (No AI) models may not be redistributed as stand-alone GLBs. This device alone keeps any private imports. Missing geometry leaves the slot empty—never fake a cabin with a sign or picture.";
   function syncVisibility(){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
       const m=assigned.get(i);
@@ -166,17 +176,23 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     const heading=document.createElement("div");
     heading.innerHTML='<strong>'+String(i+1)+'. '+c.name+'</strong> · '+c.author;
     row.append(heading);
-    const status=document.createElement("div");status.textContent=c.requiresLogin?"Needs Sketchfab glTF ZIP import":"Awaiting verified server-hosted 3D model";status.style.cssText="color:#eddda5;margin:5px 0";
+    const status=document.createElement("div");status.textContent=c.privateImportOnly?"PRIVATE: import optimized model under 96MB (not yet loaded)":c.requiresLogin?"Needs Sketchfab glTF ZIP import":"Awaiting verified server-hosted 3D model";status.style.cssText="color:#eddda5;margin:5px 0";
     row.append(status);
     const open=document.createElement("a");
     open.href=c.source;open.target="_blank";open.rel="noopener noreferrer";
-    open.textContent=c.requiresLogin?"Get glTF ZIP on Sketchfab ↗":"View model provenance ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
+    open.textContent=c.privateImportOnly?"Get source model on CGTrader ↗":c.requiresLogin?"Get glTF ZIP on Sketchfab ↗":"View model provenance ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
     row.append(open);
     if(c.requiresLogin){
       const steps=document.createElement("p");
       steps.textContent="Sign in on Sketchfab → Download 3D Model → glTF → select the ZIP below. Real 3D model only, no placeholder.";
       steps.style.cssText="margin:5px 0;color:#f0e4b9;font-size:11px";
       row.append(steps);
+    }
+    if(c.privateImportOnly){
+      const note=document.createElement("p");
+      note.textContent="CGTrader free download → extract the Wood Cabin (for #7) or Porch Cabin (for #8) → optimize textures to 2K and export a single GLB under 96MB → privately import here. Do not post the original licensed model online.";
+      note.style.cssText="margin:5px 0;color:#f0e4b9;font-size:11px";
+      row.append(note);
     }
     const pick=document.createElement("input");pick.type="file";pick.accept=".glb,.zip,model/gltf-binary,application/zip";
     pick.setAttribute("aria-label","Import downloaded model "+(i+1));
@@ -199,8 +215,12 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   async function load(i,file,persist=true,remoteUrl=null){
     const slot=CABIN_TEST_SLOTS[i],line=rows[i];
     const label=file?.name||slot.asset;
+    if(slot.privateImportOnly&&file&&file.size>96*1024*1024){
+      const notice="This source model is too big for the phone. Reduce textures and export an optimized GLB under 96MB first.";
+      line.status.textContent=notice;onStatus(notice);return;
+    }
     line.status.textContent="Loading actual 3D mesh: "+label+"…";
-    onStatus("Loading licensed cabin "+(i+1)+" of 6…");
+    onStatus("Loading licensed cabin "+(i+1)+" of 8…");
     let sceneFile=null,node=null;
     try{
       sceneFile=remoteUrl?{url:remoteUrl,ext:".glb",urls:[]}:await fileAsScene(file);
@@ -225,7 +245,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       assigned.set(i,{node,urls:sceneFile.urls,halfWidth:sizeX*unitScale/2,halfDepth:sizeZ*unitScale/2});
       syncVisibility();
       line.status.textContent="✓ Actual 3D building visible: "+label+" · "+Math.round(unitScale*100)/100+"× scale";
-      onStatus(assigned.size+" of 6 real cabin models loaded at the test field.");
+      onStatus(assigned.size+" of 8 real cabin models loaded at the test field.");
       if(persist&&file)try{await rememberModel(slot.id,file);}catch(err){
         line.status.textContent+=" (not saved on device: storage full)";
       }
@@ -244,6 +264,12 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
       if(assigned.has(i))continue;
       const slot=CABIN_TEST_SLOTS[i];
+      if(slot.privateImportOnly){
+        // Royalty Free assets may not be published as raw downloadable GLBs.
+        // Users licensed to use them may import locally in their own browser.
+        rows[i].status.textContent="Private import only · no public download permitted";
+        continue;
+      }
       const url="./assets/cabins/"+slot.asset+"?v=20261015-real-buildings-v1";
       try{
         const check=await fetch(url,{method:"HEAD"});
