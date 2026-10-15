@@ -76,6 +76,12 @@ jobs:
               raise RuntimeError("Need at least 3 independent real CC0 source meshes, not one tree cloned into a whole forest")
           (base/"source-manifest.json").write_text(json.dumps(manifest,indent=2))
           PY
+      - name: Repair autumn-brown leaf colors (preserve bark and PBR detail)
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/wild-leaf-colors
+          /tmp/wild-leaf-colors/bin/pip install --quiet pillow
+          /tmp/wild-leaf-colors/bin/python world-creator/scripts/recolor_village_foliage.py
       - name: Optimize real models for phone rendering
         run: |
           set -euo pipefail
