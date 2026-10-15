@@ -17,13 +17,13 @@ DATA = Path(__file__).resolve().parents[1] / "assets" / "riley-vulva1-source.jso
 # The named offsets are used BOTH for geometry and for the viewer's table.
 LANDMARKS = [
     dict(id="C0", name="Central pelvic origin", x=0.000, z=0.000, relief=0.000),
-    dict(id="P1", name="Pubic mound",          x=0.000, z=0.024, relief=0.003),
-    dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.006),
-    dict(id="L1", name="Left inner fold",      x=-0.010, z=-0.009, relief=0.017),
-    dict(id="R1", name="Right inner fold",     x= 0.010, z=-0.009, relief=0.017),
-    dict(id="L2", name="Left outer fold",      x=-0.022, z=-0.006, relief=0.025),
-    dict(id="R2", name="Right outer fold",     x= 0.022, z=-0.006, relief=0.025),
-    dict(id="B1", name="Lower central blend", x=0.000, z=-0.020, relief=0.003),
+    dict(id="P1", name="Pubic mound",          x=0.000, z=0.022, relief=0.002),
+    dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.003),
+    dict(id="L1", name="Left inner fold",      x=-0.009, z=-0.009, relief=0.010),
+    dict(id="R1", name="Right inner fold",     x= 0.009, z=-0.009, relief=0.010),
+    dict(id="L2", name="Left outer fold",      x=-0.019, z=-0.006, relief=0.014),
+    dict(id="R2", name="Right outer fold",     x= 0.019, z=-0.006, relief=0.014),
+    dict(id="B1", name="Lower central blend", x=0.000, z=-0.020, relief=0.002),
 ]
 
 def make_c0_anatomy(root, body, rig):
@@ -153,7 +153,8 @@ def make_c0_anatomy(root, body, rig):
     # The 3D nearest point is used only for depth and joint weights, never for
     # X/Z coordinates, because snapping X/Z caused the screenshot's spikes.
     low=min(v[2] for v in raw_verts)
-    scale=.076
+    # ~16% smaller projected footprint than the ballooned previous build.
+    scale=.064
     positions=[v.co.copy() for v in body.data.vertices]
     # The old weight filter excluded ALL polygons below z=.777m
     # even though C0 is z=.744m, so the nearest-point snap lifted
@@ -293,9 +294,10 @@ def make_c0_anatomy(root, body, rig):
         # Two independent nested folds on each side, separated by a soft
         # depression. Without these valley terms the Gaussian peaks blended
         # into the single blocky lobe reported in the viewer.
-        valley=.009*gauss(abs(dx),.016,.0042)*gauss(dz,-.008,.024)
-        center_groove=.006*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
-        relief=max(0.,min(.034,.002+inner+outer+top+donor-valley-center_groove))*fade
+        valley=.005*gauss(abs(dx),.015,.0042)*gauss(dz,-.008,.024)
+        center_groove=.004*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
+        # Avoid the former 34 mm bulge: small nested ridges, no inflated dome.
+        relief=max(0.,min(.018,.001+inner+outer+top+donor-valley-center_groove))*fade
         center_relief=max(center_relief,relief)
         # The earlier full conformal snap recessed the center into the groin
         # crease. Preserve the conformal BODY contact and all fitted rig
@@ -304,14 +306,17 @@ def make_c0_anatomy(root, body, rig):
         # Both corrections decay completely at the donor's attachment rim,
         # which must stay flush during bent-leg animation.
         interior_fade=rim_fade*lower_fade*upper_fade
-        anterior_lift=(.014-.003*roll)*interior_fade
-        normal_lift=.003*interior_fade
+        # The old 14 mm blanket lift PLUS the old 34 mm ridge built a bulb.
+        # Keep only a few millimetres of clearance and let the real skin
+        # surface dictate the attachment silhouette.
+        anterior_lift=(.004-.001*roll)*interior_fade
+        normal_lift=.001*interior_fade
         max_depth_correction=max(max_depth_correction,anterior_lift)
         # Preserve the *ordered* regular X/Z parameterization. Projecting
         # all three dimensions to unrelated closest vertices had folded
         # quads back over one another, creating the visible angular shards.
         # Offset anterior (-Y) with a smooth taper at the true mesh rim.
-        v.co=Vector((x,nearest.y-(relief+normal_lift)*.73-anterior_lift-.0004,z))
+        v.co=Vector((x,nearest.y-(relief+normal_lift)*.70-anterior_lift-.0004,z))
         if i%cols==cols//2 and (i//cols)%5==0:
             sampled_midline.append((i//cols,round(x,4),round(z,4),tuple(round(t,4) for t in nearest),round(distance,4)))
         if edge_dist[i]<.0005:
@@ -350,9 +355,9 @@ def make_c0_anatomy(root, body, rig):
           "max_anterior_lift_mm",round(max_depth_correction*1000,2),
           "body_support_mm",round(max_support_distance*1000,2),
           "upper_sample",upper_count,"upper_supported",supported_upper)
-    if center_relief<.012:
+    if center_relief<.007:
         raise RuntimeError("C0: contour flattened during skin conformity")
-    if max_depth_correction<.008:
+    if max_depth_correction<.002:
         raise RuntimeError("C0: inward-depth correction missed central donor profile")
     if upper_count<50 or supported_upper<upper_count*.40:
         raise RuntimeError("C0: upper attachment cannot be verified on torso")
