@@ -49,7 +49,7 @@ test("Joystick steering turns the camera toward the movement vector, not sideway
   assert.match(page,/Left thumb: steer & move/);
 });
 test("Cabin-only rebuild retains cabin, characters and streaming but no scenery",()=>{
-  assert.match(walk,/communityFirePits:0/);
+  assert.match(walk,/communityFirePits:habitat\?\.communityFirePits\?\?0/);
   assert.match(walk,/const villageMountains=\{meshes:\[\]\}/);
   assert.match(walk,/renderWildLandscape\(B,scene,tracked/);
   assert.match(walk,/buildHearthsideCabin\(/);
