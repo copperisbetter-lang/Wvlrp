@@ -26,6 +26,8 @@ function mount(){
  '<label>Speed <select id="wv-speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1½×</option><option value="2">2×</option></select></label>'+
  '<label><input type="checkbox" id="wv-loop" checked> Loop</label>'+
  '<label class="wv-scrub">Frame <input id="wv-frame" type="range" min="0" max="100" step="1" value="0"></label>'+
+ '<button data-wv-action="remove-all" type="button" style="background:#77532d;border-color:#e2be83;font-weight:700">Remove All (inspect fit)</button>'+
+ '<button data-wv-action="restore-clothes" type="button">Restore clothing</button>'+
  '<button data-wv-action="clothes">Clothing & fitting options</button>'+
  '<button data-wv-action="reload">Reload model</button></div>'+
  '<p id="wv-message" role="status" aria-live="polite">Waiting for model initialization…</p></details>';
@@ -53,6 +55,72 @@ function mount(){
   $('#wv-motions').append(b);pbuttons[name]=b;
  }
  let chosen='',ready=false,known='',lastNote='',lastScene=null;
+ const fittingSnapshots=[];
+ const clothingPattern=/dress|sundress|pinafore|apron|skirt|blouse|sweater|trouser|pants|shorts|shirt|sleeve|outfit|wardrobe|garment|fabric|cloth|calico|denim|corset|jacket|coat|vest|boot|shoe|sock|uniform|cloak|robe|belt|hat|glove/i;
+ const bodyPattern=/body|base.?mesh|skin|human|head|face|eye|mouth|nose|anatom|vulva|pelvis|breast|hair|lash|brow|rig|bone|skeleton|ground|floor|light|camera|mannequin/i;
+ const isChild=/carrie|young-explorer|jenny|laura|mary|child/i.test(location.pathname);
+ const clothingName=(name)=>clothingPattern.test(name||'') && !bodyPattern.test(name||'');
+ const garmentMeshes=()=>{
+   const scene=sc(); if(!scene)return [];
+   return (scene.meshes||[]).filter(mesh=>{
+     if(!(mesh.getTotalVertices?.()>0)||mesh.isDisposed?.())return false;
+     const name=mesh.name||'', materialName=mesh.material?.name||'';
+     const sub=(mesh.material?.subMaterials||[]).map(x=>x?.name||'').join(' ');
+     return clothingName(name)||clothingName(materialName)||clothingName(sub);
+   });
+ };
+ const garmentMaterials=()=>{
+   if(!mv?.loaded||!mv.model?.materials)return [];
+   return mv.model.materials.filter(mat=>clothingName(mat.name));
+ };
+ // For child character inspections, do not reveal a bare anatomical mesh:
+ // retain the fitted base outfit and allow only optional overlays to disappear.
+ const isSafeOverlay=(name)=>/apron|overlay|outer|jacket|coat|cloak|vest|hat/i.test(name||'');
+ const removeAllClothing=()=>{
+   if(fittingSnapshots.length){message.textContent='Clothing already hidden. Use Restore clothing to put it back.';return;}
+   let count=0;
+   if(mv){
+     for(const mat of garmentMaterials()){
+       if(isChild&&!isSafeOverlay(mat.name))continue;
+       const pbr=mat.pbrMetallicRoughness;
+       if(!pbr?.setBaseColorFactor)continue;
+       const color=[...(pbr.baseColorFactor||[1,1,1,1])];
+       fittingSnapshots.push({kind:'mv',material:mat,rgba:color,alphaMode:mat.alphaMode});
+       mat.setAlphaMode('BLEND');
+       pbr.setBaseColorFactor([color[0],color[1],color[2],0]);
+       count++;
+     }
+   }else{
+     for(const mesh of garmentMeshes()){
+       if(isChild&&!isSafeOverlay((mesh.name||'')+' '+(mesh.material?.name||'')))continue;
+       fittingSnapshots.push({kind:'babylon',mesh,enabled:mesh.isEnabled?.()??true,visible:mesh.isVisible});
+       mesh.setEnabled?.(false);
+       count++;
+     }
+   }
+   message.textContent=count?
+    count+' separate clothing layer'+(count===1?'':'s')+' hidden for model-fit inspection. The original model is unchanged; Restore clothing brings everything back.':
+    (isChild?'No optional outer layers could be safely removed; base clothing remains on for this child character.':
+     'This GLB has no separately identified clothing layers. Garments fused into the body mesh must be separated in the 3D source before they can be hidden.');
+   const btn=$('button[data-wv-action="remove-all"]');btn.setAttribute('aria-pressed',String(count>0));
+ };
+ const restoreClothing=()=>{
+   let n=0;
+   for(const item of fittingSnapshots.splice(0)){
+     try{
+       if(item.kind==='mv'){
+         item.material.pbrMetallicRoughness.setBaseColorFactor(item.rgba);
+         if(item.alphaMode)item.material.setAlphaMode(item.alphaMode);
+       }else if(!item.mesh.isDisposed?.()){
+         item.mesh.setEnabled?.(item.enabled);
+         item.mesh.isVisible=item.visible;
+       }
+       n++;
+     }catch(e){console.warn('Unable to restore clothing item',e);}
+   }
+   $('button[data-wv-action="remove-all"]').setAttribute('aria-pressed','false');
+   message.textContent=n?n+' clothing layer'+(n===1?'':'s')+' restored.':'No hidden clothing layers to restore.';
+ };
  const B=()=>window.BABYLON;
  const sc=()=>B()?.EngineStore?.LastCreatedScene||null;
  const cam=()=>sc()?.activeCamera;
@@ -172,6 +240,8 @@ function mount(){
    if(a==='pause'){stop();message.textContent='Motion paused.';}
    if(a==='hold')scrub(100);
    if(a==='stand')runPose('Stand');
+   if(a==='remove-all')removeAllClothing();
+   if(a==='restore-clothes')restoreClothing();
    if(a==='clothes'){
      const element=[...document.querySelectorAll('#wardrobe,#outfits,#outfit-select,#dress,#dress-size-select,.wardrobe,#wardrobeStatus')]
        .find(el=>!section.contains(el));
