@@ -57,8 +57,8 @@ test("Installed licensed binary source assets cover every one of the 59 peripher
  assert.ok(sources.length>=5,"At least five distinct source tree models required");
  for(const source of sources){
    assert.equal(source.license,"CC0");
-   assert.match(source.source,/^https:\\/\\/polyhaven\\.com\\/a\\//);
-   const relative=source.url.replace(/^\\.\\//,"../");
+   assert.ok(source.source.startsWith("https://polyhaven.com/a/"));
+   const relative=source.url.startsWith("./")?"../"+source.url.slice(2):source.url;
    const info=statSync(new URL(relative,import.meta.url));
    assert.ok(info.size>100000,"No missing/empty source GLB: "+source.id);
    assert.equal(info.size,source.bytes,"Manifest size must match real model bytes");
