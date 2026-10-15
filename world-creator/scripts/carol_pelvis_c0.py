@@ -18,10 +18,10 @@ LANDMARKS = [
     dict(id="C0", name="Central pelvic origin", x=0.000, z=0.000, relief=0.000),
     dict(id="P1", name="Pubic mound",          x=0.000, z=0.024, relief=0.003),
     dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.006),
-    dict(id="L1", name="Left inner fold",      x=-0.010, z=-0.009, relief=0.011),
-    dict(id="R1", name="Right inner fold",     x= 0.010, z=-0.009, relief=0.011),
-    dict(id="L2", name="Left outer fold",      x=-0.022, z=-0.006, relief=0.017),
-    dict(id="R2", name="Right outer fold",     x= 0.022, z=-0.006, relief=0.017),
+    dict(id="L1", name="Left inner fold",      x=-0.010, z=-0.009, relief=0.017),
+    dict(id="R1", name="Right inner fold",     x= 0.010, z=-0.009, relief=0.017),
+    dict(id="L2", name="Left outer fold",      x=-0.022, z=-0.006, relief=0.025),
+    dict(id="R2", name="Right outer fold",     x= 0.022, z=-0.006, relief=0.025),
     dict(id="B1", name="Lower central blend", x=0.000, z=-0.020, relief=0.003),
 ]
 
@@ -143,10 +143,10 @@ def make_c0_anatomy(root, body, rig):
     # hanging in FRONT of the leg fork. Hinge only that lower ~3.6 cm back
     # toward the body (+Y), while bringing the tip UP (+Z). Keeping the
     # displacement monotone avoids folding mesh rows back through themselves.
-    hinge_start_z=-.006      # start bending 6 mm below the C0 landmark
-    hinge_end_z=-.042        # former low edge of the donor patch
-    hinge_lift_m=.020        # 20 mm upward at its low edge
-    hinge_tuck_m=.027        # 27 mm inward, behind the frontal surface
+    hinge_start_z=-.004      # begin bottom lift 4 mm below C0
+    hinge_end_z=-.043        # original lower edge zone
+    hinge_lift_m=.025        # lift the lower rear 25 mm toward the body
+    hinge_tuck_m=.037        # tuck the lower rear 37 mm toward the skin
     def clamp01(t):
         return max(0.,min(1.,t))
     def smoothstep(t):
@@ -196,9 +196,9 @@ def make_c0_anatomy(root, body, rig):
         dx,dz=x-cx,z-c0z
         # The source licensed mesh provides natural surface topology.
         # Landmark table provides symmetric, measured displacement targets.
-        inner=sum(f["relief"]*gauss(dx,f["x"],.007)*gauss(dz,f["z"],.025)
+        inner=sum(f["relief"]*gauss(dx,f["x"],.009)*gauss(dz,f["z"],.027)
                   for f in LANDMARKS if f["id"] in ("L1","R1"))
-        outer=sum(f["relief"]*gauss(dx,f["x"],.012)*gauss(dz,f["z"],.027)
+        outer=sum(f["relief"]*gauss(dx,f["x"],.014)*gauss(dz,f["z"],.029)
                   for f in LANDMARKS if f["id"] in ("L2","R2"))
         top=sum(f["relief"]*gauss(dx,f["x"],.012)*gauss(dz,f["z"],.018)
                 for f in LANDMARKS if f["id"] in ("P1","H1","B1"))
@@ -210,7 +210,7 @@ def make_c0_anatomy(root, body, rig):
         upper = max(0.,min(1.,(.037-dz)/.013))
         fade=lateral*lateral*(3-2*lateral) * bottom*bottom*(3-2*bottom) * upper*upper*(3-2*upper)
         donor=max(-.004,min(.004,(src_y+.52)*.010))
-        projection=min(.034,max(0., .003+inner+outer+top+donor))
+        projection=min(.051,max(0., .003+inner+outer+top+donor))
         # +Y is backward/inward for the front-facing (-Y) MPFB body.
         # This pulls the inferior end between the legs; don't create a new
         # outward hump while lifting the bottom. Rig remains 100% Hips.
@@ -219,11 +219,11 @@ def make_c0_anatomy(root, body, rig):
     # Require a real pelvic-skin attachment in the UPPER portion; the lower
     # portion is intentionally suspended at the leg junction, not on thighs.
     offsets=[v.co.z-c0z for v in mesh.vertices]
-    # A 20 mm hinge lift should shorten the old 42 mm hanging edge to
-    # ~22 mm below C0, without shifting C0 itself or the anchored top.
+    # A 25 mm rear hinge lift draws the former dangling inferior edge upward,
+    # while a deeper inward tuck seats it between the upper legs.
     if not -.030 < min(offsets) < -.012 or max(offsets)>.042:
         raise RuntimeError("C0: failed inferior hinge placement check")
-    if not .015 <= hinge_lift_m <= .024 or hinge_tuck_m < .020:
+    if not .015 <= hinge_lift_m <= .028 or not .020 <= hinge_tuck_m <= .045:
         raise RuntimeError("C0: inferior hinge displacement out of range")
     if upper_count < 50 or supported_upper < upper_count*.60:
         raise RuntimeError("C0: insufficient upper pelvic-skin support; refusing detached patch")
