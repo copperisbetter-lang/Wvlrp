@@ -8,13 +8,11 @@ const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
 const walk=read("../walk.js"),renderer=read("../wild-landscape-renderer.js");
 const installer=read("../../.github/workflows/install-wild-village-grove-trees.yml");
 
-test("The actual first-person walk scene instantiates real 3D PBR grove",()=>{
- assert.match(walk,/installVillageGrove\(B,scene,\{seed,mobile,lite:LITE_MODE\}\)/);
- assert.match(walk,/liteMode:LITE_MODE/);
- assert.match(walk,/villageGrove\.collidableTrees/);
- assert.match(walk,/villageGrove\.setNear\(isNearVillageGrove/);
+test("PBR grove library is preserved but not instantiated in cabin-only ground test",()=>{
+ assert.doesNotMatch(walk,/installVillageGrove\(B,scene,\{/);
+ assert.match(walk,/const villageGrove=\{status:"rebuild-cleared"/);
  assert.match(walk,/villageGroveTreesPlanted:villageGrove\.planted/);
- assert.match(read("../walk.html"),/village-10acre-prototype-clear-20261014-v1/);
+ assert.match(read("../walk.html"),/photographic-cleared-wild-20261015-v3/);
 });
 test("Old generic/procedural tree models are disabled within the three-acre grove",()=>{
  assert.match(renderer,/import \{VILLAGE_SECTION\} from/);
