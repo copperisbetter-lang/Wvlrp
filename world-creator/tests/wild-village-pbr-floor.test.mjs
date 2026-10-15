@@ -48,7 +48,8 @@ test("Real asset manifest gates geometry, no generic tree fallback",()=>{
  assert.match(module,/instantiateModelsToScene/);
  assert.match(module,/awaiting-real-assets/);
  assert.doesNotMatch(module,/CreateSphere|CreateCylinder|renderHeroUnderstory/);
- assert.match(walk,/installVillageForestFloor\(B,scene,\{seed,mobile,startAfter:villageGrove\.ready\}\)/);
+ assert.match(walk,/installVillageForestFloor\(B,scene,\{seed,mobile,lite:LITE_MODE,startAfter:villageGrove\.ready\}\)/);
+ assert.match(module,/lite\?fullPlan\.filter/);
  assert.match(walk,/villageFloor\.setNear\(isNearVillageGrove/);
  assert.match(walk,/villageFloorDetailsPlanted/);
 });
