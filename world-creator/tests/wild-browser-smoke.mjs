@@ -33,6 +33,10 @@ try{
   assert.deepEqual(state.photographicTerrainSource,
     ["forest_leaves_02","forest_ground_05","forest_ground_04"],
     "The seamless photo atlas blends the three verified CC0 ground materials");
+  assert.equal(state.photographicNearDetailMetres,2,
+    "Nearby soil and leaf photograph must have sharp 2 m microdetail");
+  assert.equal(state.photographicFarDetailDisabled,true,
+    "Far ground must avoid normal-map and detail alias bands");
   assert.equal(state.nativeTrees,0);
   assert.equal(state.distantTrees,0);
   assert.equal(state.understory,0);
