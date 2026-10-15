@@ -8,10 +8,9 @@
  */
 import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
-import {createForestSurfaceTextures} from "./wild-investor-graphics.js";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
-import {installVillageRealTerrain} from "./wild-village-real-terrain.js";
+import {installVillageRealTerrain} from "./wild-village-real-terrain.js?v=photo-ground-all-tiles-20261015-v2";
 
 function tileIntersectsRoute(route,cx,cz,margin){
   return route.points.some(p=>Math.abs(p[0]-cx)<margin&&Math.abs(p[1]-cz)<margin);
@@ -72,12 +71,11 @@ function reservedPad(B,scene,track,p,{cx,cy,seed,base,material}){
 }
 export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,lite=false}){
   const base=cabinGrade(0,0,seed);
-  const atlas=createForestSurfaceTextures(B,scene,track,seed);
   const soil=track(new B.StandardMaterial("New playable summer ground",scene));
-  soil.diffuseTexture=atlas.duff;soil.diffuseColor=new B.Color3(.90,.98,.86);
+  soil.diffuseColor=new B.Color3(.48,.45,.32); // Temporary only until verified CC0 JPEG finishes loading.
   soil.specularColor=new B.Color3(.013,.019,.012);soil.useVertexColors=true;
   const distant=track(new B.StandardMaterial("distant Appalachian meadow ridges",scene));
-  distant.diffuseColor=new B.Color3(.49,.66,.43);
+  distant.diffuseColor=new B.Color3(.48,.45,.32); // Same photographed cover is applied when loaded.
   distant.specularColor=new B.Color3(.012,.012,.012);distant.useVertexColors=true;
 
   function surface(size,subdivisions,offset,mat){
@@ -95,7 +93,8 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
       const tint=.88+.16*n;
       colors.push(.84*tint,.97*tint,.82*tint,1);
       const t=k/3*2;
-      uvs[t]=x/6;uvs[t+1]=z/6;
+      // World-locked photographic UVs: 4 m repeats, no distortion as the player streams.
+      uvs[t]=x/4;uvs[t+1]=z/4;
     }
     const normals=[];B.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
     ground.updateVerticesData(B.VertexBuffer.PositionKind,positions,true);
@@ -108,33 +107,21 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
     return ground;
   }
   // Far horizon is lower-detail; local collidable ground stays fine mesh.
-  surface(1400,lite?76:mobile?98:128,.30,distant);
+  const farGround=surface(1400,lite?76:mobile?98:128,.30,distant);
   const subdivisions=lite?64:mobile?96:132;
   const ground=surface(196,subdivisions,0,soil);
   const surfaceHeight=makeGroundHeightSampler(
     ground.getVerticesData(B.VertexBuffer.PositionKind),
     ground.getIndices(),196,subdivisions,cx,cy);
 
-  // Reserved pads and paths are textures/visual geometry, not new buildings.
-  const pathMat=track(new B.StandardMaterial("Light worn dirt footpath",scene));
-  pathMat.diffuseTexture=atlas.duff;
-  pathMat.diffuseColor=new B.Color3(.89,.78,.60);
-  pathMat.specularColor=new B.Color3(.013,.013,.011);
-  const padMat=track(new B.StandardMaterial("Level cleared build-pad earth",scene));
-  padMat.diffuseTexture=atlas.duff;
-  padMat.diffuseColor=new B.Color3(.84,.87,.68);
-  padMat.specularColor=new B.Color3(.009,.012,.009);
-  const paths=makeFootpaths(B,scene,track,{cx,cy,seed,base,material:pathMat});
-  let pads=0;
-  for(const p of REBUILD_CLEARINGS){
-    // Hearthside ground remains but its building and residents never removed.
-    if(p.id==="hearthside")continue;
-    if(reservedPad(B,scene,track,p,{cx,cy,seed,base,material:padMat}))pads++;
-  }
-  // The licensed scanned ground pass is optional; its loader does not alter
-  // walkable geometry or invent a result if actual source JPEGs are absent.
+  // Clean photographic test: no legacy paths, pads, buildings, trees, rocks,
+  // giant mountain walls, or decorative mesh passes. The cabin and its people
+  // are separate permanent scene objects and remain untouched by tile loads.
+  // Terrain elevation and the ~84 m streaming trigger remain active.
+  const paths=0,pads=0;
   const villageRealTerrain=installVillageRealTerrain(B,scene,track,
-    {cx,cy,seed,mobile,lite,ground});
+    {cx,cy,seed,mobile,lite,ground,farGround});
+
   return {
     surfaceHeight,collidableTrees:[],nearTrees:0,distantTrees:0,
     addedTrees:0,addedEvergreens:0,elderTrees:0,species:0,
