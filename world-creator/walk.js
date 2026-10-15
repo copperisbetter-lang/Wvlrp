@@ -44,7 +44,7 @@ const betaParams=new URLSearchParams(window.location.search);
 // Manual ?lite=1 fallback plus automatic support for 1-2 GB phones.
 // Keep full landscape quality on modern Android phones and desktop.
 const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
-  (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=2));
+  (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const RANGER_SPAWN=Object.freeze({x:93,z:45,tileX:96,tileZ:96});
@@ -193,7 +193,7 @@ function addLandscape(x,z){
     tiles.push(item);
     return item;
   }
-  const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed,mobile});
+  const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed,mobile,lite:LITE_MODE});
   tileCx=x;tileCy=z;loadedTiles++;
   status(loadedTiles===1?"Explore Hearthside Cabin and the West Virginia mountains.":"The Wild continues beyond the cabin clearing.");
   return result;
@@ -279,7 +279,9 @@ async function loadAvatar(o){
 for(const o of cabinCrew)addNamePlate(o);
 const initial=[...cabinCrew.filter(o=>["riley","caitlyn"].includes(o.modelKey))].slice(0,2);
 if(initial.length<2)initial.push(...cabinCrew.filter(o=>!initial.includes(o)).slice(0,2-initial.length));
-for(const o of initial)loadAvatar(o);
+// On constrained phones, do not decode two 16MB cabin avatars while the
+// forest and village PBR trees are loading. Visitors can request the crew.
+if(!LITE_MODE)for(const o of initial)loadAvatar(o);
 crewButton.addEventListener("click",()=>{
   crewButton.disabled=true;crewButton.textContent="Crew requested";
   status("Loading every genuine 3D cabin avatar; this may strain phone memory.");
