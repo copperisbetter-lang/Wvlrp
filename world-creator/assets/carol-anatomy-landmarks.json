@@ -17,49 +17,49 @@
       "id": "P1",
       "name": "Pubic mound",
       "x": 0.0,
-      "z": 0.069,
-      "relief": 0.006
+      "z": 0.024,
+      "relief": 0.003
     },
     {
       "id": "H1",
       "name": "Upper central fold",
       "x": 0.0,
-      "z": 0.053,
-      "relief": 0.008
+      "z": 0.008,
+      "relief": 0.006
     },
     {
       "id": "L1",
       "name": "Left inner fold",
       "x": -0.01,
-      "z": 0.036,
+      "z": -0.009,
       "relief": 0.011
     },
     {
       "id": "R1",
       "name": "Right inner fold",
       "x": 0.01,
-      "z": 0.036,
+      "z": -0.009,
       "relief": 0.011
     },
     {
       "id": "L2",
       "name": "Left outer fold",
       "x": -0.022,
-      "z": 0.039,
+      "z": -0.006,
       "relief": 0.017
     },
     {
       "id": "R2",
       "name": "Right outer fold",
       "x": 0.022,
-      "z": 0.039,
+      "z": -0.006,
       "relief": 0.017
     },
     {
       "id": "B1",
       "name": "Lower central blend",
       "x": 0.0,
-      "z": 0.012,
+      "z": -0.033,
       "relief": 0.003
     }
   ],
