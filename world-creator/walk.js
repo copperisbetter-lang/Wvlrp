@@ -500,7 +500,7 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "");
+    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "") + (isNearVillageGrove(camera.position.x,camera.position.z,25) ? ` · GROVE: ${villageGrove.planted}/${villageGrove.requested} (${villageGrove.status})` : "");
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
