@@ -12,7 +12,7 @@ test("PBR grove library is preserved but not instantiated in cabin-only ground t
  assert.doesNotMatch(walk,/installVillageGrove\(B,scene,\{/);
  assert.match(walk,/const villageGrove=\{status:"rebuild-cleared"/);
  assert.match(walk,/villageGroveTreesPlanted:villageGrove\.planted/);
- assert.match(read("../walk.html"),/photographic-debanded-20261015-v4/);
+ assert.match(read("../walk.html"),/photographic-ground-sharp-20261015-v5/);
 });
 test("Old generic/procedural tree models are disabled within the three-acre grove",()=>{
  assert.match(renderer,/import \{VILLAGE_SECTION\} from/);
