@@ -27,7 +27,7 @@ test("Forest-floor models never block village gathering, entrances or paths",()=
    const clearance=item.kind==="fern"?3.3:item.kind==="rock"?4.8:7;
    assert.ok(pathDistance(item.x,item.z)>=clearance);
    for(const site of COMMUNITY_SITES){
-     assert.ok(siteDistance(item.x,item.z)>=clearance+1.4);
+     assert.ok(siteDistance(item.x,item.z,site)>=clearance+1.4);
    }
    assert.ok(item.spanMetres>0&&item.spanMetres<5);
    assert.ok(["fern_02","rock_moss_set_01","dead_tree_trunk","tree_stump_01"]
