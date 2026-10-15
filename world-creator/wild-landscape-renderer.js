@@ -11,6 +11,7 @@ import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=village-10acre-prototype-clear-20261014-v1";
 import {VILLAGE_DETAIL_ZONE,VILLAGE_SQUARE_TREES_ENABLED,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
 import {VILLAGE_SECTION} from "./wild-acre-regions.js";
+import {installVillageRealTerrain} from "./wild-village-real-terrain.js?v=polyhaven-village-20261015-v1";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -543,6 +544,10 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false,lite=
   terrain(1100,lite?64:mobile?104:128,.40);
   const localSubdivisions=lite?64:mobile?86:120;
   const localWalkingGround=terrain(196,localSubdivisions,0);
+  // Real scanned CC0 soil/leaf/moss surface duplicates only the finished
+  // village terrain triangles. The existing walking/collision mesh is intact.
+  const villageRealTerrain=installVillageRealTerrain(B,scene,track,
+    {cx,cy,seed,mobile,lite,ground:localWalkingGround});
   // The previous GroundMesh height cache was not guaranteed to match the
   // reshaped mountain mesh. Read its finished triangles directly instead.
   const walkSurface=makeGroundHeightSampler(
@@ -663,6 +668,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false,lite=
     collidableTrees:allTrees,species:new Set(allTrees.map(t=>t.species)).size,
     villageDetailDiameterMetres:VILLAGE_DETAIL_ZONE.diameterMetres,
     villageGroundDetails,villageEdgeTrees:villageEdgeTrees.length,
+    villageRealTerrain,
     understory:understory+heroPlants+villageGroundDetails,heroPlants,
      communityBuildings:community.buildings,communityPaths:community.paths,
      communityFirePits:community.firePits,
