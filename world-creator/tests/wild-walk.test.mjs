@@ -23,7 +23,7 @@ test("Walking uses thumb movement, touch-look, WASD and terrain-following eye he
   assert.match(walk,/renderWildLandscape\(B,scene,tracked/);
 });
 test("First-person cabin preserves real resident models with no blob replacement",()=>{
-  assert.match(walk,/resetToWildCabin\(world\)/);
+  assert.match(walk,/gatherCabinCrew\(world\)/);
   assert.match(walk,/buildHearthsideCabin\(/);
   assert.match(walk,/\.\/assets\/riley-rigged-v1\.glb/);
   assert.match(walk,/\.\/assets\/sav-realistic-shell\.glb/);
@@ -48,8 +48,9 @@ test("Joystick steering turns the camera toward the movement vector, not sideway
   assert.match(walk,/else moveReferenceHeading=null/);
   assert.match(page,/Left thumb: steer & move/);
 });
-test("One level native village plaza has a permanent fire and grounded porches",()=>{
-  assert.match(walk,/communityFirePits/);
-  assert.match(walk,/COMMUNITY_SITES,VILLAGE_CLEARING/);
-  assert.match(walk,/return ground\+\.78/);
+test("Cabin-only rebuild retains cabin, characters and streaming but no scenery",()=>{
+  assert.match(walk,/communityFirePits:0/);
+  assert.match(walk,/const villageMountains=\{meshes:\[\]\}/);
+  assert.match(walk,/renderWildLandscape\(B,scene,tracked/);
+  assert.match(walk,/buildHearthsideCabin\(/);
 });
