@@ -104,6 +104,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   const root=new B.TransformNode("four real cabin tests - only loaded source files",scene);
   const assigned=new Map(),labels=[],rows=[];
   let visible=false,solo=-1;
+  root.setEnabled(false);
   const panel=document.createElement("section");
   panel.id="fourCabinPanel";panel.hidden=true;panel.setAttribute("aria-label","Four cabin comparisons");
   panel.style.cssText="position:fixed;z-index:22;top:100px;right:8px;width:min(330px,calc(100vw - 16px));max-height:calc(100dvh - 126px);overflow:auto;background:#122e24f5;border:1px solid #bdbe9b;border-radius:12px;color:#fff8df;font:12px/1.4 system-ui;padding:12px;box-shadow:0 8px 30px #0009;touch-action:pan-y";
@@ -206,6 +207,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   }
   async function restore(){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
+      if(assigned.has(i))continue;
       try{const file=await storedModel(CABIN_TEST_SLOTS[i].id);
         if(file)await load(i,file,false);
       }catch(err){console.info("Cabin "+(i+1)+" not cached",err);}
