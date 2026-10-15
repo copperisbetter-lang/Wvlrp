@@ -1,142 +1,116 @@
 /**
- * The Wild — actual Poly Haven CC0 photographic terrain surface, village only.
+ * The Wild — photographic ground for every streamed walking tile.
  *
- * Adds diffuse + normal maps to a noncolliding overlay made from the SAME
- * triangle vertices as the walkable GroundMesh. No invented height map, no
- * ground plane floating over mountains, no changed footsteps or building grade.
+ * Uses the real locally committed CC0 Poly Haven JPEG diffuse/normal maps,
+ * not a procedural image or a wall of simulated vegetation. A single shared
+ * Babylon material is cached per scene to avoid re-downloading 1K/2K maps
+ * each time the player crosses the seamless 84 m streaming threshold.
  *
- * Fails closed if the locally installed assets are not present. Never use
- * fake/empty images, generic placeholder ground, or external hotlinks.
+ * Crucially, the photographic surface is assigned directly to the same
+ * walkable GroundMesh (and the distant ground), so it cannot float above
+ * the player, change footstep heights, or disappear outside the village.
  */
-import {VILLAGE_SECTION} from "./wild-acre-regions.js";
-import {VILLAGE_CLEARING,COMMUNITY_SITES,pathDistance,siteDistance} from "./wild-reference-layout.js";
-
 export const VILLAGE_TERRAIN_SURFACES=Object.freeze([
-  "forest_leaves_02", // natural moss + leaf duff; primary woodland
-  "forest_ground_05", // compact soil, main footpaths and central clearing
-  "forest_ground_04"  // occasional rocky woodland soil
+  "forest_leaves_02",
+  "forest_ground_05",
+  "forest_ground_04"
 ]);
 const MANIFEST="./assets/village-terrain-sources.json";
-const SQ=VILLAGE_SECTION;
-function clamp(t){return Math.max(0,Math.min(1,t));}
-function smooth(t){t=clamp(t);return t*t*(3-2*t);}
-function scramble(x,z,seed){let n=Math.sin(x*127.17+z*312.11+seed*0.0031)*43758.5453;return n-Math.floor(n);}
+const PRIMARY_SURFACE="forest_leaves_02";
+const SCENE_MATERIALS=new WeakMap();
 
-export function villageTerrainKind(x,z,seed=1){
-  const nearBuilding=COMMUNITY_SITES.some(s=>siteDistance(x,z,s)<6);
-  const fromFire=Math.hypot(x-VILLAGE_CLEARING.fireX,z-VILLAGE_CLEARING.fireZ);
-  const fromCenter=Math.hypot(x-VILLAGE_CLEARING.centerX,z-VILLAGE_CLEARING.centerZ);
-  const path=pathDistance(x,z);
-  if(nearBuilding||path<3.0||fromFire<9||fromCenter<18)
-    return "forest_ground_05";
-  const n=scramble(Math.floor(x/6.5),Math.floor(z/6.5),seed);
-  if(n<.10)return "forest_ground_04";
-  if(n<.27)return "forest_ground_05";
-  return "forest_leaves_02";
-}
-
-// Used in QA as well as at runtime: the overlay tapers out through 7 m so
-// the photographic materials don't form a hard square at the acreage edge.
-export function villageTerrainFade(x,z){
-  const margin=Math.min(x-SQ.minX,SQ.maxX-x,z-SQ.minZ,SQ.maxZ-z);
-  return smooth(margin/7);
-}
-
-export function installVillageRealTerrain(B,scene,track,{cx,cy,seed,mobile=false,lite=false,ground}){
-  const state={status:"waiting",error:"",triangles:0,materials:0,
-    sourceIds:[],visualOnly:true,collisionSurfaceUnchanged:true};
-  const bounds=ground?.getVerticesData?.(B.VertexBuffer.PositionKind);
-  const indices=ground?.getIndices?.();
-  if(!bounds||!indices){state.status="no-ground";return state;}
-  // Terrain chunks centered far from village must not download PBR maps.
-  if(cx+98<SQ.minX||cx-98>SQ.maxX||cy+98<SQ.minZ||cy-98>SQ.maxZ){
-    state.status="outside-village";return state;
-  }
-  const groups=new Map(VILLAGE_TERRAIN_SURFACES.map(id=>[id,{verts:[],normals:[],uvs:[],colors:[],indices:[]}]));
-  const groundNormals=ground.getVerticesData(B.VertexBuffer.NormalKind);
-  for(let i=0;i<indices.length;i+=3){
-    const ids=[indices[i],indices[i+1],indices[i+2]];
-    const wx=ids.reduce((sum,id)=>sum+cx+bounds[id*3],0)/3;
-    const wz=ids.reduce((sum,id)=>sum+cy+bounds[id*3+2],0)/3;
-    if(villageTerrainFade(wx,wz)<=0)continue;
-    const group=groups.get(villageTerrainKind(wx,wz,seed));
-    const base=group.verts.length/3;
-    for(const id of ids){
-      const j=id*3;
-      const x=cx+bounds[j],z=cy+bounds[j+2];
-      group.verts.push(bounds[j],bounds[j+1]+.012,bounds[j+2]);
-      group.normals.push(groundNormals[j],groundNormals[j+1],groundNormals[j+2]);
-      // World-space tiling: 3 m, never stretched across a 196 m tile.
-      group.uvs.push(x/3,z/3);
-      group.colors.push(1,1,1,villageTerrainFade(x,z));
-    }
-    group.indices.push(base,base+1,base+2);
-  }
-
-  state.status="loading-assets";
-  (async()=>{
-    let created=[];
+function sharedPhotographicMaterial(B,scene,{mobile,lite}){
+  const cached=SCENE_MATERIALS.get(scene);
+  if(cached)return cached;
+  const resolution=mobile||lite?"1k":"2k";
+  const state={
+    status:"loading-assets",error:"",triangles:0,materials:0,
+    sourceIds:[],resolution,coverage:"all-streamed-ground",
+    visualOnly:true,collisionSurfaceUnchanged:true
+  };
+  const entry={state,material:null,promise:null};
+  SCENE_MATERIALS.set(scene,entry);
+  entry.promise=(async()=>{
+    let diffuse=null,normal=null,mat=null;
     try{
       const response=await fetch(MANIFEST,{cache:"no-store"});
-      if(!response.ok)throw Error("Real terrain textures not yet installed: HTTP "+response.status);
+      if(!response.ok)throw Error("Photographic terrain manifest unavailable: HTTP "+response.status);
       const catalog=await response.json();
       if(!Array.isArray(catalog)||catalog.length!==VILLAGE_TERRAIN_SURFACES.length)
-        throw Error("Incomplete terrain-source manifest");
-      const resolution=mobile||lite?"1k":"2k";
-      const approved=new Map(catalog.map(item=>[item.id,item]));
+        throw Error("Incomplete photographic terrain manifest");
+      const entries=new Map(catalog.map(item=>[item.id,item]));
       for(const id of VILLAGE_TERRAIN_SURFACES){
-        const asset=approved.get(id);
-        const file=asset?.files?.[resolution];
-        const prefix="./assets/village-terrain-"+id+"-"+resolution+"-";
-        if(asset?.license!=="CC0"||asset?.source!=="https://polyhaven.com/a/"+id||
-            file?.diffuse!==prefix+"diffuse.jpg"||file?.normal!==prefix+"normal.jpg")
-          throw Error("Unverified source texture "+id);
-        const diffuse=await new Promise((resolve,reject)=>{
-          const tex=track(new B.Texture(file.diffuse,scene,false,false,
-            B.Texture.TRILINEAR_SAMPLINGMODE,()=>resolve(tex),
-            (_message,error)=>reject(error||Error("Texture failed: "+id))));
-        });
-        created.push(diffuse);
-        const mat=track(new B.StandardMaterial("CC0 scanned village "+id,scene));
-        mat.diffuseTexture=diffuse;
-        mat.specularColor=new B.Color3(.018,.021,.015);
-        mat.roughness=.96;
-        mat.useVertexColors=true;
-        mat.backFaceCulling=false;
-        mat.transparencyMode=B.Material.MATERIAL_ALPHABLEND;
-        mat.forceDepthWrite=false;
-        // Normal map is optional only for low-memory lite mode; diffuse
-        // still must be real and cannot be replaced with an invented color.
-        if(!lite){
-          const normal=track(new B.Texture(file.normal,scene,false,false,
-              B.Texture.TRILINEAR_SAMPLINGMODE));
-          normal.level=.42;
-          mat.bumpTexture=normal;
-          created.push(normal);
+        const asset=entries.get(id);
+        for(const quality of ["1k","2k"]){
+          const prefix="./assets/village-terrain-"+id+"-"+quality+"-";
+          if(asset?.license!=="CC0"||asset?.source!=="https://polyhaven.com/a/"+id||
+             asset?.files?.[quality]?.diffuse!==prefix+"diffuse.jpg"||
+             asset?.files?.[quality]?.normal!==prefix+"normal.jpg")
+            throw Error("Unverified terrain asset "+id+" "+quality);
         }
-        const part=groups.get(id);
-        if(part.indices.length){
-          const mesh=track(new B.Mesh("Noncolliding scanned village ground "+id,scene));
-          mesh.setVerticesData(B.VertexBuffer.PositionKind,new Float32Array(part.verts));
-          mesh.setVerticesData(B.VertexBuffer.NormalKind,new Float32Array(part.normals));
-          mesh.setVerticesData(B.VertexBuffer.UVKind,new Float32Array(part.uvs));
-          mesh.setVerticesData(B.VertexBuffer.ColorKind,new Float32Array(part.colors));
-          mesh.setIndices(part.indices);
-          mesh.useVertexColors=true;mesh.hasVertexAlpha=true;
-          mesh.isPickable=false;mesh.checkCollisions=false;mesh.material=mat;
-          mesh.renderingGroupId=1;
-          state.triangles+=part.indices.length/3;
-        }
-        state.materials++;
-        state.sourceIds.push(id);
       }
-      if(state.triangles<12)throw Error("No native triangle coverage inside village");
+      const file=entries.get(PRIMARY_SURFACE).files[resolution];
+      const image=(url)=>new Promise((resolve,reject)=>{
+        const texture=new B.Texture(url,scene,false,false,
+          B.Texture.TRILINEAR_SAMPLINGMODE,
+          ()=>resolve(texture),
+          (message,error)=>reject(error||Error(message||"Photographic texture failed: "+url)));
+        texture.wrapU=B.Texture.WRAP_ADDRESSMODE;
+        texture.wrapV=B.Texture.WRAP_ADDRESSMODE;
+        texture.anisotropicFilteringLevel=mobile?4:8;
+      });
+      diffuse=await image(file.diffuse);
+      // Bump mapping can be left out on low-memory phones. Diffuse still
+      // always comes from the real downloaded photographic JPEG.
+      if(!lite)normal=await image(file.normal);
+      if(scene.isDisposed?.())return;
+      mat=new B.StandardMaterial("CC0 photographic Appalachian forest-floor",scene);
+      mat.diffuseTexture=diffuse;
+      mat.diffuseColor=new B.Color3(1,1,1);
+      mat.ambientColor=new B.Color3(.15,.15,.15);
+      mat.specularColor=new B.Color3(.015,.017,.013);
+      mat.useVertexColors=false;
+      if(normal){
+        normal.level=.34;
+        mat.bumpTexture=normal;
+      }
+      entry.material=mat;
+      state.sourceIds=[PRIMARY_SURFACE];
+      state.materials=1;
       state.status="ready";
     }catch(err){
+      if(mat)mat.dispose();
+      if(normal)normal.dispose();
+      if(diffuse)diffuse.dispose();
       state.error=String(err?.message||err);
       state.status="awaiting-real-assets";
-      // The default walkable terrain remains available with its old atlas.
+      console.warn("Installed photographic ground could not be loaded:",state.error);
     }
   })();
-  return state;
+  return entry;
+}
+
+export function installVillageRealTerrain(B,scene,_track,{
+  mobile=false,lite=false,ground,farGround
+}){
+  if(!ground?.getIndices?.())return {
+    status:"no-ground",error:"Ground mesh missing",triangles:0,
+    materials:0,sourceIds:[],coverage:"all-streamed-ground"
+  };
+  const entry=sharedPhotographicMaterial(B,scene,{mobile,lite});
+  entry.state.triangles=ground.getIndices().length/3;
+  const apply=()=>{
+    if(!entry.material)return;
+    for(const mesh of [ground,farGround]){
+      if(!mesh||mesh.isDisposed?.())continue;
+      // Height sampler, UVs and collision geometry remain unchanged.
+      mesh.material=entry.material;
+      mesh.useVertexColors=false;
+      mesh.isPickable=false;
+      mesh.checkCollisions=false;
+    }
+  };
+  apply();
+  entry.promise.then(apply);
+  return entry.state;
 }
