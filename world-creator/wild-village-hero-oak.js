@@ -1,13 +1,15 @@
 /**
- * ONE imported, licensed CC0 detailed-leaf oak in The Wild's village square.
- * Not a generated primitive tree or a billboard. Coordinates are in world metres.
- * Source: Innerscene's "Oak street tree, detailed leaves", oak-detailed.glb,
- * https://www.innerscene.com/tools/library/3d-parts/oak-street-tree-detailed-leaves-a273fef9
- * Installed in /world-creator/assets by the companion GitHub Actions workflow.
+ * One genuinely photo-textured broadleaf test tree for The Wild's village square.
+ * Source: Poly Haven's "Tree Small 02" by Rico Cilliers, CC0.
+ * https://polyhaven.com/a/tree_small_02
+ * High-quality PBR bark and leaves, optimized for mobile from Poly Haven's glTF.
+ * Botanical species is NOT native West Virginia: single TREE-QUALITY test only.
+ * The former Innerscene geometric oak is retained in assets as an archive,
+ * but must NEVER be used as a visual fallback.
  */
 export const VILLAGE_OAK=Object.freeze({
   x:109,z:72,heightMetres:17.2,collisionRadius:2.1,
-  model:"./assets/village-oak-detailed.glb"
+  model:"./assets/village-photoreal-broadleaf.glb"
 });
 
 /** Loads exactly one local GLB, with an explicit failure state instead of
@@ -19,9 +21,9 @@ export function installVillageOak(B,scene,{groundY}){
     state.error="Babylon GLB loader not available";
     return state;
   }
-  B.SceneLoader.ImportMeshAsync("","./assets/","village-oak-detailed.glb",scene)
+  B.SceneLoader.ImportMeshAsync("","./assets/","village-photoreal-broadleaf.glb?v=polyhaven-tree-20261014-v1",scene)
     .then(result=>{
-      const root=new B.TransformNode("Village Square: imported CC0 HD oak",scene);
+      const root=new B.TransformNode("Village Square: imported Poly Haven PBR broadleaf",scene);
       root.rotation.y=0.38;
       // Preserve the imported glTF hierarchy/materials and count real geometry.
       for(const mesh of result.meshes){
@@ -73,7 +75,7 @@ export function installVillageOak(B,scene,{groundY}){
     .catch(err=>{
       state.status="error";
       state.error=String(err?.message||err);
-      console.error("Village detailed CC0 oak GLB could not load:",err);
+      console.error("Village photoreal PBR broadleaf GLB could not load:",err);
     });
   return state;
 }
