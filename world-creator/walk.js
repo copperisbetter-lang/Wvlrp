@@ -15,7 +15,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
-import {createFourCabinTest} from "./wild-cabin-lineup.js?v=four-real-cabin-test-20261015-v1";
+import {createFourCabinTest} from "./wild-cabin-lineup.js?v=photoreal-only-20261015-v3";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -431,8 +431,8 @@ const cabinComparison=createFourCabinTest({
   }
 });
 document.getElementById("cabinCompare")?.addEventListener("click",()=>{
-  cabinComparison.show();cabinComparison.jump();
-  status("Four-cabin test area. Choose each downloaded real 3D file in the comparison panel.");
+  cabinComparison.show();
+  if(cabinComparison.jump())status("Showing imported real cabin meshes; empty comparison positions are hidden.");
 });
 if(betaParams.get("compare")==="1"){
   cabinComparison.show();cabinComparison.jump();
