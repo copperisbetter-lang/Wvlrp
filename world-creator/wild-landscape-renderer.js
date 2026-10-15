@@ -427,6 +427,9 @@ function renderVillageGroundDetail(B,scene,track,{cx,cy,seed,mobile,surfaceHeigh
   const v=VILLAGE_DETAIL_ZONE;
   // Do not construct the same decoration on far-away streamed tiles.
   if(Math.hypot(cx-v.centerX,cy-v.centerZ)>85)return 0;
+  // The entire 75-m square decoration pass sits inside the protected 10 acres.
+  // Skip it altogether instead of spending mobile CPU on invisible prototypes.
+  if(isVillagePrototypeExclusion(v.centerX,v.centerZ,v.radiusMetres))return 0;
   const kinds=["leaflitter","moss","sedge","fern","wildflower",
     "rock","rock-cluster","fallen-log"];
   const groups=Object.fromEntries(kinds.map(kind=>[kind,[]]));
