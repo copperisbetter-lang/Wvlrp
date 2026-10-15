@@ -15,7 +15,7 @@ import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
-import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cabin-compare-spawn-fix-20261015-v4";
+import {createFourCabinTest} from "./wild-cabin-lineup.js?v=hosted-real-building-glbs-20261015-v6";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -392,6 +392,8 @@ const collision=(x,z)=>{
   // The rebuilt northern Ranger Station has an actual solid wall perimeter.
   // Hearthside Cabin, its people and remaining photographic landscape stay intact.
   if(rangerWallCollision(x,z))return true;
+  // Real 3D building bounds, only after its actual mesh is loaded.
+  if(cabinComparison?.collides?.(x,z))return true;
   // Installed PBR grove trunks remain solid even when the distant landscape
   // tile has been replaced for a roaming player.
   for(const t of villageGrove.collidableTrees){
@@ -510,6 +512,7 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
+    cabinComparison.update();
     const nearby=clearingAt(camera.position.x,camera.position.z);
     info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
       (habitat?.villageRealTerrain?.status==="ready"?" · PHOTO GROUND LOADED":
