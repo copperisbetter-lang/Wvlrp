@@ -63,7 +63,7 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
       // Bump mapping can be left out on low-memory phones. Diffuse still
       // always comes from the real downloaded photographic JPEG.
       if(!lite)normal=await image(file.normal);
-      if(scene.isDisposed?.())return;
+      if(scene.isDisposed===true)return;
       mat=new B.StandardMaterial("CC0 photographic Appalachian forest-floor",scene);
       mat.diffuseTexture=diffuse;
       mat.diffuseColor=new B.Color3(1,1,1);
