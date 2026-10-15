@@ -6,9 +6,11 @@
  */
 import {VILLAGE_CLEARING,COMMUNITY_SITES,pathDistance,siteDistance} from "./wild-reference-layout.js";
 
-// Phase 1 of graphics testing: leave the village square free of all trees.
-// Imported photoreal trees will be enabled only after their appearance is checked.
+// Graphics A/B pilot: procedural/generated trees remain REMOVED in the full
+// 75 m diameter square. Only the separate, imported detailed-leaf CC0 oak
+// may appear while the user evaluates whether it looks lifelike.
 export const VILLAGE_SQUARE_TREES_ENABLED=false;
+export const VILLAGE_HD_OAK_ENABLED=true;
 
 export const VILLAGE_DETAIL_ZONE=Object.freeze({
   centerX:VILLAGE_CLEARING.centerX,
