@@ -16,13 +16,13 @@ DATA = Path(__file__).resolve().parents[1] / "assets" / "riley-vulva1-source.jso
 # The named offsets are used BOTH for geometry and for the viewer's table.
 LANDMARKS = [
     dict(id="C0", name="Central pelvic origin", x=0.000, z=0.000, relief=0.000),
-    dict(id="P1", name="Pubic mound",          x=0.000, z=0.069, relief=0.006),
-    dict(id="H1", name="Upper central fold",   x=0.000, z=0.053, relief=0.008),
-    dict(id="L1", name="Left inner fold",      x=-0.010, z=0.036, relief=0.011),
-    dict(id="R1", name="Right inner fold",     x= 0.010, z=0.036, relief=0.011),
-    dict(id="L2", name="Left outer fold",      x=-0.022, z=0.039, relief=0.017),
-    dict(id="R2", name="Right outer fold",     x= 0.022, z=0.039, relief=0.017),
-    dict(id="B1", name="Lower central blend", x=0.000, z=0.012, relief=0.003),
+    dict(id="P1", name="Pubic mound",          x=0.000, z=0.024, relief=0.003),
+    dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.006),
+    dict(id="L1", name="Left inner fold",      x=-0.010, z=-0.009, relief=0.011),
+    dict(id="R1", name="Right inner fold",     x= 0.010, z=-0.009, relief=0.011),
+    dict(id="L2", name="Left outer fold",      x=-0.022, z=-0.006, relief=0.017),
+    dict(id="R2", name="Right outer fold",     x= 0.022, z=-0.006, relief=0.017),
+    dict(id="B1", name="Lower central blend", x=0.000, z=-0.033, relief=0.003),
 ]
 
 def make_c0_anatomy(root, body, rig):
@@ -133,27 +133,49 @@ def make_c0_anatomy(root, body, rig):
         raise RuntimeError("C0: subdivision insufficient for two distinct folds")
 
     low=min(v[2] for v in raw_verts)
-    scale=.076  # ~8.7 cm wide, 7.8 cm tall around C0
+    scale=.076  # ~8.7 cm wide, 7.8 cm tall total
+    # Previous build placed the ENTIRE donor from +3 mm to +81 mm ABOVE
+    # the lower-pelvis C0 junction, producing the visible upper-abdomen wedge.
+    # Keep C0 on the actual pelvis, but shift the donor 45 mm DOWN: its
+    # lower half now extends below C0, between the upper thighs.
+    down_from_high_fit_m=.045
     # Avoid extrapolating a skin projection onto the thigh. Every point
     # follows the nearest front BODY surface, tapering into existing skin.
     def gauss(a,center,r):
         return math.exp(-((a-center)/r)**2)
     total_hits=0
-    skin_cache={}
+    supported_upper=0
+    upper_count=0
     for v in mesh.vertices:
         src_x,src_y,src_z = v.co.x,v.co.y,v.co.z
-        x = cx+src_x*scale
-        z = c0z + .003 + (src_z-low)*scale
+        # Taper broad upper attachment so its silhouette no longer forms a
+        # triangular wedge above the groin; preserve natural lower fullness.
+        raw_offset=.003+(src_z-low)*scale-down_from_high_fit_m
+        top_narrow=max(0.,min(1.,(raw_offset-.013)/.024))
+        x = cx+src_x*scale*(1.0-.22*top_narrow)
+        z = c0z + raw_offset
+        if z >= c0z+.010: upper_count+=1
         surface,face=cast_front(x,z)
+        # Never follow the inner thigh. Below the fork a ray may hit a leg
+        # behind the intended pelvic contour; use the centered pelvis surface
+        # instead of skinning this attachment to that leg.
+        if surface is not None and z < c0z+.010:
+            polygon=body.data.polygons[face]
+            face_verts=[body.data.vertices[j] for j in polygon.vertices]
+            hip_avg=sum(weight(p,hips) for p in face_verts)/len(face_verts)
+            leg_avg=sum(weight(p,legs) for p in face_verts)/len(face_verts)
+            if polygon.normal.y > -.15 or hip_avg < .10 or hip_avg < .80*leg_avg:
+                surface=None
         if surface is not None:
             total_hits+=1
+            if z >= c0z+.010: supported_upper+=1
         else:
-            key=round(z,4)
-            if key not in skin_cache:
-                skin_cache[key]=cast_front(cx,z)[0]
-            surface=skin_cache[key]
-        if surface is None:
-            raise RuntimeError("C0: front-surface fit failed at z="+str(z))
+            # A below-fork CENTERLINE has no body face to raycast into.
+            # Project that lower section from the nearest genuine pelvic skin
+            # row, not from the front of the left/right inner thighs.
+            sample_x=cx+max(-.014,min(.014,x-cx))
+            surface,_=cast_front(sample_x,max(z,c0z+.004))
+            if surface is None: surface=c0y
         dx,dz=x-cx,z-c0z
         # The source licensed mesh provides natural surface topology.
         # Landmark table provides symmetric, measured displacement targets.
@@ -165,14 +187,24 @@ def make_c0_anatomy(root, body, rig):
                 for f in LANDMARKS if f["id"] in ("P1","H1","B1"))
         # Smoothly hide the attachment edges inside Carol's existing skin.
         lateral = max(0.,min(1.,(.045-abs(dx))/.011))
-        bottom = max(0.,min(1.,(dz-.002)/.012))
-        upper = max(0.,min(1.,(.081-dz)/.013))
+        bottom = max(0.,min(1.,(dz+.042)/.012))
+        upper = max(0.,min(1.,(.037-dz)/.013))
         fade=lateral*lateral*(3-2*lateral) * bottom*bottom*(3-2*bottom) * upper*upper*(3-2*upper)
         donor=max(-.004,min(.004,(src_y+.52)*.010))
         projection=min(.034,max(0., .003+inner+outer+top+donor))
         v.co=(x, surface+.001 - projection*fade, z)
-    if total_hits < len(mesh.vertices)*.65:
-        raise RuntimeError("C0: excessive unsupported surface; refusing detached anatomy patch")
+    # Require a real pelvic-skin attachment in the UPPER portion; the lower
+    # portion is intentionally suspended at the leg junction, not on thighs.
+    offsets=[v.co.z-c0z for v in mesh.vertices]
+    if min(offsets)>-.030 or max(offsets)>.042:
+        raise RuntimeError("C0: failed lower-between-legs placement check")
+    if upper_count < 50 or supported_upper < upper_count*.60:
+        raise RuntimeError("C0: insufficient upper pelvic-skin support; refusing detached patch")
+    if any(f["z"]>=0 for f in LANDMARKS if f["id"] in ("L1","R1","L2","R2")):
+        raise RuntimeError("C0: folds must sit BELOW the central pelvic reference")
+    print("WVLRP_CAROL_LOWER_FIT", "vertical_min_mm",round(min(offsets)*1000,1),
+          "vertical_max_mm",round(max(offsets)*1000,1),
+          "supported_upper",supported_upper,"upper_total",upper_count)
     for poly in mesh.polygons:
         poly.use_smooth=True
     obj=bpy.data.objects.new("WVLRP Carol C0 anatomy | inspection overlay",mesh)
