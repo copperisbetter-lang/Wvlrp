@@ -489,7 +489,7 @@ function renderVillageGroundDetail(B,scene,track,{cx,cy,seed,mobile,surfaceHeigh
   return total;
 }
 
-export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
+export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false,lite=false}){
   const textures=createForestSurfaceTextures(B,scene,track,seed);
   const soil=track(new B.StandardMaterial("Appalachian leaf litter and stone",scene));
   soil.diffuseTexture=textures.duff;
@@ -540,13 +540,14 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   }
   // High-resolution local terrain plus distant ridge panoramas. Far land is
   // offset very slightly beneath the local ground to avoid z-fighting.
-  terrain(1100,mobile?104:128,.40);
-  const localWalkingGround=terrain(196,mobile?86:120,0);
+  terrain(1100,lite?64:mobile?104:128,.40);
+  const localSubdivisions=lite?64:mobile?86:120;
+  const localWalkingGround=terrain(196,localSubdivisions,0);
   // The previous GroundMesh height cache was not guaranteed to match the
   // reshaped mountain mesh. Read its finished triangles directly instead.
   const walkSurface=makeGroundHeightSampler(
     localWalkingGround.getVerticesData(B.VertexBuffer.PositionKind),
-    localWalkingGround.getIndices(),196,mobile?86:120,cx,cy);
+    localWalkingGround.getIndices(),196,localSubdivisions,cx,cy);
   const waterMat=track(new B.StandardMaterial("river glints",scene));
   waterMat.diffuseColor=new B.Color3(.18,.33,.36);
   waterMat.specularColor=new B.Color3(.34,.38,.41);waterMat.specularPower=38;
@@ -641,7 +642,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   for(const t of mid.concat(far,addedMid,addedFar,villageEdgeTrees))
     addGroup(t,heroZone&&insidePilot(t)?"near":"far");
   for(const {species,lod,variant,trees} of groups.values()){
-    const model=lod==="near"?
+    const model=lod==="near"&&!lite?
       buildHeroTree(B,scene,track,species,seed+species.length*17,variant,textures):
       prototype(B,scene,track,species,seed+species.length*17);
     setInstances(B,model.bark,trees,cx,cy);
@@ -649,7 +650,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   }
   const understory=renderForestFloor(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
   const heroPlants=heroZone?renderHeroUnderstory(B,scene,track,
-    {cx,cy,seed,mobile,surfaceHeight:walkSurface}):0;
+    {cx,cy,seed,mobile,lite,surfaceHeight:walkSurface}):0;
   const villageGroundDetails=renderVillageGroundDetail(B,scene,track,
     {cx,cy,seed,mobile,surfaceHeight:walkSurface});
   const community=renderWildVillage(B,scene,track,{cx,cy,seed,surfaceHeight:walkSurface});
