@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync,statSync} from "node:fs";
 import {VILLAGE_PROPOSED_TREES,VILLAGE_PLANTING_METADATA} from "../wild-village-planting-blueprint.js";
 import {chooseGroveAsset,isNearVillageGrove} from "../wild-village-pbr-grove.js";
 
@@ -50,4 +50,25 @@ test("Three acres stay populated without per-tile recreation",()=>{
  assert.equal(isNearVillageGrove(1000,1000),false);
  assert.equal(VILLAGE_PLANTING_METADATA.geometryInstalled,false,
    "Blueprint remains planned; only actual runtime/model smoke test may mark installed");
+});
+
+test("Installed licensed binary source assets cover every one of the 59 peripheral tree slots",()=>{
+ const sources=JSON.parse(read("../assets/village-grove-sources.json"));
+ assert.ok(sources.length>=5,"At least five distinct source tree models required");
+ for(const source of sources){
+   assert.equal(source.license,"CC0");
+   assert.match(source.source,/^https:\\/\\/polyhaven\\.com\\/a\\//);
+   const relative=source.url.replace(/^\\.\\//,"../");
+   const info=statSync(new URL(relative,import.meta.url));
+   assert.ok(info.size>100000,"No missing/empty source GLB: "+source.id);
+   assert.equal(info.size,source.bytes,"Manifest size must match real model bytes");
+ }
+ const allocated=new Map();
+ for(const tree of VILLAGE_PROPOSED_TREES){
+    const eligible=sources.filter(src=>(allocated.get(src.id)||0)<30);
+    const match=chooseGroveAsset(tree,eligible);
+    assert.ok(match,"Unassigned village tree: "+tree.id);
+    allocated.set(match.id,(allocated.get(match.id)||0)+1);
+ }
+ assert.equal([...allocated.values()].reduce((a,b)=>a+b,0),59);
 });
