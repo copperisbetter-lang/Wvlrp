@@ -1,0 +1,47 @@
+[
+  {
+    "id": "forest_leaves_02",
+    "source": "https://polyhaven.com/a/forest_leaves_02",
+    "license": "CC0",
+    "files": {
+      "1k": {
+        "diffuse": "./assets/village-terrain-forest_leaves_02-1k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_leaves_02-1k-normal.jpg"
+      },
+      "2k": {
+        "diffuse": "./assets/village-terrain-forest_leaves_02-2k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_leaves_02-2k-normal.jpg"
+      }
+    }
+  },
+  {
+    "id": "forest_ground_05",
+    "source": "https://polyhaven.com/a/forest_ground_05",
+    "license": "CC0",
+    "files": {
+      "1k": {
+        "diffuse": "./assets/village-terrain-forest_ground_05-1k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_ground_05-1k-normal.jpg"
+      },
+      "2k": {
+        "diffuse": "./assets/village-terrain-forest_ground_05-2k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_ground_05-2k-normal.jpg"
+      }
+    }
+  },
+  {
+    "id": "forest_ground_04",
+    "source": "https://polyhaven.com/a/forest_ground_04",
+    "license": "CC0",
+    "files": {
+      "1k": {
+        "diffuse": "./assets/village-terrain-forest_ground_04-1k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_ground_04-1k-normal.jpg"
+      },
+      "2k": {
+        "diffuse": "./assets/village-terrain-forest_ground_04-2k-diffuse.jpg",
+        "normal": "./assets/village-terrain-forest_ground_04-2k-normal.jpg"
+      }
+    }
+  }
+]
