@@ -41,15 +41,13 @@ test("Mobile has a smaller persistent PBR undergrowth budget",()=>{
  assert.ok(phone.filter(item=>item.kind==="fern").length<=65);
  assert.ok(phone.filter(item=>item.kind==="rock").length<=14);
 });
-test("Real asset manifest gates geometry, no generic tree fallback",()=>{
+test("PBR forest-floor assets remain saved but are absent during cabin-only photo test",()=>{
  const module=read("../wild-village-pbr-floor.js");
  const walk=read("../walk.js");
  assert.match(module,/SceneLoader\.LoadAssetContainerAsync/);
  assert.match(module,/instantiateModelsToScene/);
  assert.match(module,/awaiting-real-assets/);
- assert.doesNotMatch(module,/CreateSphere|CreateCylinder|renderHeroUnderstory/);
- assert.match(walk,/installVillageForestFloor\(B,scene,\{seed,mobile,lite:LITE_MODE,startAfter:villageGrove\.ready\}\)/);
- assert.match(module,/lite\?fullPlan\.filter/);
- assert.match(walk,/villageFloor\.setNear\(isNearVillageGrove/);
+ assert.doesNotMatch(walk,/installVillageForestFloor\(B,scene,\{/);
+ assert.match(walk,/const villageFloor=\{status:"rebuild-cleared"/);
  assert.match(walk,/villageFloorDetailsPlanted/);
 });
