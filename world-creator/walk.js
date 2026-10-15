@@ -3,9 +3,9 @@
  * Lower-left virtual joystick, touch-look on right, and WASD/mouse controls.
  * The real cabin and real bundled GLB avatars are preserved; no blob NPCs.
  */
-import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
+import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=village-10acre-prototype-clear-20261014-v1";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=clean-slate-20261015-v1";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -63,7 +63,10 @@ const status=s=>{message.textContent=s;};
 let world;
 try{world=sanitizedWorld(JSON.parse(localStorage.getItem(STORAGE_KEY)));}
 catch{world=newWorld();}
-resetToWildCabin(world);
+// Preserve ALL saved NPCs, individual appearances and character GLB keys.
+// Old landscape and buildings are disabled at render time, never deleted
+// from storage; the current pre-reset world is backed up in GitHub.
+gatherCabinCrew(world);
 const seed=seedNumber(world.seed);
 const cabin=world.objects.find(o=>o.id===HEARTHSIDE_CABIN.id);
 const cabinY=cabinGrade(0,0,seed);
@@ -202,18 +205,16 @@ let habitat;
 try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:0,
     START_AT_RANGER?RANGER_SPAWN.tileZ:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
-// This is ONE imported GLB, not the procedural tree prototypes in the forest.
-// It stays at village world coordinates as terrain tiles stream in and out.
-const villageOak=VILLAGE_HD_OAK_ENABLED
-  ? installVillageOak(B,scene,{
-      groundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
-    })
-  : {status:"disabled-for-clear-square",meshCount:0,error:"",root:null};
-// Real imported PBR trees around the 3-acre village, on individual permanent
-// nodes. They are NOT owned by the periodically replaced wilderness tile.
-const villageGrove=installVillageGrove(B,scene,{seed,mobile,lite:LITE_MODE});
-// Only after the trees finish decoding: no competing large GLB downloads.
-const villageFloor=installVillageForestFloor(B,scene,{seed,mobile,lite:LITE_MODE,startAfter:villageGrove.ready});
+// Greenfield rebuild: retire every old forest/village tree and forest-floor
+// prop from the LIVE scene, not from the source library. They can be reused
+// later after real-species and collision QA, with no lost downloaded GLBs.
+const villageOak={status:"rebuild-cleared",meshCount:0,error:"",root:null};
+const villageGrove={status:"rebuild-cleared",planted:0,requested:0,
+  loadedModels:0,sourceIds:[],broadleafModelsLoaded:0,evergreenModelsLoaded:0,
+  plantedBySource:{},certifiedNativeSpeciesModels:0,collidableTrees:[],
+  skippedNoModel:0,error:"",setNear(){}};
+const villageFloor={status:"rebuild-cleared",sourceIds:[],planted:0,
+  requested:0,counts:{fern:0,rock:0,stump:0,log:0},error:"",setNear(){}};
 const names=[];
 function addNamePlate(o){
   const ground=cabinY+.38;
@@ -305,8 +306,8 @@ const goToRanger=()=>{
   const startX=RANGER_SPAWN.x+betaSpawnX,startZ=RANGER_SPAWN.z+betaSpawnZ;
   camera.position.set(startX,cameraGround(startX,startZ)+EYE_HEIGHT,startZ);
   camera.rotation.set(0,0,0);
-  info.textContent="Ranger Station · Laurel's Kitchen left · Mercantile right";
-  status("You're standing in front of Ranger Station. Walk forward to its porch, or turn to explore both shops.");
+  info.textContent="New village reserve · connected cabin and camp clearings";
+  status("Fresh village reserve: follow the dirt paths to future cabin lots, campsites, and lookouts.");
 };
 document.getElementById("village")?.addEventListener("click",goToRanger);
 let joyX=0,joyY=0,joyPointer=null;
@@ -398,12 +399,8 @@ const collision=(x,z)=>{
   if(closeX>8.36&&closeX<9.35&&closeZ<7.15)return true;
   if(z>6.36&&z<7.30&&closeX<9.1&&closeX>1.24)return true;
   if(z< -6.36&&z> -7.30&&closeX<9.15)return true;
-  // Keep walkers out of the permanent village flames.
-  if(Math.hypot(x-VILLAGE_CLEARING.fireX,z-VILLAGE_CLEARING.fireZ)<2.30)return true;
-  // One real village oak: its substantial root flare and trunk are solid.
-  if(villageOak.status==="loaded"&&Math.hypot(x-VILLAGE_OAK.x,z-VILLAGE_OAK.z)<VILLAGE_OAK.collisionRadius)return true;
-  const water=waterAt(x,z,seed);
-  if(water&&cabinGrade(x,z,seed)<water.level+.75)return true;
+  // No old village fires, trees, rivers or buildings exist in the clean-slate
+  // terrain. Only physical Hearthside cabin walls and future tested assets block.
   // Installed PBR grove trunks remain solid even when the distant landscape
   // tile has been replaced for a roaming player.
   for(const t of villageGrove.collidableTrees){
@@ -426,17 +423,7 @@ const cameraGround=(x,z)=>{
   // obsolete GroundMesh height cache or the unsmoothed mathematical slope.
   const rendered=habitat?.surfaceHeight?.(x,z);
   const ground=Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
-  // The porch floor and four grounded steps become physically walkable.
-  for(const site of COMMUNITY_SITES){
-    const front=site.z-site.depth/2;
-    const porchFront=front-(site.id==="wild-ranger-station"?4.45:4.65);
-    if(Math.abs(x-site.x)<site.width/2+.15&&z>=porchFront&&z<=front)
-      return ground+.78;
-    if(Math.abs(x-site.x)<2.48&&z>=porchFront-3.58&&z<porchFront){
-      const index=Math.max(0,Math.min(3,Math.floor((z-(porchFront-3.58))/.80)));
-      return ground+.15+index*.19;
-    }
-  }
+  // The former village porches and steps were cleared; no invisible stairs.
   return ground;
 };
 // Peer mode is enabled only by the public Game Beta Test entrance.
@@ -518,8 +505,7 @@ engine.runRenderLoop(()=>{
     camera.position.y+sunLook.y*420,camera.position.z+sunLook.z*420);
   // Hide complete imported PBR grove batches only when well outside village.
   // Never unload/recreate the full 3D village while guests cross the square.
-  villageGrove.setNear(isNearVillageGrove(camera.position.x,camera.position.z));
-  villageFloor.setNear(isNearVillageGrove(camera.position.x,camera.position.z));
+  // Existing character models and multiplayer keep running; old scenery loaders disabled.
   multiplayer?.update(dt);
   playerMap?.update(performance.now());
   scene.render();
@@ -537,6 +523,8 @@ if(START_AT_RANGER){
 window.__wildDiagnostics=()=>({
   position:[camera.position.x,camera.position.y,camera.position.z],
   meshes:scene.meshes.length,
+  rebuildLayoutVersion:habitat?.layoutVersion??"not-loaded",
+  reservedClearings:habitat?.clearingsRendered??0,
   nativeTrees:habitat?.nearTrees??0,
   distantTrees:habitat?.distantTrees??0,
   species:habitat?.species??0,
