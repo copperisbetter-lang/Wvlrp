@@ -2,7 +2,7 @@
 Date: 14 October 2026 | Status: **PLANNED — NOT YET PLANTED IN LIVE 3D WORLD**
 
 ## Single-section village frame
-- Game-coordinate bounding box: **X 27–159; Z 39–131 metres**, approximately **3.004 acres** (132 × 92 metres).
+- Game-coordinate bounding box: **X 27–159; Z 39–131 metres**, approximately **3.001 acres** (132 × 92 metres).
 - Exact mapped scene landmarks: Ranger Station (93,110), Laurel's Kitchen (55,110), Mercantile & Gift Shop (131,110), fire ring (93,65).
 - The existing **75-m-diameter** central circle is a protected community square: center (93,85), radius 37.5 m.
 - World X/Z are game metres from Hearthside, **not GPS, deeds or real-world survey acres**.
