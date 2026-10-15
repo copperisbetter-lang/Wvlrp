@@ -32,7 +32,8 @@ jobs:
           from pathlib import Path
           names=["fir_tree_01","pine_tree_01","fir_sapling_medium",
                  "pine_sapling_medium","pine_sapling_small","fir_sapling",
-                 "island_tree_01","island_tree_02","island_tree_03",\n                 "tree_small_02","jacaranda_tree"]
+                 "island_tree_01","island_tree_02","island_tree_03",
+                 "tree_small_02","jacaranda_tree"]
           headers={"User-Agent":"WVLRP-Wild-license-respecting-grove/1.0"}
           base=Path("/tmp/wvlrp-pbr-grove");base.mkdir(parents=True,exist_ok=True)
           manifest=[]
