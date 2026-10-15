@@ -1,0 +1,26 @@
+name: Validate The Wild clean-slate rebuild
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "world-creator/wild-rebuild-layout.js"
+      - "world-creator/wild-flatland-rebuild.js"
+      - "world-creator/wild-visible-mountain-stage.js"
+      - "world-creator/wild-player-map.js"
+      - "world-creator/walk.js"
+      - "world-creator/tests/wild-flatland-rebuild.test.mjs"
+      - ".github/workflows/validate-wild-flatland.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate cabin preservation and route graph
+        run: node --test world-creator/tests/wild-flatland-rebuild.test.mjs
