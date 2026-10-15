@@ -7,6 +7,7 @@ import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHS
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=village-10acre-prototype-clear-20261014-v1";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=spatial-diversity-20261014-v4";
+import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
@@ -207,6 +208,8 @@ const villageOak=VILLAGE_HD_OAK_ENABLED
 // Real imported PBR trees around the 3-acre village, on individual permanent
 // nodes. They are NOT owned by the periodically replaced wilderness tile.
 const villageGrove=installVillageGrove(B,scene,{seed,mobile});
+// Only after the trees finish decoding: no competing large GLB downloads.
+const villageFloor=installVillageForestFloor(B,scene,{seed,mobile,startAfter:villageGrove.ready});
 const names=[];
 function addNamePlate(o){
   const ground=cabinY+.38;
@@ -509,6 +512,7 @@ engine.runRenderLoop(()=>{
   // Hide complete imported PBR grove batches only when well outside village.
   // Never unload/recreate the full 3D village while guests cross the square.
   villageGrove.setNear(isNearVillageGrove(camera.position.x,camera.position.z));
+  villageFloor.setNear(isNearVillageGrove(camera.position.x,camera.position.z));
   multiplayer?.update(dt);
   playerMap?.update(performance.now());
   scene.render();
@@ -549,6 +553,12 @@ window.__wildDiagnostics=()=>({
    villageGroveModelsLoaded:villageGrove.loadedModels,
    villageGroveTreesPlanted:villageGrove.planted,
    villageGroveTreesRequested:villageGrove.requested,
+   villageFloorStatus:villageFloor.status,
+   villageFloorPBRModels:villageFloor.sourceIds,
+   villageFloorDetailsPlanted:villageFloor.planted,
+   villageFloorDetailsRequested:villageFloor.requested,
+   villageFloorByType:villageFloor.counts,
+   villageFloorError:villageFloor.error,
    villageGroveTreesSkipped:villageGrove.skippedNoModel,
    villageGroveError:villageGrove.error,
   heroGraphics:habitat?.heroGraphics??false,
