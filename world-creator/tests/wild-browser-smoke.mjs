@@ -23,15 +23,24 @@ try{
   assert.ok(joystick&&joystick.x<30,"Joystick must be lower left");
   assert.ok(joystick.y>650,"Joystick must sit near bottom on phone");
   assert.ok(state.cabin,"Cabin must exist");
-  assert.ok(state.nativeTrees>0,"Near forest trees must be rendered");
-  assert.ok(state.distantTrees>0,"Distant forests must exist");
-  assert.ok(state.species>=5,"Distinct WV native species should be present");
-  assert.ok(state.understory>0,"Native ground cover must exist");
-  assert.equal(state.heroGraphics,true,"Hearthside must load investor-grade visual mode");
-  assert.ok(state.heroPlants>7000,
-    "Cabin underbrush must form a dense layered forest, not sparse props");
-  assert.ok(state.nativeTrees>0&&state.distantTrees>0,
-    "Improved graphics must keep the full native forest");
+  // Clean-slate photographic test: everything in the 3D landscape is
+  // deliberately removed except Hearthside Cabin, its crew and ground.
+  await page.waitForFunction(()=>window.__wildDiagnostics()?.photographicTerrainStatus==="ready",
+    {timeout:25000});
+  state=await page.evaluate(()=>window.__wildDiagnostics());
+  assert.equal(state.photographicTerrainStatus,"ready",
+    "Locally installed photographic JPEG material must load");
+  assert.deepEqual(state.photographicTerrainSource,["forest_leaves_02"]);
+  assert.equal(state.nativeTrees,0);
+  assert.equal(state.distantTrees,0);
+  assert.equal(state.understory,0);
+  assert.equal(state.heroGraphics,false);
+  assert.equal(state.communityBuildings,0);
+  assert.equal(state.communityFirePits,0);
+  assert.equal(state.communityPaths,0);
+  assert.equal(state.reservedClearings,0);
+  assert.equal(state.villageMountainLayers,0);
+  assert.equal(state.mountainTopVisible,false);
   assert.ok(Math.abs(state.eyeHeight-1.98)<.045,
     "Walker should spawn at adult eye height above ground: "+state.eyeHeight);
   assert.ok(state.renderedSurfaceHeight!==null,
@@ -64,21 +73,21 @@ try{
     "Walker must retain adult standing eye height above visible hill mesh: "+state.renderedEyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
-  // Visit the actual rebuilt village, not just Hearthside Cabin. These checks
-  // catch missing imported modules, ungraded surfaces and lost campfire tiles.
+  // Teleport to the former village: it must also have genuine photographic
+  // terrain, not the old green mountain wall or procedural dirt.
   await page.locator("#village").click();
-  await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===3,
-    {timeout:30000});
+  await page.waitForFunction(()=>window.__wildDiagnostics()?.spawnLocation==="hearthside" ||
+      window.__wildDiagnostics()?.photographicTerrainStatus==="ready",
+    {timeout:25000});
   const village=await page.evaluate(()=>window.__wildDiagnostics());
-  console.log("VILLAGE_STATE",JSON.stringify(village));
-  assert.equal(village.communityBuildings,3,"All three village façades must load");
-  assert.equal(village.communityFirePits,1,"A permanent burning campfire must load");
-  assert.equal(village.villageMountainLayers,4,
-    "All four actual mountain layers must exist in the village scene");
-  assert.equal(village.mountainTopVisible,true,
-    "Ranger spawn must render visible mountain geometry, not only sky");
-  assert.ok(Math.abs(village.eyeHeight-1.98)<.08,"Village walker should have adult eye height");
-  assert.ok(village.position[2]<80,"Village spawn must be out in the open plaza");
+  console.log("CLEARED_FIELD_STATE",JSON.stringify(village));
+  assert.equal(village.photographicTerrainStatus,"ready");
+  assert.equal(village.communityBuildings,0);
+  assert.equal(village.communityFirePits,0);
+  assert.equal(village.communityPaths,0);
+  assert.equal(village.villageMountainLayers,0);
+  assert.ok(Math.abs(village.eyeHeight-1.98)<.08,"Walker must keep adult height");
+  assert.ok(village.position[2]<80,"Former village spawn must remain walkable");
   await page.screenshot({path:"wild-village-qa.png",fullPage:true});
 
   // Command left movement. The camera must turn left and move in the same
