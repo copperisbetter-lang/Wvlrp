@@ -21,7 +21,7 @@ export function installVillageOak(B,scene,{groundY}){
     state.error="Babylon GLB loader not available";
     return state;
   }
-  B.SceneLoader.ImportMeshAsync("","./assets/","village-photoreal-broadleaf.glb?v=polyhaven-tree-20261014-v1",scene)
+  B.SceneLoader.ImportMeshAsync("","./assets/","village-photoreal-broadleaf.glb",scene)
     .then(result=>{
       const root=new B.TransformNode("Village Square: imported Poly Haven PBR broadleaf",scene);
       root.rotation.y=0.38;
