@@ -8,6 +8,7 @@
  */
 import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
+import {buildNorthRangerStation} from "./wild-ranger-station.js?v=first-cc0-ranger-20261015-v1";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
 import {installVillageRealTerrain,PHOTO_TILE_METRES} from "./wild-village-real-terrain.js?v=photo-ground-sharp-debanded-20261015-v5";
@@ -122,13 +123,15 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
   // are separate permanent scene objects and remain untouched by tile loads.
   // Terrain elevation and the ~84 m streaming trigger remain active.
   const paths=0,pads=0;
+  const buildings=buildNorthRangerStation(B,scene,track,
+    {cx,cy,seed,base,surfaceHeight});
   const villageRealTerrain=installVillageRealTerrain(B,scene,track,
     {cx,cy,seed,mobile,lite,ground,farGround});
 
   return {
     surfaceHeight,collidableTrees:[],nearTrees:0,distantTrees:0,
     addedTrees:0,addedEvergreens:0,elderTrees:0,species:0,
-    understory:0,heroPlants:0,communityBuildings:0,communityFirePits:0,
+    understory:0,heroPlants:0,communityBuildings:buildings,communityFirePits:0,
     communityPaths:paths,clearingsRendered:pads,
     villageGroundDetails:0,villageEdgeTrees:0,villageDetailDiameterMetres:0,
     heroGraphics:false,forestExtentMetres:700,
