@@ -7,7 +7,7 @@ on:
   # Asset installers commit GLBs using GITHUB_TOKEN; these commits do not
   # trigger push workflows. Deploy after a successful installer run, too.
   workflow_run:
-    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain"]
+    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
     types: [completed]
     branches: ["main"]
 
