@@ -171,6 +171,13 @@ def make_c0_anatomy(root, body, rig):
     raw_positions=[v.co.copy() for v in mesh.vertices]
     edge_dist=[min((p-b).length for b in boundary)*scale
                for p in raw_positions]
+    # Donor is small and irregular. A fixed 13 mm seam fade can erase the
+    # ENTIRE profile if the mesh's inradius is smaller. Adapt the fade to
+    # the actual licensed topology, leaving a guaranteed interior core.
+    rim_span=max(edge_dist)
+    if rim_span < .001:
+        raise RuntimeError("C0: donor surface has no interior for a flush seam")
+    rim_width=max(.0015,min(.009,rim_span*.42))
 
     def clamp01(t):
         return max(0.,min(1.,t))
@@ -242,8 +249,12 @@ def make_c0_anatomy(root, body, rig):
                 supported_upper+=1
         # Symmetric outward relief follows the local BODY normal rather
         # than world -Y, which would peel the inferior edge off in kneeling.
-        dx=nearest.x-cx
-        dz=nearest.z-c0z
+        # The nearest 3D body point may lie beneath the pelvic rim. Its
+        # coordinates are a SUPPORT contact, not a stable sculpt UV: using
+        # them for the profile makes the entire detail disappear or spike.
+        # Keep the continuous donor X/Z parametrization for the relief.
+        dx=x-cx
+        dz=raw_offset
         inner=sum(f["relief"]*gauss(dx,f["x"],.009)*gauss(dz,f["z"],.027)
                   for f in LANDMARKS if f["id"] in ("L1","R1"))
         outer=sum(f["relief"]*gauss(dx,f["x"],.014)*gauss(dz,f["z"],.029)
@@ -253,7 +264,7 @@ def make_c0_anatomy(root, body, rig):
         donor=max(-.005,min(.007,(-src_y-.49)*scale*.24))
         # Zero detail on ALL mesh perimeter edges. Pull the perimeter onto
         # Carol's existing surface, preventing visible folded-paper flaps.
-        rim_fade=smoothstep(edge_dist[i]/.013)
+        rim_fade=smoothstep(edge_dist[i]/rim_width)
         lower_fade=smoothstep((raw_offset+.042)/.014)
         upper_fade=smoothstep((.036-raw_offset)/.012)
         fade=rim_fade*lower_fade*upper_fade
@@ -268,6 +279,12 @@ def make_c0_anatomy(root, body, rig):
     offsets=[v.co.z-c0z for v in mesh.vertices]
     if max_boundary_gap>.002:
         raise RuntimeError("C0: attachment boundary not flush with pelvis")
+    print("WVLRP_CAROL_C0_PROFILE_DIAGNOSTICS",
+          "rim_span_mm",round(rim_span*1000,2),
+          "rim_width_mm",round(rim_width*1000,2),
+          "peak_relief_mm",round(center_relief*1000,2),
+          "body_support_mm",round(max_support_distance*1000,2),
+          "upper_sample",upper_count,"upper_supported",supported_upper)
     if center_relief<.012:
         raise RuntimeError("C0: contour flattened during skin conformity")
     if upper_count<50 or supported_upper<upper_count*.40:
