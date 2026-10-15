@@ -41,6 +41,10 @@ const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 // Direct link ?spawn=ranger places the walking player outside the ranger porch.
 // Hearthside remains the default on ordinary walk links; resident NPCs stay put.
 const betaParams=new URLSearchParams(window.location.search);
+// Manual ?lite=1 fallback plus automatic support for 1-2 GB phones.
+// Keep full landscape quality on modern Android phones and desktop.
+const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
+  (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=2));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const RANGER_SPAWN=Object.freeze({x:93,z:45,tileX:96,tileZ:96});
@@ -75,7 +79,7 @@ const GLBS={
 };
 if(!B){status("3D engine unavailable. Reload while connected to the internet.");throw Error("Babylon.js unavailable");}
 const engine=new B.Engine(canvas,true,{antialias:!mobile,stencil:true,preserveDrawingBuffer:false});
-engine.setHardwareScalingLevel(mobile?1.4:1);
+engine.setHardwareScalingLevel(LITE_MODE?1.9:mobile?1.4:1);
 const scene=new B.Scene(engine);
 // Clear, sunny afternoon: enough diffuse skylight reaches forest-floor plants
 // beneath the dense native canopy, without making all foliage fluorescent.
@@ -207,9 +211,9 @@ const villageOak=VILLAGE_HD_OAK_ENABLED
   : {status:"disabled-for-clear-square",meshCount:0,error:"",root:null};
 // Real imported PBR trees around the 3-acre village, on individual permanent
 // nodes. They are NOT owned by the periodically replaced wilderness tile.
-const villageGrove=installVillageGrove(B,scene,{seed,mobile});
+const villageGrove=installVillageGrove(B,scene,{seed,mobile,lite:LITE_MODE});
 // Only after the trees finish decoding: no competing large GLB downloads.
-const villageFloor=installVillageForestFloor(B,scene,{seed,mobile,startAfter:villageGrove.ready});
+const villageFloor=installVillageForestFloor(B,scene,{seed,mobile,lite:LITE_MODE,startAfter:villageGrove.ready});
 const names=[];
 function addNamePlate(o){
   const ground=cabinY+.38;
@@ -308,7 +312,8 @@ let joyX=0,joyY=0,joyPointer=null;
 // held LEFT/RIGHT command turns toward a stable heading instead of spinning.
 let moveReferenceHeading=null;
 let runMode=false,lastCenterTap=-Infinity,tapStartAt=0,tapStartRadius=Infinity,tapMaxRadius=0;
-const DOUBLE_TAP_MS=360,CENTER_TAP_RADIUS=27;
+// Allow realistic taps when decoding GLBs briefly stalls a slower phone.
+const DOUBLE_TAP_MS=800,CENTER_TAP_RADIUS=27,CENTER_TAP_MAX_MS=500;
 function joystickCenterRadius(e){
  const r=joystick.getBoundingClientRect();
  return Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2));
@@ -346,7 +351,7 @@ joystick.addEventListener("pointermove",e=>{
 const resetStick=e=>{
   if(e.pointerId!==joyPointer)return;
   const now=performance.now();
-  const centerTap=e.type==="pointerup"&&now-tapStartAt<260&&
+  const centerTap=e.type==="pointerup"&&now-tapStartAt<CENTER_TAP_MAX_MS&&
     tapStartRadius<CENTER_TAP_RADIUS&&tapMaxRadius<CENTER_TAP_RADIUS&&
     joystickCenterRadius(e)<CENTER_TAP_RADIUS;
   joyPointer=null;joyX=joyY=0;moveReferenceHeading=null;
@@ -548,7 +553,8 @@ window.__wildDiagnostics=()=>({
    importedVillageOakMeshes:villageOak.meshCount,
    importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
    importedVillageOakError:villageOak.error,
-   villageGroveStatus:villageGrove.status,
+   liteMode:LITE_MODE,
+  villageGroveStatus:villageGrove.status,
    villageGroveModelSources:villageGrove.sourceIds,
    villageGroveModelsLoaded:villageGrove.loadedModels,
   villageGroveBroadleafModels:villageGrove.broadleafModelsLoaded,
