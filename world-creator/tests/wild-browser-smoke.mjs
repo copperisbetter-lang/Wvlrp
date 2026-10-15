@@ -79,21 +79,22 @@ try{
     "Walker must retain adult standing eye height above visible hill mesh: "+state.renderedEyeHeight);
   assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
     "Critical browser errors: "+warnings.join("; "));
-  // Teleport to the former village: it must also have genuine photographic
-  // terrain, not the old green mountain wall or procedural dirt.
+  // Teleport to the NEW station, 350m north, without moving Hearthside.
+  // Its authentic log panels and metal roofing render on photographed ground.
   await page.locator("#village").click();
-  await page.waitForFunction(()=>window.__wildDiagnostics()?.spawnLocation==="hearthside" ||
+  await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===1 &&
       window.__wildDiagnostics()?.photographicTerrainStatus==="ready",
     {timeout:25000});
   const village=await page.evaluate(()=>window.__wildDiagnostics());
-  console.log("CLEARED_FIELD_STATE",JSON.stringify(village));
+  console.log("NORTH_RANGER_STATION_STATE",JSON.stringify(village));
   assert.equal(village.photographicTerrainStatus,"ready");
-  assert.equal(village.communityBuildings,0);
+  assert.equal(village.communityBuildings,1,"One new rustic Ranger Station is visible");
   assert.equal(village.communityFirePits,0);
   assert.equal(village.communityPaths,0);
   assert.equal(village.villageMountainLayers,0);
   assert.ok(Math.abs(village.eyeHeight-1.98)<.08,"Walker must keep adult height");
-  assert.ok(village.position[2]<80,"Former village spawn must remain walkable");
+  assert.ok(Math.abs(village.position[0])<2&&Math.abs(village.position[2]-337)<2,
+    "Ranger spawn must be outside south-facing porch at (0,337)");
   await page.screenshot({path:"wild-village-qa.png",fullPage:true});
 
   // Command left movement. The camera must turn left and move in the same
