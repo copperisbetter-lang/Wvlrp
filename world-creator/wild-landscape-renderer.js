@@ -9,7 +9,7 @@ import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-2
 import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
 import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=mountain-sightline-v9";
-import {VILLAGE_DETAIL_ZONE,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=75m-village-20261014-v1";
+import {VILLAGE_DETAIL_ZONE,VILLAGE_SQUARE_TREES_ENABLED,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
 const PROFILES={
  "tulip-poplar":{height:29,radius:4.2,base:.51,crown:.43,leaf:"#627d37",kind:"broad"},
  "white-oak":{height:23,radius:6.4,base:.36,crown:.36,leaf:"#53683a",kind:"wide"},
@@ -594,12 +594,15 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // Preserve natural forest everywhere else. Add just a ring of correctly
   // grounded shade trees within the approved circular 75 m village zone.
   // The mountain vista, paths, three foundations and fireplace stay open.
-  const villageEdgeTrees=heroZone?
+  const villageEdgeTrees=VILLAGE_SQUARE_TREES_ENABLED&&heroZone?
     treesInArea(VILLAGE_DETAIL_ZONE.centerX,VILLAGE_DETAIL_ZONE.centerZ,
       VILLAGE_DETAIL_ZONE.radiusMetres,seed,8.25)
       .filter(t=>allowVillageEdgeTree(t.x,t.y))
       .map(t=>({...t,scale:t.scale*(t.elder?.84:.70)})):[];
-  const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar,villageEdgeTrees);
+  // Filter all existing and supplemental tree sources, not only the special edge ring.
+  // No procedural trunk can appear in the 75 m diameter village square.
+  const squareAllowsTree=t=>VILLAGE_SQUARE_TREES_ENABLED||!insideVillageDetail(t.x,t.y);
+  const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar,villageEdgeTrees).filter(squareAllowsTree);
   const flatHeight=cabinGrade(93,85,seed);
   for(const t of allTrees){
     const y=walkSurface(t.x,t.y);
@@ -614,6 +617,7 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // radius; trees outside remain inexpensive native forest prototypes.
   const insidePilot=t=>insideVillageDetail(t.x,t.y);
   const addGroup=(t,lod)=>{
+    if(!squareAllowsTree(t))return;
     const variant=lod==="near"?(t.variation>.51?1:0):0;
     const key=t.species+"/"+lod+"/"+variant;
     if(!groups.has(key))groups.set(key,{species:t.species,lod,variant,trees:[]});
