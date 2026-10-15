@@ -1,0 +1,30 @@
+[
+  {
+    "id": "fern_02",
+    "url": "./assets/village-floor-fern_02.glb",
+    "source": "https://polyhaven.com/a/fern_02",
+    "license": "CC0",
+    "bytes": 158948
+  },
+  {
+    "id": "rock_moss_set_01",
+    "url": "./assets/village-floor-rock_moss_set_01.glb",
+    "source": "https://polyhaven.com/a/rock_moss_set_01",
+    "license": "CC0",
+    "bytes": 533888
+  },
+  {
+    "id": "tree_stump_01",
+    "url": "./assets/village-floor-tree_stump_01.glb",
+    "source": "https://polyhaven.com/a/tree_stump_01",
+    "license": "CC0",
+    "bytes": 813216
+  },
+  {
+    "id": "dead_tree_trunk",
+    "url": "./assets/village-floor-dead_tree_trunk.glb",
+    "source": "https://polyhaven.com/a/dead_tree_trunk",
+    "license": "CC0",
+    "bytes": 801800
+  }
+]
