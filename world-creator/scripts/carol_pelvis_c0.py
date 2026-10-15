@@ -19,11 +19,11 @@ LANDMARKS = [
     dict(id="C0", name="Central pelvic origin", x=0.000, z=0.000, relief=0.000),
     dict(id="P1", name="Pubic mound",          x=0.000, z=0.022, relief=0.002),
     dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.003),
-    dict(id="L1", name="Left inner fold",      x=-0.009, z=-0.009, relief=0.010),
-    dict(id="R1", name="Right inner fold",     x= 0.009, z=-0.009, relief=0.010),
-    dict(id="L2", name="Left outer fold",      x=-0.019, z=-0.006, relief=0.014),
-    dict(id="R2", name="Right outer fold",     x= 0.019, z=-0.006, relief=0.014),
-    dict(id="B1", name="Lower central blend", x=0.000, z=-0.020, relief=0.002),
+    dict(id="L1", name="Left inner fold",      x=-0.006, z=-0.009, relief=0.010),
+    dict(id="R1", name="Right inner fold",     x= 0.006, z=-0.009, relief=0.010),
+    dict(id="L2", name="Left outer fold",      x=-0.015, z=-0.006, relief=0.013),
+    dict(id="R2", name="Right outer fold",     x= 0.015, z=-0.006, relief=0.013),
+    dict(id="B1", name="Lower central blend", x=0.000, z=-0.013, relief=0.002),
 ]
 
 def make_c0_anatomy(root, body, rig):
@@ -155,8 +155,10 @@ def make_c0_anatomy(root, body, rig):
     low=min(v[2] for v in raw_verts)
     # A compact skin inset. Separate horizontal/vertical scales prevent the
     # lower rim from dropping into empty space between the thighs.
-    x_scale=.050
-    z_scale=.037
+    # A narrow, vertically elongated silhouette. Previous 50x37 mm dimensions
+    # produced a wide, squat pouch instead of a pelvis-following contour.
+    x_scale=.041
+    z_scale=.057
     positions=[v.co.copy() for v in body.data.vertices]
     # The old weight filter excluded ALL polygons below z=.777m
     # even though C0 is z=.744m, so the nearest-point snap lifted
@@ -237,7 +239,10 @@ def make_c0_anatomy(root, body, rig):
         # original pelvic skin, including its underside, before adding detail.
         # Begin just ABOVE the first verified skin contact. The earlier
         # low tip hung 4 cm below genuine skin and could never be seamless.
-        raw_offset=(first_contact-c0z)+.007+(src_z-low)*z_scale
+        # Span both negative (inferior) and positive (pubic) C0 offsets.
+        # Previously the entire grid began near -3 mm, while inner/outer
+        # folds were specified at -9 mm; those folds were never sculpted.
+        raw_offset=-.016+(src_z-low)*z_scale
         roll=smoothstep((.008-raw_offset)/.040)
         x=cx+src_x*x_scale*(1.-.10*smoothstep((raw_offset-.010)/.022))
         z=c0z+raw_offset+.002*roll
@@ -306,11 +311,11 @@ def make_c0_anatomy(root, body, rig):
         # Keep the continuous donor X/Z parametrization for the relief.
         dx=x-cx
         dz=raw_offset
-        inner=sum(f["relief"]*gauss(dx,f["x"],.009)*gauss(dz,f["z"],.027)
+        inner=sum(f["relief"]*gauss(dx,f["x"],.0052)*gauss(dz,f["z"],.018)
                   for f in LANDMARKS if f["id"] in ("L1","R1"))
-        outer=sum(f["relief"]*gauss(dx,f["x"],.014)*gauss(dz,f["z"],.029)
+        outer=sum(f["relief"]*gauss(dx,f["x"],.007)*gauss(dz,f["z"],.021)
                   for f in LANDMARKS if f["id"] in ("L2","R2"))
-        top=sum(f["relief"]*gauss(dx,f["x"],.012)*gauss(dz,f["z"],.018)
+        top=sum(f["relief"]*gauss(dx,f["x"],.011)*gauss(dz,f["z"],.018)
                 for f in LANDMARKS if f["id"] in ("P1","H1","B1"))
         donor=max(-.005,min(.007,(-src_y-.49)*x_scale*.16))
         # Zero detail on ALL mesh perimeter edges. Pull the perimeter onto
@@ -322,11 +327,11 @@ def make_c0_anatomy(root, body, rig):
         # Two independent nested folds on each side, separated by a soft
         # depression. Without these valley terms the Gaussian peaks blended
         # into the single blocky lobe reported in the viewer.
-        valley=.0036*gauss(abs(dx),.015,.0042)*gauss(dz,-.008,.024)
-        center_groove=.003*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
+        valley=.0048*gauss(abs(dx),.010,.0028)*gauss(dz,-.008,.019)
+        center_groove=.0028*gauss(dx,0.,.0027)*gauss(dz,-.009,.020)
         # Keep two softly separated outer/inner contours; never cap them
         # into the broad sphere-like mass seen in the inspection shots.
-        relief=max(0.,min(.010,.0008+.62*inner+.70*outer+.65*top+.15*donor-.75*valley-.75*center_groove))*fade
+        relief=max(0.,min(.012,.0004+.84*inner+.85*outer+.40*top+.08*donor-valley-center_groove))*fade
         center_relief=max(center_relief,relief)
         # The earlier full conformal snap recessed the center into the groin
         # crease. Preserve the conformal BODY contact and all fitted rig
@@ -345,7 +350,10 @@ def make_c0_anatomy(root, body, rig):
         # all three dimensions to unrelated closest vertices had folded
         # quads back over one another, creating the visible angular shards.
         # Offset anterior (-Y) with a smooth taper at the true mesh rim.
-        v.co=Vector((x,nearest.y-(relief+normal_lift)*.82-anterior_lift-.0002,z))
+        # Recess the perimeter into the real body by 0.8 mm. No raised
+        # rectangular rim or free-standing front edge should be visible.
+        seam_inset=.0008*(1.-rim_fade)
+        v.co=Vector((x,nearest.y-(relief+normal_lift)*.82-anterior_lift+seam_inset,z))
         if i%cols==cols//2 and (i//cols)%5==0:
             sampled_midline.append((i//cols,round(x,4),round(z,4),tuple(round(t,4) for t in nearest),round(distance,4)))
         if edge_dist[i]<.0005:
@@ -370,6 +378,10 @@ def make_c0_anatomy(root, body, rig):
         smoothed_y=updated_y
     for j,v in enumerate(mesh.vertices):
         v.co.y=smoothed_y[j]
+    # Structural guard for the photographed defect: no broad horizontal
+    # pouch, no crest that misses the actual negative-Z labial landmarks.
+    if z_scale <= x_scale or not (min(v.co.z-c0z for v in mesh.vertices)<LANDMARKS[3]["z"]<max(v.co.z-c0z for v in mesh.vertices)):
+        raise RuntimeError("C0: anatomical features outside elongated mesh extent")
     # Reject any paper-petal / depth jump before glTF export.
     max_y_step=0.
     for row in range(rows):
@@ -442,7 +454,7 @@ def make_c0_anatomy(root, body, rig):
     front_count=len(mesh.vertices)
     front_positions=[v.co.copy() for v in mesh.vertices]
     front_faces=[tuple(p.vertices) for p in mesh.polygons]
-    back_positions=[p+Vector((0.,.0015,0.)) for p in front_positions]
+    back_positions=[p+Vector((0.,.0006,0.)) for p in front_positions]
     outline=(list(range(cols))
             +[r*cols+cols-1 for r in range(1,rows)]
             +[(rows-1)*cols+c for c in range(cols-2,-1,-1)]
@@ -473,7 +485,7 @@ def make_c0_anatomy(root, body, rig):
     transferred_skin.extend([dict(weights) for weights in transferred_skin])
     print("WVLRP_CAROL_C0_VOLUME_QA","vertices",len(mesh.vertices),
           "faces",len(mesh.polygons),"unsealed_edges",open_edges,
-          "inner_outer_valleys",True,"wall_depth_mm",1.5)
+          "inner_outer_valleys",True,"wall_depth_mm",0.6)
     obj=bpy.data.objects.new("WVLRP Carol C0 anatomy | inspection overlay",mesh)
     bpy.context.collection.objects.link(obj)
     obj.parent=root
