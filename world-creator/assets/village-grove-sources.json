@@ -39,20 +39,20 @@
     "url": "./assets/village-pbr-island_tree_01.glb",
     "source": "https://polyhaven.com/a/island_tree_01",
     "license": "CC0",
-    "bytes": 5300860
+    "bytes": 5290604
   },
   {
     "id": "island_tree_02",
     "url": "./assets/village-pbr-island_tree_02.glb",
     "source": "https://polyhaven.com/a/island_tree_02",
     "license": "CC0",
-    "bytes": 3913236
+    "bytes": 3904436
   },
   {
     "id": "island_tree_03",
     "url": "./assets/village-pbr-island_tree_03.glb",
     "source": "https://polyhaven.com/a/island_tree_03",
     "license": "CC0",
-    "bytes": 6708516
+    "bytes": 6700476
   }
 ]
