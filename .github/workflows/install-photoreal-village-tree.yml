@@ -75,6 +75,7 @@ jobs:
             world-creator/assets/village-photoreal-broadleaf.glb \
             --simplify-ratio 0.13 \
             --simplify-error 0.08 \
+            --compress quantize \
             --texture-compress webp \
             --texture-size 1024
 
