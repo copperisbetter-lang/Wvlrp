@@ -32,28 +32,28 @@
       "name": "Left inner fold",
       "x": -0.01,
       "z": -0.009,
-      "relief": 0.011
+      "relief": 0.017
     },
     {
       "id": "R1",
       "name": "Right inner fold",
       "x": 0.01,
       "z": -0.009,
-      "relief": 0.011
+      "relief": 0.017
     },
     {
       "id": "L2",
       "name": "Left outer fold",
       "x": -0.022,
       "z": -0.006,
-      "relief": 0.017
+      "relief": 0.025
     },
     {
       "id": "R2",
       "name": "Right outer fold",
       "x": 0.022,
       "z": -0.006,
-      "relief": 0.017
+      "relief": 0.025
     },
     {
       "id": "B1",
