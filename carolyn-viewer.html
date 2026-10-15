@@ -31,7 +31,7 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
 <main>
 <h2>Camera and close inspection</h2>
 <div class="controls">
-<a href="/carolyn-viewer.html?model=pelvic-x10" style="color:#fff;background:#72512e;padding:10px;border:1px solid #e0b66a;border-radius:10px;text-decoration:none">Older ×10 spike test</a><a href="/carolyn-viewer.html?view=pelvis" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Updated smooth Carol</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button><button id="pelvis">Pelvis</button>
+<a href="/carolyn-viewer.html?view=pelvis" style="color:#fff;background:#26503d;padding:10px;border:1px solid #8fae9a;border-radius:10px;text-decoration:none">Current Carol model</a><button id="reload">Reload new model</button><button id="full">Full body</button><button id="face">Face</button><button id="torso">Upper body</button><button id="pelvis">Pelvis</button>
 <button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="toggleC0" type="button">Hide C0 label</button>
 </div>
@@ -174,10 +174,9 @@ button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button[aria
    }
    saveGarments();showGarments();
  });
- const isPelvicX10=new URLSearchParams(location.search).get('model')==='pelvic-x10';
- const MODEL_PATH=isPelvicX10
-   ?'/world-creator/assets/caroline-pelvic-x10-inspection.glb'
-   :'/world-creator/assets/caroline-inspection.glb';
+ // Always show the actual latest inspection GLB. The obsolete ×10
+ // diagnostic spike model produced misleading screenshots of detached mesh.
+ const MODEL_PATH='/world-creator/assets/caroline-inspection.glb';
  const loadUncached=()=>{ v.src=MODEL_PATH+'?fresh='+Date.now(); };
  loadUncached();
  const label=(s)=>String(s||'').replace(/[^a-zA-Z]/g,'').toLowerCase();
