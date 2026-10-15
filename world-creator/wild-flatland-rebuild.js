@@ -10,7 +10,7 @@ import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
-import {installVillageRealTerrain} from "./wild-village-real-terrain.js?v=photo-ground-all-tiles-20261015-v2";
+import {installVillageRealTerrain} from "./wild-village-real-terrain.js?v=photo-ground-all-tiles-20261015-v3";
 
 function tileIntersectsRoute(route,cx,cz,margin){
   return route.points.some(p=>Math.abs(p[0]-cx)<margin&&Math.abs(p[1]-cz)<margin);
