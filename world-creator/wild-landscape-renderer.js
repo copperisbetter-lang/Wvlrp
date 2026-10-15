@@ -6,9 +6,9 @@
 import { treesInArea, supplementalTreesInArea, creekPath, riverY, riverWidth, riverLevel, terrainHeight, cabinGrade, earthColor, biomeAt, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {hash,noise} from "./world-core.js";
 import {makeGroundHeightSampler} from "./terrain-height.js?v=ground-follow-fix-20261013-v1";
-import {gradeCommunityGround,keepForestTree,keepUnderstory} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
+import {gradeCommunityGround,keepForestTree,keepUnderstory,isVillagePrototypeExclusion,VILLAGE_PROTOTYPE_TREE_MARGIN_METRES} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
 import {renderWildVillage} from "./wild-village.js?v=mountain-cove-v9";
-import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=mountain-sightline-v9";
+import {createForestSurfaceTextures,buildHeroTree,renderHeroUnderstory} from "./wild-investor-graphics.js?v=village-10acre-prototype-clear-20261014-v1";
 import {VILLAGE_DETAIL_ZONE,VILLAGE_SQUARE_TREES_ENABLED,insideVillageDetail,allowVillageEdgeTree,allowVillageGroundDetail} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
 import {VILLAGE_SECTION} from "./wild-acre-regions.js";
 const PROFILES={
@@ -438,7 +438,9 @@ function renderVillageGroundDetail(B,scene,track,{cx,cy,seed,mobile,surfaceHeigh
   for(let i=firstX;i<=lastX;i++)for(let j=firstZ;j<=lastZ;j++){
     const x=(i+(hash(i,j,seed+4101)-.5)*.65)*step;
     const z=(j+(hash(i,j,seed+4102)-.5)*.65)*step;
-    if(!insideVillageDetail(x,z))continue;
+    // The old procedural village-floor pass must not repopulate the 10-acre
+    // PBR-only showcase. New authored grove models are installed separately.
+    if(!insideVillageDetail(x,z)||isVillagePrototypeExclusion(x,z,2))continue;
     const patch=noise(x/11,z/13,seed+4110);
     const r=hash(i,j,seed+4111);
     let kind=r<.27?"leaflitter":r<.50?"moss":
@@ -468,7 +470,7 @@ function renderVillageGroundDetail(B,scene,track,{cx,cy,seed,mobile,surfaceHeigh
     if(kind!=="leaflitter"&&hash(i,j,seed+4116)<.46){
       const x2=x+(hash(i,j,seed+4117)-.5)*.96;
       const z2=z+(hash(i,j,seed+4118)-.5)*.96;
-      if(allowVillageGroundDetail(x2,z2,"leaflitter"))
+      if(!isVillagePrototypeExclusion(x2,z2,2)&&allowVillageGroundDetail(x2,z2,"leaflitter"))
         groups.leaflitter.push({x:x2,y:z2,height:h+.058,
           scale:.48+hash(i,j,seed+4119)*.25,
           heading:hash(i,j,seed+4120)*Math.PI*2,variation:.35});
@@ -604,10 +606,12 @@ export function renderWildLandscape(B,scene,track,{cx,cy,seed,mobile=false}){
   // No procedural trunk can appear in the 75 m diameter village square.
   // The entire three-acre village is reserved for real, independent PBR GLB
   // grove models. No old procedural trees may grow among its planned trunks.
-  // Outside this section the existing wilderness remains untouched.
+  // A 10-acre circular village exclusion also removes surrounding generic
+  // wilderness models; forest beyond its buffered boundary remains untouched.
   const inVillageGrove=t=>t.x>=VILLAGE_SECTION.minX&&t.x<=VILLAGE_SECTION.maxX&&
     t.y>=VILLAGE_SECTION.minZ&&t.y<=VILLAGE_SECTION.maxZ;
   const squareAllowsTree=t=>!inVillageGrove(t)&&
+    !isVillagePrototypeExclusion(t.x,t.y,VILLAGE_PROTOTYPE_TREE_MARGIN_METRES)&&
     (VILLAGE_SQUARE_TREES_ENABLED||!insideVillageDetail(t.x,t.y));
   const allTrees=near.concat(mid,far,addedNear,addedMid,addedFar,villageEdgeTrees).filter(squareAllowsTree);
   const flatHeight=cabinGrade(93,85,seed);
