@@ -86,14 +86,29 @@ export function isVillageMountainSightline(x,z){
     *(1+.10*Math.sin(z*.047+x*.018));
   return Math.abs(x-v.centerX)<edge;
 }
+// Sponsor inspection: 10 acres around the village contain ONLY the
+// independently loaded 3-acre PBR grove. No old procedural trees or brush.
+// This is an AREA-derived circular radius in game metres, not a 10-acre radius.
+// Canopy/root spillover is prevented by a narrow additional tree buffer.
+export const VILLAGE_PROTOTYPE_CLEARING_ACRES=10;
+export const VILLAGE_PROTOTYPE_CLEARING_RADIUS_METRES=
+  Math.sqrt(VILLAGE_PROTOTYPE_CLEARING_ACRES*4046.8564224/Math.PI);
+export const VILLAGE_PROTOTYPE_TREE_MARGIN_METRES=12;
+export const VILLAGE_PROTOTYPE_UNDERSTORY_MARGIN_METRES=2;
+export function isVillagePrototypeExclusion(x,z,marginMetres=0){
+  return Math.hypot(x-VILLAGE_CLEARING.centerX,z-VILLAGE_CLEARING.centerZ)
+    <=VILLAGE_PROTOTYPE_CLEARING_RADIUS_METRES+marginMetres;
+}
 export function keepForestTree(x,z){
-  return !isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
+  return !isVillagePrototypeExclusion(x,z,VILLAGE_PROTOTYPE_TREE_MARGIN_METRES)
+    &&!isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
     &&pathDistance(x,z)>3.35;
 }
 export function keepUnderstory(x,z){
-  // Leave the meeting space open. Its perimeter gets natural fern/laurel
-  // masses, while tubs and planters decorate the building foundations.
-  return !isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
+  // Imported PBR grove and natural terrain remain; old generic shrubs do not
+  // respawn anywhere in the protected showcase ring, including streamed tiles.
+  return !isVillagePrototypeExclusion(x,z,VILLAGE_PROTOTYPE_UNDERSTORY_MARGIN_METRES)
+    &&!isCommunityClearing(x,z)&&!isVillageMountainSightline(x,z)
     &&pathDistance(x,z)>1.95;
 }
 export function gradeCommunityGround(x,z,naturalHeight,heightAtSite){
