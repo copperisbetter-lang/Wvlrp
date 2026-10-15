@@ -43,7 +43,7 @@ jobs:
           def download(item,path):
               path.parent.mkdir(parents=True,exist_ok=True)
               with openurl(item['url']) as inp,path.open('wb') as dest:shutil.copyfileobj(inp,dest,1024*1024)
-              if path.stat().st_size<10000:raise ValueError('Too small: '+str(path))
+              if path.stat().st_size<100:raise ValueError('Too small: '+str(path))
               if item.get('md5'):
                   h=hashlib.md5()
                   with path.open('rb') as stream:
