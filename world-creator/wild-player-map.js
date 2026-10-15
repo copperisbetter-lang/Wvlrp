@@ -3,7 +3,7 @@
  * The map shows coordinates received inside the same Trystero/WebRTC room.
  * It never accesses a device's GPS or a public player database.
  */
-import {COMMUNITY_SITES,WILD_TRAIL_SEGMENTS} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
+import {REBUILD_CLEARINGS,REBUILD_PATHS} from "./wild-rebuild-layout.js?v=flatland-map-20261015-v1";
 
 export function wildPeerDirection(from,to){
   const dx=to.x-from.x,dz=to.z-from.z;
@@ -73,9 +73,9 @@ export function createWildPlayerMap({getSelf,getPeers,getStatus}){
       ctx.beginPath();ctx.moveTo(0,Y(z));ctx.lineTo(w,Y(z));ctx.stroke();
     }
     ctx.strokeStyle="#d5b883b8";ctx.lineWidth=3;ctx.lineJoin="round";
-    for(const path of WILD_TRAIL_SEGMENTS){
+    for(const route of REBUILD_PATHS){
       ctx.beginPath();
-      path.forEach(([x,z],i)=>{if(!i)ctx.moveTo(X(x),Y(z));else ctx.lineTo(X(x),Y(z));});
+      route.points.forEach(([x,z],i)=>{if(!i)ctx.moveTo(X(x),Y(z));else ctx.lineTo(X(x),Y(z));});
       ctx.stroke();
     }
     function landmark(text,x,z){
@@ -85,10 +85,8 @@ export function createWildPlayerMap({getSelf,getPeers,getStatus}){
       ctx.font="bold 14px system-ui";ctx.fillStyle="#f9dfae";ctx.textAlign="center";
       ctx.fillText(text,a,b-11,145);
     }
-    landmark("Hearthside",0,0);
-    for(const site of COMMUNITY_SITES){
-      landmark(site.id==="wild-ranger-station"?"Ranger Station":
-        site.id==="wild-laurels-kitchen"?"Laurel's Kitchen":"Mercantile",site.x,site.z);
+    for(const clearing of REBUILD_CLEARINGS){
+      landmark(clearing.name,clearing.x,clearing.z);
     }
     const closest=peers.slice().sort((a,b)=>
       wildPeerDirection(me,a).metres-wildPeerDirection(me,b).metres)[0];
