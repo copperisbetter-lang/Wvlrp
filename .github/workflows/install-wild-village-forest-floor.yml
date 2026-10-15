@@ -5,13 +5,14 @@ on:
   push:
     paths:
       - '.github/workflows/install-wild-village-forest-floor.yml'
+      - 'world-creator/tests/wild-village-pbr-floor.test.mjs'
 
 permissions:
   contents: write
 
 concurrency:
   group: install-wild-village-forest-floor
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   install:
