@@ -105,7 +105,10 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
   const state={
     status:"loading-manifest",error:"",requested:VILLAGE_PROPOSED_TREES.length,
     planted:0,loadedModels:0,skippedNoModel:0,collidableTrees:[],sourceIds:[],
-    roots:[],group:null
+    roots:[],group:null,
+    broadleafModelsLoaded:0,evergreenModelsLoaded:0,plantedBySource:{},
+    // Library entries are visual stand-ins, NOT certified native species.
+    certifiedNativeSpeciesModels:0
   };
   const group=new B.TransformNode("VILLAGE THREE ACRES: authentic PBR tree collection",scene);
   state.group=group;
@@ -142,6 +145,8 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
       return;
     }
     const available=manifest.filter(m=>sources.has(m.id));
+    state.broadleafModelsLoaded=available.filter(m=>!(/^(fir|pine)/.test(m.id))).length;
+    state.evergreenModelsLoaded=available.filter(m=>/^(fir|pine)/.test(m.id)).length;
     const usage=new Map();
     const placed=[];
     for(const tree of VILLAGE_PROPOSED_TREES){
@@ -184,6 +189,7 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
           radius:tree.age==="young"?.60:1.15,id:tree.id});
         state.planted++;
         usage.set(asset.id,(usage.get(asset.id)||0)+1);
+        state.plantedBySource[asset.id]=usage.get(asset.id);
         placed.push({x:tree.x,z:tree.z,sourceId:asset.id});
       }catch(err){
         console.warn("Cannot install real tree",tree.id,err);
@@ -192,8 +198,10 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
       // Yield between groups of meshes to keep mobile screen responsive.
       if(state.planted%5===0)await new Promise(resolve=>setTimeout(resolve,0));
     }
-    state.status=state.planted?"ready":"unplanted";
+    state.status=state.planted?(state.broadleafModelsLoaded<3?"limited-variety":"ready"):"unplanted";
     if(state.planted===0)state.error="No suitable models for planned village positions";
+    else if(state.broadleafModelsLoaded<3)
+      state.error="Only "+state.broadleafModelsLoaded+" broadleaf source models loaded; native-species realism is not ready";
   };
   state.ready=start().catch(e=>showError(state,e));
   state.setNear=near=>{
