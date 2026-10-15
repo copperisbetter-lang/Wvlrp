@@ -2,7 +2,7 @@ import {strict as assert} from "node:assert";
 import test from "node:test";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "../wild-reference-layout.js";
 import {
-  VILLAGE_DETAIL_ZONE,insideVillageDetail,
+  VILLAGE_DETAIL_ZONE,VILLAGE_SQUARE_TREES_ENABLED,insideVillageDetail,
   allowVillageEdgeTree,allowVillageGroundDetail
 } from "../wild-village-detail-spec.js";
 
@@ -15,6 +15,9 @@ test("realistic village pilot is 75m across, not 75m in radius",()=>{
   assert.equal(insideVillageDetail(130.5,85),true);
   assert.equal(insideVillageDetail(130.51,85),false);
   assert.equal(insideVillageDetail(93,122.51),false);
+});
+test("village tree-free comparison phase is activated",()=>{
+  assert.equal(VILLAGE_SQUARE_TREES_ENABLED,false);
 });
 test("village edge shade trees preserve fire circle, paths, and building doors",()=>{
   assert.equal(allowVillageEdgeTree(93,65),false);
