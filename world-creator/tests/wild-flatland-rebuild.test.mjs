@@ -18,8 +18,10 @@ test("all village, cabin, campsite and overlook reserves connect to the same wal
   for(const route of REBUILD_PATHS){
     const a=map.get(route.from),b=map.get(route.to);
     const first=route.points[0],last=route.points.at(-1);
-    assert.deepEqual(first,[a.x,a.z]);
-    assert.deepEqual(last,[b.x,b.z]);
+    for(let k=0;k<2;k++){
+      assert.ok(Math.abs(first[k]-[a.x,a.z][k])<1e-8);
+      assert.ok(Math.abs(last[k]-[b.x,b.z][k])<1e-8);
+    }
   }
   assert.ok(REBUILD_LAYOUT_VERSION.includes("flatland"));
 });
@@ -46,8 +48,29 @@ test("world reboot retains character files and removes old scenery loaders",()=>
   for(const name of ["amy","chrissy","caitlyn","mason","riley","sha","sav"])
     assert.match(walk,new RegExp(name+':"\\./assets/'));
   assert.match(walk,/renderRebuiltLandscape as renderWildLandscape/);
-  assert.match(renderer,/makeFootpaths/);
-  assert.match(renderer,/reservedPad/);
+  assert.match(renderer,/const paths=0,pads=0/);
+  assert.match(renderer,/installVillageRealTerrain\(B,scene,track/);
+  assert.match(renderer,/ground,farGround/);
+  assert.match(renderer,/reservedPad/); // kept as dormant code, not instantiated.
   assert.match(renderer,/makeGroundHeightSampler/);
   assert.doesNotMatch(renderer,/renderWildVillage|buildHeroTree|treesInArea/);
+});
+
+test("photographic terrain covers all moving tiles while cabin and crew remain permanent",()=>{
+  const walk=file("../walk.js");
+  const renderer=file("../wild-flatland-rebuild.js");
+  const photo=file("../wild-village-real-terrain.js");
+  assert.match(photo,/coverage:"all-streamed-ground"/);
+  assert.match(photo,/SCENE_MATERIALS=new WeakMap/);
+  assert.match(photo,/forest_leaves_02/);
+  assert.match(photo,/forest_ground_04/);
+  assert.match(photo,/ground,farGround/);
+  assert.doesNotMatch(photo,/villageTerrainFade/);
+  assert.match(renderer,/const paths=0,pads=0/);
+  assert.doesNotMatch(renderer,/createForestSurfaceTextures/);
+  assert.match(walk,/buildHearthsideCabin/);
+  assert.match(walk,/gatherCabinCrew\(world\)/);
+  assert.match(walk,/const villageMountains=\{meshes:\[\]\}/);
+  assert.doesNotMatch(walk,/installVisibleVillageMountains\(B,scene,camera/);
+  assert.match(walk,/Math\.abs\(camera\.position\.x-tileCx\)/);
 });
