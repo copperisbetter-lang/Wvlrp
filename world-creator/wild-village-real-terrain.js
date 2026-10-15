@@ -95,7 +95,41 @@ function blendedPhotoAtlas(B,scene,photos,{mobile,lite}){
   atlas.wrapU=atlas.wrapV=B.Texture.WRAP_ADDRESSMODE;
   atlas.anisotropicFilteringLevel=mobile?4:8;
   atlas.update(false);
-  return atlas;
+  // Retain photographed leaf, pebble and moss edges at walking distance.
+  // The 32 m atlas provides large natural patches; this neutral high-pass
+  // texture supplies finer true-photograph detail at 2 m without visible
+  // color-pattern repetition.
+  const detailCanvas=document.createElement("canvas");
+  const detailSize=lite?512:1024;
+  detailCanvas.width=detailCanvas.height=detailSize;
+  const detailCtx=detailCanvas.getContext("2d",{willReadFrequently:true});
+  if(!detailCtx)throw Error("Terrain detail canvas unavailable");
+  detailCtx.drawImage(photos[0],0,0,detailSize,detailSize);
+  const original=detailCtx.getImageData(0,0,detailSize,detailSize);
+  const blurred=document.createElement("canvas");
+  blurred.width=blurred.height=detailSize;
+  const blurCtx=blurred.getContext("2d",{willReadFrequently:true});
+  blurCtx.filter="blur(12px)";
+  blurCtx.drawImage(detailCanvas,0,0);
+  const smooth=blurCtx.getImageData(0,0,detailSize,detailSize).data;
+  const pixels=original.data;
+  for(let i=0;i<pixels.length;i+=4){
+    const fine=((pixels[i]-smooth[i])*.25+
+      (pixels[i+1]-smooth[i+1])*.60+
+      (pixels[i+2]-smooth[i+2])*.15)*1.65;
+    const neutral=Math.max(70,Math.min(186,128+fine));
+    pixels[i]=pixels[i+1]=pixels[i+2]=neutral;
+    pixels[i+3]=255;
+  }
+  detailCtx.putImageData(original,0,0);
+  const detail=new B.DynamicTexture(
+    "sharp close-range CC0 leaf and soil microdetail",detailCanvas,scene,true);
+  detail.wrapU=detail.wrapV=B.Texture.WRAP_ADDRESSMODE;
+  detail.uScale=detail.vScale=PHOTO_TILE_METRES/2;
+  detail.anisotropicFilteringLevel=mobile?8:16;
+  detail.update(false);
+  atlas.anisotropicFilteringLevel=mobile?8:16;
+  return {atlas,detail};
 }
 
 const SCENE_MATERIALS=new WeakMap();
@@ -109,10 +143,10 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
     sourceIds:[],resolution,coverage:"all-streamed-ground",
     visualOnly:true,collisionSurfaceUnchanged:true
   };
-  const entry={state,material:null,promise:null};
+  const entry={state,material:null,farMaterial:null,promise:null};
   SCENE_MATERIALS.set(scene,entry);
   entry.promise=(async()=>{
-    let diffuse=null,normal=null,mat=null;
+    let diffuse=null,detail=null,normal=null,mat=null,farMat=null;
     try{
       const response=await fetch(MANIFEST,{cache:"no-store"});
       if(!response.ok)throw Error("Photographic terrain manifest unavailable: HTTP "+response.status);
@@ -145,7 +179,10 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
       try{
         const photos=await Promise.all(VILLAGE_TERRAIN_SURFACES.map(id=>
           photoImage(entries.get(id).files[resolution].diffuse)));
-        diffuse=blendedPhotoAtlas(B,scene,photos,{mobile,lite});
+        const layers=blendedPhotoAtlas(B,scene,photos,{mobile,lite});
+        diffuse=layers.atlas;
+        detail=layers.detail;
+        state.nearDetailMetres=2;
         state.blendMode="seamless-photographic-atlas";
         state.sourceIds=VILLAGE_TERRAIN_SURFACES.slice();
       }catch(blendError){
@@ -154,6 +191,7 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
         diffuse.uScale=diffuse.vScale=PHOTO_TILE_METRES/4;
         state.blendMode="original-photographic-fallback";
         state.sourceIds=[PRIMARY_SURFACE];
+        state.nearDetailMetres=0;
       }
       // The subtle normal map stays at its real ~4 m detail scale while the
       // photographic diffuse has a much larger, blended 32 m repeat.
@@ -172,12 +210,32 @@ function sharedPhotographicMaterial(B,scene,{mobile,lite}){
         normal.level=.34;
         mat.bumpTexture=normal;
       }
+      if(detail){
+        mat.detailMap.texture=detail;
+        mat.detailMap.diffuseBlendLevel=.88;
+        mat.detailMap.bumpLevel=0;
+        mat.detailMap.roughnessBlendLevel=0;
+        mat.detailMap.isEnabled=true;
+      }
+      // Distant mesh uses the same photographic macro material but NEVER
+      // the close-up detail/normal: they alias into horizontal bands near
+      // the horizon on low-resolution phone screens.
+      farMat=new B.StandardMaterial("CC0 distant terrain without repeating detail",scene);
+      farMat.diffuseTexture=diffuse;
+      farMat.diffuseColor=new B.Color3(.95,.96,.95);
+      farMat.ambientColor=new B.Color3(.15,.15,.15);
+      farMat.specularColor=new B.Color3(.005,.005,.005);
+      farMat.useVertexColors=false;
       entry.material=mat;
-      state.materials=1;
+      entry.farMaterial=farMat;
+      state.materials=2;
+      state.farDetailDisabled=true;
       state.status="ready";
     }catch(err){
       if(mat)mat.dispose();
+      if(farMat)farMat.dispose();
       if(normal)normal.dispose();
+      if(detail)detail.dispose();
       if(diffuse)diffuse.dispose();
       state.error=String(err?.message||err);
       state.status="awaiting-real-assets";
@@ -198,10 +256,10 @@ export function installVillageRealTerrain(B,scene,_track,{
   entry.state.triangles=ground.getIndices().length/3;
   const apply=()=>{
     if(!entry.material)return;
-    for(const mesh of [ground,farGround]){
+    for(const [mesh,material] of [[ground,entry.material],[farGround,entry.farMaterial]]){
       if(!mesh||mesh.isDisposed?.())continue;
       // Height sampler, UVs and collision geometry remain unchanged.
-      mesh.material=entry.material;
+      mesh.material=material;
       mesh.useVertexColors=false;
       mesh.isPickable=false;
       mesh.checkCollisions=false;
