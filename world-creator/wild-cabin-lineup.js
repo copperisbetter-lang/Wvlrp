@@ -227,12 +227,15 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     show(){visible=true;root.setEnabled(true);syncVisibility();panel.hidden=false;restore().catch(console.error);},
     hidePanel(){panel.hidden=true;},
     jump(){
+      // The test field is at Z=314: always jump to its approach at Z=274.
+      // Previous gating left visitors at Hearthside when no GLBs were imported.
+      onJump(0,274);
       if(!assigned.size){
         panel.hidden=false;
-        onStatus("No photoreal models installed yet. Select real downloaded 3D files in the comparison panel.");
+        onStatus("At the four-cabin test field (Z=314). None of the photoreal 3D cabin files are installed yet; import one using this panel.");
         return false;
       }
-      onJump(0,274);return true;
+      return true;
     },
     stats(){return CABIN_TEST_SLOTS.map((s,i)=>({id:s.id,loaded:assigned.has(i),solo:solo===i,x:s.x,z:s.z}));}
   };
