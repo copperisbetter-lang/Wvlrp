@@ -1,0 +1,50 @@
+name: Verify four real cabin models render
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/verify-four-wild-cabins.yml]
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Install four CC0 real 3D cabins"]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  browser:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chrome automation runtime
+        working-directory: world-creator
+        run: npm install --no-save --ignore-scripts playwright-core@1.57.0
+      - name: Start local first-person game with installed GLBs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s world-creator/assets/cabins/historic-log-cabin.glb
+          test -s world-creator/assets/cabins/a-frame-cabin.glb
+          test -s world-creator/assets/cabins/pitched-roof-cottage.glb
+          test -s world-creator/assets/cabins/bungalow-cabin.glb
+          cd world-creator
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/wild-cabin-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/walk.html > /dev/null;then exit 0;fi
+            sleep 1
+          done
+          cat /tmp/wild-cabin-server.log
+          exit 1
+      - name: Check visible real 3D cabin meshes from phone viewport
+        working-directory: world-creator
+        run: node tests/wild-four-cabins-browser.mjs
+      - name: Save mobile four-cabin proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wild-four-cabin-actual-3d-mobile-qa
+          path: world-creator/wild-four-real-cabins-mobile.png
+          if-no-files-found: ignore
