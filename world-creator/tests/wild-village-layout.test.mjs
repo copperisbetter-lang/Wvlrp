@@ -2,7 +2,10 @@ import {strict as assert} from "node:assert";
 import test from "node:test";
 import {
   COMMUNITY_SITES,VILLAGE_CLEARING,gradeCommunityGround,
-  keepForestTree,keepUnderstory,isCommunityClearing,isVillageMountainSightline
+  keepForestTree,keepUnderstory,isCommunityClearing,isVillageMountainSightline,
+  VILLAGE_PROTOTYPE_CLEARING_ACRES,VILLAGE_PROTOTYPE_CLEARING_RADIUS_METRES,
+  VILLAGE_PROTOTYPE_TREE_MARGIN_METRES,VILLAGE_PROTOTYPE_UNDERSTORY_MARGIN_METRES,
+  isVillagePrototypeExclusion
 } from "../wild-reference-layout.js";
 
 test("The three user-placed map markers remain exactly unchanged",()=>{
@@ -58,4 +61,26 @@ test("Northern backland grades smoothly into a lower valley without moving found
   assert.ok(ground(93,400)<base-15,"rear ground must not hide mountain");
   assert.equal(ground(300,400),natural(300,400),"outside corridor retain forest hills");
   assert.equal(ground(93,650),natural(93,650),"far backcountry untouched");
+});
+
+test("The village's real three-acre grove is surrounded by a 10-acre generic-free circle",()=>{
+  assert.equal(VILLAGE_PROTOTYPE_CLEARING_ACRES,10);
+  const r=Math.sqrt(10*4046.8564224/Math.PI);
+  assert.ok(Math.abs(VILLAGE_PROTOTYPE_CLEARING_RADIUS_METRES-r)<1e-9);
+  // Every corner of the existing rectangular three-acre showcase stays protected.
+  for(const [x,z] of [[27,39],[27,131],[159,39],[159,131],[93,85]]){
+    assert.equal(isVillagePrototypeExclusion(x,z),true);
+    assert.equal(keepForestTree(x,z),false);
+    assert.equal(keepUnderstory(x,z),false);
+  }
+  // Just beyond the boundary: vegetation masks respect their spillover margins.
+  const z=VILLAGE_CLEARING.centerZ;
+  const x=VILLAGE_CLEARING.centerX+r;
+  assert.equal(isVillagePrototypeExclusion(x-0.01,z),true);
+  assert.equal(isVillagePrototypeExclusion(x+0.01,z),false);
+  assert.equal(keepForestTree(x+VILLAGE_PROTOTYPE_TREE_MARGIN_METRES-0.5,z),false);
+  assert.equal(keepUnderstory(x+VILLAGE_PROTOTYPE_UNDERSTORY_MARGIN_METRES-0.5,z),false);
+  assert.equal(isVillagePrototypeExclusion(400,0),false);
+  assert.equal(keepForestTree(400,0),true);
+  assert.equal(keepUnderstory(400,0),true);
 });
