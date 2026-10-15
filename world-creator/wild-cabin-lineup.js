@@ -1,16 +1,23 @@
 /**
- * The Wild: photoreal cabin comparison, October 2026.
- * Sources are three real photogrammetry scans and a detailed PBR building.
- * Sketchfab downloads require authorization; no model geometry is bundled yet.
- * Never render a sign at an empty slot as if a cabin is installed.
- * Preserve Hearthside Cabin and the North Ranger Station unchanged.
+ * The Wild: four actual downloadable, textured CC0 3D buildings.
+ * Models are served from our own WVLRP assets/cabins after CI verifies GLB
+ * geometry. Never render empty building placeholders; preserved cabins and NPCs
+ * are not modified. All displayed geometry comes from licensed source GLBs.
  */
-export const CABIN_CANDIDATES = Object.freeze([
-  {id:"old-cabin-scan",name:"Old Cabin (photo scan)",author:"Phil Devine",uid:"b94dff1a8d6b4e0c9248831ca772f19a",triangles:531800},
-  {id:"canadian-cabin-scan",name:"Canadian Cabin (photo scan)",author:"Air Digital",uid:"866032439f7344efa6d1155ade2435fe",triangles:998900},
-  {id:"winter-house-scan",name:"Winter House (photo scan)",author:"Shahriar Shahrabi",uid:"05e24d513635445380813a3ce15206db",triangles:144000},
-  {id:"pbr-log-cabin",name:"Log Cabin (high-detail PBR)",author:"Kless Gyzen",uid:"2657189dbdff49fdb20ba33d6ebd5c52",triangles:585300}
-].map(o=>Object.freeze({...o,source:"https://sketchfab.com/3d-models/"+o.uid,license:"CC BY 4.0"})));
+export const CABIN_CANDIDATES=Object.freeze([
+  {id:"historic-log-cabin",name:"Historic timber cabin (3D scan)",
+   source:"https://www.innerscene.com/tools/library/3d-parts/point-of-pines-slave-cabin-71703bdd",
+   author:"Smithsonian Institution (NMAAHC)",license:"CC0",asset:"historic-log-cabin.glb"},
+  {id:"a-frame-cabin",name:"A-frame woodland cabin",
+   source:"https://www.innerscene.com/tools/library/3d-parts/a-frame-cabin-73442f48",
+   author:"Innerscene",license:"CC0",asset:"a-frame-cabin.glb"},
+  {id:"pitched-roof-cottage",name:"Pitched-roof cottage",
+   source:"https://www.innerscene.com/tools/library/3d-parts/cottage-with-pitched-roof-bc88ab4f",
+   author:"Innerscene",license:"CC0",asset:"pitched-roof-cottage.glb"},
+  {id:"bungalow-cabin",name:"Woodland bungalow",
+   source:"https://www.innerscene.com/tools/library/3d-parts/bungalow-house-85d40048",
+   author:"Innerscene",license:"CC0",asset:"bungalow-cabin.glb"}
+].map(o=>Object.freeze(o)));
 export const CABIN_TEST_SLOTS=Object.freeze(CABIN_CANDIDATES.map((o,i)=>
   Object.freeze({...o,x:(i-1.5)*27,z:314})));
 const storeName="wvlrp-four-cabins";
@@ -114,14 +121,14 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   const close=document.createElement("button");close.type="button";close.textContent="✕";close.onclick=()=>panel.hidden=true;
   header.append(close);panel.append(header);
   const intro=document.createElement("p");
-  intro.textContent="Photoreal comparison: three genuine photo scans and one detailed PBR cabin. Sketchfab requires a free sign-in to download each glTF ZIP. No files have been installed on the game server yet; import the real model below. Empty slots will not show fake cabin signs. Large scans need optimization before mobile release.";
+  intro.textContent="Four licensed textured GLB buildings, loaded automatically from WVLRP's server when you approach the test field. No manual import needed. The historic timber cabin is a real scan; the other three are architectural exterior models. Inspect them close-up before approving realism.";
   panel.append(intro);
   const allButton=document.createElement("button");allButton.type="button";allButton.textContent="Show all loaded cabins";
   allButton.onclick=()=>{solo=-1;syncVisibility();onStatus("Showing all imported cabin models.");};
   panel.append(allButton);
   const foot=document.createElement("p");
   foot.style.cssText="font-size:11px;opacity:.78";
-  foot.textContent="Imports stay on this device until genuinely published to WVLRP. CC BY 4.0: credit each creator and source. These high-detail scans may slow a phone — use Solo to inspect.";
+  foot.textContent="Original model sources above. CC0 license. If any 3D model is missing or fails validation, that slot stays empty instead of being replaced with a fake sign or low-poly box.";
   function syncVisibility(){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
       const m=assigned.get(i);
@@ -150,11 +157,11 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     const heading=document.createElement("div");
     heading.innerHTML='<strong>'+String(i+1)+'. '+c.name+'</strong> · '+c.author;
     row.append(heading);
-    const status=document.createElement("div");status.textContent="No 3D model installed";status.style.cssText="color:#eddda5;margin:5px 0";
+    const status=document.createElement("div");status.textContent="Awaiting verified server-hosted 3D model";status.style.cssText="color:#eddda5;margin:5px 0";
     row.append(status);
     const open=document.createElement("a");
     open.href=c.source;open.target="_blank";open.rel="noopener noreferrer";
-    open.textContent="View photoreal model source ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
+    open.textContent="View model provenance ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
     row.append(open);
     const pick=document.createElement("input");pick.type="file";pick.accept=".glb,.zip,model/gltf-binary,application/zip";
     pick.setAttribute("aria-label","Import downloaded model "+(i+1));
@@ -162,7 +169,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     row.append(pick);
     const soloButton=document.createElement("button");soloButton.type="button";soloButton.textContent="Solo cabin "+(i+1);
     soloButton.onclick=()=>{
-      if(!assigned.has(i)){onStatus("Cabin "+(i+1)+" not installed yet — import its actual 3D file below.");return;}
+      if(!assigned.has(i)){onStatus("Cabin "+(i+1)+" is still loading, or its file was not published.");return;}
       solo=i;syncVisibility();panel.hidden=true;onJump(c.x,c.z-24);
     };
     row.append(soloButton);
@@ -174,13 +181,14 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     };
   }
   panel.append(foot);document.body.append(panel);
-  async function load(i,file,persist=true){
+  async function load(i,file,persist=true,remoteUrl=null){
     const slot=CABIN_TEST_SLOTS[i],line=rows[i];
-    line.status.textContent="Importing "+file.name+"…";
-    onStatus("Loading real model "+(i+1)+" from your file…");
+    const label=file?.name||slot.asset;
+    line.status.textContent="Loading actual 3D mesh: "+label+"…";
+    onStatus("Loading licensed cabin "+(i+1)+" of 4…");
     let sceneFile=null,node=null;
     try{
-      sceneFile=await fileAsScene(file);
+      sceneFile=remoteUrl?{url:remoteUrl,ext:".glb",urls:[]}:await fileAsScene(file);
       const imported=await B.SceneLoader.ImportMeshAsync(null,"",sceneFile.url,scene,undefined,sceneFile.ext);
       const nodes=[...new Set([...(imported.meshes||[]),...(imported.transformNodes||[])])];
       if(!nodes.length)throw Error("No nodes in imported 3D file.");
@@ -199,12 +207,11 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       node.position.set(slot.x,groundAt(slot.x,slot.z)+.05,slot.z);
       const previous=assigned.get(i);
       if(previous){previous.node.dispose(false,true);previous.urls.forEach(URL.revokeObjectURL);}
-      assigned.set(i,{node,urls:sceneFile.urls});
+      assigned.set(i,{node,urls:sceneFile.urls,halfWidth:sizeX*unitScale/2,halfDepth:sizeZ*unitScale/2});
       syncVisibility();
-      if(visible&&assigned.size===1)onJump(0,274);
-      line.status.textContent="✓ Real 3D model loaded: "+file.name+" · "+Math.round(unitScale*100)/100+"× scale";
-      onStatus("Cabin "+(i+1)+" installed for this browser. Walk around it.");
-      if(persist)try{await rememberModel(slot.id,file);}catch(err){
+      line.status.textContent="✓ Actual 3D building visible: "+label+" · "+Math.round(unitScale*100)/100+"× scale";
+      onStatus(assigned.size+" of 4 real cabin models loaded at the test field.");
+      if(persist&&file)try{await rememberModel(slot.id,file);}catch(err){
         line.status.textContent+=" (not saved on device: storage full)";
       }
     }catch(err){
@@ -213,6 +220,25 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       line.status.textContent="Import failed: "+String(err.message||err).slice(0,150);
       onStatus("Cabin "+(i+1)+" not loaded: "+String(err.message||err).slice(0,100));
       console.error("Cabin comparison import",i,err);
+    }
+  }
+  let autoLoadStarted=false;
+  async function loadPublishedBuildings(){
+    if(autoLoadStarted)return;
+    autoLoadStarted=true;
+    for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
+      if(assigned.has(i))continue;
+      const slot=CABIN_TEST_SLOTS[i];
+      const url="./assets/cabins/"+slot.asset+"?v=20261015-real-buildings-v1";
+      try{
+        const check=await fetch(url,{method:"HEAD"});
+        if(!check.ok)throw Error("not published (HTTP "+check.status+")");
+        await load(i,null,false,url);
+      }catch(err){
+        rows[i].status.textContent="3D building missing: "+String(err.message||err).slice(0,85);
+        console.warn("Actual cabin asset unavailable",slot.id,err);
+      }
+      // Sequential downloading prevents four 10MB GLBs from decoding in parallel on phones.
     }
   }
   async function restore(){
@@ -224,7 +250,24 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     }
   }
   return {
-    show(){visible=true;root.setEnabled(true);syncVisibility();panel.hidden=false;restore().catch(console.error);},
+    show(){
+      visible=true;root.setEnabled(true);syncVisibility();panel.hidden=false;
+      loadPublishedBuildings().catch(console.error);
+    },
+    update(){
+      const near=Math.abs(camera.position.x)<125&&Math.abs(camera.position.z-314)<130;
+      if(near&&!visible){
+        visible=true;root.setEnabled(true);syncVisibility();
+      }
+      if(near)loadPublishedBuildings().catch(console.error);
+    },
+    collides(x,z){
+      for(const [i,m] of assigned){
+        const slot=CABIN_TEST_SLOTS[i];
+        if(Math.abs(x-slot.x)<m.halfWidth+.35&&Math.abs(z-slot.z)<m.halfDepth+.35)return true;
+      }
+      return false;
+    },
     hidePanel(){panel.hidden=true;},
     jump(){
       // The test field is at Z=314: always jump to its approach at Z=274.
@@ -232,7 +275,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       onJump(0,274);
       if(!assigned.size){
         panel.hidden=false;
-        onStatus("At the four-cabin test field (Z=314). None of the photoreal 3D cabin files are installed yet; import one using this panel.");
+        onStatus("At the test field. Real 3D buildings are loading from WVLRP; empty positions stay empty until installed.");
         return false;
       }
       return true;
