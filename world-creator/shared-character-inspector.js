@@ -1,10 +1,11 @@
 /* WVLRP Universal 3D inspector v1. Real clip/pose controls only; never fake a rig. */
 (()=>{'use strict';
+let attempts=0;
 function mount(){
  if(document.getElementById('wv-universal-inspector'))return;
  const mv=document.querySelector('model-viewer');
  const canvas=mv?null:document.querySelector('#renderCanvas,#scene,canvas');
- if(!mv&&!canvas)return;
+ if(!mv&&!canvas){if(attempts++<24)setTimeout(mount,500);return;}
  const motions=[
   ['Stand',['stand','idle']],['Walk',['walk']],['Run',['run']],['Wave',['wave']],
   ['Bend Over',['bend','bendover']],['Touch Toes',['touchtoes']],['Sit Down',['sit']],
@@ -61,7 +62,17 @@ function mount(){
  const isChild=/carrie|young-explorer|jenny|laura|mary|child/i.test(location.pathname);
  const clothingName=(name)=>clothingPattern.test(name||'') && !bodyPattern.test(name||'');
  const garmentMeshes=()=>{
-   const scene=sc(); if(!scene)return [];
+   const scene=sc();
+   if(!scene){
+     const three=window.wvlrpSavScene;
+     if(!three?.traverse)return [];
+     const meshes=[];three.traverse(m=>{
+       if(!m.isMesh)return;
+       const materialName=Array.isArray(m.material)?m.material.map(x=>x?.name||'').join(' '):m.material?.name||'';
+       if(clothingName(m.name)||clothingName(materialName))meshes.push(m);
+     });
+     return meshes;
+   }
    return (scene.meshes||[]).filter(mesh=>{
      if(!(mesh.getTotalVertices?.()>0)||mesh.isDisposed?.())return false;
      const name=mesh.name||'', materialName=mesh.material?.name||'';
@@ -93,8 +104,9 @@ function mount(){
    }else{
      for(const mesh of garmentMeshes()){
        if(isChild&&!isSafeOverlay((mesh.name||'')+' '+(mesh.material?.name||'')))continue;
-       fittingSnapshots.push({kind:'babylon',mesh,enabled:mesh.isEnabled?.()??true,visible:mesh.isVisible});
-       mesh.setEnabled?.(false);
+       const isThree=!!mesh.isMesh&&!mesh.getTotalVertices;
+       fittingSnapshots.push({kind:isThree?'three':'babylon',mesh,enabled:mesh.isEnabled?.()??true,visible:isThree?mesh.visible:mesh.isVisible});
+       if(isThree)mesh.visible=false;else mesh.setEnabled?.(false);
        count++;
      }
    }
@@ -111,7 +123,8 @@ function mount(){
        if(item.kind==='mv'){
          item.material.pbrMetallicRoughness.setBaseColorFactor(item.rgba);
          if(item.alphaMode)item.material.setAlphaMode(item.alphaMode);
-       }else if(!item.mesh.isDisposed?.()){
+       }else if(item.kind==='three'){item.mesh.visible=item.visible;}
+       else if(!item.mesh.isDisposed?.()){
          item.mesh.setEnabled?.(item.enabled);
          item.mesh.isVisible=item.visible;
        }
