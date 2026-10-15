@@ -33,5 +33,12 @@
     "source": "https://polyhaven.com/a/island_tree_02",
     "license": "CC0",
     "bytes": 3913236
+  },
+  {
+    "id": "island_tree_03",
+    "url": "./assets/village-pbr-island_tree_03.glb",
+    "source": "https://polyhaven.com/a/island_tree_03",
+    "license": "CC0",
+    "bytes": 6708516
   }
 ]
