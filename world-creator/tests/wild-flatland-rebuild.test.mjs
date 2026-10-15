@@ -67,7 +67,11 @@ test("photographic terrain covers all moving tiles while cabin and crew remain p
   assert.match(photo,/PHOTO_TILE_METRES=32/);
   assert.match(photo,/blendedPhotoAtlas/);
   assert.match(photo,/state.blendMode="seamless-photographic-atlas"/);
-  assert.match(renderer,/uvs\[t\]=x\/PHOTO_TILE_METRES/);
+  assert.match(renderer,/const uvMetres=size>1000\?96:PHOTO_TILE_METRES/);
+  assert.match(renderer,/uvs\[t\]=x\/uvMetres/);
+  assert.match(photo,/mat\.detailMap\.diffuseBlendLevel=\.88/);
+  assert.match(photo,/entry\.farMaterial=farMat/);
+  assert.match(photo,/state\.nearDetailMetres=2/);
   assert.doesNotMatch(renderer,/uvs\[t\]=x\/4/);
   assert.match(photo,/ground,farGround/);
   assert.doesNotMatch(photo,/villageTerrainFade/);
