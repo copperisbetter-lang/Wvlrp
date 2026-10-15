@@ -19,6 +19,12 @@ test("Old generic/procedural tree models are disabled within the three-acre grov
  assert.match(renderer,/import \{VILLAGE_SECTION\} from/);
  assert.match(renderer,/const inVillageGrove=t=>/);
  assert.match(renderer,/const squareAllowsTree=t=>!inVillageGrove\(t\)/);
+ // No generic forest trunks, understory, hero thickets or legacy square floor
+ // can intrude across the ten-acre PBR-only sponsor inspection boundary.
+ assert.match(renderer,/isVillagePrototypeExclusion\(t\.x,t\.y,VILLAGE_PROTOTYPE_TREE_MARGIN_METRES\)/);
+ assert.match(renderer,/if\(isVillagePrototypeExclusion\(v\.centerX,v\.centerZ,v\.radiusMetres\)\)return 0/);
+ assert.match(renderer,/isVillagePrototypeExclusion\(x,z,2\)/);
+ assert.match(read("../wild-investor-graphics.js"),/keepUnderstory\(x,y\)/);
 });
 test("Only genuinely authored GLBs are allowed; no mock geometry fallback",()=>{
  const grove=read("../wild-village-pbr-grove.js");
