@@ -1,0 +1,121 @@
+name: Install photoreal village broadleaf
+
+on:
+  push:
+    paths:
+      - .github/workflows/install-photoreal-village-tree.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: village-photoreal-asset
+  cancel-in-progress: false
+
+jobs:
+  install:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Fetch real photo-textured CC0 tree model from Poly Haven
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, shutil, time, urllib.request
+          from pathlib import Path
+          root=Path("/tmp/polyhaven")
+          root.mkdir(parents=True,exist_ok=True)
+          base="https://api.polyhaven.com/files/tree_small_02"
+          headers={"User-Agent":"WVLRP The Wild CC0 model importer/1.0"}
+          def fetch(url,dst,expected=None):
+              dst.parent.mkdir(parents=True,exist_ok=True)
+              for attempt in range(5):
+                  try:
+                      req=urllib.request.Request(url,headers=headers)
+                      with urllib.request.urlopen(req,timeout=210) as inp,dst.open("wb") as out:
+                          shutil.copyfileobj(inp,out,1024*1024)
+                      if expected:
+                          h=hashlib.md5(dst.read_bytes()).hexdigest()
+                          assert h==expected, f"Checksum mismatch: {dst}"
+                      print(dst.relative_to(root),dst.stat().st_size,"bytes",flush=True)
+                      return
+                  except Exception:
+                      if attempt==4: raise
+                      time.sleep(3*(attempt+1))
+          req=urllib.request.Request(base,headers=headers)
+          with urllib.request.urlopen(req,timeout=45) as inp:
+              catalog=json.load(inp)
+          item=catalog["gltf"]["1k"]["gltf"]
+          source=Path("tree_small_02_1k.gltf")
+          fetch(item["url"],root/source,item["md5"])
+          for rel,asset in item["include"].items():
+              fetch(asset["url"],root/rel,asset["md5"])
+          model=json.loads((root/source).read_text())
+          assert model.get("meshes"),"Missing actual model geometry"
+          assert model.get("images"),"Missing photographic textures"
+          assert len(model["images"])>=3,"Tree appears untextured"
+          print("Source confirmed: Poly Haven Tree Small 02, CC0, PBR photo textures")
+          PY
+
+      - name: Convert to a self-contained phone-friendly GLB
+        run: |
+          set -euo pipefail
+          npm install --global @gltf-transform/cli@4.5.1
+          mkdir -p world-creator/assets
+          NODE_OPTIONS="--max-old-space-size=6144" gltf-transform optimize \
+            /tmp/polyhaven/tree_small_02_1k.gltf \
+            world-creator/assets/village-photoreal-broadleaf.glb \
+            --simplify-ratio 0.13 \
+            --simplify-error 0.08 \
+            --texture-compress webp \
+            --texture-size 1024
+
+      - name: Validate a genuinely textured GLB rather than another generated oak
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,struct
+          p=Path("world-creator/assets/village-photoreal-broadleaf.glb")
+          blob=p.read_bytes()
+          assert len(blob)>100000, "Empty or placeholder tree"
+          magic,version,total=struct.unpack_from("<4sII",blob)
+          assert magic==b"glTF" and version==2 and total==len(blob),"Invalid binary GLB"
+          n,kind=struct.unpack_from("<I4s",blob,12)
+          assert kind==b"JSON","Missing glTF JSON"
+          doc=json.loads(blob[20:20+n])
+          assert len(doc.get("images",[]))>=3, "Photo textures disappeared"
+          assert len(doc.get("meshes",[]))>0 and len(doc.get("materials",[]))>=2, "Geometry/materials missing"
+          assert not set(doc.get("extensionsRequired",[])).intersection(
+              {"EXT_meshopt_compression","KHR_draco_mesh_compression"}), "Unexpected decoder requirement"
+          assert len(blob)<85000000, "Tree is too large for phone: needs additional optimization"
+          print("Poly Haven licensed, textured village GLB:",len(blob),"bytes",
+                len(doc["meshes"]),"meshes",len(doc["images"]),"photo/PBR images")
+          PY
+
+      - name: Commit photoreal tree asset to WVLRP
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/village-photoreal-broadleaf.glb
+          if git diff --cached --quiet; then
+            echo 'Same photoreal broadleaf model already installed.'
+            exit 0
+          fi
+          git commit -m 'Install genuine Poly Haven PBR broadleaf as single village tree test'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Concurrent updates; rebasing village asset commit (attempt $attempt)"
+            git fetch origin main
+            git rebase origin/main
+            sleep 2
+          done
+          exit 1
