@@ -16,20 +16,14 @@ test("The visible mountain is fixed behind the real 3D village, not behind a mov
   assert.match(mountain,/solidCliff\.checkCollisions=false/);
 });
 
-test("The village plateau gives the Ranger Station an unobstructed mountain view",()=>{
-  assert.match(walk,/villageGroundY:cabinGrade\(VILLAGE_CLEARING\.centerX,VILLAGE_CLEARING\.centerZ,seed\)/);
-  assert.match(walk,/villageBackZ:VILLAGE_CLEARING\.centerZ\+VILLAGE_CLEARING\.halfDepth\+/);
+test("Mountain source geometry is retained for future reintroduction",()=>{
   assert.match(layout,/backExtension:100,transition:18/);
   assert.match(layout,/isVillageMountainSightline/);
-  assert.match(layout,/isCommunityClearing/);
-  assert.match(layout,/markerX:93,markerZ:77/);
-});
-
-
-test("The real game mountain has exposed cliff above the back of the village",()=>{
-  assert.match(walk,/installVisibleVillageMountains\(B,scene,camera/);
   assert.match(stage,/surface\("BACK Appalachian blue-green mountain ridge",245/);
   assert.match(stage,/surface\("VISIBLE sunlit rocky cliff above Ranger Station",176/);
-  assert.match(stage,/const alpha=clamp\(\(153-dz\)\/30,0,1\)/);
-  assert.match(layout,/!isVillageMountainSightline\(x,z\)/);
+});
+test("Clean photographic scene has no old blocky mountain layers",()=>{
+  assert.doesNotMatch(walk,/installWildMountainBackdrop\(B,scene,camera/);
+  assert.doesNotMatch(walk,/installVisibleVillageMountains\(B,scene,camera/);
+  assert.match(walk,/const villageMountains=\{meshes:\[\]\}/);
 });
