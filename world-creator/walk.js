@@ -6,7 +6,7 @@
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import { renderWildLandscape } from "./wild-landscape-renderer.js?v=village-10acre-prototype-clear-20261014-v1";
-import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=diverse-green-pbr-grove-20261014-v3";
+import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=spatial-diversity-20261014-v4";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
