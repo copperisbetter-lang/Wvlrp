@@ -1,0 +1,103 @@
+name: Install WVLRP realistic village terrain
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/install-wild-village-real-terrain.yml'
+permissions:
+  contents: write
+concurrency:
+  group: wvlrp-licensed-real-terrain
+  cancel-in-progress: true
+jobs:
+  textures:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download authentic Poly Haven CC0 woodland surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,hashlib,urllib.request,time
+          from pathlib import Path
+          out=Path("world-creator/assets");out.mkdir(parents=True,exist_ok=True)
+          ids=["forest_leaves_02","forest_ground_05","forest_ground_04"]
+          manifest=[]
+          headers={"User-Agent":"WVLRP/1.0 (CC0 Poly Haven authenticated API metadata)"}
+          def request(url):
+              for attempt in range(4):
+                  try:
+                      return urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=120)
+                  except Exception:
+                      if attempt==3:raise
+                      time.sleep(3*(attempt+1))
+          def map_item(doc,kind,scale):
+              keys=({"diffuse","albedo","basecolor"} if kind=="diffuse"
+                    else {"nor_gl","normal_gl","normal"})
+              key=next((k for k in doc if k.lower().replace(" ","_") in keys),None)
+              if not key:raise ValueError(f"Missing genuine {kind} texture")
+              variant=doc[key][scale]
+              return variant.get("jpg") or variant.get("jpeg") or (
+                  next((v for k,v in variant.items() if k.lower()=="jpg"),None))
+          for name in ids:
+              with request("https://api.polyhaven.com/files/"+name) as response:
+                  catalog=json.load(response)
+              files={}
+              for size in ["1k","2k"]:
+                  files[size]={}
+                  for kind in ["diffuse","normal"]:
+                      asset=map_item(catalog,kind,size)
+                      if not asset or not asset.get("url"):raise ValueError("Missing catalog URL "+name+kind)
+                      target=out/f"village-terrain-{name}-{size}-{kind}.jpg"
+                      with request(asset["url"]) as response:
+                          payload=response.read(16*1024*1024+1)
+                      if not 30000<len(payload)<16*1024*1024:
+                          raise ValueError("Invalid JPEG size "+str(target))
+                      if not payload.startswith(b"\xff\xd8") or not payload.endswith(b"\xff\xd9"):
+                          raise ValueError("Source is not a real JPEG")
+                      if asset.get("md5") and hashlib.md5(payload).hexdigest()!=asset["md5"]:
+                          raise ValueError("Poly Haven file checksum mismatch "+str(target))
+                      target.write_bytes(payload)
+                      files[size][kind]="./assets/"+target.name
+                  print("VERIFIED authentic terrain",name,size,flush=True)
+              manifest.append({"id":name,"source":"https://polyhaven.com/a/"+name,
+                   "license":"CC0","files":files})
+          (out/"village-terrain-sources.json").write_text(json.dumps(manifest,indent=2)+"\n")
+          PY
+      - name: Verify installed texture manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path("world-creator/assets")
+          v=json.loads((base/"village-terrain-sources.json").read_text())
+          assert len(v)==3
+          for item in v:
+              assert item["license"]=="CC0"
+              for size in ("1k","2k"):
+                  for kind in ("diffuse","normal"):
+                      path=Path("world-creator")/item["files"][size][kind]
+                      assert path.exists() and path.stat().st_size>30000,path
+          print("THREE_GENUINE_CC0_VILLAGE_MATERIALS_READY")
+          PY
+      - name: Commit downloaded scanned ground texture maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/village-terrain-*.jpg world-creator/assets/village-terrain-sources.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Install authenticated CC0 photogrammetric village soil and leaf textures'
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+            sleep 3
+          done
+          exit 1
