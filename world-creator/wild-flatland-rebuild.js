@@ -10,7 +10,7 @@ import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
-import {installVillageRealTerrain,PHOTO_TILE_METRES} from "./wild-village-real-terrain.js?v=photo-ground-seamless-20261015-v4";
+import {installVillageRealTerrain,PHOTO_TILE_METRES} from "./wild-village-real-terrain.js?v=photo-ground-sharp-debanded-20261015-v5";
 
 function tileIntersectsRoute(route,cx,cz,margin){
   return route.points.some(p=>Math.abs(p[0]-cx)<margin&&Math.abs(p[1]-cz)<margin);
@@ -93,8 +93,11 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
       const tint=.88+.16*n;
       colors.push(.84*tint,.97*tint,.82*tint,1);
       const t=k/3*2;
-      // World-locked 32 m blended photographic tile: no visible 4 m stripes.
-      uvs[t]=x/PHOTO_TILE_METRES;uvs[t+1]=z/PHOTO_TILE_METRES;
+      // The distant ground uses broader photographic patches without
+      // high-frequency repeats at grazing viewing angles. Near ground retains
+      // a sharp 32 m base with separate 2 m genuine-photo microdetail.
+      const uvMetres=size>1000?96:PHOTO_TILE_METRES;
+      uvs[t]=x/uvMetres;uvs[t+1]=z/uvMetres;
     }
     const normals=[];B.VertexData.ComputeNormals(positions,ground.getIndices(),normals);
     ground.updateVerticesData(B.VertexBuffer.PositionKind,positions,true);
