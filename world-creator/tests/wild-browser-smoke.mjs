@@ -30,7 +30,9 @@ try{
   state=await page.evaluate(()=>window.__wildDiagnostics());
   assert.equal(state.photographicTerrainStatus,"ready",
     "Locally installed photographic JPEG material must load");
-  assert.deepEqual(state.photographicTerrainSource,["forest_leaves_02"]);
+  assert.deepEqual(state.photographicTerrainSource,
+    ["forest_leaves_02","forest_ground_05","forest_ground_04"],
+    "The seamless photo atlas blends the three verified CC0 ground materials");
   assert.equal(state.nativeTrees,0);
   assert.equal(state.distantTrees,0);
   assert.equal(state.understory,0);
