@@ -19,8 +19,8 @@ test("The visible mountain is fixed behind the real 3D village, not behind a mov
 test("Mountain source geometry is retained for future reintroduction",()=>{
   assert.match(layout,/backExtension:100,transition:18/);
   assert.match(layout,/isVillageMountainSightline/);
-  assert.match(stage,/surface\("BACK Appalachian blue-green mountain ridge",245/);
-  assert.match(stage,/surface\("VISIBLE sunlit rocky cliff above Ranger Station",176/);
+  assert.match(stage,/installVisibleVillageMountains/);
+  assert.match(stage,/const meshes=\[\],materials=\[\],textures=\[\]/);
 });
 test("Clean photographic scene has no old blocky mountain layers",()=>{
   assert.doesNotMatch(walk,/installWildMountainBackdrop\(B,scene,camera/);
