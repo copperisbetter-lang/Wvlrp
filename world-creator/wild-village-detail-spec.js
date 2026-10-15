@@ -6,6 +6,10 @@
  */
 import {VILLAGE_CLEARING,COMMUNITY_SITES,pathDistance,siteDistance} from "./wild-reference-layout.js";
 
+// Phase 1 of graphics testing: leave the village square free of all trees.
+// Imported photoreal trees will be enabled only after their appearance is checked.
+export const VILLAGE_SQUARE_TREES_ENABLED=false;
+
 export const VILLAGE_DETAIL_ZONE=Object.freeze({
   centerX:VILLAGE_CLEARING.centerX,
   centerZ:VILLAGE_CLEARING.centerZ,
