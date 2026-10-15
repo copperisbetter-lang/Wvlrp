@@ -9,7 +9,8 @@ const walk=read("../walk.js"),renderer=read("../wild-landscape-renderer.js");
 const installer=read("../../.github/workflows/install-wild-village-grove-trees.yml");
 
 test("The actual first-person walk scene instantiates real 3D PBR grove",()=>{
- assert.match(walk,/installVillageGrove\(B,scene,\{seed,mobile\}\)/);
+ assert.match(walk,/installVillageGrove\(B,scene,\{seed,mobile,lite:LITE_MODE\}\)/);
+ assert.match(walk,/liteMode:LITE_MODE/);
  assert.match(walk,/villageGrove\.collidableTrees/);
  assert.match(walk,/villageGrove\.setNear\(isNearVillageGrove/);
  assert.match(walk,/villageGroveTreesPlanted:villageGrove\.planted/);
