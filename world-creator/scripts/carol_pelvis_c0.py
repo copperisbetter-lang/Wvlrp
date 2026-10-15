@@ -228,6 +228,8 @@ def make_c0_anatomy(root, body, rig):
     upper_count=0
     supported_upper=0
     total_hits=0
+    direct_front_hits=0
+    fallback_support_hits=0
     for i,v in enumerate(mesh.vertices):
         src_x,src_y,src_z=raw_positions[i]
         # A continuous, strictly monotone roll from anterior to inferior.
@@ -237,12 +239,29 @@ def make_c0_anatomy(root, body, rig):
         roll=smoothstep((.008-raw_offset)/.040)
         x=cx+src_x*x_scale*(1.-.10*smoothstep((raw_offset-.010)/.022))
         z=c0z+raw_offset+.002*roll
-        nearest,normal,face,distance=skin_bvh.find_nearest(Vector((x,c0y,z)))
-        if nearest is None or normal.length < .1 or face is None:
-            raise RuntimeError("C0: no real pelvis contact for donor vertex")
-        if not 0<=face<len(pelvic_faces):
-            raise RuntimeError("C0: BVH face mapping unavailable")
-        poly_ids=pelvic_faces[face]
+        # The original nearest-triangle BVH OMITTED the real central groin
+        # surface at C0: old logs reported a 47.6 mm gap despite a valid
+        # front-ray contact there. Prefer a physically intersected front skin
+        # triangle; only use 3D nearest support when the front ray is absent.
+        query=Vector((x,c0y,z))
+        front_hit_y,front_face=cast_front(x,z)
+        front_is_skin=(front_hit_y is not None and front_face is not None
+                       and body.data.polygons[front_face].normal.y < -.15
+                       and abs(front_hit_y-c0y)<.065)
+        if front_is_skin:
+            nearest=Vector((x,front_hit_y,z))
+            normal=body.data.polygons[front_face].normal
+            distance=(nearest-query).length
+            poly_ids=tuple(body.data.polygons[front_face].vertices)
+            direct_front_hits+=1
+        else:
+            nearest,normal,face,distance=skin_bvh.find_nearest(query)
+            if nearest is None or normal.length < .1 or face is None:
+                raise RuntimeError("C0: no real pelvis contact for donor vertex")
+            if not 0<=face<len(pelvic_faces):
+                raise RuntimeError("C0: BVH face mapping unavailable")
+            poly_ids=pelvic_faces[face]
+            fallback_support_hits+=1
         proximity=[1./max(1.e-8,(positions[j]-nearest).length_squared)
                    for j in poly_ids]
         proximity_total=sum(proximity)
@@ -391,6 +410,8 @@ def make_c0_anatomy(root, body, rig):
           "body_support_mm",round(max_support_distance*1000,2),
           "planar_support_mm",round(planar_support_max*1000,2),
           "max_neighbor_depth_jump_mm",round(max_y_step*1000,2),
+          "direct_front_contacts",direct_front_hits,
+          "nearest_fallback_contacts",fallback_support_hits,
           "upper_sample",upper_count,"upper_supported",supported_upper)
     if center_relief<.005:
         raise RuntimeError("C0: contour flattened during skin conformity")
