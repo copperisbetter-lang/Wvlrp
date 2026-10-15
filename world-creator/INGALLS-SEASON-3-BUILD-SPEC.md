@@ -7,7 +7,6 @@ Status: **reference and build acceptance specification; no finished GLBs yet.** 
 - Caroline (Karen Grassle): adult woman; light hair in a period updo; long-sleeve high-neck prairie dress, apron, sturdy shoes.
 - Mary (Melissa Sue Anderson): older child; blonde hair, pale blue eyes; modest period dress and boots.
 - Laura (Melissa Gilbert): younger child; dark brown braids, freckles, expressive face; prairie dress and boots.
-- Carrie (Lindsay and Sidney Greenbush): very young child; light hair, child-proportioned face; age-appropriate prairie outfit and boots.
 
 References are specifically **television Season 3**, not historic photos, later-season designs, or generic frontier characters. Face shapes must be distinct and independently reviewed against licensed/authorized reference stills; do not label a generic MakeHuman preset as an actor likeness.
 
@@ -20,9 +19,8 @@ References are specifically **television Season 3**, not historic photos, later-
 2. Caroline.
 3. Mary.
 4. Laura.
-5. Carrie.
-6. Mr. Edwards.
-7. Jack (dedicated quadruped pipeline).
+5. Mr. Edwards.
+6. Jack (dedicated quadruped pipeline).
 
 ## Per-character deliverables
 Human 56-joint requirement applies to humans only; Jack needs a proper canine quadruped rig.

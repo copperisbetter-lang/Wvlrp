@@ -22,21 +22,6 @@
   ],
   "candidates": [
     {
-      "id": "carrie-sunday",
-      "avatar": "carrie-ingalls-s3",
-      "ageTargetYears": [
-        3,
-        6
-      ],
-      "pieces": [
-        "elvs_frilled_party_dress",
-        "elvs_ladies_apron",
-        "scailman_low-heeled_boots"
-      ],
-      "eraFit": "requires period tailoring, modest collar/sleeves, resizing",
-      "fitStatus": "NOT TESTED"
-    },
-    {
       "id": "laura-day",
       "avatar": "laura-ingalls-s3",
       "ageTargetYears": [

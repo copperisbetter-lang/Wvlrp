@@ -59,7 +59,7 @@ function mount(){
  const fittingSnapshots=[];
  const clothingPattern=/dress|sundress|pinafore|apron|skirt|blouse|sweater|trouser|pants|shorts|shirt|sleeve|outfit|wardrobe|garment|fabric|cloth|calico|denim|corset|jacket|coat|vest|boot|shoe|sock|uniform|cloak|robe|belt|hat|glove/i;
  const bodyPattern=/body|base.?mesh|skin|human|head|face|eye|mouth|nose|anatom|vulva|pelvis|breast|hair|lash|brow|rig|bone|skeleton|ground|floor|light|camera|mannequin/i;
- const isChild=/carrie|young-explorer|jenny|laura|mary|child/i.test(location.pathname);
+ const isChild=/young-explorer|jenny|laura|mary|child/i.test(location.pathname);
  const clothingName=(name)=>clothingPattern.test(name||'') && !bodyPattern.test(name||'');
  const garmentMeshes=()=>{
    const scene=sc();
