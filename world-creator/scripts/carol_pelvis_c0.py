@@ -122,7 +122,7 @@ def make_c0_anatomy(root, body, rig):
     raw_verts, faces, texcoords = [], [], []
     for row in range(rows):
         t = row/(rows-1)
-        half_width = .56*(.23+.77*math.sin(math.pi*t)**.68)
+        half_width = .56*(.045+.955*math.sin(math.pi*t)**.9)  # narrow, tapered ends, not squared-off flaps
         for col in range(cols):
             u = col/(cols-1)
             px = (2*u-1)*half_width
@@ -153,8 +153,10 @@ def make_c0_anatomy(root, body, rig):
     # The 3D nearest point is used only for depth and joint weights, never for
     # X/Z coordinates, because snapping X/Z caused the screenshot's spikes.
     low=min(v[2] for v in raw_verts)
-    # ~16% smaller projected footprint than the ballooned previous build.
-    scale=.064
+    # A compact skin inset. Separate horizontal/vertical scales prevent the
+    # lower rim from dropping into empty space between the thighs.
+    x_scale=.050
+    z_scale=.042
     positions=[v.co.copy() for v in body.data.vertices]
     # The old weight filter excluded ALL polygons below z=.777m
     # even though C0 is z=.744m, so the nearest-point snap lifted
@@ -189,8 +191,8 @@ def make_c0_anatomy(root, body, rig):
     if len(boundary)<4:
         raise RuntimeError("C0: licensed donor needs an open attachment rim")
     raw_positions=[v.co.copy() for v in mesh.vertices]
-    edge_dist=[min((p-b).length for b in boundary)*scale
-               for p in raw_positions]
+    edge_dist=[min(math.hypot((p.x-b.x)*x_scale,(p.z-b.z)*z_scale)
+                   for b in boundary) for p in raw_positions]
     # Donor is small and irregular. A fixed 13 mm seam fade can erase the
     # ENTIRE profile if the mesh's inradius is smaller. Adapt the fade to
     # the actual licensed topology, leaving a guaranteed interior core.
@@ -222,6 +224,7 @@ def make_c0_anatomy(root, body, rig):
     max_support_distance=0.
     center_relief=0.
     max_depth_correction=0.
+    planar_support_max=0.
     upper_count=0
     supported_upper=0
     total_hits=0
@@ -230,10 +233,10 @@ def make_c0_anatomy(root, body, rig):
         # A continuous, strictly monotone roll from anterior to inferior.
         # This is only a SEARCH position; actual vertices are snapped to the
         # original pelvic skin, including its underside, before adding detail.
-        raw_offset=.003+(src_z-low)*scale-.045
-        roll=smoothstep((.010-raw_offset)/.055)
-        x=cx+src_x*scale*(1.-.12*smoothstep((raw_offset-.013)/.024))
-        z=c0z+raw_offset+.006*roll
+        raw_offset=.006+(src_z-low)*z_scale-.021
+        roll=smoothstep((.008-raw_offset)/.040)
+        x=cx+src_x*x_scale*(1.-.10*smoothstep((raw_offset-.010)/.022))
+        z=c0z+raw_offset+.002*roll
         nearest,normal,face,distance=skin_bvh.find_nearest(Vector((x,c0y,z)))
         if nearest is None or normal.length < .1 or face is None:
             raise RuntimeError("C0: no real pelvis contact for donor vertex")
@@ -261,8 +264,12 @@ def make_c0_anatomy(root, body, rig):
         transferred_skin.append(fit_weights)
         # A vertex may travel a little along the body as the front rolls
         # underneath, but it must never be supported by an imaginary plane.
-        if distance>.082*h:
-            raise RuntimeError("C0: donor too far from genuine pelvic skin")
+        planar_support=math.hypot(nearest.x-x,nearest.z-z)
+        planar_support_max=max(planar_support_max,planar_support)
+        # A big nearest-face distance at the rim creates a suspended
+        # independent oval. Fail the build instead of publishing it.
+        if distance>.052 or (edge_dist[i]<.004 and planar_support>.030):
+            raise RuntimeError("C0: detached patch; skin support missing at "+str((i//cols,i%cols,round(distance,4))))
         max_support_distance=max(max_support_distance,distance)
         total_hits+=1
         if z>=c0z+.010:
@@ -284,20 +291,21 @@ def make_c0_anatomy(root, body, rig):
                   for f in LANDMARKS if f["id"] in ("L2","R2"))
         top=sum(f["relief"]*gauss(dx,f["x"],.012)*gauss(dz,f["z"],.018)
                 for f in LANDMARKS if f["id"] in ("P1","H1","B1"))
-        donor=max(-.005,min(.007,(-src_y-.49)*scale*.24))
+        donor=max(-.005,min(.007,(-src_y-.49)*x_scale*.16))
         # Zero detail on ALL mesh perimeter edges. Pull the perimeter onto
         # Carol's existing surface, preventing visible folded-paper flaps.
         rim_fade=smoothstep(edge_dist[i]/rim_width)
-        lower_fade=smoothstep((raw_offset+.042)/.014)
-        upper_fade=smoothstep((.036-raw_offset)/.012)
+        lower_fade=smoothstep((raw_offset+.017)/.010)
+        upper_fade=smoothstep((.027-raw_offset)/.008)
         fade=rim_fade*lower_fade*upper_fade
         # Two independent nested folds on each side, separated by a soft
         # depression. Without these valley terms the Gaussian peaks blended
         # into the single blocky lobe reported in the viewer.
-        valley=.005*gauss(abs(dx),.015,.0042)*gauss(dz,-.008,.024)
-        center_groove=.004*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
-        # Avoid the former 34 mm bulge: small nested ridges, no inflated dome.
-        relief=max(0.,min(.018,.001+inner+outer+top+donor-valley-center_groove))*fade
+        valley=.0036*gauss(abs(dx),.015,.0042)*gauss(dz,-.008,.024)
+        center_groove=.003*gauss(dx,0.,.004)*gauss(dz,-.009,.023)
+        # Keep two softly separated outer/inner contours; never cap them
+        # into the broad sphere-like mass seen in the inspection shots.
+        relief=max(0.,min(.010,.0008+.62*inner+.70*outer+.65*top+.15*donor-.75*valley-.75*center_groove))*fade
         center_relief=max(center_relief,relief)
         # The earlier full conformal snap recessed the center into the groin
         # crease. Preserve the conformal BODY contact and all fitted rig
@@ -309,14 +317,14 @@ def make_c0_anatomy(root, body, rig):
         # The old 14 mm blanket lift PLUS the old 34 mm ridge built a bulb.
         # Keep only a few millimetres of clearance and let the real skin
         # surface dictate the attachment silhouette.
-        anterior_lift=(.004-.001*roll)*interior_fade
-        normal_lift=.001*interior_fade
+        anterior_lift=(.0018-.0004*roll)*interior_fade
+        normal_lift=.0005*interior_fade
         max_depth_correction=max(max_depth_correction,anterior_lift)
         # Preserve the *ordered* regular X/Z parameterization. Projecting
         # all three dimensions to unrelated closest vertices had folded
         # quads back over one another, creating the visible angular shards.
         # Offset anterior (-Y) with a smooth taper at the true mesh rim.
-        v.co=Vector((x,nearest.y-(relief+normal_lift)*.70-anterior_lift-.0004,z))
+        v.co=Vector((x,nearest.y-(relief+normal_lift)*.82-anterior_lift-.0002,z))
         if i%cols==cols//2 and (i//cols)%5==0:
             sampled_midline.append((i//cols,round(x,4),round(z,4),tuple(round(t,4) for t in nearest),round(distance,4)))
         if edge_dist[i]<.0005:
@@ -325,6 +333,33 @@ def make_c0_anatomy(root, body, rig):
                 max_boundary_gap=gap
                 worst_rim=(i//cols,i%cols,round(x,4),round(z,4),
                            tuple(round(t,4) for t in nearest),round(distance,4))
+    # Raw nearest triangles may switch abruptly between groin and thigh,
+    # making sawtooth folds. Smooth only the INTERIOR depth field; the real
+    # skin-matched edge remains unchanged so its seam stays registered.
+    smoothed_y=[v.co.y for v in mesh.vertices]
+    for _ in range(8):
+        updated_y=smoothed_y.copy()
+        for row in range(1,rows-1):
+            for col in range(1,cols-1):
+                j=row*cols+col
+                neighbor=(smoothed_y[j-1]+smoothed_y[j+1]
+                          +smoothed_y[j-cols]+smoothed_y[j+cols])*.25
+                blend=.48*smoothstep(edge_dist[j]/.009)
+                updated_y[j]=smoothed_y[j]*(1.-blend)+neighbor*blend
+        smoothed_y=updated_y
+    for j,v in enumerate(mesh.vertices):
+        v.co.y=smoothed_y[j]
+    # Reject any paper-petal / depth jump before glTF export.
+    max_y_step=0.
+    for row in range(rows):
+        for col in range(cols):
+            j=row*cols+col
+            if col+1<cols:
+                max_y_step=max(max_y_step,abs(smoothed_y[j]-smoothed_y[j+1]))
+            if row+1<rows:
+                max_y_step=max(max_y_step,abs(smoothed_y[j]-smoothed_y[j+cols]))
+    if max_y_step>.030:
+        raise RuntimeError("C0: discontinuous depth / petal mesh: "+str(round(max_y_step,4)))
     mesh.update()
     offsets=[v.co.z-c0z for v in mesh.vertices]
     # Test that no regular-grid faces have folded in their X/Z mapping.
@@ -343,7 +378,7 @@ def make_c0_anatomy(root, body, rig):
         raise RuntimeError("C0: projected patch has folded or inverted quads: "+str(inverted))
     print("WVLRP_CAROL_C0_RIM_DIAG",worst_rim,
           "midline",sampled_midline)
-    if max_boundary_gap>.060:
+    if max_boundary_gap>.032:
         raise RuntimeError("C0: patch rim is unsupported by pelvis: "+str(round(max_boundary_gap,4)))
     print("WVLRP_CAROL_C0_GRID_QA","quads",len(mesh.polygons),
           "inverted",inverted,"min_projected_area",round(min_cell,8),
@@ -354,8 +389,10 @@ def make_c0_anatomy(root, body, rig):
           "peak_relief_mm",round(center_relief*1000,2),
           "max_anterior_lift_mm",round(max_depth_correction*1000,2),
           "body_support_mm",round(max_support_distance*1000,2),
+          "planar_support_mm",round(planar_support_max*1000,2),
+          "max_neighbor_depth_jump_mm",round(max_y_step*1000,2),
           "upper_sample",upper_count,"upper_supported",supported_upper)
-    if center_relief<.007:
+    if center_relief<.005:
         raise RuntimeError("C0: contour flattened during skin conformity")
     if max_depth_correction<.002:
         raise RuntimeError("C0: inward-depth correction missed central donor profile")
@@ -374,15 +411,15 @@ def make_c0_anatomy(root, body, rig):
           "vertical_max_mm",round(max(offsets)*1000,1),
           "supported_upper",supported_upper,"upper_total",upper_count,
           "pelvic_surface_faces",len(pelvic_faces))
-    # The original patch exported as a one-sided sheet: its inferior rim
-    # was visibly sharp and open when seen from below. Close it with an
-    # inward-facing, fully skinned reverse surface and rounded side walls.
+    # Seal the open surface with an extremely shallow skin-facing layer;
+    # the previous 7.5 mm duplicate shell was exposed from behind and
+    # looked like a separate puffy pouch with angular sidewalls.
     # This avoids a paper-thin edge without changing the established front
     # quad parameterization, armature or body skin material.
     front_count=len(mesh.vertices)
     front_positions=[v.co.copy() for v in mesh.vertices]
     front_faces=[tuple(p.vertices) for p in mesh.polygons]
-    back_positions=[p+Vector((0.,.0075,0.)) for p in front_positions]
+    back_positions=[p+Vector((0.,.0015,0.)) for p in front_positions]
     outline=(list(range(cols))
             +[r*cols+cols-1 for r in range(1,rows)]
             +[(rows-1)*cols+c for c in range(cols-2,-1,-1)]
@@ -413,7 +450,7 @@ def make_c0_anatomy(root, body, rig):
     transferred_skin.extend([dict(weights) for weights in transferred_skin])
     print("WVLRP_CAROL_C0_VOLUME_QA","vertices",len(mesh.vertices),
           "faces",len(mesh.polygons),"unsealed_edges",open_edges,
-          "inner_outer_valleys",True,"wall_depth_mm",7.5)
+          "inner_outer_valleys",True,"wall_depth_mm",1.5)
     obj=bpy.data.objects.new("WVLRP Carol C0 anatomy | inspection overlay",mesh)
     bpy.context.collection.objects.link(obj)
     obj.parent=root
