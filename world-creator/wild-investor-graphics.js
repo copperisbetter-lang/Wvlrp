@@ -300,13 +300,13 @@ function detailMatrices(B,model,placements,cx,cy){
 }
 /** Dense undergrowth for the walk's first ~90m. Deliberately patchy: wet
  * coves support banks of fern and rhodo, higher slopes favor briar and sedge. */
-export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,surfaceHeight=null}){
+export function renderHeroUnderstory(B,scene,track,{cx,cy,seed,mobile=false,lite=false,surfaceHeight=null}){
  const plantGround=(x,y)=>{const h=surfaceHeight?.(x,y);
    return Number.isFinite(h)?h:cabinGrade(x,y,seed);};
  const kinds=["fern-field","rhododendron-mass","stiltgrass","sapling","briar-tangle"];
  const groups=Object.fromEntries(kinds.map(k=>[k,[]]));
  // Four-fold visually layered forest floor within the investor walk zone.
- const step=mobile?1.48:1.38,half=89;
+ const step=lite?2.65:mobile?1.48:1.38,half=89;
  const xmin=Math.floor((cx-half)/step)-1,xmax=Math.ceil((cx+half)/step)+1;
  const ymin=Math.floor((cy-half)/step)-1,ymax=Math.ceil((cy+half)/step)+1;
  for(let i=xmin;i<=xmax;i++)for(let j=ymin;j<=ymax;j++){
