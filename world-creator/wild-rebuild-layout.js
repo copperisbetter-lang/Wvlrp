@@ -32,7 +32,7 @@ export const REBUILD_CONNECTIONS=Object.freeze([
 ].map(pair=>Object.freeze(pair)));
 
 const byId=new Map(REBUILD_CLEARINGS.map(p=>[p.id,p]));
-const cubic=t=>t*t*(3-2*t);
+const cubic=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 const clamp=t=>Math.max(0,Math.min(1,t));
 export const clearingById=id=>byId.get(id)||null;
 export const isProtectedCabin=(x,z)=>Math.hypot(x,z)<26;
@@ -101,7 +101,7 @@ export function flatlandHeight(x,z,seed,base){
       .85*Math.sin((c.x+c.z)/58)+
       (c.kind==="lookout"?5:0);
     const blend=1-cubic((r-inside)/(c.radius+15-inside));
-    h=h*(1-blend)+center*blend;
+    h=h*(1-blend)+(c.kind==="protected-cabin"?base:center)*blend;
   }
   return h;
 }
