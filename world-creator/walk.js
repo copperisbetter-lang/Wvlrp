@@ -5,9 +5,9 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,resetToWildCabin,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import { renderWildLandscape } from "./wild-landscape-renderer.js?v=tree-free-square-20261014-v1";
+import { renderWildLandscape } from "./wild-landscape-renderer.js?v=one-hd-oak-20261014-v2";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=cc0-oak-20261014-v1";
-import {VILLAGE_SQUARE_TREES_ENABLED} from "./wild-village-detail-spec.js?v=tree-free-square-20261014-v1";
+import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=actual-distant-mountain-valley-20261013-v9";
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
@@ -198,7 +198,7 @@ try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:0,
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
 // This is ONE imported GLB, not the procedural tree prototypes in the forest.
 // It stays at village world coordinates as terrain tiles stream in and out.
-const villageOak=VILLAGE_SQUARE_TREES_ENABLED
+const villageOak=VILLAGE_HD_OAK_ENABLED
   ? installVillageOak(B,scene,{
       groundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
     })
@@ -526,6 +526,7 @@ window.__wildDiagnostics=()=>({
   villageGroundDetails:habitat?.villageGroundDetails??0,
   villageEdgeTrees:habitat?.villageEdgeTrees??0,
    villageTreesEnabled:VILLAGE_SQUARE_TREES_ENABLED,
+  villageHDOakEnabled:VILLAGE_HD_OAK_ENABLED,
   importedVillageOakStatus:villageOak.status,
    importedVillageOakMeshes:villageOak.meshCount,
    importedVillageOakPosition:[VILLAGE_OAK.x,VILLAGE_OAK.z],
