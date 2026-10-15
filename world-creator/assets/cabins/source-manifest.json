@@ -1,0 +1,54 @@
+[
+  {
+    "id": "historic-log-cabin",
+    "file": "historic-log-cabin.glb",
+    "bytes": 10652228,
+    "meshes": 1,
+    "materials": 1,
+    "textures": 3,
+    "license": "CC0",
+    "source": "https://www.innerscene.com/tools/library/3d-parts/point-of-pines-slave-cabin-71703bdd",
+    "author": "Smithsonian Institution (NMAAHC)",
+    "description": "3D scan of historic timber cabin",
+    "sha256": "e3992b33f272cd717431c69e80cdbd831cc7ea5030d80dfc2e00172946c987dc"
+  },
+  {
+    "id": "a-frame-cabin",
+    "file": "a-frame-cabin.glb",
+    "bytes": 7630248,
+    "meshes": 65,
+    "materials": 7,
+    "textures": 7,
+    "license": "CC0",
+    "source": "https://www.innerscene.com/tools/library/3d-parts/a-frame-cabin-73442f48",
+    "author": "Innerscene",
+    "description": "A-frame cabin exterior",
+    "sha256": "ac4803c53a351f44fd082c4e5dc7c8a0559cc9038347c78fd838d060e23e12a7"
+  },
+  {
+    "id": "pitched-roof-cottage",
+    "file": "pitched-roof-cottage.glb",
+    "bytes": 10375152,
+    "meshes": 105,
+    "materials": 8,
+    "textures": 8,
+    "license": "CC0",
+    "source": "https://www.innerscene.com/tools/library/3d-parts/cottage-with-pitched-roof-bc88ab4f",
+    "author": "Innerscene",
+    "description": "Pitched-roof wooden cottage exterior",
+    "sha256": "7ab57a09afd082a15906d2e6fd39db4e0523c10145f4f40f52a5aea31da162d6"
+  },
+  {
+    "id": "bungalow-cabin",
+    "file": "bungalow-cabin.glb",
+    "bytes": 10268592,
+    "meshes": 105,
+    "materials": 8,
+    "textures": 8,
+    "license": "CC0",
+    "source": "https://www.innerscene.com/tools/library/3d-parts/bungalow-house-85d40048",
+    "author": "Innerscene",
+    "description": "Bungalow cabin exterior",
+    "sha256": "792372518d4739d21786361d1bd12d9e0eeb7d3a95aaf0a7d4bb8cf6c214cdad"
+  }
+]
