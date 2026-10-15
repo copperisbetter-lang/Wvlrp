@@ -24,7 +24,9 @@ const MIN_MODELS=7;
 
 // Visually plausible but not botanically exact substitutions are *not*
 // documented as a matched species. The native species list is an art target.
-export function chooseGroveAsset(tree,available){
+// Nearby placements are considered so the same authored tree is not repeated
+// down an entire woodland edge. All selection is deterministic for multiplayer.
+export function chooseGroveAsset(tree,available,placed=[]){
   const find=id=>available.find(a=>a.id===id);
   const young=tree.age==="young";
   let preference;
@@ -33,24 +35,48 @@ export function chooseGroveAsset(tree,available){
       ["fir_tree_01","pine_tree_01","fir_sapling_medium","pine_sapling_medium","fir_sapling","pine_sapling_small"];
   }else{
     // DISTINCT, genuinely photo-textured author-built crown silhouettes.
-    // The imported models are anatomical *stand-ins* for the WV species
-    // blueprint, not verified oak/maple/beech botanical scans. Avoid promising
-    // accurate species until actual native tree assets have been sourced.
+    // Imported broadleaf models are visual stand-ins; they are NOT certified
+    // examples of West Virginia oaks, maples, beeches or other named species.
     const edge=tree.x<46||tree.x>141;
     const broadleaf=young?
       ["tree_small_02","island_tree_02","island_tree_03","island_tree_01"]:
       ["tree_small_02","island_tree_01","island_tree_03","island_tree_02"];
-    // Wide jacaranda silhouette appears VERY sparingly on the distant outside
-    // edge only, never beside roofs/fire ring or in the village square.
-    if(edge && !young) broadleaf.splice(2,0,"jacaranda_tree");
+    // Jacaranda is visibly different but nonnative: use rarely, outside only.
+    if(edge&&!young)broadleaf.splice(2,0,"jacaranda_tree");
     preference=broadleaf;
   }
   const offset=(Math.floor(tree.x*37+tree.z*17)>>>0)%Math.max(1,preference.length);
-  for(let i=0;i<preference.length;i++){
-    const found=find(preference[(i+offset)%preference.length]);
-    if(found)return found;
+  const candidates=preference.map((id,i)=>({asset:find(id),rank:i}))
+    .filter(candidate=>candidate.asset);
+  if(!candidates.length)return null; // Missing broadleaf? Do not use a fir.
+  // Keep the original seeded selection when checking an isolated tree.
+  if(!placed.length){
+    for(let i=0;i<preference.length;i++){
+      const found=find(preference[(i+offset)%preference.length]);
+      if(found)return found;
+    }
   }
-  return null; // Missing actual broadleaf source? Do not fake it with firs.
+  const count=new Map();
+  for(const p of placed)count.set(p.sourceId,(count.get(p.sourceId)||0)+1);
+  let best=null,bestScore=Infinity;
+  for(const {asset,rank} of candidates){
+    let score=(count.get(asset.id)||0)*3.5;
+    // Prefer appropriate age/proportions after spatial diversity.
+    score+=rank*.6;
+    // Force variation between immediately neighboring trunks where possible.
+    // 22m is a visual-repeat zone, not a tree-collision distance.
+    for(const p of placed){
+      if(p.sourceId!==asset.id)continue;
+      const distance=Math.hypot(tree.x-p.x,tree.z-p.z);
+      if(distance<12)score+=110;
+      else if(distance<22)score+=43;
+      else if(distance<38)score+=11;
+    }
+    // Stable rotation of tie-breaking priority: no network randomness.
+    score+=((rank-offset+preference.length)%preference.length)*.13;
+    if(score<bestScore){best=asset;bestScore=score;}
+  }
+  return best;
 }
 
 function worldBounds(nodes){
@@ -117,11 +143,12 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
     }
     const available=manifest.filter(m=>sources.has(m.id));
     const usage=new Map();
+    const placed=[];
     for(const tree of VILLAGE_PROPOSED_TREES){
       // Cap duplicates: genuine model variety rather than one tree pasted 30x.
       const choices=available.filter(m=>(usage.get(m.id)||0)<
         (m.id==="jacaranda_tree"?4:mobile?MAX_PER_ASSET_MOBILE:15));
-      const asset=chooseGroveAsset(tree,choices);
+      const asset=chooseGroveAsset(tree,choices,placed);
       if(!asset){state.skippedNoModel++;continue;}
       const container=sources.get(asset.id);
       let records;
@@ -157,6 +184,7 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
           radius:tree.age==="young"?.60:1.15,id:tree.id});
         state.planted++;
         usage.set(asset.id,(usage.get(asset.id)||0)+1);
+        placed.push({x:tree.x,z:tree.z,sourceId:asset.id});
       }catch(err){
         console.warn("Cannot install real tree",tree.id,err);
         records?.rootNodes?.forEach(n=>n.dispose(false,true));
