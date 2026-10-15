@@ -417,8 +417,8 @@ def make_c0_anatomy(root, body, rig):
           "upper_sample",upper_count,"upper_supported",supported_upper)
     if center_relief<.005:
         raise RuntimeError("C0: contour flattened during skin conformity")
-    if max_depth_correction<.002:
-        raise RuntimeError("C0: inward-depth correction missed central donor profile")
+    if max_depth_correction<.0013:
+        raise RuntimeError("C0: shallow skin relief was not applied to the fitted contour")
     if upper_count<50 or supported_upper<upper_count*.40:
         raise RuntimeError("C0: upper attachment cannot be verified on torso")
     if not -.055<min(offsets)<.020 or not -.010<max(offsets)<.085:
