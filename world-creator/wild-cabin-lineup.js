@@ -1,5 +1,5 @@
 /**
- * The Wild: four actual downloadable, textured CC0 3D buildings.
+ * The Wild: six licensed textured 3D buildings (four CC0, two CC BY).
  * Models are served from our own WVLRP assets/cabins after CI verifies GLB
  * geometry. Never render empty building placeholders; preserved cabins and NPCs
  * are not modified. All displayed geometry comes from licensed source GLBs.
@@ -16,7 +16,16 @@ export const CABIN_CANDIDATES=Object.freeze([
    author:"Innerscene",license:"CC0",asset:"pitched-roof-cottage.glb"},
   {id:"bungalow-cabin",name:"Woodland bungalow",
    source:"https://www.innerscene.com/tools/library/3d-parts/bungalow-house-85d40048",
-   author:"Innerscene",license:"CC0",asset:"bungalow-cabin.glb"}
+   author:"Innerscene",license:"CC0",asset:"bungalow-cabin.glb"},
+  // Doug-approved photorealistic comparison candidates (Sketchfab CC BY).
+  // A Sketchfab login is required for the official glTF ZIP download.
+  // Import the original licensed ZIP/GLB; never substitute a sign as the model.
+  {id:"sketchfab-weathered-log-cabin",name:"Weathered Log Cabin",
+   source:"https://sketchfab.com/3d-models/wooden-log-cabin-21bf3df011b147598cdb43fea839cef7",
+   author:"donnichols",license:"CC BY 4.0",asset:"sketchfab-weathered-log-cabin.glb",requiresLogin:true},
+  {id:"sketchfab-forest-cabin",name:"Forest Cabin",
+   source:"https://sketchfab.com/3d-models/forest-cabin-game-ready-3d-environment-asset-6549da49369145cf852b2d4e7554b176",
+   author:"Sampreeth Yadav",license:"CC BY 4.0",asset:"sketchfab-forest-cabin.glb",requiresLogin:true}
 ].map(o=>Object.freeze(o)));
 export const CABIN_TEST_SLOTS=Object.freeze(CABIN_CANDIDATES.map((o,i)=>
   Object.freeze({...o,x:(i-1.5)*27,z:314})));
@@ -45,14 +54,14 @@ async function rememberModel(id,file){
   });}finally{db.close();}
 }
 function textureLabel(B,scene,index,name){
-  const tex=new B.DynamicTexture("four cabin label "+index,{width:768,height:192},scene,false);
+  const tex=new B.DynamicTexture("cabin comparison label "+index,{width:768,height:192},scene,false);
   const ctx=tex.getContext();
   ctx.fillStyle="#183528";ctx.fillRect(0,0,768,192);
   ctx.strokeStyle="#dfd2a5";ctx.lineWidth=8;ctx.strokeRect(5,5,758,182);
   ctx.textAlign="center";ctx.fillStyle="#f4eccf";
   ctx.font="bold 64px Arial";ctx.fillText("CABIN "+(index+1),384,80);
   ctx.font="32px Arial";ctx.fillText(name.slice(0,35),384,135);tex.update();
-  const m=new B.StandardMaterial("four cabin lettering "+index,scene);
+  const m=new B.StandardMaterial("cabin comparison lettering "+index,scene);
   m.diffuseTexture=tex;m.emissiveColor=new B.Color3(.23,.24,.19);m.backFaceCulling=false;
   return m;
 }
@@ -108,27 +117,27 @@ function meshLimits(meshes){
   return {min,max};
 }
 export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
-  const root=new B.TransformNode("four real cabin tests - only loaded source files",scene);
+  const root=new B.TransformNode("six real cabin tests - only loaded source files",scene);
   const assigned=new Map(),labels=[],rows=[];
   let visible=false,solo=-1;
   root.setEnabled(false);
   const panel=document.createElement("section");
-  panel.id="fourCabinPanel";panel.hidden=true;panel.setAttribute("aria-label","Four cabin comparisons");
+  panel.id="fourCabinPanel";panel.hidden=true;panel.setAttribute("aria-label","Six cabin comparisons");
   panel.style.cssText="position:fixed;z-index:22;top:100px;right:8px;width:min(330px,calc(100vw - 16px));max-height:calc(100dvh - 126px);overflow:auto;background:#122e24f5;border:1px solid #bdbe9b;border-radius:12px;color:#fff8df;font:12px/1.4 system-ui;padding:12px;box-shadow:0 8px 30px #0009;touch-action:pan-y";
   const header=document.createElement("div");
   header.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px";
-  header.innerHTML='<strong style="font-size:16px">Compare four cabins</strong>';
+  header.innerHTML='<strong style="font-size:16px">Compare six cabins</strong>';
   const close=document.createElement("button");close.type="button";close.textContent="✕";close.onclick=()=>panel.hidden=true;
   header.append(close);panel.append(header);
   const intro=document.createElement("p");
-  intro.textContent="Four licensed textured GLB buildings, loaded automatically from WVLRP's server when you approach the test field. No manual import needed. The historic timber cabin is a real scan; the other three are architectural exterior models. Inspect them close-up before approving realism.";
+  intro.textContent="The original four CC0 cabins load from WVLRP. Your two selected Sketchfab cabins are CC BY models. To see their actual 3D geometry here, sign in at Sketchfab, download each in glTF ZIP format, then choose its ZIP below. Imported models are saved on this device; no fake cabin placeholders are shown.";
   panel.append(intro);
   const allButton=document.createElement("button");allButton.type="button";allButton.textContent="Show all loaded cabins";
   allButton.onclick=()=>{solo=-1;syncVisibility();onStatus("Showing all imported cabin models.");};
   panel.append(allButton);
   const foot=document.createElement("p");
   foot.style.cssText="font-size:11px;opacity:.78";
-  foot.textContent="Original model sources above. CC0 license. If any 3D model is missing or fails validation, that slot stays empty instead of being replaced with a fake sign or low-poly box.";
+  foot.textContent="Original model sources and creators are linked above. Four CC0 cabins and two Sketchfab CC BY cabins (attribution required if published). Missing 3D geometry leaves a slot empty; never fake a building with a sign or picture.";
   function syncVisibility(){
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
       const m=assigned.get(i);
@@ -157,12 +166,18 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     const heading=document.createElement("div");
     heading.innerHTML='<strong>'+String(i+1)+'. '+c.name+'</strong> · '+c.author;
     row.append(heading);
-    const status=document.createElement("div");status.textContent="Awaiting verified server-hosted 3D model";status.style.cssText="color:#eddda5;margin:5px 0";
+    const status=document.createElement("div");status.textContent=c.requiresLogin?"Needs Sketchfab glTF ZIP import":"Awaiting verified server-hosted 3D model";status.style.cssText="color:#eddda5;margin:5px 0";
     row.append(status);
     const open=document.createElement("a");
     open.href=c.source;open.target="_blank";open.rel="noopener noreferrer";
-    open.textContent="View model provenance ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
+    open.textContent=c.requiresLogin?"Get glTF ZIP on Sketchfab ↗":"View model provenance ↗";open.style.cssText="color:#cde9d4;margin-right:8px";
     row.append(open);
+    if(c.requiresLogin){
+      const steps=document.createElement("p");
+      steps.textContent="Sign in on Sketchfab → Download 3D Model → glTF → select the ZIP below. Real 3D model only, no placeholder.";
+      steps.style.cssText="margin:5px 0;color:#f0e4b9;font-size:11px";
+      row.append(steps);
+    }
     const pick=document.createElement("input");pick.type="file";pick.accept=".glb,.zip,model/gltf-binary,application/zip";
     pick.setAttribute("aria-label","Import downloaded model "+(i+1));
     pick.style.cssText="display:block;max-width:100%;font-size:11px;margin:6px 0";
@@ -185,7 +200,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     const slot=CABIN_TEST_SLOTS[i],line=rows[i];
     const label=file?.name||slot.asset;
     line.status.textContent="Loading actual 3D mesh: "+label+"…";
-    onStatus("Loading licensed cabin "+(i+1)+" of 4…");
+    onStatus("Loading licensed cabin "+(i+1)+" of 6…");
     let sceneFile=null,node=null;
     try{
       sceneFile=remoteUrl?{url:remoteUrl,ext:".glb",urls:[]}:await fileAsScene(file);
@@ -210,7 +225,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
       assigned.set(i,{node,urls:sceneFile.urls,halfWidth:sizeX*unitScale/2,halfDepth:sizeZ*unitScale/2});
       syncVisibility();
       line.status.textContent="✓ Actual 3D building visible: "+label+" · "+Math.round(unitScale*100)/100+"× scale";
-      onStatus(assigned.size+" of 4 real cabin models loaded at the test field.");
+      onStatus(assigned.size+" of 6 real cabin models loaded at the test field.");
       if(persist&&file)try{await rememberModel(slot.id,file);}catch(err){
         line.status.textContent+=" (not saved on device: storage full)";
       }
@@ -235,7 +250,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
         if(!check.ok)throw Error("not published (HTTP "+check.status+")");
         await load(i,null,false,url);
       }catch(err){
-        rows[i].status.textContent="3D building missing: "+String(err.message||err).slice(0,85);
+        rows[i].status.textContent=slot.requiresLogin?"Download the original glTF ZIP on Sketchfab and import it here.":"3D building missing: "+String(err.message||err).slice(0,85);
         console.warn("Actual cabin asset unavailable",slot.id,err);
       }
       // Sequential downloading prevents four 10MB GLBs from decoding in parallel on phones.
