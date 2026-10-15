@@ -61,7 +61,8 @@ function reservedPad(B,scene,track,p,{cx,cy,seed,base,material}){
   }
   for(let ring=0;ring<radii.length-1;ring++)for(let i=0;i<sides;i++){
     const n=(i+1)%sides,a=ring*sides+i,b=ring*sides+n,c=(ring+1)*sides+i,d=(ring+1)*sides+n;
-    idx.push(a,b,c,b,d,c);
+    if(ring===0)idx.push(b,d,c); // One center triangle: no degenerate duplicates.
+    else idx.push(a,b,c,b,d,c);
   }
   B.VertexData.ComputeNormals(verts,idx,norm);
   const m=track(new B.Mesh("RESERVED CLEARING "+p.name,scene)),data=new B.VertexData();
