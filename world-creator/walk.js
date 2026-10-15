@@ -5,15 +5,13 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=clean-slate-20261015-v1";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=photographic-clean-test-20261015-v2";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
 import {VILLAGE_SQUARE_TREES_ENABLED,VILLAGE_HD_OAK_ENABLED} from "./wild-village-detail-spec.js?v=one-hd-oak-20261014-v2";
 import { buildHearthsideCabin } from "./cabin-builder.js?v=hearthside-cabin-v5";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=village-10acre-prototype-clear-20261014-v1";
-import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
-import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=nonstriped-sandstone-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
 import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
 
@@ -111,25 +109,10 @@ const camera=new B.FreeCamera("first-person explorer",
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
 camera.rotation.set(0,START_AT_RANGER?0:Math.PI,0);
 scene.activeCamera=camera;
-// October-approved distant sunlit Appalachian ridge: real 360-degree skyline,
-// behind the actual navigable buildings and forest. No panorama cabin cutouts.
-const horizon=installWildMountainBackdrop(B,scene,camera,{
-  mobile,
-  villageX:VILLAGE_CLEARING.centerX,
-  villageBackZ:VILLAGE_CLEARING.centerZ+VILLAGE_CLEARING.halfDepth+
-    VILLAGE_CLEARING.backExtension+4,
-  villageGroundY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
-});
-// The earlier mountain-only panorama and mesh sat BEHIND the 1.1 km terrain
-// and painted an oversized, generic green wall. Keep the continuous sky dome,
-// but replace those two obsolete distant layers with nearer parallax mountains.
-horizon.vistaWall.setEnabled(false);
-horizon.solidCliff.setEnabled(false);
-const villageMountains=installVisibleVillageMountains(B,scene,camera,{
-  mobile,
-  villageX:VILLAGE_CLEARING.centerX,
-  villageY:cabinGrade(VILLAGE_CLEARING.centerX,VILLAGE_CLEARING.centerZ,seed)
-});
+// Clean photographic landscape test: retire every blocky distant ridge,
+// rock wall and skyline mesh. Keep only the real sky, photographic ground,
+// Hearthside Cabin and its protected GLB residents. No scenery imports.
+const villageMountains={meshes:[]};
 // A small, softly glowing visible sun follows the camera's *position*, not
 // its rotation, so its direction stays fixed in the real 3D sky while walking.
 // The quad is behind nearby trees, has no fog, and costs only one draw call.
@@ -200,7 +183,7 @@ function addLandscape(x,z){
   }
   const result=renderWildLandscape(B,scene,tracked,{cx:x,cy:z,seed,mobile,lite:LITE_MODE});
   tileCx=x;tileCy=z;loadedTiles++;
-  status(loadedTiles===1?"Fresh valley loaded: follow interconnected dirt trails to cabin lots, campsites and lookouts.":"The Wild continues into new lowland trails.");
+  status(loadedTiles===1?"Loading genuine photographic terrain. Hearthside Cabin and crew are protected.":"Streaming the next photographic terrain section.");
   return result;
 }
 let habitat;
@@ -294,7 +277,7 @@ crewButton.addEventListener("click",()=>{
 const resetToCabin=()=>{
   camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
   camera.rotation.set(0,Math.PI,0);
-  document.querySelector(".brand small").textContent="Hearthside Cabin · protected crew in the new valley";
+  document.querySelector(".brand small").textContent="Hearthside Cabin · photographic terrain test";
   info.textContent="Hearthside Cabin · arriving at front porch";
 };
 document.getElementById("home").addEventListener("click",resetToCabin);
@@ -308,8 +291,8 @@ const goToRanger=()=>{
   const startX=RANGER_SPAWN.x+betaSpawnX,startZ=RANGER_SPAWN.z+betaSpawnZ;
   camera.position.set(startX,cameraGround(startX,startZ)+EYE_HEIGHT,startZ);
   camera.rotation.set(0,0,0);
-  info.textContent="New village reserve · connected cabin and camp clearings";
-  status("Fresh village reserve: follow the dirt paths to future cabin lots, campsites, and lookouts.");
+  info.textContent="Former village location · cleared photographic field";
+  status("Former village cleared. Photographic terrain and the cabin are the only landscape features.");
 };
 document.getElementById("village")?.addEventListener("click",goToRanger);
 let joyX=0,joyY=0,joyPointer=null;
@@ -501,7 +484,9 @@ engine.runRenderLoop(()=>{
     seconds=0;positionSync++;
     const nearby=clearingAt(camera.position.x,camera.position.z);
     info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
-      (nearby?` · ${nearby.name}${nearby.buildable?" (reserved site)":""}`:" · connected wilderness paths");
+      (habitat?.villageRealTerrain?.status==="ready"?" · PHOTO GROUND LOADED":
+       habitat?.villageRealTerrain?.status==="awaiting-real-assets"?" · PHOTO LOAD FAILED":
+       " · loading photographic ground");
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
@@ -594,6 +579,9 @@ window.__wildDiagnostics=()=>({
   renderedSurfaceHeight:habitat?.surfaceHeight?.(camera.position.x,camera.position.z)??null,
   renderedEyeHeight:(()=>{const y=habitat?.surfaceHeight?.(camera.position.x,camera.position.z);return Number.isFinite(y)?camera.position.y-y:null;})(),
   framesPerSecond:Math.round(engine.getFps()),
+  photographicTerrainStatus:habitat?.villageRealTerrain?.status??"not-loaded",
+  photographicTerrainError:habitat?.villageRealTerrain?.error??"",
+  photographicTerrainSource:habitat?.villageRealTerrain?.sourceIds??[],
   villageMountainLayers:villageMountains.meshes.length,
   mountainTopVisible:villageMountains.meshes.some(m=>m.isEnabled()&&m.visibility>.01),
   webgl:engine.webGLVersion
