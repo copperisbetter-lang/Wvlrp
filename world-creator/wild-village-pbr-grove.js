@@ -9,6 +9,7 @@
 import {VILLAGE_PROPOSED_TREES} from "./wild-village-planting-blueprint.js";
 import {VILLAGE_SECTION} from "./wild-acre-regions.js";
 import {cabinGrade} from "./wild-nature.js";
+import {gradeCommunityGround} from "./wild-reference-layout.js";
 
 const MANIFEST_URL="./assets/village-grove-sources.json";
 const VALID_ASSETS=Object.freeze(new Set([
@@ -126,7 +127,8 @@ export function installVillageGrove(B,scene,{seed,mobile=false}={}){
         root.scaling.setAll(scale);
         root.rotation.y=tree.yawRadians;
         const adjusted=worldBounds([root]);
-        const terrainY=cabinGrade(tree.x,tree.z,seed);
+        const terrainY=gradeCommunityGround(tree.x,tree.z,cabinGrade(tree.x,tree.z,seed),
+          p=>cabinGrade(p.x,p.z,seed));
         root.position.set(tree.x-(adjusted.minX+adjusted.maxX)/2,
           terrainY-adjusted.minY+.025,
           tree.z-(adjusted.minZ+adjusted.maxZ)/2);
