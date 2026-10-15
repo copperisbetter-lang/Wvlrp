@@ -132,6 +132,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     const ground=groundAt(c.x,c.z);
     const sign=B.MeshBuilder.CreatePlane("Cabin "+(i+1)+" attribution label",{width:6.2,height:1.55},scene);
     sign.position.set(c.x,ground+2.75,c.z-8.8);
+    sign.rotation.y=Math.PI; // Face south toward players arriving from the test entrance.
     sign.material=textureLabel(B,scene,i,c.name);
     sign.isPickable=false;sign.parent=root;labels.push(sign);
     const marker=B.MeshBuilder.CreateCylinder("Cabin "+(i+1)+" signpost",{diameter:.16,height:2.1,tessellation:8},scene);
