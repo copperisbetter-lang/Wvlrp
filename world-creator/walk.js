@@ -15,6 +15,7 @@ import {COMMUNITY_SITES,VILLAGE_CLEARING} from "./wild-reference-layout.js?v=vil
 import {installWildMountainBackdrop} from "./wild-mountain-backdrop.js?v=sky-beyond-visible-rocky-ridge-20261013-v5";
 import {installVisibleVillageMountains} from "./wild-visible-mountain-stage.js?v=nonstriped-sandstone-20261014-v1";
 import {createWildPlayerMap} from "./wild-player-map.js?v=flatland-connected-camps-20261015-v1";
+import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1";
 
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
@@ -498,7 +499,9 @@ engine.runRenderLoop(()=>{
   seconds+=dt;
   if(seconds>1.5){
     seconds=0;positionSync++;
-    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(Math.hypot(camera.position.x,camera.position.z))}m from cabin · ${Math.round(engine.getFps())} fps` + (Math.hypot(camera.position.x-VILLAGE_OAK.x,camera.position.z-VILLAGE_OAK.z)<110 ? ` · PBR TREE: ${villageOak.status.toUpperCase()}${villageOak.status==="loaded"?" ("+villageOak.meshCount+" meshes)":""}` : "") + (isNearVillageGrove(camera.position.x,camera.position.z,25) ? ` · GROVE: ${villageGrove.planted}/${villageGrove.requested} (${villageGrove.status}; ${villageGrove.broadleafModelsLoaded} broadleaf models)` : "");
+    const nearby=clearingAt(camera.position.x,camera.position.z);
+    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
+      (nearby?` · ${nearby.name}${nearby.buildable?" (reserved site)":""}`:" · connected wilderness paths");
   }
   // Keep the sun fixed against the distant sky without clipping at the edge
   // of the streamed terrain or drifting as the walker leaves the cabin.
