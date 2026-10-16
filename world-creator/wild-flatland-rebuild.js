@@ -8,7 +8,7 @@
  */
 import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
-import {buildNorthRangerStation} from "./wild-ranger-station.js?v=ranger-lodge-360-20261015-v1";
+import {buildNorthRangerStation} from "./wild-ranger-station.js?v=ranger-office-facing-entry-20261015-v2";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
 import {installVillageRealTerrain,PHOTO_TILE_METRES} from "./wild-village-real-terrain.js?v=photo-ground-sharp-debanded-20261015-v5";
