@@ -1,0 +1,35 @@
+name: Inspect unwanted Vulva2 mesh geometry
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/inspect-vulva2-mesh.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exported GLB nodes and primitive bounds
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          file=pathlib.Path('world-creator/assets/vulva2-female18-inspection.glb')
+          raw=file.read_bytes()
+          n,typ=struct.unpack_from('<II',raw,12)
+          data=json.loads(raw[20:20+n])
+          nodes=data.get('nodes',[]);meshes=data.get('meshes',[]);mats=data.get('materials',[]);acc=data.get('accessors',[])
+          print('VULVA2_BINARY_BYTES',len(raw),'NODES',len(nodes),'MESHES',len(meshes),'MATERIALS',len(mats))
+          for i,m in enumerate(mats): print('MATERIAL',i,repr(m.get('name')))
+          for i,node in enumerate(nodes):
+            if 'mesh' not in node:continue
+            mesh=meshes[node['mesh']]
+            print('MESH_NODE',i,repr(node.get('name')),'MESH',node['mesh'],repr(mesh.get('name')),
+                  'SCALE',node.get('scale'),'TRANSLATION',node.get('translation'),'SKIN',node.get('skin'))
+            for k,prim in enumerate(mesh.get('primitives',[])):
+              a=acc[prim['attributes']['POSITION']]
+              mat=prim.get('material',-1)
+              print('  PRIMITIVE',k,'VERTICES',a['count'],'BOUNDS',a.get('min'),a.get('max'),
+                    'MATERIAL',mat,repr(mats[mat].get('name')) if mat>=0 else None)
+          PY
