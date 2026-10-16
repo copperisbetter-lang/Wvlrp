@@ -289,9 +289,7 @@ crewButton.addEventListener("click",()=>{
   // Load sequentially to reduce simultaneous peak memory on Android.
   (async()=>{for(const o of cabinCrew)await loadAvatar(o);status("Cabin crew load attempted: "+avatarRoots.size+" of "+cabinCrew.length+" actual models visible.");})();
 });
-const willowButton=document.createElement("button");
-willowButton.type="button";willowButton.textContent="🌳 Willow";
-document.querySelector(".actions")?.prepend(willowButton);
+const willowButton=document.getElementById("willow");
 willowButton.addEventListener("click",()=>{
   camera.position.set(0,cameraGround(0,-43)+EYE_HEIGHT,-43);
   camera.rotation.set(0,0,0);
