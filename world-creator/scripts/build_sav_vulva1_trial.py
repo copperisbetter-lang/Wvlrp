@@ -128,9 +128,23 @@ print("SAV_VULVA1_DEBUG", "body", body.name, "body_vertices",len(body.data.verti
       "coverage_low",_coverage(center_z-.065,center_z-.02),
       "coverage_mid",_coverage(center_z-.02,center_z+.02),
       "coverage_high",_coverage(center_z+.02,center_z+.065))
-if len(hits) < 115:
-    raise RuntimeError("Vulva1 surface fitting failed: only %d/%d body hits" %
-                       (len(hits),len(original)))
+# In Sav's MakeHuman shell the actual front crotch is open below the
+# pubic surface: a valid natural vulvar patch can bridge this space, but its
+# top MUST fit directly to real body geometry. Never shift it upward merely
+# to force a high surface-hit count.
+upper=[(x,z,y) for x,z,y,_ in coords if z>=center_z+.022]
+upper_supported=sum(y is not None for x,z,y in upper)
+if len(hits)<60 or upper_supported < len(upper)*.92:
+    raise RuntimeError("Sav Vulva1 upper skin perimeter not securely fitted: %d/%d" %
+                       (upper_supported,len(upper)))
+if any(y is None and z>center_z+.028 for x,z,y,_ in coords):
+    raise RuntimeError("An unsupported Vulva1 vertex occurs above Sav's groin junction")
+if nearest_missed and nearest_missed[-1]>.074:
+    raise RuntimeError("Sav lower skin gap too large for bounded anatomical bridge: %.4f" %
+                       nearest_missed[-1])
+print("SAV_VULVA1_BRIDGED_LOWER_SURFACE",
+      "upper_supported",upper_supported,"upper_total",len(upper),
+      "max_lower_gap",round(nearest_missed[-1],4) if nearest_missed else 0)
 
 # Only short interpolation inside the actual measured surface is allowed.
 # A donor corner with no nearby body support aborts rather than floats.
@@ -139,10 +153,13 @@ for x,z,y,src_y in coords:
     if y is None:
         near = sorted(hits, key=lambda h: (h[0]-x)**2+(h[1]-z)**2)
         dist = math.hypot(near[0][0]-x,near[0][1]-z)
-        if dist > .029:
-            raise RuntimeError("Vulva1 donor vertex has no nearby Sav pelvic skin support: %.4f" % dist)
+        if dist > .074 or z > center_z+.028:
+            raise RuntimeError("Vulva1 point lacks bounded lower pelvic bridge support: %.4f" % dist)
         y = sum(h[2]/max(.002, math.hypot(h[0]-x,h[1]-z)) for h in near[:4]) / sum(
             1/max(.002, math.hypot(h[0]-x,h[1]-z)) for h in near[:4])
+        # Sink lower bridge gently toward the interior instead of projecting
+        # a long unsupported appendage forward from the pubic mound.
+        y += min(.023, dist*.36)
     # Keep the original donor depth contour, but fit its surface to Sav.
     # More negative donor Y means more anterior relief.
     depth = max(0.0, min(1.0, (ymax-src_y)/(ymax-ymin)))
@@ -158,9 +175,15 @@ if not 8 <= len(boundary) <= 140:
 # forward floating capsule.
 for i in boundary:
     x,z,y,source_depth=coords[i]
-    if y is None:
-        continue
-    positions[i]=(x,y-.0004,z)
+    if y is not None:
+        positions[i]=(x,y-.0004,z)
+# Lower border spans the natural gap between the inner thighs rather than
+# falsely snapping to a nonexistent centerline front polygon.
+unsupported_boundary=sum(coords[i][2] is None for i in boundary)
+if unsupported_boundary>12:
+    raise RuntimeError("Too many open perimeter vertices in Sav pelvic bridge: %d" %
+                       unsupported_boundary)
+print("SAV_VULVA1_BOUNDARY_QA",len(boundary),unsupported_boundary)
 
 mesh = bpy.data.meshes.new("Sav original Thomas Larsson Vulva1 topology")
 mesh.from_pydata(positions, [], faces)
