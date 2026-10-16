@@ -1,3 +1,4 @@
+import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-v1";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
  * Walk The Wild: stand outside Hearthside Cabin and explore a seeded WV world.
@@ -164,6 +165,8 @@ const keep=o=>{permanent.push(o);return o;};
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
+const treeInspection=installTreeInspectionLine(B,scene,{seed,cabinGrade,camera});
+window.__treeInspection=()=>treeInspection.spots.map(({id,x,z,status,error})=>({id,x,z,status,error}));
 window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
 const woodGroups=new Map();
 for(const mesh of permanent){
@@ -549,6 +552,7 @@ if(BETA_MODE){
 }
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
+  treeInspection.tick();
   const dt=Math.min(engine.getDeltaTime()/1000,.05);
   const f=(-joyY)+(keys.has("w")||keys.has("arrowup")?1:0)-(keys.has("s")||keys.has("arrowdown")?1:0);
   const side=joyX+(keys.has("d")||keys.has("arrowright")?1:0)-(keys.has("a")||keys.has("arrowleft")?1:0);
