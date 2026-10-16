@@ -342,25 +342,28 @@ export function installRangerReferenceInterior(B,scene,track,c){
   const rugTex=track(new B.DynamicTexture("Ranger station braided oval rug woven strands",
     {width:1024,height:512},scene,false));
   const rg=rugTex.getContext();
-  rg.fillStyle="#644d38";rg.fillRect(0,0,1024,512);
+  rg.clearRect(0,0,1024,512);
   rg.save();rg.translate(512,256);
   const rings=["#a48b64","#403c2c","#846043","#a9a183","#364439",
     "#9b5940","#c0a37d","#5e6245","#baa486","#6a503a"];
-  for(let j=9;j>=0;j--){
+  for(let j=0;j<=9;j++){
     rg.beginPath();rg.ellipse(0,0,490-j*41,243-j*18,0,0,Math.PI*2);
     rg.fillStyle=rings[j];rg.fill();
     rg.lineWidth=6;rg.strokeStyle="#2d2c26";rg.stroke();
   }
   rg.restore();
-  // Directional thread flecks supply close-up textile structure.
+  // Thread flecks stay inside the oval instead of making a square floor mat.
+  rg.save();rg.beginPath();rg.ellipse(512,256,490,243,0,0,Math.PI*2);rg.clip();
   for(let i=0;i<3600;i++){
     const tx=(i*197.33)%1024,ty=(i*83.71)%512;
     rg.fillStyle=i%4===0?"#dbc8a060":"#242e273d";
     rg.fillRect(tx,ty,1.8,1.2);
   }
-  rugTex.update();
+  rg.restore();
+  rugTex.hasAlpha=true;rugTex.update();
   const rugMat=track(new B.StandardMaterial("Ranger faded woven wool rug",scene));
-  rugMat.diffuseTexture=rugTex;rugMat.specularColor=new B.Color3(.02,.02,.02);
+  rugMat.diffuseTexture=rugTex;rugMat.useAlphaFromDiffuseTexture=true;
+  rugMat.specularColor=new B.Color3(.02,.02,.02);
   rugMat.backFaceCulling=false;
   const rug=track(B.MeshBuilder.CreateGround("RANGER REFERENCE actual rug under entry desk",
     {width:4.9,height:2.65},scene));
