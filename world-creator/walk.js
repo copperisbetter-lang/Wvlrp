@@ -1,3 +1,4 @@
+import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-visibility-v9";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
@@ -165,6 +166,7 @@ const keep=o=>{permanent.push(o);return o;};
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
+const doorTree=installDoorTree(B,scene,cabinGrade(0,-13,seed));
 const treeInspection=installTreeInspectionLine(B,scene,{seed,cabinGrade,camera});
 const treeTestMode=new URLSearchParams(location.search).has("treeTest");
 if(treeTestMode){
