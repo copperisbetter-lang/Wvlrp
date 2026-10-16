@@ -35,12 +35,16 @@ a{color:#d6eac8}
 <button id="reveal" type="button" aria-expanded="true">Hide controls</button>
 <section id="panel" aria-label="Cabin 1 material and design workshop">
 <h1>The Wild · Cabin Workshop</h1>
-<p>Preserve Cabin 1's real scan on the left. Clone a section of its textured mesh in the middle. Build an independently editable cabin on the right using the project's licensed photorealistic building materials.</p>
+<p>Preserve Cabin 1's real scan on the left. Clone a section of its textured mesh in the middle. Build an independently editable cabin on the right using our newly downloaded verified 2K Poly Haven photographic materials.</p>
 <div id="progress" class="notice" role="status">Starting 3D workshop…</div>
-<h2>Design your new cabin</h2>
+<h2>Design with real 2K photographic finishes</h2>
 <label>Width <select id="width"><option value="2">6 metres</option><option value="3" selected>9 metres</option><option value="4">12 metres</option><option value="5">15 metres</option></select></label>
 <label>Depth <select id="depth"><option value="2">6 metres</option><option value="3" selected>9 metres</option><option value="4">12 metres</option><option value="5">15 metres</option></select></label>
-<label>Roof <select id="roof"><option value="corrugated_iron">Weathered metal</option><option value="roof_slates_02">Slate tiles</option></select></label>
+<label>Roof <select id="roof"><option value="corrugated_iron">Weathered metal</option><option value="roof_slates_03">Real slate tiles</option></select></label>
+<label>Log appearance <select id="logFinish"><option value="wood_trunk_wall">Stacked log timber</option><option value="pine_bark">Natural pine bark</option></select></label>
+<label>Plank surfaces <select id="floorFinish"><option value="wood_planks">Warm wooden planks</option><option value="weathered_planks">Heavily weathered</option><option value="raw_plank_wall">Rough-cut pine</option></select></label>
+<label>Fireplace stone <select id="stoneFinish"><option value="stacked_stone_wall">Natural stacked stone</option><option value="mossy_stone_wall">Mossy fieldstone</option></select></label>
+<label>Door and trim <select id="trimFinish"><option value="rough_pine_door">Weathered pine</option><option value="raw_plank_wall">Raw rough-cut pine</option></select></label>
 <label>Stone fireplace <input id="fireplace" type="checkbox" checked></label>
 <label>Covered entrance <input id="porch" type="checkbox" checked></label>
 <label>Real window openings <input id="windows" type="checkbox" checked></label>
@@ -84,11 +88,15 @@ const baseMat=new B.StandardMaterial("level workshop ground",scene);
 baseMat.diffuseColor=B.Color3.FromHexString("#597055");baseMat.specularColor=new B.Color3(.05,.05,.05);
 const ground=B.MeshBuilder.CreateGround("workshop ground",{width:85,height:60},scene);
 ground.material=baseMat;
-const mats=makeCabinMaterialLibrary(B,scene);
+const mats=makeCabinMaterialLibrary(B,scene,{resolution:"2k"});
 function designFromControls(){return normalizedCabinDesign({
   baysWide:Number(document.querySelector("#width").value),
   baysDeep:Number(document.querySelector("#depth").value),
   roof:document.querySelector("#roof").value,
+  logFinish:document.querySelector("#logFinish").value,
+  floorFinish:document.querySelector("#floorFinish").value,
+  stoneFinish:document.querySelector("#stoneFinish").value,
+  trimFinish:document.querySelector("#trimFinish").value,
   fireplace:document.querySelector("#fireplace").checked,
   porch:document.querySelector("#porch").checked,
   windows:document.querySelector("#windows").checked
@@ -97,6 +105,10 @@ function updateControls(s){
   document.querySelector("#width").value=String(s.baysWide);
   document.querySelector("#depth").value=String(s.baysDeep);
   document.querySelector("#roof").value=s.roof;
+  document.querySelector("#logFinish").value=s.logFinish;
+  document.querySelector("#floorFinish").value=s.floorFinish;
+  document.querySelector("#stoneFinish").value=s.stoneFinish;
+  document.querySelector("#trimFinish").value=s.trimFinish;
   document.querySelector("#fireplace").checked=s.fireplace;
   document.querySelector("#porch").checked=s.porch;
   document.querySelector("#windows").checked=s.windows;
@@ -114,7 +126,7 @@ function rebuild(){
 document.querySelector("#build").onclick=rebuild;
 document.querySelector("#save").onclick=()=>{
   try{localStorage.setItem(saveKey,JSON.stringify(designFromControls()));
-    text("This cabin blueprint was saved in this browser. It is NOT yet placed into the multiplayer game.");}
+    text("HD cabin blueprint saved on this device. It is NOT yet placed into the multiplayer game.");}
   catch(e){text("Could not save to browser: "+e.message);}
 };
 document.querySelector("#reset").onclick=()=>{
