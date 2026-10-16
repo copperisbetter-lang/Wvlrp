@@ -4,6 +4,7 @@ on:
     paths:
       - .github/workflows/build-sav3.yml
       - world-creator/scripts/build_sav3.py
+      - world-creator/scripts/vulva2_preview_animations.py
   workflow_dispatch:
 permissions:
   contents: write
