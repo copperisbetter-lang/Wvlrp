@@ -19,10 +19,10 @@ LANDMARKS = [
     dict(id="C0", name="Central pelvic origin", x=0.000, z=0.000, relief=0.000),
     dict(id="P1", name="Pubic mound",          x=0.000, z=0.022, relief=0.002),
     dict(id="H1", name="Upper central fold",   x=0.000, z=0.008, relief=0.003),
-    dict(id="L1", name="Left inner fold",      x=-0.006, z=-0.009, relief=0.010),
-    dict(id="R1", name="Right inner fold",     x= 0.006, z=-0.009, relief=0.010),
-    dict(id="L2", name="Left outer fold",      x=-0.015, z=-0.006, relief=0.013),
-    dict(id="R2", name="Right outer fold",     x= 0.015, z=-0.006, relief=0.013),
+    dict(id="L1", name="Left inner fold",      x=-0.006, z=-0.009, relief=0.0065),
+    dict(id="R1", name="Right inner fold",     x= 0.006, z=-0.009, relief=0.0065),
+    dict(id="L2", name="Left outer fold",      x=-0.015, z=-0.006, relief=0.0085),
+    dict(id="R2", name="Right outer fold",     x= 0.015, z=-0.006, relief=0.0085),
     dict(id="B1", name="Lower central blend", x=0.000, z=-0.013, relief=0.002),
 ]
 
@@ -157,8 +157,8 @@ def make_c0_anatomy(root, body, rig):
     # lower rim from dropping into empty space between the thighs.
     # A narrow, vertically elongated silhouette. Previous 50x37 mm dimensions
     # produced a wide, squat pouch instead of a pelvis-following contour.
-    x_scale=.041
-    z_scale=.057
+    x_scale=.036
+    z_scale=.052
     positions=[v.co.copy() for v in body.data.vertices]
     # The old weight filter excluded ALL polygons below z=.777m
     # even though C0 is z=.744m, so the nearest-point snap lifted
@@ -242,7 +242,7 @@ def make_c0_anatomy(root, body, rig):
         # Span both negative (inferior) and positive (pubic) C0 offsets.
         # Previously the entire grid began near -3 mm, while inner/outer
         # folds were specified at -9 mm; those folds were never sculpted.
-        raw_offset=-.016+(src_z-low)*z_scale
+        raw_offset=-.014+(src_z-low)*z_scale
         roll=smoothstep((.008-raw_offset)/.040)
         x=cx+src_x*x_scale*(1.-.10*smoothstep((raw_offset-.010)/.022))
         z=c0z+raw_offset+.002*roll
@@ -294,7 +294,8 @@ def make_c0_anatomy(root, body, rig):
         planar_support_max=max(planar_support_max,planar_support)
         # A big nearest-face distance at the rim creates a suspended
         # independent oval. Fail the build instead of publishing it.
-        if distance>.052 or (edge_dist[i]<.004 and planar_support>.030):
+        if ((not front_is_skin and (distance>.018 or planar_support>.011))
+                or (edge_dist[i]<.004 and planar_support>.015)):
             raise RuntimeError("C0: detached patch; skin support missing at "+str((i//cols,i%cols,round(distance,4))))
         max_support_distance=max(max_support_distance,distance)
         total_hits+=1
@@ -327,11 +328,11 @@ def make_c0_anatomy(root, body, rig):
         # Two independent nested folds on each side, separated by a soft
         # depression. Without these valley terms the Gaussian peaks blended
         # into the single blocky lobe reported in the viewer.
-        valley=.0048*gauss(abs(dx),.010,.0028)*gauss(dz,-.008,.019)
-        center_groove=.0028*gauss(dx,0.,.0027)*gauss(dz,-.009,.020)
+        valley=.0035*gauss(abs(dx),.010,.0028)*gauss(dz,-.008,.019)
+        center_groove=.0037*gauss(dx,0.,.0027)*gauss(dz,-.009,.020)
         # Keep two softly separated outer/inner contours; never cap them
         # into the broad sphere-like mass seen in the inspection shots.
-        relief=max(0.,min(.012,.0004+.84*inner+.85*outer+.40*top+.08*donor-valley-center_groove))*fade
+        relief=max(0.,min(.008,.0002+.70*inner+.82*outer+.26*top+.04*donor-valley-center_groove))*fade
         center_relief=max(center_relief,relief)
         # The earlier full conformal snap recessed the center into the groin
         # crease. Preserve the conformal BODY contact and all fitted rig
@@ -343,8 +344,8 @@ def make_c0_anatomy(root, body, rig):
         # The old 14 mm blanket lift PLUS the old 34 mm ridge built a bulb.
         # Keep only a few millimetres of clearance and let the real skin
         # surface dictate the attachment silhouette.
-        anterior_lift=(.0018-.0004*roll)*interior_fade
-        normal_lift=.0005*interior_fade
+        anterior_lift=(.0009-.0003*roll)*interior_fade
+        normal_lift=.0002*interior_fade
         max_depth_correction=max(max_depth_correction,anterior_lift)
         # Preserve the *ordered* regular X/Z parameterization. Projecting
         # all three dimensions to unrelated closest vertices had folded
@@ -391,7 +392,7 @@ def make_c0_anatomy(root, body, rig):
                 max_y_step=max(max_y_step,abs(smoothed_y[j]-smoothed_y[j+1]))
             if row+1<rows:
                 max_y_step=max(max_y_step,abs(smoothed_y[j]-smoothed_y[j+cols]))
-    if max_y_step>.030:
+    if max_y_step>.014:
         raise RuntimeError("C0: discontinuous depth / petal mesh: "+str(round(max_y_step,4)))
     mesh.update()
     offsets=[v.co.z-c0z for v in mesh.vertices]
@@ -427,9 +428,9 @@ def make_c0_anatomy(root, body, rig):
           "direct_front_contacts",direct_front_hits,
           "nearest_fallback_contacts",fallback_support_hits,
           "upper_sample",upper_count,"upper_supported",supported_upper)
-    if center_relief<.005:
+    if center_relief<.0035:
         raise RuntimeError("C0: contour flattened during skin conformity")
-    if max_depth_correction<.0013:
+    if max_depth_correction<.00055:
         raise RuntimeError("C0: shallow skin relief was not applied to the fitted contour")
     if upper_count<50 or supported_upper<upper_count*.40:
         raise RuntimeError("C0: upper attachment cannot be verified on torso")
