@@ -45,7 +45,7 @@ new GLTFLoader().load(modelUrl,g=>{
  document.getElementById('savFull').onclick=()=>{controls.target.set(0,.9,0);camera.position.set(0,1,3.1);controls.update();};
  const morphMeshes=skinMeshes.filter(o=>o.morphTargetDictionary && ("Labia_Left_Open" in o.morphTargetDictionary || "Labia_Right_Open" in o.morphTargetDictionary));
  window.savAnatomyMeshes=morphMeshes;
- document.getElementById('anatomy-status').textContent=morphMeshes.length?'Independent left/right inspection morphs available in every pose':'Inspection morphs missing: rebuild the Sav shell GLB';
+ // The original Sav body may have its former contour morphs; this trial does not drive them.
  applyAnatomy();
  const joints=[];g.scene.traverse(o=>{if(o.isSkinnedMesh)for(const b of o.skeleton.bones)joints.push(b.name)});
  const unique=[...new Set(joints)];
@@ -56,21 +56,8 @@ new GLTFLoader().load(modelUrl,g=>{
  select.value=bones.has('LUpperArm')?'LUpperArm':[...bones.keys()][0];selectJoint(select.value);document.getElementById('jointstatus').textContent=bones.size+' joints available';
  play('idle');
 },undefined,e=>{clearTimeout(loadingTimer);status.textContent='Sav failed to load: '+(e?.message||String(e))+' — model: '+modelUrl;console.error('Sav model load failure',e)});
-const anatomyState={left:0,right:0};
-function applyAnatomy(){
- for(const mesh of (window.savAnatomyMeshes||[])){
-  for(const [side,morph] of [['left','Labia_Left_Open'],['right','Labia_Right_Open']]){
-   const index=mesh.morphTargetDictionary?.[morph];
-   if(index!==undefined)mesh.morphTargetInfluences[index]=anatomyState[side];
-  }
- }
- for(const side of ['left','right']){document.getElementById(side+'-open').value=Math.round(anatomyState[side]*100);document.getElementById(side+'-value').textContent=Math.round(anatomyState[side]*100)+'%';}
-}
-for(const side of ['left','right']){
- document.getElementById(side+'-open').oninput=e=>{anatomyState[side]=Number(e.target.value)/100;applyAnatomy();};
-}
-document.getElementById('both-open').oninput=e=>{anatomyState.left=anatomyState.right=Number(e.target.value)/100;document.getElementById('both-value').textContent=e.target.value+'%';applyAnatomy();};
-document.getElementById('reset-anatomy').onclick=()=>{anatomyState.left=anatomyState.right=0;document.getElementById('both-open').value=0;document.getElementById('both-value').textContent='0%';applyAnatomy();};
+// Legacy Sav bilateral sculpt controls intentionally disabled in the isolated Vulva1 trial.
+function applyAnatomy(){}
 let current=null;
 function stopAnimation(){if(mixer){mixer.stopAllAction();mixer.update(0);}current=null;manual=true;}
 function selectJoint(name){selected=bones.get(name);if(!selected)return;const axes=document.getElementById('axes');axes.replaceChildren();
