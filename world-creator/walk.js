@@ -99,7 +99,7 @@ const engine=new B.Engine(canvas,true,{antialias:!mobile,stencil:true,preserveDr
 engine.setHardwareScalingLevel(LITE_MODE?1.9:mobile?1.4:1);
 const scene=new B.Scene(engine);
 if(new URLSearchParams(location.search).get("carolTest")==="1"){
- import("./carol-cabin-test.js?v=20261016-a").then(m=>new Promise(resolve=>setTimeout(resolve,1200)).then(()=>m.startCarolTest(B,scene,camera,cabinGrade,seed))).catch(e=>console.error("Carol test:",e));
+ import("./carol-cabin-test.js?v=20261016-porchfix2").then(m=>new Promise(resolve=>setTimeout(resolve,1200)).then(()=>m.startCarolTest(B,scene,camera,cabinGrade,seed))).catch(e=>console.error("Carol test:",e));
 }
 
 // Clear, sunny afternoon: enough diffuse skylight reaches forest-floor plants
