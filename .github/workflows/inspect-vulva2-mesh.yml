@@ -59,4 +59,33 @@ jobs:
                     'Z_PERCENTILE_95',round(points[int(.95*(len(points)-1))][2],4),
                     'MAX_BACK_Z',round(points[0][2],4),
                     'FURTHEST_FORWARD_POINTS',[[round(q,4) for q in p] for p in points[-3:]])
+          # Connected-component audit of body geometry, including embedded extra parts.
+          import collections
+          idx_accessor=acc[prim['indices']]
+          idx_view=data['bufferViews'][idx_accessor['bufferView']]
+          idx_beg=idx_view.get('byteOffset',0)+idx_accessor.get('byteOffset',0)
+          fmt={5121:'B',5123:'H',5125:'I'}[idx_accessor['componentType']]
+          fmtlen=struct.calcsize('<'+fmt)
+          ixstride=idx_view.get('byteStride',fmtlen)
+          indices=[struct.unpack_from('<'+fmt,binchunk,idx_beg+i*ixstride)[0] for i in range(idx_accessor['count'])]
+          print('BODY_TRIANGLES',len(indices)//3,'INDEX_RANGE',min(indices),max(indices))
+          parent=list(range(len(verts)))
+          def find(x):
+            while parent[x]!=x:
+              parent[x]=parent[parent[x]]
+              x=parent[x]
+            return x
+          def union(a,b):
+            a=find(a);b=find(b)
+            if a!=b:parent[b]=a
+          for j in range(0,len(indices),3):
+            a,b,c=indices[j:j+3];union(a,b);union(b,c)
+          groups=collections.defaultdict(list)
+          for v in set(indices):groups[find(v)].append(v)
+          for _,ids in sorted(groups.items(),key=lambda q:-len(q[1]))[:30]:
+            points=[verts[i] for i in ids]
+            mins=[min(p[i] for p in points) for i in range(3)]
+            maxs=[max(p[i] for p in points) for i in range(3)]
+            print('BODY_COMPONENT',len(ids),'BBOX',tuple(round(x,4) for x in mins),tuple(round(x,4) for x in maxs))
+          print('BODY_COMPONENT_TOTAL',len(groups))
           PY
