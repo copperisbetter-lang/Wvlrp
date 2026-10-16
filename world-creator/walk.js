@@ -176,6 +176,23 @@ if(treeTestMode){
  document.body.appendChild(panel);
  const show=()=>{const p=treeInspection.spots;panel.textContent="TREE TEST • "+p.filter(x=>x.status==="ready").length+"/"+p.length+" loaded • "+p.filter(x=>x.status==="error").length+" errors • first: "+p[0].status+(p[0].error?" ("+p[0].error.slice(0,90)+")":"")+" • facing first sample 12m ahead";};
  show();setInterval(show,1500);
+ // Mobile inspection controls: jump directly to each planted specimen.
+ let selectedTree=0;
+ const controls=document.createElement("div");controls.id="tree-inspection-controls";
+ controls.style.cssText="position:fixed;z-index:99999;top:145px;right:8px;display:flex;gap:6px;align-items:center;background:#10281ef0;padding:8px;border:2px solid #e6c76d;border-radius:10px";
+ const previous=document.createElement("button");previous.textContent="◀";
+ const next=document.createElement("button");next.textContent="NEXT TREE ▶";
+ const counter=document.createElement("span");counter.style.cssText="color:white;font:bold 12px system-ui";
+ controls.append(previous,counter,next);document.body.appendChild(controls);
+ const jump=delta=>{
+   selectedTree=(selectedTree+delta+treeInspection.spots.length)%treeInspection.spots.length;
+   const spot=treeInspection.spots[selectedTree];
+   camera.position.set(spot.x,cabinGrade(spot.x,spot.z+12,seed)+EYE_HEIGHT,spot.z+12);
+   camera.rotation.set(0,Math.PI,0);
+   counter.textContent=(selectedTree+1)+"/"+treeInspection.spots.length+" "+spot.id;
+   treeInspection.tick();
+ };
+ previous.onclick=()=>jump(-1);next.onclick=()=>jump(1);jump(0);
 }
 window.__treeInspection=()=>treeInspection.spots.map(({id,x,z,status,error})=>({id,x,z,status,error}));
 window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
