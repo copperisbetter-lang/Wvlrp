@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - world-creator/scripts/build_vulva2_female18.py
+      - world-creator/scripts/vulva2_clean_hair.py
+      - world-creator/scripts/vulva2_preview_animations.py
       - world-creator/assets/vulva2-mhx2-source.json
       - .github/workflows/build-vulva2-female18.yml
   workflow_dispatch:
@@ -51,7 +53,7 @@ jobs:
       - name: Build and verify truly auto-fitted Vulva2 adult
         run: |
           set -euo pipefail
-          python3 -m py_compile world-creator/scripts/build_vulva2_female18.py
+          python3 -m py_compile world-creator/scripts/build_vulva2_female18.py world-creator/scripts/vulva2_clean_hair.py world-creator/scripts/vulva2_preview_animations.py
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_vulva2_female18.py 2>&1 | tee /tmp/vulva2-build.log
           grep VULVA2_TRUE_AUTOFIT_SUCCESS /tmp/vulva2-build.log
           grep VULVA2_FEMALE18_BUILD_SUCCESS /tmp/vulva2-build.log
