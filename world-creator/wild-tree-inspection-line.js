@@ -11,7 +11,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
   ["island_tree_02",3904436],["island_tree_03",6700476],
   ["tree_small_02",5403644],["jacaranda_tree",14137844]
  ];
- const spots=entries.map(([id,bytes],i)=>({id,bytes,x:0,z:-30-i*24,status:"waiting",root:null}));
+ const spots=entries.map(([id,bytes],i)=>({id,bytes,x:0,z:-30-i*24,status:"waiting",root:null,label:null}));
  // Physical labeled test markers make positions visible even if a GLB fails to load.
  const markerMat=new B.StandardMaterial("tree-test-marker-material",scene);markerMat.diffuseColor=new B.Color3(.98,.78,.2);markerMat.emissiveColor=new B.Color3(.24,.17,.02);
  for(const spot of spots){
@@ -21,11 +21,12 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    plane.position.set(spot.x+3,cabinGrade(spot.x,spot.z,seed)+2.9,spot.z);plane.billboardMode=B.Mesh.BILLBOARDMODE_ALL;
    const tex=new B.DynamicTexture("label "+spot.id,{width:512,height:128},scene,false);
    tex.drawText(spot.id,16,76,"bold 39px Arial","#fff3bc","#163e2e",true);
+   spot.label=tex;
    const mat=new B.StandardMaterial("label mat "+spot.id,scene);mat.diffuseTexture=tex;mat.emissiveColor=new B.Color3(.4,.4,.4);mat.backFaceCulling=false;plane.material=mat;
  }
  let busy=false;
  async function load(spot){
-  busy=true;spot.status="loading";
+  busy=true;spot.status="loading";spot.label?.drawText(spot.id+" LOADING",8,76,"bold 31px Arial","#ffffff","#224455",true);
   try{
    const result=await B.SceneLoader.ImportMeshAsync(null,"./assets/",(spot.id.startsWith("oak_tree")?spot.id:"village-pbr-"+spot.id)+".glb",scene,undefined,".glb");
    const meshes=result.meshes.filter(m=>m.getTotalVertices?.()>0);
@@ -50,9 +51,9 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
     root.position.x=spot.x-(minX+maxX)*.5*scale;
     root.position.z=spot.z-(minZ+maxZ)*.5*scale;
    }
-   for(const m of meshes){m.isPickable=false;m.checkCollisions=false;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.backFaceCulling=false;mat.twoSidedLighting=true;}}
-   spot.root=root;spot.status="ready";
-  }catch(err){spot.status="error";spot.error=String(err);console.warn("Tree sample failed",spot.id,err);}
+   for(const m of meshes){m.isPickable=false;m.checkCollisions=false;m.alwaysSelectAsActiveMesh=true;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.backFaceCulling=false;mat.twoSidedLighting=true;if(mat.albedoTexture?.hasAlpha||mat.diffuseTexture?.hasAlpha){mat.transparencyMode=B.Material.MATERIAL_ALPHATEST;mat.useAlphaFromAlbedoTexture=true;}}}
+   spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
+  }catch(err){spot.status="error";spot.error=String(err);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err);}
   finally{busy=false;}
  }
  const tick=()=>{
