@@ -1,3 +1,4 @@
+import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
  * Walk The Wild: stand outside Hearthside Cabin and explore a seeded WV world.
  * Lower-left virtual joystick, touch-look on right, and WASD/mouse controls.
@@ -162,6 +163,7 @@ const keep=o=>{permanent.push(o);return o;};
 // into fewer draw calls while retaining their true shape and surface colors.
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
+girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
 window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
 const woodGroups=new Map();
 for(const mesh of permanent){
@@ -528,6 +530,7 @@ document.getElementById("materialYard")?.remove();
 let multiplayer=null;
 // Use the existing encrypted peer-to-peer positions for a player map.
 // It opens only when the visitor presses "Players Map", not over gameplay.
+const wildMinimap=installWildMinimap(camera);
 const playerMap=BETA_MODE?createWildPlayerMap({
   getSelf:()=>({x:camera.position.x,z:camera.position.z,yaw:camera.rotation.y}),
   getPeers:()=>multiplayer?.getPeerPositions?.()??[],
@@ -612,6 +615,7 @@ engine.runRenderLoop(()=>{
   // Existing character models and multiplayer keep running; old scenery loaders disabled.
   multiplayer?.update(dt);
   playerMap?.update(performance.now());
+  wildMinimap.update(performance.now());
   scene.render();
 });
 if(START_AT_MATERIALS){
