@@ -112,6 +112,22 @@ for src_x,src_y,src_z in original:
     coords.append((x,z,y,src_y))
     if y is not None:
         hits.append((x,z,y))
+# Debug coverage by source height / lateral position. This report never
+# approves a fit; the hard surface-support gate below remains in place.
+misses = [(x,z) for x,z,y,src_y in coords if y is None]
+nearest_missed = sorted([min(math.hypot(x-h[0],z-h[1]) for h in hits)
+                         for x,z in misses]) if hits else []
+def _coverage(lo,hi):
+    rows=[(x,z,y) for x,z,y,_ in coords if lo <= z < hi]
+    return (len(rows),sum(y is not None for _,_,y in rows))
+print("SAV_VULVA1_DEBUG", "body", body.name, "body_vertices",len(body.data.vertices),
+      "pelvis_z",pelvis_z, "center_z",center_z, "hip_half",hip_half,
+      "original_hits",len(hits), "misses",len(misses),
+      "nearest_missing_distances", [round(nearest_missed[int((len(nearest_missed)-1)*p)],4)
+                                     for p in (0,.5,.9,1)] if nearest_missed else [],
+      "coverage_low",_coverage(center_z-.065,center_z-.02),
+      "coverage_mid",_coverage(center_z-.02,center_z+.02),
+      "coverage_high",_coverage(center_z+.02,center_z+.065))
 if len(hits) < 115:
     raise RuntimeError("Vulva1 surface fitting failed: only %d/%d body hits" %
                        (len(hits),len(original)))
