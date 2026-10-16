@@ -11,7 +11,7 @@ export function installGirlsCabinWillow(B,scene,groundY=0){
  trunk.position.y=4.5;trunk.material=bark;trunk.parent=root;
  const branches=[],foliage=[];
  let state=987654;const rand=()=>((state=(1664525*state+1013904223)>>>0)/4294967296);
- const branch=(a,b,r)=>{const d=new B.Vector3(b.x-a.x,b.y-a.y,b.z-a.z);const m=B.MeshBuilder.CreateCylinder("willow-branch",{height:d.length(),diameterBottom:r*2,diameterTop:r*.52,tessellation:5},scene);m.position=a.add(b).scale(.5);m.rotationQuaternion=B.Quaternion.FromUnitVectorsToRef?undefined:undefined;m.lookAt(b);m.rotate(B.Axis.X,Math.PI/2,B.Space.LOCAL);m.material=bark;m.parent=root;branches.push(m);};
+ const branch=(a,b,r)=>{const d=new B.Vector3(b.x-a.x,b.y-a.y,b.z-a.z);const m=B.MeshBuilder.CreateCylinder("willow-branch",{height:d.length(),diameterBottom:r*2,diameterTop:r*.52,tessellation:5},scene);m.position=a.add(b).scale(.5);m.rotationQuaternion=B.Quaternion.FromUnitVectorsToRef?undefined:undefined;m.rotationQuaternion=B.Quaternion.RotationAlignToRef?undefined:undefined;const up=B.Vector3.Up();const axis=B.Vector3.Cross(up,d.normalize());const angle=Math.acos(Math.max(-1,Math.min(1,B.Vector3.Dot(up,d))));if(axis.lengthSquared()>1e-8)m.rotationQuaternion=B.Quaternion.RotationAxis(axis.normalize(),angle);m.material=bark;m.parent=root;branches.push(m);};
  for(let i=0;i<17;i++){
   const theta=i*Math.PI*2/17+rand()*.22,reach=5.2+rand()*4.1;
   const start=new B.Vector3(Math.sin(theta)*.35,7.6+rand()*1.6,Math.cos(theta)*.35);
