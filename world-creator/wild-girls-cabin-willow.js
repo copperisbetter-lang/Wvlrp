@@ -1,7 +1,7 @@
 /** Weeping willow landmark, 30 m due north of Hearthside cabin (0,0). */
 export function installGirlsCabinWillow(B,scene,groundY=0){
  const root=new B.TransformNode("girls-cabin-willow-30m-north",scene);
- root.position.set(0,groundY,30);
+ root.position.set(0,groundY,-30);
  const bark=new B.PBRMaterial("willow-weathered-bark",scene);
  bark.albedoColor=new B.Color3(.24,.19,.13);bark.roughness=1;
  const leaves=new B.StandardMaterial("willow-summer-leaves",scene);
