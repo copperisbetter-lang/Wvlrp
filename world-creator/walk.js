@@ -161,7 +161,7 @@ const keep=o=>{permanent.push(o);return o;};
 // floor boards. In walking mode these are static: merge identical materials
 // into fewer draw calls while retaining their true shape and surface colors.
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
-installGirlsCabinWillow(B,scene,cabinGrade(0,30,seed));
+installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 const woodGroups=new Map();
 for(const mesh of permanent){
   if(!(mesh instanceof B.Mesh)||!mesh.material||!mesh.getTotalVertices?.())continue;
