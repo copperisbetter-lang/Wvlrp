@@ -7,6 +7,7 @@ import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSI
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
 import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=ranger-360-playable-20261015-v10";
 import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-360-playable-20261015-v10";
+import {PHOTO_RANGER_STATION,photoRangerCollision,photoRangerDeckBlend} from "./wild-ranger-photo-build.js?v=photo-station-east30-20261015-v1";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -49,10 +50,13 @@ const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
+const START_AT_PHOTO_RANGER=betaParams.get("spawn")==="ranger-photo";
 const START_AT_COMPARE=betaParams.get("compare")==="1";
 const START_AT_MATERIALS=betaParams.get("materials")==="1";
 const RANGER_SPAWN=Object.freeze({x:NORTH_RANGER_STATION.x,z:NORTH_RANGER_STATION.z-13,
   tileX:NORTH_RANGER_STATION.x,tileZ:NORTH_RANGER_STATION.z});
+const PHOTO_RANGER_SPAWN=Object.freeze({x:PHOTO_RANGER_STATION.x,z:PHOTO_RANGER_STATION.z-17,
+  tileX:PHOTO_RANGER_STATION.x,tileZ:PHOTO_RANGER_STATION.z});
 // Disperse visitors in the open village approach to prevent overlapping
 // first-person spawns (which would conceal another visitor's body).
 const betaSpawnAngle=BETA_MODE?Math.random()*Math.PI*2:0;
@@ -109,12 +113,13 @@ sun.diffuse=new B.Color3(1,.96,.85);
 sun.intensity=1.55;
 const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
 const camera=new B.FreeCamera("first-person explorer",
-  new B.Vector3(START_AT_RANGER?RANGER_SPAWN.x:START_AT_MATERIALS?MATERIAL_YARD.spawnX:0,
+  new B.Vector3(START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.x:START_AT_RANGER?RANGER_SPAWN.x:START_AT_MATERIALS?MATERIAL_YARD.spawnX:0,
+    START_AT_PHOTO_RANGER?cabinGrade(PHOTO_RANGER_SPAWN.x,PHOTO_RANGER_SPAWN.z,seed)+EYE_HEIGHT:
     START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:
       START_AT_MATERIALS?cabinGrade(MATERIAL_YARD.spawnX,MATERIAL_YARD.spawnZ,seed)+EYE_HEIGHT:START_AT_COMPARE?cabinGrade(0,274,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
-    START_AT_RANGER?RANGER_SPAWN.z:START_AT_MATERIALS?MATERIAL_YARD.spawnZ:START_AT_COMPARE?274:16),scene);
+    START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.z:START_AT_RANGER?RANGER_SPAWN.z:START_AT_MATERIALS?MATERIAL_YARD.spawnZ:START_AT_COMPARE?274:16),scene);
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
-camera.rotation.set(0,START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
+camera.rotation.set(0,START_AT_PHOTO_RANGER||START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
 scene.activeCamera=camera;
 // Clean photographic landscape test: retire every blocky distant ridge,
 // rock wall and skyline mesh. Keep only the real sky, photographic ground,
@@ -194,8 +199,8 @@ function addLandscape(x,z){
   return result;
 }
 let habitat;
-try{habitat=addLandscape(START_AT_RANGER?RANGER_SPAWN.tileX:START_AT_MATERIALS?MATERIAL_YARD.x:0,
-    START_AT_RANGER?RANGER_SPAWN.tileZ:START_AT_MATERIALS?MATERIAL_YARD.z:START_AT_COMPARE?314:0);}
+try{habitat=addLandscape(START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileX:START_AT_RANGER?RANGER_SPAWN.tileX:START_AT_MATERIALS?MATERIAL_YARD.x:0,
+    START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileZ:START_AT_RANGER?RANGER_SPAWN.tileZ:START_AT_MATERIALS?MATERIAL_YARD.z:START_AT_COMPARE?314:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
 // Greenfield rebuild: retire every old forest/village tree and forest-floor
 // prop from the LIVE scene, not from the source library. They can be reused
@@ -302,6 +307,20 @@ const goToRanger=()=>{
   status("North Ranger Station · real CC0 log walls, pine door, and tin roof.");
 };
 document.getElementById("village")?.addEventListener("click",goToRanger);
+const goToPhotoRanger=()=>{
+  if(Math.max(Math.abs(tileCx-PHOTO_RANGER_SPAWN.x),
+      Math.abs(tileCy-PHOTO_RANGER_SPAWN.z))>48){
+    try{habitat=addLandscape(PHOTO_RANGER_SPAWN.tileX,PHOTO_RANGER_SPAWN.tileZ);}
+    catch(err){console.error(err);status("Could not load new photo Ranger Station: "+err.message);}
+  }
+  const x=PHOTO_RANGER_SPAWN.x,z=PHOTO_RANGER_SPAWN.z;
+  camera.position.set(x,cameraGround(x,z)+cameraEyeHeight(x,z),z);
+  camera.rotation.set(0,0,0);
+  info.textContent="Ranger Station · photo-built test · 30m east of original";
+  document.querySelector(".brand small").textContent="Photo Ranger Station · separate 3D test";
+  status("Photo Ranger Station at (+30,350). Walk forward to inspect porch, roof, door and furnished office.");
+};
+document.getElementById("photoRanger")?.addEventListener("click",goToPhotoRanger);
 let joyX=0,joyY=0,joyPointer=null;
 // Capture the facing direction at the start of a joystick gesture, so a
 // held LEFT/RIGHT command turns toward a stable heading instead of spinning.
@@ -394,6 +413,7 @@ const collision=(x,z)=>{
   // The rebuilt northern Ranger Station has an actual solid wall perimeter.
   // Hearthside Cabin, its people and remaining photographic landscape stay intact.
   if(rangerWallCollision(x,z))return true;
+  if(photoRangerCollision(x,z))return true;
   // Real 3D building bounds, only after its actual mesh is loaded.
   if(cabinComparison?.collides?.(x,z))return true;
   if(materialYard?.collides?.(x,z))return true;
@@ -426,7 +446,7 @@ const rangerDeckBlend=(x,z)=>{
 };
 // Original outside eye height is untouched; inside the building it is a
 // realistic 1.68m above the actual finished floor (not the foundation).
-const cameraEyeHeight=(x,z)=>EYE_HEIGHT-.30*rangerDeckBlend(x,z);
+const cameraEyeHeight=(x,z)=>EYE_HEIGHT-.30*Math.max(rangerDeckBlend(x,z),photoRangerDeckBlend(x,z));
 const cameraGround=(x,z)=>{
   if(Math.abs(x)<8.5&&Math.abs(z)<6.4)return cabinY+.38;
   if(Math.abs(x)<9.4&&z>=6.4&&z<=10.05)return cabinY+.36;
@@ -434,6 +454,14 @@ const cameraGround=(x,z)=>{
   // obsolete GroundMesh height cache or the unsmoothed mathematical slope.
   const rendered=habitat?.surfaceHeight?.(x,z);
   const ground=Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
+  const photoStep=photoRangerDeckBlend(x,z);
+  if(photoStep>0){
+    const ax=PHOTO_RANGER_STATION.x,az=PHOTO_RANGER_STATION.z;
+    const centerGrade=habitat?.surfaceHeight?.(ax,az);
+    const actualFloor=(Number.isFinite(centerGrade)?centerGrade:cabinGrade(ax,az,seed))+
+      PHOTO_RANGER_STATION.floorRise;
+    return ground+(actualFloor-ground)*photoStep;
+  }
   const stationStep=rangerDeckBlend(x,z);
   if(stationStep>0){
     const ax=NORTH_RANGER_STATION.x,az=NORTH_RANGER_STATION.z;
@@ -598,6 +626,8 @@ window.__wildCabinLineupDiagnostics=()=>cabinComparison.stats();
 window.__wildMaterialsDiagnostics=()=>materialYard.stats();
 window.__wildDiagnostics=()=>({
   position:[camera.position.x,camera.position.y,camera.position.z],
+  photoRangerPosition:[PHOTO_RANGER_STATION.x,PHOTO_RANGER_STATION.z],
+  photoRangerBuiltInHabitat:true,
   meshes:scene.meshes.length,
   rebuildLayoutVersion:habitat?.layoutVersion??"not-loaded",
   reservedClearings:habitat?.clearingsRendered??0,
