@@ -45,7 +45,8 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    if(!meshes.length||!Number.isFinite(height)||height<=0)throw Error("Downloaded GLB contains no renderable mesh");
    if(Number.isFinite(height)&&height>0){
     const target=spot.id==="oak_tree"?17:spot.id.includes("sapling")||spot.id.includes("small")?5:spot.id.includes("island")?12:17;
-    const scale=Math.min(8,Math.max(.08,target/height));
+    const scale=target/height; // No arbitrary 8x cap: imported GLBs can have wildly different source units.
+    console.info("TREE SIZE FIX",spot.id,{sourceHeight:height,targetHeight:target,scale});
     root.scaling.setAll(scale);
     root.position.y=cabinGrade(spot.x,spot.z,seed)-minY*scale;
     root.position.x=spot.x-(minX+maxX)*.5*scale;
@@ -59,6 +60,9 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    const ground=cabinGrade(spot.x,spot.z,seed);
    root.position.y+=ground-low;
    root.computeWorldMatrix(true);
+   const finalBounds=meshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox;});
+   const actualHeight=Math.max(...finalBounds.map(b=>b.maximumWorld.y))-Math.min(...finalBounds.map(b=>b.minimumWorld.y));
+   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-target)>target*.15)throw Error("Tree scale verification failed: "+actualHeight+"m versus "+target+"m");
    spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
   }catch(err){spot.status="error";spot.error=String(err);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err);}
   finally{busy=false;}
