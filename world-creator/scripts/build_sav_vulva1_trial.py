@@ -75,160 +75,141 @@ def front_surface_y(x, z):
         return None
     return float(result.y)
 
-# Sav trial v2: do not shrink the ENTIRE donor patch, including its huge
-# lateral wings and dangling tip, into a genital-sized rectangle. The source
-# has 181 verts over x +/-0.57 and z 0.18..1.21, but the usable central
-# labial portion is a smaller contiguous subset of those original faces.
-# Keep original face winding and original UV indices for each selected face.
-original = [tuple(map(float,row)) for row in geo["vertices"]]
-all_faces = [tuple(face) for face in geo["faces"]]
-selected_face_indices = [i for i, face in enumerate(all_faces)
-    if all(.27 <= original[j][2] <= .90 and abs(original[j][0]) <= .255
-           for j in face)]
-if not 65 <= len(selected_face_indices) <= 120:
-    raise RuntimeError("MakeHuman Vulva1 central-face selection changed: %d" %
-                       len(selected_face_indices))
-used = sorted({j for i in selected_face_indices for j in all_faces[i]})
-if not 80 <= len(used) <= 150:
-    raise RuntimeError("MakeHuman Vulva1 usable central vertices missing")
-remap = {old:i for i,old in enumerate(used)}
-central = [original[i] for i in used]
-faces = [tuple(remap[j] for j in all_faces[i]) for i in selected_face_indices]
-uv_faces = [geo["uv_faces"][i] for i in selected_face_indices]
-xmin=min(v[0] for v in central);xmax=max(v[0] for v in central)
-zmin=min(v[2] for v in central);zmax=max(v[2] for v in central)
-if xmax-xmin < .4 or zmax-zmin < .55:
-    raise RuntimeError("Vulva1 central fit subset extents are not credible")
-# A short, moderately narrow patch follows the underlying Sav anatomy.
-# All x,z mapping is derived from measured donor spans; these are NOT
-# arbitrary whole-donor normalization factors.
-target_width=.100
-target_height=.074
-sx=target_width/(xmax-xmin)
-sz=target_height/(zmax-zmin)
-z_middle=(zmax+zmin)*.5
+# Sav v3: donor Vulva1 includes a folded torso patch. Directly reusing
+# its faces and shrinking the source caused overlapping, hanging flaps.
+# Derive central proportions from the verified source, but replace its
+# folded patch topology with a continuous, smooth quad surface.
+# Fit that surface to Sav's real body, using her own UVs and Pelvis bone.
+original=[tuple(map(float,row)) for row in geo["vertices"]]
+reference=[p for p in original if .44 <= p[2] <= .82 and abs(p[0]) <= .19]
+if len(reference)<45:
+    raise RuntimeError("MakeHuman Vulva1 reference landmarks missing")
+xmin=min(p[0] for p in reference);xmax=max(p[0] for p in reference)
+zmin=min(p[2] for p in reference);zmax=max(p[2] for p in reference)
+if xmax-xmin < .30 or zmax-zmin < .30:
+    raise RuntimeError("MakeHuman Vulva1 reference dimensions invalid")
+target_width=.080
+target_height=.080
 center_z=pelvis_z-.205
 hip_band=sorted(abs((body_world@v.co).x) for v in body.data.vertices
     if abs((body_world@v.co).z-(pelvis_z+.015))<.035
     and abs((body_world@v.co).x)<.32)
-if len(hip_band)<40:
-    raise RuntimeError("Sav pelvic width diagnostic cannot be measured")
+if len(hip_band)<40 or not (.6<center_z<.95):
+    raise RuntimeError("Sav pelvic proportions outside fit bounds")
 hip_half=hip_band[int(.85*(len(hip_band)-1))]
-if not .6<center_z<.95:
-    raise RuntimeError("Sav source rig uses unexpected pelvis elevation")
-coords=[]
-hits=[]
-for src_x,src_y,src_z in central:
-    x=src_x*sx
-    z=center_z+(src_z-z_middle)*sz
-    y=front_surface_y(x,z)
-    coords.append((x,z,y,src_y,src_z))
-    if y is not None:
-        hits.append((x,z,y))
-misses=[(x,z) for x,z,y,_,_ in coords if y is None]
-nearest_missed=sorted(
-    [min(math.hypot(x-h[0],z-h[1]) for h in hits) for x,z in misses]
-) if hits else []
-upper=[(x,z,y) for x,z,y,_,_ in coords if z>=center_z+.013]
-upper_supported=sum(y is not None for x,z,y in upper)
-print("SAV_VULVA1_V2_SOURCE_CROP","all_vertices",len(original),
-      "selected_vertices",len(central),"selected_faces",len(faces),
-      "original_bounds",(-.5697,.5697,.1842,1.209),
-      "central_bounds",(round(xmin,3),round(xmax,3),round(zmin,3),round(zmax,3)))
-print("SAV_VULVA1_V2_SUPPORT","hits",len(hits),"total",len(coords),
-      "upper",upper_supported,"upper_total",len(upper),
-      "max_gap",round(nearest_missed[-1],4) if nearest_missed else 0)
-if len(hits)<len(coords)*.35 or upper_supported < len(upper)*.85:
-    raise RuntimeError("Central donor surface does not align with Sav's pelvis")
-if nearest_missed and nearest_missed[-1]>.066:
-    raise RuntimeError("Open pelvic region too large for bounded donor fitting")
-# Match local surface but keep the fine relief encoded by donor Y. Remove
-# the huge source-Y slope (it describes the donor's torso curvature, not
-# genital protrusion); preserve only the small deviation from that slope.
-positions=[]
-for x,z,y,src_y,src_z in coords:
-    gap=0.
-    if y is None:
-        near=sorted(hits,key=lambda h:(h[0]-x)**2+(h[1]-z)**2)
-        gap=math.hypot(near[0][0]-x,near[0][1]-z)
-        y=sum(h[2]/max(.002,math.hypot(h[0]-x,h[1]-z)) for h in near[:4])/sum(
-            1/max(.002,math.hypot(h[0]-x,h[1]-z)) for h in near[:4])
-    expected_source_y=-.86+.48*(src_z-.27)
-    donor_relief=max(-.004,min(.004,(expected_source_y-src_y)*.032))
-    # Positive Y is inside the body. Sink any unsupported open-side
-    # vertex to avoid a floating, forward-hanging triangular sheet.
-    sink=min(.014,gap*.48)
-    positions.append((x,y+.0013-donor_relief+sink,z))
-edges=Counter(tuple(sorted((a,b))) for f in faces
-              for a,b in zip(f,f[1:]+f[:1]))
-boundary={v for pair,count in edges.items() if count==1 for v in pair}
-if not 8<=len(boundary)<=100:
-    raise RuntimeError("Central donor boundary invalid")
-# Minimize seam relief; this is a removable QA overlay, not a skin replacement.
-for i in boundary:
-    x,z,y,_,_=coords[i]
-    if y is not None:
-        positions[i]=(x,y+.002,z)
-unsupported_boundary=sum(coords[i][2] is None for i in boundary)
-if unsupported_boundary>15:
-    raise RuntimeError("Too many unsupported edge vertices in central donor")
-print("SAV_VULVA1_V2_BOUNDARY",len(boundary),unsupported_boundary)
+if body.data.uv_layers.active is None:
+    raise RuntimeError("Sav basemesh missing skin UV layer")
+skin_uv=body.data.uv_layers.active
+body.data.calc_loop_triangles()
+triangle_map={}
+for tri in body.data.loop_triangles:
+    triangle_map.setdefault(tri.polygon_index,[]).append(tri)
 
-mesh = bpy.data.meshes.new("Sav original Thomas Larsson Vulva1 topology")
-mesh.from_pydata(positions, [], faces)
+def skin_surface(x,z):
+    origin=Vector((x,-2,z))
+    hit,point,normal,poly_index=body.ray_cast(inv@origin,inv.to_3x3()@Vector((0,1,0)))
+    if not hit:
+        return None
+    world=body_world@point
+    if abs(world.x-x)>.004 or abs(world.z-z)>.004:
+        return None
+    for tri in triangle_map.get(poly_index,[]):
+        a,b,c=[body.data.vertices[i].co for i in tri.vertices]
+        e1=b-a;e2=c-a;p=point-a
+        d11=e1.dot(e1);d12=e1.dot(e2);d22=e2.dot(e2)
+        d1=p.dot(e1);d2=p.dot(e2);det=d11*d22-d12*d12
+        if abs(det)<1e-15:continue
+        v=(d22*d1-d12*d2)/det
+        w=(d11*d2-d12*d1)/det
+        if v>=-.02 and w>=-.02 and v+w<=1.02:
+            uv0,uv1,uv2=[skin_uv.data[i].uv for i in tri.loops]
+            uv=uv0*(1-v-w)+uv1*v+uv2*w
+            return (float(world.y),(float(uv.x),float(uv.y)))
+    return None
+
+nx,nz=25,35
+samples=[]
+for j in range(nz):
+    t=j/(nz-1)
+    taper=max(0.,math.sin(math.pi*t))**.65
+    half_width=.0015+(.5*target_width-.0015)*taper
+    z=center_z+(t-.5)*target_height
+    for i in range(nx):
+        s=2*i/(nx-1)-1
+        x=s*half_width
+        samples.append((x,z,skin_surface(x,z),s,t))
+hits=[(x,z,m[0],m[1]) for x,z,m,s,t in samples if m is not None]
+upper=[r for r in samples if r[4]>.78]
+if len(hits)<len(samples)*.25 or sum(r[2] is not None for r in upper)<len(upper)*.60:
+    raise RuntimeError("Sav pubic skin coverage insufficient for reliable fit")
+positions=[];uv_by_vertex=[];max_gap=0;unsupported=0
+for x,z,m,s,t in samples:
+    if m is None:
+        unsupported+=1
+        near=sorted(hits,key=lambda h:(h[0]-x)**2+(h[1]-z)**2)[:6]
+        gap=math.hypot(near[0][0]-x,near[0][1]-z)
+        max_gap=max(max_gap,gap)
+        weights=[1/max(.003,math.hypot(h[0]-x,h[1]-z)) for h in near]
+        y=sum(h[2]*w for h,w in zip(near,weights))/sum(weights)
+        uv=near[0][3]
+    else:
+        y,uv=m;gap=0
+    feather=max(0.,math.sin(math.pi*t))**.7 * max(0.,1-abs(s)**8)
+    outer=math.exp(-((abs(x)-.018)/.011)**2)
+    inner=math.exp(-((abs(x)-.007)/.0055)**2)
+    relief=feather*(.0025*outer+.0014*inner)
+    positions.append((x,y-relief+min(.009,gap*.28)+.0006,z))
+    uv_by_vertex.append(uv)
+if max_gap>.080:
+    raise RuntimeError("Unsupported Sav underside bridge %.4f m" % max_gap)
+faces=[]
+for j in range(nz-1):
+    for i in range(nx-1):
+        a=j*nx+i
+        faces.append((a,a+1,a+nx+1,a+nx))
+mesh=bpy.data.meshes.new("Sav Vulva1 continuous quad retopology")
+mesh.from_pydata(positions,[],faces)
 mesh.update()
-skin = body.data.materials[0].copy()
-skin.name = "Sav Vulva1 original MakeHuman UV skin"
+skin=body.data.materials[0].copy()
+skin.name="Sav original skin mapped Vulva1"
 mesh.materials.append(skin)
-uv = mesh.uv_layers.new(name="Original MakeHuman Vulva1 UV")
-for face,uv_face in zip(mesh.polygons,uv_faces):
-    if len(face.loop_indices)!=len(uv_face):
-        raise RuntimeError("Source Vulva1 face/UV winding mismatch")
-    for loop_index,uv_index in zip(face.loop_indices,uv_face):
-        uv.data[loop_index].uv=geo["uv_coordinates"][uv_index]
+uv=mesh.uv_layers.new(name="Sav projected source-skin UV")
+for face in mesh.polygons:
+    for li in face.loop_indices:
+        uv.data[li].uv=uv_by_vertex[mesh.loops[li].vertex_index]
     face.use_smooth=True
 
-# Two-step subdivision interpolates original licensed UVs and reduces
-# the faceted knife-like silhouette on close mobile inspection.
-import bmesh
-bm=bmesh.new()
-bm.from_mesh(mesh)
-bmesh.ops.subdivide_edges(bm,edges=list(bm.edges),cuts=2,
-                         use_grid_fill=True,smooth=0.0)
-bm.to_mesh(mesh)
-bm.free()
-mesh.update()
-if len(mesh.vertices)<450:
-    raise RuntimeError("Vulva1 QA mesh subdivision failed")
 edge_uses=Counter(tuple(sorted((a,b))) for p in mesh.polygons
                   for a,b in zip(list(p.vertices),list(p.vertices)[1:]+list(p.vertices)[:1]))
-boundary={j for (i,j),uses in edge_uses.items() if uses==1}|{
-         i for (i,j),uses in edge_uses.items() if uses==1}
-for p in mesh.polygons:p.use_smooth=True
+boundary={i for (i,j),n in edge_uses.items() if n==1}|{
+         j for (i,j),n in edge_uses.items() if n==1}
+if len(boundary)!=2*nx+2*nz-4:
+    raise RuntimeError("Fitted Vulva1 surface is not a single connected patch")
 
-addon = bpy.data.objects.new("Sav Vulva1 MakeHuman fitted",mesh)
+addon=bpy.data.objects.new("Sav Vulva1 MakeHuman fitted",mesh)
 bpy.context.collection.objects.link(addon)
 addon["makehuman_source_uuid"]=data["source_uuid"]
 addon["makehuman_original_vertex_count"]=181
 addon["sav_trial_only"]=True
-
-# Optional separate *non-baked* volume shapes for future fit adjustments.
-# The original donor rest shape is zero for both keys.
+addon["fit_version"]="v3 smooth connected mesh"
 addon.shape_key_add(name="Basis",from_mix=False)
-for morph_name,x_at,amplitude in (("Vulva1_Outer_Fullness",.023,.009),
-                                  ("Vulva1_Inner_Fullness",.009,.005)):
+for morph_name,x_at,amplitude in (
+    ("Vulva1_Outer_Fullness",.018,.013),
+    ("Vulva1_Inner_Fullness",.007,.008)):
     key=addon.shape_key_add(name=morph_name,from_mix=False)
     count=0
     for i,v in enumerate(mesh.vertices):
-        if i in boundary: continue
+        if i in boundary:continue
         p=v.co
-        influence=math.exp(-((abs(p.x)-x_at)/.016)**2) * math.exp(-((p.z-center_z)/.043)**4)
+        influence=(math.exp(-((abs(p.x)-x_at)/.013)**2)
+                   * math.exp(-((p.z-center_z)/.035)**4))
         if influence>.025:
             key.data[i].co.y-=amplitude*influence
             count+=1
-    if count<6:
-        raise RuntimeError("Original donor %s morphed too few vertices" % morph_name)
-
+    if count<20:raise RuntimeError("Morph missing from Sav fit: "+morph_name)
+print("SAV_VULVA1_V3_SMOOTH_FIT","body_skin_hits",len(hits),
+      "unsupported",unsupported,"max_gap",round(max_gap,4),
+      "quad_faces",len(faces),"mesh_verts",len(mesh.vertices))
 # Fix geometry to one bone: pelvis *only*, never left/right thigh weights.
 # Match transform convention of earlier licensed Riley skinning trial.
 inverse_rig=rig.matrix_world.inverted_safe()
@@ -281,20 +262,21 @@ if not any(len(s.get("joints",[]))==56 for s in gltf.get("skins",[])):
     raise RuntimeError("Lost Sav 56-joint skeleton")
 if not gltf.get("animations"):
     raise RuntimeError("Lost Sav pose actions")
-print("SAV_VULVA1_MEASUREMENTS",{"pelvis_bone_z":round(pelvis_z,4),
-                                "center_z":round(center_z,4),
-                                "hip_half_width":round(hip_half,4),
-                                "original_source_span_x":round(1.1394,4),
-                                "selected_source_span_x":round(xmax-xmin,4),
-                                "original_source_span_z":round(1.0248,4),
-                                "selected_source_span_z":round(zmax-zmin,4),
-                                "final_width_m":round(target_width,4),
-                                "final_height_m":round(target_height,4),
-                                "body_raycast_hits":len(hits),
-                                "body_vertices":len(body.data.vertices)})
+print("SAV_VULVA1_MEASUREMENTS",{
+    "pelvis_bone_z":round(pelvis_z,4),
+    "center_z":round(center_z,4),
+    "hip_half_width":round(hip_half,4),
+    "original_source_span_x":round(xmax-xmin,4),
+    "original_source_span_z":round(zmax-zmin,4),
+    "final_width_m":round(target_width,4),
+    "final_height_m":round(target_height,4),
+    "actual_body_raycast_hits":len(hits),
+    "interpolated_vertices":unsupported,
+    "max_open_gap":round(max_gap,4),
+    "body_vertices":len(body.data.vertices)})
 print("SAV_VULVA1_FITTING_SUCCESS",OUT,OUT.stat().st_size,
       "original_vertices",len(original),"original_faces",len(all_faces),
-      "selected_faces",len(faces),"subdivided_vertices",len(mesh.vertices),
+      "connected_faces",len(faces),"fitted_vertices",len(mesh.vertices),
       "rig_bones",len(rig.data.bones),
       "animations",len(gltf.get("animations",[])),
       "no_vulva2",True)
