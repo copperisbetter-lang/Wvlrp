@@ -80,7 +80,8 @@ for name, parent_name, _ in parents:
 print("SAV3_DISTAL_JOINTS_WEIGHTED", [name for name, _, _ in parents])
 '''
 source = source.replace(insertion_point, addition + '\n' + insertion_point)
-source = source.replace('"LieDown","Wave")}', '"LieDown","Wave","Fetal","SupineKneesUp")}' )\nanchor = 'if not glb.get("skins"):raise RuntimeError("Model lost rig skinning")'
+source = source.replace('"LieDown","Wave")}', '"LieDown","Wave","Fetal","SupineKneesUp")}' )
+anchor = 'if not glb.get("skins"):raise RuntimeError("Model lost rig skinning")'
 if source.count(anchor) != 1:
     raise RuntimeError("Exported skin validation anchor missing")
 source = source.replace(anchor, anchor + '''
