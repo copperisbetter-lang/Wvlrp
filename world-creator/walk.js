@@ -166,6 +166,16 @@ buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
 const treeInspection=installTreeInspectionLine(B,scene,{seed,cabinGrade,camera});
+const treeTestMode=new URLSearchParams(location.search).has("treeTest");
+if(treeTestMode){
+ camera.position.set(0,cabinGrade(0,-18,seed)+EYE_HEIGHT,-18);
+ camera.rotation.set(0,Math.PI,0);
+ const panel=document.createElement("div");panel.id="tree-test-status";
+ panel.style.cssText="position:fixed;z-index:50;top:58px;left:8px;max-width:85vw;background:#10281eed;color:#fff;padding:10px;border:2px solid #e6c76d;border-radius:8px;font:12px system-ui;pointer-events:none";
+ document.body.appendChild(panel);
+ const show=()=>{const p=treeInspection.spots;panel.textContent="TREE TEST • "+p.filter(x=>x.status==="ready").length+"/10 loaded • "+p.filter(x=>x.status==="error").length+" errors • first: "+p[0].status+(p[0].error?" ("+p[0].error.slice(0,90)+")":"")+" • facing first sample 12m ahead";};
+ show();setInterval(show,1500);
+}
 window.__treeInspection=()=>treeInspection.spots.map(({id,x,z,status,error})=>({id,x,z,status,error}));
 window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
 const woodGroups=new Map();
