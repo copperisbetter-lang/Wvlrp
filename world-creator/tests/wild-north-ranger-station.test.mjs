@@ -93,9 +93,9 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.match(script,/const chairX=X\+7\.05,chairZ=Z\+4\.72/);
   assert.match(script,/const frontDeskX=X\+6\.50,frontDeskZ=Z\+2\.70/);
   assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
-  assert.match(file("../walk.js"),/ranger-photographic-reference-20261015-v9/);
-  assert.match(file("../wild-flatland-rebuild.js"),/ranger-photographic-reference-20261015-v9/);
-  assert.match(file("../walk.html"),/ranger-photographic-reference-20261015-v9/);
+  assert.match(file("../walk.js"),/ranger-360-playable-20261015-v10/);
+  assert.match(file("../wild-flatland-rebuild.js"),/ranger-360-playable-20261015-v10/);
+  assert.match(file("../walk.html"),/ranger-360-playable-20261015-v10/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
 });
@@ -130,7 +130,8 @@ test("old 360 office layout is a single desk monitor, daylight windows, maple bo
   for(const detail of ["single six-camera monitor","framed WEST VIRGINIA map",
     "public information board","forest ranger backpack","field guide bookcase",
     "working station oil lamp","four-drawer military olive filing cabinet",
-    "hand sawn explorer gear bench"]){
+    "hand sawn explorer gear bench", "curved green canvas visitor seat",
+    "flared linen desk lamp shade", "actual rug under entry desk"]){
     assert.ok(props.includes(detail),detail);
   }
 });
