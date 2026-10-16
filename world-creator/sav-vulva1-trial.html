@@ -2,10 +2,10 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sav | WVLRP Character QA</title>
 <style>body{margin:0;background:#101716;color:#eef5ed;font:16px system-ui}header{padding:12px 18px;background:#20322d}main{height:calc(100dvh - 145px);position:relative}#status{position:absolute;top:12px;left:12px;background:#172621e8;padding:10px;border-radius:8px;max-width:80%}footer{padding:12px 18px;display:flex;gap:12px;flex-wrap:wrap}button{background:#385c49;color:white;border:0;border-radius:6px;padding:10px 14px}canvas{display:block}#console{padding:16px;background:#20322d;margin:12px;border-radius:10px}#console select,#console input{width:100%}#console label{display:block;margin:12px 0}#console output{float:right}</style><script defer src="/world-creator/shared-character-inspector.js?v=20261015-remove-all-v3"></script></head>
-<body><header><strong>Sav 2 — MakeHuman Vulva1 central-fit trial</strong> <small>Isolated adult Vulva1 attachment trial • original Sav unchanged</small></header>
+<body><header><strong>Sav 2 — Vulva1 smooth-fit test v3</strong> <small>Isolated adult Vulva1 attachment trial • original Sav unchanged</small></header>
 <main id="stage"><div id="status">Loading Sav Vulva1 test…</div></main>
 <footer><button data-pose="idle">Idle</button><button data-pose="walk">Walk</button><button data-pose="floor">Elbows &amp; knees (preview)</button><button id="reset">Reset camera</button><button id="savFront">Pelvis front</button><button id="savSide">Pelvis side</button><button id="savUnder">Pelvis underside</button><button id="savFull">Full body</button></footer><section id="console"><strong>56-joint manual inspection console</strong><p>Select a joint and adjust its X, Y, Z rotations independently. Moving a slider pauses animations.</p><select id="joint"></select><div id="axes"></div><button id="resetjoint">Reset joint</button> <button id="resetall">Reset all joints</button> <button id="focus">Focus joint</button> <button id="wire">Wireframe off</button> <button id="bones">Joint markers off</button><p id="jointstatus"></p></section>
-<section id="anatomy-controls" style="padding:12px 18px;background:#20322d"><strong>Original MakeHuman Vulva1 • Sav isolated trial</strong><p>This isolated Sav 2 trial never loads Vulva2. It uses the central region of the original 181-vertex MakeHuman Vulva1 source, excludes oversized outer wings and the hanging tip, and binds the fitted surface to the Pelvis bone. The model has not yet passed visual approval.</p><label>Outer fullness <output id="savOuterOutput">0%</output><input id="savOuter" type="range" min="0" max="100" value="0"></label><label>Inner fullness <output id="savInnerOutput">0%</output><input id="savInner" type="range" min="0" max="100" value="0"></label><button id="savToggle">Hide Vulva1 for comparison</button><p id="savFitStatus">Waiting for actual GLB geometry…</p></section>
+<section id="anatomy-controls" style="padding:12px 18px;background:#20322d"><strong>Sav 2 smooth-fit v3 • independent fullness controls</strong><p>This isolated Sav 2 trial never loads Vulva2. The smooth-fit v3 keeps the original MakeHuman Vulva1 as a measurement reference, builds one connected surface using Sav’s skin UVs, and binds it to her Pelvis bone. The model has not yet passed visual approval.</p><label>Outer fullness <output id="savOuterOutput">0%</output><input id="savOuter" type="range" min="0" max="100" value="0"></label><label>Inner fullness <output id="savInnerOutput">0%</output><input id="savInner" type="range" min="0" max="100" value="0"></label><button id="savToggle">Hide Vulva1 for comparison</button><p id="savFitStatus">Waiting for actual GLB geometry…</p></section>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -22,7 +22,7 @@ function reset(){// Open at shoulders-up portrait framing; orbit and zoom-out re
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true})}catch(e){status.textContent='3D graphics unavailable on this browser: '+e.message;throw e}renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;reset();
 let mixer=null;let clips=[];let bones=new Map(),rest=new Map(),selected=null,manual=false;let skinMeshes=[],jointMarkers=[],showWire=false,showMarkers=false;
-const modelUrl='./assets/sav-vulva1-trial.glb?v=makehuman-vulva1-sav-20261016-'+Date.now();
+const modelUrl='./assets/sav-vulva1-trial.glb?v=sav-vulva1-smoothfit-v3-'+Date.now();
 const loadingTimer=setTimeout(()=>{status.textContent='Sav is taking too long to load. Check connection or reload this page.'},20000);
 new GLTFLoader().load(modelUrl,g=>{
  clearTimeout(loadingTimer);
@@ -32,10 +32,53 @@ new GLTFLoader().load(modelUrl,g=>{
  if(addon){
   fitStatus.textContent='Sav 2 central Vulva1 trial loaded: '+addon.geometry.attributes.position.count+' rendered vertices. Pelvis-only skin and neutral standing geometry require visual approval.';
   const morph=addon.morphTargetDictionary||{};
-  for(const [id,key,output] of [['savOuter','Vulva1_Outer_Fullness','savOuterOutput'],['savInner','Vulva1_Inner_Fullness','savInnerOutput']]){
-   const slider=document.getElementById(id);
-   slider.oninput=()=>{document.getElementById(output).textContent=slider.value+'%';if(key in morph)addon.morphTargetInfluences[morph[key]]=Number(slider.value)/100;};
+  const geometry=addon.geometry,basePosition=geometry.attributes.position.array.slice();
+  const controlsMap=[
+   ['savOuter','Vulva1_Outer_Fullness','savOuterOutput'],
+   ['savInner','Vulva1_Inner_Fullness','savInnerOutput']
+  ];
+  function applyFullness(){
+   const outer=Number(document.getElementById('savOuter').value)/100;
+   const inner=Number(document.getElementById('savInner').value)/100;
+   for(const [id,key,output] of controlsMap){
+    const value=Number(document.getElementById(id).value)/100;
+    document.getElementById(output).textContent=Math.round(100*value)+'%';
+    if(key in morph && addon.morphTargetInfluences){
+     addon.morphTargetInfluences[morph[key]]=value;
+    }
+   }
+   // If a GLB export omits its morphs, continue to support actual
+   // geometric adjustment rather than allowing dead-looking sliders.
+   const missingOuter=!("Vulva1_Outer_Fullness" in morph);
+   const missingInner=!("Vulva1_Inner_Fullness" in morph);
+   if(missingOuter||missingInner){
+    const att=geometry.attributes.position;
+    let zmin=Infinity,zmax=-Infinity;
+    for(let i=0;i<att.count;i++){
+     const z=basePosition[i*3+2];zmin=Math.min(zmin,z);zmax=Math.max(zmax,z);
+    }
+    const zmid=(zmin+zmax)/2, zscale=Math.max(.03,(zmax-zmin)/2);
+    for(let i=0;i<att.count;i++){
+     const x=basePosition[i*3], y=basePosition[i*3+1],z=basePosition[i*3+2];
+     const feather=Math.max(0,1-Math.pow(Math.abs(z-zmid)/zscale,4));
+     const o=missingOuter?outer*.013*Math.exp(-Math.pow((Math.abs(x)-.018)/.013,2)):0;
+     const n=missingInner?inner*.008*Math.exp(-Math.pow((Math.abs(x)-.007)/.013,2)):0;
+     att.array[i*3+1]=y-feather*(o+n);
+    }
+    att.needsUpdate=true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+   }
+   const active=controlsMap.filter(([,key])=>key in morph).map(([,key])=>key.replace("Vulva1_",""));
+   fitStatus.textContent='Sav 2 smooth-fit v3 • '+geometry.attributes.position.count+
+    ' vertices • morph targets: '+(active.join(', ')||'geometric fallback')+
+    ' • outer '+Math.round(outer*100)+'%, inner '+Math.round(inner*100)+'%. Changes apply immediately; visual approval pending.';
   }
+  for(const [id] of controlsMap){
+   document.getElementById(id).addEventListener('input',applyFullness);
+   document.getElementById(id).addEventListener('change',applyFullness);
+  }
+  applyFullness();
   document.getElementById('savToggle').onclick=()=>{addon.visible=!addon.visible;document.getElementById('savToggle').textContent=addon.visible?'Hide Vulva1 for comparison':'Show Vulva1';};
  }else{fitStatus.textContent='Vulva1 attachment missing or build has not published yet.'}
  const pelvicView=(which)=>{controls.target.set(0,.75,0);const spots={front:[0,.77,.67],side:[.72,.75,0],under:[0,.45,.55]};camera.position.set(...spots[which]);controls.update();};
