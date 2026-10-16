@@ -108,6 +108,12 @@ sx=target_width/(xmax-xmin)
 sz=target_height/(zmax-zmin)
 z_middle=(zmax+zmin)*.5
 center_z=pelvis_z-.205
+hip_band=sorted(abs((body_world@v.co).x) for v in body.data.vertices
+    if abs((body_world@v.co).z-(pelvis_z+.015))<.035
+    and abs((body_world@v.co).x)<.32)
+if len(hip_band)<40:
+    raise RuntimeError("Sav pelvic width diagnostic cannot be measured")
+hip_half=hip_band[int(.85*(len(hip_band)-1))]
 if not .6<center_z<.95:
     raise RuntimeError("Sav source rig uses unexpected pelvis elevation")
 coords=[]
