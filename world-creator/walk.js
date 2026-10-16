@@ -5,8 +5,8 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=ranger-chair-corner-entry-facing-20261015-v6";
-import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-chair-corner-entry-facing-20261015-v6";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=ranger-desk-eye-radio-20261015-v7";
+import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-desk-eye-radio-20261015-v7";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -296,7 +296,7 @@ const goToRanger=()=>{
     catch(err){console.error(err);status("Could not load village scenery: "+err.message);}
   }
   const startX=RANGER_SPAWN.x+betaSpawnX,startZ=RANGER_SPAWN.z+betaSpawnZ;
-  camera.position.set(startX,cameraGround(startX,startZ)+EYE_HEIGHT,startZ);
+  camera.position.set(startX,cameraGround(startX,startZ)+cameraEyeHeight(startX,startZ),startZ);
   camera.rotation.set(0,0,0);
   info.textContent="North Ranger Station · 350m north of Hearthside";
   status("North Ranger Station · real CC0 log walls, pine door, and tin roof.");
@@ -412,6 +412,21 @@ const collision=(x,z)=>{
   }
   return false;
 };
+// Walk on the RAISED timber surface at the Ranger Station, not through its
+// foundation on the lower terrain. Blend elevation on the central front
+// steps; do not jump vertically at the porch threshold.
+const rangerDeckBlend=(x,z)=>{
+  const dx=Math.abs(x-NORTH_RANGER_STATION.x);
+  const dz=z-NORTH_RANGER_STATION.z;
+  if(dx>8.65||dz>5.60||dz< -13.40)return 0;
+  if(dz>=-10.60)return 1; // full-width porch and indoor timber floor
+  if(dx>2.80)return 0;   // three broad entrance steps
+  const t=Math.max(0,Math.min(1,(dz+13.40)/2.80));
+  return t*t*(3-2*t);
+};
+// Original outside eye height is untouched; inside the building it is a
+// realistic 1.68m above the actual finished floor (not the foundation).
+const cameraEyeHeight=(x,z)=>EYE_HEIGHT-.30*rangerDeckBlend(x,z);
 const cameraGround=(x,z)=>{
   if(Math.abs(x)<8.5&&Math.abs(z)<6.4)return cabinY+.38;
   if(Math.abs(x)<9.4&&z>=6.4&&z<=10.05)return cabinY+.36;
@@ -419,6 +434,13 @@ const cameraGround=(x,z)=>{
   // obsolete GroundMesh height cache or the unsmoothed mathematical slope.
   const rendered=habitat?.surfaceHeight?.(x,z);
   const ground=Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
+  const stationStep=rangerDeckBlend(x,z);
+  if(stationStep>0){
+    const ax=NORTH_RANGER_STATION.x,az=NORTH_RANGER_STATION.z;
+    const centerGrade=habitat?.surfaceHeight?.(ax,az);
+    const actualFloor=(Number.isFinite(centerGrade)?centerGrade:cabinGrade(ax,az,seed))+.76;
+    return ground+(actualFloor-ground)*stationStep;
+  }
   // The former village porches and steps were cleared; no invisible stairs.
   return ground;
 };
@@ -433,7 +455,7 @@ const cabinComparison=createFourCabinTest({
     if(Math.max(Math.abs(tileCx-x),Math.abs(tileCy-z))>70){
       try{habitat=addLandscape(0,314);}catch(err){console.error(err);}
     }
-    camera.position.set(x,cameraGround(x,z)+EYE_HEIGHT,z);
+    camera.position.set(x,cameraGround(x,z)+cameraEyeHeight(x,z),z);
     camera.rotation.set(0,0,0);
     document.querySelector(".brand small").textContent="Eight-cabin walking comparison";
     info.textContent="CABIN TEST · six first-row models plus two private CGTrader tests behind";
@@ -456,7 +478,7 @@ const jumpToMaterials=()=>{
     try{habitat=addLandscape(MATERIAL_YARD.x,MATERIAL_YARD.z);}
     catch(err){console.warn("Material yard ground reload",err);status("Material-yard terrain load problem: "+err.message);}
   }
-  camera.position.set(materialYard.spawn.x,cameraGround(materialYard.spawn.x,materialYard.spawn.z)+EYE_HEIGHT,
+  camera.position.set(materialYard.spawn.x,cameraGround(materialYard.spawn.x,materialYard.spawn.z)+cameraEyeHeight(materialYard.spawn.x,materialYard.spawn.z),
     materialYard.spawn.z);
   camera.rotation.set(0,0,0);
   materialYard.update(true);
@@ -522,7 +544,8 @@ engine.runRenderLoop(()=>{
   // consistent while approaching ridges, ravines or the cabin porch.
   const walking=len>.04?1:0;
   const sway=Math.sin(walkTime*1.45)*.012*walking;
-  const targetY=cameraGround(camera.position.x,camera.position.z)+EYE_HEIGHT+sway;
+  const targetY=cameraGround(camera.position.x,camera.position.z)+
+    cameraEyeHeight(camera.position.x,camera.position.z)+sway;
   // Stay at EYE_HEIGHT above the surface on EVERY frame. Slow Y interpolation let
   // steep terrain overtake the camera, making the adult walker appear short.
   // Following the ground directly also avoids a dive on chunk transitions.
