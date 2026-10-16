@@ -89,9 +89,28 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.match(script,/const chairX=X\+7\.05,chairZ=Z\+4\.72/);
   assert.match(script,/const frontDeskX=X\+6\.50,frontDeskZ=Z\+2\.70/);
   assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
-  assert.match(file("../walk.js"),/ranger-chair-corner-entry-facing-20261015-v6/);
-  assert.match(file("../wild-flatland-rebuild.js"),/ranger-chair-corner-entry-facing-20261015-v6/);
-  assert.match(file("../walk.html"),/ranger-chair-corner-entry-facing-20261015-v6/);
+  assert.match(file("../walk.js"),/ranger-desk-eye-radio-20261015-v7/);
+  assert.match(file("../wild-flatland-rebuild.js"),/ranger-desk-eye-radio-20261015-v7/);
+  assert.match(file("../walk.html"),/ranger-desk-eye-radio-20261015-v7/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
+});
+
+test("ranger desk and player viewpoint use actual raised lodge floor",()=>{
+  const lodge=file("../wild-ranger-station.js");
+  const walk=file("../walk.js");
+  assert.match(lodge,/const deskY=floor\+\.76/);
+  assert.match(walk,/const rangerDeckBlend=/);
+  assert.match(walk,/const cameraEyeHeight=\(x,z\)=>EYE_HEIGHT-\.30/);
+  assert.match(walk,/const actualFloor=.*\+\.76/);
+  assert.match(walk,/cameraEyeHeight\(camera.position.x,camera.position.z\)/);
+});
+test("radio is a detailed CB base with physical knobs and coiled mic cable",()=>{
+  const lodge=file("../wild-ranger-station.js");
+  assert.match(lodge,/CB solid 10 inch radio chassis/);
+  assert.match(lodge,/CB luminous channel digits/);
+  assert.match(lodge,/CB stamped black speaker grille slot/);
+  assert.match(lodge,/CB coiled handset cable/);
+  assert.match(lodge,/CB microphone vent opening/);
+  assert.doesNotMatch(lodge,/CB ranger radio black housing/);
 });
