@@ -1,0 +1,70 @@
+name: Build Sav 3 private adult inspection GLB
+on:
+  push:
+    paths:
+      - .github/workflows/build-sav3.yml
+      - world-creator/scripts/build_sav3.py
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build-sav3
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/blender-4.2.0-linux-x64
+            /tmp/mpfb2
+            /tmp/mh-system.zip
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+      - name: Prepare Blender and MakeHuman
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp
+          fi
+          if [ ! -d /tmp/mpfb2/src/mpfb ]; then
+            git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          fi
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip .)
+          mkdir -p /tmp/wvlrp_sav3_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_sav3_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/mpfb.zip
+          if [ ! -s /tmp/mh-system.zip ]; then
+            curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          fi
+          unzip -tq /tmp/mh-system.zip >/dev/null
+      - name: Build and validate Sav 3
+        run: |
+          set -euo pipefail
+          python3 -m py_compile world-creator/scripts/build_sav3.py world-creator/scripts/build_vulva2_female18.py
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_sav3.py 2>&1 | tee /tmp/sav3-build.log
+          grep VULVA2_TRUE_AUTOFIT_SUCCESS /tmp/sav3-build.log
+          grep SAV3_ADULT_BUILD_SUCCESS /tmp/sav3-build.log
+          test -s world-creator/assets/sav3-adult-inspection.glb
+      - name: Save inspection GLB as private build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav3-adult-inspection-glb
+          path: world-creator/assets/sav3-adult-inspection.glb
+          retention-days: 14
+      - name: Save logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav3-build-logs
+          path: /tmp/sav3-build.log
+          if-no-files-found: ignore
+          retention-days: 14
