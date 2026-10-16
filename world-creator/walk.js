@@ -161,7 +161,8 @@ const keep=o=>{permanent.push(o);return o;};
 // floor boards. In walking mode these are static: merge identical materials
 // into fewer draw calls while retaining their true shape and surface colors.
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
-installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
+const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
+window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
 const woodGroups=new Map();
 for(const mesh of permanent){
   if(!(mesh instanceof B.Mesh)||!mesh.material||!mesh.getTotalVertices?.())continue;
@@ -287,6 +288,14 @@ crewButton.addEventListener("click",()=>{
   status("Loading every genuine 3D cabin avatar; this may strain phone memory.");
   // Load sequentially to reduce simultaneous peak memory on Android.
   (async()=>{for(const o of cabinCrew)await loadAvatar(o);status("Cabin crew load attempted: "+avatarRoots.size+" of "+cabinCrew.length+" actual models visible.");})();
+});
+const willowButton=document.createElement("button");
+willowButton.type="button";willowButton.textContent="🌳 Willow";
+document.querySelector(".actions")?.prepend(willowButton);
+willowButton.addEventListener("click",()=>{
+  camera.position.set(0,cameraGround(0,-43)+EYE_HEIGHT,-43);
+  camera.rotation.set(0,0,0);
+  status("Willow test: looking north toward the tree at Z -30. "+girlsWillow.getChildMeshes().length+" tree meshes loaded.");
 });
 const resetToCabin=()=>{
   camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
