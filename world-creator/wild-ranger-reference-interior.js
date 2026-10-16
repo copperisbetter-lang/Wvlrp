@@ -18,6 +18,7 @@ export function installRangerReferenceInterior(B,scene,track,c){
     const dt=track(new B.DynamicTexture("Ranger photo reference "+name,
       {width:px,height:py},scene,false));
     const ctx=dt.getContext();draw(ctx,px,py);dt.update();
+    decorateWith360Photo(dt,name,px,py);
     const m=track(new B.StandardMaterial("Ranger photo print "+name,scene));
     m.diffuseTexture=dt;
     m.emissiveColor=new B.Color3(.105,.086,.058);
@@ -29,6 +30,49 @@ export function installRangerReferenceInterior(B,scene,track,c){
     plane.material=m;plane.isPickable=false;plane.checkCollisions=false;
     return plane;
   };
+  // Reuse the actual approved WVLRP 360 panorama as photographic print
+  // sources.  These are mounted on real wall meshes in the walkable game,
+  // NOT a skybox or a screenshot pretending to be a navigable room.
+  const ranger360PhotoTargets=[];
+  let ranger360PhotoReady=false;
+  const ranger360Photo=new Image();
+  ranger360Photo.decoding="async";
+  ranger360Photo.onload=()=>{
+    ranger360PhotoReady=true;
+    for(const {texture,u,v,du,dv,px,py} of ranger360PhotoTargets){
+      const g=texture.getContext(),iw=ranger360Photo.naturalWidth,
+        ih=ranger360Photo.naturalHeight;
+      const sx=Math.max(0,Math.floor((u-du/2)*iw));
+      const sy=Math.max(0,Math.floor((v-dv/2)*ih));
+      const sw=Math.min(iw-sx,Math.round(iw*du));
+      const sh=Math.min(ih-sy,Math.round(ih*dv));
+      if(sw<=0||sh<=0)continue;
+      g.drawImage(ranger360Photo,sx,sy,sw,sh,0,0,px,py);
+      texture.update();
+    }
+  };
+  ranger360Photo.onerror=()=>{}; // retain drawn fallback if image is unavailable
+  ranger360Photo.src=new URL("../assets/ranger-station-v1.webp",import.meta.url).href;
+  function decorateWith360Photo(texture,name,px,py){
+    // Object positions are those used in the original ranger-station.js
+    // photo hotspot map; never swap in a generic AI-generated graphic.
+    const regions={
+      "large readable West Virginia topographic field map":
+        {u:.156,v:.39,du:.155,dv:.29},
+      "public information board with pinned woodland photographs":
+        {u:.27,v:.40,du:.17,dv:.29}
+    };
+    if(!regions[name])return;
+    const target={texture,...regions[name],px,py};
+    ranger360PhotoTargets.push(target);
+    if(ranger360PhotoReady){
+      const g=texture.getContext(),iw=ranger360Photo.naturalWidth,ih=ranger360Photo.naturalHeight;
+      const sx=Math.max(0,Math.floor((target.u-target.du/2)*iw));
+      const sy=Math.max(0,Math.floor((target.v-target.dv/2)*ih));
+      g.drawImage(ranger360Photo,sx,sy,iw*target.du,ih*target.dv,0,0,px,py);
+      texture.update();
+    }
+  }
   function paperCard(g,x,y,w,h,rotation,title,lines=3){
     g.save();g.translate(x+w/2,y+h/2);g.rotate(rotation);
     g.fillStyle="#eee7d6";g.shadowColor="#0005";g.shadowBlur=7;
@@ -243,6 +287,93 @@ export function installRangerReferenceInterior(B,scene,track,c){
         g.fillStyle="#f0ebd6";g.fillRect(0,0,w,h);
         mountainPhoto(g,19,18,w-38,h-38,i+2);
       },{yaw:Math.PI,px:512,py:384});
+  }
+  // The 360 room has a real green canvas ranger guest chair below the
+  // photo noticeboard. Restore a 3D, move-around-able chair, not a flat prop.
+  const greenCanvas=makeMat("aged forest-green chair fabric","#4b5d45");
+  const woodChair=makeMat("dark worn chair hardwood","#6a462d");
+  const chairCenterX=X-5.55,chairCenterZ=Z+2.75,chairBaseY=floor;
+  for(const side of [-1,1]){
+    const x=chairCenterX+side*.35;
+    for(const depth of [-.28,.28]){
+      const upright=cylinder("reference canvas chair hardwood leg "+side+"/"+depth,
+        .085,1.18,x,chairBaseY+.59,chairCenterZ+depth,woodChair);
+      upright.rotation.x=depth>.0?-.14:.08;
+    }
+    box("reference canvas visitor chair wooden arm "+side,.105,.085,.77,
+      x,chairBaseY+.80,chairCenterZ-.02,woodChair);
+    cylinder("reference director chair underseat pivot "+side,.062,.87,
+      x,chairBaseY+.51,chairCenterZ,woodChair,"z");
+  }
+  const canvasSeat=track(B.MeshBuilder.CreateSphere("RANGER REFERENCE curved green canvas visitor seat",
+    {diameter:1,segments:16},scene));
+  canvasSeat.scaling.set(.78,.055,.67);
+  canvasSeat.position.set(chairCenterX,chairBaseY+.59,chairCenterZ-.01);
+  canvasSeat.material=greenCanvas;canvasSeat.isPickable=false;
+  const canvasBack=box("reference chair olive canvas slung back panel",
+    .74,.64,.043,chairCenterX,chairBaseY+1.09,chairCenterZ+.30,greenCanvas);
+  canvasBack.rotation.x=.10;
+  for(const side of [-1,1]){
+    cylinder("folding camp chair backrest rail "+side,.047,.80,
+      chairCenterX+side*.36,chairBaseY+1.09,chairCenterZ+.30,woodChair);
+  }
+  // Vintage shaded DESK lamp, the largest warm-light landmark in the
+  // photograph. Sized to the desktop, with a flared fabric shade.
+  const lampX=frontDeskX-1.01,lampZ=frontDeskZ+.28;
+  cylinder("patinated brass desk lamp weighted foot",.31,.045,
+    lampX,deskY+.10,lampZ,brass);
+  cylinder("tall brass desk lamp turned stem",.063,.57,
+    lampX,deskY+.42,lampZ,brass);
+  cylinder("desk lamp shade rim",.66,.033,
+    lampX,deskY+.63,lampZ,brass);
+  const warmShade=makeMat("linen cream lamp shade","#e5cb98",{emission:"#302519"});
+  const shade=track(B.MeshBuilder.CreateCylinder("RANGER REFERENCE flared linen desk lamp shade",
+    {height:.49,diameterTop:.31,diameterBottom:.82,tessellation:32},scene));
+  shade.position.set(lampX,deskY+.88,lampZ);
+  shade.material=warmShade;shade.isPickable=false;shade.checkCollisions=false;
+  cylinder("desk lamp turned brass finial",.072,.09,
+    lampX,deskY+1.18,lampZ,brass);
+  const lampGlow=track(new B.PointLight("RANGER REFERENCE warm desk lamp practical",
+    new B.Vector3(lampX,deskY+.71,lampZ),scene));
+  lampGlow.diffuse=new B.Color3(1,.70,.36);
+  lampGlow.intensity=.30;lampGlow.range=4.4;
+  // Woven Appalachian rug: a single detailed, photoreal-ish textile surface,
+  // not a giant coloured polygon or a pile of overlapping meshes.
+  const rugTex=track(new B.DynamicTexture("Ranger station braided oval rug woven strands",
+    {width:1024,height:512},scene,false));
+  const rg=rugTex.getContext();
+  rg.fillStyle="#644d38";rg.fillRect(0,0,1024,512);
+  rg.save();rg.translate(512,256);
+  const rings=["#a48b64","#403c2c","#846043","#a9a183","#364439",
+    "#9b5940","#c0a37d","#5e6245","#baa486","#6a503a"];
+  for(let j=9;j>=0;j--){
+    rg.beginPath();rg.ellipse(0,0,490-j*41,243-j*18,0,0,Math.PI*2);
+    rg.fillStyle=rings[j];rg.fill();
+    rg.lineWidth=6;rg.strokeStyle="#2d2c26";rg.stroke();
+  }
+  rg.restore();
+  // Directional thread flecks supply close-up textile structure.
+  for(let i=0;i<3600;i++){
+    const tx=(i*197.33)%1024,ty=(i*83.71)%512;
+    rg.fillStyle=i%4===0?"#dbc8a060":"#242e273d";
+    rg.fillRect(tx,ty,1.8,1.2);
+  }
+  rugTex.update();
+  const rugMat=track(new B.StandardMaterial("Ranger faded woven wool rug",scene));
+  rugMat.diffuseTexture=rugTex;rugMat.specularColor=new B.Color3(.02,.02,.02);
+  rugMat.backFaceCulling=false;
+  const rug=track(B.MeshBuilder.CreateGround("RANGER REFERENCE actual rug under entry desk",
+    {width:4.9,height:2.65},scene));
+  rug.position.set(X+2.6,floor+.013,Z+1.30);
+  rug.material=rugMat;rug.isPickable=false;rug.checkCollisions=false;
+  // The real office also has a framed glass-top map board and natural
+  // field clutter. Give the old storage chest proper metal corners and hasps.
+  for(const side of [-1,1]){
+    const atZ=Z-.9+side*.67;
+    box("iron-reinforced visitor equipment chest edge "+side,.092,.61,.045,
+      X-7.36,floor+.31,atZ,dark);
+    box("weathered brass chest corner hinge "+side,.09,.085,.09,
+      X-7.36,floor+.56,atZ,brass);
   }
   return true;
 }
