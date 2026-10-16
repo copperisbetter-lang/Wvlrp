@@ -50,7 +50,7 @@ jobs:
       - name: Build and validate Sav 3
         run: |
           set -euo pipefail
-          python3 -m py_compile world-creator/scripts/build_sav3.py world-creator/scripts/build_vulva2_female18.py
+          python3 -m py_compile world-creator/scripts/build_sav3.py world-creator/scripts/build_vulva2_female18.py world-creator/scripts/vulva2_preview_animations.py
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_sav3.py 2>&1 | tee /tmp/sav3-build.log
           grep VULVA2_TRUE_AUTOFIT_SUCCESS /tmp/sav3-build.log
           grep SAV3_ADULT_BUILD_SUCCESS /tmp/sav3-build.log
