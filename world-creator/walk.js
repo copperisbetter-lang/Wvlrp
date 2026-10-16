@@ -19,6 +19,7 @@ import {clearingAt} from "./wild-rebuild-layout.js?v=flatland-status-20261015-v1
 import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cgtrader-two-private-tests-20261015-v8";
 import {createBuildingMaterialYard,MATERIAL_YARD} from "./wild-material-yard.js?v=walkable-real-pbr-samples-20261015-v1";
 
+import {installGirlsCabinWillow} from "./wild-girls-cabin-willow.js?v=willow-20261016-v1";
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
 const message=document.getElementById("message");
@@ -160,6 +161,7 @@ const keep=o=>{permanent.push(o);return o;};
 // floor boards. In walking mode these are static: merge identical materials
 // into fewer draw calls while retaining their true shape and surface colors.
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
+installGirlsCabinWillow(B,scene,cabinGrade(0,30,seed));
 const woodGroups=new Map();
 for(const mesh of permanent){
   if(!(mesh instanceof B.Mesh)||!mesh.material||!mesh.getTotalVertices?.())continue;
