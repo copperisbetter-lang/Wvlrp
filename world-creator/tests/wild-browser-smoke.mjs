@@ -149,6 +149,26 @@ try{
     "The new display must not break the game: "+warnings.join("; "));
   await page.waitForTimeout(1600);
   await page.screenshot({path:"wild-materials-qa.png",fullPage:true});
+  // Regression: direct-link ?spawn=ranger-photo must NOT reset to Hearthside.
+  // This caught the real bug: the initial camera was correctly constructed
+  // then the final startup if/else branch called resetToCabin().
+  await page.goto("http://127.0.0.1:8765/walk.html?spawn=ranger-photo&test=direct-20261016",{
+    waitUntil:"domcontentloaded",timeout:60000});
+  await page.waitForFunction(()=>typeof window.__wildDiagnostics==="function",
+    {timeout:60000});
+  const direct=await page.evaluate(()=>window.__wildDiagnostics());
+  console.log("PHOTO_RANGER_DIRECT_LINK",JSON.stringify({
+    position:direct.position,spawnLocation:direct.spawnLocation,
+    photoRangerMeshCount:direct.photoRangerMeshCount,
+    communityBuildings:direct.communityBuildings
+  }));
+  assert.equal(direct.spawnLocation,"ranger-photo",
+    "Direct-photo URL must be an explicit spawn option");
+  assert.ok(Math.abs(direct.position[0]-30)<.25 &&
+    Math.abs(direct.position[2]-333)<.25,
+    "DIRECT URL must stay at new station (30,333), not reset to girls' cabin near (0,16)");
+  assert.ok(direct.photoRangerMeshCount>180,"Direct arrival should load the new station");
+  await page.screenshot({path:"wild-photo-ranger-directlink-qa.png",fullPage:true});
   console.log("WILD_BABYLON_BROWSER_SMOKE_PASSED");
   if(warnings.length)console.log("NONFATAL_WARNINGS",JSON.stringify(warnings.slice(0,12)));
 }catch(err){
