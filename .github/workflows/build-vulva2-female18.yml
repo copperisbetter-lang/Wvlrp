@@ -26,7 +26,8 @@ jobs:
             /tmp/blender-4.2.0-linux-x64
             /tmp/mpfb2
             /tmp/mh-system.zip
-          key: wvlrp-vulva2-blender420-mpfb2018-assets-v1
+            /tmp/mh-faceunits.zip
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
       - name: Install Blender and original MakeHuman CC0 source
         run: |
           set -euo pipefail
