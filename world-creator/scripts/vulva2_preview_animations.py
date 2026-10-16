@@ -74,7 +74,9 @@ def add_vulva2_preview_animations(rig):
     crawl2=dict(hands);crawl2.update(angles(la=-87,ra=-69,lt=-69,rt=-85))
     motion("Crawl",[(1,hands),(10,crawl1),(19,crawl2),(28,crawl1),(37,hands)])
     motion("LieDown",[(1,R),(38,angles(hips=83,spine=20,lt=-38,rt=-38,lk=-50,rk=-50,la=-77,ra=-77))])
-    motion("Fetal",[(1,R),(22,angles(hips=65,spine=30,chest=15,lt=95,rt=95,lk=-125,rk=-125,la=-65,ra=-65,le=-65,re=-65,head=12)),(38,angles(hips=65,spine=30,chest=15,lt=95,rt=95,lk=-125,rk=-125,la=-65,ra=-65,le=-65,re=-65,head=12))])\n    motion("SupineKneesUp",[(1,R),(38,angles(hips=80,spine=15,lt=55,rt=55,lk=-85,rk=-85,la=-25,ra=-25))])\n    motion("Wave",[(1,R),(10,angles(ra=(0,-45,65),re=-65)),(19,angles(ra=(0,-45,65),re=-65,rh=(0,0,30))),
+    motion("Fetal",[(1,R),(22,angles(hips=65,spine=30,chest=15,lt=95,rt=95,lk=-125,rk=-125,la=-65,ra=-65,le=-65,re=-65,head=12)),(38,angles(hips=65,spine=30,chest=15,lt=95,rt=95,lk=-125,rk=-125,la=-65,ra=-65,le=-65,re=-65,head=12))])
+    motion("SupineKneesUp",[(1,R),(38,angles(hips=80,spine=15,lt=55,rt=55,lk=-85,rk=-85,la=-25,ra=-25))])
+    motion("Wave",[(1,R),(10,angles(ra=(0,-45,65),re=-65)),(19,angles(ra=(0,-45,65),re=-65,rh=(0,0,30))),
                    (28,angles(ra=(0,-45,65),re=-65,rh=(0,0,-30))),(38,R)])
     for p in rig.pose.bones:
         p.rotation_mode="XYZ";p.rotation_euler=(0,0,0);p.location=(0,0,0)
