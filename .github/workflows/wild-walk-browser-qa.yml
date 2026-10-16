@@ -50,5 +50,6 @@ jobs:
           path: |
             world-creator/wild-walk-qa.png
             world-creator/wild-village-qa.png
+            world-creator/wild-photo-ranger-qa.png
             world-creator/wild-materials-qa.png
           if-no-files-found: ignore
