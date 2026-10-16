@@ -78,3 +78,14 @@ test("ranger window renovation uses slim sash and individual narrow shutter louv
   assert.match(script,/clear window glass/);
   assert.doesNotMatch(script,/shutter raised plank|window sash crossing|working slatted shutter/);
 });
+
+test("ranger desk remains clear of the former full-height chimney shaft",()=>{
+  const script=file("../wild-ranger-station.js");
+  assert.doesNotMatch(script,/box\("lodge fieldstone chimney main shaft"/);
+  assert.doesNotMatch(script,/box\("lodge chimney corbel"/);
+  assert.doesNotMatch(script,/box\("lodge iron flue cover"/);
+  assert.match(script,/continuous L desk FRONT face toward station entrance/);
+  assert.match(script,/continuous L desk SIDE return toward room rear/);
+  assert.match(script,/ranger chair backrest at rear toward wall/);
+  assert.match(script,/full round hardwood porch column/);
+});
