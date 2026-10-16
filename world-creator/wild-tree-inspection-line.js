@@ -49,7 +49,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
     root.position.x=spot.x-(minX+maxX)*.5*scale;
     root.position.z=spot.z-(minZ+maxZ)*.5*scale;
    }
-   for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
+   for(const m of meshes){m.isPickable=false;m.checkCollisions=false;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.backFaceCulling=false;mat.twoSidedLighting=true;}}
    spot.root=root;spot.status="ready";
   }catch(err){spot.status="error";spot.error=String(err);console.warn("Tree sample failed",spot.id,err);}
   finally{busy=false;}
