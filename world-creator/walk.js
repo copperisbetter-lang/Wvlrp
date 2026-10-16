@@ -5,8 +5,8 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=photo-ranger-texture-rake-20261016-v2";
-import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-360-playable-20261015-v10";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=both-ranger-timber-repair-20261016-v3";
+import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=original-ranger-android-pbr-20261016-v3";
 import {PHOTO_RANGER_STATION,photoRangerCollision,photoRangerDeckBlend} from "./wild-ranger-photo-build.js?v=photo-ranger-texture-rake-20261016-v2";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
