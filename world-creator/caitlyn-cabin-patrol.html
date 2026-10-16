@@ -9,8 +9,40 @@ const keys=new Set();window.addEventListener('keydown',e=>keys.add(e.key.toLower
 let stickX=0,stickY=0,looking=false,lastX=0,lastY=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);padMove(e)});pad.addEventListener('pointermove',e=>{if(e.buttons)padMove(e)});pad.addEventListener('pointerup',()=>{stickX=stickY=0;nub.style.transform='';});function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;stickX=Math.max(-1,Math.min(1,x/44));stickY=Math.max(-1,Math.min(1,y/44));nub.style.transform=`translate(${stickX*39}px,${stickY*39}px)`;}
 canvas.addEventListener('pointerdown',e=>{looking=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointerup',()=>looking=false);canvas.addEventListener('pointermove',e=>{if(!looking)return;camera.rotation.y+=(e.clientX-lastX)*.004;camera.rotation.x=Math.max(-1.25,Math.min(1.25,camera.rotation.x+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY});
 let root=null,groups=[],active=null,phase=0,elapsed=0;const steps=[['Walk',7],['Stand',2],['HandsAndKnees',4],['ElbowsAndKnees',4],['Stand',2],['Walk',7],['Stand',1.5]];const state=document.getElementById('state');
-try{const result=await B.SceneLoader.ImportMeshAsync('','./assets/','caitlyn-mpfb-trial.glb',scene);root=new B.TransformNode('Caitlyn patrol',scene);for(const m of result.meshes){if(!m.parent)m.parent=root;}root.position.set(0,0,17);groups=result.animationGroups;state.textContent='Caitlyn loaded';}catch(e){state.textContent='Model failed to load: '+e.message;}
-function pose(name){if(!groups.length)return;const find=groups.find(g=>g.name.toLowerCase().includes(name.toLowerCase()))||groups.find(g=>g.name.toLowerCase().includes(name==='Walk'?'stand':name==='Stand'?'stand':'kneel'));if(find!==active){for(const g of groups)g.stop();active=find;if(find)find.start(false,1,find.from,find.to,false);}}
+try{const result=await B.SceneLoader.ImportMeshAsync('','./assets/','caitlyn-mpfb-trial.glb',scene);root=new B.TransformNode('Caitlyn patrol',scene);for(const m of result.meshes){if(!m.parent)m.parent=root;}root.position.set(0,0,17);groups=result.animationGroups;state.textContent='Caitlyn loaded · '+groups.map(g=>g.name).join(', ');}catch(e){state.textContent='Model failed to load: '+e.message;}
+let walkBones={},walkClock=0;
+function pose(name){
+ const exact='Caitlyn '+(name==='Walk'?'Stand':name);
+ const find=groups.find(g=>g.name===exact);
+ if(find!==active){
+  for(const g of groups)g.stop();
+  active=find||null;
+  if(find){find.start(false,1,find.from,find.to,false);if(name==='Walk'){find.goToFrame(find.from);find.pause();}}
+  if(!find)state.textContent='Missing animation: '+exact;
+ }
+}
+function applyWalk(dt,walking){
+ if(!root)return;
+ if(walking)walkClock+=dt*7;
+ const skeletons=scene.skeletons;
+ for(const sk of skeletons)for(const bone of sk.bones){
+  const n=bone.name.toLowerCase();
+  let kind=null,side=null;
+  if(/left|_l\b|\.l\b/.test(n))side=1;
+  if(/right|_r\b|\.r\b/.test(n))side=-1;
+  if(!side)continue;
+  if(/upleg|thigh/.test(n))kind='thigh';
+  else if(/leg|shin|calf/.test(n))kind='shin';
+  else if(/arm/.test(n)&&!/forearm|lowerarm/.test(n))kind='arm';
+  if(!kind)continue;
+  if(!walkBones[bone.uniqueId])walkBones[bone.uniqueId]={bone,base:bone.rotationQuaternion?.clone()||null};
+  const data=walkBones[bone.uniqueId];
+  if(!data.base||!bone.rotationQuaternion)continue;
+  const wave=Math.sin(walkClock)*side;
+  const radians=walking?(kind==='thigh'?.29*wave:kind==='shin'?.35*Math.max(0,-wave):-.13*wave):0;
+  bone.rotationQuaternion.copyFrom(data.base.multiply(B.Quaternion.RotationAxis(B.Axis.X,radians)));
+ }
+}
 let angle=0;engine.runRenderLoop(()=>{const dt=Math.min(engine.getDeltaTime()/1000,.05);let forward=(keys.has('w')?1:0)-(keys.has('s')?1:0)-stickY,side=(keys.has('d')?1:0)-(keys.has('a')?1:0)+stickX;const len=Math.hypot(forward,side);if(len>.05){forward/=len;side/=len;const yaw=camera.rotation.y;camera.position.x+=(Math.sin(yaw)*forward+Math.cos(yaw)*side)*dt*4;camera.position.z+=(Math.cos(yaw)*forward-Math.sin(yaw)*side)*dt*4;}camera.position.y=1.72;
-if(root){elapsed+=dt;const [name,duration]=steps[phase];state.textContent=name.replace(/([a-z])([A-Z])/g,'$1 $2');pose(name);if(name==='Walk'){angle+=dt*.29;root.position.set(Math.sin(angle)*15,0,Math.cos(angle)*15);root.rotation.y=angle+Math.PI/2;}if(elapsed>=duration){elapsed=0;phase=(phase+1)%steps.length;}}scene.render();});window.addEventListener('resize',()=>engine.resize());
+if(root){elapsed+=dt;const [name,duration]=steps[phase];state.textContent=name.replace(/([a-z])([A-Z])/g,'$1 $2');pose(name);applyWalk(dt,name==='Walk');if(name==='Walk'){angle+=dt*.29;root.position.set(Math.sin(angle)*15,0,Math.cos(angle)*15);root.rotation.y=angle+Math.PI/2;}if(elapsed>=duration){elapsed=0;phase=(phase+1)%steps.length;}}scene.render();});window.addEventListener('resize',()=>engine.resize());
 </script></body></html>
