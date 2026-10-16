@@ -295,7 +295,7 @@ document.querySelector(".actions")?.prepend(willowButton);
 willowButton.addEventListener("click",()=>{
   camera.position.set(0,cameraGround(0,-43)+EYE_HEIGHT,-43);
   camera.rotation.set(0,0,0);
-  status("Willow test: looking north toward the tree at Z -30. "+girlsWillow.getChildMeshes().length+" tree meshes loaded.");
+  status("Willow test: looking south toward the tree at Z -30. "+girlsWillow.getChildMeshes().length+" tree meshes loaded.");
 });
 const resetToCabin=()=>{
   camera.position.set(0,cameraGround(0,16)+EYE_HEIGHT,16);
