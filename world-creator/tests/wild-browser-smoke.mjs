@@ -112,6 +112,27 @@ try{
   const released=await page.evaluate(()=>window.__wildDiagnostics());
   assert.equal(released.movementHeadingLocked,false,"Release must restore free-look");
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
+  // Inspect actual in-world geometric stacks, not a page of texture links.
+  await page.locator("#materialYard").click();
+  await page.waitForFunction(()=>window.__wildMaterialsDiagnostics?.()?.ready===true,{
+    timeout:25000});
+  const yard=await page.evaluate(()=>window.__wildMaterialsDiagnostics());
+  const materialWalk=await page.evaluate(()=>window.__wildDiagnostics());
+  console.log("REAL_HD_MATERIAL_YARD",JSON.stringify(yard));
+  assert.equal(yard.count,10,"Ten real sample piles must be installed in-world");
+  assert.ok(yard.meshes>160,"Actual 3D logs, stone, planks, slate and roof rib meshes must exist");
+  assert.equal(yard.enabled,true,"Material yard should be visible at player location");
+  assert.deepEqual(yard.ids,[
+    "wood_trunk_wall","pine_bark","raw_plank_wall","weathered_planks",
+    "wood_planks","stacked_stone_wall","mossy_stone_wall","rough_pine_door",
+    "roof_slates_03","corrugated_iron"],"Only verified, locally downloaded 2K CC0 sources");
+  assert.ok(Math.abs(materialWalk.position[0]+151)<1.0&&
+    Math.abs(materialWalk.position[2]-282)<1.0,
+    "Material button must teleport beside the display for first-person inspection");
+  assert.equal(warnings.filter(s=>/TypeError|ReferenceError|SyntaxError|WebGL context lost/i.test(s)).length,0,
+    "The new display must not break the game: "+warnings.join("; "));
+  await page.waitForTimeout(1600);
+  await page.screenshot({path:"wild-materials-qa.png",fullPage:true});
   console.log("WILD_BABYLON_BROWSER_SMOKE_PASSED");
   if(warnings.length)console.log("NONFATAL_WARNINGS",JSON.stringify(warnings.slice(0,12)));
 }catch(err){
