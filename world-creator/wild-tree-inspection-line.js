@@ -1,5 +1,5 @@
 /** Walk The Wild: real downloaded Poly Haven tree model inspection line.
- * One of each verified local GLB, beginning 30 m north of Hearthside Cabin.
+ * One of each verified local GLB, beginning 35 m north of Hearthside Cabin.
  * Load on approach to protect Android memory; preserve all existing world assets.
  */
 export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
@@ -11,7 +11,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
   ["island_tree_02",3904436],["island_tree_03",6700476],
   ["tree_small_02",5403644],["jacaranda_tree",14137844]
  ];
- const spots=entries.map(([id,bytes],i)=>({id,bytes,x:0,z:-30-i*24,status:"waiting",root:null,label:null}));
+ const spots=entries.map(([id,bytes],i)=>({id,bytes,x:0,z:-35-i*21,status:"waiting",root:null,label:null}));
  // Physical labeled test markers make positions visible even if a GLB fails to load.
  const markerMat=new B.StandardMaterial("tree-test-marker-material",scene);markerMat.diffuseColor=new B.Color3(.98,.78,.2);markerMat.emissiveColor=new B.Color3(.24,.17,.02);
  for(const spot of spots){
@@ -59,7 +59,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
  const tick=()=>{
   if(busy)return;
   // Do not decode all ten heavy models at once on mobile.
-  const next=spots.find(p=>p.status==="waiting"&&Math.hypot(camera.position.x-p.x,camera.position.z-p.z)<70);
+  const next=spots.find(p=>p.status==="waiting"&&Math.hypot(camera.position.x-p.x,camera.position.z-p.z)<95);
   if(next)void load(next);
  };
  tick();
