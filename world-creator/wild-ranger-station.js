@@ -367,16 +367,62 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     box("loft exposed ceiling joist "+xx,.26,.25,d-.48,
       X+xx,top-.28,Z,timber);
   }
-  const deskZ=Z+1.18,deskY=floor+.95;
-  box("Ranger oak service desk heavy body",8.10,1.0,1.12,
-    X,deskY-.51,deskZ,wood);
-  box("hand-oiled large desktop counter",8.50,.14,1.55,
-    X,deskY+.03,deskZ,doorMat);
-  box("station desk front field-file drawers",7.7,.57,.12,
-    X,deskY-.55,deskZ-.63,timber);
-  for(const x0 of [-3.2,-1.05,1.1,3.25]){
-    box("black forged drawer pull "+x0,.15,.08,.10,
-      X+x0,deskY-.53,deskZ-.71,dark);
+  // The ranger sits in the BACK-RIGHT ROOM CORNER, looking SOUTH at the
+  // front entrance. Desk surfaces are IN FRONT and to the RIGHT of the ranger:
+  // this is the 180-degree reversal of the old wall-facing desk arrangement.
+  // Deliberately leave the chair/knee opening behind the two L-shaped wings;
+  // never rebuild the old bank-teller counter or center pillar here.
+  const deskY=floor+.94;
+  const deskFrontZ=Z+2.70;
+  const deskReturnX=X+7.58;
+  const chairX=X+6.02,chairZ=Z+4.15;
+  box("Ranger L-desk front wing facing entry",5.05,.12,1.02,
+    X+5.05,deskY,deskFrontZ,doorMat);
+  box("Ranger L-desk right wing projecting into room",1.02,.12,3.95,
+    deskReturnX,deskY,Z+1.13,doorMat);
+  // Open-front underside: two compact cabinets rather than one wall of drawers.
+  box("L-desk left outside file pedestal",.74,.72,.80,
+    X+2.95,floor+.42,deskFrontZ,wood);
+  box("L-desk right far end file pedestal",.79,.72,.78,
+    deskReturnX,floor+.42,Z-.46,wood);
+  for(const y0 of [.27,.46,.65]){
+    box("left small office drawer "+y0,.61,.13,.025,
+      X+2.95,floor+y0,deskFrontZ-.415,timber);
+    box("right small office drawer "+y0,.64,.13,.025,
+      deskReturnX,floor+y0,Z-.875,timber);
+    box("left forged drawer handle "+y0,.12,.04,.035,
+      X+2.95,floor+y0,deskFrontZ-.442,dark);
+    box("right forged drawer handle "+y0,.12,.04,.035,
+      deskReturnX,floor+y0,Z-.898,dark);
+  }
+  box("L-desk modest left upright",.11,.80,.84,
+    X+2.57,floor+.48,deskFrontZ,wood);
+  box("L-desk right return near upright",.83,.77,.11,
+    deskReturnX,floor+.45,Z+2.99,wood);
+  // Chair is behind the main tabletop with backrest nearest the rear wall.
+  // Its seat faces -Z (south) straight toward the station's entrance.
+  const seat=makeMat("ranger padded chair","#314a40");
+  box("ranger chair seat looking south",.83,.17,.79,
+    chairX,floor+.56,chairZ,seat);
+  box("ranger chair back behind seat facing the doorway",.86,.89,.16,
+    chairX,floor+1.07,chairZ+.41,seat);
+  for(const side of [-1,1]){
+    box("ranger chair armrest "+side,.12,.08,.60,
+      chairX+side*.47,floor+.85,chairZ-.02,dark);
+    box("ranger chair armrest stem "+side,.10,.25,.10,
+      chairX+side*.47,floor+.70,chairZ+.10,dark);
+  }
+  cylinder("ranger chair swivel post",.13,.43,
+    chairX,floor+.32,chairZ,dark);
+  for(let i=0;i<5;i++){
+    const a=i*2*Math.PI/5;
+    const footX=chairX+Math.sin(a)*.27;
+    const footZ=chairZ+Math.cos(a)*.27;
+    const leg=box("ranger chair five-leg base "+i,.11,.09,.53,
+      chairX+Math.sin(a)*.20,floor+.13,chairZ+Math.cos(a)*.20,dark);
+    leg.rotation.y=a;
+    cylinder("ranger chair caster "+i,.09,.06,
+      footX,floor+.07,footZ,dark);
   }
   // The six-monitor camera wall reuses the original two online/four
   // unavailable labels. These are static props; no live HLS streams here.
@@ -422,31 +468,33 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   }
   signText("interior wall map caption","WV FIELD MAP",2.2,.26,
     X-7.25,floor+1.42,front+.18,52);
-  // Seven real piles of separate ranger's field reports on the counter.
+  // Seven separate ranger reports on the front wing, accessible while
+  // seated facing the doorway. Keep its work surface unobstructed.
   for(let i=0;i<7;i++){
-    const x=X-3.35+i*1.1,z=deskZ-.13+(i%2)*.17;
+    const x=X+3.55+(i%4)*.82;
+    const z=deskFrontZ+(i>=4?.23:-.24);
     for(let sheet=0;sheet<3+(i%3);sheet++){
       const page=box("individual report sheet stack "+i+" "+sheet,
-        .72,.015,.43,x+(sheet%2)*.018,deskY+.13+sheet*.018,z,paper);
+        .63,.015,.37,x+(sheet%2)*.018,deskY+.08+sheet*.018,z,paper);
       page.rotation.y=(i%3-1)*.07;
     }
   }
-  // Ranger radio and antenna; loose maps, the passport, and coffee cup.
-  box("CB radio black base",.72,.26,.35,
-    X+3.48,deskY+.28,deskZ-.25,dark);
+  // CB radio, mug, passport and field map now sit on the *rotated* desk.
+  box("CB radio black base",.69,.24,.39,
+    deskReturnX,deskY+.20,Z+1.70,dark);
   cylinder("CB radio aerial",.025,.72,
-    X+3.69,deskY+.72,deskZ-.20,dark);
+    deskReturnX+.22,deskY+.66,Z+1.83,dark);
   for(let k=0;k<3;k++)
-    cylinder("CB dial "+k,.09,.035,
-      X+3.23+k*.16,deskY+.29,deskZ-.46,brass,"z");
+    cylinder("CB dial "+k,.08,.035,
+      deskReturnX-.20+k*.17,deskY+.23,Z+1.48,brass,"z");
   cylinder("desk enamel coffee mug",.21,.24,
-    X-3.75,deskY+.29,deskZ+.14,paper);
+    X+3.01,deskY+.19,deskFrontZ-.06,paper);
   cylinder("desk mug handle",.055,.21,
-    X-3.58,deskY+.29,deskZ+.14,brass,"z");
-  box("woodland passport book",.51,.08,.67,
-    X-2.60,deskY+.16,deskZ+.36,foliage);
-  box("desk map papers",1.30,.035,.76,
-    X+2.02,deskY+.15,deskZ+.31,paper);
+    X+3.20,deskY+.19,deskFrontZ-.06,brass,"z");
+  box("woodland passport book",.51,.08,.45,
+    X+6.68,deskY+.10,deskFrontZ+.19,foliage);
+  box("desk map papers",.76,.035,.59,
+    deskReturnX,deskY+.09,Z+.24,paper);
   // Practical, reassuring warm hanging station lanterns.
   for(const x0 of [-5.5,0,5.5]){
     cylinder("hanging entry station lantern chain "+x0,.06,.43,
