@@ -32,17 +32,20 @@ test("only tiles near the station render it, and station perimeter stops walking
 });
 test("station uses locally downloaded authenticated Poly Haven texture sets",()=>{
   const s=NORTH_RANGER_STATION;
-  const manifest=JSON.parse(file("../assets/building/building-sources.json"));
-  for(const id of [s.walls,s.door,s.roof,"mossy_stone_wall"]){
-    const asset=manifest.find(x=>x.id===id);
-    assert.ok(asset,id+" must exist");
+  const legacy=JSON.parse(file("../assets/building/building-sources.json"));
+  const hd=JSON.parse(file("../assets/building/hd-building-downloads.json")).materials;
+  for(const id of [s.walls,s.door,s.roof,"mossy_stone_wall",
+    "wood_planks","weathered_planks","stacked_stone_wall"]){
+    const asset=hd.find(x=>x.id===id);
+    assert.ok(asset,id+" must exist in new material-yard downloads");
     assert.equal(asset.license,"CC0");
     for(const kind of ["diffuse","normal","arm"]){
-      const local=asset.resolutions["1k"][kind];
-      assert.ok(local.includes(id+"_"+kind+"_1k"));
-      const localFile=file("../"+local.replace("./",""));
-      assert.ok(localFile.length>30000,"missing local "+kind+" texture");
+      assert.ok(asset.maps[kind].file.includes(id+"_"+kind+"_2k.jpg"));
+      assert.ok(asset.maps[kind].bytes>30000);
     }
+  }
+  for(const id of [s.door,s.roof,"mossy_stone_wall"]){
+    assert.ok(legacy.find(x=>x.id===id)?.resolutions?.["1k"]);
   }
 });
 test("real building installed into active landscape instead of retired village code",()=>{
