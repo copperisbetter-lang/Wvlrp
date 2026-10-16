@@ -557,11 +557,11 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   const lcdMat=track(new B.StandardMaterial("CB luminous channel digits",scene));
   lcdMat.diffuseTexture=lcd;lcdMat.emissiveColor=new B.Color3(.18,.37,.24);
   lcdMat.backFaceCulling=false;
-  const glass=track(B.MeshBuilder.CreatePlane("RANGER LODGE CB LCD CHANNEL 19",
+  const lcdGlassPlane=track(B.MeshBuilder.CreatePlane("RANGER LODGE CB LCD CHANNEL 19",
     {width:.292,height:.134},scene));
-  glass.position.set(rx-.172,ry+.025,rz-.293);
-  glass.rotation.y=Math.PI;glass.material=lcdMat;
-  glass.isPickable=false;glass.checkCollisions=false;
+  lcdGlassPlane.position.set(rx-.172,ry+.025,rz-.293);
+  lcdGlassPlane.rotation.y=Math.PI;lcdGlassPlane.material=lcdMat;
+  lcdGlassPlane.isPickable=false;lcdGlassPlane.checkCollisions=false;
   for(const [i,x0,diam] of [[0,.13,.135],[1,.31,.109]]){
     cylinder("CB machined knob bezel "+i,diam+.026,.020,
       rx+x0,ry-.032,rz-.285,cbSilver,"z");
