@@ -1,0 +1,291 @@
+{
+  "title": "The Wild: verified photorealistic architectural PBR textures",
+  "provider": "Poly Haven",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "source_api": "https://api.polyhaven.com/files/{id}",
+  "resolution": "2k",
+  "note": "Real asset files; 2K is runtime master, 1K legacy/mobile variants kept separately.",
+  "materials": [
+    {
+      "id": "wood_trunk_wall",
+      "use": "round log walls and bark-sided cabins",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/wood_trunk_wall",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "wood_trunk_wall_diffuse_2k.jpg",
+          "bytes": 2082901,
+          "md5": "4ee54e6e4e1b2460d091ab66dbe9c533",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "wood_trunk_wall_normal_2k.jpg",
+          "bytes": 3551981,
+          "md5": "316f64bf1cb6cb066e164def07ec6103",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "wood_trunk_wall_arm_2k.jpg",
+          "bytes": 1903207,
+          "md5": "c7eb0481192585158e805eb010265a6a",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "raw_plank_wall",
+      "use": "rough-cut timber and cabin interiors",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/raw_plank_wall",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "raw_plank_wall_diffuse_2k.jpg",
+          "bytes": 2522671,
+          "md5": "b56bcf1c5c2c4c984468598afcc62be6",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "raw_plank_wall_normal_2k.jpg",
+          "bytes": 3223836,
+          "md5": "2752697ed683a35ccbb080c1c4e5408b",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "raw_plank_wall_arm_2k.jpg",
+          "bytes": 2432109,
+          "md5": "5a3680bf66880cb109b4cc2c7c5f5c5d",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "weathered_planks",
+      "use": "weathered siding and older village buildings",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/weathered_planks",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "weathered_planks_diffuse_2k.jpg",
+          "bytes": 2385451,
+          "md5": "dd5f91445812117d216ed962c2607b7d",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "weathered_planks_normal_2k.jpg",
+          "bytes": 3184832,
+          "md5": "db8ad9ad21c8de018e009f9c27c2a63d",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "weathered_planks_arm_2k.jpg",
+          "bytes": 2296561,
+          "md5": "dfe9c9bbefd9146d62852966f95ef096",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "wood_planks",
+      "use": "wooden floors, porch decking and beams",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/wood_planks",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "wood_planks_diffuse_2k.jpg",
+          "bytes": 2387732,
+          "md5": "29f2d08d585433fb54034a0e8fa79adc",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "wood_planks_normal_2k.jpg",
+          "bytes": 2906326,
+          "md5": "61c0a752deaa8fda789a31e4fc1427d8",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "wood_planks_arm_2k.jpg",
+          "bytes": 1469083,
+          "md5": "11ca8e371e2ca87669f123e97e9289f8",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "stacked_stone_wall",
+      "use": "fireplace masonry and chimneys",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/stacked_stone_wall",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "stacked_stone_wall_diffuse_2k.jpg",
+          "bytes": 2812965,
+          "md5": "f20377a6d0a90386d46a82dfc0e5fc97",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "stacked_stone_wall_normal_2k.jpg",
+          "bytes": 4072631,
+          "md5": "d37be81d921fe39c6708c07baea8187c",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "stacked_stone_wall_arm_2k.jpg",
+          "bytes": 2983412,
+          "md5": "86275a6fbe004446b19fffe2233a25a6",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "mossy_stone_wall",
+      "use": "aged foundation stone and rustic exterior masonry",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/mossy_stone_wall",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "mossy_stone_wall_diffuse_2k.jpg",
+          "bytes": 3808852,
+          "md5": "1f0ff600e455874379c78ab97c7680b4",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "mossy_stone_wall_normal_2k.jpg",
+          "bytes": 5143278,
+          "md5": "0c40b1b9b731c404bd499389322fffb1",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "mossy_stone_wall_arm_2k.jpg",
+          "bytes": 2772458,
+          "md5": "106e0815da1a746ee9e464a90fb26645",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "rough_pine_door",
+      "use": "hand-hewn pine door and furniture",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/rough_pine_door",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "rough_pine_door_diffuse_2k.jpg",
+          "bytes": 2941214,
+          "md5": "2b7cd5662ba309769c5acaad87bacc23",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "rough_pine_door_normal_2k.jpg",
+          "bytes": 3201598,
+          "md5": "0299cf175f40dcf8d12f7dad73760e09",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "rough_pine_door_arm_2k.jpg",
+          "bytes": 852927,
+          "md5": "5f0b43cd0a60d9e023f98052a0c0833f",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "roof_slates_03",
+      "use": "old Appalachian slate roofs",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/roof_slates_03",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "roof_slates_03_diffuse_2k.jpg",
+          "bytes": 2083015,
+          "md5": "ac4940aeb369dd8c8919d3233cb42023",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "roof_slates_03_normal_2k.jpg",
+          "bytes": 2741713,
+          "md5": "3d52d34312b0e44096ce0db7ad9ee3d2",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "roof_slates_03_arm_2k.jpg",
+          "bytes": 3128318,
+          "md5": "bd5ccc76e0a5be82e53d7fb371128395",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "corrugated_iron",
+      "use": "weathered metal roofs and awnings",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/corrugated_iron",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "corrugated_iron_diffuse_2k.jpg",
+          "bytes": 2605861,
+          "md5": "fb7cfe9f978589b8e3d1155a859fed46",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "corrugated_iron_normal_2k.jpg",
+          "bytes": 3453777,
+          "md5": "ba7b8088897242f5df20ab6fb1fe4124",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "corrugated_iron_arm_2k.jpg",
+          "bytes": 1862024,
+          "md5": "7349638f91a593c358b158e8bd713c31",
+          "download": "official-api"
+        }
+      }
+    },
+    {
+      "id": "pine_bark",
+      "use": "individual log grain and rustic posts",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/pine_bark",
+      "provider": "Poly Haven",
+      "resolution": "2k",
+      "maps": {
+        "diffuse": {
+          "file": "pine_bark_diffuse_2k.jpg",
+          "bytes": 3167561,
+          "md5": "d10980446d36a65a73081cf61bc84992",
+          "download": "official-api"
+        },
+        "normal": {
+          "file": "pine_bark_normal_2k.jpg",
+          "bytes": 4637035,
+          "md5": "ee1de039967165665060653a0e12e571",
+          "download": "official-api"
+        },
+        "arm": {
+          "file": "pine_bark_arm_2k.jpg",
+          "bytes": 3084928,
+          "md5": "e8a438551d14ac7dccbaee5cc2c5fe45",
+          "download": "official-api"
+        }
+      }
+    }
+  ]
+}
