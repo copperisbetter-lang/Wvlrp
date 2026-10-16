@@ -414,43 +414,44 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     box("loft exposed ceiling joist "+xx,.26,.25,d-.48,
       X+xx,top-.28,Z,timber);
   }
-  // REAL L-SHAPED RANGER WORKSTATION (BACK-RIGHT INTERIOR).
-  // Looking at the station from the south entrance: the ranger sits behind
-  // the desk toward the back-right corner, facing SOUTH toward the FRONT DOOR.
-  // The desk is on the *room* side of the ranger, never pushed into the walls.
-  // Horizontal wing runs east-west in FRONT of the chair; return wing runs
-  // north-south at the ranger's RIGHT (west side while facing south).
-  // Joined desktops create ONE L, NOT two separate bank-teller counters.
+  // REAL L-SHAPED RANGER WORKSTATION — BACK-RIGHT CORNER OFFICE (v6).
+  // Entrance is SOUTH (-Z). A seated ranger looks SOUTH, straight toward
+  // the entrance; chair back is toward the rear wall, NEVER the front door.
+  // Put the RANGER'S CHAIR in the empty north-east nook, not the desktop.
+  // The return reaches the BACK WALL, projects 3m into the room, and joins
+  // the front east-west wing. Viewed from the doorway this is an L, not a
+  // bank-teller counter or a desktop laid along the rear walls.
+  // No interior chimney, pillar, tree trunk or column belongs in this space.
   const deskY=floor+.93;
-  const frontDeskX=X+5.76,frontDeskZ=Z+2.15;
-  const returnDeskX=X+3.45,returnDeskZ=Z+3.51;
-  const chairX=X+5.54,chairZ=Z+4.38;
-  box("continuous L desk FRONT face toward station entrance",
-    4.90,.13,1.05,frontDeskX,deskY,frontDeskZ,doorMat);
-  box("continuous L desk SIDE return toward room rear",
-    1.05,.13,3.78,returnDeskX,deskY,returnDeskZ,doorMat);
-  box("L desk seamless worktop corner joining both wings",
-    1.06,.134,1.06,returnDeskX,deskY+.003,frontDeskZ,doorMat);
+  const frontDeskX=X+6.50,frontDeskZ=Z+2.70;
+  const returnDeskX=X+4.85,returnDeskZ=Z+4.19;
+  const chairX=X+7.05,chairZ=Z+4.72;
+  box("continuous L desk FRONT wing facing south entrance",
+    3.80,.13,1.10,frontDeskX,deskY,frontDeskZ,doorMat);
+  box("continuous L desk SIDE return projecting from rear wall",
+    1.10,.13,3.02,returnDeskX,deskY,returnDeskZ,doorMat);
+  box("L desk seamless joined corner both wings",
+    1.10,.134,1.10,returnDeskX,deskY+.003,frontDeskZ,doorMat);
   // Keep a large uninterrupted knee space directly in front of chair.
   // Slim pedestals appear at the OUTER ends only, not in the seat opening.
   box("front L desk east end compact drawer pedestal",.69,.71,.76,
-    X+7.87,floor+.42,frontDeskZ,wood);
-  box("return L desk south end compact drawer pedestal",.75,.71,.73,
-    returnDeskX,floor+.42,Z+1.90,wood);
+    X+8.05,floor+.42,frontDeskZ,wood);
+  box("return L desk front end compact drawer pedestal",.75,.71,.73,
+    returnDeskX,floor+.42,Z+2.93,wood);
   for(const y0 of [.27,.45,.63]){
     box("front wing small drawer "+y0,.58,.12,.035,
-      X+7.87,floor+y0,frontDeskZ-.395,timber);
+      X+8.05,floor+y0,frontDeskZ-.48,timber);
     box("return wing side drawer "+y0,.63,.12,.035,
-      returnDeskX-.385,floor+y0,Z+1.90,timber);
+      returnDeskX-.385,floor+y0,Z+2.93,timber);
     box("front wing black drawer pull "+y0,.13,.04,.025,
-      X+7.87,floor+y0,frontDeskZ-.419,dark);
+      X+8.05,floor+y0,frontDeskZ-.51,dark);
     box("return wing black drawer pull "+y0,.025,.04,.13,
-      returnDeskX-.417,floor+y0,Z+1.90,dark);
+      returnDeskX-.417,floor+y0,Z+2.93,dark);
   }
   box("front L desk narrow end leg",.12,.77,.88,
-    X+3.31,floor+.45,frontDeskZ,wood);
+    X+4.65,floor+.45,frontDeskZ,wood);
   box("side L desk back slim leg",.86,.77,.12,
-    returnDeskX,floor+.45,Z+5.30,wood);
+    returnDeskX,floor+.45,Z+5.58,wood);
 
   // Ranger's actual chair is in the open nook BEHIND the connected L desktop.
   // Its upright back faces the far wall, seat and occupant face the main door.
@@ -523,7 +524,7 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   // Seven field-note piles across the ranger's worktop, with the CB radio
   // and coffee close enough for someone actually seated in the corner.
   for(let i=0;i<7;i++){
-    const x=X+4.15+(i%4)*.89,z=frontDeskZ+(i>=4?.24:-.24);
+    const x=X+5.12+(i%4)*.83,z=frontDeskZ+(i>=4?.19:-.19);
     for(let sheet=0;sheet<3+(i%3);sheet++){
       const page=box("individual report sheet stack "+i+" "+sheet,
         .61,.015,.34,x+(sheet%2)*.018,deskY+.09+sheet*.018,z,paper);
@@ -531,19 +532,19 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     }
   }
   box("CB ranger radio black housing",.72,.24,.40,
-    returnDeskX,deskY+.20,Z+4.25,dark);
+    returnDeskX,deskY+.20,Z+4.54,dark);
   cylinder("CB aerial",.022,.74,
-    returnDeskX+.21,deskY+.67,Z+4.36,dark);
+    returnDeskX+.21,deskY+.67,Z+4.64,dark);
   for(let k=0;k<3;k++)cylinder("CB tuning dial "+k,.08,.035,
-    returnDeskX-.21+k*.18,deskY+.22,Z+4.04,brass,"z");
+    returnDeskX-.21+k*.18,deskY+.22,Z+4.32,brass,"z");
   cylinder("ranger enamel coffee mug",.21,.24,
-    X+6.62,deskY+.20,frontDeskZ-.04,paper);
+    X+6.72,deskY+.20,frontDeskZ-.04,paper);
   cylinder("ranger mug handle",.055,.21,
-    X+6.81,deskY+.20,frontDeskZ-.04,brass,"z");
+    X+6.91,deskY+.20,frontDeskZ-.04,brass,"z");
   box("field passport folio",.49,.075,.55,
-    X+7.58,deskY+.105,frontDeskZ+.14,foliage);
+    X+7.61,deskY+.105,frontDeskZ+.14,foliage);
   box("ranger office field map on side return",.68,.035,.51,
-    returnDeskX,deskY+.09,Z+3.06,paper);
+    returnDeskX,deskY+.09,Z+3.74,paper);
   // Practical, reassuring warm hanging station lanterns.
   for(const x0 of [-5.5,0,5.5]){
     cylinder("hanging entry station lantern chain "+x0,.06,.43,
