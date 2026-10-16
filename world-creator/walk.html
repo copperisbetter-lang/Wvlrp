@@ -13,7 +13,7 @@
 .top{top:env(safe-area-inset-top,0);left:0;right:0;display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding:12px;pointer-events:none}
 .brand{background:#0b1c16da;border:1px solid #e9ddb76e;padding:9px 12px;border-radius:12px;max-width:55%;box-shadow:0 3px 16px #0006}
 .brand strong{font-size:14px;letter-spacing:.08em}.brand small{display:block;font-size:11px;opacity:.87;margin-top:3px}
-.actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:46%;pointer-events:auto}
+.actions{display:none!important} /* Keep controls wired for game logic, but remove top-screen buttons. */
 button,.link{appearance:none;font:600 12px system-ui;color:#fff5d8;background:#153e2fdc;border:1px solid #a6b79b7e;padding:10px 11px;border-radius:10px;text-decoration:none;cursor:pointer;box-shadow:0 4px 12px #0005}
 button:active,.link:active{background:#467052}button:focus-visible,.link:focus-visible{outline:2px solid #ffe99f}
 #message{top:68px;left:50%;transform:translateX(-50%);background:#0b1812d9;padding:9px 12px;border:1px solid #ffffff35;border-radius:9px;max-width:90vw;text-align:center;font-size:12px}
@@ -69,6 +69,6 @@ border:1px solid #74957a;border-radius:9px}
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script type="module" src="./walk.js?v=minimap-20261016-v1"></script>
+<script type="module" src="./walk.js?v=top-buttons-hidden-20261016-v1"></script>
 </body>
 </html>
