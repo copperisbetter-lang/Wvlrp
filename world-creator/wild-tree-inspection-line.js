@@ -64,7 +64,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    const actualHeight=Math.max(...finalBounds.map(b=>b.maximumWorld.y))-Math.min(...finalBounds.map(b=>b.minimumWorld.y));
    if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-target)>target*.15)throw Error("Tree scale verification failed: "+actualHeight+"m versus "+target+"m");
    spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
-  }catch(err){spot.status="error";spot.error=String(err);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err);}
+  }catch(err){spot.status="error";spot.error=String(err);spot.stack=String(err?.stack||"").slice(0,650);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err?.stack||err);}
   finally{busy=false;}
  }
  const tick=()=>{
