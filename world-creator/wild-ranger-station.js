@@ -344,10 +344,25 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
           .075,.32,b-a,X+side*(half-.29),y,Z+(a+b)/2,timber);
     }
   }
-  // Open entry into the actual 3D room — two doors stood open against the jambs.
+  // The 360 entrance has traditional double glazed timber doors, not
+  // two opaque rectangular slabs. Their leaves stand open at the jamb
+  // so the full center path stays walkable.
   for(const side of [-1,1]){
-    box("open vertical pine entry door "+side,.86,2.73,.13,
-      X+side*1.58,floor+1.37,front+.26,doorMat,0);
+    const doorX=X+side*1.58,doorZ=front+.26,doorW=.86,doorH=2.73;
+    for(const edge of [-1,1])
+      box("open glazed entry door stile "+side+" "+edge,
+        .12,doorH,.13,doorX+edge*(doorW/2-.06),
+        floor+doorH/2,doorZ,doorMat);
+    for(const y0 of [.065,1.13,2.67])
+      box("open glazed entry door transom "+side+" "+y0,
+        doorW,.12,.13,doorX,floor+y0,doorZ,doorMat);
+    box("traditional six light glazing "+side,
+      doorW-.25,1.45,.026,doorX,floor+1.91,doorZ+.012,glass);
+    box("door glass mullion vertical "+side,
+      .039,1.43,.065,doorX,floor+1.91,doorZ-.07,timber);
+    for(const yy of [1.67,2.15])
+      box("door glass slender cross rail "+side+" "+yy,
+        doorW-.23,.038,.065,doorX,floor+yy,doorZ-.072,timber);
     box("carved entrance jamb "+side,.22,3.04,.34,
       X+side*(s.entryWidth/2+.13),floor+1.5,front-.30,timber);
     cylinder("entry iron latch "+side,.095,.10,
@@ -441,12 +456,23 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       }
     }
   }
-  // Broad three-tier fieldstone stairs with no steep step near doorway.
-  for(let n=0;n<3;n++){
-    const stepD=.55;
+  // Five real 15cm risers descend AWAY from the raised porch. Previously
+  // the steps were upside-down in elevation and only three slabs thick.
+  for(let n=0;n<5;n++){
     box("wide handmade sandstone approach step "+n,
-      5.15+.30*n,.20+n*.14,stepD,
-      X,Y+.07+n*.12,porchFront-.33-n*.52,masonry);
+      5.15+.30*n,.15,.55,
+      X,floor-.075-n*.15,porchFront-.26-n*.48,masonry);
+  }
+  // Hardwood entry handrails and their angled supports, either side
+  // of the same clear center walkway in the photographed station.
+  for(const side of [-1,1]){
+    const xx=X+side*2.70;
+    for(let n=0;n<3;n++)
+      box("stair timber newel "+side+" "+n,.13,.96,.13,
+        xx,floor-.03-n*.30,porchFront-.20-n*.95,timber);
+    const rail=box("descending pine stair rail "+side,.13,.13,2.20,
+      xx,floor+.39,porchFront-1.17,timber);
+    rail.rotation.x=-.30;
   }
   box("entry flagstone threshold",s.entryWidth+.50,.09,.85,
     X,floor-.06,front-.38,masonry);
@@ -708,7 +734,19 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     X+7.61,deskY+.105,frontDeskZ+.14,foliage);
   box("ranger office field map on side return",.68,.035,.51,
     returnDeskX,deskY+.09,Z+3.74,paper);
-  // Practical, reassuring warm hanging station lanterns.
+  // Four amber porch wall lanterns are a signature of the photographed
+  // front elevation; they belong between the glazing and the entry.
+  for(const x0 of [-5.15,-1.92,1.92,5.15]){
+    box("weathered porch lantern arm "+x0,.10,.17,.43,
+      X+x0,floor+2.43,front-.42,dark);
+    cylinder("porch glass lantern warm amber "+x0,.22,.44,
+      X+x0,floor+2.19,front-.72,warmLight);
+    cylinder("porch lantern dark iron cap "+x0,.30,.09,
+      X+x0,floor+2.46,front-.72,dark);
+    cylinder("porch lantern dark iron base "+x0,.25,.08,
+      X+x0,floor+1.94,front-.72,dark);
+  }
+  // Practical warm interior field lanterns.
   for(const x0 of [-5.5,0,5.5]){
     cylinder("hanging entry station lantern chain "+x0,.06,.43,
       X+x0,top-.51,Z-1.75,dark);
