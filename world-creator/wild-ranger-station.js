@@ -45,36 +45,51 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   // Four verified 1K PBR sets cut mobile texture memory sharply while
   // keeping the 2K building finishes on desktop. Screenshots must not OOM.
   const mobileRenderer=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-  const mobile1k=new Set(["wood_trunk_wall","rough_pine_door",
-    "mossy_stone_wall","corrugated_iron"]);
+  // The original Ranger Station is also used by ?spawn=ranger. Its 2K
+  // facade/roof materials could show the red checker reported on Android.
+  // Prefer the verified photographic 1K sets and fail to actual timber colors.
+  const verified1k=new Set(["wood_trunk_wall","rough_pine_door",
+    "mossy_stone_wall","corrugated_iron","weathered_plank_siding"]);
+  const fallbackColor={
+    wood_trunk_wall:"#665244",rough_pine_door:"#845c37",
+    mossy_stone_wall:"#666860",corrugated_iron:"#6b889b",
+    weathered_plank_siding:"#77604c",wood_planks:"#8a755a",
+    pine_bark:"#665240",stacked_stone_wall:"#78756c"
+  };
   const materials=new Map();
   const finish=(id,{texture="1k",metal=false,repeatU=1,repeatV=1}={})=>{
-    const key=id+"-"+texture+"-"+repeatU+"-"+repeatV;
+    const assetId=id==="weathered_planks"?"weathered_plank_siding":id;
+    const key=assetId+"-"+texture+"-"+repeatU+"-"+repeatV;
     if(materials.has(key))return materials.get(key);
     const mat=track(new B.PBRMaterial("Ranger lodge CC0 "+key,scene));
-    const tex=(kind,res)=>{
-      const actualRes=mobileRenderer&&mobile1k.has(id)?"1k":res;
-      const t=track(new B.Texture(rootPath+id+"_"+kind+"_"+actualRes+".jpg",scene));
+    const res=verified1k.has(assetId)?"1k":texture;
+    const tex=kind=>{
+      const url=rootPath+assetId+"_"+kind+"_"+res+".jpg";
+      const t=track(new B.Texture(url,scene,false,false,
+        B.Texture.TRILINEAR_SAMPLINGMODE,null,(_msg,_error)=>{
+          if(kind==="diffuse"){
+            mat.albedoTexture=null;
+            mat.albedoColor=B.Color3.FromHexString(fallbackColor[assetId]||"#78624d");
+          }else if(kind==="normal")mat.bumpTexture=null;
+          else if(kind==="arm")mat.metallicTexture=null;
+          console.warn("Original ranger texture failed:",url);
+        }));
       t.wrapU=B.Texture.WRAP_ADDRESSMODE;t.wrapV=B.Texture.WRAP_ADDRESSMODE;
       t.uScale=repeatU;t.vScale=repeatV;return t;
     };
-    // HD 2K color on the most visible bark, timber, stone and metal surfaces.
-    mat.albedoTexture=tex("diffuse",texture);
-    // Newly downloaded HD materials have no 1K normal/ARM variants;
-    // avoid broken texture requests and missing relief on the live station.
-    const detailRes=new Set(["pine_bark","weathered_planks","wood_planks",
-      "stacked_stone_wall"]).has(id)?"2k":"1k";
-    mat.bumpTexture=tex("normal",detailRes);
-    mat.bumpTexture.level=metal?.56:.69;
-    mat.metallicTexture=tex("arm",detailRes);
+    mat.albedoTexture=tex("diffuse");
+    mat.bumpTexture=tex("normal");
+    mat.bumpTexture.level=metal?.42:.50;
+    mat.metallicTexture=tex("arm");
     mat.useRoughnessFromMetallicTextureGreen=true;
     mat.useMetallnessFromMetallicTextureBlue=true;
-    mat.metallic=metal?.67:0;mat.roughness=metal?.79:.96;
+    mat.metallic=metal?.30:0;mat.roughness=metal?.82:.94;
     mat.backFaceCulling=false;
     materials.set(key,mat);
     return mat;
   };
-  const bark=finish("pine_bark",{texture:"2k",repeatV:2});
+  const bark=finish(mobileRenderer?"wood_trunk_wall":"pine_bark",
+    {texture:mobileRenderer?"1k":"2k",repeatV:2});
   const stacked=finish("wood_trunk_wall",{texture:"2k",repeatU:2});
   const timber=finish("weathered_planks",{texture:"2k",repeatV:2});
   const wood=finish("wood_planks",{texture:"2k",repeatU:2,repeatV:2});
