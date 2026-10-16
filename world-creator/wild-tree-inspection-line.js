@@ -43,8 +43,8 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
     minZ=Math.min(minZ,b.minimumWorld.z);maxZ=Math.max(maxZ,b.maximumWorld.z);}
    const height=maxY-minY;
    if(!meshes.length||!Number.isFinite(height)||height<=0)throw Error("Downloaded GLB contains no renderable mesh");
-   if(Number.isFinite(height)&&height>0){
-    const target=spot.id==="oak_tree"?17:spot.id.includes("sapling")||spot.id.includes("small")?5:spot.id.includes("island")?12:17;
+   const target=spot.id==="oak_tree"?17:spot.id.includes("sapling")||spot.id.includes("small")?5:spot.id.includes("island")?12:17;
+   {
     const scale=target/height; // No arbitrary 8x cap: imported GLBs can have wildly different source units.
     console.info("TREE SIZE FIX",spot.id,{sourceHeight:height,targetHeight:target,scale});
     root.scaling.setAll(scale);
