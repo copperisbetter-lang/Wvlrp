@@ -1,0 +1,81 @@
+name: Build Sav Vulva1 isolated trial
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - world-creator/scripts/build_sav_vulva1_trial.py
+      - world-creator/assets/riley-vulva1-source.json
+      - .github/workflows/build-sav-vulva1-trial.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sav-vulva1-isolated-trial
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender 4.2
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
+          curl -fL --retry 4 --retry-delay 5 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp/
+      - name: Fit original MakeHuman Vulva1 to Sav-only GLB
+        run: |
+          set -euo pipefail
+          python3 -m py_compile world-creator/scripts/build_sav_vulva1_trial.py
+          xvfb-run -a -s '-screen 0 1280x1024x24' /tmp/blender-4.2.0-linux-x64/blender --background --factory-startup --python world-creator/scripts/build_sav_vulva1_trial.py 2>&1 | tee /tmp/sav-vulva1-build.log
+          grep SAV_VULVA1_FITTING_SUCCESS /tmp/sav-vulva1-build.log
+      - name: Verify exact donor topology and Sav skeleton
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          src=json.loads(Path('world-creator/assets/riley-vulva1-source.json').read_text())
+          assert len(src['mesh']['vertices'])==181 and len(src['mesh']['faces'])==168
+          f=Path('world-creator/assets/sav-vulva1-trial.glb')
+          b=f.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n,t=struct.unpack_from('<II',b,12)
+          assert t==0x4e4f534a
+          d=json.loads(b[20:20+n])
+          assert any(len(s.get('joints',[]))==56 for s in d.get('skins',[])), 'Lost 56-joint rig'
+          names=[v.get('name','') for v in d.get('nodes',[])]
+          assert sum('Sav Vulva1 MakeHuman fitted' in name for name in names)==1,names
+          assert not any('Vulva2' in n for n in names), 'Vulva2 unexpectedly present'
+          assert d.get('animations'), 'Sav animations missing'
+          print('SAV_VULVA1_GLB_QA', f.stat().st_size, len(d['animations']))
+          PY
+      - name: Publish only isolated Sav trial GLB
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/sav-vulva1-trial.glb
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish isolated Sav MakeHuman Vulva1 fit for inspection'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Save build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav-vulva1-trial-report
+          path: |
+            /tmp/sav-vulva1-build.log
+            world-creator/assets/sav-vulva1-trial.glb
+          if-no-files-found: warn
+          retention-days: 7
