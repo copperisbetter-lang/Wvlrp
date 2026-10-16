@@ -498,9 +498,8 @@ if(START_AT_COMPARE){
 }
 // Real HD building-material stockyard: independent of static cabin imports and
 // streamed terrain. Textures become active only near the display.
-const materialYard=createBuildingMaterialYard({
-  B,scene,camera,groundAt:(x,z)=>cameraGround(x,z),onStatus:status
-});
+// Performance test: preserve all lumber-yard assets but do not instantiate them.
+const materialYard={spawn:{x:MATERIAL_YARD.spawnX,z:MATERIAL_YARD.spawnZ},update(){},collides(){return false;},stats(){return {enabled:false,count:0,reason:"Material yard temporarily removed for Ranger Station performance test"};}};
 const jumpToMaterials=()=>{
   if(Math.max(Math.abs(tileCx-MATERIAL_YARD.x),Math.abs(tileCy-MATERIAL_YARD.z))>55){
     try{habitat=addLandscape(MATERIAL_YARD.x,MATERIAL_YARD.z);}
@@ -514,7 +513,7 @@ const jumpToMaterials=()=>{
   info.textContent="MATERIAL YARD · ten real 3D lumber, stone, roof and log samples";
   status("Material yard: walk north to inspect ten stacked photorealistic building materials.");
 };
-document.getElementById("materialYard")?.addEventListener("click",jumpToMaterials);
+document.getElementById("materialYard")?.remove();
 // Peer mode is enabled only by the public Game Beta Test entrance.
 // The local visitor stays first person and resident GLB characters are untouched.
 let multiplayer=null;
