@@ -140,6 +140,8 @@ for j in range(nz):
         samples.append((x,z,skin_surface(x,z),s,t))
 hits=[(x,z,m[0],m[1]) for x,z,m,s,t in samples if m is not None]
 upper=[r for r in samples if r[4]>.78]
+print("SAV_V3_COVERAGE_DIAGNOSTIC","hits",len(hits),"total",len(samples),
+      "upper_hits",sum(r[2] is not None for r in upper),"upper_total",len(upper))
 if len(hits)<len(samples)*.25 or sum(r[2] is not None for r in upper)<len(upper)*.60:
     raise RuntimeError("Sav pubic skin coverage insufficient for reliable fit")
 positions=[];uv_by_vertex=[];max_gap=0;unsupported=0
