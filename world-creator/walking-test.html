@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10221b">
-<title>The Wild — Caitlyn Walking Test v13</title>
+<title>The Wild — Caitlyn Autonomous Cabin Test v15</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15251f;color:#fff;font:14px system-ui,-apple-system,sans-serif}
 #renderCanvas{width:100%;height:100%;display:block;touch-action:none}
@@ -23,10 +23,10 @@ button{color:#fff;border:1px solid #ecf6db75;border-radius:10px;background:#1438
 </head>
 <body>
 <canvas id="renderCanvas"></canvas>
-<div id="top"><h1>THE WILD — Caitlyn Walking Test v13</h1><p>Caitlyn 3D model · Ranger Station walking sandbox · Prototype</p><a href="./index.html">Back to World Creator</a></div>
+<div id="top"><h1>THE WILD — Caitlyn Autonomous Cabin Test v15</h1><p>Caitlyn 3D model · Autonomous cabin walk · First-person observer</p><a href="./index.html">Back to World Creator</a></div>
 <div id="status" role="status">Loading Caitlyn’s real 3D character…</div>
-<div id="help">Push up to walk. Left/right steers Caitlyn. Swipe to look around.</div>
-<div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="view" type="button">View: Follow</button><button id="home" type="button">Reset position</button></div></div>
+<div id="help">Caitlyn follows her own routine. Joystick moves YOU. Run button doubles your speed.</div>
+<div id="controls"><div id="pad" aria-label="Touch movement joystick"><div id="knob"></div></div><div id="buttonside"><button id="run" type="button">Run: OFF</button><button id="view" type="button">View: First person</button><button id="home" type="button">Reset position</button></div></div>
 <div id="problem"><h2>3D scene did not load</h2><p id="errorText">Please try refreshing in Chrome with an internet connection.</p></div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
@@ -71,7 +71,7 @@ for(let i=0;i<48;i++){
  cyl('trunk',.45,3.3,x,1.65,z,treeBark);
  sphere('foliage',4,x,4.4,z,i%3===0?leaf2:leaf,null,[.9,1.2,.9]);
 }
-const root=new B.TransformNode('player-position',scene);root.position.set(0,0,4);
+const root=new B.TransformNode('Caitlyn-autonomous-position',scene);root.position.set(0,0,4);
 const walkBody=new B.TransformNode('walking-body',scene);walkBody.parent=root;
 // Keep the world, working joystick and collision boundary intact.
 // Load Caitlyn's ACTUAL rigged GLB, not a blob/mannequin stand-in.
@@ -378,7 +378,7 @@ B.SceneLoader.ImportMeshAsync(null,'./assets/',
    idle.pause();
    idle.stop();
  }
- const bound=bindWalkingRig(result);
+ window.__caitlynPoseGroups=Object.fromEntries((result.animationGroups||[]).map(g=>[g.name,g]));const bound=bindWalkingRig(result);
  stanceCalibration=gaitReady?calibrateNaturalStance():null;
  footfallCalibration=gaitReady?calibrateCenterlineFootfalls():null;
  armCalibration=calibrateRelaxedArms();
@@ -404,7 +404,7 @@ root.rotation.y=0;
 const camera=new B.ArcRotateCamera('follow',Math.PI/2,1.30,7,new B.Vector3(0,1.5,0),scene);
 camera.lowerRadiusLimit=3;camera.upperRadiusLimit=16;camera.lowerBetaLimit=.45;camera.upperBetaLimit=1.55;camera.wheelPrecision=35;
 camera.attachControl(cvs,true);camera.panningSensibility=0;camera.angularSensibilityX=750;camera.angularSensibilityY=850;
-let yaw=0,clock=0,axisX=0,axisY=0,follow=true;
+let yaw=0,clock=0,axisX=0,axisY=0,follow=true,run=false,autoClock=0;const observer=new B.Vector3(2,0,7);
 const keys=new Set();
 window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key.toLowerCase())});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
@@ -414,8 +414,8 @@ pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);stick(
 pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))stick(e)});
 function release(){axisX=axisY=0;knob.style.transform='translate(0,0)'}
 pad.addEventListener('pointerup',release);pad.addEventListener('pointercancel',release);
-document.getElementById('view').onclick=()=>{follow=!follow;document.getElementById('view').textContent=follow?'View: Follow':'View: Free orbit';};
-document.getElementById('home').onclick=()=>{root.position.set(0,0,4);yaw=0;root.rotation.y=0;follow=true;document.getElementById('view').textContent='View: Follow';};
+document.getElementById('run').onclick=()=>{run=!run;document.getElementById('run').textContent='Run: '+(run?'ON':'OFF');};document.getElementById('view').onclick=()=>{follow=!follow;document.getElementById('view').textContent=follow?'View: First person':'View: Orbit';};
+document.getElementById('home').onclick=()=>{observer.set(2,0,7);yaw=0;autoClock=0;follow=true;document.getElementById('view').textContent='View: First person';};
 function blocked(x,z){if(Math.abs(x)>36||Math.abs(z)>36)return true;return collision.some(w=>Math.abs(x-w.x)<w.hx+.31&&Math.abs(z-w.z)<w.hz+.31)}
 let last=performance.now();
 engine.runRenderLoop(()=>{
@@ -423,50 +423,46 @@ engine.runRenderLoop(()=>{
  let f=-axisY+(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
  let turn=axisX+(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
  f=Math.max(-1,Math.min(1,f));turn=Math.max(-1,Math.min(1,turn));
- yaw-=turn*dt*2;root.rotation.y=yaw;
- let moved=0;
- // Never slide a mannequin across the ground if the actual leg rig is unavailable.
- // A missing or mismatched skeleton is a visible loading error, not "walking".
- if(Math.abs(f)>.06 && caitlynReady && gaitReady){let speed=1.10*f,dx=-Math.sin(yaw)*speed*dt,dz=-Math.cos(yaw)*speed*dt;let nx=root.position.x+dx,nz=root.position.z+dz;
- if(!blocked(nx,root.position.z))root.position.x=nx;else dx=0;
- if(!blocked(root.position.x,nz))root.position.z=nz;else dz=0;
- moved=Math.hypot(dx,dz)/Math.max(dt,.001);
+ yaw-=turn*dt*2;
+ // The observer is independently controlled; Caitlyn never responds to the joystick.
+ const observerSpeed=(run?5.5:2.4)*f*dt;
+ const ox=-Math.sin(yaw)*observerSpeed,oz=-Math.cos(yaw)*observerSpeed;
+ if(!blocked(observer.x+ox,observer.z))observer.x+=ox;
+ if(!blocked(observer.x,observer.z+oz))observer.z+=oz;
+ autoClock+=dt;
+ // 18-second autonomous loop: walk, stop, hands/knees, elbows/knees, stand.
+ const cycle=autoClock%18;
+ const walking=caitlynReady&&cycle<9.5;
+ if(walking){
+   const theta=autoClock*.30;
+   root.position.x=Math.sin(theta)*3.4;
+   root.position.z=4-Math.cos(theta)*3.4;
+   root.rotation.y=-theta;
  }
- const walking=moved>.05;
- // A distance-driven stride, rather than replaying the bend/stand pose track.
- // Hard stop on joystick release: absolutely no continuing bend, sway or gait.
- gaitWeight=walking&&gaitReady?1:0;
- if(walking)clock+=dt*6.6*(moved/1.10);
- const direction=f<0?-1:1,phase=Math.sin(clock),
-       leftLift=Math.max(0,-phase),rightLift=Math.max(0,phase),stride=gaitWeight*direction;
- // A hip swings the leg forward; the corresponding shin folds BACK,
- // following the actual anatomical hinge orientation from Caitlyn's rig.
- // Each knee keeps its natural bending but uses shallower swing-phase clearance,
- // so the toes lift only slightly off the ground instead of high-stepping.
- // Natural-length steps: less exaggerated marching and less bowlegged swing.
- // Both feet stay on the same narrow centerline track AT CONTACT, not only
- // when airborne. The extra 0.006 rad provides subtle swing-foot clearance.
- setGait('leftThigh',phase*.30*stride,(centerlineAngle.leftThigh+.006*leftLift)*gaitWeight);
- setGait('rightThigh',-phase*.30*stride,(centerlineAngle.rightThigh+.006*rightLift)*gaitWeight);
- setKneeFlex('leftKnee',gaitWeight*(.10+leftLift*.50));
- setKneeFlex('rightKnee',gaitWeight*(.10+rightLift*.50));
- // Limit ankle motion until fully foot-planted IK is available.
- setGait('leftFoot',(-phase*.07-leftLift*.08)*stride);
- setGait('rightFoot',(phase*.07-rightLift*.08)*stride);
- // Arms rest naturally alongside the body, with a modest opposing swing.
- setGait('leftArm',-phase*.11*stride);
- setGait('rightArm',phase*.11*stride);
- // Weight settles gently over the PLANTED leg (left while right swings,
- // right while left swings). Keep this subtle; hip sway is not a torso lean.
- const transfer=walking?Math.sin(clock)*stanceLeftSign:0;
- walkBody.position.x=transfer*.013;
- walkBody.position.y=walking?Math.abs(Math.sin(clock))*.009:0;
- walkBody.rotation.x=0;
- walkBody.rotation.z=transfer*.012;
- let target=new B.Vector3(root.position.x,1.45,root.position.z);
- camera.setTarget(target);
- if(follow){camera.alpha=Math.PI/2-yaw;camera.beta=1.30;camera.radius=7;}
- if(caitlynReady)status.textContent='Caitlyn '+(!gaitReady?'knee calibration missing ('+kneeBendSources+'/2) — stopped':walking?'walking · centerline heel-to-toe footfalls · natural hip transfer':'standing STILL')+' · '+(root.position.z< -4?'Inside Ranger Station':'Outside Ranger Station')+' · X '+root.position.x.toFixed(1)+' / Z '+root.position.z.toFixed(1);
+ if(gaitReady){
+   if(walking)clock+=dt*6.5;
+   const phase=Math.sin(clock),weight=walking?1:0;
+   setGait('leftThigh',phase*.30*weight,centerlineAngle.leftThigh*weight);
+   setGait('rightThigh',-phase*.30*weight,centerlineAngle.rightThigh*weight);
+   setKneeFlex('leftKnee',weight*(.1+Math.max(0,-phase)*.5));
+   setKneeFlex('rightKnee',weight*(.1+Math.max(0,phase)*.5));
+   setGait('leftArm',-phase*.11*weight);setGait('rightArm',phase*.11*weight);
+ }
+ // Use the exported authored pose clips, never fake kneeling by lowering a rigid mesh.
+ const poseGroups=window.__caitlynPoseGroups||{};
+ const wanted=cycle>=11.8&&cycle<14.5?'Caitlyn HandsAndKnees':cycle>=14.5&&cycle<16.8?'Caitlyn ElbowsAndKnees':null;
+ if(wanted!==window.__caitlynCurrentPose){
+   for(const g of Object.values(poseGroups))g.stop();
+   if(wanted&&poseGroups[wanted])poseGroups[wanted].start(false,1,poseGroups[wanted].from,poseGroups[wanted].to,false);
+   window.__caitlynCurrentPose=wanted;
+ }
+ if(follow){
+   camera.setTarget(new B.Vector3(observer.x-Math.sin(yaw)*4,1.55,observer.z-Math.cos(yaw)*4));
+   camera.position.set(observer.x,1.65,observer.z);
+ }else{
+   camera.setTarget(new B.Vector3(root.position.x,1.1,root.position.z));
+ }
+ if(caitlynReady)status.textContent='Caitlyn: '+(walking?'walking automatically':wanted?(poseGroups[wanted]?'posing: '+wanted:'POSE CLIP MISSING: '+wanted):'stopping / standing')+' · You: '+(run?'RUN':'WALK')+' · '+(gaitReady?'leg rig ready':'leg rig unavailable');
  scene.render();
 });
 window.addEventListener('resize',()=>engine.resize());
