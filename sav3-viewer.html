@@ -5,7 +5,7 @@
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0c1f17;color:#f3f6f2;font:15px system-ui,Arial,sans-serif}
 header{background:#183a2a;padding:15px}h1{margin:0;font-size:1.3rem}small{color:#c6d9cb;line-height:1.5}
 main{max-width:1000px;margin:auto;padding:10px 12px 35px}
-model-viewer{width:100%;display:block;height:65dvh;min-height:400px;background:linear-gradient(#c4cfcb,#a6b5ac);touch-action:none;border-radius:14px}
+model-viewer{width:100%;display:block;height:76dvh;min-height:420px;background:linear-gradient(#c4cfcb,#a6b5ac);touch-action:none;border-radius:14px}
 h2{font-size:1.03rem;margin:21px 0 9px}.controls{display:flex;gap:8px;flex-wrap:wrap}
 button,select{font:inherit;color:#fff;background:#26513b;border:1px solid #789b81;border-radius:9px;padding:10px 12px;min-height:44px}
 button:disabled{opacity:.45}button[aria-pressed=true]{background:#49765a;border-color:#f6d68a}
@@ -50,7 +50,7 @@ select{max-width:100%;width:100%;background:#1b3d2d}p{line-height:1.52}
 <button data-pose="LieDown" disabled>Lie down</button><button data-pose="Fetal" disabled>Fetal position</button><button data-pose="SupineKneesUp" disabled>Back, knees up</button><button data-pose="Wave" disabled>Wave</button>
 </div>
 <div class="controls" style="margin-top:9px">
-<button id="play" disabled>Play</button><button id="pause" disabled>Pause</button>
+<button id="auto" disabled>Auto-play all</button><button id="play" disabled>Play</button><button id="pause" disabled>Pause</button>
 <button id="hold" disabled>Hold final pose</button><button id="stop" disabled>Reset pose</button>
 </div>
 <p class="note">Other exported clips:</p><select id="animations" aria-label="Actual GLB animations"><option>Waiting for model</option></select>
@@ -65,11 +65,11 @@ const v=document.querySelector('#model'),s=document.querySelector('#status'),dia
   motion=document.querySelector('#motion'),select=document.querySelector('#animations');
 const asset='/world-creator/assets/sav3-adult-inspection.glb';
 let size={x:1,y:1,z:1},center={x:0,y:.9,z:0},radius=2.8,ready=false,clips=[],current='';
-let loadTimer=0,rendererTimer=0;
+let loadTimer=0,rendererTimer=0,sequenceTimer=0,sequence=[],sequenceIndex=0,sequenceActive=false,sequencePhase="";
 let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibility={hair:true,anatomy:true,body:true,clothes:true};
 const $=(id)=>document.getElementById(id);
 function load(){
-  ready=false;clearTimeout(loadTimer);
+  stopSequence();ready=false;clearTimeout(loadTimer);
   // The custom element must be registered before its model controls exist.
   v.pause?.();
   s.textContent='Loading Sav 3 exported 3D model…';
@@ -83,6 +83,13 @@ function orbit(a,r=radius,polar=80){radius=clamp(r,.13,Math.max(12,size.y*7));v.
 function target(y){v.cameraTarget=center.x.toFixed(3)+'m '+y.toFixed(3)+'m '+center.z.toFixed(3)+'m';}
 const aims={full:[.5,1.65],head:[.94,.37],chest:[.74,.55],pelvis:[.48,.42],hands:[.62,.54],feet:[.07,.5]};
 function focus(k){if(!ready)return;const [f,zoom]=aims[k]||aims.full;target(center.y+(f-.5)*size.y);orbit(0,Math.max(.18,size.y*zoom));}
+function sideFullBody(){
+ target(center.y);
+ v.fieldOfView='30deg';
+ // At 30 degrees vertical FOV, this distance frames the full body at ~75% viewport height.
+ const distance=Math.max(.25,size.y/(2*Math.tan(Math.PI/12)*.75));
+ orbit(-90,distance,90);
+}
 function updateGroup(k,visible){visibility[k]=visible;for(const m of matGroups[k]){
  const orig=originals.get(m);if(!orig)continue;
  try{m.setAlphaMode('BLEND');m.pbrMetallicRoughness.setBaseColorFactor([orig[0],orig[1],orig[2],visible?orig[3]:0]);}
@@ -113,10 +120,34 @@ diag.textContent='Materials found: '+labels.length+' · hair '+matGroups.hair.le
 }
 const norm=x=>String(x).toLowerCase().replace(/[^a-z]/g,'');
 function match(pose){const wanted=norm(pose);return clips.find(c=>norm(c)===wanted||norm(c).endsWith(wanted));}
-function setClip(name){
+function stopSequence(){sequenceActive=false;clearTimeout(sequenceTimer);sequencePhase="";}
+function sequenceNext(){
+ if(!sequenceActive)return;
+ clearTimeout(sequenceTimer);
+ if(sequencePhase==="motion"){
+   sequencePhase="stand";
+   const stand=match("Stand");
+   if(stand){setClip(stand,true);sequenceTimer=setTimeout(sequenceNext,Math.max(1200,(v.duration||1)*1000));}
+   else {v.pause();sequenceTimer=setTimeout(sequenceNext,900);}
+   motion.textContent='Standing reset between movements';
+   return;
+ }
+ const next=sequence[sequenceIndex++ % sequence.length];
+ sequencePhase="motion";setClip(next,true);
+ motion.textContent='Automatic movement '+sequenceIndex+' / '+sequence.length+': '+next;
+ sequenceTimer=setTimeout(sequenceNext,Math.max(1200,(v.duration||1)*1000+200));
+}
+function startSequence(){
+ stopSequence();const stand=match("Stand");
+ sequence=clips.filter(c=>c!==stand);
+ if(!sequence.length){motion.textContent='No movement clips available for automatic playback.';return;}
+ sequenceIndex=0;sequenceActive=true;sequencePhase="stand";sequenceNext();
+}
+function setClip(name,fromSequence=false){
+ if(!fromSequence)stopSequence();
  if(!name)return;current=name;v.pause();v.animationName=name;v.currentTime=0;v.play();
  for(const b of document.querySelectorAll('[data-pose]'))b.setAttribute('aria-pressed',String(match(b.dataset.pose)===name));
- for(const id of ['play','pause','hold','stop'])$(id).disabled=false;
+ for(const id of ['auto','play','pause','hold','stop'])$(id).disabled=false;
  motion.textContent='Playing actual exported animation: '+name;
 }
 v.addEventListener('load',()=>{
@@ -124,7 +155,7 @@ v.addEventListener('load',()=>{
  try {
  ready=true;size=v.getDimensions();center=v.getBoundingBoxCenter();radius=size.y*1.65;
  v.maxCameraOrbit='auto auto '+Math.max(12,size.y*7)+'m';
- focus('full');clips=Array.from(v.availableAnimations||[]);
+ sideFullBody();clips=Array.from(v.availableAnimations||[]);
  select.replaceChildren(new Option(clips.length?'Choose actual motion clip':'No animation clips exported',''));
  for(const c of clips)select.add(new Option(c,c));
  for(const b of document.querySelectorAll('[data-pose]')){
@@ -133,10 +164,11 @@ v.addEventListener('load',()=>{
  }
  classifyMaterials();
  s.textContent='GLB loaded — '+clips.length+' real motion clip(s). This confirms file loading, not visual quality.';
- motion.textContent=clips.length?'Choose an enabled motion. Missing clips remain disabled.':'No animations in this export yet; building an updated rigged version.';
+ motion.textContent=clips.length?'Starting automatic movement sequence, returning to stand between each clip.':'No animations in this export yet; building an updated rigged version.';
+ if(clips.length){$('auto').disabled=false;startSequence();}
  } catch(e) { ready=false; s.textContent='Model loaded but viewer setup failed: '+(e?.message||e); }
 });
-v.addEventListener('error',()=>{clearTimeout(loadTimer);ready=false;s.textContent='The 3D model failed to load. Check the network and retry with Reload newest build.';});
+v.addEventListener('error',()=>{stopSequence();clearTimeout(loadTimer);ready=false;s.textContent='The 3D model failed to load. Check the network and retry with Reload newest build.';});
 $('reload').onclick=()=>{if(!customElements.get('model-viewer'))location.reload();else load();};
 $('reset').onclick=()=>focus('full');
 for(const b of document.querySelectorAll('[data-focus]'))b.onclick=()=>focus(b.dataset.focus);
@@ -149,10 +181,11 @@ $('removeClothes').onclick=()=>{updateGroup('clothes',false);diag.textContent='A
 $('restoreClothes').onclick=()=>{updateGroup('clothes',true);diag.textContent='All detectable fitted garment materials restored.';};
 for(const b of document.querySelectorAll('[data-pose]'))b.onclick=()=>setClip(match(b.dataset.pose));
 select.onchange=()=>setClip(select.value);
+$('auto').onclick=()=>startSequence();
 $('play').onclick=()=>{if(current){v.play();motion.textContent='Playing '+current;}};
-$('pause').onclick=()=>{v.pause();motion.textContent='Paused '+current;};
-$('hold').onclick=()=>{v.pause();v.currentTime=Math.max(0,(v.duration||0)-.02);motion.textContent='Holding last frame of '+current;};
-$('stop').onclick=()=>{v.pause();v.currentTime=0;current='';motion.textContent='Returned to first pose frame.';};
+$('pause').onclick=()=>{stopSequence();v.pause();motion.textContent='Paused '+current;};
+$('hold').onclick=()=>{stopSequence();v.pause();v.currentTime=Math.max(0,(v.duration||0)-.02);motion.textContent='Holding last frame of '+current;};
+$('stop').onclick=()=>{stopSequence();v.pause();v.currentTime=0;current='';motion.textContent='Returned to first pose frame.';};
 // This classic inline script executes BEFORE the earlier type="module" CDN
 // import. Calling model-viewer methods immediately used to throw and silently
 // leave the mobile viewer on its original "Loading actual model" message.
