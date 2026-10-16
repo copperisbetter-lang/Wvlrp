@@ -1,4 +1,4 @@
-import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-oaks-v1";
+import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-ground-v7";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
  * Walk The Wild: stand outside Hearthside Cabin and explore a seeded WV world.
@@ -170,7 +170,7 @@ const treeTestMode=new URLSearchParams(location.search).has("treeTest");
 if(treeTestMode){
  camera.position.set(0,cabinGrade(0,-18,seed)+EYE_HEIGHT,-18);
  camera.rotation.set(0,Math.PI,0);
- document.getElementById("tree-build-proof")?.replaceChildren(document.createTextNode("TREE INSPECTION BUILD 5 • new oaks first"));
+ document.getElementById("tree-build-proof")?.replaceChildren(document.createTextNode("TREE INSPECTION BUILD 7 • grounded trees"));
  const panel=document.createElement("div");panel.id="tree-test-status";
  panel.style.cssText="position:fixed;z-index:99998;top:65px;left:8px;max-width:85vw;background:#10281eed;color:#fff;padding:10px;border:2px solid #e6c76d;border-radius:8px;font:12px system-ui;pointer-events:none";
  document.body.appendChild(panel);
@@ -188,7 +188,8 @@ if(treeTestMode){
    selectedTree=(selectedTree+delta+treeInspection.spots.length)%treeInspection.spots.length;
    const spot=treeInspection.spots[selectedTree];
    camera.position.set(spot.x,cabinGrade(spot.x,spot.z+12,seed)+EYE_HEIGHT,spot.z+12);
-   camera.rotation.set(0,Math.PI,0);
+   camera.setTarget(new B.Vector3(spot.x,cabinGrade(spot.x,spot.z,seed)+5,spot.z));
+   treeInspection.loadSelected(selectedTree);
    counter.textContent=(selectedTree+1)+"/"+treeInspection.spots.length+" "+spot.id;
    treeInspection.tick();
  };
