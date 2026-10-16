@@ -84,8 +84,14 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.doesNotMatch(script,/box\("lodge fieldstone chimney main shaft"/);
   assert.doesNotMatch(script,/box\("lodge chimney corbel"/);
   assert.doesNotMatch(script,/box\("lodge iron flue cover"/);
-  assert.match(script,/continuous L desk FRONT face toward station entrance/);
-  assert.match(script,/continuous L desk SIDE return toward room rear/);
+  assert.match(script,/continuous L desk FRONT wing facing south entrance/);
+  assert.match(script,/continuous L desk SIDE return projecting from rear wall/);
+  assert.match(script,/const chairX=X\+7\.05,chairZ=Z\+4\.72/);
+  assert.match(script,/const frontDeskX=X\+6\.50,frontDeskZ=Z\+2\.70/);
+  assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
+  assert.match(file("../walk.js"),/ranger-chair-corner-entry-facing-20261015-v6/);
+  assert.match(file("../wild-flatland-rebuild.js"),/ranger-chair-corner-entry-facing-20261015-v6/);
+  assert.match(file("../walk.html"),/ranger-chair-corner-entry-facing-20261015-v6/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
 });
