@@ -4,6 +4,8 @@ on:
     paths:
       - "world-creator/walk.js"
       - "world-creator/walk.html"
+      - "world-creator/wild-material-yard.js"
+      - "world-creator/wild-modular-cabin-kit.js"
       - "world-creator/wild-nature.js"
       - "world-creator/wild-landscape-renderer.js"
       - "world-creator/wild-reference-layout.js"
@@ -48,4 +50,5 @@ jobs:
           path: |
             world-creator/wild-walk-qa.png
             world-creator/wild-village-qa.png
+            world-creator/wild-materials-qa.png
           if-no-files-found: ignore
