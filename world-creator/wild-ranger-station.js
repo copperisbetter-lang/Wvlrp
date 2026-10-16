@@ -422,7 +422,8 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   // the front east-west wing. Viewed from the doorway this is an L, not a
   // bank-teller counter or a desktop laid along the rear walls.
   // No interior chimney, pillar, tree trunk or column belongs in this space.
-  const deskY=floor+.93;
+  // Standard 32.5-inch writing surface above the station's raised floor.
+  const deskY=floor+.76;
   const frontDeskX=X+6.50,frontDeskZ=Z+2.70;
   const returnDeskX=X+4.85,returnDeskZ=Z+4.19;
   const chairX=X+7.05,chairZ=Z+4.72;
@@ -434,10 +435,10 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     1.10,.134,1.10,returnDeskX,deskY+.003,frontDeskZ,doorMat);
   // Keep a large uninterrupted knee space directly in front of chair.
   // Slim pedestals appear at the OUTER ends only, not in the seat opening.
-  box("front L desk east end compact drawer pedestal",.69,.71,.76,
-    X+8.05,floor+.42,frontDeskZ,wood);
-  box("return L desk front end compact drawer pedestal",.75,.71,.73,
-    returnDeskX,floor+.42,Z+2.93,wood);
+  box("front L desk east end compact drawer pedestal",.69,.59,.76,
+    X+8.05,floor+.37,frontDeskZ,wood);
+  box("return L desk front end compact drawer pedestal",.75,.59,.73,
+    returnDeskX,floor+.37,Z+2.93,wood);
   for(const y0 of [.27,.45,.63]){
     box("front wing small drawer "+y0,.58,.12,.035,
       X+8.05,floor+y0,frontDeskZ-.48,timber);
@@ -448,10 +449,10 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     box("return wing black drawer pull "+y0,.025,.04,.13,
       returnDeskX-.417,floor+y0,Z+2.93,dark);
   }
-  box("front L desk narrow end leg",.12,.77,.88,
-    X+4.65,floor+.45,frontDeskZ,wood);
-  box("side L desk back slim leg",.86,.77,.12,
-    returnDeskX,floor+.45,Z+5.58,wood);
+  box("front L desk narrow end leg",.12,.63,.88,
+    X+4.65,floor+.35,frontDeskZ,wood);
+  box("side L desk back slim leg",.86,.63,.12,
+    returnDeskX,floor+.35,Z+5.58,wood);
 
   // Ranger's actual chair is in the open nook BEHIND the connected L desktop.
   // Its upright back faces the far wall, seat and occupant face the main door.
@@ -531,12 +532,88 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       page.rotation.y=(i%3-1)*.07;
     }
   }
-  box("CB ranger radio black housing",.72,.24,.40,
-    returnDeskX,deskY+.20,Z+4.54,dark);
-  cylinder("CB aerial",.022,.74,
-    returnDeskX+.21,deskY+.67,Z+4.64,dark);
-  for(let k=0;k<3;k++)cylinder("CB tuning dial "+k,.08,.035,
-    returnDeskX-.21+k*.18,deskY+.22,Z+4.32,brass,"z");
+  // Ranger's old-fashioned 40-channel CB transceiver: distinct die-cast
+  // housing, metallic faceplate, real controls, green LCD and handheld mic.
+  const cbShell=makeMat("CB powder coated graphite chassis","#262c2e");
+  const cbPanel=makeMat("CB brushed stainless faceplate","#606769");
+  const cbRubber=makeMat("CB dark rubber grip","#171b1b");
+  const cbSilver=makeMat("CB machine-turned chrome","#aab0ab");
+  const cbLCD=makeMat("CB backlit green window","#102b26",{emission:"#315f43"});
+  const cbAmber=makeMat("CB transmit orange lamp","#ca9b47",{emission:"#a66a19"});
+  const rx=returnDeskX,rz=Z+4.52,ry=deskY+.25;
+  box("CB solid 10 inch radio chassis",.86,.31,.49,rx,ry,rz,cbShell);
+  box("CB brushed aluminum front bezel",.828,.255,.025,rx,ry,rz-.260,cbPanel);
+  box("CB black inset channel aperture",.32,.154,.014,
+    rx-.172,ry+.026,rz-.281,cbLCD);
+  const lcd=track(new B.DynamicTexture("CB 40 channel LCD artwork",
+    {width:512,height:240},scene,false));
+  const lc=lcd.getContext();
+  lc.fillStyle="#09211c";lc.fillRect(0,0,512,240);
+  lc.strokeStyle="#6f967d";lc.lineWidth=9;lc.strokeRect(7,7,498,226);
+  lc.fillStyle="#c5ebaf";lc.textAlign="center";
+  lc.font="bold 98px monospace";lc.fillText("19",256,128);
+  lc.font="bold 38px monospace";lc.fillText("CB  AM",256,200);
+  lcd.update();
+  const lcdMat=track(new B.StandardMaterial("CB luminous channel digits",scene));
+  lcdMat.diffuseTexture=lcd;lcdMat.emissiveColor=new B.Color3(.18,.37,.24);
+  lcdMat.backFaceCulling=false;
+  const glass=track(B.MeshBuilder.CreatePlane("RANGER LODGE CB LCD CHANNEL 19",
+    {width:.292,height:.134},scene));
+  glass.position.set(rx-.172,ry+.025,rz-.293);
+  glass.rotation.y=Math.PI;glass.material=lcdMat;
+  glass.isPickable=false;glass.checkCollisions=false;
+  for(const [i,x0,diam] of [[0,.13,.135],[1,.31,.109]]){
+    cylinder("CB machined knob bezel "+i,diam+.026,.020,
+      rx+x0,ry-.032,rz-.285,cbSilver,"z");
+    cylinder("CB rubber knurled tuning knob "+i,diam,.075,
+      rx+x0,ry-.032,rz-.324,cbRubber,"z");
+    for(let t=0;t<12;t++){
+      const a=t*Math.PI/6;
+      box("CB grooved tuning knurl "+i+" "+t,.009,.021,.008,
+        rx+x0+Math.sin(a)*(diam/2-.007),
+        ry-.032+Math.cos(a)*(diam/2-.007),rz-.365,cbPanel);
+    }
+    box("CB white index mark "+i,.012,.027,.008,
+      rx+x0,ry-.032+diam/2-.012,rz-.373,paper);
+  }
+  for(let k=0;k<3;k++){
+    box("CB rubber pushbutton "+k,.053,.035,.032,
+      rx-.330+k*.093,ry-.088,rz-.295,cbRubber);
+  }
+  cylinder("CB genuine amber power indicator",.029,.012,
+    rx+.324,ry+.087,rz-.282,cbAmber,"z");
+  for(let i=0;i<20;i++){
+    box("CB stamped black speaker grille slot "+i,.038,.005,.065,
+      rx-.03+(i%5)*.071,ry+.159,rz-.16+Math.floor(i/5)*.077,cbRubber);
+  }
+  for(const side of [-1,1])for(const high of [-1,1])
+    cylinder("CB front chassis rivet "+side+" "+high,.017,.010,
+      rx+side*.388,ry+high*.105,rz-.280,cbSilver,"z");
+  cylinder("CB rubber aerial mount",.070,.065,
+    rx-.32,ry+.19,rz+.14,cbRubber);
+  cylinder("CB steel aerial whip",.012,.49,
+    rx-.32,ry+.46,rz+.14,cbSilver);
+  // Separate PTT mic resting by the base; it isn't another rectangular box
+  // masquerading as an all-in-one radio.
+  const micX=rx+.22,micZ=Z+5.28;
+  box("CB push to talk microphone shell",.205,.125,.33,
+    micX,deskY+.16,micZ,cbRubber);
+  box("CB microphone alloy mesh panel",.155,.008,.148,
+    micX,deskY+.228,micZ-.070,cbPanel);
+  for(let i=0;i<8;i++)
+    box("CB microphone vent opening "+i,.131,.004,.007,
+      micX,deskY+.234,micZ-.130+i*.017,cbRubber);
+  box("CB microphone side PTT switch",.028,.027,.075,
+    micX+.115,deskY+.170,micZ+.07,cbAmber);
+  const wire=[];
+  for(let i=0;i<=64;i++){
+    const t=i/64,a=t*16*Math.PI;
+    wire.push(new B.Vector3(rx+.22+.030*Math.cos(a),
+      deskY+.16+.031*Math.sin(a),rz+.19+t*.54));
+  }
+  const coil=track(B.MeshBuilder.CreateTube("RANGER LODGE CB coiled handset cable",
+    {path:wire,radius:.014,tessellation:7},scene));
+  coil.material=cbRubber;coil.isPickable=false;coil.checkCollisions=false;
   cylinder("ranger enamel coffee mug",.21,.24,
     X+6.72,deskY+.20,frontDeskZ-.04,paper);
   cylinder("ranger mug handle",.055,.21,
