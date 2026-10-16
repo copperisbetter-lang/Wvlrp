@@ -1,4 +1,4 @@
-import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-v4";
+import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-v5";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
  * Walk The Wild: stand outside Hearthside Cabin and explore a seeded WV world.
