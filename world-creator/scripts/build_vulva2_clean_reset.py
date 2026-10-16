@@ -126,7 +126,8 @@ def fit_vulva2(root,body,rig):
     pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
     mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
     mod.object=rig
-    # Make the fresh female attachment surface visible instead of recessed.\n    # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
+    # Make the fresh female attachment surface visible instead of recessed.
+    # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
     # of leaving a body surface beneath the opening (prevents dark overlap).
     bitmap=proxy["delete_verts"]
     if len(bitmap)>len(body.data.vertices):
