@@ -13,33 +13,56 @@ export const KIT_SOURCE = Object.freeze({
   important:"The scan is one joined mesh; sampled pieces have open cut edges and are prototypes, not closed solid timber."
 });
 const buildingPath="./assets/building/";
-const libraryIds=["wood_trunk_wall","weathered_plank_siding","mossy_stone_wall","rough_pine_door","roof_slates_02","corrugated_iron"];
-export function makeCabinMaterialLibrary(B,scene){
-  const mats={};
-  for(const id of libraryIds){
-    const m=new B.PBRMaterial("The Wild modular "+id,scene);
+export const HD_BUILDING_MATERIALS=Object.freeze([
+  {id:"wood_trunk_wall",name:"Photographic stacked log timber",use:"Log walls"},
+  {id:"pine_bark",name:"Natural pine bark",use:"Individual round log posts"},
+  {id:"raw_plank_wall",name:"Rough-cut pine",use:"Interior walls and framing"},
+  {id:"weathered_planks",name:"Weathered brown siding",use:"Porches and older cabins"},
+  {id:"wood_planks",name:"Warm wooden planks",use:"Cabin floors"},
+  {id:"stacked_stone_wall",name:"Stacked natural stone",use:"Fireplaces and chimneys"},
+  {id:"mossy_stone_wall",name:"Mossy fieldstone",use:"Foundations and aged masonry"},
+  {id:"rough_pine_door",name:"Rough pine timber",use:"Doors and furniture"},
+  {id:"roof_slates_03",name:"Old overlapping slate",use:"Cabin roofs"},
+  {id:"corrugated_iron",name:"Aged corrugated metal",use:"Ranger Station and workshop roofs"}
+]);
+export function makeCabinMaterialLibrary(B,scene,{resolution="2k"}={}){
+  // Lazy: only request the maps actually used on the chosen build. This
+  // prevents ten 2K material sets loading immediately on a mobile device.
+  if(resolution!=="1k"&&resolution!=="2k")resolution="2k";
+  const ids=new Set(HD_BUILDING_MATERIALS.map(m=>m.id));
+  const cache={};
+  return new Proxy(cache,{get(target,id){
+    if(typeof id!=="string"||!ids.has(id))return undefined;
+    if(target[id])return target[id];
+    const m=new B.PBRMaterial("The Wild "+resolution+" "+id,scene);
+    const file=kind=>buildingPath+id+"_"+kind+"_"+resolution+".jpg";
     const tex=kind=>{
-      const t=new B.Texture(buildingPath+id+"_"+kind+"_1k.jpg",scene);
+      const t=new B.Texture(file(kind),scene);
       t.wrapU=B.Texture.WRAP_ADDRESSMODE;t.wrapV=B.Texture.WRAP_ADDRESSMODE;
       return t;
     };
     m.albedoTexture=tex("diffuse");
     m.bumpTexture=tex("normal");
-    m.bumpTexture.level=id==="mossy_stone_wall"?.72:.6;
+    m.bumpTexture.level=id==="stacked_stone_wall"||id==="mossy_stone_wall"?.72:.63;
     m.metallicTexture=tex("arm");
     m.useRoughnessFromMetallicTextureGreen=true;
     m.useMetallnessFromMetallicTextureBlue=true;
     m.metallic=id==="corrugated_iron"?.72:0;
     m.roughness=id==="corrugated_iron"?.77:.96;
-    mats[id]=m;
-  }
-  return mats;
+    target[id]=m;
+    return m;
+  }});
 }
 const limit=(v,lo,hi,fallback)=>Number.isFinite(Number(v))?Math.max(lo,Math.min(hi,Math.round(Number(v)))):fallback;
 export function normalizedCabinDesign(spec={}){
+  const pick=(value,allowed,fallback)=>allowed.includes(value)?value:fallback;
   return {baysWide:limit(spec.baysWide,2,5,3),
     baysDeep:limit(spec.baysDeep,2,5,3),
-    roof:spec.roof==="roof_slates_02"?"roof_slates_02":"corrugated_iron",
+    roof:pick(spec.roof,["corrugated_iron","roof_slates_03"],"corrugated_iron"),
+    logFinish:pick(spec.logFinish,["wood_trunk_wall","pine_bark"],"wood_trunk_wall"),
+    floorFinish:pick(spec.floorFinish,["wood_planks","weathered_planks","raw_plank_wall"],"wood_planks"),
+    stoneFinish:pick(spec.stoneFinish,["stacked_stone_wall","mossy_stone_wall"],"stacked_stone_wall"),
+    trimFinish:pick(spec.trimFinish,["rough_pine_door","raw_plank_wall"],"rough_pine_door"),
     fireplace:spec.fireplace!==false,
     porch:spec.porch!==false,
     windows:spec.windows!==false};
@@ -55,17 +78,17 @@ export function buildModularCabin(B,scene,mats,config={}){
   function timber(name,len,x,y,z,axis,course){
     const dia=.42,shrink=1-((course%4)*.004);
     const m=mesh(B.MeshBuilder.CreateCylinder("KIT "+name,{height:len,diameterTop:dia*shrink,
-       diameterBottom:dia*(1-((course+1)%3)*.005),tessellation:12},scene),"wood_trunk_wall");
+       diameterBottom:dia*(1-((course+1)%3)*.005),tessellation:12},scene),spec.logFinish);
     m.position.set(x,y,z);
     if(axis==="x")m.rotation.z=-Math.PI/2;else m.rotation.x=Math.PI/2;
     return m;
   }
   const floor=.53,wallH=3.5,courses=10,step=.345,roofRise=Math.min(2.5,w*.24);
   const front=-d/2,rear=d/2,top=floor+wallH;
-  box("fieldstone footing",w+.45,.48,d+.45,0,.22,0,"mossy_stone_wall");
+  box("fieldstone footing",w+.45,.48,d+.45,0,.22,0,spec.stoneFinish);
   for(let i=0;i<Math.ceil(w/.65);i++){
     const strip=w/Math.ceil(w/.65),x=-w/2+(i+.5)*strip;
-    box("individual floorboard "+i,strip-.016,.16,d-.16,x,.55,0,"weathered_plank_siding");
+    box("individual floorboard "+i,strip-.016,.16,d-.16,x,.55,0,spec.floorFinish);
   }
   // Courses are fully round meshes with end caps; real openings remain voids.
   function segmented(name,y,z,minX,maxX,holes,course){
@@ -96,10 +119,10 @@ export function buildModularCabin(B,scene,mats,config={}){
   }
   // The scan can provide texture/shape references; buildable openings use
   // separate high-resolution licensed timber materials with repeatable UVs.
-  for(const x of [-.96,.96])box("front door jamb",.13,2.64,.42,x,floor+1.32,front-.08,"rough_pine_door");
-  box("door header",2.07,.17,.48,0,floor+2.70,front-.08,"rough_pine_door");
+  for(const x of [-.96,.96])box("front door jamb",.13,2.64,.42,x,floor+1.32,front-.08,spec.trimFinish);
+  box("door header",2.07,.17,.48,0,floor+2.70,front-.08,spec.trimFinish);
   // Actual door remains closed for preview; a gameplay interaction comes later.
-  box("timber entry door",1.72,2.50,.12,0,floor+1.25,front+.07,"rough_pine_door");
+  box("timber entry door",1.72,2.50,.12,0,floor+1.25,front+.07,spec.trimFinish);
   if(spec.windows){
     const glass=new B.StandardMaterial("KIT translucent window glass",scene);
     glass.diffuseColor=new B.Color3(.36,.52,.56);glass.alpha=.42;
@@ -110,13 +133,13 @@ export function buildModularCabin(B,scene,mats,config={}){
     for(const x of [-w/2+2.225,w/2-2.225]){
       if(w<9)break;
       pane("front glass",x,floor+1.83,front+.08,1.34,1.45,.055);
-      for(const off of [-.72,.72])box("front vertical casing",.12,1.62,.18,x+off,floor+1.83,front-.18,"rough_pine_door");
-      box("front sill",1.65,.12,.35,x,floor+1.01,front-.13,"rough_pine_door");
+      for(const off of [-.72,.72])box("front vertical casing",.12,1.62,.18,x+off,floor+1.83,front-.18,spec.trimFinish);
+      box("front sill",1.65,.12,.35,x,floor+1.01,front-.13,spec.trimFinish);
     }
     for(const x of [-w/2,w/2]){
       pane("side glass",x,floor+1.83,0,.055,1.45,1.38);
-      for(const off of [-.75,.75])box("side casing",.21,1.62,.11,x,floor+1.83,off,"rough_pine_door");
-      box("side sill",.30,.13,1.65,x,floor+1.02,0,"rough_pine_door");
+      for(const off of [-.75,.75])box("side casing",.21,1.62,.11,x,floor+1.83,off,spec.trimFinish);
+      box("side sill",.30,.13,1.65,x,floor+1.02,0,spec.trimFinish);
     }
   }
   // Structural gable triangles, independently materialed to avoid hidden gaps.
@@ -126,7 +149,7 @@ export function buildModularCabin(B,scene,mats,config={}){
     v.positions=[-w/2,top,z, 0,top+roofRise,z, w/2,top,z];
     v.indices=[0,1,2,2,1,0];v.uvs=[0,0,.5,1,1,0];
     v.normals=[];B.VertexData.ComputeNormals(v.positions,v.indices,v.normals);
-    v.applyToMesh(g);mesh(g,"weathered_plank_siding");
+    v.applyToMesh(g);mesh(g,spec.floorFinish);
   }
   const span=w/2+.62,roofLen=Math.hypot(span,roofRise);
   const angle=Math.atan2(roofRise,span);
@@ -134,33 +157,33 @@ export function buildModularCabin(B,scene,mats,config={}){
     box("full pitched roof "+side,roofLen+.18,.18,d+.95,
       side*span/2,top+roofRise/2,0,spec.roof,-side*angle);
     box("roof fascia "+side,roofLen+.05,.19,.19,
-      side*span/2,top+roofRise/2,front-.51,"rough_pine_door",-side*angle);
+      side*span/2,top+roofRise/2,front-.51,spec.trimFinish,-side*angle);
   }
   box("continuous ridge cap",.36,.25,d+1.1,0,top+roofRise,0,spec.roof);
   if(spec.porch){
-    box("front plank porch",Math.max(3.8,w*.55),.23,2.7,0,.54,front-1.50,"weathered_plank_siding");
+    box("front plank porch",Math.max(3.8,w*.55),.23,2.7,0,.54,front-1.50,spec.floorFinish);
     for(const x of [-Math.max(1.6,w*.24),Math.max(1.6,w*.24)]){
-      box("porch support",.23,3.08,.23,x,2.05,front-2.55,"wood_trunk_wall");
+      box("porch support",.23,3.08,.23,x,2.05,front-2.55,spec.logFinish);
     }
-    box("porch step",2.3,.24,.68,0,.23,front-3.01,"mossy_stone_wall");
+    box("porch step",2.3,.24,.68,0,.23,front-3.01,spec.stoneFinish);
   }
   if(spec.fireplace){
     // Reusable stone fireplace is actual layered 3D masonry; Cabin 1's scan
     // is not falsely presented as containing an independently modeled hearth.
     const fx=-w*.28,fz=rear-.95;
-    box("hearthstone slab",3.1,.20,1.7,fx,.78,fz-1.0,"mossy_stone_wall");
-    box("deep firebox back",2.85,2.45,.38,fx,1.93,fz+.38,"mossy_stone_wall");
+    box("hearthstone slab",3.1,.20,1.7,fx,.78,fz-1.0,spec.stoneFinish);
+    box("deep firebox back",2.85,2.45,.38,fx,1.93,fz+.38,spec.stoneFinish);
     for(const side of [-1,1]){
       for(let c=0;c<6;c++){
         const height=.40,yy=.95+c*.40;
         box("individual fireplace jamb stone "+side+" "+c,.57,height,1.16,
-          fx+side*1.22,yy,fz-.26,"mossy_stone_wall");
+          fx+side*1.22,yy,fz-.26,spec.stoneFinish);
       }
     }
-    box("wide stone lintel",3.15,.43,1.22,fx,3.38,fz-.28,"mossy_stone_wall");
-    box("timber mantel",3.43,.25,1.40,fx,3.73,fz-.28,"rough_pine_door");
-    box("stone chimney above roof",1.12,2.7,1.12,fx,top+roofRise+1.01,rear-1,"mossy_stone_wall");
-    box("chimney cap",1.39,.18,1.40,fx,top+roofRise+2.42,rear-1,"mossy_stone_wall");
+    box("wide stone lintel",3.15,.43,1.22,fx,3.38,fz-.28,spec.stoneFinish);
+    box("timber mantel",3.43,.25,1.40,fx,3.73,fz-.28,spec.trimFinish);
+    box("stone chimney above roof",1.12,2.7,1.12,fx,top+roofRise+1.01,rear-1,spec.stoneFinish);
+    box("chimney cap",1.39,.18,1.40,fx,top+roofRise+2.42,rear-1,spec.stoneFinish);
     const soot=new B.StandardMaterial("KIT dark firebox",scene);
     soot.diffuseColor=new B.Color3(.045,.037,.032);
     const firebox=B.MeshBuilder.CreatePlane("KIT recessed dark fireplace opening",{width:1.68,height:1.75},scene);
