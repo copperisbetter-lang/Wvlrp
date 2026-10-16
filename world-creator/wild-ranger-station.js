@@ -11,6 +11,7 @@
  * Everything, including Babylon textures, is tracked for tile teardown.
  */
 import {flatlandHeight} from "./wild-rebuild-layout.js";
+import {installRangerReferenceInterior} from "./wild-ranger-reference-interior.js?v=photo-reference-20261015-v8";
 
 export const NORTH_RANGER_STATION=Object.freeze({
   id:"north-ranger-station",name:"Ranger Station",x:0,z:350,
@@ -41,13 +42,19 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   const w=s.width,d=s.depth,half=w/2,front=Z-d/2,back=Z+d/2;
   const floor=Y+.76,wallH=4.0,top=floor+wallH,roofRise=3.05;
   const rootPath="./assets/building/";
+  // Four verified 1K PBR sets cut mobile texture memory sharply while
+  // keeping the 2K building finishes on desktop. Screenshots must not OOM.
+  const mobileRenderer=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  const mobile1k=new Set(["wood_trunk_wall","rough_pine_door",
+    "mossy_stone_wall","corrugated_iron"]);
   const materials=new Map();
   const finish=(id,{texture="1k",metal=false,repeatU=1,repeatV=1}={})=>{
     const key=id+"-"+texture+"-"+repeatU+"-"+repeatV;
     if(materials.has(key))return materials.get(key);
     const mat=track(new B.PBRMaterial("Ranger lodge CC0 "+key,scene));
     const tex=(kind,res)=>{
-      const t=track(new B.Texture(rootPath+id+"_"+kind+"_"+res+".jpg",scene));
+      const actualRes=mobileRenderer&&mobile1k.has(id)?"1k":res;
+      const t=track(new B.Texture(rootPath+id+"_"+kind+"_"+actualRes+".jpg",scene));
       t.wrapU=B.Texture.WRAP_ADDRESSMODE;t.wrapV=B.Texture.WRAP_ADDRESSMODE;
       t.uScale=repeatU;t.vScale=repeatV;return t;
     };
@@ -140,6 +147,9 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   }
 
   const logDia=.42,logStep=.345,logCount=12;
+  // The 360 station has daylight behind the chair and side walls, not
+  // a sealed dark log box. Leave genuine openings in the timber courses.
+  const backWindows=[-6.82,6.82],sideWindows=[-2.05,2.05];
   const log=(name,len,x,y,z,axis="x",n=0)=>{
     const m=track(B.MeshBuilder.CreateCylinder("RANGER LODGE "+name,{
       height:len,diameterTop:logDia*(1-.012*(n%3)),
@@ -172,10 +182,19 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   }
   for(let n=0;n<logCount;n++){
     const y=floor+.18+n*logStep;
-    log("rear round-timber course "+n,w+(n%2?.24:.74),X,y,back,"x",n);
+    const backHoles=y>=sill&&y<=lintel?
+      backWindows.map(x=>[x-windowW/2,x+windowW/2]):[];
+    for(const [a,b] of segments(-half,half,backHoles)){
+      log("rear timber with true glazing recess "+n+" "+a.toFixed(2),
+        b-a+.08,X+(a+b)/2,y,back,"x",n);
+    }
+    const sideHoles=y>=sill&&y<=lintel?
+      sideWindows.map(z=>[z-windowW/2,z+windowW/2]):[];
     for(const side of [-1,1]){
-      log("east/west interlocked timber "+side+" "+n,
-        d+(n%2?.76:.18),X+side*half,y,Z,"z",n);
+      for(const [a,b] of segments(-d/2,d/2,sideHoles)){
+        log("east/west timbers cut for window "+side+" "+n+" "+a.toFixed(2),
+          b-a+.08,X+side*half,y,Z+(a+b)/2,"z",n);
+      }
     }
     for(const [a,b] of segments(-half,half,opening(y))){
       log("front door/window cut round timber "+n+" "+a.toFixed(2),
@@ -265,6 +284,54 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       windowW+.20,.11,.25,x,lintel+.068,front-.30,timber);
     box("window thin natural sandstone sill "+i,
       windowW+.24,.105,.38,x,sill-.085,front-.30,masonry);
+  }
+  // True rear and side sash openings: natural forest remains visible
+  // through them from the ranger's leather office chair.
+  for(const [i,x0] of backWindows.entries()){
+    const x=X+x0,mid=(sill+lintel)/2,z=back-.10,h=lintel-sill;
+    box("rear clear view into forest "+i,windowW-.11,h-.10,.027,x,mid,z,glass);
+    for(const q of [-1,1]){
+      box("rear glazed sash jamb "+i+" "+q,.085,h+.12,.15,
+        x+q*windowW/2,mid,z-.19,timber);
+      box("rear glazed sash head sill "+i+" "+q,windowW+.08,.086,.17,
+        x,mid+q*h/2,z-.19,timber);
+    }
+    box("rear narrow vertical glazed mullion "+i,.05,h,.09,
+      x,mid,z-.19,wood);
+    box("rear narrow horizontal glazed mullion "+i,windowW,.05,.10,
+      x,mid,z-.19,wood);
+  }
+  for(const side of [-1,1])for(const [i,z0] of sideWindows.entries()){
+    const x=X+side*(half-.12),z=Z+z0,mid=(sill+lintel)/2,h=lintel-sill;
+    box("side window glass in actual log-wall opening "+side+" "+i,
+      .025,h-.10,windowW-.10,x,mid,z,glass);
+    for(const q of [-1,1]){
+      box("side narrow sash vertical jamb "+side+" "+i+" "+q,
+        .15,h+.09,.087,x-side*.15,mid,z+q*windowW/2,timber);
+      box("side narrow sash top or bottom "+side+" "+i+" "+q,
+        .16,.086,windowW+.07,x-side*.15,mid+q*h/2,z,timber);
+    }
+    box("side window divided glass upright "+side+" "+i,
+      .10,h,.048,x-side*.16,mid,z,timber);
+    box("side window divided glass rail "+side+" "+i,
+      .10,.048,windowW,x-side*.16,mid,z,timber);
+  }
+  // Interior pine boards cover solid log courses only, preserving every
+  // window opening. This is the warm fitted timber room in the 360 images.
+  for(let n=0;n<11;n++){
+    const y=floor+.17+n*.345;
+    const backHoles=y>=sill&&y<=lintel?
+      backWindows.map(x=>[x-windowW/2,x+windowW/2]):[];
+    for(const [a,b] of segments(-half+.26,half-.26,backHoles))
+      box("interior rear horizontal real-wood plank "+n+" "+a.toFixed(1),
+        b-a,.32,.071,X+(a+b)/2,y,back-.30,wood);
+    const sideHoles=y>=sill&&y<=lintel?
+      sideWindows.map(z=>[z-windowW/2,z+windowW/2]):[];
+    for(const side of [-1,1]){
+      for(const [a,b] of segments(-d/2+.25,d/2-.25,sideHoles))
+        box("interior west/east fitted pine board "+side+" "+n+" "+a.toFixed(1),
+          .075,.32,b-a,X+side*(half-.29),y,Z+(a+b)/2,timber);
+    }
   }
   // Open entry into the actual 3D room — two doors stood open against the jambs.
   for(const side of [-1,1]){
@@ -478,50 +545,9 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       chairX+Math.sin(a)*.27,floor+.075,
       chairZ+Math.cos(a)*.27,dark);
   }
-  // The six-monitor camera wall reuses the original two online/four
-  // unavailable labels. These are static props; no live HLS streams here.
-  const monitorX=[-1.30,0,1.30],monitorY=[floor+2.95,floor+2.18];
-  const monitorLabels=["EAST BANK","THE ROOST","WEST BANK",
-    "SOUTH HILL","INFRARED","CAMERA 6"];
-  for(let i=0;i<6;i++){
-    const col=i%3,row=Math.floor(i/3),x=X+monitorX[col];
-    const y=monitorY[row],z=back-.43;
-    box("monitor black housing "+i,1.18,.72,.12,x,y,z,dark);
-    box("monitor screen "+i,1.02,.52,.035,x,y,z-.079,ink);
-    signText("camera screen "+i,monitorLabels[i],.94,.28,
-      x,y-.19,z-.13,46);
-    if(i>=2){
-      box("offline screen lower black band "+i,.98,.17,.038,
-        x,y+.16,z-.101,dark);
-    }else{
-      box("green monitor status LED "+i,.055,.055,.043,
-        x+.48,y-.28,z-.15,warmLight);
-    }
-  }
-  // Twin large bulletin boards and wall map on the long interior rear wall.
-  for(const [x0,title] of [[-6.10,"RANGER NOTICES"],[6.10,"VISITOR BOARD"]]){
-    box("large pinned cork board "+title,3.12,1.75,.15,
-      X+x0,floor+2.56,back-.40,brownPaper);
-    for(const xx of [-.85,.0,.85]){
-      const j=Math.round((xx+1)*10);
-      box("individual pinned paper "+title+" "+j,.67,.92,.018,
-        X+x0+xx,floor+2.46+(j%2)*.05,back-.53,paper);
-    }
-    signText("bulletin label "+title,title,2.8,.33,
-      X+x0,floor+3.45,back-.54,49);
-  }
-  // Old-world field map and documents next to the entrance.
-  box("wall field map mounting board",2.5,1.55,.12,
-    X-7.25,floor+2.2,front+.33,wood);
-  box("wall actual West Virginia field map",2.26,1.31,.025,
-    X-7.25,floor+2.2,front+.25,foliage);
-  for(let n=0;n<9;n++){
-    box("field map irregular topographic stroke "+n,.7,.02,.025,
-      X-8.05+(n%3)*.67,floor+1.77+Math.floor(n/3)*.39,
-      front+.22,n%2?paper:brass);
-  }
-  signText("interior wall map caption","WV FIELD MAP",2.2,.26,
-    X-7.25,floor+1.42,front+.18,52);
+  // The 360 reference used ONE six-feed LCD on the wooden desk.
+  // The photographed map, public notices and field equipment are built by
+  // installRangerReferenceInterior below. No floating back-wall monitors.
   // Seven field-note piles across the ranger's worktop, with the CB radio
   // and coffee close enough for someone actually seated in the corner.
   for(let i=0;i<7;i++){
@@ -631,5 +657,19 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     cylinder("lantern metal base "+x0,.52,.08,
       X+x0,top-1.24,Z-1.75,dark);
   }
+  // Realistic outdoor-right stone chimney stays fully OUTSIDE the room;
+  // nothing can pass through the ranger desk or its chair again.
+  box("exterior stone chimney east wall outer mass",1.20,6.10,1.50,
+    X+half+1.05,Y+3.05,Z+4.45,masonry);
+  box("exterior chimney cap with rain ledge",1.53,.24,1.85,
+    X+half+1.05,Y+6.12,Z+4.45,stone);
+  box("chimney recessed black flue",.68,.025,.81,
+    X+half+1.05,Y+6.25,Z+4.45,dark);
+  // Photo references: walnut maps, notices, equipment bench, field guides,
+  // ranger hat, filing cabinet and single six-slot tabletop monitor.
+  installRangerReferenceInterior(B,scene,track,{
+    X,Z,front,back,floor,deskY,frontDeskX,frontDeskZ,returnDeskX,
+    box,cylinder,makeMat,wood,timber,dark,brass,doorMat,paper
+  });
   return 1;
 }
