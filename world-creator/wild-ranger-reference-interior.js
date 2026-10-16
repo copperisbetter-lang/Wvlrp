@@ -131,8 +131,22 @@ export function installRangerReferenceInterior(B,scene,track,c){
   }
   box("olive forest ranger backpack bag",.78,.96,.38,
     X-7.43,floor+1.32,Z-1.95,olive);
+  // Break the square box silhouette with curved stuffed canvas and
+  // leather-worn straps like the rucksack in the photographed station.
+  const pack=track(B.MeshBuilder.CreateSphere(
+    "RANGER REFERENCE canvas backpack rounded outer pack",
+    {diameter:1,segments:12},scene));
+  pack.scaling.set(.73,.83,.38);
+  pack.position.set(X-7.43,floor+1.33,Z-1.95);
+  pack.material=olive;pack.isPickable=false;
   box("backpack upper flap",.84,.26,.42,
     X-7.43,floor+1.70,Z-1.95,leather);
+  for(const side of [-1,1]){
+    box("old backpack worn leather vertical strap "+side,
+      .08,.84,.068,X-7.43,floor+1.32,Z-1.95+side*.235,leather);
+    box("old backpack canvas side pocket "+side,
+      .20,.31,.21,X-7.43,floor+1.12,Z-1.95+side*.31,olive);
+  }
   for(const side of [-1,1])
     box("backpack worn leather buckle "+side,.06,.17,.08,
       X-7.43,floor+1.47,Z-1.95+side*.22,brass);
@@ -162,7 +176,9 @@ export function installRangerReferenceInterior(B,scene,track,c){
     }
   }
   // Old filing cabinet, ranger hat and oil lamp — same visual anchors as 360.
-  const fileX=X+.72,fileZ=back-.64;
+  // In the actual 360 office the filing cabinet and hat are to the
+  // RIGHT of the brown leather chair, not across the room by the shelves.
+  const fileX=X+8.06,fileZ=back-.64;
   box("four-drawer military olive filing cabinet",.84,2.05,.79,
     fileX,floor+1.04,fileZ,black);
   for(let i=0;i<4;i++){
@@ -175,7 +191,7 @@ export function installRangerReferenceInterior(B,scene,track,c){
     fileX,floor+2.29,fileZ,paper);
   cylinder("working station oil lamp cap",.28,.08,
     fileX,floor+2.54,fileZ,dark);
-  const hookX=X+1.75;
+  const hookX=X+7.98;
   box("ranger hat wall hook rail",1.24,.13,.16,
     hookX,floor+2.22,back-.29,timber);
   cylinder("weathered tan ranger hat crown",.34,.20,
@@ -184,7 +200,7 @@ export function installRangerReferenceInterior(B,scene,track,c){
     hookX,floor+2.34,back-.56,bookColors[5]);
   // Weathered coat hanging loosely, never through the ranger's chair.
   box("hung green ranger jacket",.73,1.25,.18,
-    X+.04,floor+1.47,back-.35,olive);
+    X+8.45,floor+1.47,back-.35,olive);
   // Single six-feed desk monitor, not six unrelated screens nailed to a wall.
   // Front (visitor-facing) panel sits ON the 76cm-high L desk.
   const mx=frontDeskX-.03,mz=frontDeskZ-.27;
