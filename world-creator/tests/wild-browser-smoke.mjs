@@ -82,13 +82,13 @@ try{
   // Teleport to the NEW station, 350m north, without moving Hearthside.
   // Its authentic log panels and metal roofing render on photographed ground.
   await page.locator("#village").click();
-  await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===1 &&
+  await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===2 &&
       window.__wildDiagnostics()?.photographicTerrainStatus==="ready",
     {timeout:25000});
   const village=await page.evaluate(()=>window.__wildDiagnostics());
   console.log("NORTH_RANGER_STATION_STATE",JSON.stringify(village));
   assert.equal(village.photographicTerrainStatus,"ready");
-  assert.equal(village.communityBuildings,1,"One new rustic Ranger Station is visible");
+  assert.equal(village.communityBuildings,2,"Both the original Ranger Station and the new 30m-east photo rebuild are visible");
   assert.equal(village.communityFirePits,0);
   assert.equal(village.communityPaths,0);
   assert.equal(village.villageMountainLayers,0);
@@ -112,6 +112,22 @@ try{
   const released=await page.evaluate(()=>window.__wildDiagnostics());
   assert.equal(released.movementHeadingLocked,false,"Release must restore free-look");
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
+  // The photo rebuild is a separate physical place 30m east of the old one.
+  // Verify real meshes, approach camera, and photo-station dedicated spawn.
+  await page.locator("#photoRanger").click();
+  await page.waitForTimeout(1800);
+  const newRanger=await page.evaluate(()=>window.__wildDiagnostics());
+  console.log("PHOTO_RANGER_30M_EAST",JSON.stringify(newRanger));
+  assert.equal(newRanger.communityBuildings,2,
+    "Must retain original while rendering the separate rebuilt Ranger Station");
+  assert.deepEqual(newRanger.photoRangerPosition,[30,350],
+    "New build is precisely 30m east of the old station");
+  assert.ok(Math.abs(newRanger.position[0]-30)<.25 &&
+    Math.abs(newRanger.position[2]-333)<.25,
+    "Photo station spawn is south of the real entrance");
+  assert.ok(newRanger.photoRangerMeshCount>180,
+    "New Ranger Station must have actual 3D geometry and furnished interior");
+  await page.screenshot({path:"wild-photo-ranger-qa.png",fullPage:true});
   // Inspect actual in-world geometric stacks, not a page of texture links.
   await page.locator("#materialYard").click();
   await page.waitForFunction(()=>window.__wildMaterialsDiagnostics?.()?.ready===true,{
