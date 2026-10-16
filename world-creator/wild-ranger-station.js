@@ -87,7 +87,7 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   const dark=makeMat("charcoal iron","#262b27");
   const darkWood=makeMat("deep brown timber","#402e22");
   const brass=makeMat("aged brass","#ba9561");
-  const glass=makeMat("glass","#294444",{alpha:.49});
+  const glass=makeMat("clear window glass","#aab4b2",{alpha:.13});
   const warmLight=makeMat("warm lantern glow","#f4cd87",{emission:"#cf9c54"});
   const paper=makeMat("old paper","#e6d9b4");
   const brownPaper=makeMat("brown card","#a98762");
@@ -195,25 +195,76 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     box("central pavilion heavy upright "+side,.30,wallH+.24,.38,
       X+side*1.62,floor+wallH/2,front-.27,timber);
   }
-  // Deep framed, transparent window openings: two on each side of entrance.
+  // Four real four-light sash windows. Keep muntins slim, avoid the
+  // duplicate central sash and cartoon-thick crossed boards of the first pass.
+  // Side shutters are narrow, open-louver timber shutters with proper stiles,
+  // top/bottom rails and wrought-iron hinges — NOT four ladder-like bars.
+  const windowHeight=lintel-sill;
   for(const [i,x0] of frontWindows.entries()){
     const x=X+x0,mid=(sill+lintel)/2;
-    box("window real glass "+i,windowW-.16,lintel-sill-.17,.047,
-      x,mid,front+.19,glass);
+    box("window almost clear glazing "+i,windowW-.13,windowHeight-.11,.028,
+      x,mid,front+.135,glass);
+    // Slim inset wooden sash perimeter, plus one of each central muntin.
     for(const side of [-1,1]){
-      box("window hardwood jamb "+i+" "+side,.13,lintel-sill+.16,.34,
-        x+side*(windowW/2+.01),mid,front-.24,timber);
-      box("vertical window sash "+i,.075,lintel-sill-.10,.13,
-        x,mid,front-.30,wood);
-      box("working slatted shutter "+i+" "+side,.52,lintel-sill+.16,.12,
-        x+side*(windowW/2+.36),mid,front-.34,darkWood);
-      for(let k=0;k<4;k++)
-        box("shutter raised plank "+i+" "+side+" "+k,.43,.065,.15,
-          x+side*(windowW/2+.36),sill+.20+k*.40,front-.43,timber);
+      box("window narrow vertical outer sash "+i+" "+side,
+        .078,windowHeight+.055,.16,
+        x+side*(windowW/2-.035),mid,front-.335,timber);
     }
-    box("window lintel "+i,windowW+.42,.23,.49,x,lintel+.08,front-.22,timber);
-    box("window sandstone sill "+i,windowW+.40,.16,.52,x,sill-.08,front-.24,masonry);
-    box("window sash crossing "+i,windowW-.10,.07,.17,x,mid,front-.31,wood);
+    for(const side of [-1,1]){
+      box("window narrow horizontal outer sash "+i+" "+side,
+        windowW+.055,.080,.16,
+        x,mid+side*(windowHeight/2-.033),front-.335,timber);
+    }
+    box("window single slender vertical muntin "+i,
+      .043,windowHeight-.07,.095,
+      x,mid,front-.414,wood);
+    box("window single slender horizontal muntin "+i,
+      windowW-.085,.040,.095,
+      x,mid,front-.416,wood);
+
+    // True louvered shutters mounted beside—not across—the glass.
+    for(const side of [-1,1]){
+      const centerX=x+side*(windowW/2+.265);
+      const shutterZ=front-.390;
+      const shutterW=.52,shutterH=windowHeight+.02;
+      // Narrow recessed backing shows through real louver gaps.
+      box("shutter recessed dark shadow "+i+" "+side,
+        shutterW-.055,shutterH-.055,.035,
+        centerX,mid,shutterZ+.055,darkWood);
+      for(const edge of [-1,1]){
+        box("shutter slim weathered vertical stile "+i+" "+side+" "+edge,
+          .074,shutterH,.084,
+          centerX+edge*(shutterW/2-.037),mid,shutterZ-.025,timber);
+      }
+      for(const edge of [-1,1]){
+        box("shutter narrow horizontal frame rail "+i+" "+side+" "+edge,
+          shutterW,.114,.083,
+          centerX,mid+edge*(shutterH/2-.057),shutterZ-.026,timber);
+      }
+      // Closely spaced angled individual louvers (not broad raised planks).
+      // 12 per shutter give fine shadow lines up close on a mobile screen.
+      const slats=12;
+      for(let k=0;k<slats;k++){
+        box("shutter angled narrow timber louver "+i+" "+side+" "+k,
+          shutterW-.148,.048,.093,
+          centerX,mid-.684+k*(1.368/(slats-1)),shutterZ-.048,
+          wood,0,-.31);
+      }
+      const hingeX=centerX-side*(shutterW/2-.012);
+      for(const high of [-1,1]){
+        const hingeY=mid+high*(shutterH/2-.32);
+        box("small black iron shutter hinge leaf "+i+" "+side+" "+high,
+          .14,.030,.020,hingeX,hingeY,shutterZ-.081,dark);
+        box("black iron hinge pivot "+i+" "+side+" "+high,
+          .030,.075,.025,
+          hingeX-side*.069,hingeY,shutterZ-.087,dark);
+      }
+    }
+    // A restrained header and realistic stone drip sill; no huge beam.
+    box("window narrow exterior head trim "+i,
+      windowW+.20,.11,.25,x,lintel+.068,front-.30,timber);
+    box("window thin natural sandstone sill "+i,
+      windowW+.24,.105,.38,x,sill-.085,front-.30,masonry);
   }
   // Open entry into the actual 3D room — two doors stood open against the jambs.
   for(const side of [-1,1]){
