@@ -129,6 +129,8 @@ function meshLimits(meshes){
 export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   const root=new B.TransformNode("eight real cabin tests - only loaded source files",scene);
   const assigned=new Map(),labels=[],rows=[];
+  // Performance test: retain only original comparison Cabin #1. All source assets stay saved.
+  const keepOnlyOriginalCabin=true;
   let visible=false,solo=-1;
   root.setEnabled(false);
   const panel=document.createElement("section");
@@ -213,6 +215,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
   }
   panel.append(foot);document.body.append(panel);
   async function load(i,file,persist=true,remoteUrl=null){
+    if(keepOnlyOriginalCabin&&i!==0)return;
     const slot=CABIN_TEST_SLOTS[i],line=rows[i];
     const label=file?.name||slot.asset;
     if(slot.privateImportOnly&&file&&file.size>96*1024*1024){
@@ -262,7 +265,7 @@ export function createFourCabinTest({B,scene,groundAt,camera,onStatus,onJump}){
     if(autoLoadStarted)return;
     autoLoadStarted=true;
     for(let i=0;i<CABIN_TEST_SLOTS.length;i++){
-      if(assigned.has(i))continue;
+      if((keepOnlyOriginalCabin&&i!==0)||assigned.has(i))continue;
       const slot=CABIN_TEST_SLOTS[i];
       if(slot.privateImportOnly){
         // Royalty Free assets may not be published as raw downloadable GLBs.
