@@ -612,6 +612,9 @@ if(START_AT_MATERIALS){
   // The comparison entry already teleported the player to its field.
   // Do NOT reset to Hearthside Cabin after the first render.
   document.querySelector(".brand small").textContent="Eight-cabin test field · north of Hearthside";
+}else if(START_AT_PHOTO_RANGER){
+  // Direct URL ?spawn=ranger-photo must NEVER reset to Hearthside Cabin.
+  goToPhotoRanger();
 }else if(START_AT_RANGER)goToRanger();
 else{
   resetToCabin();
@@ -672,7 +675,7 @@ window.__wildDiagnostics=()=>({
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,
    communityPaths:habitat?.communityPaths??0,
-   spawnLocation:START_AT_RANGER?"ranger":"hearthside",
+   spawnLocation:START_AT_PHOTO_RANGER?"ranger-photo":START_AT_RANGER?"ranger":"hearthside",
     betaMode:BETA_MODE,
     multiplayerPeers:multiplayer?.getPeerCount()??0,
     multiplayerStatus:multiplayer?.getStatus()??(BETA_MODE?"connecting":"disabled"),
