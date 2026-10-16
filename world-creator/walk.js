@@ -561,6 +561,23 @@ if(BETA_MODE){
     if(playersBadge)playersBadge.textContent="Multiplayer unavailable · exploring solo";
   });
 }
+
+// Bird scouting mode: lightweight free-flight camera using the existing streamed world.
+const birdMode=new URLSearchParams(location.search).get("bird")==="1";
+let birdFlying=birdMode,birdClimb=0;
+if(birdMode){
+ document.querySelector(".brand small").textContent="🦅 Bird scout · tree search";
+ const panel=document.createElement("div");
+ panel.style.cssText="position:fixed;right:12px;bottom:105px;z-index:30;display:flex;flex-direction:column;gap:9px";
+ panel.innerHTML='<button id="birdUp" style="font-size:17px;padding:13px">▲ Climb</button><button id="birdDown" style="font-size:17px;padding:13px">▼ Descend</button><button id="birdLand" style="font-size:16px;padding:13px">Land</button>';
+ document.body.appendChild(panel);
+ const hold=(id,value)=>{const el=document.getElementById(id);el.addEventListener("pointerdown",e=>{e.preventDefault();el.setPointerCapture(e.pointerId);birdClimb=value;});for(const type of ["pointerup","pointercancel","lostpointercapture"])el.addEventListener(type,()=>{if(birdClimb===value)birdClimb=0;});};
+ hold("birdUp",1);hold("birdDown",-1);
+ document.getElementById("birdLand").addEventListener("click",()=>{birdFlying=!birdFlying;birdClimb=0;document.getElementById("birdLand").textContent=birdFlying?"Land":"Take off";if(birdFlying)camera.position.y=Math.max(camera.position.y,cameraGround(camera.position.x,camera.position.z)+8);});
+ document.getElementById("help").textContent="🦅 Joystick: fly · drag right: look · ▲▼ altitude";
+ camera.position.y+=35;
+}
+
 let positionSync=0,seconds=0,walkTime=0,walkDistance=0;
 engine.runRenderLoop(()=>{
   treeInspection.tick();
@@ -571,8 +588,8 @@ engine.runRenderLoop(()=>{
   if(keys.has("e"))camera.rotation.y+=dt*1.7;
   // Walk pace raised from its former 20%-feeling speed to roughly 38%.
   // Maintain the same faster sprint-to-walk ratio for desktop users.
-  const len=Math.hypot(f,side),speed=runMode||keys.has("shift")?9.5:5.7;
-  if(len>.04){
+  const len=Math.hypot(f,side),speed=birdMode?30:(runMode||keys.has("shift")?9.5:5.7);
+  if(len>.04 && (!birdMode || birdFlying)){
     // Free-look when still; when moving, the joystick steers the player's
     // entire facing direction. Base the target on the heading when movement
     // began, not the continually updating camera heading: otherwise holding
@@ -588,8 +605,8 @@ engine.runRenderLoop(()=>{
     const dx=Math.sin(yaw)*pace,dz=Math.cos(yaw)*pace;
     let nx=camera.position.x+dx,nz=camera.position.z+dz;
     const oldX=camera.position.x,oldZ=camera.position.z;
-    if(!collision(nx,camera.position.z))camera.position.x=nx;
-    if(!collision(camera.position.x,nz))camera.position.z=nz;
+    if(birdMode||!collision(nx,camera.position.z))camera.position.x=nx;
+    if(birdMode||!collision(camera.position.x,nz))camera.position.z=nz;
     const traveled=Math.hypot(camera.position.x-oldX,camera.position.z-oldZ);
     walkDistance+=traveled;
     if(traveled>.0001)walkTime+=dt*8;
@@ -603,7 +620,7 @@ engine.runRenderLoop(()=>{
   // Stay at EYE_HEIGHT above the surface on EVERY frame. Slow Y interpolation let
   // steep terrain overtake the camera, making the adult walker appear short.
   // Following the ground directly also avoids a dive on chunk transitions.
-  camera.position.y=targetY;
+  if(birdMode){const ground=cameraGround(camera.position.x,camera.position.z);camera.position.y=birdFlying?Math.max(ground+3,camera.position.y+birdClimb*24*dt):ground+2.5;}else camera.position.y=targetY;
   // Rebuild at coarse distance intervals, never on every footstep. The source
   // procedural seed gives continuous landforms even across forest chunks.
   if(Math.max(Math.abs(camera.position.x-tileCx),Math.abs(camera.position.z-tileCy))>84){
@@ -616,7 +633,7 @@ engine.runRenderLoop(()=>{
     cabinComparison.update();
     materialYard.update();
     const nearby=clearingAt(camera.position.x,camera.position.z);
-    info.textContent=`${runMode?"RUNNING":"WALKING"} · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
+    info.textContent=`${birdMode?(birdFlying?"FLYING":"PERCHED"):(runMode?"RUNNING":"WALKING")} · X:${Math.round(camera.position.x)} Z:${Math.round(camera.position.z)} ALT:${Math.round(camera.position.y-cameraGround(camera.position.x,camera.position.z))}m · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
       (habitat?.villageRealTerrain?.status==="ready"?" · PHOTO GROUND LOADED":
        habitat?.villageRealTerrain?.status==="awaiting-real-assets"?" · PHOTO LOAD FAILED":
        " · loading photographic ground");
