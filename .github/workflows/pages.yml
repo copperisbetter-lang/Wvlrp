@@ -7,7 +7,7 @@ on:
   # Asset installers commit GLBs using GITHUB_TOKEN; these commits do not
   # trigger push workflows. Deploy after a successful installer run, too.
   workflow_run:
-    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
+    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
     types: [completed]
     branches: ["main"]
 
@@ -171,6 +171,25 @@ jobs:
         uses: actions/deploy-pages@v4
 
 
+      - name: Verify clean Vulva2 reset GLB reached live website
+        env:
+          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${LIVE_URL%/}"
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/vulva2-adult18-reset-viewer.html" -o /tmp/vulva2-reset-viewer-live.html
+          grep -q 'vulva2-adult18-clean-reset.glb' /tmp/vulva2-reset-viewer-live.html
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/vulva2-adult18-clean-reset.glb" -o /tmp/vulva2-reset-model-live.glb
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          p=Path('/tmp/vulva2-reset-model-live.glb')
+          b=p.read_bytes()
+          assert len(b)>100000, "Live clean-reset GLB is missing or empty"
+          magic,version,length=struct.unpack_from('<4sII',b)
+          assert magic==b'glTF' and version==2 and length==len(b), "Live clean-reset GLB header invalid"
+          print('LIVE clean-reset Vulva2 GLB:',len(b),'bytes: OK')
+          PY
       - name: Verify Carolyn 3D viewer is live
         env:
           LIVE_URL: ${{ steps.deployment.outputs.page_url }}
