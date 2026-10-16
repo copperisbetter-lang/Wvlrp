@@ -53,9 +53,13 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     };
     // HD 2K color on the most visible bark, timber, stone and metal surfaces.
     mat.albedoTexture=tex("diffuse",texture);
-    mat.bumpTexture=tex("normal","1k");
+    // Newly downloaded HD materials have no 1K normal/ARM variants;
+    // avoid broken texture requests and missing relief on the live station.
+    const detailRes=new Set(["pine_bark","weathered_planks","wood_planks",
+      "stacked_stone_wall"]).has(id)?"2k":"1k";
+    mat.bumpTexture=tex("normal",detailRes);
     mat.bumpTexture.level=metal?.56:.69;
-    mat.metallicTexture=tex("arm","1k");
+    mat.metallicTexture=tex("arm",detailRes);
     mat.useRoughnessFromMetallicTextureGreen=true;
     mat.useMetallnessFromMetallicTextureBlue=true;
     mat.metallic=metal?.67:0;mat.roughness=metal?.79:.96;
