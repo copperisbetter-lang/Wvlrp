@@ -61,9 +61,13 @@ test("new lodge has a proper portico, full porch and recognizable indoor ranger 
   const script=file("../wild-ranger-station.js");
   assert.match(script,/projecting central lodge gable|center cross gable|portico/i);
   assert.match(script,/RANGER STATION/);
-  assert.match(script,/bulletin board|VISITOR BOARD/i);
-  assert.match(script,/six-monitor|monitorLabels/);
-  assert.match(script,/desk|radio|report sheet|wall field map/i);
+  assert.match(file("../wild-ranger-reference-interior.js"),/cork bulletin board/i);
+  const interior=file("../wild-ranger-reference-interior.js");
+  assert.match(interior,/single six-camera monitor/);
+  assert.match(interior,/WEST VIRGINIA/);
+  assert.match(interior,/backpack/);
+  assert.match(interior,/filing cabinet/);
+  assert.match(script,/desk|radio|report sheet|field map/i);
   assert.match(script,/assets\/building/);
 });
 
@@ -89,9 +93,9 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.match(script,/const chairX=X\+7\.05,chairZ=Z\+4\.72/);
   assert.match(script,/const frontDeskX=X\+6\.50,frontDeskZ=Z\+2\.70/);
   assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
-  assert.match(file("../walk.js"),/ranger-desk-eye-radio-20261015-v7/);
-  assert.match(file("../wild-flatland-rebuild.js"),/ranger-desk-eye-radio-20261015-v7/);
-  assert.match(file("../walk.html"),/ranger-desk-eye-radio-20261015-v7/);
+  assert.match(file("../walk.js"),/ranger-photographic-reference-20261015-v8/);
+  assert.match(file("../wild-flatland-rebuild.js"),/ranger-photographic-reference-20261015-v8/);
+  assert.match(file("../walk.html"),/ranger-photographic-reference-20261015-v8/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
 });
@@ -113,4 +117,20 @@ test("radio is a detailed CB base with physical knobs and coiled mic cable",()=>
   assert.match(lodge,/CB coiled handset cable/);
   assert.match(lodge,/CB microphone vent opening/);
   assert.doesNotMatch(lodge,/CB ranger radio black housing/);
+});
+
+test("old 360 office layout is a single desk monitor, daylight windows, maple board and field equipment",()=>{
+  const lodge=file("../wild-ranger-station.js");
+  const props=file("../wild-ranger-reference-interior.js");
+  assert.match(lodge,/interior rear horizontal real-wood plank/);
+  assert.match(lodge,/side window glass in actual log-wall opening/);
+  assert.match(lodge,/rear clear view into forest/);
+  assert.match(lodge,/installRangerReferenceInterior/);
+  assert.doesNotMatch(lodge,/monitor black housing/);
+  for(const detail of ["single six-camera monitor","framed WEST VIRGINIA map",
+    "public information board","forest ranger backpack","field guide bookcase",
+    "working station oil lamp","four-drawer military olive filing cabinet",
+    "hand sawn explorer gear bench"]){
+    assert.ok(props.includes(detail),detail);
+  }
 });
