@@ -4,6 +4,7 @@
  */
 export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
  const entries=[
+  ["oak_tree",545000],["oak_tree_small",458000],
   ["fir_sapling_medium",7199688],["fir_tree_01",30224784],
   ["pine_sapling_medium",18025200],["pine_sapling_small",1717548],
   ["fir_sapling",2648492],["island_tree_01",5290604],
@@ -26,7 +27,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
  async function load(spot){
   busy=true;spot.status="loading";
   try{
-   const result=await B.SceneLoader.ImportMeshAsync(null,"./assets/","village-pbr-"+spot.id+".glb",scene,undefined,".glb");
+   const result=await B.SceneLoader.ImportMeshAsync(null,"./assets/",(spot.id.startsWith("oak_tree")?spot.id:"village-pbr-"+spot.id)+".glb",scene,undefined,".glb");
    const meshes=result.meshes.filter(m=>m.getTotalVertices?.()>0);
    const roots=result.meshes.filter(m=>!m.parent||!result.meshes.includes(m.parent));
    const root=new B.TransformNode("TREE INSPECTION: "+spot.id,scene);
@@ -42,7 +43,7 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    const height=maxY-minY;
    if(!meshes.length||!Number.isFinite(height)||height<=0)throw Error("Downloaded GLB contains no renderable mesh");
    if(Number.isFinite(height)&&height>0){
-    const target=spot.id.includes("sapling")||spot.id.includes("small")?5:spot.id.includes("island")?12:17;
+    const target=spot.id==="oak_tree"?17:spot.id.includes("sapling")||spot.id.includes("small")?5:spot.id.includes("island")?12:17;
     const scale=Math.min(8,Math.max(.08,target/height));
     root.scaling.setAll(scale);
     root.position.y=cabinGrade(spot.x,spot.z,seed)-minY*scale;
