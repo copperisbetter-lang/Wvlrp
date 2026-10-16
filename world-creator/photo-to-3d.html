@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122b22">
+<title>The Wild — Photo to 3D Workshop</title>
+<style>
+:root{color-scheme:dark;--bg:#101e19;--panel:#1b3027;--line:#3c6050;--accent:#b8dc95;--text:#f2f4ea}
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:15px 20px;background:#233f31;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:1.4rem}header small{display:block;font-size:.76rem;letter-spacing:.1em;color:var(--accent)}
+a{color:var(--accent)}.wrap{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);min-height:calc(100vh - 77px)}
+aside{padding:18px;overflow:auto;max-height:calc(100vh - 77px);background:var(--panel);border-right:1px solid var(--line)}
+h2{margin:0 0 12px;font-size:1.16rem}h3{margin:18px 0 8px;font-size:1rem}
+label{display:block;margin:10px 0 3px;font-size:.89rem}input,select,button{font:inherit}
+input[type=number],input[type=file],select{background:#10261b;color:var(--text);border:1px solid #678775;padding:9px;border-radius:6px;width:100%}
+input[type=range]{width:100%;accent-color:#a3d37d}button{border:1px solid #87b783;border-radius:8px;background:#305740;color:#fff;padding:11px 12px;cursor:pointer}
+button.primary{background:#c7e59d;color:#152716;border:0;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.help{font-size:.83rem;line-height:1.48;color:#c3d5c5}
+.note{background:#244a36;border-left:3px solid #b7d98d;padding:10px 12px;font-size:.86rem;line-height:1.48;border-radius:5px}
+.stage{min-width:0;min-height:520px;display:flex;flex-direction:column;position:relative}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:#172b22}
+.toolbar button.active{background:#c7e59d;color:#183222}
+#renderCanvas{display:block;width:100%;flex:1;min-height:470px;touch-action:none;outline:none}
+#status{padding:9px 14px;background:#142820;border-top:1px solid var(--line);font-size:.84rem;min-height:39px}
+#photoThumb{width:100%;max-height:170px;object-fit:contain;background:#0a160f;border:1px dashed #5e856b;border-radius:6px}
+#pad{display:none;position:absolute;bottom:76px;left:19px;width:134px;height:134px;background:#ffffff22;border:2px solid #b9e5bb99;border-radius:50%;touch-action:none;user-select:none;z-index:2}
+#knob{position:absolute;left:47px;top:47px;width:36px;height:36px;background:#b3d7a4cc;border:2px solid #fff9;border-radius:50%;pointer-events:none}
+#lookhint{display:none;position:absolute;bottom:94px;right:15px;background:#07140fc4;border-radius:8px;padding:8px;font-size:.77rem}
+details{margin-top:12px}summary{cursor:pointer;color:var(--accent)}
+@media(max-width:840px){.wrap{display:flex;flex-direction:column}aside{max-height:none}.stage{min-height:71svh}#renderCanvas{min-height:65svh}.toolbar{position:relative}header h1{font-size:1.2rem}}
+</style>
+</head>
+<body>
+<header><div><small>WEST VIRGINIA LIVE RESEARCH PROJECT · THE WILD</small><h1>Photo → Walkable 3D Workshop <span style="font-weight:400;font-size:.75rem">v0.1</span></h1></div>
+<a href="./walk.html">↗ Return to The Wild</a></header>
+<div class="wrap">
+<aside>
+<h2>Build real geometry from reference photos</h2>
+<p class="note"><strong>This makes a real 3D building with floors, walls, roof and a walk-through door.</strong> Your uploaded pictures are applied as visual references/textures. Hidden geometry cannot be recovered perfectly from one photo; measure and refine it here with my help.</p>
+<h3>1 · Load your photographs</h3>
+<label for="frontPhoto">Front / main view (required for matching)</label><input id="frontPhoto" type="file" accept="image/*">
+<img id="photoThumb" alt="The front reference photograph preview" hidden>
+<details><summary>Add other views (strongly recommended)</summary>
+<label for="leftPhoto">Left side</label><input id="leftPhoto" type="file" accept="image/*">
+<label for="rightPhoto">Right side</label><input id="rightPhoto" type="file" accept="image/*">
+<label for="backPhoto">Back wall</label><input id="backPhoto" type="file" accept="image/*">
+<label for="interiorPhoto">Interior rear wall</label><input id="interiorPhoto" type="file" accept="image/*">
+</details>
+<h3>2 · Shape the actual 3D structure</h3>
+<div class="two">
+<div><label for="width">Width (m)</label><input type="number" id="width" min="3" max="40" step=".5" value="12"></div>
+<div><label for="depth">Depth (m)</label><input type="number" id="depth" min="3" max="40" step=".5" value="9"></div>
+<div><label for="height">Wall height (m)</label><input type="number" id="height" min="2.2" max="10" step=".1" value="3.6"></div>
+<div><label for="roofRise">Roof peak above wall (m)</label><input type="number" id="roofRise" min=".2" max="7" step=".1" value="2"></div>
+<div><label for="doorWidth">Door width (m)</label><input type="number" id="doorWidth" min=".7" max="5" step=".1" value="1.6"></div>
+<div><label for="doorHeight">Door height (m)</label><input type="number" id="doorHeight" min="1.6" max="3.4" step=".1" value="2.5"></div>
+</div>
+<label for="roofType">Roof layout</label>
+<select id="roofType"><option value="gable">Gable (ridge front to back)</option><option value="shed">Single slope (shed)</option><option value="flat">Flat roof</option></select>
+<label for="material">Unphotographed wall material</label>
+<select id="material"><option value="pine_bark">Natural pine bark</option><option value="wood_trunk_wall">Stacked logs</option><option value="weathered_planks">Weathered timber</option></select>
+<details><summary>Photo alignment / wall crop</summary>
+<p class="help">Perspective photography often includes ground and roof. Crop to the building's wall before applying the photo, and use straighter views when available.</p>
+<div class="two">
+<div><label for="cropTop">Trim top %</label><input type="number" id="cropTop" min="0" max="75" value="0"></div>
+<div><label for="cropBottom">Trim bottom %</label><input type="number" id="cropBottom" min="0" max="75" value="0"></div>
+<div><label for="cropLeft">Trim left %</label><input type="number" id="cropLeft" min="0" max="75" value="0"></div>
+<div><label for="cropRight">Trim right %</label><input type="number" id="cropRight" min="0" max="75" value="0"></div>
+</div>
+</details>
+<div class="two" style="margin-top:14px"><button id="rebuild" class="primary" type="button">Rebuild 3D</button><button id="reset" type="button">Reset shape</button></div>
+<h3>3 · Test and take it into The Wild</h3>
+<button id="exportGLB" class="primary" type="button" style="width:100%">Export real 3D model (.glb)</button>
+<p class="help">GLB contains the editable-in-3D building geometry and embedded photo textures. Export doesn't automatically install it in public gameplay; we inspect the finished asset first.</p>
+<button id="exportRecipe" type="button" style="width:100%">Save build instructions (.json)</button>
+<p class="help">Uploads stay in this browser during editing; no image upload to a server is performed. Large phone photographs may use considerable memory.</p>
+</aside>
+<section class="stage">
+<div class="toolbar">
+<button id="orbitMode" class="active" type="button">↻ Inspect outside</button>
+<button id="walkMode" type="button">🚶 Walk inside & outside</button>
+<button id="frontView" type="button">Front view</button>
+<button id="birdView" type="button">Overhead</button>
+</div>
+<canvas id="renderCanvas" tabindex="0" aria-label="Interactive 3D building. Drag to turn; use WASD in walking mode."></canvas>
+<div id="pad" aria-label="Mobile walking joystick"><div id="knob"></div></div>
+<div id="lookhint">Drag scene to look around · joystick to walk<br>Desktop: WASD / arrow keys</div>
+<div id="status" role="status">Preparing 3D editor…</div>
+</section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-serializers@9.27.0/babylonjs.serializers.min.js"></script>
+<script src="./photo-to-3d.js?v=20261015-1"></script>
+</body>
+</html>
