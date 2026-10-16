@@ -11,7 +11,7 @@
  * Everything, including Babylon textures, is tracked for tile teardown.
  */
 import {flatlandHeight} from "./wild-rebuild-layout.js";
-import {installRangerReferenceInterior} from "./wild-ranger-reference-interior.js?v=photo-reference-20261015-v9";
+import {installRangerReferenceInterior} from "./wild-ranger-reference-interior.js?v=ranger-360-playable-20261015-v10";
 
 export const NORTH_RANGER_STATION=Object.freeze({
   id:"north-ranger-station",name:"Ranger Station",x:0,z:350,
