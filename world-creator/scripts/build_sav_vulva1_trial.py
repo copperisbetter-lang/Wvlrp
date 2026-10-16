@@ -125,6 +125,14 @@ def skin_surface(x,z):
             uv0,uv1,uv2=[skin_uv.data[i].uv for i in tri.loops]
             uv=uv0*(1-v-w)+uv1*v+uv2*w
             return (float(world.y),(float(uv.x),float(uv.y)))
+    # A ray hit can land at a triangulation edge where barycentric
+    # tolerances reject the face. Keep the REAL hit; use its nearest
+    # polygon loop UV rather than falsely treating the surface as open.
+    loops=body.data.polygons[poly_index].loop_indices
+    if loops:
+        li=min(loops,key=lambda k:(body.data.vertices[body.data.loops[k].vertex_index].co-point).length_squared)
+        uv=skin_uv.data[li].uv
+        return (float(world.y),(float(uv.x),float(uv.y)))
     return None
 
 nx,nz=25,35
