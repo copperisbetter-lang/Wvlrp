@@ -16,6 +16,8 @@ from bl_ext.wvlrp_local.mpfb.services.exportservice import ExportService
 from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
 from bl_ext.wvlrp_local.mpfb.entities.objectproperties import HumanObjectProperties
 from face_materials import preserve_photo_skin, verify_photo_skin_glb
+from vulva2_clean_hair import add_clean_long_blonde_hair
+from vulva2_preview_animations import add_vulva2_preview_animations
 
 ROOT=Path(__file__).resolve().parents[1]
 DATA=ROOT/"assets"/"vulva2-mhx2-source.json"
@@ -100,7 +102,11 @@ def fit_vulva2(root,body,rig):
     mesh.update()
     if not body.data.materials or not body.data.materials[0]:
         raise RuntimeError("Original female skin texture unavailable")
-    mesh.materials.append(body.data.materials[0])
+    # Dedicated visible material lets the mobile inspection viewer isolate
+    # this attachment without hiding the woman's entire skin or face.
+    anatomy_skin=body.data.materials[0].copy()
+    anatomy_skin.name="Vulva2 anatomy attachment fitted skin"
+    mesh.materials.append(anatomy_skin)
     uv=mesh.uv_layers.new(name="Vulva2 original MakeHuman UV")
     for face,uv_indices in zip(mesh.polygons,geom["uv_faces"]):
         if len(face.loop_indices)!=len(uv_indices):
@@ -112,13 +118,15 @@ def fit_vulva2(root,body,rig):
     bpy.context.collection.objects.link(ob)
     ob.parent=root
     ob.matrix_world=body.matrix_world.copy()
-    group_cache={}
-    for n,weights in enumerate(transferred):
-        for name,val in weights.items():
-            if name not in group_cache:
-                group_cache[name]=ob.vertex_groups.new(name=name)
-            group_cache[name].add([n],val,"REPLACE")
-    mod=ob.modifiers.new("MakeHuman inherited skeletal weights","ARMATURE")
+    # The old automatically interpolated thigh weights can split the central
+    # attachment during a stride. The pelvis is rigidly Hips-bound instead.
+    hips=next((b.name for b in rig.data.bones
+               if ''.join(c for c in b.name.lower() if c.isalnum())
+                  .replace("mixamorig","") in ("hips","pelvis")),None)
+    if not hips:raise RuntimeError("Missing hips bone for fixed centerline fitting")
+    pelvis_group=ob.vertex_groups.new(name=hips)
+    pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
+    mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
     mod.object=rig
     # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
     # of leaving a body surface beneath the opening (prevents dark overlap).
@@ -162,7 +170,8 @@ add_asset(h,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 add_asset(h,"eyebrows",["eyebrow001.mhclo"],"Eyebrows")
 add_asset(h,"eyelashes",["eyelashes01.mhclo"],"Eyelashes")
 add_asset(h,"teeth",["teeth_base.mhclo"],"Teeth")
-add_asset(h,"hair",["long01.mhclo"],"Hair")
+# The stock long01 hair uses a fitted cape and caused warped face/chest
+# curtain polygons. Use a new, skull-anchored blonde hairstyle after copying.
 root=ExportService.create_character_copy(h,name_suffix="_vulva2_adult18")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if not body: raise RuntimeError("MPFB adult basemesh absent")
@@ -172,23 +181,17 @@ if len(rigs)!=1:raise RuntimeError("Rig export copy missing")
 # to the *original* MakeHuman mesh. Strip masks/helpers only AFTER fitting.
 preserve_photo_skin(body,"Vulva2Test")
 addon=fit_vulva2(root,body,rigs[0])
-# The export copy contains the actual long01 hair geometry; recolor its
-# base-color material without touching photographic body/eye textures.
-hair_meshes=[ob for ob in root.children_recursive if ob.type=="MESH" and "long01" in ob.name.lower()]
-if not hair_meshes: raise RuntimeError("Long blonde hair mesh not on copy")
-for hair in hair_meshes:
-    hair.data=hair.data.copy()
-    for i,original in enumerate(list(hair.data.materials)):
-        if original is None:continue
-        mat=original.copy();mat.name="Vulva2 Test long warm blonde hair"
-        mat.use_nodes=True
-        shader=next((n for n in mat.node_tree.nodes if n.type=="BSDF_PRINCIPLED"),None)
-        if shader:
-            for link in list(shader.inputs["Base Color"].links):
-                mat.node_tree.links.remove(link)
-            shader.inputs["Base Color"].default_value=(.73,.57,.33,1.)
-            shader.inputs["Roughness"].default_value=.82
-        hair.data.materials[i]=mat
+hair=add_clean_long_blonde_hair(root,body,rigs[0])
+add_vulva2_preview_animations(rigs[0])
+# Never export old fitted hair pieces or extra copy bodies.
+source_members=[root]+list(root.children_recursive)
+if any(o.type=="MESH" and "long01" in o.name.lower() for o in source_members):
+    raise RuntimeError("Old face-shredding stock hair still in export")
+if len([o for o in source_members if o.type=="MESH" and
+        len(o.data.vertices)>10000])!=1:
+    raise RuntimeError("Missing or duplicated full adult body geometry")
+if len([o for o in source_members if o.get("wvlrp_vulva2_authentic_mhx2")])!=1:
+    raise RuntimeError("Inspection export requires exactly one authentic Vulva2 attachment")
 root["wvlrp_vulva2_18_comparison_root"]=True
 bpy.context.view_layer.update()
 bpy.ops.object.select_all(action="DESELECT")
@@ -199,7 +202,8 @@ for ob in members:
 bpy.context.view_layer.objects.active=rigs[0]
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",
-    use_selection=True,export_apply=False,export_materials="EXPORT")
+    use_selection=True,export_apply=False,export_materials="EXPORT",
+    export_animations=True,export_nla_strips=True)
 if not OUT.is_file() or OUT.stat().st_size<500000:
     raise RuntimeError("Vulva2 inspection GLB missing/too small")
 raw=OUT.read_bytes()
@@ -210,6 +214,18 @@ verify_photo_skin_glb(glb,"Vulva2Test")
 if not any("Vulva2 MHX2 true auto-fit" in node.get("name","") for node in glb.get("nodes",[])):
     raise RuntimeError("Actual Vulva2 anatomy absent from exported binary")
 if not glb.get("skins"):raise RuntimeError("Model lost rig skinning")
+clips={a.get("name","") for a in glb.get("animations",[])}
+expected={"Vulva2 "+name for name in ("Stand","Walk","Run","Bend",
+    "TouchToes","Sit","PickUp","HandsAndKnees","ElbowsAndKnees",
+    "Crawl","LieDown","Wave")}
+missing=expected-clips
+if missing:raise RuntimeError("Inspection GLB missing real pose clips: "+str(sorted(missing)))
+if not any("Vulva2 clean long blonde hair" in n.get("name","")
+           for n in glb.get("nodes",[])):
+    raise RuntimeError("Clean, rigged blonde hair missing from exported avatar")
+if not any(m.get("name","").startswith("Vulva2 anatomy attachment")
+           for m in glb.get("materials",[])):
+    raise RuntimeError("Vulva2 anatomy isolation material missing from GLB")
 print("VULVA2_FEMALE18_BUILD_SUCCESS",OUT,OUT.stat().st_size,
       "glb_meshes",len(glb.get("meshes",[])),"rig_skins",len(glb["skins"]),
-      "body_and_long_hair",True)
+      "body_and_long_hair",True,"real_motion_clips",len(clips))
