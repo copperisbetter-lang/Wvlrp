@@ -1,0 +1,77 @@
+name: Build Vulva2 female 18 authentic auto-fit
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_vulva2_female18.py
+      - world-creator/assets/vulva2-mhx2-source.json
+      - .github/workflows/build-vulva2-female18.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build-vulva2-female18
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/blender-4.2.0-linux-x64
+            /tmp/mpfb2
+            /tmp/mh-system.zip
+          key: wvlrp-vulva2-blender420-mpfb2018-assets-v1
+      - name: Install Blender and original MakeHuman CC0 source
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp
+          fi
+          if [ ! -d /tmp/mpfb2/src/mpfb ]; then
+            git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          fi
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip .)
+          mkdir -p /tmp/wvlrp_vulva2_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_vulva2_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/mpfb.zip
+          if [ ! -s /tmp/mh-system.zip ]; then
+            curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          fi
+          unzip -tq /tmp/mh-system.zip >/dev/null
+      - name: Build and verify truly auto-fitted Vulva2 adult
+        run: |
+          set -euo pipefail
+          python3 -m py_compile world-creator/scripts/build_vulva2_female18.py
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_vulva2_female18.py 2>&1 | tee /tmp/vulva2-build.log
+          grep VULVA2_TRUE_AUTOFIT_SUCCESS /tmp/vulva2-build.log
+          grep VULVA2_FEMALE18_BUILD_SUCCESS /tmp/vulva2-build.log
+          test -s world-creator/assets/vulva2-female18-inspection.glb
+      - name: Publish independently without overwriting Carol
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f world-creator/assets/vulva2-female18-inspection.glb
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish authentic MakeHuman Vulva2 auto-fitted adult 18 inspection GLB"
+          for i in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Save build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulva2-female18-build-logs
+          path: /tmp/vulva2-build.log
+          retention-days: 7
