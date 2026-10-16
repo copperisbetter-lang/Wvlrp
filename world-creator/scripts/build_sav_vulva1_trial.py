@@ -275,7 +275,7 @@ print("SAV_VULVA1_MEASUREMENTS",{
     "max_open_gap":round(max_gap,4),
     "body_vertices":len(body.data.vertices)})
 print("SAV_VULVA1_FITTING_SUCCESS",OUT,OUT.stat().st_size,
-      "original_vertices",len(original),"original_faces",len(all_faces),
+      "original_vertices",len(original),"original_faces",len(geo["faces"]),
       "connected_faces",len(faces),"fitted_vertices",len(mesh.vertices),
       "rig_bones",len(rig.data.bones),
       "animations",len(gltf.get("animations",[])),
