@@ -169,6 +169,29 @@ girlsWillow.setEnabled(false); // Remove failed willow prototype from visible wo
 const doorTree=installDoorTree(B,scene,cabinGrade(0,-13,seed));
 const treeInspection=installTreeInspectionLine(B,scene,{seed,cabinGrade,camera});
 const treeTestMode=new URLSearchParams(location.search).has("treeTest");
+// Independent, zero-download visibility sentinel. This intentionally bypasses
+// the GLB loader and inspection-line status so missing assets cannot hide it.
+if(treeTestMode){
+ try{
+  const trunk=B.MeshBuilder.CreateCylinder("GATER TREE TEST trunk",{height:12,diameter:1.6,tessellation:12},scene);
+  trunk.position.set(0,cabinGrade(0,-25,seed)+6,-25);
+  const bark=new B.StandardMaterial("GATER TEST bark",scene);
+  bark.diffuseColor=new B.Color3(.36,.19,.07);bark.emissiveColor=new B.Color3(.08,.035,.01);trunk.material=bark;
+  const green=new B.StandardMaterial("GATER TEST vivid green",scene);
+  green.diffuseColor=new B.Color3(.06,.8,.13);green.emissiveColor=new B.Color3(.02,.25,.04);
+  for(let i=0;i<7;i++){
+   const a=i*Math.PI*2/7;
+   const crown=B.MeshBuilder.CreateSphere("GATER TREE TEST canopy "+i,{diameter:7,segments:8},scene);
+   crown.position.set(Math.cos(a)*2.7,cabinGrade(0,-25,seed)+12+Math.sin(i*2)*1.2,-25+Math.sin(a)*2.7);
+   crown.material=green;
+  }
+  const marker=document.createElement("div");marker.id="gater-tree-proof";
+  marker.textContent="GATER TREE: 3D TEST MESH CREATED";
+  marker.style.cssText="position:fixed;z-index:100000;bottom:85px;left:8px;background:#073;color:#fff;padding:8px;border:2px solid lime;font:bold 13px system-ui";
+  document.body.appendChild(marker);
+ }catch(e){const marker=document.createElement("pre");marker.textContent="TREE TEST ERROR: "+e.message;marker.style.cssText="position:fixed;z-index:100000;bottom:85px;left:8px;background:#600;color:white;padding:8px";document.body.appendChild(marker);console.error(e);}
+}
+
 if(treeTestMode){
  camera.position.set(0,cabinGrade(0,-18,seed)+EYE_HEIGHT,-18);
  camera.rotation.set(0,Math.PI,0);
