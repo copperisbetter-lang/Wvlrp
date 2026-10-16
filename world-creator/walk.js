@@ -628,6 +628,7 @@ window.__wildDiagnostics=()=>({
   position:[camera.position.x,camera.position.y,camera.position.z],
   photoRangerPosition:[PHOTO_RANGER_STATION.x,PHOTO_RANGER_STATION.z],
   photoRangerBuiltInHabitat:true,
+  photoRangerMeshCount:scene.meshes.filter(m=>m.name.startsWith("PHOTO RANGER")).length,
   meshes:scene.meshes.length,
   rebuildLayoutVersion:habitat?.layoutVersion??"not-loaded",
   reservedClearings:habitat?.clearingsRendered??0,
