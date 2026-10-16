@@ -185,7 +185,17 @@ for x,z,m,s,t in samples:
         max_gap=max(max_gap,gap)
         weights=[1/max(.003,math.hypot(h[0]-x,h[1]-z)) for h in near]
         y=sum(h[2]*w for h,w in zip(near,weights))/sum(weights)
-        uv=near[0][3]
+        # Nearest-neighbour UVs made abrupt texture islands across the gap.
+        # Blend only UV neighbours on the same island; never average across a seam.
+        anchor_uv=near[0][3]
+        uv_near=[(h,w) for h,w in zip(near,weights)
+                 if abs(h[3][0]-anchor_uv[0])<.12 and abs(h[3][1]-anchor_uv[1])<.12]
+        if uv_near:
+            sw=sum(w for _,w in uv_near)
+            uv=(sum(h[3][0]*w for h,w in uv_near)/sw,
+                sum(h[3][1]*w for h,w in uv_near)/sw)
+        else:
+            uv=anchor_uv
     else:
         y,uv=m;gap=0
     feather=max(0.,math.sin(math.pi*t))**.7 * max(0.,1-abs(s)**8)
@@ -194,7 +204,7 @@ for x,z,m,s,t in samples:
     relief=feather*(.0025*outer+.0014*inner)
     positions.append((x,y-relief+min(.009,gap*.28)+.0006,z))
     uv_by_vertex.append(uv)
-if max_gap>.080:
+if max_gap>.045:
     raise RuntimeError("Unsupported Sav underside bridge %.4f m" % max_gap)
 faces=[]
 for j in range(nz-1):
