@@ -6,14 +6,15 @@ import {
 } from "../wild-ranger-station.js";
 const file=path=>readFileSync(new URL(path,import.meta.url),"utf8");
 
-test("one new 3x3 Ranger Station stands exactly 350m north of Hearthside",()=>{
+test("wide 360-inspired Ranger Station stays exactly 350m north of Hearthside",()=>{
   const s=NORTH_RANGER_STATION;
   assert.deepEqual([s.x,s.z],[0,350]);
-  assert.equal(s.panelsWide,3);
-  assert.equal(s.panelsDeep,3);
+  assert.equal(s.panelsWide,6);
+  assert.equal(s.panelsDeep,4);
   assert.equal(s.panelMetres,3);
-  assert.equal(s.width,9);
-  assert.equal(s.depth,9);
+  assert.equal(s.width,18);
+  assert.equal(s.depth,12);
+  assert.equal(s.entryWidth,2.8);
   assert.equal(s.front,"south");
 });
 test("only tiles near the station render it, and station perimeter stops walking",()=>{
@@ -23,9 +24,11 @@ test("only tiles near the station render it, and station perimeter stops walking
   assert.equal(rangerVisibleInTile(0,268),true);
   assert.equal(rangerVisibleInTile(0,259),false);
   assert.equal(rangerWallCollision(0,350),false);
-  assert.equal(rangerWallCollision(0,345.5),true);
-  assert.equal(rangerWallCollision(4.5,350),true);
-  assert.equal(rangerWallCollision(0,337),false);
+  assert.equal(rangerWallCollision(0,344),false); // open main door
+  assert.equal(rangerWallCollision(3,344),true);  // solid front wall
+  assert.equal(rangerWallCollision(9,350),true);  // solid east wall
+  assert.equal(rangerWallCollision(0,356),true);  // solid rear wall
+  assert.equal(rangerWallCollision(0,337),false); // open stair approach
 });
 test("station uses locally downloaded authenticated Poly Haven texture sets",()=>{
   const s=NORTH_RANGER_STATION;
@@ -49,4 +52,14 @@ test("real building installed into active landscape instead of retired village c
   assert.match(renderer,/communityBuildings:buildings/);
   assert.match(walk,/rangerWallCollision\(x,z\)/);
   assert.match(walk,/tileZ:NORTH_RANGER_STATION.z/);
+});
+
+test("new lodge has a proper portico, full porch and recognizable indoor ranger room",()=>{
+  const script=file("../wild-ranger-station.js");
+  assert.match(script,/projecting central lodge gable|center cross gable|portico/i);
+  assert.match(script,/RANGER STATION/);
+  assert.match(script,/bulletin board|VISITOR BOARD/i);
+  assert.match(script,/six-monitor|monitorLabels/);
+  assert.match(script,/desk|radio|report sheet|wall field map/i);
+  assert.match(script,/assets\/building/);
 });
