@@ -93,9 +93,9 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.match(script,/const chairX=X\+7\.05,chairZ=Z\+4\.72/);
   assert.match(script,/const frontDeskX=X\+6\.50,frontDeskZ=Z\+2\.70/);
   assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
-  assert.match(file("../walk.js"),/ranger-photographic-reference-20261015-v8/);
-  assert.match(file("../wild-flatland-rebuild.js"),/ranger-photographic-reference-20261015-v8/);
-  assert.match(file("../walk.html"),/ranger-photographic-reference-20261015-v8/);
+  assert.match(file("../walk.js"),/ranger-photographic-reference-20261015-v9/);
+  assert.match(file("../wild-flatland-rebuild.js"),/ranger-photographic-reference-20261015-v9/);
+  assert.match(file("../walk.html"),/ranger-photographic-reference-20261015-v9/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
 });
