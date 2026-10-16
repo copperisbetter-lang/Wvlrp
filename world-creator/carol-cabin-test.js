@@ -16,14 +16,14 @@ export async function startCarolTest(B,scene,camera,cabinGrade,seed){
  root.computeWorldMatrix(true);
  low=Infinity;
  for(const m of meshes){if(!m.getTotalVertices?.())continue;m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y)}
- const floor=cabinGrade(0,-12,seed)+.04;
- root.position.set(0,floor-low,-12);
- camera.position.set(2,cabinGrade(2,-21,seed)+1.72,-21);
- camera.setTarget(new B.Vector3(0,floor+1,-12));
+ const floor=cabinGrade(0,10.7,seed)+.04;
+ root.position.set(0,floor-low,10.7);
+ camera.position.set(2,cabinGrade(2,16,seed)+1.72,16);
+ camera.setTarget(new B.Vector3(0,floor+1,10.7));
  const groups=data.animationGroups||[];
  groups.forEach(g=>g.stop());
  const lookup=name=>groups.find(g=>g.name.toLowerCase()===("caroline "+name).toLowerCase())||groups.find(g=>g.name.toLowerCase().endsWith(" "+name.toLowerCase()));
- const steps=[["Stand",2],["Walk",3],["HandsAndKnees",4],["ElbowsAndKnees",5],["Stand",3],["LieDown",5],["Kneel",3],["LieDown",5]];
+ const steps=[["Stand",2],["Kneel",12]];
  let index=-1,active=null;
  function next(){
   if(active)active.stop();
@@ -34,7 +34,7 @@ export async function startCarolTest(B,scene,camera,cabinGrade,seed){
   const g=lookup(name);
   if(!g){say(name+" animation missing from Carol GLB");return;}
   active=g;g.start(false,1,g.from,g.to,false);
-  say(name+" · "+(index+1)+"/"+steps.length);
+  say(name==="Kneel"?"On front steps · seated pose requires new animation":name+" · "+(index+1)+"/"+steps.length);
  }
  next();
  let elapsed=0;
