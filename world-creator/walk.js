@@ -5,8 +5,8 @@
  */
 import { STORAGE_KEY,newWorld,sanitizedWorld,seedNumber,gatherCabinCrew,HEARTHSIDE_CABIN } from "./world-core.js?v=woodland-village-20261013-v1";
 import { cabinGrade, waterAt } from "./wild-nature.js?v=preserved-forest-20261013-v7";
-import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=ranger-desk-no-chimney-20261015-v5";
-import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-desk-no-chimney-20261015-v5";
+import {renderRebuiltLandscape as renderWildLandscape} from "./wild-flatland-rebuild.js?v=ranger-chair-corner-entry-facing-20261015-v6";
+import {NORTH_RANGER_STATION,rangerWallCollision} from "./wild-ranger-station.js?v=ranger-chair-corner-entry-facing-20261015-v6";
 import {installVillageGrove,isNearVillageGrove} from "./wild-village-pbr-grove.js?v=actual-model-diversity-20261014-v5";
 import {installVillageForestFloor} from "./wild-village-pbr-floor.js?v=authentic-forest-floor-20261014-v1";
 import {installVillageOak,VILLAGE_OAK} from "./wild-village-hero-oak.js?v=polyhaven-pbr-20261014-v1";
@@ -567,7 +567,7 @@ else{
   status("You're at Hearthside Cabin. Push the joystick to walk, double-tap its center to run, and drag right to look.");
 }
 if(START_AT_RANGER){
-  document.querySelector(".brand small").textContent="Ranger Station · first-person walk";
+  document.querySelector(".brand small").textContent="Ranger Station · entry-facing desk v6";
 }
 
 // Non-interactive read-only telemetry for repeatable browser smoke tests.
