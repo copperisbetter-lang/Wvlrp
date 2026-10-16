@@ -48,27 +48,45 @@ export function buildPhotoRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   const roofTop=wallTop+s.roofRise;
   const root="./assets/building/";
   const finishes=new Map();
-  const small=mobile;
+  // Genuine published 1K photo sets: keep mobile GPU uploads predictable.
+  // The old "weathered_planks" 2K material gave a corrupted-looking red grid
+  // on Android in the reported station build. Use verified horizontal timber.
+  const published1k=new Set(["weathered_plank_siding","wood_trunk_wall",
+    "rough_pine_door","mossy_stone_wall","corrugated_iron"]);
+  const woodFallback={
+    weathered_plank_siding:"#665444",wood_planks:"#8f7657",
+    pine_bark:"#665340",wood_trunk_wall:"#594738",
+    rough_pine_door:"#845c37",mossy_stone_wall:"#666860",
+    stacked_stone_wall:"#79766e",corrugated_iron:"#6a8694"
+  };
   const pbr=(id,{u=1,v=1,metal=false,tint=null,alpha=1}={})=>{
-    const key=[id,u,v,metal,tint,alpha].join("|");
+    const assetId=id==="weathered_planks"?"weathered_plank_siding":id;
+    const key=[assetId,u,v,metal,tint,alpha].join("|");
     if(finishes.has(key))return finishes.get(key);
     const mat=track(new B.PBRMaterial("PHOTO RANGER CC0 "+key,scene));
-    const resolution=small?"1k":"2k";
-    // Every referenced set has downloaded 2k maps; 1k fallback only where present.
-    const baseRes=small&&["wood_trunk_wall","rough_pine_door","mossy_stone_wall","corrugated_iron"].includes(id)?"1k":resolution;
-    const detailRes=baseRes;
-    const tex=(kind,res)=>{
-      const t=track(new B.Texture(root+id+"_"+kind+"_"+res+".jpg",scene));
+    const res=published1k.has(assetId)?"1k":"2k";
+    // Texture errors must fail to natural wood/metal, never to a debug grid.
+    const tex=kind=>{
+      const url=root+assetId+"_"+kind+"_"+res+".jpg";
+      const t=track(new B.Texture(url,scene,false,false,
+        B.Texture.TRILINEAR_SAMPLINGMODE,null,(_message,_exception)=>{
+          if(kind==="diffuse"){
+            mat.albedoTexture=null;
+            mat.albedoColor=B.Color3.FromHexString(woodFallback[assetId]||"#746353");
+          }else if(kind==="normal")mat.bumpTexture=null;
+          else if(kind==="arm")mat.metallicTexture=null;
+          console.warn("Ranger station texture load failed:",url);
+        }));
       t.wrapU=B.Texture.WRAP_ADDRESSMODE;t.wrapV=B.Texture.WRAP_ADDRESSMODE;
       t.uScale=u;t.vScale=v;return t;
     };
-    mat.albedoTexture=tex("diffuse",baseRes);
-    mat.bumpTexture=tex("normal",detailRes);
-    mat.bumpTexture.level=.62;
-    mat.metallicTexture=tex("arm",detailRes);
+    mat.albedoTexture=tex("diffuse");
+    mat.bumpTexture=tex("normal");
+    mat.bumpTexture.level=.45;
+    mat.metallicTexture=tex("arm");
     mat.useRoughnessFromMetallicTextureGreen=true;
     mat.useMetallnessFromMetallicTextureBlue=true;
-    mat.metallic=metal?.42:0;mat.roughness=metal?.7:.90;
+    mat.metallic=metal?.25:0;mat.roughness=metal?.78:.90;
     mat.alpha=alpha;mat.backFaceCulling=false;
     if(tint)mat.albedoColor=B.Color3.FromHexString(tint);
     finishes.set(key,mat);return mat;
@@ -118,6 +136,16 @@ export function buildPhotoRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     const m=track(B.MeshBuilder.CreateSphere("PHOTO RANGER "+name,{diameter:1,segments:12},scene));
     m.scaling.set(a,b,c);m.position.set(x,y,z);
     m.material=material;m.isPickable=false;m.checkCollisions=false;return m;
+  };
+  // Slope trim follows measured roof endpoints instead of arbitrarily
+  // rotating an extra-long rectangular box into midair.
+  const roofTimber=(name,start,end,radius,material)=>{
+    const m=track(B.MeshBuilder.CreateTube("PHOTO RANGER "+name,{
+      path:[new B.Vector3(...start),new B.Vector3(...end)],
+      radius,tessellation:8,cap:B.Mesh.CAP_ALL
+    },scene));
+    m.material=material;m.isPickable=false;m.checkCollisions=false;
+    return m;
   };
   const plane=(name,width,height,x,y,z,material,yaw=Math.PI)=>{
     const m=track(B.MeshBuilder.CreatePlane("PHOTO RANGER "+name,{width,height},scene));
@@ -261,12 +289,10 @@ export function buildPhotoRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   surface("rear tall gable inner wood triangle",
     [[X+hw,wallTop,back+.22],[X-hw,wallTop,back+.22],[X,ridge,back+.22]],
     [[0,0],[2.5,0],[1.25,1]],wall);
-  // Exposed wood rakes along high roof including underside, not floating bars.
+  // Main front rakes lie exactly on the two sloping gable edges.
   for(const side of [-1,1]){
-    const length=Math.hypot(rr,rise);
-    const rake=box("exposed main gable weathered roof rake "+side,.24,.20,length,
-       X+side*rr/2,(ridge+edge)/2,front-.55,beam);
-    rake.rotation.set(0,Math.PI/2,side*Math.atan2(rise,rr));
+    roofTimber("front roof rake "+side,
+      [X,ridge,front-.55],[X+side*rr,edge,front-.55],.135,beam);
   }
 
   // Deep timber porch elevated to the SAME finished floor.
@@ -314,10 +340,10 @@ export function buildPhotoRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     const brace=box("angled rustic gable truss braces "+side,.23,2.90,.27,
       X+side*1.58,floor+4.26,postZ-.03,posts);
     brace.rotation.z=side*.83;
-    // Face rake timber
-    const rake=box("gable edge genuine timber trim "+side,.22,5.70,.23,
-      X+side*2.60,floor+4.64,postZ-.03,posts);
-    rake.rotation.z=side*1.16;
+    // Photo-match the canopy edge directly; never extend into the sky.
+    roofTimber("portico sloping gable edge "+side,
+      [X,porticoPeak,postZ-.03],
+      [X+side*gHalf,floor+3.53,postZ-.03],.135,posts);
   }
   box("portico heavy suspended sign board",5.45,.89,.19,
     X,floor+3.79,postZ-.22,door);
