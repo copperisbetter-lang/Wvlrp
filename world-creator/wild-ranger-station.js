@@ -334,18 +334,20 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     box("porch tin standing seam "+i,.042,.052,porchDepth+1.10,
       x,top-.53,front-porchDepth/2-.06,metal,0,-.12);
   }
-  // NO full round bark-covered porch columns anywhere near the entry.
-  // The oversized vertical tree-trunks obstructed the ranger's workstation
-  // sightline. Keep only two narrow square supports at the FAR outer corners;
-  // clear the central opening all the way up to the roof.
-  for(const x0 of [-7.7,7.7]){
+  for(const x0 of [-7.7,-4.75,4.75,7.7]){
     const x=X+x0;
-    box("outer porch foot plate "+x0,.47,.22,.47,
-      x,floor+1.03,porchFront+.13,masonry);
-    box("slender square outer porch timber "+x0,.22,2.82,.22,
-      x,floor+1.12+2.82/2,porchFront+.13,timber);
-    box("small porch beam seat "+x0,.43,.16,.40,
+    box("porch stone load pier "+x0,.95,1.02,.95,
+      x,Y+.49,porchFront+.16,masonry);
+    cylinder("full round hardwood porch column "+x0,.44,2.85,
+      x,floor+1.02+2.85/2,porchFront+.13,bark);
+    box("post timber footing "+x0,.69,.16,.69,
+      x,floor+1.10,porchFront+.13,timber);
+    box("capital cross timber "+x0,.84,.22,.62,
       x,top-.63,porchFront+.13,timber);
+    for(const side of [-1,1]){
+      box("angled handcrafted front knee brace "+x0+" "+side,.13,1.25,.21,
+        x+side*.46,top-1.28,porchFront+.12,timber,-side*.66);
+    }
   }
   // Porch timber rails leave 5m middle completely clear for visitors and stairs.
   for(const side of [-1,1]){
@@ -401,14 +403,10 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     X,porticoTop+.73,porticoZ-.39,doorMat);
   signText("Ranger Station carved lodge front","RANGER STATION",
     5.23,.90,X,porticoTop+.73,porticoZ-.57,95);
-  // Rough natural-stone side chimney, heavy stonework and iron chimney cap.
-  const chimneyX=X+5.95,chimneyZ=Z+2.7;
-  box("lodge fieldstone chimney main shaft",1.65,top+roofRise-Y+1.95,1.63,
-    chimneyX,(Y+top+roofRise+1.95)/2,chimneyZ,stone);
-  box("lodge chimney corbel",1.99,.22,1.96,
-    chimneyX,top+roofRise+1.80,chimneyZ,masonry);
-  box("lodge iron flue cover",1.48,.13,1.45,
-    chimneyX,top+roofRise+2.03,chimneyZ,metal);
+  // The former 1.65-m-wide chimney was at local (+5.95,+2.70),
+  // DIRECTLY INTERSECTING the ranger desk at (+5.76,+2.15).
+  // Delete the entire floor-to-roof chimney shaft and its cap;
+  // no post, column or fake chimney may pass through the workstation.
   // Timber interior: real walk-in open room, not a fake facade.
   box("interior rear exposed long ceiling beam",w-.65,.27,.30,
     X,top-.30,back-.34,timber);
