@@ -52,6 +52,13 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
     root.position.z=spot.z-(minZ+maxZ)*.5*scale;
    }
    for(const m of meshes){m.isPickable=false;m.checkCollisions=false;m.alwaysSelectAsActiveMesh=true;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.backFaceCulling=false;mat.twoSidedLighting=true;if(mat.albedoTexture?.hasAlpha||mat.diffuseTexture?.hasAlpha){mat.transparencyMode=B.Material.MATERIAL_ALPHATEST;mat.useAlphaFromAlbedoTexture=true;}}}
+   root.computeWorldMatrix(true);
+   // Verify the transformed tree actually occupies its assigned test location.
+   const bounds=meshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox;});
+   const low=Math.min(...bounds.map(b=>b.minimumWorld.y));
+   const ground=cabinGrade(spot.x,spot.z,seed);
+   root.position.y+=ground-low;
+   root.computeWorldMatrix(true);
    spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
   }catch(err){spot.status="error";spot.error=String(err);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err);}
   finally{busy=false;}
@@ -63,5 +70,5 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
   if(next)void load(next);
  };
  tick();
- return {spots,tick};
+ return {spots,tick,loadSelected(index){const spot=spots[index];if(spot?.status==="waiting"&&!busy)void load(spot);}};
 }
