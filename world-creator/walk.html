@@ -74,12 +74,12 @@ if(new URLSearchParams(location.search).has("treeTest")){
  const banner=document.createElement("div");
  banner.id="tree-build-proof";
  banner.style.cssText="position:fixed;top:8px;left:8px;z-index:99999;background:#163c26;color:#fff;border:3px solid #f5cb45;padding:10px;font:bold 14px system-ui;max-width:85vw";
- banner.textContent="TREE INSPECTION BUILD 4 • Starting 30m north of cabin";
+ banner.textContent="TREE INSPECTION BUILD 6 • NEXT TREE buttons";
  document.body.appendChild(banner);
  window.addEventListener("error",e=>{banner.textContent="TREE TEST SCRIPT ERROR: "+e.message;});
  window.addEventListener("unhandledrejection",e=>{banner.textContent="TREE TEST LOAD ERROR: "+String(e.reason).slice(0,180);});
 }
 </script>
-<script type="module" src="./walk.js?v=bird-scout-20261016-v1"></script>
+<script type="module" src="./walk.js?v=tree-next-20261016-v6"></script>
 </body>
 </html>
