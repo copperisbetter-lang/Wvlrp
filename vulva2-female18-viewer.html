@@ -65,9 +65,19 @@ const v=document.querySelector('#model'),s=document.querySelector('#status'),dia
   motion=document.querySelector('#motion'),select=document.querySelector('#animations');
 const asset='/world-creator/assets/vulva2-female18-inspection.glb';
 let size={x:1,y:1,z:1},center={x:0,y:.9,z:0},radius=2.8,ready=false,clips=[],current='';
+let loadTimer=0,rendererTimer=0;
 let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibility={hair:true,anatomy:true,body:true,clothes:true};
 const $=(id)=>document.getElementById(id);
-function load(){ready=false;v.pause();s.textContent='Loading latest exported 3D model…';v.src=asset+'?fresh='+Date.now();}
+function load(){
+  ready=false;clearTimeout(loadTimer);
+  // The custom element must be registered before its model controls exist.
+  v.pause?.();
+  s.textContent='Loading latest exported 3D model (16.6 MB)…';
+  v.src=asset+'?fresh='+Date.now();
+  loadTimer=setTimeout(()=>{
+    if(!ready) s.textContent='Still waiting for the 3D model. Check your connection and tap Reload newest build.';
+  },45000);
+}
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 function orbit(a,r=radius,polar=80){radius=clamp(r,.13,Math.max(12,size.y*7));v.cameraOrbit=a+'deg '+polar+'deg '+radius.toFixed(3)+'m';v.jumpCameraToGoal?.();}
 function target(y){v.cameraTarget=center.x.toFixed(3)+'m '+y.toFixed(3)+'m '+center.z.toFixed(3)+'m';}
@@ -110,6 +120,8 @@ function setClip(name){
  motion.textContent='Playing actual exported animation: '+name;
 }
 v.addEventListener('load',()=>{
+ clearTimeout(loadTimer);
+ try {
  ready=true;size=v.getDimensions();center=v.getBoundingBoxCenter();radius=size.y*1.65;
  v.maxCameraOrbit='auto auto '+Math.max(12,size.y*7)+'m';
  focus('full');clips=Array.from(v.availableAnimations||[]);
@@ -122,9 +134,10 @@ v.addEventListener('load',()=>{
  classifyMaterials();
  s.textContent='GLB loaded — '+clips.length+' real motion clip(s). This confirms file loading, not visual quality.';
  motion.textContent=clips.length?'Choose an enabled motion. Missing clips remain disabled.':'No animations in this export yet; building an updated rigged version.';
+ } catch(e) { ready=false; s.textContent='Model loaded but viewer setup failed: '+(e?.message||e); }
 });
-v.addEventListener('error',()=>{ready=false;s.textContent='The model failed to load; check the export/build before reviewing.';});
-$('reload').onclick=load;
+v.addEventListener('error',()=>{clearTimeout(loadTimer);ready=false;s.textContent='The 3D model failed to load. Check the network and retry with Reload newest build.';});
+$('reload').onclick=()=>{if(!customElements.get('model-viewer'))location.reload();else load();};
 $('reset').onclick=()=>focus('full');
 for(const b of document.querySelectorAll('[data-focus]'))b.onclick=()=>focus(b.dataset.focus);
 const angles={front:[0,80],left:[-90,80],right:[90,80],rear:[180,80],under:[0,145]};
@@ -140,6 +153,21 @@ $('play').onclick=()=>{if(current){v.play();motion.textContent='Playing '+curren
 $('pause').onclick=()=>{v.pause();motion.textContent='Paused '+current;};
 $('hold').onclick=()=>{v.pause();v.currentTime=Math.max(0,(v.duration||0)-.02);motion.textContent='Holding last frame of '+current;};
 $('stop').onclick=()=>{v.pause();v.currentTime=0;current='';motion.textContent='Returned to first pose frame.';};
-load();
+// This classic inline script executes BEFORE the earlier type="module" CDN
+// import. Calling model-viewer methods immediately used to throw and silently
+// leave the mobile viewer on its original "Loading actual model" message.
+s.textContent='Preparing the 3D renderer…';
+rendererTimer=setTimeout(()=>{
+  if(!customElements.get('model-viewer')){
+    s.textContent='3D renderer could not initialize. Check internet access, then tap Reload newest build.';
+  }
+},15000);
+customElements.whenDefined('model-viewer').then(()=>{
+  clearTimeout(rendererTimer);
+  load();
+}).catch(e=>{
+  clearTimeout(rendererTimer);
+  s.textContent='3D renderer setup failed: '+(e?.message||e);
+});
 })();
 </script></body></html>
