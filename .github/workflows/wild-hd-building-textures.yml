@@ -1,0 +1,33 @@
+name: Import CC0 HD building textures
+on:
+  push:
+    paths:
+      - 'world-creator/scripts/download_hd_building_materials.py'
+      - '.github/workflows/wild-hd-building-textures.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: wild-hd-materials
+  cancel-in-progress: false
+jobs:
+  download-verified-materials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download official Poly Haven maps and verify each hash
+        run: python3 world-creator/scripts/download_hd_building_materials.py
+      - name: Check and commit all real HD materials
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/building/
+          if git diff --cached --quiet; then
+            echo "All selected textures already downloaded and verified."
+          else
+            git commit -m "Import verified CC0 Poly Haven 2K photographic building PBR textures"
+            git push
+          fi
