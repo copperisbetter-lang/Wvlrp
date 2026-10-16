@@ -1,4 +1,4 @@
-import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-ground-v7";
+import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-debug-v8";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
 /**
  * Walk The Wild: stand outside Hearthside Cabin and explore a seeded WV world.
@@ -170,11 +170,11 @@ const treeTestMode=new URLSearchParams(location.search).has("treeTest");
 if(treeTestMode){
  camera.position.set(0,cabinGrade(0,-18,seed)+EYE_HEIGHT,-18);
  camera.rotation.set(0,Math.PI,0);
- document.getElementById("tree-build-proof")?.replaceChildren(document.createTextNode("TREE INSPECTION BUILD 7 • grounded trees"));
+ document.getElementById("tree-build-proof")?.replaceChildren(document.createTextNode("TREE INSPECTION BUILD 8 • loader diagnostics"));
  const panel=document.createElement("div");panel.id="tree-test-status";
  panel.style.cssText="position:fixed;z-index:99998;top:65px;left:8px;max-width:85vw;background:#10281eed;color:#fff;padding:10px;border:2px solid #e6c76d;border-radius:8px;font:12px system-ui;pointer-events:none";
  document.body.appendChild(panel);
- const show=()=>{const p=treeInspection.spots;panel.textContent="TREE TEST • "+p.filter(x=>x.status==="ready").length+"/"+p.length+" loaded • "+p.filter(x=>x.status==="error").length+" errors • first: "+p[0].status+(p[0].error?" ("+p[0].error.slice(0,90)+")":"")+" • facing first sample 12m ahead";};
+ const show=()=>{const p=treeInspection.spots;panel.textContent="TREE TEST • "+p.filter(x=>x.status==="ready").length+"/"+p.length+" loaded • "+p.filter(x=>x.status==="error").length+" errors • first: "+p[0].status+(p[0].error?" ("+(p[0].stack||p[0].error).slice(0,220)+")":"")+" • facing first sample 12m ahead";};
  show();setInterval(show,1500);
  // Mobile inspection controls: jump directly to each planted specimen.
  let selectedTree=0;
@@ -195,7 +195,7 @@ if(treeTestMode){
  };
  previous.onclick=()=>jump(-1);next.onclick=()=>jump(1);jump(0);
 }
-window.__treeInspection=()=>treeInspection.spots.map(({id,x,z,status,error})=>({id,x,z,status,error}));
+window.__treeInspection=()=>treeInspection.spots.map(({id,x,z,status,error,stack})=>({id,x,z,status,error,stack}));
 window.__girlsWillowDiagnostics=()=>({position:girlsWillow.position.asArray(),meshCount:girlsWillow.getChildMeshes().length,enabled:girlsWillow.isEnabled(),camera:camera.position.asArray()});
 const woodGroups=new Map();
 for(const mesh of permanent){
