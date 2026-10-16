@@ -9,6 +9,7 @@
 import {cabinGrade} from "./wild-nature.js";
 import {makeGroundHeightSampler} from "./terrain-height.js";
 import {buildNorthRangerStation} from "./wild-ranger-station.js?v=ranger-360-playable-20261015-v10";
+import {buildPhotoRangerStation} from "./wild-ranger-photo-build.js?v=photo-station-east30-20261015-v1";
 import {hash} from "./world-core.js";
 import {REBUILD_CLEARINGS,REBUILD_PATHS,flatlandHeight,REBUILD_LAYOUT_VERSION} from "./wild-rebuild-layout.js";
 import {installVillageRealTerrain,PHOTO_TILE_METRES} from "./wild-village-real-terrain.js?v=photo-ground-sharp-debanded-20261015-v5";
@@ -124,7 +125,9 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
   // Terrain elevation and the ~84 m streaming trigger remain active.
   const paths=0,pads=0;
   const buildings=buildNorthRangerStation(B,scene,track,
-    {cx,cy,seed,base,surfaceHeight});
+    {cx,cy,seed,base,surfaceHeight})+
+    buildPhotoRangerStation(B,scene,track,
+      {cx,cy,seed,base,surfaceHeight,mobile});
   const villageRealTerrain=installVillageRealTerrain(B,scene,track,
     {cx,cy,seed,mobile,lite,ground,farGround});
 
