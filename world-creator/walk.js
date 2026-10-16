@@ -55,7 +55,8 @@ const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const START_AT_PHOTO_RANGER=betaParams.get("spawn")==="ranger-photo";
-const START_AT_COMPARE=betaParams.get("compare")==="1";
+const CAITLYN_PATROL=betaParams.get("caitlyn")==="patrol";
+const START_AT_COMPARE=betaParams.get("compare")==="1"||CAITLYN_PATROL;
 const START_AT_MATERIALS=betaParams.get("materials")==="1";
 const RANGER_SPAWN=Object.freeze({x:NORTH_RANGER_STATION.x,z:NORTH_RANGER_STATION.z-13,
   tileX:NORTH_RANGER_STATION.x,tileZ:NORTH_RANGER_STATION.z});
@@ -199,6 +200,7 @@ if(treeTestMode){
    treeInspection.loadSelected(selectedTree);
    counter.textContent=(selectedTree+1)+"/"+treeInspection.spots.length+" "+spot.id;
    treeInspection.tick();
+  updateCaitlynPatrol(Math.min(engine.getDeltaTime()/1000,.05));
  };
  previous.onclick=()=>jump(-1);next.onclick=()=>jump(1);jump(0);
 }
@@ -545,6 +547,52 @@ document.getElementById("cabinCompare")?.addEventListener("click",()=>{
 });
 if(START_AT_COMPARE){
   cabinComparison.show();cabinComparison.jump();
+}
+// Caitlyn inspection runs IN the real Wild scene, never in a fake green test world.
+let caitlynPatrol=null;
+if(CAITLYN_PATROL){
+ const center={x:-40.5,z:314}; // First cabin in the current eight-cabin lineup
+ const controls=document.createElement("div");
+ controls.style.cssText="position:fixed;right:12px;bottom:24px;z-index:100;display:flex;flex-direction:column;gap:9px";
+ controls.innerHTML='<button id="patrolRun" style="font-size:17px;padding:15px">RUN: OFF</button><button id="patrolPause" style="font-size:17px;padding:15px">PAUSE CAITLYN</button><button id="patrolFollow" style="font-size:17px;padding:15px">GO TO CAITLYN</button>';
+ document.body.appendChild(controls);
+ document.getElementById("patrolRun").onclick=()=>{runMode=!runMode;document.getElementById("patrolRun").textContent="RUN: "+(runMode?"ON":"OFF");};
+ let paused=false;
+ document.getElementById("patrolPause").onclick=()=>{paused=!paused;document.getElementById("patrolPause").textContent=paused?"RESUME CAITLYN":"PAUSE CAITLYN";};
+ document.getElementById("patrolFollow").onclick=()=>{const p=caitlynPatrol?.root?.position||center;camera.position.set(p.x,cameraGround(p.x,p.z+8)+EYE_HEIGHT,p.z+8);camera.rotation.y=Math.PI;};
+ B.SceneLoader.ImportMeshAsync(null,"",GLBS.caitlyn,scene,undefined,".glb").then(data=>{
+  const root=new B.TransformNode("Caitlyn Wild cabin patrol",scene);
+  const imported=new Set([...data.meshes,...data.transformNodes]);
+  for(const node of imported)if(!node.parent||!imported.has(node.parent))node.parent=root;
+  const body=data.meshes.filter(m=>m.getTotalVertices?.()>1000);
+  let low=Infinity,high=-Infinity;
+  for(const m of body){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;low=Math.min(low,b.minimumWorld.y);high=Math.max(high,b.maximumWorld.y);}
+  const scale=Number.isFinite(high-low)&&high-low>.1?1.7/(high-low):1;
+  const holder=new B.TransformNode("Caitlyn rig calibration",scene);
+  for(const node of [...root.getChildren()])node.parent=holder;
+  holder.parent=root;holder.scaling.setAll(scale);holder.position.y=-low*scale;
+  const groups=data.animationGroups||[];
+  groups.forEach(g=>g.stop());
+  caitlynPatrol={root,groups,phase:-1,time:0,angle:0,paused:()=>paused};
+  root.position.set(center.x,cameraGround(center.x,center.z+15),center.z+15);
+  status("Caitlyn loaded in the actual Wild cabin landscape");
+ }).catch(e=>status("Caitlyn model error: "+e.message));
+}
+function updateCaitlynPatrol(dt){
+ const p=caitlynPatrol;if(!p||p.paused())return;
+ const steps=[["Walk",8],["Stand",2],["HandsAndKnees",4],["ElbowsAndKnees",4],["Stand",2]];
+ p.time+=dt;
+ let phase=p.phase;
+ if(phase<0||p.time>=steps[phase][1]){
+  p.time=0;phase=(phase+1)%steps.length;p.phase=phase;
+  p.groups.forEach(g=>g.stop());
+  const clip=p.groups.find(g=>g.name==="Caitlyn "+(steps[phase][0]==="Walk"?"Stand":steps[phase][0]));
+  if(clip){clip.start(false,1,clip.from,clip.to,false);if(steps[phase][0]==="Walk"){clip.goToFrame(clip.from);clip.pause();}}
+ }
+ if(steps[phase][0]==="Walk"){
+  p.angle+=dt*.09;const x=center.x+Math.sin(p.angle)*15,z=center.z+Math.cos(p.angle)*15;
+  p.root.position.set(x,cameraGround(x,z),z);p.root.rotation.y=p.angle+Math.PI/2;
+ }
 }
 // Real HD building-material stockyard: independent of static cabin imports and
 // streamed terrain. Textures become active only near the display.
