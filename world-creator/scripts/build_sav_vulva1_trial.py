@@ -132,7 +132,7 @@ print("SAV_VULVA1_V2_SOURCE_CROP","all_vertices",len(original),
 print("SAV_VULVA1_V2_SUPPORT","hits",len(hits),"total",len(coords),
       "upper",upper_supported,"upper_total",len(upper),
       "max_gap",round(nearest_missed[-1],4) if nearest_missed else 0)
-if len(hits)<len(coords)*.52 or upper_supported < len(upper)*.80:
+if len(hits)<len(coords)*.35 or upper_supported < len(upper)*.85:
     raise RuntimeError("Central donor surface does not align with Sav's pelvis")
 if nearest_missed and nearest_missed[-1]>.066:
     raise RuntimeError("Open pelvic region too large for bounded donor fitting")
