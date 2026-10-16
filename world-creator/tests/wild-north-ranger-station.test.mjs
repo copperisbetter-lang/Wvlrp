@@ -66,3 +66,15 @@ test("new lodge has a proper portico, full porch and recognizable indoor ranger 
   assert.match(script,/desk|radio|report sheet|wall field map/i);
   assert.match(script,/assets\/building/);
 });
+
+test("ranger window renovation uses slim sash and individual narrow shutter louvers",()=>{
+  const script=file("../wild-ranger-station.js");
+  assert.match(script,/shutter angled narrow timber louver/);
+  assert.match(script,/const slats=12/);
+  assert.match(script,/shutter slim weathered vertical stile/);
+  assert.match(script,/small black iron shutter hinge leaf/);
+  assert.match(script,/window single slender vertical muntin/);
+  assert.match(script,/window single slender horizontal muntin/);
+  assert.match(script,/clear window glass/);
+  assert.doesNotMatch(script,/shutter raised plank|window sash crossing|working slatted shutter/);
+});
