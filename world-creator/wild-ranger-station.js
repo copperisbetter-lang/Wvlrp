@@ -82,6 +82,9 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
   const stone=finish("mossy_stone_wall",{texture:"2k",repeatU:2});
   const masonry=finish("stacked_stone_wall",{texture:"2k"});
   const metal=finish("corrugated_iron",{texture:"2k",metal:true,repeatV:2});
+  // The photographed lodge has a faded BLUE standing-seam steel roof,
+  // not the neutral charcoal sheet metal of the first 3D prototype.
+  metal.albedoColor=new B.Color3(.42,.65,.83);
 
   const makeMat=(name,hex,{emission=null,alpha=1}={})=>{
     const m=track(new B.StandardMaterial("Ranger "+name,scene));
@@ -234,12 +237,16 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
         windowW+.055,.080,.16,
         x,mid+side*(windowHeight/2-.033),front-.335,timber);
     }
-    box("window single slender vertical muntin "+i,
-      .043,windowHeight-.07,.095,
-      x,mid,front-.414,wood);
-    box("window single slender horizontal muntin "+i,
-      windowW-.085,.040,.095,
-      x,mid,front-.416,wood);
+    // Reference photograph: traditional tall 3 x 4 glazing, not a
+    // cartoon 4-pane cross. Match the slender cream-colored timber bars.
+    for(let col=1;col<3;col++)
+      box("window single slender vertical muntin "+i+" "+col,
+        .032,windowHeight-.07,.085,
+        x-windowW/2+windowW*col/3,mid,front-.414,timber);
+    for(let row=1;row<4;row++)
+      box("window single slender horizontal muntin "+i+" "+row,
+        windowW-.085,.032,.085,
+        x,mid-windowHeight/2+windowHeight*row/4,front-.416,timber);
 
     // True louvered shutters mounted beside—not across—the glass.
     for(const side of [-1,1]){
@@ -296,10 +303,12 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       box("rear glazed sash head sill "+i+" "+q,windowW+.08,.086,.17,
         x,mid+q*h/2,z-.19,timber);
     }
-    box("rear narrow vertical glazed mullion "+i,.05,h,.09,
-      x,mid,z-.19,wood);
-    box("rear narrow horizontal glazed mullion "+i,windowW,.05,.10,
-      x,mid,z-.19,wood);
+    for(let col=1;col<3;col++)
+      box("rear narrow vertical glazed mullion "+i+" "+col,.033,h,.07,
+        x-windowW/2+windowW*col/3,mid,z-.19,timber);
+    for(let row=1;row<4;row++)
+      box("rear narrow horizontal glazed mullion "+i+" "+row,
+        windowW,.033,.07,x,mid-h/2+h*row/4,z-.19,timber);
   }
   for(const side of [-1,1])for(const [i,z0] of sideWindows.entries()){
     const x=X+side*(half-.12),z=Z+z0,mid=(sill+lintel)/2,h=lintel-sill;
@@ -311,10 +320,12 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
       box("side narrow sash top or bottom "+side+" "+i+" "+q,
         .16,.086,windowW+.07,x-side*.15,mid+q*h/2,z,timber);
     }
-    box("side window divided glass upright "+side+" "+i,
-      .10,h,.048,x-side*.16,mid,z,timber);
-    box("side window divided glass rail "+side+" "+i,
-      .10,.048,windowW,x-side*.16,mid,z,timber);
+    for(let col=1;col<3;col++)
+      box("side window divided glass upright "+side+" "+i+" "+col,
+        .065,h,.032,x-side*.16,mid,z-windowW/2+windowW*col/3,timber);
+    for(let row=1;row<4;row++)
+      box("side window divided glass rail "+side+" "+i+" "+row,
+        .065,.034,windowW,x-side*.16,mid-h/2+h*row/4,z,timber);
   }
   // Interior pine boards cover solid log courses only, preserving every
   // window opening. This is the warm fitted timber room in the 360 images.
@@ -500,6 +511,38 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
     1.10,.13,3.02,returnDeskX,deskY,returnDeskZ,doorMat);
   box("L desk seamless joined corner both wings",
     1.10,.134,1.10,returnDeskX,deskY+.003,frontDeskZ,doorMat);
+  // The photographed desk is solid framed-and-paneled cabinetry, never
+  // a floating slab or a bank-teller glass counter. Each recessed panel
+  // carries real 2K aged-wood grain and layered solid hardwood trim.
+  const carved=finish("weathered_planks",
+    {texture:"2k",repeatU:.63,repeatV:.85});
+  const inset=finish("wood_planks",
+    {texture:"2k",repeatU:.58,repeatV:.76});
+  for(let i=0;i<7;i++){
+    const xx=frontDeskX-1.64+i*.54;
+    const bow=Math.sin((i+.5)*Math.PI/7)*.065;
+    const zz=frontDeskZ-.565-bow;
+    box("solid framed desk visitor facade "+i,.535,.61,.070,
+      xx,floor+.385,zz,carved);
+    box("real raised desk grain panel "+i,.405,.43,.028,
+      xx,floor+.365,zz-.053,inset);
+    for(const edge of [-1,1])
+      box("handset cabinet panel vertical stile "+i+" "+edge,
+        .042,.47,.045,xx+edge*.23,floor+.365,zz-.078,carved);
+    box("handset cabinet lower bevel "+i,.49,.046,.068,
+      xx,floor+.12,zz-.078,carved);
+  }
+  box("carved desk full width upper cornice",3.80,.083,.11,
+    frontDeskX,deskY-.105,frontDeskZ-.565,carved);
+  box("carved desk full width foot plinth",3.80,.10,.12,
+    frontDeskX,floor+.085,frontDeskZ-.575,carved);
+  for(let i=0;i<5;i++){
+    const zz=Z+2.96+i*.53;
+    box("solid carved L-return public side panel "+i,.065,.57,.49,
+      returnDeskX-.565,floor+.38,zz,carved);
+    box("L-return timber inset panel "+i,.033,.42,.38,
+      returnDeskX-.605,floor+.37,zz,inset);
+  }
   // Keep a large uninterrupted knee space directly in front of chair.
   // Slim pedestals appear at the OUTER ends only, not in the seat opening.
   box("front L desk east end compact drawer pedestal",.69,.59,.76,
@@ -523,11 +566,28 @@ export function buildNorthRangerStation(B,scene,track,{cx,cy,seed,base,surfaceHe
 
   // Ranger's actual chair is in the open nook BEHIND the connected L desktop.
   // Its upright back faces the far wall, seat and occupant face the main door.
-  const seat=makeMat("ranger weathered green upholstered chair","#314a40");
+  const seat=makeMat("ranger weathered brown leather chair","#674333");
+  const leatherPiping=makeMat("ranger chair dark brown leather seams","#38291f");
   box("ranger chair seat toward south entrance",.82,.16,.78,
     chairX,floor+.54,chairZ,seat);
   box("ranger chair backrest at rear toward wall",.84,.88,.16,
     chairX,floor+1.04,chairZ+.39,seat);
+  // Actual leather upholstery has a softened seat and button-tufted back,
+  // as opposed to the two flat green cubes shown in the earlier model.
+  const cushion=track(B.MeshBuilder.CreateSphere(
+    "RANGER LODGE ranger worn leather seat cushion",
+    {diameter:1,segments:16},scene));
+  cushion.scaling.set(.76,.105,.70);
+  cushion.position.set(chairX,floor+.655,chairZ-.035);
+  cushion.material=seat;cushion.isPickable=false;
+  for(const side of [-1,1])for(const high of [-1,1]){
+    const stud=track(B.MeshBuilder.CreateSphere(
+      "RANGER LODGE leather upholstery button "+side+" "+high,
+      {diameter:.052,segments:8},scene));
+    stud.position.set(chairX+side*.19,
+      floor+1.03+high*.19,chairZ+.30);
+    stud.material=leatherPiping;stud.isPickable=false;
+  }
   for(const side of [-1,1]){
     box("ranger chair arm "+side,.10,.07,.55,
       chairX+side*.45,floor+.82,chairZ-.01,dark);
