@@ -162,6 +162,32 @@ jobs:
               assert p.stat().st_size>100000
               print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
           PY
+      - name: Install Sav 3 inspection model from successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/assets /tmp/sav3-publish
+          run_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-sav3.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id')"
+          test -n "$run_id" && test "$run_id" != "null"
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name sav3-adult-inspection-glb --dir /tmp/sav3-publish
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          source=Path('/tmp/sav3-publish/sav3-adult-inspection.glb')
+          data=source.read_bytes()
+          magic,version,length=struct.unpack_from('<4sII',data)
+          assert magic==b'glTF' and version==2 and length==len(data) and len(data)>100000
+          n,typ=struct.unpack_from('<I4s',data,12)
+          assert typ==b'JSON'
+          glb=json.loads(data[20:20+n])
+          clips=[x.get('name','') for x in glb.get('animations',[])]
+          for required in ('Stand','Walk','Run','Fetal','SupineKneesUp'):
+              assert any(name.lower().endswith(required.lower()) for name in clips),(required,clips)
+          target=Path('world-creator/assets/sav3-adult-inspection.glb')
+          target.write_bytes(data)
+          print('SAV3_PUBLISH_READY',len(data),'bytes',len(clips),'animations')
+          PY
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
