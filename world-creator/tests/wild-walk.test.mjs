@@ -10,7 +10,7 @@ test("Dedicated first-person page launches at Hearthside and has a lower-left th
   assert.match(page,/#joystick\{position:fixed;z-index:9;left:/);
   assert.match(page,/id="stick"/);
   assert.match(walk,/FreeCamera\("first-person explorer"/);
-  assert.match(walk,/START_AT_RANGER\|\|START_AT_COMPARE\?0:Math\.PI/);
+  assert.match(walk,/START_AT_RANGER\|\|START_AT_COMPARE\|\|START_AT_MATERIALS\?0:Math\.PI/);
   assert.match(studio,/walk\.html\?v=/);
 });
 test("Walking uses thumb movement, touch-look, WASD and terrain-following eye height",()=>{
@@ -43,7 +43,7 @@ test("Double tapping the joystick center switches between running and walking",(
 test("Joystick steering turns the camera toward the movement vector, not sideways",()=>{
   assert.match(walk,/moveReferenceHeading=camera\.rotation\.y/);
   assert.match(walk,/moveReferenceHeading\+Math\.atan2\(side,f\)/);
-  assert.match(walk,/START_AT_RANGER\|\|START_AT_COMPARE\?0:Math\.PI/);
+  assert.match(walk,/START_AT_RANGER\|\|START_AT_COMPARE\|\|START_AT_MATERIALS\?0:Math\.PI/);
   assert.match(walk,/const dx=Math\.sin\(yaw\)\*pace,dz=Math\.cos\(yaw\)\*pace/);
   assert.match(walk,/else moveReferenceHeading=null/);
   assert.match(page,/Left thumb: steer & move/);
