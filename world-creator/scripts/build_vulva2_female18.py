@@ -86,7 +86,7 @@ def fit_vulva2(root,body,rig):
     if not 1.3<original_h<2.2:
         raise RuntimeError("Invalid adult source scale")
     # Refuse a misplaced body rather than publishing another floating add-on.
-    if not .53*original_h<zlo<.72*original_h or not .4*original_h<zhi<.78*original_h:
+    if not .38*original_h<zlo<.65*original_h or not .39*original_h<zhi<.70*original_h:
         raise RuntimeError("Vulva2 fitted outside adult pelvis: "+str((zlo,zhi,original_h)))
     if not .035<xhi-xlo<.19 or not .005<yhi-ylo<.22:
         raise RuntimeError("Vulva2 size/projection incompatible with source topology")
