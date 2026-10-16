@@ -232,8 +232,16 @@ for morph_name,x_at,amplitude in (("Vulva1_Outer_Fullness",.023,.009),
 # Fix geometry to one bone: pelvis *only*, never left/right thigh weights.
 # Match transform convention of earlier licensed Riley skinning trial.
 inverse_rig=rig.matrix_world.inverted_safe()
-for v in addon.data.vertices:
-    v.co=inverse_rig @ v.co
+# Convert Basis AND fullness morphs into rig space together. Converting
+# only mesh.vertices can leave morph targets in donor/world coordinates,
+# producing enormous spikes as soon as a fullness slider is moved.
+if addon.data.shape_keys:
+    for block in addon.data.shape_keys.key_blocks:
+        for point in block.data:
+            point.co=inverse_rig @ point.co
+else:
+    for v in addon.data.vertices:
+        v.co=inverse_rig @ v.co
 addon.parent=rig
 addon.matrix_world=rig.matrix_world.copy()
 group=addon.vertex_groups.new(name="Pelvis")
