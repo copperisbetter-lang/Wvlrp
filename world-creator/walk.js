@@ -1,5 +1,5 @@
 import {flatlandHeight} from "./wild-rebuild-layout.js";
-import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-maple-scatter-syntax-repair-v9";
+import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-maple-diagnostic-v10";
 import {installNativeConiferScatter} from "./wild-native-conifer-scatter.js?v=20261017-native10-v1";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
@@ -171,7 +171,7 @@ scene.onBeforeRenderObservable.add(()=>{
     return bottom-ground;
   }).filter(Number.isFinite);
   const max=errors.length?Math.max(...errors.map(Math.abs)):0;
-  mapleDebug.textContent="MAPLE v8 "+autumnMaples.status+" ("+p.length+")\\n"+
+  mapleDebug.textContent="MAPLE v10 "+autumnMaples.status+" ("+p.length+") "+(autumnMaples.error||"")+"\\n"+
     "max offset "+max.toFixed(2)+"m\\n"+
     "first 6: "+errors.slice(0,6).map(v=>v.toFixed(1)).join(", ");
 });
