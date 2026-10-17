@@ -243,7 +243,7 @@ def fit_vulva2(root,body,rig):
     # Detect duplicate anatomy by geometry and object identity before export.
     duplicates=[other.name for other in [root]+list(root.children_recursive)
                 if other.type=="MESH" and other!=ob and
-                ("vulva" in other.name.lower() or
+                (other.name.lower().startswith(("vulva1 ", "vulva2 ", "vulva1_", "vulva2_")) or
                  other.get("wvlrp_vulva2_authentic_mhx2"))]
     if duplicates:
         raise RuntimeError("SAV3_DUPLICATE_ANATOMY: "+repr(duplicates))
