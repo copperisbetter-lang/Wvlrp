@@ -9,9 +9,9 @@ const walk=read("../walk.js");
 const view=read("../walk.html");
 const network=read("../wild-multiplayer.js");
 
-test("All homepage Adventure entrances lead to the two-option portal",()=>{
-  assert.match(home,/href="adventure-portal\.html"/);
-  assert.doesNotMatch(home,/href="adventures\.html"/);
+test("Homepage Adventures entry stays accessible while beta portal remains available",()=>{
+  assert.match(home,/href="adventures\.html"/);
+  assert.match(portal,/Game Beta Test/);
   assert.match(portal,/Game Beta Test/);
   assert.match(portal,/world-creator\/walk\.html\?mode=beta&amp;spawn=ranger/);
   assert.match(portal,/Original 360° World/);
