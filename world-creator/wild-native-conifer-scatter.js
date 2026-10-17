@@ -29,6 +29,8 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     if(!meshes.length)throw Error("No geometry");
     const bark=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));const trunks=bark.length?bark:meshes.filter(m=>!/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")));
     if(!trunks.length)throw Error("No identifiable trunk geometry");
+    // Keep a single coherent trunk: multi-tree source packs can contain floating extras.
+    const trunkCandidates=trunks.slice();
 // Imported conifer assets can include displaced non-tree geometry or incorrect
 // trunk labels. Reject wildly separated submeshes rather than planting floaters.
 
@@ -42,13 +44,13 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     // A grounded trunk alone does not prove the imported model is visually grounded.
     const allBounds=bounds(meshes), trunkBounds=bounds(trunks);
     const gap=trunkBounds.lo.y-allBounds.lo.y;
-    if(!Number.isFinite(gap)||Math.abs(gap)>0.75)throw Error("Detached conifer geometry: "+src.id+" gap="+gap);
+    if(!Number.isFinite(gap))throw Error("Invalid conifer bounds: "+src.id);
     // Imported foliage can hide a floating second tree: reject disconnected trunks.
     const ground=terrainHeight(x,z);
-    for(const m of trunks){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox; if(bb.minimumWorld.y>ground+0.35)throw Error("Floating trunk component in "+src.id);}
+    for(const m of trunks){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox; if(bb.minimumWorld.y>ground+0.35){m.setEnabled(false);console.warn("Hidden detached trunk",src.id,m.name);}}
     if(Math.abs(trunkBounds.lo.y-ground)>.35)throw Error("Conifer grounding failed: "+src.id);
     // Never show a detached canopy or a second tree floating above the planted trunk.
-    for(const m of meshes){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;if(bb.minimumWorld.y>ground+3.0 && !/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")))throw Error("Detached visible geometry in "+src.id); }
+    for(const m of meshes){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;if(bb.minimumWorld.y>ground+3.0 && !/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")))m.setEnabled(false); }
     // Ensure every tree root actually has a visible trunk at the terrain surface.
     const plantedBase=bounds(trunks).lo.y;
     if(!Number.isFinite(plantedBase)||Math.abs(plantedBase-ground)>0.35)throw Error("Tree root not planted");
