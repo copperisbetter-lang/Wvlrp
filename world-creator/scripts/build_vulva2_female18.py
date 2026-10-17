@@ -240,7 +240,7 @@ def fit_vulva2(root,body,rig):
     if len(buried)>len(pts)*.02:
         raise RuntimeError("SAV3_ANATOMY_BURIED: "
                            +str(len(buried))+"/"+str(len(pts))+" vertices behind skin")
-    # Detect duplicate anatomy by geometry and object identity before export.
+    # Reject separately named anatomy meshes; do not confuse the export suffix on facial assets with anatomy.
     duplicates=[other.name for other in [root]+list(root.children_recursive)
                 if other.type=="MESH" and other!=ob and
                 (other.name.lower().startswith(("vulva1 ", "vulva2 ", "vulva1_", "vulva2_")) or
