@@ -117,6 +117,7 @@ def fit_vulva2(root,body,rig):
                 for (x,y,z),surface in zip(
                     [(x,y-depth_shift,z) for x,y,z in pts],samples)
                 if surface is not None]
+    print("SAV3_SURFACE_DIAGNOSTIC", "median",statistics.median(deviations),"max",max(deviations),"samples",len(deviations),flush=True)
     if statistics.median(deviations)>.018:
         raise RuntimeError("SAV3_VULVA2_SURFACE: anatomy does not conform to outer skin")
     print("SAV3_VULVA2_EXTERIOR_FIT",
