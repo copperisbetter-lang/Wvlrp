@@ -1,19 +1,20 @@
 /** Living PBR grove around Hearthside girls' cabin. 500 m² circle; no deadwood. */
-const ASSETS=["island_tree_01","island_tree_02","island_tree_03","tree_small_02"];
+// Prefer upright evergreen PBR assets; retire all island trees with sprawling roots.
+const ASSETS=["fir_sapling_medium","pine_sapling_small","fir_sapling","fir_tree_01","pine_tree_01"];
 const AREA=500, R=Math.sqrt(AREA/Math.PI);
 export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
  const state={status:"loading",planted:0,failed:0,areaSquareMetres:AREA,roots:[]};
  state.ready=(async()=>{
   const manifests=await fetch("./assets/village-grove-sources.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Tree manifest unavailable");return r.json()});
   const candidates=ASSETS.map(id=>manifests.find(m=>m.id===id&&m.license==="CC0")).filter(Boolean);
-  if(candidates.length<3)throw Error("Need at least three living PBR tree sources");
+  if(candidates.length<2)throw Error("Need at least two upright living PBR tree sources");
   const loaded=[];
   for(const asset of candidates){try{
    const container=await B.SceneLoader.LoadAssetContainerAsync("",asset.url,scene);
    if(!container.meshes.some(m=>m.getTotalVertices?.()>0))throw Error("Empty mesh");
    loaded.push({asset,container});
   }catch(e){console.warn("Girls cabin living tree asset",asset.id,e)}}
-  if(loaded.length<3)throw Error("Fewer than three living tree meshes loaded");
+  if(loaded.length<2)throw Error("Fewer than two upright living tree meshes loaded");
   // Six well-spaced mature trees around the OUTER perimeter of the 500 m²
   // circle. The earlier 22 trees crowded the porch and overlapped canopies.
   // Keep the central cabin/porch completely open for visibility and walking.
@@ -39,7 +40,7 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     // Size all standing trees as mature specimens. If a future manifest entry
     // is labeled sapling, it must not render at its tiny source-file scale.
     const isSapling=/sapling|young|small/i.test(asset.id);
-    const desired=isSapling?16+(i%3)*1.2:17+(i%3)*1.4;
+    const desired=isSapling?17+(i%3)*1.5:19+(i%3)*1.5;
     root.scaling.setAll(desired/(hi-lo));
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
