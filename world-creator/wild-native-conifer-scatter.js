@@ -6,7 +6,7 @@ import {mayPlantTree} from "./wild-master-forest-reservations.js";
  * Cell occupancy is 10%; not a claim that 10% of physical acreage is covered.
  */
 export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight,excluded=()=>false,radius=900,cellSize=75,maxVisible=90}={}){
- const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of this.placements){const result=groundTree(p.root,terrainHeight,p.x,p.z,.12);if(result.ok&&Math.abs(result.error)>.025)fixed++;}this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
+ const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of [...this.placements]){const before=p.root.position.y;const result=groundTree(p.root,terrainHeight,p.x,p.z,.12);if(!result.ok){p.root.setEnabled(false);p.root.dispose(false,true);this.roots=this.roots.filter(r=>r!==p.root);this.placements=this.placements.filter(v=>v!==p);this.skipped++;continue;}if(Math.abs(p.root.position.y-before)>.025)fixed++;}this.planted=this.placements.length;this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
  state.ready=(async()=>{
   const manifest=await fetch("./assets/village-grove-sources.json").then(r=>r.json());
@@ -33,7 +33,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const bark=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));const trunks=bark.length?bark:meshes.filter(m=>!/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")));
     if(!trunks.length)throw Error("No identifiable trunk geometry");
     // Keep a single coherent trunk: multi-tree source packs can contain floating extras.
-    const trunkCandidates=trunks.slice();
+    // Every trunk in the imported source must pass the shared grounding check.
 // Imported conifer assets can include displaced non-tree geometry or incorrect
 // trunk labels. Reject wildly separated submeshes rather than planting floaters.
 
