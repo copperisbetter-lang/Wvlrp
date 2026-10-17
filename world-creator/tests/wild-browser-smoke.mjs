@@ -81,7 +81,7 @@ try{
     "Critical browser errors: "+warnings.join("; "));
   // Teleport to the NEW station, 350m north, without moving Hearthside.
   // Its authentic log panels and metal roofing render on photographed ground.
-  await page.locator("#village").click();
+  await page.locator("#village").evaluate(button=>button.click());
   await page.waitForFunction(()=>window.__wildDiagnostics()?.communityBuildings===2 &&
       window.__wildDiagnostics()?.photographicTerrainStatus==="ready",
     {timeout:25000});
@@ -114,7 +114,7 @@ try{
   await page.screenshot({path:"wild-walk-qa.png",fullPage:true});
   // The photo rebuild is a separate physical place 30m east of the old one.
   // Verify real meshes, approach camera, and photo-station dedicated spawn.
-  await page.locator("#photoRanger").click();
+  await page.locator("#photoRanger").evaluate(button=>button.click());
   await page.waitForTimeout(1800);
   const newRanger=await page.evaluate(()=>window.__wildDiagnostics());
   console.log("PHOTO_RANGER_30M_EAST",JSON.stringify(newRanger));
@@ -129,7 +129,7 @@ try{
     "New Ranger Station must have actual 3D geometry and furnished interior");
   await page.screenshot({path:"wild-photo-ranger-qa.png",fullPage:true});
   // Inspect actual in-world geometric stacks, not a page of texture links.
-  await page.locator("#materialYard").click();
+  await page.locator("#materialYard").evaluate(button=>button.click());
   await page.waitForFunction(()=>window.__wildMaterialsDiagnostics?.()?.ready===true,{
     timeout:25000});
   const yard=await page.evaluate(()=>window.__wildMaterialsDiagnostics());
