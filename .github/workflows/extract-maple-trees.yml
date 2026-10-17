@@ -1,0 +1,32 @@
+name: Extract planting-ready maple trees
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/extract-maple-trees.yml'
+      - 'world-creator/scripts/extract_maple_trees.py'
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract twelve LOD0 maples without checker ground
+        run: python3 world-creator/scripts/extract_maple_trees.py
+      - name: Validate cleaned GLB
+        run: python3 -c "import struct,pathlib; p=pathlib.Path('world-creator/assets/maple_trees_planting_clean.glb'); d=p.read_bytes(); assert d[:4]==b'glTF' and struct.unpack_from('<I',d,8)[0]==len(d)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maple-trees-individual-clean
+          path: maple-individual-assets/*.glb
+          compression-level: 6
+      - name: Commit clean combined planting GLB
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/maple_trees_planting_clean.glb
+          git commit -m "Add platform-free LOD0 maple planting asset" || exit 0
+          git push
