@@ -1,4 +1,4 @@
-import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-worldwide-18pct-v1";
+import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-ground-anchor-v2";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
