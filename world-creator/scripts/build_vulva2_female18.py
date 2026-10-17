@@ -279,6 +279,15 @@ glb=json.loads(raw[20:20+n])
 verify_photo_skin_glb(glb,"Vulva2Test")
 if not any("Vulva2 MHX2 true auto-fit" in node.get("name","") for node in glb.get("nodes",[])):
     raise RuntimeError("Actual Vulva2 anatomy absent from exported binary")
+# Validate the exported binary, not just Blender's pre-export object list.
+anatomy_nodes=[n for n in glb.get("nodes",[]) if "Vulva2 MHX2 true auto-fit" in n.get("name","")]
+if len(anatomy_nodes)!=1:
+    raise RuntimeError(f"SAV3_ANATOMY_COUNT: expected one Vulva2 mesh, got {len(anatomy_nodes)}")
+if any("Vulva1" in n.get("name","") for n in glb.get("nodes",[])):
+    raise RuntimeError("SAV3_DUPLICATE_ANATOMY: Vulva1 leaked into export")
+if any("delete original covered faces" in n.get("name","") for n in glb.get("nodes",[])):
+    raise RuntimeError("SAV3_UNSAFE_MASK: legacy deletion helper leaked into export")
+print("SAV3_SINGLE_VULVA2_EXPORT_VERIFIED",flush=True)
 if not glb.get("skins"):raise RuntimeError("Model lost rig skinning")
 clips={a.get("name","") for a in glb.get("animations",[])}
 expected={"Vulva2 "+name for name in ("Stand","Walk","Run","Bend",
