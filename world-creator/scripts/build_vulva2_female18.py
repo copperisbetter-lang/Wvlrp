@@ -355,6 +355,18 @@ def repair_small_skin_holes():
     bm.free()
     print("SAV3_SMALL_SKIN_HOLES_REPAIRED",repaired,flush=True)
 repair_small_skin_holes()
+# Never treat a hollow or non-manifold body as a successful export.
+def assert_closed_body():
+    import bmesh
+    bm=bmesh.new()
+    bm.from_mesh(body.data)
+    boundary=sum(1 for e in bm.edges if e.is_boundary)
+    nonmanifold=sum(1 for e in bm.edges if not e.is_manifold)
+    bm.free()
+    if boundary or nonmanifold:
+        raise RuntimeError(f"SAV3_BODY_NOT_CLOSED: boundary={boundary}, nonmanifold={nonmanifold}")
+    print("SAV3_BODY_WATERTIGHT_VERIFIED",flush=True)
+assert_closed_body()
 hair=add_clean_long_blonde_hair(root,body,rigs[0])
 # Stop the build if an accidentally exported body-sized shell or
 # misplaced facial asset would recreate the broken Sav3 silhouette.
