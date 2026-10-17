@@ -147,4 +147,28 @@ validate_face_alignment()
 '''
 source=source.replace(face_anchor,'validate_visible_meshes()\\n'+face_qa+'\\nadd_vulva2_preview_animations')
 
+# Facial accessories must be bound to the same rig as the body. A valid
+# position in the bind pose is not enough if their parent/armature differs.
+rig_anchor = 'validate_face_alignment()\\n'
+if source.count(rig_anchor) != 1:
+    raise RuntimeError("SAV3_FACE_RIG_ANCHOR_CHANGED")
+rig_qa = '''
+def validate_face_rigging():
+    for obj in [root]+list(root.children_recursive):
+        if obj.type!="MESH" or obj in (body,addon,hair): continue
+        name=obj.name.lower()
+        if not any(term in name for term in ("eye","brow","lash","teeth","tooth","high-poly","low-poly")):
+            continue
+        modifiers=[m for m in obj.modifiers if m.type=="ARMATURE"]
+        if len(modifiers)!=1 or modifiers[0].object!=rigs[0]:
+            raise RuntimeError("SAV3_FACE_RIG_MISMATCH: "+obj.name)
+        if not obj.vertex_groups:
+            raise RuntimeError("SAV3_FACE_UNWEIGHTED: "+obj.name)
+        if any(not vertex.groups for vertex in obj.data.vertices):
+            raise RuntimeError("SAV3_FACE_PARTIALLY_UNWEIGHTED: "+obj.name)
+    print("SAV3_FACE_RIG_BINDINGS_VERIFIED",flush=True)
+validate_face_rigging()
+'''
+source=source.replace(rig_anchor,rig_anchor+rig_qa)
+
 exec(compile(source, str(base), "exec"), {"__name__": "__main__", "__file__": str(base)})
