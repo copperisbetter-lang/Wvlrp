@@ -81,19 +81,29 @@ def add_clean_long_blonde_hair(root, body, rig):
         poly.material_index=mat;poly.use_smooth=True
     obj=bpy.data.objects.new("Vulva2 clean long blonde hair | head rigged",mesh)
     bpy.context.collection.objects.link(obj)
-    # Preserve world-space hair coordinates when attaching to the export hierarchy.
-    # Assign the parent first, then explicitly restore the world transform.
-    obj.parent=root
-    obj.matrix_world=rig.matrix_world.copy()
-    inv=obj.matrix_world.inverted_safe()
-    for vertex in mesh.vertices:vertex.co=inv @ vertex.co
-    group=obj.vertex_groups.new(name=head)
-    group.add(list(range(len(verts))),1.,"REPLACE")
-    arm_mod=obj.modifiers.new("Keep blonde hair attached to head","ARMATURE")
-    arm_mod.object=rig
-    arm_mod.use_deform_preserve_volume=True
-    if obj.parent != root or arm_mod.object != rig or len(group.name)==0:
-        raise RuntimeError("SAV3_HAIR_RIG_BINDING_FAILED")
+    # Bone-parent the hair directly to Head. Do not simultaneously armature-
+    # deform and parent it: that can double-transform the cap during animation.
+    # Generated vertices above are WORLD coordinates, so convert them to
+    # the rest head-bone coordinate frame before attaching.
+    bpy.context.view_layer.update()
+    head_bone=rig.data.bones[head]
+    rest_world=rig.matrix_world @ head_bone.matrix_local
+    inv=rest_world.inverted_safe()
+    for vertex in mesh.vertices:
+        vertex.co=inv @ vertex.co
+    obj.parent=rig
+    obj.parent_type="BONE"
+    obj.parent_bone=head
+    obj.matrix_parent_inverse.identity()
+    obj.matrix_basis.identity()
+    bpy.context.view_layer.update()
+    if obj.parent!=rig or obj.parent_type!="BONE" or obj.parent_bone!=head:
+        raise RuntimeError("SAV3_HAIR_BONE_PARENT_FAILED")
+    # In rest pose the generated scalp must remain where it was constructed.
+    original=Vector(verts[0])
+    actual=obj.matrix_world @ mesh.vertices[0].co
+    if (actual-original).length > .015*h:
+        raise RuntimeError("SAV3_HAIR_REST_TRANSFORM_MISMATCH")
     if min(z for x,y,z in verts) < ez-.48*h:
         raise RuntimeError("Long hair hanging below intended back/waist clearance")
     print("WVLRP_VULVA2_CLEAN_HAIR_SUCCESS",len(verts),len(faces),head)
