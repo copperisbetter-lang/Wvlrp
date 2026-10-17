@@ -13,7 +13,7 @@ test("Homepage Adventures entry stays accessible while beta portal remains avail
   assert.match(home,/href="adventures\.html"/);
   assert.match(portal,/Game Beta Test/);
   assert.match(portal,/Game Beta Test/);
-  assert.match(portal,/temporarily closed|world-creator\\/walk\\.html\\?mode=beta&amp;spawn=ranger/i);
+  assert.ok(portal.includes("temporarily closed") || portal.includes("world-creator/walk.html?mode=beta&amp;spawn=ranger"));
   assert.match(portal,/Original 360° World/);
   assert.match(portal,/href="adventures\.html"/);
 });
