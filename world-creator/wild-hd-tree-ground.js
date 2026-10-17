@@ -25,6 +25,18 @@ export function groundTree(root, heightAt, x, z, burial=0.12) {
     root.position.y+=delta;
     if(Math.abs(delta)<0.015)break;
   }
-  const error=bounds().low-heightAt(x,z)+burial;
-  return {ok:Number.isFinite(error)&&Math.abs(error)<0.25,error,usedBark:bark.length>0};
+  const terrain=heightAt(x,z);
+  const error=bounds().low-terrain+burial;
+  // Reject imported packs with a grounded trunk and additional floating trunks.
+  const detached=[];
+  if(Number.isFinite(terrain)&&bark.length){
+    for(const mesh of bark){
+      mesh.computeWorldMatrix(true);
+      const base=mesh.getBoundingInfo().boundingBox.minimumWorld.y;
+      if(!Number.isFinite(base)||base>terrain+0.35)detached.push(mesh.name);
+    }
+  }
+  return {ok:Number.isFinite(error)&&Math.abs(error)<0.25&&detached.length===0,
+    error,usedBark:bark.length>0,detached,
+    reason:detached.length?'detached trunks in imported model':undefined};
 }
