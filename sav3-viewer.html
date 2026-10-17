@@ -70,31 +70,40 @@ let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibi
 const $=(id)=>document.getElementById(id);
 try{const p=JSON.parse(localStorage.getItem('sav3-fit-offset')||'{}');for(const [k,id] of [['x','fitx'],['y','fity'],['z','fitz']])if(Number.isFinite(p[k]))$(id).value=p[k]}catch{}
 let fitDrag=false,fitPointer=null,fitView='front',fitMeshes=[];const overlay=$('fitoverlay');
-function setFitMode(on){fitDrag=on;v.toggleAttribute('camera-controls',!on);overlay.style.display=on?'block':'none';v.style.touchAction=on?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(on?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag on the transparent touch layer to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
+function setFitMode(on){fitDrag=on&&fitMeshes.length>0;v.toggleAttribute('camera-controls',!fitDrag);overlay.style.display=on&&fitMeshes.length?'block':'none';v.style.touchAction=fitDrag?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag on the transparent touch layer to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
 function applyFit(){
-  const pos=fitPosition();
-  for(const item of fitMeshes){item.node.position.set(item.base.x+pos.x,item.base.y+pos.y,item.base.z+pos.z);}
-  v.requestUpdate?.();
+ const pos=fitPosition();
+ for(const item of fitMeshes){
+   // model-viewer scene graph uses translation arrays, NOT three.js position vectors.
+   item.node.translation=[item.base[0]+pos.x,item.base[1]+pos.y,item.base[2]+pos.z];
+ }
+ v.requestUpdate?.();
 }
 function findFitMeshes(){
  fitMeshes=[];
- // Select only the exported attachment node; never transform the character root.
- // model-viewer's public scene graph exposes mesh nodes through model.getNodes().
  try{
-  const nodes=v.model?.getNodes?.()||[];
+  const nodes=Array.from(v.model?.getNodes?.()||[]);
   for(const node of nodes){
    const label=String(node.name||'');
-   if(/vulva2.*(attachment|anatom|fit)|anatom.*vulva2/i.test(label)&&node.position){
-    fitMeshes.push({node,base:{x:node.position.x,y:node.position.y,z:node.position.z}});
+   if(/Vulva2 MHX2 true auto-fit/i.test(label) && node.translation){
+    fitMeshes.push({node,base:Array.from(node.translation)});
    }
   }
- }catch(e){$('fitstatus').textContent='Attachment nodes unavailable: '+e.message}
- applyFit();
+ }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
+ if(!fitMeshes.length){
+  setFitMode(false);
+  $('fitdrag').disabled=true;
+  $('fitstatus').textContent='Attachment node unavailable; dragging disabled to protect body. Model must expose Vulva2 mesh node.';
+ }else{
+  $('fitdrag').disabled=false;
+  applyFit();
+  $('fitstatus').textContent='Attachment selected: '+fitMeshes.length+' node. Finger Move controls attachment only.';
+ }
 }
 $('fitdrag').onclick=()=>setFitMode(!fitDrag);
 for(const event of ['pointerdown','pointermove','pointerup','pointercancel']){
  overlay.addEventListener(event,e=>{
-  if(!fitDrag||!ready)return;
+  if(!fitDrag||!ready||!fitMeshes.length)return;
   e.stopImmediatePropagation();
   e.preventDefault();
   if(event==='pointerdown'){
