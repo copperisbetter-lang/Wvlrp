@@ -76,111 +76,60 @@ export function installAutumnMaples(B,scene,{
         if(Math.hypot(x,z)>radius||excluded(x,z,16))continue;
         const y=terrainHeight(x,z);
         if(!Number.isFinite(y))continue;
+        // Each of the twelve original Acer models is treated as a master.
+        // All clones use the same trunk-footprint normalization, independent
+        // of the imported showroom layout and its arbitrary node pivots.
         const source=sourceRoots[Math.floor(hash(ix,iz,3)*sourceRoots.length)];
         const clone=source.clone("autumn-maple-"+ix+"-"+iz,null,false);
         if(!clone)continue;
-        // A dedicated world-space anchor prevents imported GLB parent transforms
-        // from turning local Y corrections into floating world-space trees.
         clone.parent=null;
         const anchor=new B.TransformNode("maple-ground-anchor-"+ix+"-"+iz,scene);
         clone.parent=anchor;
         clone.setEnabled(true);
         for(const child of clone.getChildMeshes(false))child.setEnabled(true);
-        // Remove imported display platforms, including unnamed flat bases.
         for(const mesh of clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0)){
           mesh.computeWorldMatrix(true);
           const bb=mesh.getBoundingInfo().boundingBox;
           const e=bb.maximumWorld.subtract(bb.minimumWorld);
           const name=(mesh.name+" "+(mesh.material?.name||"")).toLowerCase();
-          const platform=/platform|pedestal|plinth|display.?base|ground.?plane|floor|stage|terrain|socle/.test(name);
-          const flat=e.y>0&&e.x>e.y*7&&e.z>e.y*7&&e.x>2&&e.z>2;
-          if(platform||flat){mesh.setEnabled(false);mesh.isVisible=false;}
-        }
-        // Normalize only remaining tree geometry, not the removed platforms.
-        const meshes=clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0&&m.isEnabled()&&m.isVisible);
-        if(!meshes.length){clone.dispose(false,true);continue;}
-        for(const m of meshes) m.computeWorldMatrix(true);
-        let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
-        for(const m of meshes){const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
-        const height=max.y-min.y;
-        if(!Number.isFinite(height)||height<=0){clone.dispose(false,true);continue;}
-        const targetHeight=12+hash(ix,iz,4)*18;
-        // Apply rotation and scale first, then measure the transformed visible trunk.
-        clone.scaling.scaleInPlace(targetHeight/height);
-        clone.rotation.y=hash(ix,iz,5)*Math.PI*2;
-        clone.position.set(0,0,0);
-        clone.computeWorldMatrix(true);
-        for(const m of meshes)m.computeWorldMatrix(true);
-        let bottom=Infinity,lowX=0,lowZ=0;
-        // World bounds after scaling/rotation are essential: the GLB may have
-        // parent transforms and offsets unrelated to the removed display platform.
-        for(const m of meshes){
-          const bb=m.getBoundingInfo().boundingBox;
-          if(bb.minimumWorld.y<bottom){
-            bottom=bb.minimumWorld.y;
-            lowX=(bb.minimumWorld.x+bb.maximumWorld.x)*.5;
-            lowZ=(bb.minimumWorld.z+bb.maximumWorld.z)*.5;
+          if(/platform|pedestal|plinth|display.?base|ground.?plane|floor|stage|terrain|socle/.test(name)
+             ||(e.y>0&&e.x>e.y*7&&e.z>e.y*7&&e.x>2&&e.z>2)){
+            mesh.setEnabled(false);mesh.isVisible=false;
           }
         }
-        if(!Number.isFinite(bottom)){clone.dispose(false,true);continue;}
-        // Ground-pivot normalization: imported Sketchfab GLBs can carry a
-        // display-stage offset on nested transform nodes. Keep the full tree
-        // hierarchy intact and correct against WORLD bounds after parenting.
-        // Do not move the trunk sideways based on canopy bounds.
-        clone.position.set(0,0,0);
-        // Imported Acer roots are arranged on a shared display grid. Their
-        // trunk geometry can be tens of metres away from the root pivot, so
-        // sampling ground at the anchor alone plants at the WRONG X/Z.
-        // Center the lowest bark/trunk mesh horizontally on our world anchor.
+        const meshes=clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0&&m.isEnabled()&&m.isVisible);
+        if(!meshes.length){anchor.dispose(false,true);continue;}
         const bark=meshes.filter(m=>/bark|trunk|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));
         const trunkMeshes=bark.length?bark:meshes;
-        let trunkBottom=Infinity,trunkX=0,trunkZ=0;
-        for(const m of trunkMeshes){
-          m.computeWorldMatrix(true);
-          const bb=m.getBoundingInfo().boundingBox;
-          if(bb.minimumWorld.y<trunkBottom){
-            trunkBottom=bb.minimumWorld.y;
-            trunkX=(bb.minimumWorld.x+bb.maximumWorld.x)/2;
-            trunkZ=(bb.minimumWorld.z+bb.maximumWorld.z)/2;
-          }
-        }
-        if(!Number.isFinite(trunkBottom)){anchor.dispose(false,true);continue;}
-        // Shift the source's display-grid offset out of the tree geometry.
-        // Since the anchor is still at origin, world and local X/Z coincide.
-        clone.position.x-=trunkX;
-        clone.position.z-=trunkZ;
-        anchor.position.set(x,0,z);
-        const worldBottom=()=>{
-          anchor.computeWorldMatrix(true);
-          clone.computeWorldMatrix(true);
-          let low=Infinity;
-          for(const m of trunkMeshes){
-            m.computeWorldMatrix(true);
-            low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);
-          }
-          return low;
+        const bounds=arr=>{
+          let lo=new B.Vector3(Infinity,Infinity,Infinity),hi=new B.Vector3(-Infinity,-Infinity,-Infinity);
+          for(const m of arr){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;
+            lo=B.Vector3.Minimize(lo,bb.minimumWorld);hi=B.Vector3.Maximize(hi,bb.maximumWorld);}
+          return {lo,hi};
         };
-        const pivotBottom=worldBottom();
-        if(!Number.isFinite(pivotBottom)){anchor.dispose(false,true);continue;}
-        // The anchor is the new ground-level pivot. Its children are translated
-        // locally so the lowest surviving bark/foliage vertex meets y=0.
-        // pivotBottom is already a WORLD-space value. Correcting the clone
-        // before setting the anchor height would apply the terrain elevation
-        // twice (the cause of the floating maples on nonzero terrain).
-        // Position the anchor at the sampled terrain first. Then measure the
-        // lowest visible trunk in world coordinates and shift the tree exactly
-        // to the surface. Do not assume the imported pivot is at its base.
-        anchor.position.y=y-.12;
-        clone.position.y+=y-.12-pivotBottom;
-        // Verify against final world-space geometry, including nested GLB
-        // transforms, then compensate once more if the origin was offset.
-        for(let pass=0;pass<4;pass++){
-          const low=worldBottom();
-          const surface=terrainHeight(x,z);
+        const initial=bounds(meshes);
+        const height=initial.hi.y-initial.lo.y;
+        if(!Number.isFinite(height)||height<=0){anchor.dispose(false,true);continue;}
+        clone.scaling.scaleInPlace((12+hash(ix,iz,4)*18)/height);
+        clone.rotation.y=hash(ix,iz,5)*Math.PI*2;
+        clone.position.set(0,0,0);
+        // The original pack has twelve separate showroom positions.
+        // Translate each clone so its TRUNK, not its foliage or parent
+        // pivot, sits at the selected scatter coordinate.
+        const tb=bounds(trunkMeshes);
+        clone.position.x-=(tb.lo.x+tb.hi.x)/2;
+        clone.position.z-=(tb.lo.z+tb.hi.z)/2;
+        anchor.position.set(x,0,z);
+        // Move the trunk's actual world-space bottom to the visible ground.
+        // Recompute after every transform; never reuse a pre-anchor Y value.
+        const groundAtTrunk=()=>terrainHeight(x,z);
+        for(let pass=0;pass<5;pass++){
+          const low=bounds(trunkMeshes).lo.y;
+          const surface=groundAtTrunk();
           if(!Number.isFinite(low)||!Number.isFinite(surface))break;
           const delta=surface-.12-low;
           if(Math.abs(delta)<.01)break;
-          clone.position.y+=delta;
+          anchor.position.y+=delta;
         }
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
