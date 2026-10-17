@@ -182,6 +182,28 @@ if len(rigs)!=1:raise RuntimeError("Rig export copy missing")
 preserve_photo_skin(body,"Vulva2Test")
 addon=fit_vulva2(root,body,rigs[0])
 hair=add_clean_long_blonde_hair(root,body,rigs[0])
+# Stop the build if an accidentally exported body-sized shell or
+# misplaced facial asset would recreate the broken Sav3 silhouette.
+def validate_visible_meshes():
+    base_points=[body.matrix_world @ v.co for v in body.data.vertices]
+    low=min(v.z for v in base_points); high=max(v.z for v in base_points)
+    height=high-low
+    for ob in [root]+list(root.children_recursive):
+        if ob.type!="MESH" or ob==body or ob==addon or ob==hair:
+            continue
+        if not ob.data.vertices:
+            continue
+        name=ob.name.lower()
+        points=[ob.matrix_world @ v.co for v in ob.data.vertices]
+        zmin=min(v.z for v in points);zmax=max(v.z for v in points)
+        extent=zmax-zmin
+        if extent>height*.52:
+            raise RuntimeError("Unexpected oversized accessory/body shell: "+ob.name)
+        if any(k in name for k in ("eye","teeth","brow","lash")) and zmin<low+height*.70:
+            raise RuntimeError("Facial asset displaced below head: "+ob.name)
+    print("SAV3_VISIBLE_MESH_SANITY_PASS")
+validate_visible_meshes()
+
 add_vulva2_preview_animations(rigs[0])
 # Never export old fitted hair pieces or extra copy bodies.
 source_members=[root]+list(root.children_recursive)
