@@ -103,4 +103,48 @@ if not required.issubset(joint_names):
     raise RuntimeError("New weighted distal joints absent from exported skin: " + str(required-joint_names))
 print("SAV3_56_JOINTS_VERIFIED", len(joint_ids))
 ''')
+# Prevent publishing an obviously exploded face. All facial assets must occupy
+# a tight envelope around the head and must not project wildly beyond skin.
+face_anchor = 'validate_visible_meshes()\\n\\nadd_vulva2_preview_animations'
+if source.count(face_anchor) != 1:
+    raise RuntimeError("SAV3_FACE_QA_ANCHOR_CHANGED")
+face_qa = '''
+def validate_face_alignment():
+    from mathutils import Vector
+    points=[body.matrix_world @ v.co for v in body.data.vertices]
+    low=min(p.z for p in points); high=max(p.z for p in points)
+    height=high-low
+    head_points=[p for p in points if p.z>low+.83*height]
+    if not head_points: raise RuntimeError("SAV3_FACE_NO_HEAD_SURFACE")
+    left=min(p.x for p in head_points); right=max(p.x for p in head_points)
+    front=min(p.y for p in head_points); back=max(p.y for p in head_points)
+    bad=[]
+    counts={"eyes":0,"teeth":0}
+    for obj in [root]+list(root.children_recursive):
+        if obj.type!="MESH" or obj in (body,addon,hair): continue
+        name=obj.name.lower()
+        is_eye=("high-poly" in name or "low-poly" in name or "eye" in name) and not any(x in name for x in ("brow","lash"))
+        is_teeth=any(x in name for x in ("teeth","tooth"))
+        if not (is_eye or is_teeth):continue
+        category="eyes" if is_eye else "teeth"
+        counts[category]+=1
+        coords=[obj.matrix_world @ v.co for v in obj.data.vertices]
+        if not coords:bad.append((obj.name,"empty"));continue
+        # Allow minor protrusion, but reject eyeballs or jaws sitting
+        # visibly outside the facial silhouette (as in Oct 17 screenshots).
+        if (min(p.x for p in coords)<left-.025*height or
+            max(p.x for p in coords)>right+.025*height or
+            min(p.y for p in coords)<front-.035*height or
+            max(p.y for p in coords)>back+.025*height or
+            min(p.z for p in coords)<low+.76*height or
+            max(p.z for p in coords)>high+.015*height):
+            bad.append((obj.name,"outside head envelope"))
+    if counts["eyes"]<1 or counts["teeth"]<1:
+        bad.append(("face","missing eyes or teeth"))
+    if bad:raise RuntimeError("SAV3_FACE_ALIGNMENT_FAILED: "+repr(bad))
+    print("SAV3_FACE_ENVELOPE_VERIFIED",counts,flush=True)
+validate_face_alignment()
+'''
+source=source.replace(face_anchor,'validate_visible_meshes()\\n'+face_qa+'\\nadd_vulva2_preview_animations')
+
 exec(compile(source, str(base), "exec"), {"__name__": "__main__", "__file__": str(base)})
