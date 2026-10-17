@@ -21,8 +21,11 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
   const positions=[];
   for(let i=0;i<6;i++){
     const theta=(i+.5)*Math.PI/3;
-    const radial=R-0.35;
+    // Keep trunks outside the 18 x 14 m cabin, porch, and a generous walking buffer.
+    const radial=Math.max(R-0.35,25);
     const x=Math.cos(theta)*radial,z=Math.sin(theta)*radial;
+    // Cabin footprint x ±9, z ±7; include 8 m access/branch buffer.
+    if(Math.abs(x)<17 && Math.abs(z)<15)continue;
     positions.push({x,z,i});
   }
   const autumn=new Date().getMonth()===9; // October in the real calendar
