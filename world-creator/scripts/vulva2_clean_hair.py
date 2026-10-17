@@ -95,7 +95,13 @@ def add_clean_long_blonde_hair(root, body, rig):
     obj.parent_type="BONE"
     obj.parent_bone=head
     obj.matrix_parent_inverse.identity()
-    obj.matrix_basis.identity()
+    obj.location=(0,0,0)
+    obj.rotation_mode="QUATERNION"
+    obj.rotation_quaternion=(1,0,0,0)
+    obj.scale=(1,1,1)
+    # Blender bone parenting includes the bone length offset along local Y.
+    # Cancel it explicitly; the vertices are already in bone-rest coordinates.
+    obj.location.y=-head_bone.length
     bpy.context.view_layer.update()
     if obj.parent!=rig or obj.parent_type!="BONE" or obj.parent_bone!=head:
         raise RuntimeError("SAV3_HAIR_BONE_PARENT_FAILED")
