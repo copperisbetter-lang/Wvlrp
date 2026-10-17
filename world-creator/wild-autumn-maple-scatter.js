@@ -39,8 +39,18 @@ export function installAutumnMaples(B,scene,{
         if(!clone)continue;
         clone.setEnabled(true);
         for(const child of clone.getChildMeshes(false))child.setEnabled(true);
-        // Normalize model bounds: source pack coordinates may be huge or offset.
-        const meshes=clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
+        // Remove imported display platforms, including unnamed flat bases.
+        for(const mesh of clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0)){
+          mesh.computeWorldMatrix(true);
+          const bb=mesh.getBoundingInfo().boundingBox;
+          const e=bb.maximumWorld.subtract(bb.minimumWorld);
+          const name=(mesh.name+" "+(mesh.material?.name||"")).toLowerCase();
+          const platform=/platform|pedestal|plinth|display.?base|ground.?plane|floor|stage|terrain|socle/.test(name);
+          const flat=e.y>0&&e.x>e.y*7&&e.z>e.y*7&&e.x>2&&e.z>2;
+          if(platform||flat){mesh.setEnabled(false);mesh.isVisible=false;}
+        }
+        // Normalize only remaining tree geometry, not the removed platforms.
+        const meshes=clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0&&m.isEnabled()&&m.isVisible);
         if(!meshes.length){clone.dispose(false,true);continue;}
         for(const m of meshes) m.computeWorldMatrix(true);
         let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
@@ -57,6 +67,7 @@ export function installAutumnMaples(B,scene,{
         clone.rotation.y=hash(ix,iz,5)*Math.PI*2;
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
+          if(!mesh.isEnabled()||!mesh.isVisible)continue;
           mesh.isPickable=false;mesh.checkCollisions=false;
           if(!mesh.material)continue;
           const name=(mesh.material.name+" "+mesh.name).toLowerCase();
