@@ -1,6 +1,6 @@
 /** Living PBR grove around Hearthside girls' cabin. 500 m² circle; no deadwood. */
 // Prefer upright evergreen PBR assets; retire all island trees with sprawling roots.
-const ASSETS=["fir_sapling_medium","pine_sapling_small","fir_sapling","fir_tree_01","pine_tree_01"];
+const ASSETS=["fir_sapling_medium","pine_sapling_small","fir_sapling","fir_tree_01","tree_small_02"];
 const AREA=500, R=Math.sqrt(AREA/Math.PI);
 export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
  const state={status:"loading",planted:0,failed:0,areaSquareMetres:AREA,roots:[]};
@@ -25,8 +25,13 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     const x=Math.cos(theta)*radial,z=Math.sin(theta)*radial;
     positions.push({x,z,i});
   }
+  const autumn=new Date().getMonth()===9; // October in the real calendar
   for(const {x,z,i} of positions){
-   const {asset,container}=loaded[i%loaded.length];let instance;
+   // Use upright conifers plus two broadleaf trees; never recolor evergreen needles.
+   const broadleaf=autumn&&(i===1||i===4);
+   const chosen=broadleaf?loaded.find(v=>v.asset.id==="tree_small_02"):null;
+   const evergreens=loaded.filter(v=>v.asset.id!=="tree_small_02");
+   const {asset,container}=chosen||evergreens[i%evergreens.length];let instance;
    try{
     instance=container.instantiateModelsToScene(n=>"girls-live-"+i+"-"+n,false,{doNotInstantiate:false});
     const root=new B.TransformNode("girls-cabin-fixed-world-tree-"+i,scene);
@@ -48,6 +53,20 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       if(/leaf|leaves|foliage|needle|canopy|branchlet/.test(label)&&!/trunk|bark|stem/.test(label)){
         m.scaling.x*=1.28;
         m.scaling.z*=1.28;
+      }
+    }
+    if(autumn&&asset.id==="tree_small_02"){
+      // Tint only foliage material on the two broadleaf specimens.
+      // Clone per-instance materials so evergreens and shared source assets
+      // retain their original colors. Preserve photographic texture detail.
+      const colors=[new B.Color3(.84,.46,.14),new B.Color3(.72,.26,.13)];
+      for(const m of meshes){
+        const label=(m.name+" "+(m.material?.name||"")).toLowerCase();
+        if(!/leaf|leaves|foliage|canopy/.test(label)||/trunk|bark|wood/.test(label)||!m.material)continue;
+        const mat=m.material.clone("october-hardwood-"+i+"-"+m.name);
+        if(mat.albedoColor)mat.albedoColor=colors[i%2];
+        else if(mat.diffuseColor)mat.diffuseColor=colors[i%2];
+        m.material=mat;
       }
     }
     root.rotation.y=i*2.399963229728653;
