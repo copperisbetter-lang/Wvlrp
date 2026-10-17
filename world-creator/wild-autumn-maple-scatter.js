@@ -167,8 +167,11 @@ export function installAutumnMaples(B,scene,{
         // pivotBottom is already a WORLD-space value. Correcting the clone
         // before setting the anchor height would apply the terrain elevation
         // twice (the cause of the floating maples on nonzero terrain).
-        clone.position.y-=pivotBottom;
+        // Position the anchor at the sampled terrain first. Then measure the
+        // lowest visible trunk in world coordinates and shift the tree exactly
+        // to the surface. Do not assume the imported pivot is at its base.
         anchor.position.y=y-.12;
+        clone.position.y+=y-.12-pivotBottom;
         // Verify against final world-space geometry, including nested GLB
         // transforms, then compensate once more if the origin was offset.
         for(let pass=0;pass<4;pass++){
