@@ -1,4 +1,5 @@
 import {groundTree} from "./wild-hd-tree-ground.js";
+import {flatlandHeight} from "./wild-rebuild-layout.js";
 /** Living PBR grove around Hearthside girls' cabin. 500 m² circle; no deadwood. */
 // Prefer upright evergreen PBR assets; retire all island trees with sprawling roots.
 const ASSETS=["fir_sapling_medium","pine_sapling_small","fir_sapling","fir_tree_01","tree_small_02"];
@@ -35,10 +36,10 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
    const broadleaf=autumn&&(i===1||i===4);
    const chosen=broadleaf?loaded.find(v=>v.asset.id==="tree_small_02"):null;
    const evergreens=loaded.filter(v=>v.asset.id!=="tree_small_02");
-   const {asset,container}=chosen||evergreens[i%evergreens.length];let instance;
+   const {asset,container}=chosen||evergreens[i%evergreens.length];let instance,root;
    try{
     instance=container.instantiateModelsToScene(n=>"girls-live-"+i+"-"+n,false,{doNotInstantiate:false});
-    const root=new B.TransformNode("girls-cabin-fixed-world-tree-"+i,scene);
+    root=new B.TransformNode("girls-cabin-fixed-world-tree-"+i,scene);
     instance.rootNodes.forEach(n=>{n.parent=root;n.setEnabled?.(true);});
     const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
     if(!meshes.length)throw Error("No tree mesh");
@@ -97,11 +98,13 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       minZ=Math.min(minZ,box.minimumWorld.z);maxZ=Math.max(maxZ,box.maximumWorld.z);
       m.isPickable=false;m.checkCollisions=false;
     }
-    const placement=groundTree(root,(px,pz)=>cabinGrade(px,pz,seed),x,z,.10);
+    // Use the exact same terrain height function as the streamed ground and maples.
+    const terrainAt=(px,pz)=>flatlandHeight(px,pz,seed,cabinGrade(0,0,seed));
+    const placement=groundTree(root,terrainAt,x,z,.10);
     if(!placement.ok)throw Error("Cabin HD tree grounding failed: "+placement.reason+" "+placement.error);
     root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
-   }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
+   }catch(e){state.failed++;root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
   }
   state.status=state.planted?"ready":"empty";
   console.info("GIRLS_CABIN_LIVING_GROVE",JSON.stringify({status:state.status,planted:state.planted,failed:state.failed,areaSquareMetres:AREA}));
