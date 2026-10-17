@@ -23,8 +23,9 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
    try{
     instance=src.container.instantiateModelsToScene(n=>"native10-"+ix+"-"+iz+"-"+n,false,{doNotInstantiate:false});
     root=new B.TransformNode("native10-anchor-"+ix+"-"+iz,scene);
-    instance.rootNodes.forEach(n=>n.parent=root);
+    instance.rootNodes.forEach(n=>{n.parent=root; n.setEnabled?.(true);});
     const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
+    for(const m of meshes)m.setEnabled(true);
     if(!meshes.length)throw Error("No geometry");
     const bark=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));const trunks=bark.length?bark:meshes.filter(m=>!/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")));
     if(!trunks.length)throw Error("No identifiable trunk geometry");
@@ -48,6 +49,9 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     if(Math.abs(trunkBounds.lo.y-ground)>.35)throw Error("Conifer grounding failed: "+src.id);
     // Never show a detached canopy or a second tree floating above the planted trunk.
     for(const m of meshes){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;if(bb.minimumWorld.y>ground+3.0 && !/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")))throw Error("Detached visible geometry in "+src.id); }
+    // Ensure every tree root actually has a visible trunk at the terrain surface.
+    const plantedBase=bounds(trunks).lo.y;
+    if(!Number.isFinite(plantedBase)||Math.abs(plantedBase-ground)>0.35)throw Error("Tree root not planted");
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
     root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
