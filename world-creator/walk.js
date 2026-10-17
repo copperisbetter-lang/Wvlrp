@@ -134,6 +134,16 @@ const camera=new B.FreeCamera("first-person explorer",
  */
 const autumnMaples=installAutumnMaples(B,scene,{
   seed,terrainHeight:(x,z)=>{
+    // Sample the visible photographic ground first. The landscape's procedural
+    // height can differ from the separate photo-ground mesh (floating trees).
+    const ray=new B.Ray(new B.Vector3(x,10000,z),new B.Vector3(0,-1,0),20000);
+    const hit=scene.pickWithRay(ray,mesh=>{
+      if(!mesh.isEnabled()||!mesh.isVisible||!mesh.getTotalVertices?.())return false;
+      const name=(mesh.name||"").toLowerCase();
+      return /photo.*ground|ground.*photo|terrain|landscape|ground/.test(name)
+        && !/maple|tree|leaf|foliage|anchor|platform|display/.test(name);
+    });
+    if(hit?.hit&&Number.isFinite(hit.pickedPoint?.y))return hit.pickedPoint.y;
     const rendered=habitat?.surfaceHeight?.(x,z);
     return Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
   },
