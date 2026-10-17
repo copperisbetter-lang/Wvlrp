@@ -233,6 +233,21 @@ def fit_vulva2(root,body,rig):
               "remaining",remaining,"max_displacement",round(max(abs(v) for v in shifts),5),flush=True)
         if remaining>len(pts)*.10 or max(abs(v) for v in shifts)>.16:
             raise RuntimeError("SAV3_EXTERIOR_PROJECTION_UNSAFE")
+    # Final exterior check must use the FINAL coordinates, not the initial fit.
+    final_contacts=[front_surface(x,z) for x,y,z in pts]
+    buried=[i for i,((x,y,z),surface) in enumerate(zip(pts,final_contacts))
+            if surface is not None and y>surface+.001]
+    if len(buried)>len(pts)*.02:
+        raise RuntimeError("SAV3_ANATOMY_BURIED: "
+                           +str(len(buried))+"/"+str(len(pts))+" vertices behind skin")
+    # Detect duplicate anatomy by geometry and object identity before export.
+    duplicates=[other.name for other in [root]+list(root.children_recursive)
+                if other.type=="MESH" and other!=ob and
+                ("vulva" in other.name.lower() or
+                 other.get("wvlrp_vulva2_authentic_mhx2"))]
+    if duplicates:
+        raise RuntimeError("SAV3_DUPLICATE_ANATOMY: "+repr(duplicates))
+    print("SAV3_SINGLE_EXTERIOR_ANATOMY_VERIFIED",len(pts)-len(buried),flush=True)
     # Do not delete body vertices using an unverified cross-topology mask.
     # The original mask can create jagged holes on different body topology.
     delete=[]
