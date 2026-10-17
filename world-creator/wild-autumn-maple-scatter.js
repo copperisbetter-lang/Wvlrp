@@ -10,6 +10,8 @@ export function installAutumnMaples(B,scene,{
   const state={status:"loading",planted:0,error:"",roots:[],placements:[],reground(){
     let corrected=0;
     for(const item of this.placements){
+      // Sample the terrain at the actual trunk footprint, not just the cell anchor.
+      // A sloping terrain can be several metres different across a tree's canopy.
       const ground=terrainHeight(item.x,item.z);
       if(!Number.isFinite(ground))continue;
       let lowest=Infinity;
@@ -34,6 +36,15 @@ export function installAutumnMaples(B,scene,{
       }
     }
     this.lastRegroundCorrections=corrected;
+    this.groundingErrors=this.placements.map(item=>{
+      const surface=terrainHeight(item.x,item.z);
+      let bottom=Infinity;
+      for(const mesh of (item.trunkMeshes||item.meshes)){
+        mesh.computeWorldMatrix(true);
+        bottom=Math.min(bottom,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
+      }
+      return {x:item.x,z:item.z,error:bottom-surface};
+    }).filter(p=>Number.isFinite(p.error)&&Math.abs(p.error)>.5).slice(0,20);
     return corrected;
   },dispose(){
     if(this.groundObserver)scene.onBeforeRenderObservable.remove(this.groundObserver);
@@ -153,6 +164,9 @@ export function installAutumnMaples(B,scene,{
         if(!Number.isFinite(pivotBottom)){anchor.dispose(false,true);continue;}
         // The anchor is the new ground-level pivot. Its children are translated
         // locally so the lowest surviving bark/foliage vertex meets y=0.
+        // pivotBottom is already a WORLD-space value. Correcting the clone
+        // before setting the anchor height would apply the terrain elevation
+        // twice (the cause of the floating maples on nonzero terrain).
         clone.position.y-=pivotBottom;
         anchor.position.y=y-.12;
         // Verify against final world-space geometry, including nested GLB
