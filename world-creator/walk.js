@@ -137,12 +137,18 @@ const autumnMaples=installAutumnMaples(B,scene,{
     // Sample the visible photographic ground first. The landscape's procedural
     // height can differ from the separate photo-ground mesh (floating trees).
     const ray=new B.Ray(new B.Vector3(x,10000,z),new B.Vector3(0,-1,0),20000);
-    const hit=scene.pickWithRay(ray,mesh=>{
+    // Prefer the photographic surface, not an overlapping procedural terrain
+    // tile: the latter can be many metres above the ground the player sees.
+    const isGround=mesh=>{
       if(!mesh.isEnabled()||!mesh.isVisible||!mesh.getTotalVertices?.())return false;
       const name=(mesh.name||"").toLowerCase();
-      return /photo.*ground|ground.*photo|terrain|landscape|ground/.test(name)
-        && !/maple|tree|leaf|foliage|anchor|platform|display/.test(name);
-    });
+      return !/maple|tree|leaf|foliage|anchor|platform|display|cabin|roof/.test(name);
+    };
+    const photoHit=scene.pickWithRay(ray,mesh=>isGround(mesh)&&
+      /photo|photogram|real.?terrain|pbr.?ground/.test((mesh.name||"").toLowerCase()));
+    if(photoHit?.hit&&Number.isFinite(photoHit.pickedPoint?.y))return photoHit.pickedPoint.y;
+    const hit=scene.pickWithRay(ray,mesh=>isGround(mesh)&&
+      /terrain|landscape|ground/.test((mesh.name||"").toLowerCase()));
     if(hit?.hit&&Number.isFinite(hit.pickedPoint?.y))return hit.pickedPoint.y;
     const rendered=habitat?.surfaceHeight?.(x,z);
     return Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
