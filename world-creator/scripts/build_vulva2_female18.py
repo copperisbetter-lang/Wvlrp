@@ -210,7 +210,7 @@ source_members=[root]+list(root.children_recursive)
 # Only the body, anatomical fitting, generated hair and explicit facial
 # assets belong in this unclothed inspection model. Unexpected garment
 # meshes must never silently become a shin-length shell in the GLB.
-allowed_face_terms=("eye","brow","lash","teeth","tooth","tongue")
+allowed_face_terms=("eye","brow","lash","teeth","tooth","tongue","high-poly","low-poly")
 unexpected=[o.name for o in source_members if o.type=="MESH"
             and o not in (body,addon,hair)
             and not any(term in o.name.lower() for term in allowed_face_terms)]
