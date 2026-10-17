@@ -80,6 +80,16 @@ jobs:
               raise SystemExit("SAV3_BUILD_DIAGNOSTIC: GLB missing or too small")
           print("SAV3_BUILD_VALIDATED",artifact.stat().st_size,flush=True)
           PY
+      - name: Publish SAV 3 GLB to GitHub Pages source
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f world-creator/assets/sav3-adult-inspection.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish validated SAV 3 inspection model"
+            git push origin HEAD:main
+          fi
       - name: Save inspection GLB as private build artifact
         uses: actions/upload-artifact@v4
         with:
