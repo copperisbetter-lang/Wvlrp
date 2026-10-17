@@ -40,7 +40,7 @@ select{max-width:100%;width:100%;background:#1b3d2d}p{line-height:1.52}
 <button id="skeleton" disabled title="Rig bones must be exported as a visible debugging layer">Skeleton overlay (not available)</button>
 </div>
 <p id="diagnostic" class="note">Material isolation becomes available when the exported GLB loads. No garments will be invented by the viewer.</p>
-<h2>Touch fitting position</h2><p class="note">Save placement offsets on this phone. These controls record measurements only; they do not yet move the 3D attachment or modify the exported model.</p><div class="controls"><label>X <input id="fitx" type="number" step="0.005" value="0"></label><label>Y <input id="fity" type="number" step="0.005" value="0"></label><label>Z <input id="fitz" type="number" step="0.005" value="0"></label><button id="fitsave">Save position</button><button id="fitcopy">Copy coordinates</button></div><p id="fitstatus" class="note"></p><h2>Movements and poses</h2>
+<h2>Touch fitting position</h2><p class="note">Turn Finger move ON, then drag on the model. Front view changes X/Z; side view changes Y/Z. Save retains offsets on this phone; copying coordinates lets us apply them to a rebuilt model.</p><div class="controls"><label>X <input id="fitx" type="number" step="0.005" value="0"></label><label>Y <input id="fity" type="number" step="0.005" value="0"></label><label>Z <input id="fitz" type="number" step="0.005" value="0"></label><button id="fitdrag" aria-pressed="false">Finger move: OFF</button><button id="fitsave">Save position</button><button id="fitcopy">Copy coordinates</button></div><p id="fitstatus" class="note"></p><h2>Movements and poses</h2>
 <div class="controls" id="poseButtons">
 <button data-pose="Stand" disabled>Idle / stand</button><button data-pose="Walk" disabled>Walk</button>
 <button data-pose="Run" disabled>Run</button><button data-pose="Sit" disabled>Sit</button>
@@ -69,6 +69,42 @@ let loadTimer=0,rendererTimer=0,sequenceTimer=0,sequence=[],sequenceIndex=0,sequ
 let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibility={hair:true,anatomy:true,body:true,clothes:true};
 const $=(id)=>document.getElementById(id);
 try{const p=JSON.parse(localStorage.getItem('sav3-fit-offset')||'{}');for(const [k,id] of [['x','fitx'],['y','fity'],['z','fitz']])if(Number.isFinite(p[k]))$(id).value=p[k]}catch{}
+let fitDrag=false,fitPointer=null,fitView='front',fitMeshes=[];
+function applyFit(){
+  const pos=fitPosition();
+  for(const item of fitMeshes){item.node.position.set(item.base.x+pos.x,item.base.y+pos.y,item.base.z+pos.z);}
+  v.requestUpdate?.();
+}
+function findFitMeshes(){
+ fitMeshes=[];
+ const scene=v.model?.[Symbol.for('unused')]||null;
+ // model-viewer's public scene graph exposes mesh nodes through model.getNodes().
+ try{
+  const nodes=v.model?.getNodes?.()||[];
+  for(const node of nodes){
+   const label=String(node.name||'');
+   if(/vulva2.*(attachment|anatom|fit)|anatom.*vulva2/i.test(label)&&node.position){
+    fitMeshes.push({node,base:{x:node.position.x,y:node.position.y,z:node.position.z}});
+   }
+  }
+ }catch(e){$('fitstatus').textContent='Attachment nodes unavailable: '+e.message}
+ applyFit();
+}
+$('fitdrag').onclick=()=>{
+ fitDrag=!fitDrag;$('fitdrag').setAttribute('aria-pressed',String(fitDrag));
+ $('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');
+ $('fitstatus').textContent=fitDrag?'Drag vertically to change height; horizontally to change X (front) or Y (side).':'Finger move off';
+};
+v.addEventListener('pointerdown',e=>{if(!fitDrag||!ready)return;fitPointer={x:e.clientX,y:e.clientY};v.setPointerCapture?.(e.pointerId);e.preventDefault()},{capture:true});
+v.addEventListener('pointermove',e=>{if(!fitPointer||!fitDrag)return;
+ const factor=Math.max(.0001,size.y/Math.max(200,v.clientHeight));
+ const dx=(e.clientX-fitPointer.x)*factor,dy=(fitPointer.y-e.clientY)*factor;
+ const h=fitView==='side'?'fity':'fitx';
+ $(h).value=(Number($(h).value)+dx).toFixed(4);
+ $('fitz').value=(Number($('fitz').value)+dy).toFixed(4);
+ fitPointer={x:e.clientX,y:e.clientY};applyFit();e.preventDefault();
+},{capture:true});
+v.addEventListener('pointerup',()=>fitPointer=null,{capture:true});
 function fitPosition(){return {x:Number($('fitx').value)||0,y:Number($('fity').value)||0,z:Number($('fitz').value)||0}}
 $('fitsave').onclick=()=>{localStorage.setItem('sav3-fit-offset',JSON.stringify(fitPosition()));$('fitstatus').textContent='Coordinates saved on this phone (not applied to the mesh).'};
 $('fitcopy').onclick=()=>{const value=JSON.stringify({sav3_offset_m:fitPosition()});navigator.clipboard.writeText(value).then(()=>$('fitstatus').textContent='Coordinates copied. Paste them into chat.').catch(()=>$('fitstatus').textContent=value)};
@@ -166,7 +202,7 @@ v.addEventListener('load',()=>{
    const clip=match(b.dataset.pose);b.disabled=!clip;
    b.title=clip?'Actual clip: '+clip:'No matching animation exported in this GLB';
  }
- classifyMaterials();
+ classifyMaterials();findFitMeshes();
  s.textContent='GLB loaded — '+clips.length+' real motion clip(s). This confirms file loading, not visual quality.';
  motion.textContent=clips.length?'Starting automatic movement sequence, returning to stand between each clip.':'No animations in this export yet; building an updated rigged version.';
  if(clips.length){$('auto').disabled=false;startSequence();}
@@ -177,7 +213,7 @@ $('reload').onclick=()=>{if(!customElements.get('model-viewer'))location.reload(
 $('reset').onclick=()=>focus('full');
 for(const b of document.querySelectorAll('[data-focus]'))b.onclick=()=>focus(b.dataset.focus);
 const angles={front:[0,80],left:[-90,80],right:[90,80],rear:[180,80],under:[0,145]};
-for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>{if(ready){const [a,p]=angles[b.dataset.view];orbit(a,radius,p);}};
+for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>{if(ready){const [a,p]=angles[b.dataset.view];orbit(a,radius,p);if(b.dataset.view==='front'||b.dataset.view==='left'||b.dataset.view==='right')fitView=b.dataset.view==='front'?'front':'side';}};
 $('zin').onclick=()=>{if(ready)orbit(v.getCameraOrbit().theta*180/Math.PI,radius*.72,v.getCameraOrbit().phi*180/Math.PI);};
 $('zout').onclick=()=>{if(ready)orbit(v.getCameraOrbit().theta*180/Math.PI,radius*1.3,v.getCameraOrbit().phi*180/Math.PI);};
 for(const k of ['hair','anatomy','body'])$(k).onclick=()=>updateGroup(k,!visibility[k]);
