@@ -95,6 +95,21 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     // Source GLBs often contain a displaced origin. Center actual world-space
     // geometry over the planned tree coordinate, not the source-file pivot.
     root.position.set(x-(minX+maxX)/2,cabinGrade(x,z,seed)-lo+.02,z-(minZ+maxZ)/2);
+    // Imported hierarchies may retain nontrivial parent transforms. Correct
+    // against the actual world-space bottom AFTER translating the root.
+    for(let pass=0;pass<5;pass++){
+      root.computeWorldMatrix(true);
+      let actualBottom=Infinity;
+      for(const m of meshes){
+        m.computeWorldMatrix(true);
+        actualBottom=Math.min(actualBottom,m.getBoundingInfo().boundingBox.minimumWorld.y);
+      }
+      const ground=cabinGrade(x,z,seed);
+      if(!Number.isFinite(actualBottom)||!Number.isFinite(ground))throw Error("Invalid final tree grounding");
+      const correction=ground+.02-actualBottom;
+      if(Math.abs(correction)<.015)break;
+      root.position.y+=correction;
+    }
     root.computeWorldMatrix(true);
     root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
