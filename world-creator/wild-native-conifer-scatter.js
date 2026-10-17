@@ -1,3 +1,4 @@
+import {FOREST_SPECIES_TARGETS} from "./wild-master-forest-registry.js";
 import {groundTree} from "./wild-hd-tree-ground.js";
 import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /** Seeded 10% conifer placement pass using verified upright CC0 PBR assets.
@@ -9,7 +10,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
  state.ready=(async()=>{
   const manifest=await fetch("./assets/village-grove-sources.json").then(r=>r.json());
-  const ids=["fir_tree_01","fir_sapling_medium","pine_sapling_medium","pine_sapling_small","fir_sapling"];
+  const ids=FOREST_SPECIES_TARGETS.find(s=>s.species==="conifer").assetIds;
   const sources=[];
   for(const id of ids){const a=manifest.find(v=>v.id===id&&v.license==="CC0");if(!a)continue;
    try{const c=await B.SceneLoader.LoadAssetContainerAsync("",a.url,scene);if(c.meshes.some(m=>m.getTotalVertices?.()>0))sources.push({id,container:c});}
