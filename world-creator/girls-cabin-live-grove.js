@@ -114,7 +114,7 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       root.position.y+=correction;
     }
     root.computeWorldMatrix(true);
-    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
+    // Anchor using the actual trunk bottom, not stray leaf/scene geometry.\n    const trunkMeshes=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));\n    if(!trunkMeshes.length)throw Error("No trunk geometry: skip floating conifer");\n    for(let pass=0;pass<5;pass++){\n      root.computeWorldMatrix(true);\n      let bottom=Infinity;\n      for(const m of trunkMeshes){m.computeWorldMatrix(true);bottom=Math.min(bottom,m.getBoundingInfo().boundingBox.minimumWorld.y)}\n      const delta=cabinGrade(x,z,seed)-.10-bottom;\n      if(!Number.isFinite(delta))throw Error("Invalid trunk ground height");\n      if(Math.abs(delta)<.015)break;\n      root.position.y+=delta;\n    }\n    root.computeWorldMatrix(true);\n    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
    }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
   }
