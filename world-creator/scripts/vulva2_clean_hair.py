@@ -48,19 +48,19 @@ def add_clean_long_blonde_hair(root, body, rig):
         prev=ring
     # Independently tapered strands entirely behind the eyes. Slight stagger
     # gives varied length and prevents a blunt straight polygon curtain.
-    strands=92;steps=18
+    strands=72;steps=18
     for j in range(strands):
         az=.10+(math.pi-.20)*j/(strands-1)  # back hemisphere (+Y); face/eyes are on -Y
         start=surface(az,1.45)
         previous=None
         wiggle=.0015*h*math.sin(j*1.5)
-        end_depth=(.34+.065*math.sin(.45*j)**2)*h
+        end_depth=(.19+.035*math.sin(.45*j)**2)*h
         for step in range(steps+1):
             t=step/steps
             width=.0058*h*(1-.48*t)
             wave=wiggle*math.sin(math.pi*t*2)
             x=start[0]+wave+(.011*h*math.cos(az))*t
-            y=start[1]+(.033*h+.008*h*math.sin(j*.31))*t
+            y=start[1]+(.065*h+.008*h*math.sin(j*.31))*t
             z=start[2]-end_depth*t+.004*h*math.sin(2.5*math.pi*t+j*.2)*t
             a=addpoint((x-width,y,z))
             b=addpoint((x+width,y,z))
