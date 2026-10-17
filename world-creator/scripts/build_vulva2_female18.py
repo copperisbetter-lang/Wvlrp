@@ -206,6 +206,33 @@ def fit_vulva2(root,body,rig):
         if surface is not None and y>surface+.001:
             overlap+=1
     if overlap>len(pts)*.10:
+        # Preserve topology: project buried points to the exterior, then
+        # smooth the displacement across connected proxy vertices.
+        original=[Vector(p) for p in pts]
+        adjacency=[set() for _ in pts]
+        for face in geom["faces"]:
+            for a,b in zip(face,list(face[1:])+[face[0]]):
+                adjacency[a].add(b);adjacency[b].add(a)
+        needed=[]
+        for x,y,z in pts:
+            surf=front_surface(x,z)
+            needed.append(min(0.,surf-.002-y) if surf is not None else 0.)
+        shifts=needed[:]
+        for iteration in range(8):
+            shifts=[min(0.,.65*needed[i]+.35*(
+                sum(shifts[j] for j in adjacency[i])/len(adjacency[i])
+                if adjacency[i] else shifts[i]))
+                for i in range(len(pts))]
+        pts=[(p.x,p.y+shifts[i],p.z) for i,p in enumerate(original)]
+        for v,p in zip(mesh.vertices,pts):v.co=p
+        mesh.update()
+        remaining=sum(1 for x,y,z in pts if
+                      (front_surface(x,z) is not None and y>front_surface(x,z)+.001))
+        print("SAV3_EXTERIOR_PROJECTION", "original_overlap",overlap,
+              "remaining",remaining,"max_displacement",round(max(abs(v) for v in shifts),5),flush=True)
+        if remaining>len(pts)*.10 or max(abs(v) for v in shifts)>.16:
+            raise RuntimeError("SAV3_EXTERIOR_PROJECTION_UNSAFE")
+    if False:
         raise RuntimeError(
             f"SAV3_OCCLUDED_ANATOMY: {overlap}/{len(pts)} proxy vertices "
             "behind intact outer skin; repair body topology before export")
