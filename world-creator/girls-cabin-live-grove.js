@@ -56,18 +56,29 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       }
     }
     if(autumn&&asset.id==="tree_small_02"){
-      // Tint only foliage material on the two broadleaf specimens.
-      // Clone per-instance materials so evergreens and shared source assets
-      // retain their original colors. Preserve photographic texture detail.
-      const colors=[new B.Color3(.84,.46,.14),new B.Color3(.72,.26,.13)];
+      // Source mesh names are often generic. Inspect material AND texture names,
+      // and avoid recoloring woody trunks or bark.
+      const colors=[new B.Color3(.94,.52,.17),new B.Color3(.80,.31,.12)];
+      const tint=colors[i===1?0:1];
+      let tinted=0;
       for(const m of meshes){
-        const label=(m.name+" "+(m.material?.name||"")).toLowerCase();
-        if(!/leaf|leaves|foliage|canopy/.test(label)||/trunk|bark|wood/.test(label)||!m.material)continue;
-        const mat=m.material.clone("october-hardwood-"+i+"-"+m.name);
-        if(mat.albedoColor)mat.albedoColor=colors[i%2];
-        else if(mat.diffuseColor)mat.diffuseColor=colors[i%2];
-        m.material=mat;
+        const mat=m.material;
+        if(!mat)continue;
+        const label=[m.name,mat.name,mat.albedoTexture?.name,mat.diffuseTexture?.name]
+          .filter(Boolean).join(" ").toLowerCase();
+        const woody=/trunk|bark|wood|stem|branch/.test(label);
+        const leafy=/leaf|leaves|foliage|canopy|crown|twig|plant/.test(label);
+        if(woody||!leafy)continue;
+        const copy=mat.clone("october-leaves-"+i+"-"+tinted++);
+        if(copy.albedoColor)copy.albedoColor=tint.clone();
+        if(copy.diffuseColor)copy.diffuseColor=tint.clone();
+        // A small warm emissive lift stops green base textures from completely
+        // swallowing the autumn tint while retaining photographic leaf detail.
+        if(copy.emissiveColor)copy.emissiveColor=tint.scale(.20);
+        m.material=copy;
       }
+      root.metadata={octoberLeafMeshes:tinted};
+      console.info("OCTOBER_TREE_FOLIAGE",asset.id,i,"leafMeshes",tinted);
     }
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
