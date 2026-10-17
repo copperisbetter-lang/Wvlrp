@@ -243,8 +243,9 @@ def fit_vulva2(root,body,rig):
     # Reject separately named anatomy meshes; do not confuse the export suffix on facial assets with anatomy.
     duplicates=[other.name for other in [root]+list(root.children_recursive)
                 if other.type=="MESH" and other!=ob and
-                (other.name.lower().startswith(("vulva1 ", "vulva2 ", "vulva1_", "vulva2_")) or
-                 other.get("wvlrp_vulva2_authentic_mhx2"))]
+                (other.get("wvlrp_vulva2_authentic_mhx2") or
+                 other.name.lower().startswith(("vulva1 ", "vulva2 ", "vulva1_", "vulva2_")) and
+                 not any(t in other.name.lower() for t in ("eyebrow", "eyelash", "teeth", "tooth", "high-poly", "low-poly", "eye", "adult female 18_")))]
     if duplicates:
         raise RuntimeError("SAV3_DUPLICATE_ANATOMY: "+repr(duplicates))
     print("SAV3_SINGLE_EXTERIOR_ANATOMY_VERIFIED",len(pts)-len(buried),flush=True)
