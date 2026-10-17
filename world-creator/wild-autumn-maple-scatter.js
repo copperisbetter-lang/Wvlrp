@@ -97,38 +97,37 @@ export function installAutumnMaples(B,scene,{
           }
         }
         if(!Number.isFinite(bottom)){clone.dispose(false,true);continue;}
-        clone.position.set(-lowX,-bottom,-lowZ);
-        anchor.position.set(x,y-.12,z);
-        // Re-measure after translation: GLB hierarchy transforms can invalidate
-        // the first estimate, particularly when nodes carry imported offsets.
-        // Iteratively correct the *actual* rendered world-space bottom.
-        for(let pass=0;pass<3;pass++){
+        // Ground-pivot normalization: imported Sketchfab GLBs can carry a
+        // display-stage offset on nested transform nodes. Keep the full tree
+        // hierarchy intact and correct against WORLD bounds after parenting.
+        // Do not move the trunk sideways based on canopy bounds.
+        clone.position.set(0,0,0);
+        anchor.position.set(x,0,z);
+        const worldBottom=()=>{
+          anchor.computeWorldMatrix(true);
           clone.computeWorldMatrix(true);
-          let actualBottom=Infinity;
+          let low=Infinity;
           for(const m of meshes){
             m.computeWorldMatrix(true);
-            actualBottom=Math.min(actualBottom,m.getBoundingInfo().boundingBox.minimumWorld.y);
+            low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);
           }
-          if(!Number.isFinite(actualBottom))break;
-          const error=(y-.12)-actualBottom;
-          if(Math.abs(error)<.02)break;
-          anchor.position.y+=error;
-        }
-        clone.computeWorldMatrix(true);
-        // Final grounding uses the same terrain-height provider as the walker.
-        // The provider can be updated when streamed terrain becomes available.
-        for(let pass=0;pass<3;pass++){
-          clone.computeWorldMatrix(true);
-          let lowest=Infinity;
-          for(const mesh of meshes){
-            mesh.computeWorldMatrix(true);
-            lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
-          }
+          return low;
+        };
+        const pivotBottom=worldBottom();
+        if(!Number.isFinite(pivotBottom)){anchor.dispose(false,true);continue;}
+        // The anchor is the new ground-level pivot. Its children are translated
+        // locally so the lowest surviving bark/foliage vertex meets y=0.
+        clone.position.y-=pivotBottom;
+        anchor.position.y=y-.12;
+        // Verify against final world-space geometry, including nested GLB
+        // transforms, then compensate once more if the origin was offset.
+        for(let pass=0;pass<4;pass++){
+          const low=worldBottom();
           const surface=terrainHeight(x,z);
-          if(!Number.isFinite(lowest)||!Number.isFinite(surface))break;
-          const delta=surface-.12-lowest;
+          if(!Number.isFinite(low)||!Number.isFinite(surface))break;
+          const delta=surface-.12-low;
           if(Math.abs(delta)<.01)break;
-          anchor.position.y+=delta;
+          clone.position.y+=delta;
         }
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
