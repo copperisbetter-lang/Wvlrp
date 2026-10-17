@@ -85,19 +85,23 @@ function findFitMeshes(){
   const nodes=Array.from(v.model?.getNodes?.()||[]);
   for(const node of nodes){
    const label=String(node.name||'');
-   if(/Vulva2 MHX2 true auto-fit/i.test(label) && node.translation){
-    fitMeshes.push({node,base:Array.from(node.translation)});
+   const materials=Array.from(node.mesh?.materials||[]).map(m=>String(m.name||'')).join(' ');
+   // Exporters often rename the original attachment; accept anatomical
+   // identifiers on the mesh or its materials, never the generic body.
+   const signature=(label+' '+materials).toLowerCase();
+   const isAttachment=/(vulva[ _-]*2|vulva2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
+   const isBody=/^(body|female|human|skin|sav.?3)([ _.-]|$)/i.test(label);
+   if(isAttachment&&!isBody&&node.translation&&node.mesh){
+    fitMeshes.push({node,base:Array.from(node.translation),name:label});
    }
   }
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
  if(!fitMeshes.length){
-  setFitMode(false);
-  $('fitdrag').disabled=true;
-  $('fitstatus').textContent='Attachment node unavailable; dragging disabled to protect body. Model must expose Vulva2 mesh node.';
+  setFitMode(false);$('fitdrag').disabled=true;
+  $('fitstatus').textContent='No separate Vulva 2 mesh node in this GLB. Finger movement is disabled until the model is exported with its attachment separate.';
  }else{
-  $('fitdrag').disabled=false;
-  applyFit();
-  $('fitstatus').textContent='Attachment selected: '+fitMeshes.length+' node. Finger Move controls attachment only.';
+  $('fitdrag').disabled=false;applyFit();
+  $('fitstatus').textContent='Movable attachment: '+fitMeshes.map(x=>x.name).join(', ')+'. Body stays locked.';
  }
 }
 $('fitdrag').onclick=()=>setFitMode(!fitDrag);
