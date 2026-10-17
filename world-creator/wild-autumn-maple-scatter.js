@@ -117,9 +117,8 @@ export function installAutumnMaples(B,scene,{
         // Translate each clone so its TRUNK, not its foliage or parent
         // pivot, sits at the selected scatter coordinate.
         const tb=bounds(trunkMeshes);
-        clone.position.x-=(tb.lo.x+tb.hi.x)/2;
-        clone.position.z-=(tb.lo.z+tb.hi.z)/2;
-        anchor.position.set(x,0,z);
+        // World bounds already include the anchor transform. Normalize the imported\n        // showroom offset in anchor-local coordinates, not world coordinates.\n        clone.position.x-=(tb.lo.x+tb.hi.x)/2;\n        clone.position.z-=(tb.lo.z+tb.hi.z)/2;
+        anchor.position.set(x,0,z);\n        // Recenter again after parenting and placement, since world bounds\n        // must be evaluated at the final anchor location.\n        const centered=bounds(trunkMeshes);\n        clone.position.x+=x-(centered.lo.x+centered.hi.x)/2;\n        clone.position.z+=z-(centered.lo.z+centered.hi.z)/2;
         // Move the trunk's actual world-space bottom to the visible ground.
         // Recompute after every transform; never reuse a pre-anchor Y value.
         const groundAtTrunk=()=>terrainHeight(x,z);
