@@ -38,9 +38,10 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
    try{
     instance=container.instantiateModelsToScene(n=>"girls-live-"+i+"-"+n,false,{doNotInstantiate:false});
     const root=new B.TransformNode("girls-cabin-fixed-world-tree-"+i,scene);
-    instance.rootNodes.forEach(n=>n.parent=root);
+    instance.rootNodes.forEach(n=>{n.parent=root;n.setEnabled?.(true);});
     const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
     if(!meshes.length)throw Error("No tree mesh");
+    for(const m of meshes)m.setEnabled(true);
     root.computeWorldMatrix(true);
     let lo=Infinity,hi=-Infinity;
     for(const m of meshes){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;lo=Math.min(lo,b.minimumWorld.y);hi=Math.max(hi,b.maximumWorld.y)}
@@ -97,7 +98,7 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     }
     // Source GLBs often contain a displaced origin. Center actual world-space
     // geometry over the planned tree coordinate, not the source-file pivot.
-    root.position.set(x-(minX+maxX)/2,cabinGrade(x,z,seed)-lo+.02,z-(minZ+maxZ)/2);
+    root.position.set(x-(minX+maxX)/2,0,z-(minZ+maxZ)/2);
     // Imported hierarchies may retain nontrivial parent transforms. Correct
     // against the actual world-space bottom AFTER translating the root.
     for(let pass=0;pass<5;pass++){
@@ -114,7 +115,22 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       root.position.y+=correction;
     }
     root.computeWorldMatrix(true);
-    // Anchor using the actual trunk bottom, not stray leaf/scene geometry.\n    const trunkMeshes=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));\n    if(!trunkMeshes.length)throw Error("No trunk geometry: skip floating conifer");\n    for(let pass=0;pass<5;pass++){\n      root.computeWorldMatrix(true);\n      let bottom=Infinity;\n      for(const m of trunkMeshes){m.computeWorldMatrix(true);bottom=Math.min(bottom,m.getBoundingInfo().boundingBox.minimumWorld.y)}\n      const delta=cabinGrade(x,z,seed)-.10-bottom;\n      if(!Number.isFinite(delta))throw Error("Invalid trunk ground height");\n      if(Math.abs(delta)<.015)break;\n      root.position.y+=delta;\n    }\n    root.computeWorldMatrix(true);\n    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
+    // Anchor using the actual trunk bottom, not stray leaf/scene geometry.
+    const trunkMeshes=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));
+    if(!trunkMeshes.length)throw Error("No trunk geometry: skip floating conifer");
+    for(let pass=0;pass<5;pass++){
+      root.computeWorldMatrix(true);
+      let bottom=Infinity;
+      for(const m of trunkMeshes){m.computeWorldMatrix(true);bottom=Math.min(bottom,m.getBoundingInfo().boundingBox.minimumWorld.y)}
+      const delta=cabinGrade(x,z,seed)-.10-bottom;
+      if(!Number.isFinite(delta))throw Error("Invalid trunk ground height");
+      if(Math.abs(delta)<.015)break;
+      root.position.y+=delta;
+    }
+    root.computeWorldMatrix(true);
+    const finalBottom=Math.min(...trunkMeshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox.minimumWorld.y;}));
+    if(!Number.isFinite(finalBottom)||Math.abs(finalBottom-cabinGrade(x,z,seed))>.35)throw Error("Cabin conifer still floating");
+    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
    }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
   }
