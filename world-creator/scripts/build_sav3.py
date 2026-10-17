@@ -165,7 +165,7 @@ def validate_single_pelvic_attachment():
     print("SAV3_SINGLE_PELVIC_ATTACHMENT_VERIFIED",flush=True)
 validate_single_pelvic_attachment()
 '''
-source=source.replace(anatomy_anchor,anatomy_qa+'\\n'+anatomy_anchor)
+source=source.replace(anatomy_anchor,anatomy_qa+'\n'+anatomy_anchor)
 
 # Facial accessories must be bound to the same rig as the body. A valid
 # position in the bind pose is not enough if their parent/armature differs.
