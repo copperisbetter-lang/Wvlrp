@@ -27,17 +27,23 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
     if(!meshes.length)throw Error("No geometry");
     const bark=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));const trunks=bark.length?bark:meshes;
+// Imported conifer assets can include displaced non-tree geometry or incorrect
+// trunk labels. Reject wildly separated submeshes rather than planting floaters.
+const geometryBottom=()=>{let low=Infinity;for(const m of meshes){if(!m.isEnabled()||!m.isVisible)continue;m.computeWorldMatrix(true);const box=m.getBoundingInfo().boundingBox;low=Math.min(low,box.minimumWorld.y);}return low;};
     const bounds=(selected=meshes)=>{let lo=new B.Vector3(Infinity,Infinity,Infinity),hi=new B.Vector3(-Infinity,-Infinity,-Infinity);
      for(const m of selected){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;lo=B.Vector3.Minimize(lo,b.minimumWorld);hi=B.Vector3.Maximize(hi,b.maximumWorld);}return {lo,hi};};
     let b=bounds(),h=b.hi.y-b.lo.y;if(!Number.isFinite(h)||h<.01)throw Error("Invalid tree bounds");
     root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;
     b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;
-    for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-b.lo.y;if(Math.abs(d)<.02)break;root.position.y+=d;}
+    for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-geometryBottom();if(Math.abs(d)<.02)break;root.position.y+=d;}
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
-    root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,x,z});state.planted++;
+    root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks:meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
   }
-  state.reground();let frames=0;state.observer=scene.onBeforeRenderObservable.add(()=>{if(++frames<=120||frames%120===0)state.reground();});state.status="ready";return state;
+  state.reground();
+// Report actual geometry-to-ground errors for both tree systems separately.
+state.groundingErrors=()=>state.placements.map(p=>{let low=Infinity;for(const m of p.trunks){m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);}return {x:p.x,z:p.z,error:low-terrainHeight(p.x,p.z)};});
+let frames=0;state.observer=scene.onBeforeRenderObservable.add(()=>{if(++frames<=120||frames%120===0)state.reground();});state.status="ready";return state;
  })().catch(e=>{state.status="error";state.error=String(e);});
  return state;
 }
