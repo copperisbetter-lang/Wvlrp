@@ -17,6 +17,8 @@ export function installAutumnMaples(B,scene,{
     const sourceRoots=container.rootNodes.filter(n=>n.getChildMeshes?.(false).some(m=>m.getTotalVertices?.()>0));
     if(!sourceRoots.length)throw Error("Maple GLB has no instantiable tree roots; split collection into individual tree GLBs first.");
     state.sourceRoots=sourceRoots.length;
+    // Imported GLB nodes remain disabled until explicitly enabled on each clone.
+    // Place a deterministic near-cabin test tree outside the protected cabin clearing.
     const palettes=["#b71e1c","#db481c","#ec7922","#a94620","#7e4829","#e69b34"];
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
@@ -31,6 +33,8 @@ export function installAutumnMaples(B,scene,{
         const source=sourceRoots[Math.floor(hash(ix,iz,3)*sourceRoots.length)];
         const clone=source.clone("autumn-maple-"+ix+"-"+iz,null,false);
         if(!clone)continue;
+        clone.setEnabled(true);
+        for(const child of clone.getChildMeshes(false))child.setEnabled(true);
         clone.position.set(x,y,z);
         const size=.65+hash(ix,iz,4)*1.35;
         clone.scaling.scaleInPlace(size);
