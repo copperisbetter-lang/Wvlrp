@@ -40,11 +40,11 @@ export function installAutumnMaples(B,scene,{
     const palettes=["#b71e1c","#db481c","#ec7922","#a94620","#7e4829","#e69b34"];
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
-    for(let ix=-Math.ceil(radius/cellSize);ix<=Math.ceil(radius/cellSize)&&planted<count;ix++){
-      for(let iz=-Math.ceil(radius/cellSize);iz<=Math.ceil(radius/cellSize)&&planted<count;iz++){
-        if(hash(ix,iz)>density)continue;
-        const x=ix*cellSize+(hash(ix,iz,1)-.5)*cellSize;
-        const z=iz*cellSize+(hash(ix,iz,2)-.5)*cellSize;
+    for(let ix=0;ix<1&&planted<count;ix++){
+      for(let iz=0;iz<1&&planted<count;iz++){
+        // Single fixed diagnostic planting, no random rejection.
+        const x=55;
+        const z=-25;
         if(Math.hypot(x,z)>radius||excluded(x,z,12))continue;
         const y=terrainHeight(x,z);
         if(!Number.isFinite(y))continue;
@@ -144,7 +144,7 @@ export function installAutumnMaples(B,scene,{
       for(const mesh of visible){mesh.computeWorldMatrix(true);low=Math.min(low,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       return {x:Math.round(root.position.x),z:Math.round(root.position.z),bottom:Math.round(low*10)/10,ground:Math.round(terrainHeight(root.position.x,root.position.z)*10)/10};
     });
-    state.planted=planted;state.status="ready";return state;
+    state.planted=planted;state.status="ready";console.info("CLEAN_MAPLE_GROUND_TEST",JSON.stringify({planted,samples:state.samples}));return state;
   })().catch(err=>{state.status="error";state.error=String(err.message||err);return state;});
   return state;
 }
