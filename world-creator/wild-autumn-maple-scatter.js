@@ -93,6 +93,28 @@ export function installAutumnMaples(B,scene,{
           clone.position.y+=error;
         }
         clone.computeWorldMatrix(true);
+        // Gravity-style grounding: use a downward ray against the actual
+        // collision-free terrain surface. A tree is static once planted.
+        // Ray starts above the model so even offset GLB hierarchies are covered.
+        const rayOrigin=new B.Vector3(x,y+300,z);
+        const hit=scene.pickWithRay(new B.Ray(rayOrigin,new B.Vector3(0,-1,0),600),
+          mesh=>mesh.isPickable&&mesh.isEnabled()&&mesh.isVisible&&
+            !mesh.name.startsWith("autumn-maple-"));
+        const groundY=hit?.hit&&hit.pickedPoint&&Number.isFinite(hit.pickedPoint.y)
+          ?hit.pickedPoint.y:y;
+        for(let pass=0;pass<3;pass++){
+          clone.computeWorldMatrix(true);
+          let lowest=Infinity;
+          for(const mesh of meshes){
+            mesh.computeWorldMatrix(true);
+            lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
+          }
+          if(!Number.isFinite(lowest))break;
+          const delta=groundY-.15-lowest;
+          if(Math.abs(delta)<.01)break;
+          clone.position.y+=delta;
+        }
+        clone.computeWorldMatrix(true);
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
           if(!mesh.isEnabled()||!mesh.isVisible)continue;
