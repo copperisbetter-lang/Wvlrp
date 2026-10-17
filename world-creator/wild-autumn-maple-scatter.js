@@ -16,8 +16,22 @@ export function installAutumnMaples(B,scene,{
       item.root.computeWorldMatrix(true);
       for(const mesh of item.meshes){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       if(!Number.isFinite(lowest))continue;
-      const delta=ground-.12-lowest;
-      if(Math.abs(delta)>.02){item.root.position.y+=delta;item.root.computeWorldMatrix(true);for(const mesh of item.meshes)mesh.computeWorldMatrix(true);corrected++;}
+      // Move the world anchor, not the imported child pivot. Repeat until
+      // the visible geometry actually meets the terrain after nested transforms.
+      let delta=ground-.18-lowest;
+      if(Math.abs(delta)>.02){
+        for(let pass=0;pass<3&&Math.abs(delta)>.02;pass++){
+          item.root.position.y+=delta;
+          item.root.computeWorldMatrix(true);
+          let measured=Infinity;
+          for(const mesh of item.meshes){
+            mesh.computeWorldMatrix(true);
+            measured=Math.min(measured,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
+          }
+          delta=ground-.18-measured;
+        }
+        corrected++;
+      }
     }
     this.lastRegroundCorrections=corrected;
     return corrected;
@@ -154,9 +168,11 @@ export function installAutumnMaples(B,scene,{
     });
     // Terrain may load or change after the trees. Recheck actual world-space mesh
     // bounds as terrain becomes available, without shifting correctly grounded trees.
+    // Correct immediately and on every early frame while photographic terrain
+    // finishes loading; later checks remain inexpensive and periodic.
     let frames=0;
     state.groundObserver=scene.onBeforeRenderObservable.add(()=>{
-      if(++frames%120===0)state.reground();
+      if(++frames<=120 || frames%120===0)state.reground();
     });
     state.reground();
     state.planted=planted;state.status="ready";console.info("CLEAN_MAPLE_GROUND_TEST",JSON.stringify({planted,samples:state.samples}));return state;
