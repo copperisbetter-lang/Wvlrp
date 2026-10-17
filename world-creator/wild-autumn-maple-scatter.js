@@ -14,7 +14,7 @@ export function installAutumnMaples(B,scene,{
       if(!Number.isFinite(ground))continue;
       let lowest=Infinity;
       item.root.computeWorldMatrix(true);
-      for(const mesh of item.meshes){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
+      for(const mesh of (item.trunkMeshes||item.meshes)){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       if(!Number.isFinite(lowest))continue;
       // Move the world anchor, not the imported child pivot. Repeat until
       // the visible geometry actually meets the terrain after nested transforms.
@@ -24,7 +24,7 @@ export function installAutumnMaples(B,scene,{
           item.root.position.y+=delta;
           item.root.computeWorldMatrix(true);
           let measured=Infinity;
-          for(const mesh of item.meshes){
+          for(const mesh of (item.trunkMeshes||item.meshes)){
             mesh.computeWorldMatrix(true);
             measured=Math.min(measured,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
           }
@@ -143,7 +143,7 @@ export function installAutumnMaples(B,scene,{
           anchor.computeWorldMatrix(true);
           clone.computeWorldMatrix(true);
           let low=Infinity;
-          for(const m of meshes){
+          for(const m of trunkMeshes){
             m.computeWorldMatrix(true);
             low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);
           }
@@ -177,7 +177,7 @@ export function installAutumnMaples(B,scene,{
           else if(mat.diffuseColor)mat.diffuseColor=tint;
           mesh.material=mat;
         }
-        state.roots.push(anchor);state.placements.push({root:anchor,meshes,x,z});planted++;
+        state.roots.push(anchor);state.placements.push({root:anchor,meshes,trunkMeshes,x,z});planted++;
       }
     }
     // Record a real, post-transform sample for remote phone diagnostics.
