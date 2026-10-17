@@ -1,4 +1,5 @@
 name: Build Sav 3 private adult inspection GLB
+# Rebuild missing SAV3 inspection GLB; publish only after validation.
 on:
   push:
     paths:
