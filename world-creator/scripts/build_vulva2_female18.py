@@ -140,7 +140,7 @@ def fit_vulva2(root,body,rig):
                 if z<=bands[j]:
                     t=(z-bands[j-1])/(bands[j]-bands[j-1])
                     return offsets[j-1]*(1-t)+offsets[j]*t
-        candidate=[(x,y-depth_shift+smooth_offset(z),z) for x,y,z in pts]
+        candidate=[(x,y+smooth_offset(z),z) for x,y,z in pts]
         gaps=[abs(p[1]-surface) for p,surface in zip(candidate,samples) if surface is not None]
         print("SAV3_HEIGHT_ADAPTIVE_FIT", "median",statistics.median(gaps),
               "max",max(gaps),"offset_span",max(offsets)-min(offsets),flush=True)
