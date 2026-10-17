@@ -128,19 +128,10 @@ def fit_vulva2(root,body,rig):
     pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
     mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
     mod.object=rig
-    # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
-    # of leaving a body surface beneath the opening (prevents dark overlap).
-    bitmap=proxy["delete_verts"]
-    if len(bitmap)>len(body.data.vertices):
-        raise RuntimeError("Vulva2 original deletion mask incompatible with body")
-    delete=[i for i,val in enumerate(bitmap) if val]
-    if not 15<len(delete)<200:
-        raise RuntimeError("Vulva2 original deletion mask unexpected")
-    maskgroup=body.vertex_groups.new(name="Vulva2 delete original covered faces")
-    maskgroup.add(delete,1.,"REPLACE")
-    mask=body.modifiers.new("Vulva2 original MHX2 skin opening","MASK")
-    mask.vertex_group=maskgroup.name
-    mask.invert_vertex_group=True
+    # Do not delete body vertices using an unverified cross-topology mask.
+    # The original mask can create jagged holes on different body topology.
+    delete=[]
+    print("SAV3_UNSAFE_BODY_DELETION_MASK_DISABLED",flush=True)
     ob["wvlrp_vulva2_authentic_mhx2"]=True
     ob["wvlrp_vulva2_source_uuid"]=proxy["uuid"]
     print("VULVA2_TRUE_AUTOFIT_SUCCESS",
