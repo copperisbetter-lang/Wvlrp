@@ -3,7 +3,7 @@
  * Deterministic cell placement keeps multiplayer clients in agreement.
  */
 export function installAutumnMaples(B,scene,{
-  assetUrl="./assets/maple_trees_optimized_single_upload.glb",
+  assetUrl="./assets/maple_trees_planting_clean.glb",
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
   cellSize=90, radius=900, density=0.20, maxVisible=180
 }={}){
@@ -28,11 +28,11 @@ export function installAutumnMaples(B,scene,{
   const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
   state.ready=(async()=>{
     const container=await B.SceneLoader.LoadAssetContainerAsync("",assetUrl,scene);
-    // Select separate tree/LOD0 nodes, rather than cloning the whole packed scene.
-    const nodes=container.transformNodes.filter(n=>n.getChildMeshes?.(false).some(m=>m.getTotalVertices?.()>0));
-    const treeNodes=nodes.filter(n=>/tree|maple|lod.?0/i.test(n.name||"")&&!/lod.?[1-9]|proxy|billboard|collision/i.test(n.name||""));
-    const sourceRoots=treeNodes.length?treeNodes:nodes.filter(n=>!/lod.?[1-9]|proxy|billboard|collision/i.test(n.name||""));
-
+    // The extracted planting GLB contains twelve Acer roots, each with only
+    // LOD0 bark and foliage. The original checker platform is not included.
+    const sourceRoots=container.transformNodes.filter(n=>
+      /^Acer_(Sapling|large|medium|small)_[123]$/.test(n.name||""));
+    if(sourceRoots.length!==12)throw Error("Expected twelve clean Acer roots; found "+sourceRoots.length);
     if(!sourceRoots.length)throw Error("Maple GLB has no instantiable tree roots; split collection into individual tree GLBs first.");
     state.sourceRoots=sourceRoots.length;
     // Imported GLB nodes remain disabled until explicitly enabled on each clone.
