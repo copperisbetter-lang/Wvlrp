@@ -47,7 +47,15 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     if(!Number.isFinite(gap))throw Error("Invalid conifer bounds: "+src.id);
     // Imported foliage can hide a floating second tree: reject disconnected trunks.
     const ground=terrainHeight(x,z);
-    for(const m of trunks){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox; if(bb.minimumWorld.y>ground+0.35){m.setEnabled(false);console.warn("Hidden detached trunk",src.id,m.name);}}
+    // A floating trunk means this imported asset contains detached geometry.
+    // Hiding only its trunk leaves the floating canopy in the sky. Reject the
+    // entire instance instead; never display a visibly unplanted conifer.
+    for(const m of trunks){
+     m.computeWorldMatrix(true);
+     const bb=m.getBoundingInfo().boundingBox;
+     if(bb.minimumWorld.y>ground+0.35)
+      throw Error("Detached floating conifer trunk: "+src.id+" / "+m.name);
+    }
     if(Math.abs(trunkBounds.lo.y-ground)>.35)throw Error("Conifer grounding failed: "+src.id);
     // Never show a detached canopy or a second tree floating above the planted trunk.
     for(const m of meshes){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;if(bb.minimumWorld.y>ground+3.0 && !/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")))m.setEnabled(false); }
