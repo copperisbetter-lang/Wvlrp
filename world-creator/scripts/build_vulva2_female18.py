@@ -207,6 +207,17 @@ validate_visible_meshes()
 add_vulva2_preview_animations(rigs[0])
 # Never export old fitted hair pieces or extra copy bodies.
 source_members=[root]+list(root.children_recursive)
+# Only the body, anatomical fitting, generated hair and explicit facial
+# assets belong in this unclothed inspection model. Unexpected garment
+# meshes must never silently become a shin-length shell in the GLB.
+allowed_face_terms=("eye","brow","lash","teeth","tooth","tongue")
+unexpected=[o.name for o in source_members if o.type=="MESH"
+            and o not in (body,addon,hair)
+            and not any(term in o.name.lower() for term in allowed_face_terms)]
+if unexpected:
+    raise RuntimeError("Unrecognized accessory/garment meshes in adult export: "
+                       +repr(unexpected))
+print("SAV3_NO_GARMENT_SHELL_VERIFIED")
 if any(o.type=="MESH" and "long01" in o.name.lower() for o in source_members):
     raise RuntimeError("Old face-shredding stock hair still in export")
 if len([o for o in source_members if o.type=="MESH" and
