@@ -26,7 +26,7 @@ import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cgtrader-two-private
 import {createBuildingMaterialYard,MATERIAL_YARD} from "./wild-material-yard.js?v=walkable-real-pbr-samples-20261015-v1";
 
 import {installGirlsCabinWillow} from "./wild-girls-cabin-willow.js?v=willow-20261016-v1";
-import {installGirlsCabinLiveGrove} from "./girls-cabin-live-grove.js?v=trunk-ground-20261017-v2";
+import {installGirlsCabinLiveGrove} from "./girls-cabin-live-grove.js?v=syntax-ground-20261017-v3";
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
 const message=document.getElementById("message");
