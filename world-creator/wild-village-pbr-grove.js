@@ -1,3 +1,5 @@
+import {groundTree} from "./wild-hd-tree-ground.js";
+import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /**
  * The Wild — optional licensed 3D village grove.
  *
@@ -157,6 +159,7 @@ export function installVillageGrove(B,scene,{seed,mobile=false,lite=false}={}){
     const usage=new Map();
     const placed=[];
     for(const tree of trees){
+      if(!mayPlantTree(tree.x,tree.z,1.5)){state.skippedNoModel++;continue;}
       // Cap duplicates: genuine model variety rather than one tree pasted 30x.
       const choices=available.filter(m=>(usage.get(m.id)||0)<
         (m.id==="jacaranda_tree"?4:mobile?MAX_PER_ASSET_MOBILE:15));
@@ -182,9 +185,8 @@ export function installVillageGrove(B,scene,{seed,mobile=false,lite=false}={}){
         const adjusted=worldBounds([root]);
         const terrainY=gradeCommunityGround(tree.x,tree.z,cabinGrade(tree.x,tree.z,seed),
           p=>cabinGrade(p.x,p.z,seed));
-        root.position.set(tree.x-(adjusted.minX+adjusted.maxX)/2,
-          terrainY-adjusted.minY+.025,
-          tree.z-(adjusted.minZ+adjusted.maxZ)/2);
+        const placement=groundTree(root,()=>terrainY,tree.x,tree.z,.10);
+        if(!placement.ok)throw Error("Grove tree not grounded: "+asset.id);
         root.parent=group;
         root.computeWorldMatrix(true);
         for(const mesh of root.getChildMeshes(false)){
