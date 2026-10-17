@@ -88,7 +88,7 @@ preview.addEventListener('load',()=>{
 });
 preview.addEventListener('error',()=>previewStatus.textContent='Separate source could not load.');
 
-function setFitMode(on){fitDrag=on&&(fitMeshes.length>0||previewMeshes.length>0);v.toggleAttribute('camera-controls',!fitDrag);overlay.style.display=on&&fitMeshes.length?'block':'none';previewTouch.style.display=fitDrag&&previewMeshes.length?'block':'none';v.style.touchAction=fitDrag?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag on the transparent touch layer to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
+function setFitMode(on){fitDrag=on&&(fitMeshes.length>0||previewMeshes.length>0);v.toggleAttribute('camera-controls',!fitDrag);overlay.style.display=on&&fitMeshes.length?'block':'none';previewTouch.style.display=fitDrag&&previewMeshes.length?'block':'none';v.style.touchAction=fitDrag?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');$('fitstatus').textContent=on?((fitMeshes.length||previewMeshes.length)?'Drag on the separate fitting preview; X / Y / Z update live. Camera locked.':'No independently movable mesh available.'):'Camera rotation restored.';}
 function applyFit(){
  const pos=fitPosition();
  for(const node of previewMeshes){if(node.__fitBase)node.translation=node.__fitBase.map((n,i)=>n+[pos.x,pos.y,pos.z][i]);}preview.requestUpdate?.();
@@ -116,7 +116,7 @@ function findFitMeshes(){
   }
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
  if(!fitMeshes.length){
-  setFitMode(false);$('fitdrag').disabled=true;
+  if(!previewMeshes.length)setFitMode(false);$('fitdrag').disabled=!previewMeshes.length;
   $('fitstatus').textContent='No separate Vulva 2 mesh node in this GLB. Finger movement is disabled until the model is exported with its attachment separate.';
  }else{
   $('fitdrag').disabled=false;applyFit();
@@ -158,7 +158,7 @@ for(const event of ['pointerdown','pointermove','pointerup','pointercancel']){
  },{capture:true,passive:false});
 }
 function fitPosition(){return {x:Number($('fitx').value)||0,y:Number($('fity').value)||0,z:Number($('fitz').value)||0}}
-$('fitsave').onclick=()=>{localStorage.setItem('sav3-fit-offset',JSON.stringify(fitPosition()));$('fitstatus').textContent='Coordinates saved on this phone (not applied to the mesh).'};
+$('fitsave').onclick=()=>{localStorage.setItem('sav3-fit-offset',JSON.stringify(fitPosition()));$('fitstatus').textContent='Coordinates saved on this phone (not baked into the GLB).'};
 $('fitcopy').onclick=()=>{const value=JSON.stringify({sav3_offset_m:fitPosition()});navigator.clipboard.writeText(value).then(()=>$('fitstatus').textContent='Coordinates copied. Paste them into chat.').catch(()=>$('fitstatus').textContent=value)};
 function load(){
   stopSequence();ready=false;clearTimeout(loadTimer);
