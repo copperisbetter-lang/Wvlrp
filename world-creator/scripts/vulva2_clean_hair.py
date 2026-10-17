@@ -50,7 +50,7 @@ def add_clean_long_blonde_hair(root, body, rig):
     # gives varied length and prevents a blunt straight polygon curtain.
     strands=92;steps=18
     for j in range(strands):
-        az=math.pi+.10+(math.pi-.20)*j/(strands-1)  # rear hemisphere (-Y), opposite face
+        az=.10+(math.pi-.20)*j/(strands-1)  # back hemisphere (+Y); face/eyes are on -Y
         start=surface(az,1.45)
         previous=None
         wiggle=.0015*h*math.sin(j*1.5)
