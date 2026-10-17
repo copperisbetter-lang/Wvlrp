@@ -34,14 +34,18 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const bounds=(selected=meshes)=>{let lo=new B.Vector3(Infinity,Infinity,Infinity),hi=new B.Vector3(-Infinity,-Infinity,-Infinity);
      for(const m of selected){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;if(!m.isEnabled()||!m.isVisible)continue;lo=B.Vector3.Minimize(lo,b.minimumWorld);hi=B.Vector3.Maximize(hi,b.maximumWorld);}return {lo,hi};};
     let b=bounds(),h=b.hi.y-b.lo.y;if(!Number.isFinite(h)||h<.01)throw Error("Invalid tree bounds");
-    root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;
-    b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;
+    root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);
+    b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);
     for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-bounds(trunks).lo.y;if(Math.abs(d)<.02)break;root.position.y+=d;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);}
     // Reject trees whose visible geometry is detached far above the grounded trunk.
     // A grounded trunk alone does not prove the imported model is visually grounded.
     const allBounds=bounds(meshes), trunkBounds=bounds(trunks);
     const gap=trunkBounds.lo.y-allBounds.lo.y;
     if(!Number.isFinite(gap)||Math.abs(gap)>3)throw Error("Detached conifer geometry: "+src.id+" gap="+gap);
+    // Imported foliage can hide a floating second tree: reject disconnected trunks.
+    const ground=terrainHeight(x,z);
+    for(const m of trunks){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox; if(bb.minimumWorld.y>ground+1.0)throw Error("Floating trunk component in "+src.id);}
+    if(Math.abs(trunkBounds.lo.y-ground)>.5)throw Error("Conifer grounding failed: "+src.id);
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
     root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
