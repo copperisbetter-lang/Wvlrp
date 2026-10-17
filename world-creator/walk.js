@@ -1,3 +1,4 @@
+import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-ground-master-v5";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
@@ -134,24 +135,10 @@ const camera=new B.FreeCamera("first-person explorer",
  */
 const autumnMaples=installAutumnMaples(B,scene,{
   seed,terrainHeight:(x,z)=>{
-    // Sample the visible photographic ground first. The landscape's procedural
-    // height can differ from the separate photo-ground mesh (floating trees).
-    const ray=new B.Ray(new B.Vector3(x,10000,z),new B.Vector3(0,-1,0),20000);
-    // Prefer the photographic surface, not an overlapping procedural terrain
-    // tile: the latter can be many metres above the ground the player sees.
-    const isGround=mesh=>{
-      if(!mesh.isEnabled()||!mesh.isVisible||!mesh.getTotalVertices?.())return false;
-      const name=(mesh.name||"").toLowerCase();
-      return !/maple|tree|leaf|foliage|anchor|platform|display|cabin|roof/.test(name);
-    };
-    const photoHit=scene.pickWithRay(ray,mesh=>isGround(mesh)&&
-      /photo|photogram|real.?terrain|pbr.?ground/.test((mesh.name||"").toLowerCase()));
-    if(photoHit?.hit&&Number.isFinite(photoHit.pickedPoint?.y))return photoHit.pickedPoint.y;
-    const hit=scene.pickWithRay(ray,mesh=>isGround(mesh)&&
-      /terrain|landscape|ground/.test((mesh.name||"").toLowerCase()));
-    if(hit?.hit&&Number.isFinite(hit.pickedPoint?.y))return hit.pickedPoint.y;
-    const rendered=habitat?.surfaceHeight?.(x,z);
-    return Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
+    // Ground meshes are intentionally non-pickable. Use the exact height
+    // function used to construct BOTH photographic terrain tiles, including
+    // positions outside the currently streamed 196 m mesh.
+    return flatlandHeight(x,z,seed,cabinGrade(0,0,seed));
   },
   radius:900,density:.18,maxVisible:180,
   excluded:(x,z,clearance)=>[
