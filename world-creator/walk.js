@@ -148,6 +148,29 @@ const autumnMaples=installAutumnMaples(B,scene,{
 });
 window.__wildAutumnMaples=autumnMaples;
 
+// On-phone grounding telemetry: no developer console or screenshots required.
+// Report numerical offsets from the actual running Android game.
+const mapleDebug=document.createElement("div");
+mapleDebug.id="maple-ground-debug";
+mapleDebug.style.cssText="position:fixed;right:8px;top:50%;z-index:1000;background:#102820e8;color:#fff;padding:8px;border:1px solid #e4bd55;border-radius:8px;font:12px monospace;max-width:220px;pointer-events:none;white-space:pre-wrap";
+mapleDebug.textContent="MAPLE v8: loading";
+document.body.appendChild(mapleDebug);
+let mapleDebugFrames=0;
+scene.onBeforeRenderObservable.add(()=>{
+  if(++mapleDebugFrames%90!==0)return;
+  const p=autumnMaples.placements||[];
+  const errors=p.map(t=>{
+    const ground=flatlandHeight(t.x,t.z,seed,cabinGrade(0,0,seed));
+    const bottom=Math.min(...t.trunkMeshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox.minimumWorld.y;}));
+    return bottom-ground;
+  }).filter(Number.isFinite);
+  const max=errors.length?Math.max(...errors.map(Math.abs)):0;
+  mapleDebug.textContent="MAPLE v8 "+autumnMaples.status+" ("+p.length+")\\n"+
+    "max offset "+max.toFixed(2)+"m\\n"+
+    "first 6: "+errors.slice(0,6).map(v=>v.toFixed(1)).join(", ");
+});
+
+
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
 camera.rotation.set(0,START_AT_PHOTO_RANGER||START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
 scene.activeCamera=camera;
