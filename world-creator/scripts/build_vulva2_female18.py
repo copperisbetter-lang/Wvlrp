@@ -267,6 +267,43 @@ def remove_detached_body_islands():
     bm.free()
     print("SAV3_DETACHED_BODY_ISLANDS_REMOVED",len(debris),flush=True)
 remove_detached_body_islands()
+# Repair small accidental openings left in the continuous skin after
+# disconnected helper islands have been removed. Large boundaries are
+# deliberately rejected: filling them blindly would create a skin curtain.
+def repair_small_skin_holes():
+    import bmesh
+    bm=bmesh.new()
+    bm.from_mesh(body.data)
+    boundary={e for e in bm.edges if e.is_boundary}
+    loops=[]
+    while boundary:
+        first=boundary.pop()
+        loop={first}
+        stack=[first]
+        while stack:
+            edge=stack.pop()
+            for v in edge.verts:
+                for next_edge in v.link_edges:
+                    if next_edge in boundary:
+                        boundary.remove(next_edge)
+                        loop.add(next_edge)
+                        stack.append(next_edge)
+        loops.append(loop)
+    repaired=0
+    for edges in loops:
+        if len(edges)>32:
+            bm.free()
+            raise RuntimeError("SAV3_LARGE_BODY_OPENING: "+str(len(edges))+" boundary edges")
+        if len(edges)>=3:
+            bmesh.ops.holes_fill(bm,edges=list(edges),sides=0)
+            repaired+=1
+    if repaired:
+        bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+        bm.to_mesh(body.data)
+        body.data.update()
+    bm.free()
+    print("SAV3_SMALL_SKIN_HOLES_REPAIRED",repaired,flush=True)
+repair_small_skin_holes()
 hair=add_clean_long_blonde_hair(root,body,rigs[0])
 # Stop the build if an accidentally exported body-sized shell or
 # misplaced facial asset would recreate the broken Sav3 silhouette.
