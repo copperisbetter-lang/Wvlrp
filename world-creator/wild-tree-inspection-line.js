@@ -59,10 +59,12 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
    const low=Math.min(...bounds.map(b=>b.minimumWorld.y));
    const ground=cabinGrade(spot.x,spot.z,seed);
    root.position.y+=ground-low+0.35;
+   root.parent=null; // Tree belongs to the world, never to the moving camera or player.
    root.computeWorldMatrix(true);
    const finalBounds=meshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox;});
    const actualHeight=Math.max(...finalBounds.map(b=>b.maximumWorld.y))-Math.min(...finalBounds.map(b=>b.minimumWorld.y));
    if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-target)>target*.15)throw Error("Tree scale verification failed: "+actualHeight+"m versus "+target+"m");
+   root.freezeWorldMatrix(); // Lock the specimen at its measured ground coordinates.
    for(const m of meshes){m.setEnabled(true);m.isVisible=true;m.visibility=1;m.renderingGroupId=1;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.disableDepthWrite=false;if(mat.alphaCutOff!==undefined)mat.alphaCutOff=0.15;}} spot.actualHeight=actualHeight;spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" "+Math.round(actualHeight)+"m READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
   }catch(err){spot.status="error";spot.error=String(err);spot.stack=String(err?.stack||"").slice(0,650);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err?.stack||err);}
   finally{busy=false;}
