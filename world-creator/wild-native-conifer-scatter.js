@@ -30,6 +30,27 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
     for(const m of meshes)m.setEnabled(true);
     if(!meshes.length)throw Error("No geometry");
+    // Source-level audit: a downloaded GLB may contain several displaced trees.
+    // A single terrain anchor cannot plant independent trees at different X/Z.
+    // Reject these bundles before any instance becomes visible in the forest.
+    const sourceGroups=instance.rootNodes.map(n=>{
+      const parts=(n.getChildMeshes?.(false)||[]).filter(m=>m.getTotalVertices?.()>0);
+      if(n.getTotalVertices?.()>0)parts.push(n);
+      if(!parts.length)return null;
+      let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+      for(const m of parts){
+        m.computeWorldMatrix(true);
+        const b=m.getBoundingInfo().boundingBox;
+        minX=Math.min(minX,b.minimumWorld.x);maxX=Math.max(maxX,b.maximumWorld.x);
+        minZ=Math.min(minZ,b.minimumWorld.z);maxZ=Math.max(maxZ,b.maximumWorld.z);
+      }
+      return {x:(minX+maxX)/2,z:(minZ+maxZ)/2,width:Math.max(maxX-minX,maxZ-minZ)};
+    }).filter(Boolean);
+    if(sourceGroups.length>1){
+      const main=sourceGroups[0];
+      if(sourceGroups.some(g=>Math.hypot(g.x-main.x,g.z-main.z)>Math.max(8,main.width*1.5)))
+        throw Error("Multi-tree source has displaced roots: "+src.id);
+    }
     const bark=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));const trunks=bark.length?bark:meshes.filter(m=>!/leaf|foliage|needle|branch|crown|canopy/i.test((m.name||"")+" "+(m.material?.name||"")));
     if(!trunks.length)throw Error("No identifiable trunk geometry");
     // Keep a single coherent trunk: multi-tree source packs can contain floating extras.
