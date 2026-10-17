@@ -375,6 +375,19 @@ def validate_visible_meshes():
             raise RuntimeError("Unexpected oversized accessory/body shell: "+ob.name)
         if any(k in name for k in ("eye","teeth","brow","lash")) and zmin<low+height*.70:
             raise RuntimeError("Facial asset displaced below head: "+ob.name)
+    # Face pieces must stay near the head, not merely above 70% of height.
+    # Reject exploded eyes, teeth, brows or lashes before exporting a broken GLB.
+    face_meshes=[o for o in [root]+list(root.children_recursive)
+                 if o.type=="MESH" and o not in (body,addon,hair)
+                 and any(t in o.name.lower() for t in ("eye","teeth","brow","lash"))]
+    for obj in face_meshes:
+        pts=[obj.matrix_world @ v.co for v in obj.data.vertices]
+        if not pts: continue
+        bounds=[(min(p[i] for p in pts),max(p[i] for p in pts)) for i in range(3)]
+        if bounds[0][1]-bounds[0][0] > height*.22 or bounds[2][1]-bounds[2][0] > height*.20:
+            raise RuntimeError("SAV3_FACE_EXPLODED: "+obj.name)
+        if bounds[2][0] < low+height*.78:
+            raise RuntimeError("SAV3_FACE_OUTSIDE_HEAD: "+obj.name)
     print("SAV3_VISIBLE_MESH_SANITY_PASS")
 validate_visible_meshes()
 
