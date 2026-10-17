@@ -14,15 +14,15 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
    loaded.push({asset,container});
   }catch(e){console.warn("Girls cabin living tree asset",asset.id,e)}}
   if(loaded.length<3)throw Error("Fewer than three living tree meshes loaded");
-  // Deterministic positions for multiplayer. Ring avoids cabin footprint and porch.
+  // Six well-spaced mature trees around the OUTER perimeter of the 500 m²
+  // circle. The earlier 22 trees crowded the porch and overlapped canopies.
+  // Keep the central cabin/porch completely open for visibility and walking.
   const positions=[];
-  for(let i=0;i<22;i++){
-   const theta=i*2.399963229728653;
-   const radial=8.6+(i%5)*.92;
-   const x=Math.cos(theta)*radial,z=Math.sin(theta)*radial;
-   if(Math.abs(x)<4.5&&z<0)continue; // porch / entrance approach
-   if(Math.abs(x)<5&&Math.abs(z)<6)continue; // cabin footprint
-   positions.push({x,z,i});
+  for(let i=0;i<6;i++){
+    const theta=(i+.5)*Math.PI/3;
+    const radial=R-0.35;
+    const x=Math.cos(theta)*radial,z=Math.sin(theta)*radial;
+    positions.push({x,z,i});
   }
   for(const {x,z,i} of positions){
    const {asset,container}=loaded[i%loaded.length];let instance;
@@ -39,7 +39,7 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     // Size all standing trees as mature specimens. If a future manifest entry
     // is labeled sapling, it must not render at its tiny source-file scale.
     const isSapling=/sapling|young|small/i.test(asset.id);
-    const desired=isSapling?16+(i%4)*1.5:17+(i%5)*1.6;
+    const desired=isSapling?16+(i%3)*1.2:17+(i%3)*1.4;
     root.scaling.setAll(desired/(hi-lo));
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
