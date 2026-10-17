@@ -3,7 +3,7 @@
  * Cell occupancy is 10%; not a claim that 10% of physical acreage is covered.
  */
 export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight,excluded=()=>false,radius=900,cellSize=75,maxVisible=90}={}){
- const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of this.placements){const g=terrainHeight(p.x,p.z);if(!Number.isFinite(g))continue;for(let pass=0;pass<3;pass++){let low=Infinity;for(const m of p.meshes){if(!m.isEnabled()||!m.isVisible)continue;m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);}const d=g-.12-low;if(!Number.isFinite(d)||Math.abs(d)<.025)break;p.root.position.y+=d;p.root.computeWorldMatrix(true);for(const m of p.meshes)m.computeWorldMatrix(true);fixed++;}}this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
+ const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of this.placements){const g=terrainHeight(p.x,p.z);if(!Number.isFinite(g))continue;for(let pass=0;pass<3;pass++){let low=Infinity;for(const m of p.trunks){if(!m.isEnabled()||!m.isVisible)continue;m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);}const d=g-.12-low;if(!Number.isFinite(d)||Math.abs(d)<.025)break;p.root.position.y+=d;p.root.computeWorldMatrix(true);for(const m of p.meshes)m.computeWorldMatrix(true);fixed++;}}this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
  state.ready=(async()=>{
   const manifest=await fetch("./assets/village-grove-sources.json").then(r=>r.json());
@@ -36,19 +36,19 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     let b=bounds(),h=b.hi.y-b.lo.y;if(!Number.isFinite(h)||h<.01)throw Error("Invalid tree bounds");
     root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;
     b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;
-    for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-bounds(meshes).lo.y;if(Math.abs(d)<.02)break;root.position.y+=d;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);}
+    for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-bounds(trunks).lo.y;if(Math.abs(d)<.02)break;root.position.y+=d;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);}
     // Reject trees whose visible geometry is detached far above the grounded trunk.
     // A grounded trunk alone does not prove the imported model is visually grounded.
     const allBounds=bounds(meshes), trunkBounds=bounds(trunks);
     const gap=trunkBounds.lo.y-allBounds.lo.y;
-    if(!Number.isFinite(gap)||Math.abs(gap)>3)console.warn("Conifer trunk/foliage bounds differ",src.id,gap);
+    if(!Number.isFinite(gap)||Math.abs(gap)>3)throw Error("Detached conifer geometry: "+src.id+" gap="+gap);
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
     root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
   }
   state.reground();
 // Report actual geometry-to-ground errors for both tree systems separately.
-state.groundingErrors=()=>state.placements.map(p=>{let low=Infinity;for(const m of p.meshes){if(!m.isEnabled()||!m.isVisible)continue;m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);}return {x:p.x,z:p.z,error:low-terrainHeight(p.x,p.z)};});
+state.groundingErrors=()=>state.placements.map(p=>{let low=Infinity;for(const m of p.trunks){if(!m.isEnabled()||!m.isVisible)continue;m.computeWorldMatrix(true);low=Math.min(low,m.getBoundingInfo().boundingBox.minimumWorld.y);}return {x:p.x,z:p.z,error:low-terrainHeight(p.x,p.z)};});
 let frames=0;state.observer=scene.onBeforeRenderObservable.add(()=>{if(++frames<=120||frames%120===0)state.reground();});state.status="ready";return state;
  })().catch(e=>{state.status="error";state.error=String(e);});
  return state;
