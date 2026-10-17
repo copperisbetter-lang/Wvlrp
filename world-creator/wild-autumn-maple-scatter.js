@@ -1,3 +1,4 @@
+import {FOREST_SPECIES_TARGETS} from "./wild-master-forest-registry.js";
 import {groundTree} from "./wild-hd-tree-ground.js";
 import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /** Autumn maple scatter for The Wild. Call installAutumnMaples after terrain setup.
@@ -5,7 +6,7 @@ import {mayPlantTree} from "./wild-master-forest-reservations.js";
  * Deterministic cell placement keeps multiplayer clients in agreement.
  */
 export function installAutumnMaples(B,scene,{
-  assetUrl="./assets/maple_trees_planting_clean.glb",
+  assetUrl=FOREST_SPECIES_TARGETS.find(s=>s.species==="maple").asset,
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
   cellSize=90, radius=900, density=0.18, maxVisible=180
 }={}){
