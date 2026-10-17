@@ -58,13 +58,26 @@ export function installAutumnMaples(B,scene,{
         const height=max.y-min.y;
         if(!Number.isFinite(height)||height<=0){clone.dispose(false,true);continue;}
         const targetHeight=12+hash(ix,iz,4)*18;
+        // Apply rotation and scale first, then measure the transformed visible trunk.
         clone.scaling.scaleInPlace(targetHeight/height);
-        clone.computeWorldMatrix(true);
-        // Move original model origin to its trunk base.
-        clone.position.set(x-(min.x+max.x)*.5*targetHeight/height,y-min.y*targetHeight/height,z-(min.z+max.z)*.5*targetHeight/height);
-        const size=.65+hash(ix,iz,4)*1.35;
-        // Height already normalized above; retain natural proportions.
         clone.rotation.y=hash(ix,iz,5)*Math.PI*2;
+        clone.position.set(0,0,0);
+        clone.computeWorldMatrix(true);
+        for(const m of meshes)m.computeWorldMatrix(true);
+        let bottom=Infinity,lowX=0,lowZ=0;
+        // World bounds after scaling/rotation are essential: the GLB may have
+        // parent transforms and offsets unrelated to the removed display platform.
+        for(const m of meshes){
+          const bb=m.getBoundingInfo().boundingBox;
+          if(bb.minimumWorld.y<bottom){
+            bottom=bb.minimumWorld.y;
+            lowX=(bb.minimumWorld.x+bb.maximumWorld.x)*.5;
+            lowZ=(bb.minimumWorld.z+bb.maximumWorld.z)*.5;
+          }
+        }
+        if(!Number.isFinite(bottom)){clone.dispose(false,true);continue;}
+        clone.position.set(x-lowX,y-bottom-.12,z-lowZ);
+        clone.computeWorldMatrix(true);
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
           if(!mesh.isEnabled()||!mesh.isVisible)continue;
