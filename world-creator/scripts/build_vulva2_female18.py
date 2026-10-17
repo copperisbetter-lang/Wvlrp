@@ -88,8 +88,27 @@ def fit_vulva2(root,body,rig):
     body_zmin=min(v.co.z for v in vs)
     body_height=max(v.co.z for v in vs)-body_zmin
     center_z=(min(p[2] for p in pts)+max(p[2] for p in pts))*.5
-    if not body_zmin+.40*body_height<center_z<body_zmin+.58*body_height:
-        raise RuntimeError("SAV3_VULVA2_POSITION: proxy center is outside low pelvic band")
+    # Locate the crotch from the original body's inner-thigh silhouette.
+    # A generic pelvis-height percentage can falsely accept an abdominal fit.
+    # Probe the central frontal skin in the lower pelvis and require a
+    # pronounced medial notch between the upper thighs.
+    center_x=(min(v.co.x for v in vs)+max(v.co.x for v in vs))*.5
+    band=[v.co for v in vs if abs(v.co.x-center_x)<.045*body_height
+          and body_zmin+.35*body_height<v.co.z<body_zmin+.56*body_height]
+    if len(band)<15:
+        raise RuntimeError("SAV3_CROTCH_LANDMARK: insufficient midline geometry")
+    # The crotch is the LOWEST central skin point in the pelvis region,
+    # excluding feet and leg geometry. Never use a guessed global Z offset.
+    crotch_z=min(p.z for p in band)
+    # This is a safety gate, not an arbitrary relocation of donor topology.
+    # If the donor fits above the crotch, stop the export rather than publish.
+    proxy_low=min(p[2] for p in pts)
+    if proxy_low>crotch_z+.045*body_height:
+        raise RuntimeError("SAV3_VULVA2_TOO_HIGH: proxy lowest point "+
+                           str(round(proxy_low,4))+" crotch "+
+                           str(round(crotch_z,4)))
+    if not body_zmin+.35*body_height<center_z<body_zmin+.56*body_height:
+        raise RuntimeError("SAV3_VULVA2_POSITION: proxy center outside crotch region")
     frontmost=min(v.co.y for v in vs)
     def front_surface(x,z):
         hit,location,normal,index=body.ray_cast(
