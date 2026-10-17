@@ -1,6 +1,6 @@
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-maple-diagnostic-v10";
-import {installNativeConiferScatter} from "./wild-native-conifer-scatter.js?v=20261017-native-ground-v3";
+import {installNativeConiferScatter} from "./wild-native-conifer-scatter.js?v=20261017-visible-ground-v4";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
