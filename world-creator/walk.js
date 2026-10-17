@@ -1,4 +1,4 @@
-import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-clean-v2";
+import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-fixed-test-v3";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
@@ -189,7 +189,7 @@ const keep=o=>{permanent.push(o);return o;};
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
-const girlsLiveGrove=installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade});
+const girlsLiveGrove={status:"retired-for-clean-maple-test",planted:0,roots:[],ready:Promise.resolve()};
 girlsLiveGrove.ready.then(()=>console.info("GIRLS_CABIN_500_SQM_LIVE_TREES",girlsLiveGrove.status,girlsLiveGrove.planted,girlsLiveGrove.error||""));
 // Retire the cabin-door procedural ico-sphere canopy; imported oak specimens remain world-anchored.
 const doorTree=installDoorTree(B,scene,cabinGrade(0,-13,seed));
