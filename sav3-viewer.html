@@ -70,6 +70,7 @@ let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibi
 const $=(id)=>document.getElementById(id);
 try{const p=JSON.parse(localStorage.getItem('sav3-fit-offset')||'{}');for(const [k,id] of [['x','fitx'],['y','fity'],['z','fitz']])if(Number.isFinite(p[k]))$(id).value=p[k]}catch{}
 let fitDrag=false,fitPointer=null,fitView='front',fitMeshes=[];
+function setFitMode(on){fitDrag=on;v.toggleAttribute('camera-controls',!on);v.style.touchAction=on?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(on?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag anywhere on the model to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
 function applyFit(){
   const pos=fitPosition();
   for(const item of fitMeshes){item.node.position.set(item.base.x+pos.x,item.base.y+pos.y,item.base.z+pos.z);}
@@ -90,21 +91,26 @@ function findFitMeshes(){
  }catch(e){$('fitstatus').textContent='Attachment nodes unavailable: '+e.message}
  applyFit();
 }
-$('fitdrag').onclick=()=>{
- fitDrag=!fitDrag;$('fitdrag').setAttribute('aria-pressed',String(fitDrag));
- $('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');
- $('fitstatus').textContent=fitDrag?'Drag vertically to change height; horizontally to change X (front) or Y (side).':'Finger move off';
-};
-v.addEventListener('pointerdown',e=>{if(!fitDrag||!ready)return;fitPointer={x:e.clientX,y:e.clientY};v.setPointerCapture?.(e.pointerId);e.preventDefault()},{capture:true});
-v.addEventListener('pointermove',e=>{if(!fitPointer||!fitDrag)return;
- const factor=Math.max(.0001,size.y/Math.max(200,v.clientHeight));
- const dx=(e.clientX-fitPointer.x)*factor,dy=(fitPointer.y-e.clientY)*factor;
- const h=fitView==='side'?'fity':'fitx';
- $(h).value=(Number($(h).value)+dx).toFixed(4);
- $('fitz').value=(Number($('fitz').value)+dy).toFixed(4);
- fitPointer={x:e.clientX,y:e.clientY};applyFit();e.preventDefault();
-},{capture:true});
-v.addEventListener('pointerup',()=>fitPointer=null,{capture:true});
+$('fitdrag').onclick=()=>setFitMode(!fitDrag);
+for(const event of ['pointerdown','pointermove','pointerup','pointercancel']){
+ v.addEventListener(event,e=>{
+  if(!fitDrag||!ready)return;
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  if(event==='pointerdown'){
+   if(fitPointer!==null)return;
+   fitPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
+   try{v.setPointerCapture(e.pointerId)}catch{}
+  }else if(event==='pointermove'&&fitPointer?.id===e.pointerId){
+   const factor=Math.max(.0001,size.y/Math.max(200,v.clientHeight));
+   const dx=(e.clientX-fitPointer.x)*factor,dy=(fitPointer.y-e.clientY)*factor;
+   const h=fitView==='side'?'fity':'fitx';
+   $(h).value=(Number($(h).value)+dx).toFixed(4);
+   $('fitz').value=(Number($('fitz').value)+dy).toFixed(4);
+   fitPointer={id:e.pointerId,x:e.clientX,y:e.clientY};applyFit();
+  }else if((event==='pointerup'||event==='pointercancel')&&fitPointer?.id===e.pointerId){fitPointer=null;}
+ },{capture:true,passive:false});
+}
 function fitPosition(){return {x:Number($('fitx').value)||0,y:Number($('fity').value)||0,z:Number($('fitz').value)||0}}
 $('fitsave').onclick=()=>{localStorage.setItem('sav3-fit-offset',JSON.stringify(fitPosition()));$('fitstatus').textContent='Coordinates saved on this phone (not applied to the mesh).'};
 $('fitcopy').onclick=()=>{const value=JSON.stringify({sav3_offset_m:fitPosition()});navigator.clipboard.writeText(value).then(()=>$('fitstatus').textContent='Coordinates copied. Paste them into chat.').catch(()=>$('fitstatus').textContent=value)};
@@ -202,7 +208,7 @@ v.addEventListener('load',()=>{
    const clip=match(b.dataset.pose);b.disabled=!clip;
    b.title=clip?'Actual clip: '+clip:'No matching animation exported in this GLB';
  }
- classifyMaterials();findFitMeshes();
+ classifyMaterials();findFitMeshes();if(fitDrag)setFitMode(true);
  s.textContent='GLB loaded — '+clips.length+' real motion clip(s). This confirms file loading, not visual quality.';
  motion.textContent=clips.length?'Starting automatic movement sequence, returning to stand between each clip.':'No animations in this export yet; building an updated rigged version.';
  if(clips.length){$('auto').disabled=false;startSequence();}
