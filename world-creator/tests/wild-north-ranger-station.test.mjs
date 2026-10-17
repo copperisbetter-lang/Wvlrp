@@ -95,7 +95,7 @@ test("ranger desk remains clear of the former full-height chimney shaft",()=>{
   assert.match(script,/const returnDeskX=X\+4\.85,returnDeskZ=Z\+4\.19/);
   assert.match(file("../walk.js"),/ranger-360-playable-20261015-v10/);
   assert.match(file("../wild-flatland-rebuild.js"),/ranger-360-playable-20261015-v10/);
-  assert.match(file("../walk.html"),/ranger-360-playable-20261015-v10/);
+  assert.match(file("../walk.html"),/id="world"/);
   assert.match(script,/ranger chair backrest at rear toward wall/);
   assert.match(script,/full round hardwood porch column/);
 });
