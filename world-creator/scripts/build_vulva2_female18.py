@@ -232,10 +232,6 @@ def fit_vulva2(root,body,rig):
               "remaining",remaining,"max_displacement",round(max(abs(v) for v in shifts),5),flush=True)
         if remaining>len(pts)*.10 or max(abs(v) for v in shifts)>.16:
             raise RuntimeError("SAV3_EXTERIOR_PROJECTION_UNSAFE")
-    if False:
-        raise RuntimeError(
-            f"SAV3_OCCLUDED_ANATOMY: {overlap}/{len(pts)} proxy vertices "
-            "behind intact outer skin; repair body topology before export")
     # Do not delete body vertices using an unverified cross-topology mask.
     # The original mask can create jagged holes on different body topology.
     delete=[]
