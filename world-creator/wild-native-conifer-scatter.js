@@ -37,7 +37,12 @@ const geometryBottom=()=>{let low=Infinity;for(const m of trunks){m.computeWorld
     root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;
     b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;
     for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-geometryBottom();if(Math.abs(d)<.02)break;root.position.y+=d;root.computeWorldMatrix(true);for(const m of trunks)m.computeWorldMatrix(true);}
-    // Reject trees whose visible geometry is detached far above the grounded trunk.\n    // A grounded trunk alone does not prove the imported model is visually grounded.\n    const allBounds=bounds(meshes), trunkBounds=bounds(trunks);\n    const gap=allBounds.lo.y-trunkBounds.lo.y;\n    if(!Number.isFinite(gap)||Math.abs(gap)>3)throw Error("Detached conifer geometry: "+gap.toFixed(2)+"m");\n    for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
+    // Reject trees whose visible geometry is detached far above the grounded trunk.
+    // A grounded trunk alone does not prove the imported model is visually grounded.
+    const allBounds=bounds(meshes), trunkBounds=bounds(trunks);
+    const gap=allBounds.lo.y-trunkBounds.lo.y;
+    if(!Number.isFinite(gap)||Math.abs(gap)>3)throw Error("Detached conifer geometry: "+gap.toFixed(2)+"m");
+    for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
     root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
   }
