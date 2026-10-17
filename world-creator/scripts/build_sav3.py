@@ -147,6 +147,26 @@ validate_face_alignment()
 '''
 source=source.replace(face_anchor,'validate_visible_meshes()\n'+face_qa+'\nadd_vulva2_preview_animations')
 
+# Reject a second pelvic proxy, including copies without the expected tag.
+anatomy_anchor = 'hair=add_clean_long_blonde_hair(root,body,rigs[0])'
+if source.count(anatomy_anchor) != 1:
+    raise RuntimeError("SAV3_ANATOMY_QA_ANCHOR_CHANGED")
+anatomy_qa = '''
+def validate_single_pelvic_attachment():
+    meshes=[o for o in [root]+list(root.children_recursive) if o.type=="MESH"]
+    candidates=[o for o in meshes if any(term in o.name.lower()
+                for term in ("vulva","labia","genital","pelvic attachment"))]
+    if len(candidates)!=1 or candidates[0]!=addon:
+        raise RuntimeError("SAV3_DUPLICATE_PELVIC_MESHES: "+repr([o.name for o in candidates]))
+    if addon.hide_render or addon.hide_viewport:
+        raise RuntimeError("SAV3_PELVIC_ATTACHMENT_HIDDEN")
+    if len([m for m in addon.modifiers if m.type=="ARMATURE" and m.object==rigs[0]])!=1:
+        raise RuntimeError("SAV3_PELVIC_RIG_MISMATCH")
+    print("SAV3_SINGLE_PELVIC_ATTACHMENT_VERIFIED",flush=True)
+validate_single_pelvic_attachment()
+'''
+source=source.replace(anatomy_anchor,anatomy_qa+'\\n'+anatomy_anchor)
+
 # Facial accessories must be bound to the same rig as the body. A valid
 # position in the bind pose is not enough if their parent/armature differs.
 rig_anchor = 'validate_face_alignment()\n'
