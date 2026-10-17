@@ -7,7 +7,7 @@ on:
   # Asset installers commit GLBs using GITHUB_TOKEN; these commits do not
   # trigger push workflows. Deploy after a successful installer run, too.
   workflow_run:
-    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
+    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build Sav 3 private adult inspection GLB", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
     types: [completed]
     branches: ["main"]
 
@@ -170,6 +170,11 @@ jobs:
           mkdir -p world-creator/assets /tmp/sav3-publish
           run_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-sav3.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id')"
           test -n "$run_id" && test "$run_id" != "null"
+          # Never silently publish an older successful model after a newer
+          # build failed. For a SAV3-triggered deployment, use that exact run.
+          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "${{ github.event.workflow_run.name }}" = "Build Sav 3 private adult inspection GLB" ]; then
+            run_id="${{ github.event.workflow_run.id }}"
+          fi
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name sav3-adult-inspection-glb --dir /tmp/sav3-publish
           python3 - <<'PY'
           import json,struct
