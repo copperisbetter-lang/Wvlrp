@@ -1,0 +1,20 @@
+name: Inspect maple GLB hierarchy
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-maple-glb.yml'
+      - 'world-creator/scripts/inspect_maple_glb.py'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect actual imported maple model
+        run: python3 world-creator/scripts/inspect_maple_glb.py > maple-hierarchy.jsonl
+      - name: Print hierarchy to build log
+        run: cat maple-hierarchy.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maple-hierarchy
+          path: maple-hierarchy.jsonl
