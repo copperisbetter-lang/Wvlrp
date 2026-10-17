@@ -117,6 +117,27 @@ export function installAutumnMaples(B,scene,{
         // hierarchy intact and correct against WORLD bounds after parenting.
         // Do not move the trunk sideways based on canopy bounds.
         clone.position.set(0,0,0);
+        // Imported Acer roots are arranged on a shared display grid. Their
+        // trunk geometry can be tens of metres away from the root pivot, so
+        // sampling ground at the anchor alone plants at the WRONG X/Z.
+        // Center the lowest bark/trunk mesh horizontally on our world anchor.
+        const bark=meshes.filter(m=>/bark|trunk|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));
+        const trunkMeshes=bark.length?bark:meshes;
+        let trunkBottom=Infinity,trunkX=0,trunkZ=0;
+        for(const m of trunkMeshes){
+          m.computeWorldMatrix(true);
+          const bb=m.getBoundingInfo().boundingBox;
+          if(bb.minimumWorld.y<trunkBottom){
+            trunkBottom=bb.minimumWorld.y;
+            trunkX=(bb.minimumWorld.x+bb.maximumWorld.x)/2;
+            trunkZ=(bb.minimumWorld.z+bb.maximumWorld.z)/2;
+          }
+        }
+        if(!Number.isFinite(trunkBottom)){anchor.dispose(false,true);continue;}
+        // Shift the source's display-grid offset out of the tree geometry.
+        // Since the anchor is still at origin, world and local X/Z coincide.
+        clone.position.x-=trunkX;
+        clone.position.z-=trunkZ;
         anchor.position.set(x,0,z);
         const worldBottom=()=>{
           anchor.computeWorldMatrix(true);
