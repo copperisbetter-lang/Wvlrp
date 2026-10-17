@@ -14,7 +14,11 @@ export function installAutumnMaples(B,scene,{
   const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
   state.ready=(async()=>{
     const container=await B.SceneLoader.LoadAssetContainerAsync("",assetUrl,scene);
-    const sourceRoots=container.rootNodes.filter(n=>n.getChildMeshes?.(false).some(m=>m.getTotalVertices?.()>0));
+    // Select separate tree/LOD0 nodes, rather than cloning the whole packed scene.
+    const nodes=container.transformNodes.filter(n=>n.getChildMeshes?.(false).some(m=>m.getTotalVertices?.()>0));
+    const treeNodes=nodes.filter(n=>/tree|maple|lod.?0/i.test(n.name||"")&&!/lod.?[1-9]|proxy|billboard|collision/i.test(n.name||""));
+    const sourceRoots=treeNodes.length?treeNodes:nodes.filter(n=>!/lod.?[1-9]|proxy|billboard|collision/i.test(n.name||""));
+
     if(!sourceRoots.length)throw Error("Maple GLB has no instantiable tree roots; split collection into individual tree GLBs first.");
     state.sourceRoots=sourceRoots.length;
     // Imported GLB nodes remain disabled until explicitly enabled on each clone.
@@ -35,9 +39,21 @@ export function installAutumnMaples(B,scene,{
         if(!clone)continue;
         clone.setEnabled(true);
         for(const child of clone.getChildMeshes(false))child.setEnabled(true);
-        clone.position.set(x,y,z);
+        // Normalize model bounds: source pack coordinates may be huge or offset.
+        const meshes=clone.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
+        if(!meshes.length){clone.dispose(false,true);continue;}
+        for(const m of meshes) m.computeWorldMatrix(true);
+        let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
+        for(const m of meshes){const bb=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld);}
+        const height=max.y-min.y;
+        if(!Number.isFinite(height)||height<=0){clone.dispose(false,true);continue;}
+        const targetHeight=12+hash(ix,iz,4)*18;
+        clone.scaling.scaleInPlace(targetHeight/height);
+        clone.computeWorldMatrix(true);
+        // Move original model origin to its trunk base.
+        clone.position.set(x-(min.x+max.x)*.5*targetHeight/height,y-min.y*targetHeight/height,z-(min.z+max.z)*.5*targetHeight/height);
         const size=.65+hash(ix,iz,4)*1.35;
-        clone.scaling.scaleInPlace(size);
+        // Height already normalized above; retain natural proportions.
         clone.rotation.y=hash(ix,iz,5)*Math.PI*2;
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
