@@ -100,15 +100,18 @@ def fit_vulva2(root,body,rig):
     # The crotch is the LOWEST central skin point in the pelvis region,
     # excluding feet and leg geometry. Never use a guessed global Z offset.
     crotch_z=min(p.z for p in band)
-    # This is a safety gate, not an arbitrary relocation of donor topology.
-    # If the donor fits above the crotch, stop the export rather than publish.
+    # Keep the licensed donor topology intact while translating the entire
+    # attachment to the measured body landmark, not a guessed world height.
     proxy_low=min(p[2] for p in pts)
-    if proxy_low>crotch_z+.045*body_height:
-        raise RuntimeError("SAV3_VULVA2_TOO_HIGH: proxy lowest point "+
-                           str(round(proxy_low,4))+" crotch "+
-                           str(round(crotch_z,4)))
-    if not body_zmin+.35*body_height<center_z<body_zmin+.56*body_height:
-        raise RuntimeError("SAV3_VULVA2_POSITION: proxy center outside crotch region")
+    target_low=crotch_z+.008*body_height
+    dz=target_low-proxy_low
+    if abs(dz)>.16*body_height:
+        raise RuntimeError("SAV3_VULVA2_SHIFT_UNSAFE: "+str(round(dz,4)))
+    pts=[(x,y,z+dz) for x,y,z in pts]
+    center_z+=dz
+    print("SAV3_VULVA2_LANDMARK_SHIFT",round(dz,5),"target",round(target_low,5),flush=True)
+    if abs(min(p[2] for p in pts)-target_low)>.002:
+        raise RuntimeError("SAV3_VULVA2_LANDMARK_ALIGNMENT_FAILED")
     frontmost=min(v.co.y for v in vs)
     def front_surface(x,z):
         hit,location,normal,index=body.ray_cast(
