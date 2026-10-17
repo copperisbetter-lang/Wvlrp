@@ -386,7 +386,10 @@ def validate_visible_meshes():
         bounds=[(min(p[i] for p in pts),max(p[i] for p in pts)) for i in range(3)]
         if bounds[0][1]-bounds[0][0] > height*.22 or bounds[2][1]-bounds[2][0] > height*.20:
             raise RuntimeError("SAV3_FACE_EXPLODED: "+obj.name)
-        if bounds[2][0] < low+height*.78:
+        # Teeth extend into the mouth/jaw below the eye region; do not
+        # classify their normal lower extent as an exploded face mesh.
+        floor_fraction = .70 if "teeth" in obj.name.lower() else .78
+        if bounds[2][0] < low+height*floor_fraction:
             raise RuntimeError("SAV3_FACE_OUTSIDE_HEAD: "+obj.name)
     print("SAV3_VISIBLE_MESH_SANITY_PASS")
 validate_visible_meshes()
