@@ -1,3 +1,4 @@
+import {groundTree} from "./wild-hd-tree-ground.js";
 /** Living PBR grove around Hearthside girls' cabin. 500 m² circle; no deadwood. */
 // Prefer upright evergreen PBR assets; retire all island trees with sprawling roots.
 const ASSETS=["fir_sapling_medium","pine_sapling_small","fir_sapling","fir_tree_01","tree_small_02"];
@@ -96,40 +97,8 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
       minZ=Math.min(minZ,box.minimumWorld.z);maxZ=Math.max(maxZ,box.maximumWorld.z);
       m.isPickable=false;m.checkCollisions=false;
     }
-    // Source GLBs often contain a displaced origin. Center actual world-space
-    // geometry over the planned tree coordinate, not the source-file pivot.
-    root.position.set(x-(minX+maxX)/2,0,z-(minZ+maxZ)/2);
-    // Imported hierarchies may retain nontrivial parent transforms. Correct
-    // against the actual world-space bottom AFTER translating the root.
-    for(let pass=0;pass<5;pass++){
-      root.computeWorldMatrix(true);
-      let actualBottom=Infinity;
-      for(const m of meshes){
-        m.computeWorldMatrix(true);
-        actualBottom=Math.min(actualBottom,m.getBoundingInfo().boundingBox.minimumWorld.y);
-      }
-      const ground=cabinGrade(x,z,seed);
-      if(!Number.isFinite(actualBottom)||!Number.isFinite(ground))throw Error("Invalid final tree grounding");
-      const correction=ground+.02-actualBottom;
-      if(Math.abs(correction)<.015)break;
-      root.position.y+=correction;
-    }
-    root.computeWorldMatrix(true);
-    // Anchor using the actual trunk bottom, not stray leaf/scene geometry.
-    const trunkMeshes=meshes.filter(m=>/trunk|bark|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));
-    if(!trunkMeshes.length)throw Error("No trunk geometry: skip floating conifer");
-    for(let pass=0;pass<5;pass++){
-      root.computeWorldMatrix(true);
-      let bottom=Infinity;
-      for(const m of trunkMeshes){m.computeWorldMatrix(true);bottom=Math.min(bottom,m.getBoundingInfo().boundingBox.minimumWorld.y)}
-      const delta=cabinGrade(x,z,seed)-.10-bottom;
-      if(!Number.isFinite(delta))throw Error("Invalid trunk ground height");
-      if(Math.abs(delta)<.015)break;
-      root.position.y+=delta;
-    }
-    root.computeWorldMatrix(true);
-    const finalBottom=Math.min(...trunkMeshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox.minimumWorld.y;}));
-    if(!Number.isFinite(finalBottom)||Math.abs(finalBottom-cabinGrade(x,z,seed))>.35)throw Error("Cabin conifer still floating");
+    const placement=groundTree(root,(px,pz)=>cabinGrade(px,pz,seed),x,z,.10);
+    if(!placement.ok)throw Error("Cabin HD tree grounding failed: "+placement.reason+" "+placement.error);
     root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
    }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
