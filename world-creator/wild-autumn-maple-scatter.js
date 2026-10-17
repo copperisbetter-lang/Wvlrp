@@ -7,7 +7,21 @@ export function installAutumnMaples(B,scene,{
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
   cellSize=90, radius=900, density=0.20, maxVisible=180
 }={}){
-  const state={status:"loading",planted:0,error:"",roots:[],dispose(){
+  const state={status:"loading",planted:0,error:"",roots:[],placements:[],reground(){
+    let corrected=0;
+    for(const item of this.placements){
+      const ground=terrainHeight(item.x,item.z);
+      if(!Number.isFinite(ground))continue;
+      let lowest=Infinity;
+      item.root.computeWorldMatrix(true);
+      for(const mesh of item.meshes){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
+      if(!Number.isFinite(lowest))continue;
+      const delta=ground-.12-lowest;
+      if(Math.abs(delta)>.02){item.root.position.y+=delta;corrected++;}
+    }
+    this.lastRegroundCorrections=corrected;
+    return corrected;
+  },dispose(){
     for(const root of this.roots)root.dispose(false,true);
     this.roots.length=0;
   }};
@@ -93,15 +107,8 @@ export function installAutumnMaples(B,scene,{
           clone.position.y+=error;
         }
         clone.computeWorldMatrix(true);
-        // Gravity-style grounding: use a downward ray against the actual
-        // collision-free terrain surface. A tree is static once planted.
-        // Ray starts above the model so even offset GLB hierarchies are covered.
-        const rayOrigin=new B.Vector3(x,y+300,z);
-        const hit=scene.pickWithRay(new B.Ray(rayOrigin,new B.Vector3(0,-1,0),600),
-          mesh=>mesh.isPickable&&mesh.isEnabled()&&mesh.isVisible&&
-            !mesh.name.startsWith("autumn-maple-"));
-        const groundY=hit?.hit&&hit.pickedPoint&&Number.isFinite(hit.pickedPoint.y)
-          ?hit.pickedPoint.y:y;
+        // Final grounding uses the same terrain-height provider as the walker.
+        // The provider can be updated when streamed terrain becomes available.
         for(let pass=0;pass<3;pass++){
           clone.computeWorldMatrix(true);
           let lowest=Infinity;
@@ -109,12 +116,12 @@ export function installAutumnMaples(B,scene,{
             mesh.computeWorldMatrix(true);
             lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);
           }
-          if(!Number.isFinite(lowest))break;
-          const delta=groundY-.15-lowest;
+          const surface=terrainHeight(x,z);
+          if(!Number.isFinite(lowest)||!Number.isFinite(surface))break;
+          const delta=surface-.12-lowest;
           if(Math.abs(delta)<.01)break;
           clone.position.y+=delta;
         }
-        clone.computeWorldMatrix(true);
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
           if(!mesh.isEnabled()||!mesh.isVisible)continue;
@@ -127,7 +134,7 @@ export function installAutumnMaples(B,scene,{
           else if(mat.diffuseColor)mat.diffuseColor=tint;
           mesh.material=mat;
         }
-        state.roots.push(clone);planted++;
+        state.roots.push(clone);state.placements.push({root:clone,meshes,x,z});planted++;
       }
     }
     // Record a real, post-transform sample for remote phone diagnostics.
