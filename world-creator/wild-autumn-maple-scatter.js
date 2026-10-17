@@ -17,11 +17,12 @@ export function installAutumnMaples(B,scene,{
       for(const mesh of item.meshes){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       if(!Number.isFinite(lowest))continue;
       const delta=ground-.12-lowest;
-      if(Math.abs(delta)>.02){item.root.position.y+=delta;item.root.computeWorldMatrix(true);corrected++;}
+      if(Math.abs(delta)>.02){item.root.position.y+=delta;item.root.computeWorldMatrix(true);for(const mesh of item.meshes)mesh.computeWorldMatrix(true);corrected++;}
     }
     this.lastRegroundCorrections=corrected;
     return corrected;
   },dispose(){
+    if(this.groundObserver)scene.onBeforeRenderObservable.remove(this.groundObserver);
     for(const root of this.roots)root.dispose(false,true);
     this.roots.length=0;
   }};
@@ -151,6 +152,13 @@ export function installAutumnMaples(B,scene,{
       for(const mesh of visible){mesh.computeWorldMatrix(true);low=Math.min(low,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       return {x:Math.round(root.position.x),z:Math.round(root.position.z),bottom:Math.round(low*10)/10,ground:Math.round(terrainHeight(root.position.x,root.position.z)*10)/10};
     });
+    // Terrain may load or change after the trees. Recheck actual world-space mesh
+    // bounds as terrain becomes available, without shifting correctly grounded trees.
+    let frames=0;
+    state.groundObserver=scene.onBeforeRenderObservable.add(()=>{
+      if(++frames%120===0)state.reground();
+    });
+    state.reground();
     state.planted=planted;state.status="ready";console.info("CLEAN_MAPLE_GROUND_TEST",JSON.stringify({planted,samples:state.samples}));return state;
   })().catch(err=>{state.status="error";state.error=String(err.message||err);return state;});
   return state;
