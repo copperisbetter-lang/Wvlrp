@@ -53,18 +53,40 @@ export function installTreeInspectionLine(B,scene,{seed,cabinGrade,camera}){
     root.position.z=spot.z-(minZ+maxZ)*.5*scale;
    }
    for(const m of meshes){m.isPickable=false;m.checkCollisions=false;m.alwaysSelectAsActiveMesh=true;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.backFaceCulling=false;mat.twoSidedLighting=true;if(mat.albedoTexture?.hasAlpha||mat.diffuseTexture?.hasAlpha){mat.transparencyMode=B.Material.MATERIAL_ALPHATEST;mat.useAlphaFromAlbedoTexture=true;}}}
+   // Recalculate the imported meshes after scaling and moving the parent.
+   // Some GLBs cache their pre-parenting bounding boxes; force each matrix
+   // update and anchor the lowest actual vertex/bound to the terrain.
    root.computeWorldMatrix(true);
-   // Verify the transformed tree actually occupies its assigned test location.
-   const bounds=meshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox;});
-   const low=Math.min(...bounds.map(b=>b.minimumWorld.y));
+   for(const m of meshes)m.computeWorldMatrix(true);
+   const measure=()=>{
+     root.computeWorldMatrix(true);
+     let bottom=Infinity,top=-Infinity;
+     for(const m of meshes){
+       m.computeWorldMatrix(true);
+       const bb=m.getBoundingInfo().boundingBox;
+       bottom=Math.min(bottom,bb.minimumWorld.y);
+       top=Math.max(top,bb.maximumWorld.y);
+     }
+     return {bottom,top};
+   };
    const ground=cabinGrade(spot.x,spot.z,seed);
-   root.position.y+=ground-low+0.35;
-   root.parent=null; // Tree belongs to the world, never to the moving camera or player.
-   root.computeWorldMatrix(true);
-   const finalBounds=meshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox;});
-   const actualHeight=Math.max(...finalBounds.map(b=>b.maximumWorld.y))-Math.min(...finalBounds.map(b=>b.minimumWorld.y));
-   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-target)>target*.15)throw Error("Tree scale verification failed: "+actualHeight+"m versus "+target+"m");
-   root.freezeWorldMatrix(); // Lock the specimen at its measured ground coordinates.
+   // Iterative correction handles imported pivot offsets and nested GLB roots.
+   for(let pass=0;pass<3;pass++){
+     const {bottom}=measure();
+     if(!Number.isFinite(bottom))throw Error("Invalid tree ground bounds");
+     const delta=ground-bottom-0.08;
+     root.position.y+=delta;
+     root.markAsDirty();
+     if(Math.abs(delta)<0.015)break;
+   }
+   const final=measure();
+   const actualHeight=final.top-final.bottom;
+   if(!Number.isFinite(actualHeight)||Math.abs(actualHeight-target)>target*.15)
+     throw Error("Tree scale verification failed: "+actualHeight+"m versus "+target+"m");
+   if(Math.abs(final.bottom-ground)>0.3)
+     throw Error("Tree remains off ground: "+(final.bottom-ground).toFixed(2)+"m");
+   // Do not freeze imported transforms: freezing can retain stale world matrices
+   // in nested GLB hierarchies and make the visual mesh float despite its pivot.
    for(const m of meshes){m.setEnabled(true);m.isVisible=true;m.visibility=1;m.renderingGroupId=1;const mats=m.material?.subMaterials||[m.material];for(const mat of mats){if(!mat)continue;mat.disableDepthWrite=false;if(mat.alphaCutOff!==undefined)mat.alphaCutOff=0.15;}} spot.actualHeight=actualHeight;spot.root=root;spot.status="ready";spot.label?.drawText(spot.id+" "+Math.round(actualHeight)+"m READY",8,76,"bold 32px Arial","#b8ffb5","#163e2e",true);
   }catch(err){spot.status="error";spot.error=String(err);spot.stack=String(err?.stack||"").slice(0,650);spot.label?.drawText(spot.id+" FAILED",8,76,"bold 32px Arial","#ffaaaa","#661b1b",true);console.warn("Tree sample failed",spot.id,err?.stack||err);}
   finally{busy=false;}
