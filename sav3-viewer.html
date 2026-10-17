@@ -63,7 +63,7 @@ The viewer cannot repair geometry on its own; rebuilt meshes must be exported to
 (()=>{
 const v=document.querySelector('#model'),s=document.querySelector('#status'),diag=document.querySelector('#diagnostic'),
   motion=document.querySelector('#motion'),select=document.querySelector('#animations');
-const asset='/world-creator/assets/sav3-adult-inspection.glb';
+const asset=new URL('world-creator/assets/sav3-adult-inspection.glb',document.baseURI).href+'?v='+Date.now();
 let size={x:1,y:1,z:1},center={x:0,y:.9,z:0},radius=2.8,ready=false,clips=[],current='';
 let loadTimer=0,rendererTimer=0,sequenceTimer=0,sequence=[],sequenceIndex=0,sequenceActive=false,sequencePhase="";
 let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibility={hair:true,anatomy:true,body:true,clothes:true};
