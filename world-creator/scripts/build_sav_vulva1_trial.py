@@ -54,8 +54,9 @@ if body.data.shape_keys:
     for block in list(body.data.shape_keys.key_blocks):
         if block.name in ("Labia_Left_Open", "Labia_Right_Open"):
             body.shape_key_remove(block)
-    for block in body.data.shape_keys.key_blocks:
-        block.value = 0.0
+    # Preserve all unrelated facial and body morph values. Resetting every
+    # shape key was erasing the character's existing expression and fit.
+    # Only the two obsolete pelvic sculpt keys above are removed.
 
 bpy.context.scene.frame_set(0)
 bpy.context.view_layer.update()
