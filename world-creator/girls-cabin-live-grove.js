@@ -44,13 +44,25 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
     lo=Infinity;
-    for(const m of meshes){m.computeWorldMatrix(true);lo=Math.min(lo,m.getBoundingInfo().boundingBox.minimumWorld.y);m.isPickable=false;m.checkCollisions=false}
-    root.position.set(x,cabinGrade(x,z,seed)-lo+.02,z);
+    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(const m of meshes){
+      m.computeWorldMatrix(true);
+      const box=m.getBoundingInfo().boundingBox;
+      lo=Math.min(lo,box.minimumWorld.y);
+      minX=Math.min(minX,box.minimumWorld.x);maxX=Math.max(maxX,box.maximumWorld.x);
+      minZ=Math.min(minZ,box.minimumWorld.z);maxZ=Math.max(maxZ,box.maximumWorld.z);
+      m.isPickable=false;m.checkCollisions=false;
+    }
+    // Source GLBs often contain a displaced origin. Center actual world-space
+    // geometry over the planned tree coordinate, not the source-file pivot.
+    root.position.set(x-(minX+maxX)/2,cabinGrade(x,z,seed)-lo+.02,z-(minZ+maxZ)/2);
+    root.computeWorldMatrix(true);
     root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
    }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
   }
   state.status=state.planted?"ready":"empty";
+  console.info("GIRLS_CABIN_LIVING_GROVE",JSON.stringify({status:state.status,planted:state.planted,failed:state.failed,areaSquareMetres:AREA}));
  })().catch(e=>{state.status="error";state.error=String(e);console.error("Girls cabin grove",e)});
  return state;
 }
