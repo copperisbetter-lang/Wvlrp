@@ -17,7 +17,7 @@ export function installAutumnMaples(B,scene,{
       for(const mesh of item.meshes){mesh.computeWorldMatrix(true);lowest=Math.min(lowest,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
       if(!Number.isFinite(lowest))continue;
       const delta=ground-.12-lowest;
-      if(Math.abs(delta)>.02){item.root.position.y+=delta;corrected++;}
+      if(Math.abs(delta)>.02){item.root.position.y+=delta;item.root.computeWorldMatrix(true);corrected++;}
     }
     this.lastRegroundCorrections=corrected;
     return corrected;
@@ -53,6 +53,11 @@ export function installAutumnMaples(B,scene,{
         const source=sourceRoots[Math.floor(hash(ix,iz,3)*sourceRoots.length)];
         const clone=source.clone("autumn-maple-"+ix+"-"+iz,null,false);
         if(!clone)continue;
+        // A dedicated world-space anchor prevents imported GLB parent transforms
+        // from turning local Y corrections into floating world-space trees.
+        clone.parent=null;
+        const anchor=new B.TransformNode("maple-ground-anchor-"+ix+"-"+iz,scene);
+        clone.parent=anchor;
         clone.setEnabled(true);
         for(const child of clone.getChildMeshes(false))child.setEnabled(true);
         // Remove imported display platforms, including unnamed flat bases.
@@ -92,7 +97,8 @@ export function installAutumnMaples(B,scene,{
           }
         }
         if(!Number.isFinite(bottom)){clone.dispose(false,true);continue;}
-        clone.position.set(x-lowX,y-bottom-.12,z-lowZ);
+        clone.position.set(-lowX,-bottom,-lowZ);
+        anchor.position.set(x,y-.12,z);
         // Re-measure after translation: GLB hierarchy transforms can invalidate
         // the first estimate, particularly when nodes carry imported offsets.
         // Iteratively correct the *actual* rendered world-space bottom.
@@ -106,7 +112,7 @@ export function installAutumnMaples(B,scene,{
           if(!Number.isFinite(actualBottom))break;
           const error=(y-.12)-actualBottom;
           if(Math.abs(error)<.02)break;
-          clone.position.y+=error;
+          anchor.position.y+=error;
         }
         clone.computeWorldMatrix(true);
         // Final grounding uses the same terrain-height provider as the walker.
@@ -122,7 +128,7 @@ export function installAutumnMaples(B,scene,{
           if(!Number.isFinite(lowest)||!Number.isFinite(surface))break;
           const delta=surface-.12-lowest;
           if(Math.abs(delta)<.01)break;
-          clone.position.y+=delta;
+          anchor.position.y+=delta;
         }
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
@@ -136,7 +142,7 @@ export function installAutumnMaples(B,scene,{
           else if(mat.diffuseColor)mat.diffuseColor=tint;
           mesh.material=mat;
         }
-        state.roots.push(clone);state.placements.push({root:clone,meshes,x,z});planted++;
+        state.roots.push(anchor);state.placements.push({root:anchor,meshes,x,z});planted++;
       }
     }
     // Record a real, post-transform sample for remote phone diagnostics.
