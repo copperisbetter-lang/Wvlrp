@@ -3,7 +3,7 @@
  * Deterministic cell placement keeps multiplayer clients in agreement.
  */
 export function installAutumnMaples(B,scene,{
-  assetUrl="./assets/maple_trees_pack_lowpoly_game_ready_lods.glb",
+  assetUrl="./assets/maple_trees_optimized_single_upload.glb",
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
   cellSize=90, radius=900, density=0.20, maxVisible=180
 }={}){
