@@ -81,6 +81,47 @@ def fit_vulva2(root,body,rig):
         total=sum(skin.values())
         if total<.01:raise RuntimeError("Vulva2 automatic source rig weights unavailable")
         transferred.append({name:weight/total for name,weight in skin.items() if weight/total>.0001})
+    # SAV3: the native MHX2 proxy can be inside the uncut original body.
+    # Conform its exterior-facing vertices to actual FRONT body skin instead
+    # of trusting an internal attachment to become visible in the viewer.
+    # Preserve the donor topology, UVs and pelvis-only rigging.
+    body_zmin=min(v.co.z for v in vs)
+    body_height=max(v.co.z for v in vs)-body_zmin
+    center_z=(min(p[2] for p in pts)+max(p[2] for p in pts))*.5
+    if not body_zmin+.40*body_height<center_z<body_zmin+.58*body_height:
+        raise RuntimeError("SAV3_VULVA2_POSITION: proxy center is outside low pelvic band")
+    frontmost=min(v.co.y for v in vs)
+    def front_surface(x,z):
+        hit,location,normal,index=body.ray_cast(
+            Vector((x,frontmost-.25*body_height,z)),
+            Vector((0,1,0)),distance=2*body_height)
+        if not hit or normal.y>=-.12:
+            return None
+        return location.y
+    # The first ray hit is the external surface, never an interior cavity.
+    samples=[front_surface(x,z) for x,y,z in pts]
+    valid=[(surface-y) for (x,y,z),surface in zip(pts,samples)
+           if surface is not None]
+    if len(valid)<len(pts)*.65:
+        raise RuntimeError("SAV3_VULVA2_SURFACE: insufficient exterior skin contacts")
+    # Move the proxy as ONE rigid assembly, not each vertex independently.
+    # This prevents folding the licensed mesh and retains its proportions.
+    import statistics
+    median_depth=statistics.median(valid)
+    # Forward is -Y; 2 mm clearance places the proxy visibly outside skin.
+    depth_shift=median_depth-.002
+    pts=[(x,y+depth_shift,z) for x,y,z in pts]
+    # Every sampled vertex must remain close to the actual outer body.
+    # A large mismatch indicates an incorrect donor/body fit.
+    deviations=[abs((y+depth_shift)-surface)
+                for (x,y,z),surface in zip(
+                    [(x,y-depth_shift,z) for x,y,z in pts],samples)
+                if surface is not None]
+    if statistics.median(deviations)>.018:
+        raise RuntimeError("SAV3_VULVA2_SURFACE: anatomy does not conform to outer skin")
+    print("SAV3_VULVA2_EXTERIOR_FIT",
+          "surface_samples",len(valid),"depth_shift_m",round(depth_shift,5),
+          "median_surface_gap_m",round(statistics.median(deviations),5),flush=True)
     zlo=min(p[2] for p in pts);zhi=max(p[2] for p in pts)
     xlo=min(p[0] for p in pts);xhi=max(p[0] for p in pts)
     ylo=min(p[1] for p in pts);yhi=max(p[1] for p in pts)
