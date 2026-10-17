@@ -16,6 +16,7 @@ export function installAutumnMaples(B,scene,{
     const container=await B.SceneLoader.LoadAssetContainerAsync("",assetUrl,scene);
     const sourceRoots=container.rootNodes.filter(n=>n.getChildMeshes?.(false).some(m=>m.getTotalVertices?.()>0));
     if(!sourceRoots.length)throw Error("Maple GLB has no instantiable tree roots; split collection into individual tree GLBs first.");
+    state.sourceRoots=sourceRoots.length;
     const palettes=["#b71e1c","#db481c","#ec7922","#a94620","#7e4829","#e69b34"];
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
