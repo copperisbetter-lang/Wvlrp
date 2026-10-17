@@ -118,6 +118,11 @@ def fit_vulva2(root,body,rig):
                     [(x,y-depth_shift,z) for x,y,z in pts],samples)
                 if surface is not None]
     print("SAV3_SURFACE_DIAGNOSTIC", "median",statistics.median(deviations),"max",max(deviations),"samples",len(deviations),flush=True)
+    # Report per-vertex outliers before refusing unsafe geometry.
+    errors=sorted([(abs((p[1]-surf)),i,p[0],p[2]) for i,(p,surf) in enumerate(zip(pts,samples)) if surf is not None],reverse=True)
+    print("SAV3_WORST_SURFACE_POINTS",[(i,round(g,5),round(x,4),round(z,4)) for g,i,x,z in errors[:15]],flush=True)
+    for label,subset in (("left",[e[0] for e in errors if e[2]<-.015]),("center",[e[0] for e in errors if abs(e[2])<=.015]),("right",[e[0] for e in errors if e[2]>.015])):
+        if subset: print("SAV3_SURFACE_REGION",label,"count",len(subset),"median_gap",round(statistics.median(subset),5),flush=True)
     if statistics.median(deviations)>.018:
         raise RuntimeError("SAV3_VULVA2_SURFACE: anatomy does not conform to outer skin")
     print("SAV3_VULVA2_EXTERIOR_FIT",
