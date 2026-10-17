@@ -1,5 +1,4 @@
 import {groundTree} from "./wild-hd-tree-ground.js";
-import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /**
  * The Wild — optional licensed 3D village grove.
  *
@@ -159,7 +158,6 @@ export function installVillageGrove(B,scene,{seed,mobile=false,lite=false}={}){
     const usage=new Map();
     const placed=[];
     for(const tree of trees){
-      if(!mayPlantTree(tree.x,tree.z,1.5)){state.skippedNoModel++;continue;}
       // Cap duplicates: genuine model variety rather than one tree pasted 30x.
       const choices=available.filter(m=>(usage.get(m.id)||0)<
         (m.id==="jacaranda_tree"?4:mobile?MAX_PER_ASSET_MOBILE:15));
