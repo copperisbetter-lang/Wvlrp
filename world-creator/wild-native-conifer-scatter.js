@@ -1,3 +1,5 @@
+import {groundTree} from "./wild-hd-tree-ground.js";
+import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /** Seeded 10% conifer placement pass using verified upright CC0 PBR assets.
  * Other native hardwood species remain pending genuine verified models.
  * Cell occupancy is 10%; not a claim that 10% of physical acreage is covered.
@@ -18,7 +20,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
   for(let ix=-half;ix<=half&&state.planted<maxVisible;ix++)for(let iz=-half;iz<=half&&state.planted<maxVisible;iz++){
    if(hash(ix,iz) >= .10)continue;
    const x=(ix+(hash(ix,iz,1)-.5)*.65)*cellSize,z=(iz+(hash(ix,iz,2)-.5)*.65)*cellSize;
-   if(Math.hypot(x,z)>radius||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
+   if(Math.hypot(x,z)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
    const src=sources[Math.floor(hash(ix,iz,3)*sources.length)];let instance,root;
    try{
     instance=src.container.instantiateModelsToScene(n=>"native10-"+ix+"-"+iz+"-"+n,false,{doNotInstantiate:false});
@@ -39,7 +41,8 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     let b=bounds(),h=b.hi.y-b.lo.y;if(!Number.isFinite(h)||h<.01)throw Error("Invalid tree bounds");
     root.scaling.setAll((17+hash(ix,iz,4)*8)/h);root.rotation.y=hash(ix,iz,5)*Math.PI*2;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);
     b=bounds(trunks);root.position.x=x-(b.lo.x+b.hi.x)/2;root.position.z=z-(b.lo.z+b.hi.z)/2;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);
-    for(let pass=0;pass<5;pass++){b=bounds(trunks);const g=terrainHeight(x,z);if(!Number.isFinite(g))throw Error("Invalid ground");const d=g-.12-bounds(trunks).lo.y;if(Math.abs(d)<.02)break;root.position.y+=d;root.computeWorldMatrix(true);for(const m of meshes)m.computeWorldMatrix(true);}
+    const result=groundTree(root,terrainHeight,x,z,.12);
+    if(!result.ok)throw Error("Shared conifer grounding failed: "+result.reason+" "+result.error);
     // Reject trees whose visible geometry is detached far above the grounded trunk.
     // A grounded trunk alone does not prove the imported model is visually grounded.
     const allBounds=bounds(meshes), trunkBounds=bounds(trunks);
