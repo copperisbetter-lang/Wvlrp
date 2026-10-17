@@ -1,4 +1,4 @@
-import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-v1";
+import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-clean-v2";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
@@ -137,7 +137,7 @@ const autumnMaples=installAutumnMaples(B,scene,{
     const rendered=habitat?.surfaceHeight?.(x,z);
     return Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
   },
-  radius:900,density:.12,maxVisible:mobile?35:90,
+  radius:160,density:.30,maxVisible:1,
   excluded:(x,z,clearance)=>[
     [0,0,42],[93,77,55],[90,78,40],[90,75,40],
     [0,274,40]
