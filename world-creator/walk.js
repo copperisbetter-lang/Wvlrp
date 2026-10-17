@@ -177,12 +177,16 @@ girlsLiveGrove.ready.then(()=>console.info("GIRLS_CABIN_500_SQM_LIVE_TREES",girl
 // Retire the cabin-door procedural ico-sphere canopy; imported oak specimens remain world-anchored.
 const doorTree=installDoorTree(B,scene,cabinGrade(0,-13,seed));
 doorTree.setEnabled(false);
-const treeInspection=installTreeInspectionLine(B,scene,{seed,cabinGrade,camera});
 const treeTestMode=new URLSearchParams(location.search).has("treeTest");
+// Old inspection trees are NOT part of the girls cabin grove. They must not
+// load while players walk around the cabin; use explicit ?treeLine=1 only.
+const treeInspection=new URLSearchParams(location.search).has("treeLine")
+ ? installTreeInspectionLine(B,scene,{seed,cabinGrade,camera})
+ : {spots:[],tick(){},loadSelected(){}};
 // Removed the bright-green sphere/cylinder test sentinel. It was a cartoon
 // placeholder, not a photographic tree. Use world-anchored imported GLBs below.
 
-if(treeTestMode){
+if(treeTestMode&&treeInspection.spots.length){
  camera.position.set(0,cabinGrade(0,-18,seed)+EYE_HEIGHT,-18);
  camera.rotation.set(0,Math.PI,0);
  document.getElementById("tree-build-proof")?.replaceChildren(document.createTextNode("TREE INSPECTION BUILD 9 • taller visible trees"));
