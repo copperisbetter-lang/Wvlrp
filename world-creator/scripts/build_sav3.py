@@ -154,7 +154,7 @@ if source.count(anatomy_anchor) != 1:
 anatomy_qa = '''
 def validate_single_pelvic_attachment():
     meshes=[o for o in [root]+list(root.children_recursive) if o.type=="MESH"]
-    candidates=[addon] + [o for o in meshes if o != addon and any(term in o.name.lower()
+    candidates=[addon] + [o for o in meshes if o != addon and o != body and o != root and any(term in o.name.lower()
                 for term in ("vulva","labia","genital","pelvic attachment")) and o != addon and not any(face in o.name.lower() for face in ("eyebrow","eyelash","teeth","tooth","high-poly","low-poly","eye"))]
     if len(candidates)!=1 or candidates[0]!=addon:
         raise RuntimeError("SAV3_DUPLICATE_PELVIC_MESHES: "+repr([o.name for o in candidates]))
