@@ -36,14 +36,17 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     let lo=Infinity,hi=-Infinity;
     for(const m of meshes){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;lo=Math.min(lo,b.minimumWorld.y);hi=Math.max(hi,b.maximumWorld.y)}
     if(!Number.isFinite(hi-lo)||hi-lo<.01)throw Error("Invalid bounds");
-    const desired=7+(i%5)*1.4;
+    // Size all standing trees as mature specimens. If a future manifest entry
+    // is labeled sapling, it must not render at its tiny source-file scale.
+    const isSapling=/sapling|young|small/i.test(asset.id);
+    const desired=isSapling?16+(i%4)*1.5:17+(i%5)*1.6;
     root.scaling.setAll(desired/(hi-lo));
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
     lo=Infinity;
     for(const m of meshes){m.computeWorldMatrix(true);lo=Math.min(lo,m.getBoundingInfo().boundingBox.minimumWorld.y);m.isPickable=false;m.checkCollisions=false}
     root.position.set(x,cabinGrade(x,z,seed)-lo+.02,z);
-    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true};
+    root.metadata={kind:"living-pbr-tree",source:asset.id,worldAnchored:true,matureHeightMetres:desired,sourceLabeledSapling:isSapling};
     state.roots.push(root);state.planted++;
    }catch(e){state.failed++;instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Tree placement failed",i,e)}
   }
