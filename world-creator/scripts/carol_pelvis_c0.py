@@ -35,6 +35,62 @@ def make_c0_anatomy(root, body, rig):
     if len(source["vertices"]) != 181 or len(source["faces"]) != 168:
         raise RuntimeError("C0: anatomy donor topology changed; refit required")
 
+    # Repair source-mesh openings BEFORE fitting the external contour.
+    # An open pelvic shell exposes interior attachments in the viewer.
+    # Work only on pelvis-region boundary loops; do not cap the neck,
+    # hands, feet, or other deliberate openings.
+    if body.data.users > 1:
+        body.data = body.data.copy()
+    bm_body = bmesh.new()
+    bm_body.from_mesh(body.data)
+    bm_body.verts.ensure_lookup_table()
+    z_values = [v.co.z for v in bm_body.verts]
+    low_z, high_z = min(z_values), max(z_values)
+    body_height = high_z-low_z
+    pelvic_edges = [e for e in bm_body.edges if e.is_boundary
+                    and all(low_z+.39*body_height < v.co.z < low_z+.57*body_height
+                            for v in e.verts)]
+    # A boundary touching the pelvic region may continue outside it.
+    # Never fill partial loops, since doing so creates floating triangles.
+    all_boundary = {e for e in bm_body.edges if e.is_boundary}
+    remaining = set(all_boundary)
+    repaired_loops = 0
+    while remaining:
+        seed = remaining.pop()
+        component = {seed}
+        queue = [seed]
+        while queue:
+            edge = queue.pop()
+            for vertex in edge.verts:
+                for linked in vertex.link_edges:
+                    if linked in remaining:
+                        remaining.remove(linked)
+                        component.add(linked)
+                        queue.append(linked)
+        if not component.intersection(pelvic_edges):
+            continue
+        if not component.issubset(set(pelvic_edges)):
+            raise RuntimeError("C0: pelvic opening extends outside repair band; manual retopology required")
+        if len(component) > 600:
+            raise RuntimeError("C0: pelvic body opening too large for safe automatic closure")
+        bmesh.ops.holes_fill(bm_body, edges=list(component), sides=0)
+        repaired_loops += 1
+    if repaired_loops:
+        bmesh.ops.recalc_face_normals(bm_body, faces=list(bm_body.faces))
+        bm_body.to_mesh(body.data)
+        body.data.update()
+    bm_body.free()
+    print("WVLRP_C0_BODY_SHELL_REPAIR", "pelvic_loops_closed", repaired_loops)
+
+    # Only one C0 overlay may survive a rebuild. Remove stale objects
+    # rather than exporting both anatomy variants inside the same body.
+    for existing in list(bpy.data.objects):
+        if existing is body:
+            continue
+        if (existing.get("wvlrp_carol_c0_anatomy")
+                or existing.name.startswith("WVLRP Carol C0 anatomy |")):
+            bpy.data.objects.remove(existing, do_unlink=True)
+
     points = [v.co for v in body.data.vertices]
     h = max(p.z for p in points) - min(p.z for p in points)
     zmin = min(p.z for p in points)
