@@ -23,6 +23,7 @@ import {createFourCabinTest} from "./wild-cabin-lineup.js?v=cgtrader-two-private
 import {createBuildingMaterialYard,MATERIAL_YARD} from "./wild-material-yard.js?v=walkable-real-pbr-samples-20261015-v1";
 
 import {installGirlsCabinWillow} from "./wild-girls-cabin-willow.js?v=willow-20261016-v1";
+import {installGirlsCabinLiveGrove} from "./girls-cabin-live-grove.js?v=20261016-v1";
 const B=window.BABYLON;
 const canvas=document.getElementById("world");
 const message=document.getElementById("message");
@@ -171,6 +172,8 @@ const keep=o=>{permanent.push(o);return o;};
 buildHearthsideCabin(B,scene,keep,0,cabinY,0,true);
 const girlsWillow=installGirlsCabinWillow(B,scene,cabinGrade(0,-30,seed));
 girlsWillow.setEnabled(false); // Remove failed willow prototype from visible world.
+const girlsLiveGrove=installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade});
+girlsLiveGrove.ready.then(()=>console.info("GIRLS_CABIN_500_SQM_LIVE_TREES",girlsLiveGrove.status,girlsLiveGrove.planted,girlsLiveGrove.error||""));
 // Retire the cabin-door procedural ico-sphere canopy; imported oak specimens remain world-anchored.
 const doorTree=installDoorTree(B,scene,cabinGrade(0,-13,seed));
 doorTree.setEnabled(false);
