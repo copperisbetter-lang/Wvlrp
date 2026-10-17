@@ -42,6 +42,14 @@ export function installGirlsCabinLiveGrove(B,scene,{seed,cabinGrade}){
     const isSapling=/sapling|young|small/i.test(asset.id);
     const desired=isSapling?17+(i%3)*1.5:19+(i%3)*1.5;
     root.scaling.setAll(desired/(hi-lo));
+    // Expand existing foliage meshes only; do not duplicate heavy geometry.
+    for(const m of meshes){
+      const label=(m.name+" "+(m.material?.name||"")).toLowerCase();
+      if(/leaf|leaves|foliage|needle|canopy|branchlet/.test(label)&&!/trunk|bark|stem/.test(label)){
+        m.scaling.x*=1.28;
+        m.scaling.z*=1.28;
+      }
+    }
     root.rotation.y=i*2.399963229728653;
     root.computeWorldMatrix(true);
     lo=Infinity;
