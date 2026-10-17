@@ -1,6 +1,6 @@
 import {flatlandHeight} from "./wild-rebuild-layout.js";
-import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-shared-ground-v11";
-import {installNativeConiferScatter} from "./wild-native-conifer-scatter.js?v=20261017-source-audit-v8";
+import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261017-master-v1";
+
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
@@ -134,24 +134,15 @@ const camera=new B.FreeCamera("first-person explorer",
 /* Autumn maples are loaded independently; missing assets never break walking.
  * Campsite/structure exclusion is conservative until exact plot polygons exist.
  */
-const autumnMaples=installAutumnMaples(B,scene,{
-  seed,terrainHeight:(x,z)=>{
-    // Ground meshes are intentionally non-pickable. Use the exact height
-    // function used to construct BOTH photographic terrain tiles, including
-    // positions outside the currently streamed 196 m mesh.
-    return flatlandHeight(x,z,seed,cabinGrade(0,0,seed));
-  },
-  radius:900,density:.18,maxVisible:180,
-  excluded:(x,z,clearance)=>[
-    [0,0,42],[93,77,55],[90,78,40],[90,75,40],
-    [0,274,40]
-  ].some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
-});
-window.__wildAutumnMaples=autumnMaples;
-const nativeConifers=installNativeConiferScatter(B,scene,{
+const masterForest=installMasterHDForest(B,scene,{
  seed,terrainHeight:(x,z)=>flatlandHeight(x,z,seed,cabinGrade(0,0,seed)),
- excluded:(x,z,clearance)=>[[0,0,42],[93,77,55],[90,78,40],[90,75,40],[0,274,40],[30,333,50]].some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
+ excluded:(x,z,clearance)=>[[0,0,42],[93,77,55],[90,78,40],[90,75,40],[0,274,40],[30,333,50]]
+   .some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
 });
+const autumnMaples=masterForest.maple;
+const nativeConifers=masterForest.conifer;
+window.__wildMasterForest=masterForest;
+window.__wildAutumnMaples=autumnMaples;
 window.__wildNativeConifers=nativeConifers;
 
 // On-phone grounding telemetry: no developer console or screenshots required.
