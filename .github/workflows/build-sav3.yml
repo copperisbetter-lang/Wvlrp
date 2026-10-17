@@ -59,6 +59,8 @@ jobs:
           from pathlib import Path
           log=Path("/tmp/sav3-build.log").read_text(errors="replace")
           markers=(
+              "SAV3_BODY_WATERTIGHT_VERIFIED",
+              "SAV3_SINGLE_EXTERIOR_ANATOMY_VERIFIED",
               "SAV3_VISIBLE_MESH_SANITY_PASS",
               "SAV3_NO_GARMENT_SHELL_VERIFIED",
               "VULVA2_TRUE_AUTOFIT_SUCCESS",
