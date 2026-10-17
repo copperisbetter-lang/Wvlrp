@@ -4,6 +4,9 @@ on:
     paths:
       - .github/workflows/build-sav3.yml
       - world-creator/scripts/build_sav3.py
+      - world-creator/scripts/build_vulva2_female18.py
+      - world-creator/scripts/vulva2_clean_hair.py
+      - world-creator/scripts/face_materials.py
       - world-creator/scripts/vulva2_preview_animations.py
   workflow_dispatch:
 permissions:
