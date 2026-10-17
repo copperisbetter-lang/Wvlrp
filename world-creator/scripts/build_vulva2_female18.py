@@ -112,6 +112,9 @@ def fit_vulva2(root,body,rig):
     print("SAV3_VULVA2_LANDMARK_SHIFT",round(dz,5),"target",round(target_low,5),flush=True)
     if abs(min(p[2] for p in pts)-target_low)>.002:
         raise RuntimeError("SAV3_VULVA2_LANDMARK_ALIGNMENT_FAILED")
+    # Probe the body at the attachment's actual crotch height, not at its
+    # original abdominal depth. Use the centerline of the local skin surface
+    # as the Y anchor; side/thigh hits must not drive the fit.
     frontmost=min(v.co.y for v in vs)
     def front_surface(x,z):
         hit,location,normal,index=body.ray_cast(
@@ -120,12 +123,31 @@ def fit_vulva2(root,body,rig):
         if not hit or normal.y>=-.12:
             return None
         return location.y
-    # The first ray hit is the external surface, never an interior cavity.
+    # Establish the centerline depth before conforming the donor mesh.
+    # At the lower crotch the frontal ray may miss entirely, so sample a
+    # narrow X/Z neighborhood and reject fits without reliable body contact.
+    cx=sum(p[0] for p in pts)/len(pts)
+    cz=sum(p[2] for p in pts)/len(pts)
+    probes=[front_surface(cx+dx,cz+dz0)
+            for dx in (-.018,-.009,0,.009,.018)
+            for dz0 in (-.025,-.012,0,.012,.025)]
+    probes=[p for p in probes if p is not None]
+    if len(probes)<5:
+        raise RuntimeError("SAV3_CROTCH_DEPTH_UNRESOLVED: no reliable midline skin")
+    import statistics
+    target_y=statistics.median(probes)-.002
+    donor_front=statistics.median(p[1] for p in pts)
+    dy=target_y-donor_front
+    if abs(dy)>.30*body_height:
+        raise RuntimeError("SAV3_CROTCH_DEPTH_SHIFT_UNSAFE: "+str(round(dy,4)))
+    pts=[(x,y+dy,z) for x,y,z in pts]
+    print("SAV3_CROTCH_DEPTH_SHIFT",round(dy,5),"samples",len(probes),flush=True)
     samples=[front_surface(x,z) for x,y,z in pts]
     valid=[(surface-y) for (x,y,z),surface in zip(pts,samples)
            if surface is not None]
     if len(valid)<len(pts)*.65:
-        raise RuntimeError("SAV3_VULVA2_SURFACE: insufficient exterior skin contacts")
+        raise RuntimeError("SAV3_VULVA2_SURFACE: insufficient exterior skin contacts "+
+                           str(len(valid))+"/"+str(len(pts)))
     # Move the proxy as ONE rigid assembly, not each vertex independently.
     # This prevents folding the licensed mesh and retains its proportions.
     import statistics
