@@ -40,6 +40,13 @@ select{max-width:100%;width:100%;background:#1b3d2d}p{line-height:1.52}
 <button id="skeleton" disabled title="Rig bones must be exported as a visible debugging layer">Skeleton overlay (not available)</button>
 </div>
 <p id="diagnostic" class="note">Material isolation becomes available when the exported GLB loads. No garments will be invented by the viewer.</p>
+<h2>Separate fitting preview</h2>
+<p class="note">Independent preview loads the available source model. Its placement coordinates are shown below and saved on this phone. This does not modify the exported GLB.</p>
+<div id="fit-preview-stage" style="position:relative;max-width:520px">
+<model-viewer id="fit-preview" style="height:340px;min-height:340px" camera-controls interaction-prompt="none" alt="Separate fitting source preview"></model-viewer>
+<div id="fit-preview-touch" style="position:absolute;inset:0;touch-action:none;display:none;z-index:30"></div>
+</div>
+<p id="fit-preview-status" class="note">Preparing independent source preview…</p>
 <h2>Touch fitting position</h2><p class="note">Turn Finger move ON, then drag on the model. Front view changes X/Z; side view changes Y/Z. Save retains offsets on this phone; copying coordinates lets us apply them to a rebuilt model.</p><div class="controls"><label>X <input id="fitx" type="number" step="0.005" value="0"></label><label>Y <input id="fity" type="number" step="0.005" value="0"></label><label>Z <input id="fitz" type="number" step="0.005" value="0"></label><button id="fitdrag" aria-pressed="false">Finger move: OFF</button><button id="fitsave">Save position</button><button id="fitcopy">Copy coordinates</button></div><p id="fitstatus" class="note"></p><h2>Movements and poses</h2>
 <div class="controls" id="poseButtons">
 <button data-pose="Stand" disabled>Idle / stand</button><button data-pose="Walk" disabled>Walk</button>
@@ -70,9 +77,21 @@ let matGroups={hair:[],anatomy:[],body:[],clothes:[]},originals=new Map(),visibi
 const $=(id)=>document.getElementById(id);
 try{const p=JSON.parse(localStorage.getItem('sav3-fit-offset')||'{}');for(const [k,id] of [['x','fitx'],['y','fity'],['z','fitz']])if(Number.isFinite(p[k]))$(id).value=p[k]}catch{}
 let fitDrag=false,fitPointer=null,fitView='front',fitMeshes=[];const overlay=$('fitoverlay');
-function setFitMode(on){fitDrag=on&&fitMeshes.length>0;v.toggleAttribute('camera-controls',!fitDrag);overlay.style.display=on&&fitMeshes.length?'block':'none';v.style.touchAction=fitDrag?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag on the transparent touch layer to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
+const preview=$('fit-preview'),previewTouch=$('fit-preview-touch'),previewStatus=$('fit-preview-status');
+let previewReady=false,previewMeshes=[];
+preview.src=new URL('world-creator/assets/vulva2-adult18-clean-reset.glb',document.baseURI).href;
+preview.addEventListener('load',()=>{
+ previewReady=true;
+ previewMeshes=Array.from(preview.model?.getNodes?.()||[]).filter(n=>n.mesh&&n.translation&&/vulva|attachment|anatom/i.test(String(n.name||'')+' '+Array.from(n.mesh.materials||[]).map(m=>m.name).join(' ')));
+ previewStatus.textContent=previewMeshes.length?'Separate source loaded: '+previewMeshes.length+' selectable mesh(es). Coordinates X / Y / Z are editable below.':'Source loaded, but no separately named fitting mesh was exposed.';
+ if(previewMeshes.length){for(const n of previewMeshes)n.__fitBase=Array.from(n.translation);$('fitdrag').disabled=false;}
+});
+preview.addEventListener('error',()=>previewStatus.textContent='Separate source could not load.');
+
+function setFitMode(on){fitDrag=on&&(fitMeshes.length>0||previewMeshes.length>0);v.toggleAttribute('camera-controls',!fitDrag);overlay.style.display=on&&fitMeshes.length?'block':'none';previewTouch.style.display=fitDrag&&previewMeshes.length?'block':'none';v.style.touchAction=fitDrag?'none':'';$('fitdrag').setAttribute('aria-pressed',String(on));$('fitdrag').textContent='Finger move: '+(fitDrag?'ON':'OFF');$('fitstatus').textContent=on?(fitMeshes.length?'Drag on the transparent touch layer to reposition attachment. Camera locked.':'Attachment node not found in GLB; drag changes coordinates only, not geometry.'):'Camera rotation restored.';}
 function applyFit(){
  const pos=fitPosition();
+ for(const node of previewMeshes){if(node.__fitBase)node.translation=node.__fitBase.map((n,i)=>n+[pos.x,pos.y,pos.z][i]);}preview.requestUpdate?.();
  for(const item of fitMeshes){
    // model-viewer scene graph uses translation arrays, NOT three.js position vectors.
    item.node.translation=[item.base[0]+pos.x,item.base[1]+pos.y,item.base[2]+pos.z];
@@ -105,6 +124,20 @@ function findFitMeshes(){
  }
 }
 $('fitdrag').onclick=()=>setFitMode(!fitDrag);
+let previewPointer=null;
+for(const kind of ['pointerdown','pointermove','pointerup','pointercancel'])previewTouch.addEventListener(kind,e=>{
+ if(!fitDrag||!previewMeshes.length)return;
+ e.preventDefault();e.stopPropagation();
+ if(kind==='pointerdown'){previewPointer={id:e.pointerId,x:e.clientX,y:e.clientY};previewTouch.setPointerCapture(e.pointerId);}
+ else if(kind==='pointermove'&&previewPointer?.id===e.pointerId){
+ const dx=(e.clientX-previewPointer.x)*.002,dy=(previewPointer.y-e.clientY)*.002;
+ const horizontal=fitView==='side'?'fity':'fitx';
+ $(horizontal).value=(Number($(horizontal).value)+dx).toFixed(4);
+ $('fitz').value=(Number($('fitz').value)+dy).toFixed(4);
+ previewPointer={id:e.pointerId,x:e.clientX,y:e.clientY};applyFit();
+ }else if(previewPointer?.id===e.pointerId)previewPointer=null;
+},{passive:false});
+
 for(const event of ['pointerdown','pointermove','pointerup','pointercancel']){
  overlay.addEventListener(event,e=>{
   if(!fitDrag||!ready||!fitMeshes.length)return;
