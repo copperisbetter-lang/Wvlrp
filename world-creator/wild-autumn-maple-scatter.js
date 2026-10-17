@@ -1,3 +1,5 @@
+import {groundTree} from "./wild-hd-tree-ground.js";
+import {mayPlantTree} from "./wild-master-forest-reservations.js";
 /** Autumn maple scatter for The Wild. Call installAutumnMaples after terrain setup.
  * Requires a hosted, licensed GLB URL; does not alter public access controls.
  * Deterministic cell placement keeps multiplayer clients in agreement.
@@ -77,7 +79,7 @@ export function installAutumnMaples(B,scene,{
         // Seeded placement stays identical across multiplayer clients.
         const x=(ix+(hash(ix,iz,1)-.5)*.72)*cellSize;
         const z=(iz+(hash(ix,iz,2)-.5)*.72)*cellSize;
-        if(Math.hypot(x,z)>radius||insideCabinBuffer(x,z)||excluded(x,z,16))continue;
+        if(Math.hypot(x,z)>radius||insideCabinBuffer(x,z)||excluded(x,z,16)||!mayPlantTree(x,z,2))continue;
         const y=terrainHeight(x,z);
         if(!Number.isFinite(y))continue;
         // Each of the twelve original Acer models is treated as a master.
