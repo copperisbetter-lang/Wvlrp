@@ -51,7 +51,10 @@ export function installAutumnMaples(B,scene,{
     for(const root of this.roots)root.dispose(false,true);
     this.roots.length=0;
   }};
-  // Hearthside girls cabin occupies x ±9, z ±7 near world origin.\n  // Keep trunks and branches outside the building and porch with a 14 m buffer.\n  // This exclusion is enforced even when callers omit their own cabin mask.\n  const insideCabinBuffer=(x,z,margin=14)=>Math.abs(x)<9+margin && Math.abs(z)<7+margin;\n  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
+  // Hearthside girls cabin occupies x ±9, z ±7 near world origin.
+  // Keep trunks and branches outside the building and porch with a 14 m buffer.
+  // This exclusion is enforced even when callers omit their own cabin mask.
+  const insideCabinBuffer=(x,z,margin=14)=>Math.abs(x)<9+margin && Math.abs(z)<7+margin;\n  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
   state.ready=(async()=>{
     const container=await B.SceneLoader.LoadAssetContainerAsync("",assetUrl,scene);
     // The extracted planting GLB contains twelve Acer roots, each with only
