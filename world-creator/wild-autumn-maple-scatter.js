@@ -77,6 +77,21 @@ export function installAutumnMaples(B,scene,{
         }
         if(!Number.isFinite(bottom)){clone.dispose(false,true);continue;}
         clone.position.set(x-lowX,y-bottom-.12,z-lowZ);
+        // Re-measure after translation: GLB hierarchy transforms can invalidate
+        // the first estimate, particularly when nodes carry imported offsets.
+        // Iteratively correct the *actual* rendered world-space bottom.
+        for(let pass=0;pass<3;pass++){
+          clone.computeWorldMatrix(true);
+          let actualBottom=Infinity;
+          for(const m of meshes){
+            m.computeWorldMatrix(true);
+            actualBottom=Math.min(actualBottom,m.getBoundingInfo().boundingBox.minimumWorld.y);
+          }
+          if(!Number.isFinite(actualBottom))break;
+          const error=(y-.12)-actualBottom;
+          if(Math.abs(error)<.02)break;
+          clone.position.y+=error;
+        }
         clone.computeWorldMatrix(true);
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
