@@ -108,6 +108,13 @@ export function installAutumnMaples(B,scene,{
         state.roots.push(clone);planted++;
       }
     }
+    // Record a real, post-transform sample for remote phone diagnostics.
+    state.samples=state.roots.slice(0,6).map(root=>{
+      const visible=root.getChildMeshes(false).filter(m=>m.isEnabled()&&m.isVisible&&m.getTotalVertices?.()>0);
+      let low=Infinity;
+      for(const mesh of visible){mesh.computeWorldMatrix(true);low=Math.min(low,mesh.getBoundingInfo().boundingBox.minimumWorld.y);}
+      return {x:Math.round(root.position.x),z:Math.round(root.position.z),bottom:Math.round(low*10)/10,ground:Math.round(terrainHeight(root.position.x,root.position.z)*10)/10};
+    });
     state.planted=planted;state.status="ready";return state;
   })().catch(err=>{state.status="error";state.error=String(err.message||err);return state;});
   return state;
