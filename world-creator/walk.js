@@ -133,7 +133,10 @@ const camera=new B.FreeCamera("first-person explorer",
  * Campsite/structure exclusion is conservative until exact plot polygons exist.
  */
 const autumnMaples=installAutumnMaples(B,scene,{
-  seed,terrainHeight:(x,z)=>cabinGrade(x,z,seed),
+  seed,terrainHeight:(x,z)=>{
+    const rendered=habitat?.surfaceHeight?.(x,z);
+    return Number.isFinite(rendered)?rendered:cabinGrade(x,z,seed);
+  },
   radius:900,density:.12,maxVisible:mobile?35:90,
   excluded:(x,z,clearance)=>[
     [0,0,42],[93,77,55],[90,78,40],[90,75,40],
@@ -730,6 +733,7 @@ engine.runRenderLoop(()=>{
     seconds=0;positionSync++;
     cabinComparison.update();
     materialYard.update();
+    if(autumnMaples.status==="ready")autumnMaples.reground();
     const nearby=clearingAt(camera.position.x,camera.position.z);
     info.textContent=`${birdMode?(birdFlying?"FLYING":"PERCHED"):(runMode?"RUNNING":"WALKING")} · X:${Math.round(camera.position.x)} Z:${Math.round(camera.position.z)} ALT:${Math.round(camera.position.y-cameraGround(camera.position.x,camera.position.z))}m · ${Math.round(walkDistance)}m traveled · ${Math.round(engine.getFps())} fps`+
       (habitat?.villageRealTerrain?.status==="ready"?" · PHOTO GROUND LOADED":
