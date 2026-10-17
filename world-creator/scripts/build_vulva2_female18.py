@@ -124,7 +124,29 @@ def fit_vulva2(root,body,rig):
     for label,subset in (("left",[e[0] for e in errors if e[2]<-.015]),("center",[e[0] for e in errors if abs(e[2])<=.015]),("right",[e[0] for e in errors if e[2]>.015])):
         if subset: print("SAV3_SURFACE_REGION",label,"count",len(subset),"median_gap",round(statistics.median(subset),5),flush=True)
     if statistics.median(deviations)>.018:
-        raise RuntimeError("SAV3_VULVA2_SURFACE: anatomy does not conform to outer skin")
+        # Adapt the donor depth smoothly across height, preserving bilateral symmetry.
+        # Do not shift individual vertices independently (which tears the surface).
+        bands=sorted(set(round(p[2],3) for p in pts))
+        offsets=[]
+        for zband in bands:
+            nearby=[surface-y for (x,y,z),surface in zip(pts,samples)
+                    if surface is not None and abs(z-zband)<.012]
+            if not nearby: raise RuntimeError("SAV3_SURFACE_BAND_NO_CONTACT")
+            offsets.append(statistics.median(nearby)-.002)
+        def smooth_offset(z):
+            if z<=bands[0]: return offsets[0]
+            if z>=bands[-1]: return offsets[-1]
+            for j in range(1,len(bands)):
+                if z<=bands[j]:
+                    t=(z-bands[j-1])/(bands[j]-bands[j-1])
+                    return offsets[j-1]*(1-t)+offsets[j]*t
+        candidate=[(x,y-depth_shift+smooth_offset(z),z) for x,y,z in pts]
+        gaps=[abs(p[1]-surface) for p,surface in zip(candidate,samples) if surface is not None]
+        print("SAV3_HEIGHT_ADAPTIVE_FIT", "median",statistics.median(gaps),
+              "max",max(gaps),"offset_span",max(offsets)-min(offsets),flush=True)
+        if statistics.median(gaps)>.018 or max(offsets)-min(offsets)>.12:
+            raise RuntimeError("SAV3_VULVA2_SURFACE: adaptive fit remains unsafe")
+        pts=candidate
     print("SAV3_VULVA2_EXTERIOR_FIT",
           "surface_samples",len(valid),"depth_shift_m",round(depth_shift,5),
           "median_surface_gap_m",round(statistics.median(deviations),5),flush=True)
