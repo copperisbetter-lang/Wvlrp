@@ -139,14 +139,8 @@ export function installAutumnMaples(B,scene,{
         // Move the trunk's actual world-space bottom to the visible ground.
         // Recompute after every transform; never reuse a pre-anchor Y value.
         const groundAtTrunk=()=>terrainHeight(x,z);
-        for(let pass=0;pass<5;pass++){
-          const low=bounds(trunkMeshes).lo.y;
-          const surface=groundAtTrunk();
-          if(!Number.isFinite(low)||!Number.isFinite(surface))break;
-          const delta=surface-.12-low;
-          if(Math.abs(delta)<.01)break;
-          anchor.position.y+=delta;
-        }
+        const planting=groundTree(anchor,terrainHeight,x,z,.12);
+        if(!planting.ok){anchor.dispose(false,true);continue;}
         const tint=B.Color3.FromHexString(palettes[Math.floor(hash(ix,iz,6)*palettes.length)]);
         for(const mesh of clone.getChildMeshes(false)){
           if(!mesh.isEnabled()||!mesh.isVisible)continue;
