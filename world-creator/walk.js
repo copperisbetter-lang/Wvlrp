@@ -1,3 +1,4 @@
+import {installAutumnMaples} from "./wild-autumn-maple-scatter.js?v=20261017-v1";
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
 import {installWildMinimap} from "./wild-minimap.js?v=20261016-v1";
@@ -128,6 +129,19 @@ const camera=new B.FreeCamera("first-person explorer",
     START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:
       START_AT_MATERIALS?cabinGrade(MATERIAL_YARD.spawnX,MATERIAL_YARD.spawnZ,seed)+EYE_HEIGHT:START_AT_COMPARE?cabinGrade(0,274,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
     START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.z:START_AT_RANGER?RANGER_SPAWN.z:START_AT_MATERIALS?MATERIAL_YARD.spawnZ:START_AT_COMPARE?274:16),scene);
+/* Autumn maples are loaded independently; missing assets never break walking.
+ * Campsite/structure exclusion is conservative until exact plot polygons exist.
+ */
+const autumnMaples=installAutumnMaples(B,scene,{
+  seed,terrainHeight:(x,z)=>cabinGrade(x,z,seed),
+  radius:900,density:.12,maxVisible:mobile?35:90,
+  excluded:(x,z,clearance)=>[
+    [0,0,42],[93,77,55],[90,78,40],[90,75,40],
+    [0,274,40]
+  ].some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
+});
+window.__wildAutumnMaples=autumnMaples;
+
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
 camera.rotation.set(0,START_AT_PHOTO_RANGER||START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
 scene.activeCamera=camera;
