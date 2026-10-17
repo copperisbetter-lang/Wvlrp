@@ -181,6 +181,48 @@ if len(rigs)!=1:raise RuntimeError("Rig export copy missing")
 # to the *original* MakeHuman mesh. Strip masks/helpers only AFTER fitting.
 preserve_photo_skin(body,"Vulva2Test")
 addon=fit_vulva2(root,body,rigs[0])
+# Remove detached MakeHuman helper islands (the floating pieces and skirt-like
+# export debris). Fit the MHX2 proxy FIRST because it uses original vertex IDs.
+# Preserve the dominant connected skin surface and reject ambiguous topology.
+def remove_detached_body_islands():
+    import bmesh
+    bm=bmesh.new()
+    bm.from_mesh(body.data)
+    bm.verts.ensure_lookup_table()
+    remaining=set(bm.verts)
+    islands=[]
+    while remaining:
+        start=remaining.pop()
+        island={start}
+        stack=[start]
+        while stack:
+            for edge in stack.pop().link_edges:
+                # Each edge has two endpoints; traverse from current vertex.
+                # Avoid relying on cached vertex indices after BMesh edits.
+                for neighbor in edge.verts:
+                    if neighbor in remaining:
+                        remaining.remove(neighbor)
+                        island.add(neighbor)
+                        stack.append(neighbor)
+        islands.append(island)
+    islands.sort(key=len,reverse=True)
+    if not islands:
+        bm.free()
+        raise RuntimeError("Sav3 skin geometry is empty")
+    total=sum(map(len,islands))
+    dominant=len(islands[0])
+    print("SAV3_BODY_ISLAND_AUDIT",[(len(i)) for i in islands[:16]],"total",total,flush=True)
+    if dominant < total*.65:
+        bm.free()
+        raise RuntimeError("Sav3 body has no dominant continuous skin mesh; refuse malformed export")
+    debris=[v for island in islands[1:] for v in island]
+    if debris:
+        bmesh.ops.delete(bm,geom=debris,context="VERTS")
+        bm.to_mesh(body.data)
+        body.data.update()
+    bm.free()
+    print("SAV3_DETACHED_BODY_ISLANDS_REMOVED",len(debris),flush=True)
+remove_detached_body_islands()
 hair=add_clean_long_blonde_hair(root,body,rigs[0])
 # Stop the build if an accidentally exported body-sized shell or
 # misplaced facial asset would recreate the broken Sav3 silhouette.
