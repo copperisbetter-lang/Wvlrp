@@ -8,6 +8,14 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 base = root / "scripts" / "build_vulva2_female18.py"
 source = base.read_text(encoding="utf-8")
+# Do not silently certify Vulva2 as the requested Vulva1 asset.
+# The current upstream builder is Vulva2-only. Refuse a mislabeled release
+# until a real Vulva1-based body/export pipeline is wired in and validated.
+if "fit_vulva2(" in source and "fit_vulva1(" not in source:
+    raise RuntimeError(
+        "SAV3_ASSET_MISMATCH: upstream builds Vulva2, not requested Vulva1. "
+        "Do not deploy or label this export as a corrected Sav3."
+    )
 old = 'OUT=ROOT/"assets"/"vulva2-female18-inspection.glb"'
 if source.count(old) != 1:
     raise RuntimeError("Upstream adult builder output definition changed")
