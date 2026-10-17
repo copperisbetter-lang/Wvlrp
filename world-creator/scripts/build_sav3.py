@@ -105,7 +105,7 @@ print("SAV3_56_JOINTS_VERIFIED", len(joint_ids))
 ''')
 # Prevent publishing an obviously exploded face. All facial assets must occupy
 # a tight envelope around the head and must not project wildly beyond skin.
-face_anchor = 'validate_visible_meshes()\\n\\nadd_vulva2_preview_animations'
+face_anchor = 'validate_visible_meshes()\n\nadd_vulva2_preview_animations'
 if source.count(face_anchor) != 1:
     raise RuntimeError("SAV3_FACE_QA_ANCHOR_CHANGED")
 face_qa = '''
@@ -145,11 +145,11 @@ def validate_face_alignment():
     print("SAV3_FACE_ENVELOPE_VERIFIED",counts,flush=True)
 validate_face_alignment()
 '''
-source=source.replace(face_anchor,'validate_visible_meshes()\\n'+face_qa+'\\nadd_vulva2_preview_animations')
+source=source.replace(face_anchor,'validate_visible_meshes()\n'+face_qa+'\nadd_vulva2_preview_animations')
 
 # Facial accessories must be bound to the same rig as the body. A valid
 # position in the bind pose is not enough if their parent/armature differs.
-rig_anchor = 'validate_face_alignment()\\n'
+rig_anchor = 'validate_face_alignment()\n'
 if source.count(rig_anchor) != 1:
     raise RuntimeError("SAV3_FACE_RIG_ANCHOR_CHANGED")
 rig_qa = '''
