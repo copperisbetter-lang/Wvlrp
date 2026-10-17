@@ -101,6 +101,9 @@ export function installAutumnMaples(B,scene,{
         if(!meshes.length){anchor.dispose(false,true);continue;}
         const bark=meshes.filter(m=>/bark|trunk|stem|wood/i.test((m.name||"")+" "+(m.material?.name||"")));
         const trunkMeshes=bark.length?bark:meshes;
+        // Debug actual rendered trunk bounds per instance; these are independent
+        // of the imported collection's showroom pivot.
+        const diagnostic={source:source.name,meshes:meshes.length,bark:bark.length};
         const bounds=arr=>{
           let lo=new B.Vector3(Infinity,Infinity,Infinity),hi=new B.Vector3(-Infinity,-Infinity,-Infinity);
           for(const m of arr){m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;
@@ -150,7 +153,7 @@ export function installAutumnMaples(B,scene,{
           else if(mat.diffuseColor)mat.diffuseColor=tint;
           mesh.material=mat;
         }
-        state.roots.push(anchor);state.placements.push({root:anchor,meshes,trunkMeshes,x,z});planted++;
+        state.roots.push(anchor);state.placements.push({root:anchor,meshes,trunkMeshes,x,z,diagnostic});planted++;
       }
     }
     // Record a real, post-transform sample for remote phone diagnostics.
@@ -169,6 +172,14 @@ export function installAutumnMaples(B,scene,{
       if(++frames<=120 || frames%120===0)state.reground();
     });
     state.reground();
+    state.diagnostics=state.placements.slice(0,12).map(p=>({
+      source:p.diagnostic.source,meshCount:p.diagnostic.meshes,
+      barkCount:p.diagnostic.bark,x:p.x,z:p.z,
+      anchorY:p.root.position.y,
+      ground:terrainHeight(p.x,p.z),
+      lowestTrunk:Math.min(...p.trunkMeshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox.minimumWorld.y; }))
+    }));
+    console.info("MAPLE_GROUND_DIAGNOSTICS",JSON.stringify(state.diagnostics));
     state.planted=planted;state.status="ready";console.info("CLEAN_MAPLE_GROUND_TEST",JSON.stringify({planted,samples:state.samples}));return state;
   })().catch(err=>{state.status="error";state.error=String(err.message||err);return state;});
   return state;
