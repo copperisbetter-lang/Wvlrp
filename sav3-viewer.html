@@ -99,7 +99,7 @@ function findFitMeshes(){
    // Exporters often rename the original attachment; accept anatomical
    // identifiers on the mesh or its materials, never the generic body.
    const signature=(label+' '+materials).toLowerCase();
-   const isAttachment=/(vulva[ _-]*2|vulva2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
+   const isAttachment=/(vulva[ _-]*2|vulva2|vulva.*mhx2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
    const isBody=/^(body|female|human|skin|sav.?3)([ _.-]|$)/i.test(label);
    if(isAttachment&&!isBody&&node.translation&&node.mesh){
     fitMeshes.push({node,base:Array.from(node.translation),name:label});
