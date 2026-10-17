@@ -5,7 +5,7 @@
 export function installAutumnMaples(B,scene,{
   assetUrl="./assets/maple_trees_planting_clean.glb",
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
-  cellSize=90, radius=900, density=0.20, maxVisible=180
+  cellSize=90, radius=900, density=0.18, maxVisible=180
 }={}){
   const state={status:"loading",planted:0,error:"",roots:[],placements:[],reground(){
     let corrected=0;
@@ -36,16 +36,18 @@ export function installAutumnMaples(B,scene,{
     if(!sourceRoots.length)throw Error("Maple GLB has no instantiable tree roots; split collection into individual tree GLBs first.");
     state.sourceRoots=sourceRoots.length;
     // Imported GLB nodes remain disabled until explicitly enabled on each clone.
-    // Place a deterministic near-cabin test tree outside the protected cabin clearing.
+    // Scatter deterministically across terrain cells, respecting campsite and trail exclusions.
     const palettes=["#b71e1c","#db481c","#ec7922","#a94620","#7e4829","#e69b34"];
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
-    for(let ix=0;ix<1&&planted<count;ix++){
-      for(let iz=0;iz<1&&planted<count;iz++){
-        // Single fixed diagnostic planting, no random rejection.
-        const x=55;
-        const z=-25;
-        if(Math.hypot(x,z)>radius||excluded(x,z,12))continue;
+    const cells=Math.ceil(radius/cellSize);
+    for(let ix=-cells;ix<=cells&&planted<count;ix++){
+      for(let iz=-cells;iz<=cells&&planted<count;iz++){
+        if(hash(ix,iz,0)>=density)continue;
+        // Seeded placement stays identical across multiplayer clients.
+        const x=(ix+(hash(ix,iz,1)-.5)*.72)*cellSize;
+        const z=(iz+(hash(ix,iz,2)-.5)*.72)*cellSize;
+        if(Math.hypot(x,z)>radius||excluded(x,z,16))continue;
         const y=terrainHeight(x,z);
         if(!Number.isFinite(y))continue;
         const source=sourceRoots[Math.floor(hash(ix,iz,3)*sourceRoots.length)];
