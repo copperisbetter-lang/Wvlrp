@@ -169,6 +169,18 @@ def fit_vulva2(root,body,rig):
     pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
     mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
     mod.object=rig
+    # Block an overlapping uncut skin surface at the anatomical attachment.
+    # Check the actual fitted proxy against the source body: the previous
+    # name-only duplicate check could not detect buried/overlaid geometry.
+    overlap=0
+    for x,y,z in pts:
+        surface=front_surface(x,z)
+        if surface is not None and y>surface+.001:
+            overlap+=1
+    if overlap>len(pts)*.10:
+        raise RuntimeError(
+            f"SAV3_OCCLUDED_ANATOMY: {overlap}/{len(pts)} proxy vertices "
+            "behind intact outer skin; repair body topology before export")
     # Do not delete body vertices using an unverified cross-topology mask.
     # The original mask can create jagged holes on different body topology.
     delete=[]
