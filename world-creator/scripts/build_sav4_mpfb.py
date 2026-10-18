@@ -38,6 +38,33 @@ if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse expo
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
 tint(hair,(.73,.64,.49),.96)
+# Marybeth Hutchinson / Laura Harris (The Faculty, 1998) inspired facial pass.
+# Apply to the source basemesh before making the rigged export copy, so the
+# facial changes travel with the character instead of becoming loose proxies.
+# This is a geometry approximation, not a scan or verified photographic match.
+face_body=ObjectService.find_object_of_type_amongst_nearest_relatives(human,"Basemesh")
+if face_body is None: raise RuntimeError("SAV4 face morph: source basemesh missing")
+coords=[v.co.copy() for v in face_body.data.vertices]
+zmin=min(p.z for p in coords); zmax=max(p.z for p in coords)
+xmin=min(p.x for p in coords); xmax=max(p.x for p in coords)
+span=zmax-zmin
+# Upper face: gently broaden cheekbones, refine lower jaw and chin, and
+# soften the temple-to-cheek transition. Limit movement to the head region.
+# Head orientation is retained; no changes to eyes, rig, or wardrobe assets.
+changed=0
+for vert,p in zip(face_body.data.vertices,coords):
+    h=(p.z-zmin)/span
+    if h<0.865 or h>0.995: continue
+    t=(h-0.865)/0.130
+    fade=math.sin(math.pi*min(1.0,max(0.0,t)))**2
+    # cheek prominence near the mid-face, narrower jaw near the lower face
+    cheek=math.exp(-((h-0.928)/0.020)**2)
+    jaw=math.exp(-((h-0.885)/0.017)**2)
+    factor=1.0+fade*(0.050*cheek-0.045*jaw)
+    vert.co.x=p.x*factor
+    if abs(vert.co.x-p.x)>1e-7: changed+=1
+face_body.data.update()
+print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
 # Remove facial helper/proxy meshes that are misplaced in the exported head.
 for obj in list(root.children_recursive):
