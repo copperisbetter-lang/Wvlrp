@@ -74,7 +74,10 @@ print("SAV4_MEASURED_MORPH_WEIGHTS",round(mouth_weight,4),round(chin_weight_ref,
 changed=0
 for vert,p in zip(face_body.data.vertices,coords):
     h=(p.z-zmin)/span
-    if h<0.865 or h>0.995: continue
+    if h<0.865 or h>0.965: continue
+    # Preserve the eye socket/upper lid band. Previous eye regressions
+    # included displaced pupils and hollow-looking sockets.
+    if 0.941<=h<=0.965: continue
     t=(h-0.865)/0.130
     fade=math.sin(math.pi*min(1.0,max(0.0,t)))**2
     # cheek prominence near the mid-face, narrower jaw near the lower face
@@ -135,8 +138,23 @@ if ratio_path.exists():
     print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
 else:
     print("SAV4_REFERENCE_NOT_MEASURED: keeping conservative facial pass")
+# Detect accidental changes outside the intended face zone.
+# Keep the original mesh topology, rig weights and every non-face vertex.
+if len(face_body.data.vertices)!=len(coords):
+    raise RuntimeError("SAV4 face morph changed vertex topology")
+max_displacement=0.0
+for vertex,original in zip(face_body.data.vertices,coords):
+    displacement=(vertex.co-original).length
+    max_displacement=max(max_displacement,displacement)
+    h=(original.z-zmin)/span
+    if displacement>1e-7 and (h<0.865 or h>0.941):
+        raise RuntimeError(f"SAV4 facial deformation escaped safe region: {h:.5f}")
+if changed==0:
+    raise RuntimeError("SAV4 face morph modified no vertices")
+if max_displacement>span*0.012:
+    raise RuntimeError(f"SAV4 facial deformation exceeded safety limit: {max_displacement:.6f}")
 face_body.data.update()
-print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed)
+print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed,"max_delta",round(max_displacement,6))
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
 # Remove facial helper/proxy meshes that are misplaced in the exported head.
 for obj in list(root.children_recursive):
