@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:28dvh;overflow:auto}summary{cursor:pointer;padding:10px;background:#2c473d;border-radius:6px}button[aria-pressed="true"]{background:#83b799;color:#10291c}button:disabled{opacity:.45}.performance{margin-bottom:8px}#motionStatus,#smileStatus{font-size:13px;color:#cfdfd6;margin:4px}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer><div class="performance"><div aria-label="Movement controls"><button type="button" data-motion="Stand" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Stand</button><button type="button" data-motion="Walk" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Walk</button><button type="button" data-motion="Run" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Run</button><button type="button" data-motion="Wave" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Wave</button><button type="button" data-motion="Sit" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit</button><button type="button" data-motion="Bend and pick up" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Bend and pick up</button><button type="button" data-motion="Hands and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Hands and knees</button><button type="button" data-motion="Elbows and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Elbows and knees</button></div><div id="motionStatus" role="status">Loading movement rig…</div><div aria-label="Smile controls"><button type="button" data-smile="Neutral" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Neutral</button><button type="button" data-smile="Flirty" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Flirty smile</button><button type="button" data-smile="Happy" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Happy smile</button><button type="button" data-smile="Cute" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Cute smile</button></div><div id="smileStatus" role="status">Neutral expression.</div></div><details id="clothingMenu"><summary>Clothing &amp; fit adjustments</summary>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">4.02 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:28dvh;overflow:auto}summary{cursor:pointer;padding:10px;background:#2c473d;border-radius:6px}button[aria-pressed="true"]{background:#83b799;color:#10291c}button:disabled{opacity:.45}.performance{margin-bottom:8px}#motionStatus,#smileStatus{font-size:13px;color:#cfdfd6;margin:4px}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer><div class="performance"><div aria-label="Movement controls"><button type="button" data-motion="Stand" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Stand</button><button type="button" data-motion="Walk" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Walk</button><button type="button" data-motion="Run" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Run</button><button type="button" data-motion="Wave" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Wave</button><button type="button" data-motion="Sit" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit</button><button type="button" data-motion="Sit — legs apart" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit — legs apart</button><button type="button" data-motion="Bend and pick up" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Bend and pick up</button><button type="button" data-motion="Hands and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Hands and knees</button><button type="button" data-motion="Elbows and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Elbows and knees</button></div><div id="motionStatus" role="status">Loading movement rig…</div><div aria-label="Smile controls"><button type="button" data-smile="Neutral" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Neutral</button><button type="button" data-smile="Flirty" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Flirty smile</button><button type="button" data-smile="Happy" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Happy smile</button><button type="button" data-smile="Cute" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Cute smile</button></div><div id="smileStatus" role="status">Neutral expression.</div></div><details id="clothingMenu"><summary>Clothing &amp; fit adjustments</summary>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">4.02 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
 <label>Move forward/back <input aria-label="Move skirt forward or backward" id="skirtDepth" type="range" min="-1" max="1" step="0.005" value="0.09" oninput="window.refitSkirt?.()"> <output id="skirtDepthValue">9.0 cm</output></label>
 <div><button type="button" onclick="window.moveSkirtDepth?.(0.01)">Forward 1 cm</button><button type="button" onclick="window.moveSkirtDepth?.(-0.01)">Backward 1 cm</button><button type="button" onclick="window.centerSkirtDepth?.()">Center forward/back</button></div>
 <label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="8" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">8°</output></label>
@@ -78,12 +78,12 @@ const wardrobe={
  casual:{label:'Casual',color:0x738474},tankIvory:{label:'Ivory tank'},tankSage:{label:'Sage tank'},miniBlack:{label:'Black mini'},miniRose:{label:'Rose mini'},bikiniCoral:{label:'Coral bikini'}
 };
 let avatar=null;
-// Procedural poses use the imported Mixamo bones; no synthetic replacement body.
-const motionNames=['Stand','Walk','Run','Wave','Sit','Bend and pick up','Hands and knees','Elbows and knees'];
-let activeMotion='Stand',activeSmile='Neutral',motionStart=0,rigReady=false,motionScale=1;
+// Poses use the imported adult SAV4 rig and original face mesh.
+const motionNames=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees'];
+let activeMotion='Stand',activeSmile='Neutral',motionStart=0,rigReady=false,motionScale=1,groundY=0,framePending=false;
 const rig=new Map(),rest=new Map(),wearBindings=new Map();
 const motionClock=new T.Clock();
-let faceMesh=null,faceBase=null,facePoints=[],bodyTree=null;
+let faceMesh=null,faceBase=null,facePoints=[],bodyTree=null,poseFloor=null,poseSeat=null;
 const v3=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
 function setupPerformance(){
  avatar.updateMatrixWorld(true);
@@ -91,59 +91,142 @@ function setupPerformance(){
  const required=['Hips','Spine','Spine1','Spine2','Head','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'];
  rigReady=required.every(n=>rig.has(n));
  if(!rigReady){document.getElementById('motionStatus').textContent='This model is missing required movement bones.';return;}
- if(faceMesh){
-  // A compact, smooth displacement field around the actual mouth, in rest mesh space.
-  faceBase=faceMesh.geometry.attributes.position.array.slice();
-  const box=new T.Box3().setFromBufferAttribute(faceMesh.geometry.attributes.position),h=box.max.y-box.min.y;
-  const mouthY=box.min.y+h*.918;
-  const attr=faceMesh.geometry.attributes.position;
-  for(let i=0;i<attr.count;i++){
-   const x=attr.getX(i),y=attr.getY(i),z=attr.getZ(i);
-   if(Math.abs(x)<h*.039&&Math.abs(y-mouthY)<h*.024&&z>h*.025){
-    const w=Math.exp(-Math.pow((y-mouthY)/(h*.014),2))*Math.exp(-Math.pow(x/(h*.036),4));
-    if(w>.005)facePoints.push({i,x,w,h});
-   }
+ motionScale=rest.get('Head').point.distanceTo(rest.get('Hips').point)/.60;
+ faceBase=faceMesh.geometry.attributes.position.array.slice();
+ const attr=faceMesh.geometry.attributes.position;
+ // SAV4's mouth is around mesh Y=1.49; the former height ratio selected her eyes.
+ for(let i=0;i<attr.count;i++){
+  const x=attr.getX(i),y=attr.getY(i),z=attr.getZ(i);
+  if(Math.abs(x)<.070&&Math.abs(y-1.489)<.047&&z>.075){
+   const mouth=Math.exp(-Math.pow((y-1.489)/.027,2));
+   const corner=Math.exp(-Math.pow((Math.abs(x)-.022)/.021,2));
+   const cheek=Math.exp(-Math.pow((Math.abs(x)-.035)/.020,2)-Math.pow((y-1.509)/.018,2));
+   facePoints.push({i,x,y,mouth,corner,cheek});
   }
  }
- motionScale=rest.get('Head').point.distanceTo(rest.get('Hips').point)/.60;
+ const baseBounds=posedBodyBounds();groundY=baseBounds.min.y;
+ poseFloor=new T.Mesh(new T.CircleGeometry(baseBounds.getSize(v3()).y*.65,64),new T.MeshStandardMaterial({color:0x1d2e26,roughness:1,side:T.DoubleSide}));
+ poseFloor.name='SAV4 pose contact floor';poseFloor.rotation.x=-Math.PI/2;poseFloor.position.set(0,groundY-.015,0);scene.add(poseFloor);
+ poseSeat=new T.Group();poseSeat.name='SAV4 seated pose support';
+ const seatTop=rest.get('Hips').point.y-.39*motionScale-.23,wood=new T.MeshStandardMaterial({color:0x5f4936,roughness:.92});
+ const seat=new T.Mesh(new T.CylinderGeometry(.76,.76,.13,32),wood);seat.position.set(0,seatTop-.065,-.08);poseSeat.add(seat);
+ for(const x of [-.45,.45])for(const z of [-.45,.45]){const leg=new T.Mesh(new T.CylinderGeometry(.055,.065,seatTop-groundY-.13,12),wood);leg.position.set(x,groundY+(seatTop-groundY-.13)/2,z-.08);poseSeat.add(leg);}
+ poseSeat.visible=false;scene.add(poseSeat);
  document.querySelectorAll('[data-motion],[data-smile]').forEach(b=>b.disabled=false);
- setMotion('Stand');
- animatePerformance();
- const viewBounds=new T.Box3();avatar.traverse(o=>{if(o.isMesh){o.updateWorldMatrix(true,false);for(let i=0;i<o.geometry.attributes.position.count;i++){const p=v3();o.getVertexPosition(i,p);viewBounds.expandByPoint(p.applyMatrix4(o.matrixWorld));}}});
- const viewCenter=viewBounds.getCenter(v3()),viewSize=viewBounds.getSize(v3());controls.target.copy(viewCenter);camera.position.copy(viewCenter).add(v3(0,0,Math.max(viewSize.y*1.9,viewSize.x*2.5)));camera.far=Math.max(100,viewSize.y*20);camera.updateProjectionMatrix();controls.update();
+ setMotion('Stand');setSmile('Neutral');animatePerformance();
+ const viewBounds=posedBodyBounds(),viewCenter=viewBounds.getCenter(v3()),viewSize=viewBounds.getSize(v3());
+ controls.target.copy(viewCenter);camera.position.copy(viewCenter).add(v3(0,0,Math.max(viewSize.y*1.9,viewSize.x*2.5)));camera.far=Math.max(100,viewSize.y*20);camera.updateProjectionMatrix();controls.update();
 }
+function posedBodyBounds(){const bounds=new T.Box3(),p=v3();if(!faceMesh)return bounds;avatar.updateMatrixWorld(true);for(let i=0;i<faceMesh.geometry.attributes.position.count;i++){faceMesh.getVertexPosition(i,p);bounds.expandByPoint(p.applyMatrix4(faceMesh.matrixWorld));}return bounds;}
 function resetRig(){for(const [name,b]of rig){b.quaternion.copy(rest.get(name).q);b.position.copy(rest.get(name).p);}avatar.updateMatrixWorld(true);}
 function rotateWorld(name,axis,angle){const b=rig.get(name);if(!b)return;const q=new T.Quaternion().setFromAxisAngle(axis,angle).multiply(rest.get(name).world);const parent=b.parent.getWorldQuaternion(new T.Quaternion()).invert();b.quaternion.copy(parent.multiply(q));b.updateWorldMatrix(false,true);}
-function aim(name,child,direction){const b=rig.get(name);if(!b)return;const baseDirection=rest.get(child).point.clone().sub(rest.get(name).point).normalize();const q=new T.Quaternion().setFromUnitVectors(baseDirection,direction.normalize()).multiply(rest.get(name).world);b.quaternion.copy(b.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));b.updateWorldMatrix(false,true);}
-function lowerHips(meters){const hip=rig.get('Hips'),p=hip.getWorldPosition(v3());p.y-=meters*motionScale;hip.position.copy(hip.parent.worldToLocal(p));hip.updateWorldMatrix(false,true);}
-window.setMotion=function(name){if(!rigReady||!motionNames.includes(name))return;activeMotion=name;motionStart=motionClock.getElapsedTime();document.querySelectorAll('[data-motion]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.motion===name)));document.getElementById('motionStatus').textContent=name==='Stand'?'Standing — movement stopped.':name+' active.';};
-window.setSmile=function(name){if(!faceMesh||!['Neutral','Flirty','Happy','Cute'].includes(name))return;activeSmile=name;const attr=faceMesh.geometry.attributes.position;attr.array.set(faceBase);for(const p of facePoints){const side=Math.min(1,Math.abs(p.x)/(p.h*.023));let lift=0,width=0,forward=0;if(name==='Happy'){lift=.0065*side; width=.002*side;}if(name==='Flirty'){lift=(p.x>0?.005:.002)*side;width=.0008*side;forward=.0005;}if(name==='Cute'){lift=.0038*side;width=.0012*side;forward=.0008;}attr.array[p.i*3]+=Math.sign(p.x)*width*p.w;attr.array[p.i*3+1]+=lift*p.w;attr.array[p.i*3+2]+=forward*p.w;}attr.needsUpdate=true;faceMesh.geometry.computeVertexNormals();document.querySelectorAll('[data-smile]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.smile===name)));document.getElementById('smileStatus').textContent=name==='Neutral'?'Neutral expression.':name+' smile.';};
+function aim(name,child,direction){
+ const b=rig.get(name),end=rig.get(child);if(!b||!end)return;
+ // Swing from the current parent orientation, preserving the joint's inherited twist.
+ const current=end.getWorldPosition(v3()).sub(b.getWorldPosition(v3())).normalize();
+ const q=new T.Quaternion().setFromUnitVectors(current,direction.clone().normalize()).multiply(b.getWorldQuaternion(new T.Quaternion()));
+ b.quaternion.copy(b.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));b.updateWorldMatrix(false,true);
+}
+function setHipY(y){const hip=rig.get('Hips'),p=hip.getWorldPosition(v3());p.y=y;hip.position.copy(hip.parent.worldToLocal(p));hip.updateWorldMatrix(false,true);}
+function lowerHips(meters){setHipY(rest.get('Hips').point.y-meters*motionScale);}
+function limbLength(a,b){return rest.get(a).point.distanceTo(rest.get(b).point);}
+function solveLimb(rootName,jointName,endName,target,pole){
+ const root=rig.get(rootName).getWorldPosition(v3()),l1=limbLength(rootName,jointName),l2=limbLength(jointName,endName);
+ const to=target.clone().sub(root),distance=Math.max(.001,Math.min(to.length(),l1+l2-.0001));to.normalize();
+ const along=(l1*l1-l2*l2+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,l1*l1-along*along));
+ const bend=pole.clone().sub(root);bend.addScaledVector(to,-bend.dot(to));if(bend.lengthSq()<1e-8)bend.set(0,0,1);bend.normalize();
+ const joint=root.clone().addScaledVector(to,along).addScaledVector(bend,height);
+ aim(rootName,jointName,joint.sub(root));
+ aim(jointName,endName,target.clone().sub(rig.get(jointName).getWorldPosition(v3())));
+}
+window.setMotion=function(name){if(!rigReady||!motionNames.includes(name))return;activeMotion=name;framePending=true;motionStart=motionClock.getElapsedTime();document.querySelectorAll('[data-motion]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.motion===name)));document.getElementById('motionStatus').textContent=name==='Stand'?'Standing — movement stopped.':name+' active.';};
+window.setSmile=function(name){
+ if(!faceMesh||!['Neutral','Flirty','Happy','Cute'].includes(name))return;activeSmile=name;
+ const attr=faceMesh.geometry.attributes.position;attr.array.set(faceBase);
+ for(const p of facePoints){
+  const side=Math.min(1,Math.abs(p.x)/.022);let lift=0,width=0,cheekLift=0;
+  if(name==='Happy'){lift=.0048;width=.0025;cheekLift=.0015;}
+  if(name==='Flirty'){lift=p.x>0?.0045:.0018;width=.0015;cheekLift=.0010;}
+  if(name==='Cute'){lift=.0034;width=.0018;cheekLift=.0012;}
+  const w=p.mouth*p.corner;
+  attr.array[p.i*3]+=Math.sign(p.x)*width*w*side;
+  attr.array[p.i*3+1]+=lift*w*Math.pow(side,1.35)+cheekLift*p.cheek;
+  if(name!=='Neutral')attr.array[p.i*3+1]+=.0014*Math.exp(-Math.pow((p.y-1.477)/.007,2)-Math.pow(p.x/.022,4));
+  if(name!=='Neutral')attr.array[p.i*3+2]+=.0007*w;
+ }
+ attr.needsUpdate=true;faceMesh.geometry.computeVertexNormals();
+ document.querySelectorAll('[data-smile]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.smile===name)));
+ document.getElementById('smileStatus').textContent=name==='Neutral'?'Neutral expression.':name+' smile.';
+};
+
+function applyWorldTurn(b,axis,angle){const q=new T.Quaternion().setFromAxisAngle(axis,angle).multiply(b.getWorldQuaternion(new T.Quaternion()));b.quaternion.copy(b.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));b.updateWorldMatrix(false,true);}
+function flattenPalm(side){
+ const hand=rig.get(side+'Hand'),across=rig.get(side+'HandIndex1').getWorldPosition(v3()).sub(rig.get(side+'HandPinky1').getWorldPosition(v3()));across.z=0;across.normalize();
+ const target=v3(side==='Left'?-1:1,0,0),angle=Math.atan2(v3().crossVectors(across,target).z,across.dot(target));
+ applyWorldTurn(hand,v3(0,0,1),angle);
+}
+function curlFingers(side,amount){
+ const hand=rig.get(side+'Hand').getWorldPosition(v3());
+ const direction=rig.get(side+'HandMiddle1').getWorldPosition(v3()).sub(hand).normalize();
+ const across=rig.get(side+'HandIndex1').getWorldPosition(v3()).sub(rig.get(side+'HandPinky1').getWorldPosition(v3())).normalize();
+ const sign=side==='Left'?1:-1,normal=v3().crossVectors(across,direction).normalize().multiplyScalar(sign);
+ for(const finger of ['Index','Middle','Ring','Pinky']){
+  for(const [joint,angle]of [[1,.80],[2,1.75]]){
+   const bend=angle*amount,target=direction.clone().multiplyScalar(Math.cos(bend)).addScaledVector(normal,Math.sin(bend));
+   aim(side+'Hand'+finger+joint,side+'Hand'+finger+(joint+1),target);
+  }
+  applyWorldTurn(rig.get(side+'Hand'+finger+'3'),across,sign*.65*amount);
+ }
+}
 function animatePerformance(){
  if(!rigReady)return;resetRig();const t=motionClock.getElapsedTime()-motionStart;
- const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run';
- const phase=t*(run?10:6),s=Math.sin(phase),step=run?.78:.43;
- let lean=0;
- if(gait){lean=run?.16:.035;lowerHips((run?.045:.012)*(1-Math.cos(phase*2)));}
- if(activeMotion==='Sit'){lowerHips(.48);lean=.04;}
- if(activeMotion==='Bend and pick up')lean=.95*(.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2));
- const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees';
- if(crawl){lowerHips(activeMotion==='Elbows and knees'?.68:.56);lean=1.25;}
- rotateWorld('Spine',v3(1,0,0),lean*.4);rotateWorld('Spine1',v3(1,0,0),lean*.7);rotateWorld('Spine2',v3(1,0,0),lean);
+ const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run',seated=activeMotion==='Sit'||activeMotion==='Sit — legs apart';
+ const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees',onElbows=activeMotion==='Elbows and knees';
+ if(poseSeat)poseSeat.visible=seated;
+ const phase=t*(run?9.2:5.4),s=Math.sin(phase),step=run?.63:.34;
+ const reach=activeMotion==='Bend and pick up'?.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2):0;
+ let lean=gait?(run?.12:.025):reach*.95;
+ if(crawl)lean=onElbows?1.94:Math.PI/2;
+ // Lean the pelvis and torso together instead of twisting only the spine.
+ rotateWorld('Hips',v3(1,0,0),lean);
+ if(gait)lowerHips((run?.025:.007)*(1-Math.cos(phase*2)));
+ if(seated)lowerHips(.39);
+ if(crawl){
+  const legLength=limbLength('LeftUpLeg','LeftLeg'),pad=.066*motionScale;
+  const hip=rig.get('Hips').getWorldPosition(v3()),upper=rig.get('LeftUpLeg').getWorldPosition(v3());
+  setHipY(hip.y+groundY+legLength+pad-upper.y);
+ }
  for(const side of ['Left','Right']){
   const sign=side==='Left'?1:-1,legSwing=gait?s*step*sign:0;
-  let thigh=v3(sign*.025,-Math.cos(legSwing),Math.sin(legSwing)),shin=v3(0,-1,0);
-  if(gait){const knee=Math.max(0,-s*sign)*(run?1.25:.65);shin=v3(0,-Math.cos(legSwing-knee),Math.sin(legSwing-knee));}
-  if(activeMotion==='Sit'){thigh=v3(sign*.06,-.07,1);shin=v3(0,-1,.05);}
-  if(crawl){thigh=v3(sign*.05,-1,.3);shin=v3(0,-.08,-1);}
-  aim(side+'UpLeg',side+'Leg',thigh);aim(side+'Leg',side+'Foot',shin);
-  let arm=v3(sign*.12,-1,gait?-s*sign*(run?.65:.35):.02),fore=v3(sign*.08,-1,gait?(run?.65:.12):.04);
-  if(activeMotion==='Wave'&&side==='Right'){arm=v3(-.5,.7,.1);fore=v3(Math.sin(t*7)*.3,1,.04);}
-  if(activeMotion==='Bend and pick up'){arm=v3(sign*.12,-1,.35*lean);fore=v3(sign*.08,-1,.25*lean);}
-  if(crawl){arm=v3(sign*.12,-1,.3);fore=activeMotion==='Elbows and knees'?v3(sign*.08,-.15,1):v3(sign*.08,-1,.1);}
-  aim(side+'Arm',side+'ForeArm',arm);aim(side+'ForeArm',side+'Hand',fore);
+  if(crawl){
+   const root=rig.get(side+'UpLeg').getWorldPosition(v3()),pad=.066*motionScale;
+   const ankle=v3(root.x,groundY+.106*motionScale,root.z-limbLength(side+'Leg',side+'Foot'));
+   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',ankle,root.clone().add(v3(0,-3,-.1)));
+   aim(side+'Foot',side+'ToeBase',v3(0,-.05,-1));
+  }else{
+   let thigh=v3(sign*.025,-Math.cos(legSwing),Math.sin(legSwing)),shin=v3(0,-1,0);
+   if(gait){const knee=.08+Math.max(0,-s*sign)*(run?1.20:.48);shin=v3(0,-Math.cos(legSwing-knee),Math.sin(legSwing-knee));}
+   if(seated){const spread=activeMotion==='Sit — legs apart'?.90:.10;thigh=v3(sign*spread,-.06,1);shin=v3(0,-1,.04);}
+   aim(side+'UpLeg',side+'Leg',thigh);aim(side+'Leg',side+'Foot',shin);aim(side+'Foot',side+'ToeBase',v3(0,-.12,1));
+  }
+  if(crawl){
+   const shoulder=rig.get(side+'Arm').getWorldPosition(v3()),pad=.066*motionScale;
+   const target=v3(shoulder.x,groundY+pad,shoulder.z+(onElbows?limbLength(side+'ForeArm',side+'Hand'):.10*motionScale));
+   solveLimb(side+'Arm',side+'ForeArm',side+'Hand',target,shoulder.clone().add(v3(onElbows?0:sign*.25,-.7,onElbows?-.6:-.25)));
+   // Palms and fingers rest forward instead of hanging beneath the wrists.
+   aim(side+'Hand',side+'HandMiddle1',v3(0,-.03,1));flattenPalm(side);
+  }else{
+   const swing=gait?-s*sign*(run?.54:.24):0,flex=gait?(run?1.32:.32):.10;
+   let upper=v3(sign*.065,-Math.cos(swing),Math.sin(swing));
+   let fore=v3(sign*.025,-Math.cos(swing+flex),Math.sin(swing+flex));
+   if(activeMotion==='Wave'&&side==='Right'){upper=v3(-.4,.75,.12);fore=v3(Math.sin(t*5)*.18,1,.10);}
+   if(reach){upper=v3(sign*.10,-1,.65*reach);fore=v3(sign*.04,-1,.55*reach);}
+   if(seated){upper=v3(sign*.1,-1,.20);fore=v3(sign*.05,-.65,.8);}
+   aim(side+'Arm',side+'ForeArm',upper);aim(side+'ForeArm',side+'Hand',fore);
+   if(gait)curlFingers(side,run?1:.25);
+  }
  }
- if(activeSmile==='Flirty')rotateWorld('Head',v3(0,0,1),-.065);
- if(activeSmile==='Cute')rotateWorld('Head',v3(0,0,1),.045);
+ if(crawl){rotateWorld('Neck',v3(1,0,0),.55);rotateWorld('Head',v3(1,0,0),.28);}
  avatar.updateMatrixWorld(true);
  if(blouseHemRest&&blouseTorsoRest)blouseHemPlane.copy(blouseHemRest).applyMatrix4(new T.Matrix4().multiplyMatrices(rig.get('Spine2').matrixWorld,blouseTorsoRest));
  // Update transferred garment skinning from the same deforming body vertices.
@@ -152,6 +235,11 @@ function animatePerformance(){
   const delta=new Map();const point=v3(),offset=v3();for(const i of binding.used){faceMesh.getVertexPosition(i,point);point.applyMatrix4(faceMesh.matrixWorld);delta.set(i,point.clone().sub(binding.bodyRest.get(i)));}
   for(const part of binding.parts){const inv=part.mesh.matrixWorld.clone().invert(),attr=part.mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){point.fromArray(part.world,i*3);offset.set(0,0,0);for(let j=0;j<8;j++)offset.addScaledVector(delta.get(part.nearest[i*8+j]),part.weights[i*8+j]);point.add(offset).applyMatrix4(inv);attr.setXYZ(i,point.x,point.y,point.z);}attr.needsUpdate=true;}
  }
+}
+
+function framePerformance(){
+ const bounds=posedBodyBounds(),center=bounds.getCenter(v3()),size=bounds.getSize(v3()),direction=camera.position.clone().sub(controls.target).normalize();
+ controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,Math.max(size.x,size.y,size.z)*1.95);controls.update();
 }
 function makeTree(points,depth=0){if(!points.length)return null;const axis=depth%3;points.sort((a,b)=>a.p.getComponent(axis)-b.p.getComponent(axis));const mid=points.length>>1;return{item:points[mid],axis,left:makeTree(points.slice(0,mid),depth+1),right:makeTree(points.slice(mid+1),depth+1)};}
 function nearestTree(node,p,best={d:Infinity,item:null}){if(!node)return best;const dist=node.item.p.distanceToSquared(p);if(dist<best.d){best.d=dist;best.item=node.item;}const split=p.getComponent(node.axis)-node.item.p.getComponent(node.axis);nearestTree(split<0?node.left:node.right,p,best);if(split*split<best.d)nearestTree(split<0?node.right:node.left,p,best);return best;}
@@ -166,7 +254,7 @@ function bindWear(model){
  const world=new Float32Array(attr.count*3),nearest=new Uint32Array(attr.count*8),weights=new Float32Array(attr.count*8);for(let i=0;i<attr.count;i++){const p=v3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld),found=nearbyTree(bodyTree,p);p.toArray(world,i*3);const total=found.reduce((a,f)=>a+1/(f.d+.0025),0);for(let j=0;j<8;j++){const f=found[j];nearest[i*8+j]=f.item.i;weights[i*8+j]=(1/(f.d+.0025))/total;binding.used.add(f.item.i);binding.bodyRest.set(f.item.i,f.item.p);}}
  binding.parts.push({mesh,world,nearest,weights});});wearBindings.set(model,binding);
 }
-window.sav4Diagnostics=()=>({ready:rigReady,movement:activeMotion,smile:activeSmile,bones:rig.size,faceVertices:facePoints.length,garments:wearBindings.size,bounds:avatar?new T.Box3().setFromObject(avatar).getSize(v3()).toArray():null,hips:rig.get('Hips')?.getWorldPosition(v3()).toArray(),head:rig.get('Head')?.getWorldPosition(v3()).toArray(),pose:[...rig].map(([name,b])=>[name,...b.quaternion.toArray()]),faceSample:facePoints.slice(0,20).map(p=>Array.from(faceMesh.geometry.attributes.position.array.slice(p.i*3,p.i*3+3)))});
+window.sav4Diagnostics=()=>({ready:rigReady,movement:activeMotion,smile:activeSmile,bones:rig.size,faceVertices:facePoints.length,garments:wearBindings.size,bounds:avatar?posedBodyBounds().getSize(v3()).toArray():null,bodyMinY:avatar?posedBodyBounds().min.y:null,hips:rig.get('Hips')?.getWorldPosition(v3()).toArray(),head:rig.get('Head')?.getWorldPosition(v3()).toArray(),pose:[...rig].map(([name,b])=>[name,...b.quaternion.toArray()]),groundY,contacts:rigReady?Object.fromEntries(['LeftHand','RightHand','LeftForeArm','RightForeArm','LeftLeg','RightLeg','LeftFoot','RightFoot'].map(n=>[n,rig.get(n).getWorldPosition(v3()).toArray()])):null,faceSample:facePoints.slice(0,20).map(p=>Array.from(faceMesh.geometry.attributes.position.array.slice(p.i*3,p.i*3+3)))});
 
 
 
@@ -392,4 +480,4 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  if(selectedOutfit)window.outfit(selectedOutfit);
 if(blouseWanted)window.showBlouse();
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
-function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();animatePerformance();renderer.render(scene,camera)}loop();</script></body></html>
+function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();animatePerformance();if(framePending){framePending=false;framePerformance();}renderer.render(scene,camera)}loop();</script></body></html>
