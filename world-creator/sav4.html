@@ -77,7 +77,8 @@ window.outfit=function(style){
  status.textContent=item.label+' — loading garment file…';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
- if(!garmentFiles[style]){status.textContent='No garment file registered for '+style;return;}\n loader.load('./assets/'+garmentFiles[style],g=>{
+ if(!garmentFiles[style]){status.textContent='No garment file registered for '+style;return;}
+ loader.load('./assets/'+garmentFiles[style],g=>{
   loadingGarments.delete(style);
   const model=g.scene;
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
