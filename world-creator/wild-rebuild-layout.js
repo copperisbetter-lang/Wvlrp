@@ -103,6 +103,14 @@ export function flatlandHeight(x,z,seed,base){
     const blend=1-cubic((r-inside)/(c.radius+15-inside));
     h=h*(1-blend)+(c.kind==="protected-cabin"?base:center)*blend;
   }
+  // Recess lakebeds into the streamed terrain; banks transition smoothly.
+  for(const lake of [{x:-165,z:-180,rx:72,rz:52},{x:410,z:-340,rx:95,rz:72}]){
+    const r=Math.hypot((x-lake.x)/lake.rx,(z-lake.z)/lake.rz);
+    if(r>=1.18)continue;
+    const bank=Math.max(0,Math.min(1,(1.18-r)/.28));
+    const smooth=bank*bank*(3-2*bank);
+    h-=3.2*smooth;
+  }
   return h;
 }
 export function isTrailConnected(){
