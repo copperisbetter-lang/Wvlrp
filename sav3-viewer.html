@@ -101,7 +101,7 @@ function findFitMeshes(){
    const signature=(label+' '+materials).toLowerCase();
    const isAttachment=/(vulva[ _-]*2|vulva2|vulva.*mhx2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
    const isBody=/^(body|female|human|skin|sav.?3)([ _.-]|$)/i.test(label);
-   if(isAttachment&&!isBody&&node.mesh){
+   if(isAttachment&&!isBody){
     const t=node.translation;
     const base=t&&t.length===3?Array.from(t):[0,0,0];
     if(base.every(Number.isFinite))fitMeshes.push({node,base,name:label});
@@ -110,7 +110,7 @@ function findFitMeshes(){
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
  if(!fitMeshes.length){
   setFitMode(false);$('fitdrag').disabled=true;
-  $('fitstatus').textContent='No separate Vulva 2 mesh node in this GLB. Finger movement is disabled until the model is exported with its attachment separate.';
+  $('fitstatus').textContent='No independently named anatomy node was found. Check exported GLB node names before enabling finger movement.';
  }else{
   $('fitdrag').disabled=false;applyFit();
   $('fitstatus').textContent='Movable attachment: '+fitMeshes.map(x=>x.name).join(', ')+'. Body stays locked.';
