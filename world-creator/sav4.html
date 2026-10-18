@@ -480,7 +480,7 @@ window.outfit=function(style){
  },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — file failed to load: '+(e?.message||'network or format error');});
 };
 
-loader.load('./assets/sav4-realistic.glb?v=7c939e2bcf69',g=>{
+loader.load('./assets/sav4-realistic.glb?v=68a4b2a16374',g=>{
  avatar=g.scene;body.add(avatar);
  // SAV4 inspection material correction: target only named hair/eye geometry.
  const blonde=new T.Color(0xb9a27c), irisBlue=new T.Color(0x9fc4d8), scleraWhite=new T.Color(0xf0ede8);
