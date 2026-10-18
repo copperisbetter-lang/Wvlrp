@@ -1,5 +1,5 @@
 import {flatlandHeight} from "./wild-rebuild-layout.js";
-import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261017-radius-2400-v2";
+import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261017-streamed-v3";
 
 import {installDoorTree} from "./wild-girls-cabin-door-tree.js?v=door-tree-20261016-v1";
 import {installTreeInspectionLine} from "./wild-tree-inspection-line.js?v=20261016-world-anchor-v10";
@@ -135,6 +135,7 @@ const camera=new B.FreeCamera("first-person explorer",
  * Campsite/structure exclusion is conservative until exact plot polygons exist.
  */
 const masterForest=installMasterHDForest(B,scene,{
+ getPosition:()=>({x:camera.position.x,z:camera.position.z}),
  seed,terrainHeight:(x,z)=>flatlandHeight(x,z,seed,cabinGrade(0,0,seed)),
  excluded:(x,z,clearance)=>[[0,0,42],[93,77,55],[90,78,40],[90,75,40],[0,274,40],[30,333,50]]
    .some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
@@ -155,14 +156,14 @@ document.body.appendChild(mapleDebug);
 let mapleDebugFrames=0;
 scene.onBeforeRenderObservable.add(()=>{
   if(++mapleDebugFrames%90!==0)return;
-  const p=autumnMaples.placements||[];
+  const p=masterForest.maple.placements||[];
   const errors=p.map(t=>{
     const ground=flatlandHeight(t.x,t.z,seed,cabinGrade(0,0,seed));
     const bottom=Math.min(...t.trunkMeshes.map(m=>{m.computeWorldMatrix(true);return m.getBoundingInfo().boundingBox.minimumWorld.y;}));
     return bottom-ground;
   }).filter(Number.isFinite);
   const max=errors.length?Math.max(...errors.map(Math.abs)):0;
-  mapleDebug.textContent="MAPLE v10 "+autumnMaples.status+" ("+p.length+") "+(autumnMaples.error||"")+"\\n"+
+  mapleDebug.textContent="MAPLE STREAM "+masterForest.maple.status+" ("+p.length+") "+(masterForest.maple.error||"")+"\\n"+
     "max offset "+max.toFixed(2)+"m\\n"+
     "first 6: "+errors.slice(0,6).map(v=>v.toFixed(1)).join(", ");
 });
