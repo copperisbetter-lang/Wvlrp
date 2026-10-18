@@ -1,4 +1,4 @@
-import {installWildWaters} from "./wild-living-waters.js?v=20261018-reflection-fix-v9";
+import {installWildWaters} from "./wild-living-waters.js?v=20261018-water-visibility-v10";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
 
