@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:24dvh;overflow:auto}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="2.5" oninput="window.refitSkirt?.()"> Height <input id="skirtHeight" type="range" min="-0.50" max="2.00" step="0.01" value="0.59" oninput="window.refitSkirt?.()"></div><div style="margin:8px 0;display:grid;gap:8px">
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:24dvh;overflow:auto}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="2.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="1.05" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">1.05 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
 <label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">0°</output></label>
 <label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">0°</output></label>
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
@@ -72,14 +72,24 @@ function alignGarment(model,style){
  garmentBounds=new T.Box3().setFromObject(model);
  const center=garmentBounds.getCenter(new T.Vector3()),size=garmentBounds.getSize(new T.Vector3());
  const bodyCenter=bodyBounds.getCenter(new T.Vector3());
- // Position the skirt upper edge at natural waist, approximately 58% of height.
- const waistY=bodyBounds.min.y+bodySize.y*Number(heightControl?.value||.59);
+ // Explicit world-space meters: height never depends on avatar bounding-box proportions.
+ const waistY=Number(heightControl?.value ?? 1.05);
  model.position.set(bodyCenter.x-center.x,waistY-garmentBounds.max.y,bodyCenter.z-center.z);
  model.updateMatrixWorld(true);
  status.textContent='Imported MakeHuman mini skirt loaded; width '+size.x.toFixed(2)+'m; inspect waist and hem';
  console.info('SAV4 imported skirt fit',dims,size,bodySize);
 }
+window.moveSkirtHeight=(delta)=>{
+ const control=document.getElementById('skirtHeight');
+ const next=Number(control.value)+delta;
+ // Buttons continue extending the range if more travel is needed.
+ control.max=String(Math.max(Number(control.max),next));
+ control.min=String(Math.min(Number(control.min),next));
+ control.value=next.toFixed(2);
+ window.refitSkirt();
+};
 window.refitSkirt=()=>{
+ document.getElementById('skirtHeightValue').textContent=Number(document.getElementById('skirtHeight').value).toFixed(2)+' m';
  for(const id of ['skirtYaw','skirtPitch','skirtRoll']){
   const output=document.getElementById(id+'Value');if(output)output.textContent=document.getElementById(id).value+'°';
  }
