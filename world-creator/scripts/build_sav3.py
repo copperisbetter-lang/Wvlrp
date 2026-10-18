@@ -8,7 +8,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 base = root / "scripts" / "build_vulva2_female18.py"
 source = base.read_text(encoding="utf-8")
-# SAV 3 uses the existing authentic Vulva2 pipeline. Do not mix Vulva1 and Vulva2 assets.
+# SAV 3 starts with a clean scene and rebuilds one attachment from source. Never reuse a previously fitted mesh.
 if source.count('addon=fit_vulva2(root,body,rigs[0])') != 1:
     raise RuntimeError('SAV3_SOURCE_MISMATCH: expected exactly one Vulva2 attachment call')
 if 'fit_vulva1(' in source:
@@ -18,6 +18,24 @@ if source.count(old) != 1:
     raise RuntimeError("Upstream adult builder output definition changed")
 source = source.replace(old, 'OUT=ROOT/"assets"/"sav3-adult-inspection.glb"')
 source = source.replace('h.name="Vulva2 Test Adult Female 18"', 'h.name="Sav 3 Adult Female 18"')
+# Reset stale anatomy before rebuilding; retain the original body and rig.
+reset_anchor = 'addon=fit_vulva2(root,body,rigs[0])'
+if source.count(reset_anchor) != 1:
+    raise RuntimeError("SAV3_RESET_ANCHOR_CHANGED")
+reset_code = '''
+# Remove all old pelvic attachment objects from this character copy.
+# A fresh attachment is reconstructed from the original source JSON below.
+for stale in list(root.children_recursive):
+    if stale == body or stale.type != "MESH":
+        continue
+    label = stale.name.lower()
+    if (stale.get("wvlrp_vulva2_authentic_mhx2") or
+        any(term in label for term in ("vulva", "labia", "genital", "pelvic attachment"))):
+        bpy.data.objects.remove(stale, do_unlink=True)
+bpy.context.view_layer.update()
+'''
+source = source.replace(reset_anchor, reset_code + '\n' + reset_anchor)
+
 source = source.replace('print("VULVA2_FEMALE18_BUILD_SUCCESS"', 'print("SAV3_ADULT_BUILD_SUCCESS"')
 
 insertion_point = 'bpy.context.view_layer.update()\nbpy.ops.object.select_all(action="DESELECT")'
