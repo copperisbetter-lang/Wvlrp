@@ -72,8 +72,9 @@ eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Use the original MPFB eye UVs and the bundled blue iris texture.
 # Do not replace the whole eye with a flat white or blue material.
+# Reuse the proven UV-based MakeHuman blue iris texture routine.
 from caroline_eyes import add_light_blue_eyes
-add_light_blue_eyes(root, human, rig)
+add_light_blue_eyes(root, body, rig)
 print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes))
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
