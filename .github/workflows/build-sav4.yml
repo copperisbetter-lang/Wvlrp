@@ -57,11 +57,25 @@ jobs:
           assert doc.get("skins") and doc.get("meshes")
           print("SAV4_GLB_VERIFIED",len(b))
           PY
+      - name: Refresh SAV 4 viewer asset revision
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,re
+          model=Path("world-creator/assets/sav4-realistic.glb")
+          viewer=Path("world-creator/sav4.html")
+          revision=hashlib.sha256(model.read_bytes()).hexdigest()[:12]
+          html=viewer.read_text()
+          updated,count=re.subn(r"sav4-realistic\\.glb\\?v=[A-Za-z0-9]+", "sav4-realistic.glb?v="+revision, html)
+          if count != 1: raise RuntimeError("SAV4 viewer GLB reference not found uniquely")
+          viewer.write_text(updated)
+          print("SAV4_VIEWER_ASSET_REVISION",revision)
+          PY
       - name: Publish SAV 4 asset
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/sav4-realistic.glb
+          git add world-creator/assets/sav4-realistic.glb world-creator/sav4.html
           if ! git diff --cached --quiet; then
             git commit -m "Publish SAV 4 game-ready GLB"
             git pull --rebase origin main
