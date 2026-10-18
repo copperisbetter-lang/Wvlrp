@@ -19,9 +19,13 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
   if(!sources.length)throw Error("No verified conifer meshes loaded");
   const half=Math.ceil(radius/cellSize);
   const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
-  for(let dx=-half;dx<=half&&state.planted<maxVisible;dx++)for(let dz=-half;dz<=half&&state.planted<maxVisible;dz++){
+  const offsets=[];
+  for(let dx=-half;dx<=half;dx++)for(let dz=-half;dz<=half;dz++)offsets.push({dx,dz});
+  offsets.sort((a,b)=>(a.dx*a.dx+a.dz*a.dz)-(b.dx*b.dx+b.dz*b.dz)||a.dx-b.dx||a.dz-b.dz);
+  for(const {dx,dz} of offsets){
+   if(state.planted>=maxVisible)break;
    const ix=cx+dx,iz=cz+dz;
-   if(hash(ix,iz) >= .10)continue;
+   if(hash(ix,iz) >= .24)continue;
    const x=(ix+(hash(ix,iz,1)-.5)*.65)*cellSize,z=(iz+(hash(ix,iz,2)-.5)*.65)*cellSize;
    if(Math.hypot(x-centerX,z-centerZ)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
    const src=sources[Math.floor(hash(ix,iz,3)*sources.length)];let instance,root;
