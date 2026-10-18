@@ -145,6 +145,21 @@ const masterForest=installMasterHDForest(B,scene,{
 });
 const livingWaters=installWildWaters(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY),getPosition:()=>camera.position,seed});
 window.__wildLivingWaters=livingWaters;
+if(START_AT_LAKE){
+ const probe=document.createElement("div");
+ probe.id="wild-lake-build-probe";
+ probe.style.cssText="position:fixed;top:170px;right:8px;z-index:99999;background:#142c24;color:#fff;padding:8px;border:2px solid #ffdc60;border-radius:8px;font:12px monospace;pointer-events:none";
+ probe.textContent="LAKE BUILD V5 · checking water";
+ document.body.appendChild(probe);
+ let checks=0;
+ const timer=setInterval(()=>{
+  const waterMeshes=scene.meshes.filter(m=>/lake|water|river|creek/i.test(m.name));
+  const active=waterMeshes.filter(m=>m.isEnabled()&&m.isVisible);
+  probe.textContent="LAKE V5 | active "+active.length+" / "+waterMeshes.length+" | "+active.slice(0,3).map(m=>m.name+":"+(m.material?.name||"none")).join(", ");
+  if(++checks>=30)clearInterval(timer);
+ },1000);
+}
+
 const autumnMaples=masterForest.maple;
 const nativeConifers=masterForest.conifer;
 window.__wildMasterForest=masterForest;
