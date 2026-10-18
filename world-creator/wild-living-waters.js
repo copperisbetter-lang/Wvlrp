@@ -132,10 +132,10 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    realWater.waveLength=.13;
    realWater.waveSpeed=.32;
    realWater.waveCount=18;
-   realWater.waterColor=new B.Color3(.045,.13,.105);
-   realWater.waterColor2=new B.Color3(.065,.15,.12);
-   realWater.colorBlendFactor=.23;
-   realWater.colorBlendFactor2=.32;
+   realWater.waterColor=new B.Color3(.018,.065,.045);
+   realWater.waterColor2=new B.Color3(.025,.085,.06);
+   realWater.colorBlendFactor=.82;
+   realWater.colorBlendFactor2=.82;
    realWater.bumpAffectsReflection=true;
    realWater.backFaceCulling=false;
    // Reflect a limited set of nearby shoreline scenery to preserve mobile FPS.
@@ -160,6 +160,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    });
    root.metadata={...(root.metadata||{}),reflectionObserver};
    for(const g of groups){g.mesh.material=realWater;g.mesh.setEnabled(false);}
+   window.__wildLakeMaterialStatus="reflective";
    // Streaming terrain can create a second blue surface. Suppress duplicate water meshes.
    const hideOtherWater=()=>{
      for(const mesh of scene.meshes){
@@ -176,7 +177,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    });
    root.metadata={...(root.metadata||{}),duplicateObserver};
    realWater.onCompiled=null;
- }).catch(err=>console.error("Reflective lake renderer unavailable; old flat lake hidden",err));
+ }).catch(err=>{window.__wildLakeMaterialStatus="FAILED: "+err.message;console.error("Reflective lake renderer unavailable; old flat lake hidden",err);});
  let frame=0;
  const observer=scene.onBeforeRenderObservable.add(()=>{
    const t=performance.now()*.001;
