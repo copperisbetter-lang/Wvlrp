@@ -134,7 +134,34 @@ if ratio_path.exists():
         mapping=json.loads(region_map.read_text())
         if mapping.get("mesh_vertex_count")!=len(face_body.data.vertices):
             raise RuntimeError("SAV4 face region map incompatible with basemesh topology")
-        print("SAV4_FACE_REGION_MAP_VALIDATED",region_map)
+        # Optional explicit calibrated vertex sets. Never infer a nose or mouth
+        # from head-height alone: that previously displaced eyes and teeth.
+        # Each region lists source-basemesh vertex IDs selected in Blender.
+        # Offsets are fractions of full body height in local mesh coordinates.
+        region_specs={
+            "nose_bridge":(0.0,0.0,-0.0004),
+            "nose_tip":(0.0,0.0005,0.0),
+            "mouth_corners":(0.0005*mouth_weight,0.0,0.0),
+            "upper_lip":(0.0,0.0002,0.0),
+            "lower_lip":(0.0,0.0003,0.0),
+        }
+        assigned=set()
+        for name,offset in region_specs.items():
+            indices=mapping.get("regions",{}).get(name,[])
+            if not isinstance(indices,list) or len(indices)!=len(set(indices)):
+                raise RuntimeError("SAV4 invalid calibrated vertex list: "+name)
+            for index in indices:
+                if type(index) is not int or index<0 or index>=len(coords):
+                    raise RuntimeError("SAV4 invalid calibrated vertex index: "+name)
+                if index in assigned:
+                    raise RuntimeError("SAV4 overlapping calibrated facial regions: "+name)
+                assigned.add(index)
+                delta=Vector(offset)*span
+                if delta.length>span*0.001:
+                    raise RuntimeError("SAV4 facial region offset over safety limit")
+                face_body.data.vertices[index].co+=delta
+            print("SAV4_CALIBRATED_REGION",name,len(indices))
+        print("SAV4_FACE_REGION_MAP_VALIDATED",region_map,len(assigned))
     print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
 else:
     print("SAV4_REFERENCE_NOT_MEASURED: keeping conservative facial pass")
