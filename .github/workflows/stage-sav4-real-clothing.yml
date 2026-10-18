@@ -1,0 +1,37 @@
+name: Stage SAV4 original MakeHuman clothing
+on:
+  push:
+    paths:
+      - world-creator/scripts/sav4_real_pack_fetch.py
+      - .github/workflows/stage-sav4-real-clothing.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch original garment meshes and textures
+        run: |
+          set -euo pipefail
+          python3 world-creator/scripts/sav4_real_pack_fetch.py | tee /tmp/sav4-real-clothing.log
+          grep -q SAV4_ORIGINAL_PACKS_READY /tmp/sav4-real-clothing.log
+      - name: Commit source assets
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/sav4-original-clothes
+          if ! git diff --cached --quiet; then
+            git commit -m "Stage original MakeHuman clothes and textures for SAV4 fitting"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Upload diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav4-original-clothing-log
+          path: /tmp/sav4-real-clothing.log
+          if-no-files-found: ignore
