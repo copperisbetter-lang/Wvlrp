@@ -74,6 +74,7 @@ scale=1.6764/height
 # Scaling individual vertex coordinates without the armature breaks skinning
 # and can collapse the exported GLB bounds.
 root.scale *= scale
+# Exporter must preserve hierarchy scale; verify world-space bounds after transform.
 bpy.context.view_layer.update()
 bpy.context.view_layer.update()
 check=[body.matrix_world@v.co for v in body.data.vertices]
@@ -94,6 +95,7 @@ doc=json.loads(raw[20:20+chunk_size])
 nodes=doc.get("nodes",[])
 meshes=doc.get("meshes",[])
 if not meshes:raise RuntimeError("SAV4 GLB has no meshes")
+if not doc.get("skins"):raise RuntimeError("SAV4 GLB missing skin rig")
 # Reject known bad model if exported positions are implausibly small.
 positions=[]
 for mesh in meshes:
