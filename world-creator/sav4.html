@@ -32,9 +32,10 @@ const wardrobe={
  casual:{label:'Casual',color:0x738474},tankIvory:{label:'Ivory tank'},tankSage:{label:'Sage tank'},miniBlack:{label:'Black mini'},miniRose:{label:'Rose mini'},bikiniCoral:{label:'Coral bikini'}
 };
 let avatar=null;
+let selectedOutfit='skirt';
 let realSkirt=null;
 const skirtLoader=new loaderModule.GLTFLoader();
-skirtLoader.load('./assets/sav4_makehuman_mini_skirt_01.glb',g=>{realSkirt=g.scene;if(avatar)window.outfit('skirt');},undefined,()=>{console.warn('MakeHuman skirt GLB not yet published to site assets');});
+skirtLoader.load('./assets/sav4_makehuman_mini_skirt_01.glb',g=>{realSkirt=g.scene;if(avatar&&selectedOutfit==='skirt')window.outfit('skirt');},undefined,()=>{console.warn('MakeHuman skirt GLB not yet published to site assets');});
 function measureSkirtReady(){return !!avatar&&!!realSkirt;}
 
 // Load real garment meshes only. A missing GLB is not a wearable outfit.
@@ -42,10 +43,11 @@ const garmentFiles={dress:'sav4-plaid-dress.glb',bikini:'sav4-bikini-blue.glb',s
 const fittedGarments=new Map();
 const loadingGarments=new Set();
 window.outfit=function(style){
+ selectedOutfit=style;
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(ready){clothes.add(ready);ready.visible=true;status.textContent=item.label+' — loaded 3D garment (fit requires inspection).';return;}
+ if(ready){clothes.add(ready);ready.visible=true;status.textContent=item.label+' — 3D garment loaded; check alignment and fit.';return;}
  status.textContent=item.label+' — realistic 3D garment not installed yet.';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
@@ -54,7 +56,7 @@ window.outfit=function(style){
   const model=g.scene;
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   fittedGarments.set(style,model);
-  window.outfit(style);
+  if(selectedOutfit===style)window.outfit(style);
  },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — garment GLB unavailable; no fake preview shown.';});
 };
 
@@ -72,6 +74,6 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(4.5,fittedSize.y*2.8));controls.update();
- window.outfit('skirt');
+ window.outfit(selectedOutfit);
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
 function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
