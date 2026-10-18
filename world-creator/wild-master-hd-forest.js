@@ -8,7 +8,7 @@ import {FOREST_CAMPS} from "./wild-master-forest-reservations.js";
 export function installMasterHDForest(B,scene,{seed,terrainHeight,excluded=()=>false,getPosition=()=>({x:0,z:0})}={}){
  validateForestTargets();
  if(FOREST_CAMPS.length!==100)throw Error("Forest campsite reservations incomplete");
- const radius=520,step=360;
+ const radius=650,step=360;
  let active=null,pending=null,disposed=false,lastX=NaN,lastZ=NaN;
  const state={
    campsites:FOREST_CAMPS.length,plantingRadiusMetres:radius,streaming:true,
@@ -26,9 +26,9 @@ export function installMasterHDForest(B,scene,{seed,terrainHeight,excluded=()=>f
    if(cx===lastX&&cz===lastZ)return;
    const batch={
      maple:installAutumnMaples(B,scene,{seed,terrainHeight,centerX:cx,centerZ:cz,
-       radius,density:.38,maxVisible:105,excluded}),
+       radius,cellSize:48,density:.72,maxVisible:280,excluded}),
      conifer:installNativeConiferScatter(B,scene,{seed,terrainHeight,centerX:cx,centerZ:cz,
-       radius,cellSize:65,maxVisible:65,excluded})
+       radius,cellSize:38,maxVisible:160,excluded})
    };
    pending=batch;
    Promise.all([batch.maple.ready,batch.conifer.ready]).then(()=>{
