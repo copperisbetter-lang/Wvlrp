@@ -20,13 +20,18 @@ const wardrobe={
  casual:{label:'Casual',color:0x738474}
 };
 let avatar=null;
+let realSkirt=null;
+const skirtLoader=new loaderModule.GLTFLoader();
+skirtLoader.load('./assets/sav4_makehuman_mini_skirt_01.glb',g=>{realSkirt=g.scene;if(avatar&&measureSkirtReady())window.outfit('skirt');},undefined,()=>{console.warn('MakeHuman skirt GLB not yet published to site assets');});
+function measureSkirtReady(){return !!avatar&&!!realSkirt;}
+
 window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  if(!avatar){status.textContent='Wardrobe preview active while SAV 4 loads.';}
  // Always show the selected procedural garment preview, even when GLB has no wardrobe meshes.
  if(avatar)avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
- const preview=garment(style);preview.scale.set(1,1,1);preview.traverse(o=>{if(o.isMesh){o.material.depthTest=false;o.renderOrder=999;}});clothes.add(preview);status.textContent=item.label+' preview visible (approximate fit; not rigged).';
+ const preview=(style==='skirt'&&realSkirt)?realSkirt.clone(true):garment(style);preview.scale.set(1,1,1);preview.traverse(o=>{if(o.isMesh){o.material.depthTest=false;o.renderOrder=999;}});if(style==='skirt'&&realSkirt){const bounds=new T.Box3().setFromObject(avatar),w=bounds.getSize(new T.Vector3()).x;const skirtBox=new T.Box3().setFromObject(preview),sw=skirtBox.getSize(new T.Vector3()).x;if(sw>0)preview.scale.setScalar(Math.max(.65,Math.min(1.4,w*.9/sw)));}clothes.add(preview);status.textContent=item.label+' preview visible (approximate fit; not rigged).';
 };
 loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  avatar=g.scene;body.add(avatar);
