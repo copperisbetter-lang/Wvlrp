@@ -95,6 +95,20 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  // SAV4 inspection material correction: target only named hair/eye geometry.
  const blonde=new T.Color(0xb9a27c), irisBlue=new T.Color(0x9fc4d8), scleraWhite=new T.Color(0xf0ede8);
  avatar.traverse(o=>{if(!o.isMesh)return;const name=o.name.toLowerCase();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach((m,i)=>{if(!m)return;const mn=(m.name||'').toLowerCase();const isHair=/hair|scalp|strand|fringe|bang|ponytail/.test(name+' '+mn);const isEye=/eye|iris|sclera|cornea|pupil/.test(name+' '+mn);if(!isHair&&!isEye)return;const clone=m.clone();if(isHair){clone.color.copy(blonde);if(clone.map){clone.map=null;}clone.roughness=.88;}else if(/sclera|eyewhite|eye_white/.test(name+' '+mn)){clone.color.copy(scleraWhite);clone.emissive?.set(0x000000);}else if(/iris|eye/.test(name+' '+mn)&&!/lash|brow|socket|lid|pupil/.test(name+' '+mn)){clone.color.copy(irisBlue);clone.emissive?.set(0x000000);clone.emissiveIntensity=0;if(clone.map)clone.map=null;}else return;clone.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=clone;else o.material=clone;});});
+ // Temporary reversible eye-position trial: only actual eye geometry, never lids or face.
+ const eyeMeshes=[];
+ avatar.traverse(o=>{
+  if(!o.isMesh)return;
+  const tag=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m?.name||'').join(' '):(o.material?.name||''))).toLowerCase();
+  if(!/(eyeball|sclera|iris|cornea|pupil|eye[_ .-]?(left|right|l|r|white))/.test(tag))return;
+  if(/eyelid|eyelash|brow|socket|skin|face|head/.test(tag))return;
+  eyeMeshes.push({object:o,base:o.position.clone()});
+ });
+ const eyeUp=.012,eyeForward=.018;
+ // Source MakeHuman models generally face +Z in this viewer; inspect before final bake.
+ for(const e of eyeMeshes){e.object.position.y=e.base.y+eyeUp;e.object.position.z=e.base.z+eyeForward;}
+ console.info('SAV4 eye-position trial',eyeMeshes.map(e=>e.object.name),eyeUp,eyeForward);
+ window.resetEyeTrial=()=>{for(const e of eyeMeshes)e.object.position.copy(e.base);};
  // Highlight absent facial parts in diagnostics instead of pretending recoloring creates geometry.
  const faceParts=[];avatar.traverse(o=>{if(o.isMesh){const n=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m?.name).join(' '):o.material?.name||'')).toLowerCase();if(/iris|sclera|eyeball|eye[_ .-]/.test(n))faceParts.push(o.name);}});
  console.info('SAV4 facial eye mesh candidates',faceParts);
