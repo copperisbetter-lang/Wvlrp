@@ -7,9 +7,9 @@
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
 <button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details open style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
 <label>Crop bottom <input id="blouseCrop" type="range" min="0" max="0.75" step="0.01" value="0.35" oninput="window.refitBlouse?.()"> <output id="blouseCropValue">35%</output></label><small>0% restores the full blouse. Increase to raise the straight hem above the back opening.</small>
-<label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="1.15" oninput="window.refitBlouse?.()"></label>
-<label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="1.5" oninput="window.refitBlouse?.()"></label>
-<label>Blouse forward/back <input id="blouseDepth" type="range" min="-2" max="2" step="0.005" value="0" oninput="window.refitBlouse?.()"></label>
+<label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="4.6" oninput="window.refitBlouse?.()"></label>
+<label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="5.67" oninput="window.refitBlouse?.()"></label>
+<label>Blouse forward/back <input id="blouseDepth" type="range" min="-2" max="2" step="0.005" value="0.04" oninput="window.refitBlouse?.()"></label>
 <label>Blouse rotate <input id="blouseYaw" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse tilt forward/back <input id="blousePitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
@@ -125,10 +125,7 @@ window.showBlouse=()=>{
  loader.load('./assets/sav4-peasant-blouse.glb',g=>{
   blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);
   blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;m.clippingPlanes=[blouseHemPlane];m.clipShadows=true;m.needsUpdate=true;}}});
-  if(!blouseRestored){
-   const b=new T.Box3().setFromObject(avatar),h=b.max.y-b.min.y;
-   document.getElementById('blouseHeight').value=String(b.min.y+h*.86);
-  }
+  // Use Doug's saved blouse defaults unless a browser fit was restored.
   blouseGroup.visible=blouseWanted;window.refitBlouse();
  },undefined,e=>{blouseLoading=false;document.getElementById('blouseStatus').textContent='Blouse file failed to load. Tap Put on blouse to retry.';console.error(e);});
 };
