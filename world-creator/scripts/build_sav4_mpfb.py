@@ -30,14 +30,8 @@ if not skin:raise RuntimeError("SAV4 skin missing")
 HumanService.set_character_skin(skin,human,skin_type="GAMEENGINE")
 rig=HumanService.add_builtin_rig(human,"mixamo")
 if rig is None:raise RuntimeError("SAV4 rig missing")
-for sub,names,kind in [
- ("eyes",["low-poly.mhclo"],"Eyes"),
- ("eyebrows",["eyebrow001.mhclo"],"Eyebrows"),
- ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
- # Omit teeth proxy until its alignment with the head is validated.
- # Misaligned teeth and oral helpers caused visible facial artifacts.
-]:
- add_asset(human,sub,names,kind)
+# Facial proxies previously caused severe eye protrusion and mouth cutouts.
+# Export the intact base face first; add fitted proxies only after QA.
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
 tint(hair,(.76,.68,.52),.96)
@@ -59,8 +53,12 @@ for obj in root.children_recursive:
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
-for m in list(body.modifiers):
- if m.type=="MASK":body.modifiers.remove(m)
+for obj in [root,*root.children_recursive]:
+ if obj.type=="MESH":
+  for m in list(obj.modifiers):
+   if m.type=="MASK":obj.modifiers.remove(m)
+# All facial skin polygons must remain visible without proxy cutout masks.
+print("SAV4_FACE_PROXY_FREE",len(body.data.vertices))
 # Preserve MPFB topology; no anatomical add-ons or disconnected geometry.
 # Scale the character to the approved 5 ft 6 in (1.6764 m).
 bpy.context.view_layer.update()
