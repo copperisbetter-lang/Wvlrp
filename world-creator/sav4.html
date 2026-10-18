@@ -6,6 +6,7 @@
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
 <button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details open style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
+<label>Crop bottom <input id="blouseCrop" type="range" min="0" max="0.75" step="0.01" value="0.35" oninput="window.refitBlouse?.()"> <output id="blouseCropValue">35%</output></label><small>0% restores the full blouse. Increase to raise the straight hem above the back opening.</small>
 <label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="1.15" oninput="window.refitBlouse?.()"></label>
 <label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="1.5" oninput="window.refitBlouse?.()"></label>
 <label>Blouse forward/back <input id="blouseDepth" type="range" min="-2" max="2" step="0.005" value="0" oninput="window.refitBlouse?.()"></label>
@@ -78,6 +79,8 @@ const wardrobe={
 };
 let avatar=null;
 
+renderer.localClippingEnabled=true;
+const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);
 const blouseGroup=new T.Group();scene.add(blouseGroup);
 let blouseModel=null,blouseLoading=false,blouseWanted=true;
 const blouseFields={size:'blouseSize',heightMeters:'blouseHeight',forwardMeters:'blouseDepth',yawDegrees:'blouseYaw',pitchDegrees:'blousePitch',rollDegrees:'blouseRoll'};
@@ -89,7 +92,9 @@ try{
   for(const [k,id] of Object.entries(blouseFields)){
    const el=document.getElementById(id),v=fit[k];el.min=String(Math.min(Number(el.min),v));el.max=String(Math.max(Number(el.max),v));el.value=String(v);
   }
-  document.getElementById('blouseFlip').checked=fit.flipped===true;blouseRestored=true;
+  document.getElementById('blouseFlip').checked=fit.flipped===true;
+  if(typeof fit.cropBottomFraction==='number'&&Number.isFinite(fit.cropBottomFraction))document.getElementById('blouseCrop').value=String(Math.max(0,Math.min(.75,fit.cropBottomFraction)));
+  blouseRestored=true;
  }
 }catch(e){console.warn('Could not restore blouse fit',e);}
 window.refitBlouse=()=>{
@@ -102,6 +107,12 @@ window.refitBlouse=()=>{
  const bounds=new T.Box3().setFromObject(blouseModel),c=bounds.getCenter(new T.Vector3());
  blouseModel.position.set(center.x-c.x,val('blouseHeight')-bounds.max.y,center.z-c.z+val('blouseDepth'));
  blouseModel.updateMatrixWorld(true);
+ // Crop only this garment, after its fit is applied. Original mesh and fit stay intact.
+ const fullBounds=new T.Box3().setFromObject(blouseModel);
+ const crop=val('blouseCrop');
+ const hemY=fullBounds.min.y+(fullBounds.max.y-fullBounds.min.y)*crop;
+ blouseHemPlane.constant=-hemY;
+ document.getElementById('blouseCropValue').textContent=Math.round(crop*100)+'%';
  document.getElementById('blouseStatus').textContent=(blouseWanted?'Blouse on. ':'Blouse removed. ')+'Size '+val('blouseSize').toFixed(2)+'; height '+val('blouseHeight').toFixed(2)+' m; forward '+(val('blouseDepth')*100).toFixed(1)+' cm; rotation '+val('blouseYaw')+' / '+val('blousePitch')+' / '+val('blouseRoll')+'°. Fit still needs front, side and back inspection.';
 };
 window.removeBlouse=()=>{blouseWanted=false;blouseGroup.visible=false;document.getElementById('blouseStatus').textContent='Blouse removed; fit retained.';};
@@ -113,7 +124,7 @@ window.showBlouse=()=>{
  blouseLoading=true;document.getElementById('blouseStatus').textContent='Loading real peasant blouse…';
  loader.load('./assets/sav4-peasant-blouse.glb',g=>{
   blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);
-  blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;}}});
+  blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;m.clippingPlanes=[blouseHemPlane];m.clipShadows=true;m.needsUpdate=true;}}});
   if(!blouseRestored){
    const b=new T.Box3().setFromObject(avatar),h=b.max.y-b.min.y;
    document.getElementById('blouseHeight').value=String(b.min.y+h*.86);
@@ -124,6 +135,7 @@ window.showBlouse=()=>{
 window.saveBlouseFit=()=>{
  const fit={version:1};for(const [k,id] of Object.entries(blouseFields))fit[k]=Number(document.getElementById(id).value);
  fit.flipped=document.getElementById('blouseFlip').checked;
+ fit.cropBottomFraction=Number(document.getElementById('blouseCrop').value);
  const box=document.getElementById('blouseCoordinates');box.hidden=false;box.value=JSON.stringify(fit,null,2);
  try{localStorage.setItem(blouseKey,JSON.stringify(fit));document.getElementById('blouseStatus').textContent='Blouse fit saved on this browser.';}
  catch(e){document.getElementById('blouseStatus').textContent='Browser storage unavailable. Keep a copy of these coordinates.';}
