@@ -30,7 +30,7 @@ export function installMasterHDForest(B,scene,{seed,terrainHeight,excluded=()=>f
      maple:installAutumnMaples(B,scene,{seed,terrainHeight,centerX:cx,centerZ:cz,
        radius,cellSize:20,density:.72,maxVisible:180,excluded}),
      conifer:installNativeConiferScatter(B,scene,{seed,terrainHeight,centerX:cx,centerZ:cz,
-       radius,cellSize:28,maxVisible:70,excluded})
+       radius,cellSize:28,maxVisible:95,excluded})
    };
    pending=batch;
    Promise.all([batch.maple.ready,batch.conifer.ready]).then(()=>{

@@ -70,7 +70,7 @@ export function installAutumnMaples(B,scene,{
     state.sourceRoots=sourceRoots.length;
     // Imported GLB nodes remain disabled until explicitly enabled on each clone.
     // Scatter deterministically across terrain cells, respecting campsite and trail exclusions.
-    const palettes=["#b71e1c","#db481c","#ec7922","#a94620","#7e4829","#e69b34"];
+    const palettes=["#477b38","#568b42","#3f7436","#66964c","#477f48","#5c8b3b"];
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
     const cells=Math.ceil(radius/cellSize);
