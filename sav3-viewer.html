@@ -110,7 +110,8 @@ function findFitMeshes(){
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
  if(!fitMeshes.length){
   setFitMode(false);$('fitdrag').disabled=true;
-  $('fitstatus').textContent='No independently named anatomy node was found. Check exported GLB node names before enabling finger movement.';
+  const candidates=Array.from(v.model?.getNodes?.()||[]).filter(n=>n.mesh).map(n=>String(n.name||'(unnamed)')); 
+  $('fitstatus').textContent='No independent attachment node found. Exported mesh nodes: '+(candidates.join(' | ')||'none exposed')+'. This model must be re-exported with an independently named mesh.';
  }else{
   $('fitdrag').disabled=false;applyFit();
   $('fitstatus').textContent='Movable attachment: '+fitMeshes.map(x=>x.name).join(', ')+'. Body stays locked.';
