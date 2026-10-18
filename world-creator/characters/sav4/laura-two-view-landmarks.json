@@ -1,0 +1,81 @@
+{
+  "method": "Manual two-view image-space landmarks",
+  "source_commit": "c2f031e2976a62dc7f097ed3c09fd101069d69c2",
+  "units": "pixels",
+  "calibration_status": "uncalibrated perspective references; not direct 3D vertex targets",
+  "front_three_quarter": {
+    "image": "5458.jpg",
+    "size": [
+      1536,
+      864
+    ],
+    "eye_centers": [
+      [
+        687,
+        359
+      ],
+      [
+        816,
+        333
+      ]
+    ],
+    "nose_tip": [
+      758,
+      427
+    ],
+    "mouth_center": [
+      771,
+      488
+    ],
+    "chin": [
+      776,
+      577
+    ],
+    "mouth_corners": [
+      [
+        726,
+        488
+      ],
+      [
+        824,
+        475
+      ]
+    ],
+    "projected_eye_separation_approx": 132,
+    "projected_mouth_width_approx": 99,
+    "eye_to_nose_vertical_approx": 81,
+    "nose_to_mouth_vertical_approx": 61,
+    "mouth_to_chin_vertical_approx": 89
+  },
+  "profile": {
+    "image": "5459.jpg",
+    "size": [
+      1536,
+      831
+    ],
+    "forehead_bangs": [
+      889,
+      287
+    ],
+    "nose_tip": [
+      831,
+      387
+    ],
+    "lip_contour": [
+      837,
+      455
+    ],
+    "chin_contour": [
+      841,
+      521
+    ],
+    "jaw_back": [
+      1028,
+      537
+    ],
+    "ear_center": [
+      1086,
+      388
+    ]
+  }
+}
