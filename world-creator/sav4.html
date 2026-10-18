@@ -1,5 +1,8 @@
 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:74dvh}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('dress')">Plaid dress</button><button onclick="outfit('bikini')">Bikini</button><button onclick="outfit('shorts')">Shirt & shorts</button><button onclick="outfit('skirt')">Skirt & tank</button><button onclick="outfit('casual')">Casual</button><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">import * as T from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';const scene=new T.Scene();scene.background=new T.Color(0x24352f);scene.add(new T.HemisphereLight(0xffffff,0x66746e,2));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(2,4,5);scene.add(sun);const camera=new T.PerspectiveCamera(38,1,.01,50);camera.position.set(0,1.25,3.8);const renderer=new T.WebGLRenderer({antialias:true});document.getElementById('stage').append(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.enableDamping=true;const skin=new T.MeshStandardMaterial({color:0xecc6b2,roughness:.84}),hair=new T.MeshStandardMaterial({color:0xbca481,roughness:.88}),eye=new T.MeshStandardMaterial({color:0x9dc6db}),dressMat=new T.MeshStandardMaterial({color:0x9c6468}),blue=new T.MeshStandardMaterial({color:0x53768c}),white=new T.MeshStandardMaterial({color:0xe2ddd3}),pink=new T.MeshStandardMaterial({color:0xb46c86});const body=new T.Group();scene.add(body);
 const clothes=new T.Group();scene.add(clothes);
+const skirtFabric=new T.MeshStandardMaterial({color:0x866b86,roughness:.94,side:T.DoubleSide});
+function makeMiniSkirt(){const group=new T.Group();const skirt=new T.Mesh(new T.CylinderGeometry(.215,.29,.29,32,1,true),skirtFabric);skirt.position.y=.89;group.add(skirt);const waist=new T.Mesh(new T.CylinderGeometry(.217,.217,.045,32),skirtFabric);waist.position.y=1.035;group.add(waist);return group;}
+
 const loaderModule=await import('three/addons/loaders/GLTFLoader.js');
 const loader=new loaderModule.GLTFLoader();
 const status=document.getElementById('note');status.textContent='Loading SAV 4 real GLB…';
@@ -19,7 +22,7 @@ window.outfit=function(style){
  const named=[];
  avatar.traverse(o=>{if(o.isMesh && /dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))named.push(o)});
  if(named.length){named.forEach(o=>o.visible=o.name.toLowerCase().includes(style));status.textContent=item.label+' selected';}
- else status.textContent='SAV 4 GLB loaded. '+item.label+' requested; fitted wardrobe meshes not yet included in GLB.';
+ else if(style==='skirt'){const mesh=makeMiniSkirt();clothes.add(mesh);status.textContent='Mini skirt preview fitted approximately; rigged garment export still needed.';}else status.textContent='SAV 4 GLB loaded. '+item.label+' requested; fitted wardrobe meshes not yet included in GLB.';
 };
 loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  avatar=g.scene;body.add(avatar);
@@ -31,6 +34,7 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  if(size.y<=0)throw Error('SAV 4 has invalid model bounds');
  const longest=Math.max(size.x,size.y,size.z);if(size.y<longest*.7){if(size.z>=size.x)avatar.rotation.x=-Math.PI/2;else avatar.rotation.z=Math.PI/2;avatar.updateMatrixWorld(true);}const upright=new T.Box3().setFromObject(avatar),uprightSize=upright.getSize(new T.Vector3());if(uprightSize.y>0){const factor=1.6764/uprightSize.y;avatar.scale.multiplyScalar(factor);avatar.updateMatrixWorld(true);}console.info('SAV4 bounds',size,'upright',uprightSize);
  const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
+ clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.58,Math.max(2.7,fittedSize.y*1.8));controls.update();
  status.textContent='SAV 4 model fitted: '+fittedSize.x.toFixed(2)+' × '+fittedSize.y.toFixed(2)+' × '+fittedSize.z.toFixed(2)+'m (original '+size.x.toFixed(2)+'/'+size.y.toFixed(2)+'/'+size.z.toFixed(2)+').';
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
