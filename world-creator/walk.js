@@ -58,6 +58,8 @@ const betaParams=new URLSearchParams(window.location.search);
 const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
+const START_AT_LAKE=betaParams.get("spawn")==="lake";
+const LAKE_SPAWN=Object.freeze({x:-165,z:-120});
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const START_AT_PHOTO_RANGER=betaParams.get("spawn")==="ranger-photo";
 const CAITLYN_PATROL=betaParams.get("caitlyn")==="patrol";
@@ -127,11 +129,11 @@ sun.diffuse=new B.Color3(1,.96,.85);
 sun.intensity=1.55;
 const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
 const camera=new B.FreeCamera("first-person explorer",
-  new B.Vector3(START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.x:START_AT_RANGER?RANGER_SPAWN.x:START_AT_MATERIALS?MATERIAL_YARD.spawnX:0,
-    START_AT_PHOTO_RANGER?cabinGrade(PHOTO_RANGER_SPAWN.x,PHOTO_RANGER_SPAWN.z,seed)+EYE_HEIGHT:
+  new B.Vector3(START_AT_LAKE?LAKE_SPAWN.x:START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.x:START_AT_RANGER?RANGER_SPAWN.x:START_AT_MATERIALS?MATERIAL_YARD.spawnX:0,
+    START_AT_LAKE?flatlandHeight(LAKE_SPAWN.x,LAKE_SPAWN.z,seed,cabinY)+EYE_HEIGHT:START_AT_PHOTO_RANGER?cabinGrade(PHOTO_RANGER_SPAWN.x,PHOTO_RANGER_SPAWN.z,seed)+EYE_HEIGHT:
     START_AT_RANGER?cabinGrade(RANGER_SPAWN.x,RANGER_SPAWN.z,seed)+EYE_HEIGHT:
       START_AT_MATERIALS?cabinGrade(MATERIAL_YARD.spawnX,MATERIAL_YARD.spawnZ,seed)+EYE_HEIGHT:START_AT_COMPARE?cabinGrade(0,274,seed)+EYE_HEIGHT:cabinY+EYE_HEIGHT,
-    START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.z:START_AT_RANGER?RANGER_SPAWN.z:START_AT_MATERIALS?MATERIAL_YARD.spawnZ:START_AT_COMPARE?274:16),scene);
+    START_AT_LAKE?LAKE_SPAWN.z:START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.z:START_AT_RANGER?RANGER_SPAWN.z:START_AT_MATERIALS?MATERIAL_YARD.spawnZ:START_AT_COMPARE?274:16),scene);
 /* Autumn maples are loaded independently; missing assets never break walking.
  * Campsite/structure exclusion is conservative until exact plot polygons exist.
  */
@@ -173,7 +175,7 @@ scene.onBeforeRenderObservable.add(()=>{
 
 
 camera.minZ=.07;camera.maxZ=2900;camera.fov=1.13;
-camera.rotation.set(0,START_AT_PHOTO_RANGER||START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
+camera.rotation.set(0,START_AT_LAKE?Math.PI:START_AT_PHOTO_RANGER||START_AT_RANGER||START_AT_COMPARE||START_AT_MATERIALS?0:Math.PI,0);
 scene.activeCamera=camera;
 // Clean photographic landscape test: retire every blocky distant ridge,
 // rock wall and skyline mesh. Keep only the real sky, photographic ground,
@@ -300,8 +302,8 @@ function addLandscape(x,z){
   return result;
 }
 let habitat;
-try{habitat=addLandscape(START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileX:START_AT_RANGER?RANGER_SPAWN.tileX:START_AT_MATERIALS?MATERIAL_YARD.x:0,
-    START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileZ:START_AT_RANGER?RANGER_SPAWN.tileZ:START_AT_MATERIALS?MATERIAL_YARD.z:START_AT_COMPARE?314:0);}
+try{habitat=addLandscape(START_AT_LAKE?LAKE_SPAWN.x:START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileX:START_AT_RANGER?RANGER_SPAWN.tileX:START_AT_MATERIALS?MATERIAL_YARD.x:0,
+    START_AT_LAKE?LAKE_SPAWN.z:START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.tileZ:START_AT_RANGER?RANGER_SPAWN.tileZ:START_AT_MATERIALS?MATERIAL_YARD.z:START_AT_COMPARE?314:0);}
 catch(err){status("Forest render problem: "+err.message);console.error(err);}
 // Greenfield rebuild: retire every old forest/village tree and forest-floor
 // prop from the LIVE scene, not from the source library. They can be reused
@@ -785,6 +787,11 @@ if(START_AT_MATERIALS){
   // The comparison entry already teleported the player to its field.
   // Do NOT reset to Hearthside Cabin after the first render.
   document.querySelector(".brand small").textContent="Eight-cabin test field · north of Hearthside";
+}else if(START_AT_LAKE){
+  camera.position.set(LAKE_SPAWN.x,cameraGround(LAKE_SPAWN.x,LAKE_SPAWN.z)+EYE_HEIGHT,LAKE_SPAWN.z);
+  camera.rotation.set(0,Math.PI,0);
+  document.querySelector(".brand small").textContent="Living Lake · shoreline inspection";
+  status("Living Lake · water should be straight ahead.");
 }else if(START_AT_PHOTO_RANGER){
   // Direct URL ?spawn=ranger-photo must NEVER reset to Hearthside Cabin.
   goToPhotoRanger();
@@ -848,7 +855,7 @@ window.__wildDiagnostics=()=>({
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,
    communityPaths:habitat?.communityPaths??0,
-   spawnLocation:START_AT_PHOTO_RANGER?"ranger-photo":START_AT_RANGER?"ranger":"hearthside",
+   spawnLocation:START_AT_LAKE?"lake":START_AT_PHOTO_RANGER?"ranger-photo":START_AT_RANGER?"ranger":"hearthside",
     betaMode:BETA_MODE,
     multiplayerPeers:multiplayer?.getPeerCount()??0,
     multiplayerStatus:multiplayer?.getStatus()??(BETA_MODE?"connecting":"disabled"),
