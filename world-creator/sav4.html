@@ -41,15 +41,33 @@ function measureSkirtReady(){return !!avatar&&!!realSkirt;}
 // Load real garment meshes only. A missing GLB is not a wearable outfit.
 const garmentFiles={dress:'sav4-plaid-dress.glb',bikini:'sav4-bikini-blue.glb',shorts:'sav4-shorts-shirt.glb',skirt:'sav4-mini-denim.glb',casual:'sav4-casual.glb',tankIvory:'sav4-tank-ivory.glb',tankSage:'sav4-tank-sage.glb',miniBlack:'sav4-mini-black.glb',miniRose:'sav4-mini-rose.glb',bikiniCoral:'sav4-bikini-coral.glb'};
 const fittedGarments=new Map();
-function alignGarment(model){if(!avatar)return;avatar.updateMatrixWorld(true);const b=new T.Box3().setFromObject(avatar),s=b.getSize(new T.Vector3()),m=new T.Box3().setFromObject(model),ms=m.getSize(new T.Vector3());if(ms.y>0&&ms.y<s.y*.1){console.warn('SAV4 garment implausibly short',ms)}const scale=avatar.scale.x;model.scale.setScalar(scale);model.rotation.copy(avatar.rotation);model.position.copy(avatar.position);model.updateMatrixWorld(true);console.info('SAV4 garment alignment',s,ms,scale);}
-
+function alignGarment(model,style){
+ if(!avatar)return;
+ // The garment GLBs were exported in a different scene transform from the viewer.
+ // Fit against the rendered body bounds, not raw asset origins.
+ model.position.set(0,0,0);model.rotation.set(0,0,0);model.scale.setScalar(1);
+ model.updateMatrixWorld(true);avatar.updateMatrixWorld(true);
+ const ab=new T.Box3().setFromObject(avatar),as=ab.getSize(new T.Vector3());
+ const gb=new T.Box3().setFromObject(model),gs=gb.getSize(new T.Vector3());
+ if(gs.x<.001||gs.y<.001||gs.z<.001){status.textContent='Invalid garment dimensions — needs rebuild';return;}
+ const skirt=/skirt|mini/i.test(style),tank=/tank/i.test(style),bikini=/bikini/i.test(style);
+ const targetWidth=as.x*(skirt?.43:tank?.43:bikini?.44:.47);
+ const factor=targetWidth/gs.x;
+ model.scale.setScalar(factor);model.updateMatrixWorld(true);
+ const fitted=new T.Box3().setFromObject(model),fs=fitted.getSize(new T.Vector3());
+ const ac=ab.getCenter(new T.Vector3()),fc=fitted.getCenter(new T.Vector3());
+ const targetY=ab.min.y+as.y*(skirt?.52:tank?.69:bikini?.62:.60);
+ model.position.set(ac.x-fc.x,targetY-fc.y,ac.z-fc.z);
+ model.updateMatrixWorld(true);
+ console.info('SAV4 measured garment bounds',style,gs,fs,'body',as);
+}
 const loadingGarments=new Set();
 window.outfit=function(style){
  selectedOutfit=style;
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(ready){alignGarment(ready);clothes.add(ready);ready.visible=true;status.textContent=item.label+' — 3D garment loaded; check alignment and fit.';return;}
+ if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent=item.label+' — 3D garment loaded; check alignment and fit.';return;}
  status.textContent=item.label+' — realistic 3D garment not installed yet.';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
