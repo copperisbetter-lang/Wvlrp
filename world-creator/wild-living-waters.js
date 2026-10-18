@@ -116,26 +116,26 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  });
  loadWaterLibrary().then(()=>{
    if(disposed)return;
-   realWater=new B.WaterMaterial("Babylon realistic reflective lake",scene,new B.Vector2(256,256));
+   realWater=new B.WaterMaterial("Babylon realistic reflective lake",scene,new B.Vector2(512,512));
    waterBump=new B.Texture(bumpURL,scene);
-   waterBump.uScale=5;waterBump.vScale=5;
+   waterBump.uScale=2;waterBump.vScale=2;
    realWater.bumpTexture=waterBump;
    realWater.disableLighting=false;
    realWater.alpha=1;
    realWater.windForce=5;
    realWater.windDirection=new B.Vector2(.7,.3);
    realWater.waveHeight=.12;
-   realWater.bumpHeight=.16;
-   realWater.waveLength=.13;
-   realWater.waveSpeed=.32;
+   realWater.bumpHeight=.35;
+   realWater.waveLength=.35;
+   realWater.waveSpeed=.55;
    realWater.waveCount=18;
-   realWater.waterColor=new B.Color3(.025,.16,.105);
-   realWater.waterColor2=new B.Color3(.035,.18,.115);
-   realWater.colorBlendFactor=.12;
-   realWater.colorBlendFactor2=.12;
+   realWater.waterColor=new B.Color3(.08,.24,.19);
+   realWater.waterColor2=new B.Color3(.10,.27,.22);
+   realWater.colorBlendFactor=.035;
+   realWater.colorBlendFactor2=.045;
    realWater.bumpAffectsReflection=true;
    realWater.useWorldCoordinatesForWaveDeformation=true;
-   realWater.specularColor=new B.Color3(.12,.18,.14);
+   realWater.specularColor=new B.Color3(.85,.9,.88);
    realWater.backFaceCulling=false;
    // Reflect a limited set of nearby shoreline scenery to preserve mobile FPS.
    const reflected=new Set();
@@ -153,14 +153,15 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      }
    };
    refreshReflections();
+   window.__wildLakeReflectionCount=reflected.size;
    // Re-check as streamed terrain and trees arrive.
    let refreshFrames=0;
    const reflectionObserver=scene.onBeforeRenderObservable.add(()=>{
-     if(++refreshFrames%240===0)refreshReflections();
+     if(++refreshFrames%240===0){refreshReflections();window.__wildLakeReflectionCount=reflected.size;}
    });
    root.metadata={...(root.metadata||{}),reflectionObserver};
    for(const g of groups){g.mesh.material=realWater;g.mesh.setEnabled(false);}
-   window.__wildLakeMaterialStatus="reflective";
+   window.__wildLakeMaterialStatus="reflective "+reflected.size+" objects, bump "+(waterBump.isReady()?"ready":"loading");
    // Streaming terrain can create a second blue surface. Suppress duplicate water meshes.
    const hideOtherWater=()=>{
      for(const mesh of scene.meshes){
