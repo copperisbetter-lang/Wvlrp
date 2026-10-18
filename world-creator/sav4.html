@@ -155,7 +155,7 @@ function animatePerformance(){
 }
 function makeTree(points,depth=0){if(!points.length)return null;const axis=depth%3;points.sort((a,b)=>a.p.getComponent(axis)-b.p.getComponent(axis));const mid=points.length>>1;return{item:points[mid],axis,left:makeTree(points.slice(0,mid),depth+1),right:makeTree(points.slice(mid+1),depth+1)};}
 function nearestTree(node,p,best={d:Infinity,item:null}){if(!node)return best;const dist=node.item.p.distanceToSquared(p);if(dist<best.d){best.d=dist;best.item=node.item;}const split=p.getComponent(node.axis)-node.item.p.getComponent(node.axis);nearestTree(split<0?node.left:node.right,p,best);if(split*split<best.d)nearestTree(split<0?node.right:node.left,p,best);return best;}
-function restoreWear(model){if(!model)return;model.traverse(o=>{if(o.isMesh&&o.userData.fitBase){o.geometry.attributes.position.array.set(o.userData.fitBase);o.geometry.attributes.position.needsUpdate=true;}});}
+function restoreWear(model){if(!model)return;model.traverse(o=>{if(o.isMesh&&o.userData.fitBase){o.geometry.attributes.position.array.set(o.userData.fitBase);o.geometry.attributes.position.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();}});}
 function nearbyTree(node,p,best=[]){if(!node)return best;const d=node.item.p.distanceToSquared(p);if(best.length<8||d<best[best.length-1].d){best.push({d,item:node.item});best.sort((a,b)=>a.d-b.d);if(best.length>8)best.pop();}const split=p.getComponent(node.axis)-node.item.p.getComponent(node.axis);nearbyTree(split<0?node.left:node.right,p,best);if(best.length<8||split*split<best[best.length-1].d)nearbyTree(split<0?node.right:node.left,p,best);return best;}
 function bindWear(model){
  if(!rigReady||!faceMesh||!model)return;
@@ -294,7 +294,8 @@ function alignGarment(model,style){
  // A mini should occupy the hip region, not the full avatar width or crotch.
  const sizeControl=document.getElementById('skirtSize');
  const heightControl=document.getElementById('skirtHeight');
- const desiredWidth=bodySize.y*.235*Number(sizeControl?.value||4.5);
+ // Saved size coordinates use the approved height, not pose-dependent skinned bounds.
+ const desiredWidth=1.6764*.235*Number(sizeControl?.value||4.5);
  const scale=desiredWidth/Math.max(dims.x,dims.z);
  // Keep size independent of rotation, then refit the rotated bounds to the waist.
  const angle=id=>Number(document.getElementById(id)?.value||0)*Math.PI/180;
