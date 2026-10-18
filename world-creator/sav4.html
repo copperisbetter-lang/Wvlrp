@@ -9,7 +9,7 @@ if(style==='skirt'||style==='shorts'||style==='casual'){g.add(cylinder(.18,.20,.
 if(style==='shorts'||style==='casual'){g.add(cylinder(.22,.23,.18,.96,mat));for(const x of [-.115,.115])g.add(cylinder(.115,.12,.24,.83,mat,x));}
 if(style==='bikini'){g.add(cylinder(.175,.19,.16,1.40,mat));g.add(cylinder(.20,.21,.13,.97,mat));}
 return g}
-const loaderModule=await import('three/addons/loaders/GLTFLoader.js');
+window.outfit=()=>{};const loaderModule=await import('three/addons/loaders/GLTFLoader.js');
 const loader=new loaderModule.GLTFLoader();
 const status=document.getElementById('note');status.textContent='Loading SAV 4 real GLB…';
 const wardrobe={
@@ -23,10 +23,10 @@ let avatar=null;
 window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
- if(!avatar){status.textContent='Loading SAV 4 GLB…';return}
+ if(!avatar){status.textContent='Wardrobe preview active while SAV 4 loads.';}
  // Always show the selected procedural garment preview, even when GLB has no wardrobe meshes.
- avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
- const preview=garment(style);preview.traverse(o=>{if(o.isMesh){o.material.depthTest=false;o.renderOrder=999;}});clothes.add(preview);status.textContent=item.label+' preview visible (approximate fit; not rigged).';
+ if(avatar)avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
+ const preview=garment(style);preview.scale.set(1,1,1);preview.traverse(o=>{if(o.isMesh){o.material.depthTest=false;o.renderOrder=999;}});clothes.add(preview);status.textContent=item.label+' preview visible (approximate fit; not rigged).';
 };
 loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  avatar=g.scene;body.add(avatar);
@@ -42,6 +42,6 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.58,Math.max(2.7,fittedSize.y*1.8));controls.update();
- window.outfit('skirt');status.textContent='SAV 4 model fitted; mini skirt preview selected. '+fittedSize.x.toFixed(2)+' × '+fittedSize.y.toFixed(2)+' × '+fittedSize.z.toFixed(2)+'m (original '+size.x.toFixed(2)+'/'+size.y.toFixed(2)+'/'+size.z.toFixed(2)+').';
+ window.outfit('skirt');
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
 function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
