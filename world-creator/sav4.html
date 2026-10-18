@@ -5,7 +5,15 @@
 <label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="85" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">85°</output></label>
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
-<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
+<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details open style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
+<label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="1.15" oninput="window.refitBlouse?.()"></label>
+<label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="1.5" oninput="window.refitBlouse?.()"></label>
+<label>Blouse forward/back <input id="blouseDepth" type="range" min="-2" max="2" step="0.005" value="0" oninput="window.refitBlouse?.()"></label>
+<label>Blouse rotate <input id="blouseYaw" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
+<label>Blouse tilt forward/back <input id="blousePitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
+<label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
+<label><input id="blouseFlip" type="checkbox" onchange="window.refitBlouse?.()">Flip blouse upside down</label>
+</div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
  const key='wvlrp.sav4.skirtFit.v1';
  const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
  const show=(fit,message)=>{
@@ -69,6 +77,58 @@ const wardrobe={
  casual:{label:'Casual',color:0x738474},tankIvory:{label:'Ivory tank'},tankSage:{label:'Sage tank'},miniBlack:{label:'Black mini'},miniRose:{label:'Rose mini'},bikiniCoral:{label:'Coral bikini'}
 };
 let avatar=null;
+
+const blouseGroup=new T.Group();scene.add(blouseGroup);
+let blouseModel=null,blouseLoading=false,blouseWanted=true;
+const blouseFields={size:'blouseSize',heightMeters:'blouseHeight',forwardMeters:'blouseDepth',yawDegrees:'blouseYaw',pitchDegrees:'blousePitch',rollDegrees:'blouseRoll'};
+const blouseKey='wvlrp.sav4.peasantBlouseFit.v1';
+let blouseRestored=false;
+try{
+ const fit=JSON.parse(localStorage.getItem(blouseKey)||'null');
+ if(fit?.version===1&&Object.keys(blouseFields).every(k=>typeof fit[k]==='number'&&Number.isFinite(fit[k]))&&fit.size>0){
+  for(const [k,id] of Object.entries(blouseFields)){
+   const el=document.getElementById(id),v=fit[k];el.min=String(Math.min(Number(el.min),v));el.max=String(Math.max(Number(el.max),v));el.value=String(v);
+  }
+  document.getElementById('blouseFlip').checked=fit.flipped===true;blouseRestored=true;
+ }
+}catch(e){console.warn('Could not restore blouse fit',e);}
+window.refitBlouse=()=>{
+ if(!avatar||!blouseModel)return;
+ const val=id=>Number(document.getElementById(id).value);
+ const b=new T.Box3().setFromObject(avatar),center=b.getCenter(new T.Vector3());
+ blouseModel.position.set(0,0,0);blouseModel.scale.setScalar(val('blouseSize'));
+ blouseModel.rotation.set((val('blousePitch')+(document.getElementById('blouseFlip').checked?180:0))*Math.PI/180,val('blouseYaw')*Math.PI/180,val('blouseRoll')*Math.PI/180,'YXZ');
+ blouseModel.updateMatrixWorld(true);
+ const bounds=new T.Box3().setFromObject(blouseModel),c=bounds.getCenter(new T.Vector3());
+ blouseModel.position.set(center.x-c.x,val('blouseHeight')-bounds.max.y,center.z-c.z+val('blouseDepth'));
+ blouseModel.updateMatrixWorld(true);
+ document.getElementById('blouseStatus').textContent=(blouseWanted?'Blouse on. ':'Blouse removed. ')+'Size '+val('blouseSize').toFixed(2)+'; height '+val('blouseHeight').toFixed(2)+' m; forward '+(val('blouseDepth')*100).toFixed(1)+' cm; rotation '+val('blouseYaw')+' / '+val('blousePitch')+' / '+val('blouseRoll')+'°. Fit still needs front, side and back inspection.';
+};
+window.removeBlouse=()=>{blouseWanted=false;blouseGroup.visible=false;document.getElementById('blouseStatus').textContent='Blouse removed; fit retained.';};
+window.showBlouse=()=>{
+ blouseWanted=true;blouseGroup.visible=true;
+ if(!avatar){document.getElementById('blouseStatus').textContent='Blouse waiting for character.';return;}
+ if(blouseModel){window.refitBlouse();return;}
+ if(blouseLoading)return;
+ blouseLoading=true;document.getElementById('blouseStatus').textContent='Loading real peasant blouse…';
+ loader.load('./assets/sav4-peasant-blouse.glb',g=>{
+  blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);
+  blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;}}});
+  if(!blouseRestored){
+   const b=new T.Box3().setFromObject(avatar),h=b.max.y-b.min.y;
+   document.getElementById('blouseHeight').value=String(b.min.y+h*.86);
+  }
+  blouseGroup.visible=blouseWanted;window.refitBlouse();
+ },undefined,e=>{blouseLoading=false;document.getElementById('blouseStatus').textContent='Blouse file failed to load. Tap Put on blouse to retry.';console.error(e);});
+};
+window.saveBlouseFit=()=>{
+ const fit={version:1};for(const [k,id] of Object.entries(blouseFields))fit[k]=Number(document.getElementById(id).value);
+ fit.flipped=document.getElementById('blouseFlip').checked;
+ const box=document.getElementById('blouseCoordinates');box.hidden=false;box.value=JSON.stringify(fit,null,2);
+ try{localStorage.setItem(blouseKey,JSON.stringify(fit));document.getElementById('blouseStatus').textContent='Blouse fit saved on this browser.';}
+ catch(e){document.getElementById('blouseStatus').textContent='Browser storage unavailable. Keep a copy of these coordinates.';}
+};
+
 let selectedOutfit='skirt';
 let realSkirt=null;
 const skirtLoader=new loaderModule.GLTFLoader();
@@ -203,5 +263,6 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(5.8,fittedSize.y*3.4));controls.update();
  if(selectedOutfit)window.outfit(selectedOutfit);
+if(blouseWanted)window.showBlouse();
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
 function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
