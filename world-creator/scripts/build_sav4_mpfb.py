@@ -67,6 +67,8 @@ for obj in root.children_recursive:
    for v,p in zip(obj.data.vertices,coords):
     if p.z<cutoff:v.co=(inv@Vector((p.x,p.y,cutoff)))
   print("SAV4_HAIR_TRIM",obj.name)
+body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
+if body is None:raise RuntimeError("SAV4 continuous body missing")
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
 eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
@@ -76,8 +78,6 @@ if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 from caroline_eyes import add_light_blue_eyes
 add_light_blue_eyes(root, body, rig)
 print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes))
-body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
-if body is None:raise RuntimeError("SAV4 continuous body missing")
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
 for obj in [root,*root.children_recursive]:
  if obj.type=="MESH":
