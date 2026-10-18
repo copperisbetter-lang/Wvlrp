@@ -70,7 +70,7 @@ for obj in root.children_recursive:
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
-eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
+eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and ("eye" in o.name.lower() or "high-poly" in o.name.lower() or "low-poly" in o.name.lower()) and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Use the original MPFB eye UVs and the bundled blue iris texture.
 # Do not replace the whole eye with a flat white or blue material.
@@ -91,7 +91,7 @@ for eye_obj in eye_meshes:
         raise RuntimeError(f"SAV4 detached eye mesh {eye_obj.name}: eye Z {eye_center.z:.3f}, body {head_bottom:.3f}..{head_top:.3f}")
     print("SAV4_EYE_HEAD_ALIGNMENT",eye_obj.name,tuple(round(x,3) for x in eye_center))
 # Check eyes remain after material fitting.
-eye_meshes_after=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
+eye_meshes_after=[o for o in root.children_recursive if o.type=="MESH" and ("eye" in o.name.lower() or "high-poly" in o.name.lower() or "low-poly" in o.name.lower()) and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes_after:raise RuntimeError("SAV4 eye helper removed the eye meshes")
 print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes_after))
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
@@ -143,8 +143,9 @@ for mesh in meshes:
 if not positions:raise RuntimeError("SAV4 GLB missing position bounds")
 # Ensure material transparency cannot make the character disappear.
 for mat in doc.get("materials",[]):
- mat["alphaMode"]="OPAQUE"
- mat["doubleSided"]=True
+ if mat.get("alphaMode")=="BLEND":
+  print("SAV4_TRANSPARENT_MATERIAL",mat.get("name","unnamed"))
+# Do not mutate the parsed JSON: that would not modify the serialized GLB.
 # Bounds from accessors are mesh-local; viewer checks transformed world bounds.
 print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
 print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
