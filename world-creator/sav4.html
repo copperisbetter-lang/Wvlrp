@@ -1,11 +1,11 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:24dvh;overflow:auto}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">4.02 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:28dvh;overflow:auto}summary{cursor:pointer;padding:10px;background:#2c473d;border-radius:6px}button[aria-pressed="true"]{background:#83b799;color:#10291c}button:disabled{opacity:.45}.performance{margin-bottom:8px}#motionStatus,#smileStatus{font-size:13px;color:#cfdfd6;margin:4px}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer><div class="performance"><div aria-label="Movement controls"><button type="button" data-motion="Stand" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Stand</button><button type="button" data-motion="Walk" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Walk</button><button type="button" data-motion="Run" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Run</button><button type="button" data-motion="Wave" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Wave</button><button type="button" data-motion="Sit" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit</button><button type="button" data-motion="Bend and pick up" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Bend and pick up</button><button type="button" data-motion="Hands and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Hands and knees</button><button type="button" data-motion="Elbows and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Elbows and knees</button></div><div id="motionStatus" role="status">Loading movement rig…</div><div aria-label="Smile controls"><button type="button" data-smile="Neutral" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Neutral</button><button type="button" data-smile="Flirty" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Flirty smile</button><button type="button" data-smile="Happy" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Happy smile</button><button type="button" data-smile="Cute" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Cute smile</button></div><div id="smileStatus" role="status">Neutral expression.</div></div><details id="clothingMenu"><summary>Clothing &amp; fit adjustments</summary>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">4.02 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
 <label>Move forward/back <input aria-label="Move skirt forward or backward" id="skirtDepth" type="range" min="-1" max="1" step="0.005" value="0.09" oninput="window.refitSkirt?.()"> <output id="skirtDepthValue">9.0 cm</output></label>
 <div><button type="button" onclick="window.moveSkirtDepth?.(0.01)">Forward 1 cm</button><button type="button" onclick="window.moveSkirtDepth?.(-0.01)">Backward 1 cm</button><button type="button" onclick="window.centerSkirtDepth?.()">Center forward/back</button></div>
 <label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="8" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">8°</output></label>
 <label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="85" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">85°</output></label>
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
-<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details open style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
+<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
 <label>Crop bottom <input id="blouseCrop" type="range" min="0" max="0.75" step="0.01" value="0.35" oninput="window.refitBlouse?.()"> <output id="blouseCropValue">35%</output></label><small>0% restores the full blouse. Increase to raise the straight hem above the back opening.</small>
 <label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="4.6" oninput="window.refitBlouse?.()"></label>
 <label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="5.67" oninput="window.refitBlouse?.()"></label>
@@ -14,7 +14,7 @@
 <label>Blouse tilt forward/back <input id="blousePitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label><input id="blouseFlip" type="checkbox" onchange="window.refitBlouse?.()">Flip blouse upside down</label>
-</div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
+</div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
  const key='wvlrp.sav4.skirtFit.v1';
  const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
  const show=(fit,message)=>{
@@ -78,9 +78,99 @@ const wardrobe={
  casual:{label:'Casual',color:0x738474},tankIvory:{label:'Ivory tank'},tankSage:{label:'Sage tank'},miniBlack:{label:'Black mini'},miniRose:{label:'Rose mini'},bikiniCoral:{label:'Coral bikini'}
 };
 let avatar=null;
+// Procedural poses use the imported Mixamo bones; no synthetic replacement body.
+const motionNames=['Stand','Walk','Run','Wave','Sit','Bend and pick up','Hands and knees','Elbows and knees'];
+let activeMotion='Stand',activeSmile='Neutral',motionStart=0,rigReady=false,motionScale=1;
+const rig=new Map(),rest=new Map(),wearBindings=new Map();
+const motionClock=new T.Clock();
+let faceMesh=null,faceBase=null,facePoints=[],bodyTree=null;
+const v3=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
+function setupPerformance(){
+ avatar.updateMatrixWorld(true);
+ avatar.traverse(o=>{if(o.isBone){const name=o.name.replace(/^mixamorig[:_]?/,'');rig.set(name,o);rest.set(name,{q:o.quaternion.clone(),p:o.position.clone(),world:o.getWorldQuaternion(new T.Quaternion()),point:o.getWorldPosition(v3())});}if(o.isSkinnedMesh&&(!faceMesh||o.geometry.attributes.position.count>faceMesh.geometry.attributes.position.count))faceMesh=o;});
+ const required=['Hips','Spine','Spine1','Spine2','Head','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'];
+ rigReady=required.every(n=>rig.has(n));
+ if(!rigReady){document.getElementById('motionStatus').textContent='This model is missing required movement bones.';return;}
+ if(faceMesh){
+  // A compact, smooth displacement field around the actual mouth, in rest mesh space.
+  faceBase=faceMesh.geometry.attributes.position.array.slice();
+  const box=new T.Box3().setFromBufferAttribute(faceMesh.geometry.attributes.position),h=box.max.y-box.min.y;
+  const mouthY=box.min.y+h*.918;
+  const attr=faceMesh.geometry.attributes.position;
+  for(let i=0;i<attr.count;i++){
+   const x=attr.getX(i),y=attr.getY(i),z=attr.getZ(i);
+   if(Math.abs(x)<h*.039&&Math.abs(y-mouthY)<h*.024&&z>h*.025){
+    const w=Math.exp(-Math.pow((y-mouthY)/(h*.014),2))*Math.exp(-Math.pow(x/(h*.036),4));
+    if(w>.005)facePoints.push({i,x,w,h});
+   }
+  }
+ }
+ motionScale=rest.get('Head').point.distanceTo(rest.get('Hips').point)/.60;
+ document.querySelectorAll('[data-motion],[data-smile]').forEach(b=>b.disabled=false);
+ setMotion('Stand');
+ animatePerformance();
+ const viewBounds=new T.Box3();avatar.traverse(o=>{if(o.isMesh){o.updateWorldMatrix(true,false);for(let i=0;i<o.geometry.attributes.position.count;i++){const p=v3();o.getVertexPosition(i,p);viewBounds.expandByPoint(p.applyMatrix4(o.matrixWorld));}}});
+ const viewCenter=viewBounds.getCenter(v3()),viewSize=viewBounds.getSize(v3());controls.target.copy(viewCenter);camera.position.copy(viewCenter).add(v3(0,0,Math.max(viewSize.y*1.9,viewSize.x*2.5)));camera.far=Math.max(100,viewSize.y*20);camera.updateProjectionMatrix();controls.update();
+}
+function resetRig(){for(const [name,b]of rig){b.quaternion.copy(rest.get(name).q);b.position.copy(rest.get(name).p);}avatar.updateMatrixWorld(true);}
+function rotateWorld(name,axis,angle){const b=rig.get(name);if(!b)return;const q=new T.Quaternion().setFromAxisAngle(axis,angle).multiply(rest.get(name).world);const parent=b.parent.getWorldQuaternion(new T.Quaternion()).invert();b.quaternion.copy(parent.multiply(q));b.updateWorldMatrix(false,true);}
+function aim(name,child,direction){const b=rig.get(name);if(!b)return;const baseDirection=rest.get(child).point.clone().sub(rest.get(name).point).normalize();const q=new T.Quaternion().setFromUnitVectors(baseDirection,direction.normalize()).multiply(rest.get(name).world);b.quaternion.copy(b.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));b.updateWorldMatrix(false,true);}
+function lowerHips(meters){const hip=rig.get('Hips'),p=hip.getWorldPosition(v3());p.y-=meters*motionScale;hip.position.copy(hip.parent.worldToLocal(p));hip.updateWorldMatrix(false,true);}
+window.setMotion=function(name){if(!rigReady||!motionNames.includes(name))return;activeMotion=name;motionStart=motionClock.getElapsedTime();document.querySelectorAll('[data-motion]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.motion===name)));document.getElementById('motionStatus').textContent=name==='Stand'?'Standing — movement stopped.':name+' active.';};
+window.setSmile=function(name){if(!faceMesh||!['Neutral','Flirty','Happy','Cute'].includes(name))return;activeSmile=name;const attr=faceMesh.geometry.attributes.position;attr.array.set(faceBase);for(const p of facePoints){const side=Math.min(1,Math.abs(p.x)/(p.h*.023));let lift=0,width=0,forward=0;if(name==='Happy'){lift=.0065*side; width=.002*side;}if(name==='Flirty'){lift=(p.x>0?.005:.002)*side;width=.0008*side;forward=.0005;}if(name==='Cute'){lift=.0038*side;width=.0012*side;forward=.0008;}attr.array[p.i*3]+=Math.sign(p.x)*width*p.w;attr.array[p.i*3+1]+=lift*p.w;attr.array[p.i*3+2]+=forward*p.w;}attr.needsUpdate=true;faceMesh.geometry.computeVertexNormals();document.querySelectorAll('[data-smile]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.smile===name)));document.getElementById('smileStatus').textContent=name==='Neutral'?'Neutral expression.':name+' smile.';};
+function animatePerformance(){
+ if(!rigReady)return;resetRig();const t=motionClock.getElapsedTime()-motionStart;
+ const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run';
+ const phase=t*(run?10:6),s=Math.sin(phase),step=run?.78:.43;
+ let lean=0;
+ if(gait){lean=run?.16:.035;lowerHips((run?.045:.012)*(1-Math.cos(phase*2)));}
+ if(activeMotion==='Sit'){lowerHips(.48);lean=.04;}
+ if(activeMotion==='Bend and pick up')lean=.95*(.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2));
+ const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees';
+ if(crawl){lowerHips(activeMotion==='Elbows and knees'?.68:.56);lean=1.25;}
+ rotateWorld('Spine',v3(1,0,0),lean*.4);rotateWorld('Spine1',v3(1,0,0),lean*.7);rotateWorld('Spine2',v3(1,0,0),lean);
+ for(const side of ['Left','Right']){
+  const sign=side==='Left'?1:-1,legSwing=gait?s*step*sign:0;
+  let thigh=v3(sign*.025,-Math.cos(legSwing),Math.sin(legSwing)),shin=v3(0,-1,0);
+  if(gait){const knee=Math.max(0,-s*sign)*(run?1.25:.65);shin=v3(0,-Math.cos(legSwing-knee),Math.sin(legSwing-knee));}
+  if(activeMotion==='Sit'){thigh=v3(sign*.06,-.07,1);shin=v3(0,-1,.05);}
+  if(crawl){thigh=v3(sign*.05,-1,.3);shin=v3(0,-.08,-1);}
+  aim(side+'UpLeg',side+'Leg',thigh);aim(side+'Leg',side+'Foot',shin);
+  let arm=v3(sign*.12,-1,gait?-s*sign*(run?.65:.35):.02),fore=v3(sign*.08,-1,gait?(run?.65:.12):.04);
+  if(activeMotion==='Wave'&&side==='Right'){arm=v3(-.5,.7,.1);fore=v3(Math.sin(t*7)*.3,1,.04);}
+  if(activeMotion==='Bend and pick up'){arm=v3(sign*.12,-1,.35*lean);fore=v3(sign*.08,-1,.25*lean);}
+  if(crawl){arm=v3(sign*.12,-1,.3);fore=activeMotion==='Elbows and knees'?v3(sign*.08,-.15,1):v3(sign*.08,-1,.1);}
+  aim(side+'Arm',side+'ForeArm',arm);aim(side+'ForeArm',side+'Hand',fore);
+ }
+ if(activeSmile==='Flirty')rotateWorld('Head',v3(0,0,1),-.065);
+ if(activeSmile==='Cute')rotateWorld('Head',v3(0,0,1),.045);
+ avatar.updateMatrixWorld(true);
+ if(blouseHemRest&&blouseTorsoRest)blouseHemPlane.copy(blouseHemRest).applyMatrix4(new T.Matrix4().multiplyMatrices(rig.get('Spine2').matrixWorld,blouseTorsoRest));
+ // Update transferred garment skinning from the same deforming body vertices.
+ for(const [model,binding]of wearBindings){
+  if(!model.visible||!model.parent)continue;
+  const delta=new Map();const point=v3(),offset=v3();for(const i of binding.used){faceMesh.getVertexPosition(i,point);point.applyMatrix4(faceMesh.matrixWorld);delta.set(i,point.clone().sub(binding.bodyRest.get(i)));}
+  for(const part of binding.parts){const inv=part.mesh.matrixWorld.clone().invert(),attr=part.mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){point.fromArray(part.world,i*3);offset.set(0,0,0);for(let j=0;j<8;j++)offset.addScaledVector(delta.get(part.nearest[i*8+j]),part.weights[i*8+j]);point.add(offset).applyMatrix4(inv);attr.setXYZ(i,point.x,point.y,point.z);}attr.needsUpdate=true;}
+ }
+}
+function makeTree(points,depth=0){if(!points.length)return null;const axis=depth%3;points.sort((a,b)=>a.p.getComponent(axis)-b.p.getComponent(axis));const mid=points.length>>1;return{item:points[mid],axis,left:makeTree(points.slice(0,mid),depth+1),right:makeTree(points.slice(mid+1),depth+1)};}
+function nearestTree(node,p,best={d:Infinity,item:null}){if(!node)return best;const dist=node.item.p.distanceToSquared(p);if(dist<best.d){best.d=dist;best.item=node.item;}const split=p.getComponent(node.axis)-node.item.p.getComponent(node.axis);nearestTree(split<0?node.left:node.right,p,best);if(split*split<best.d)nearestTree(split<0?node.right:node.left,p,best);return best;}
+function restoreWear(model){if(!model)return;model.traverse(o=>{if(o.isMesh&&o.userData.fitBase){o.geometry.attributes.position.array.set(o.userData.fitBase);o.geometry.attributes.position.needsUpdate=true;}});}
+function nearbyTree(node,p,best=[]){if(!node)return best;const d=node.item.p.distanceToSquared(p);if(best.length<8||d<best[best.length-1].d){best.push({d,item:node.item});best.sort((a,b)=>a.d-b.d);if(best.length>8)best.pop();}const split=p.getComponent(node.axis)-node.item.p.getComponent(node.axis);nearbyTree(split<0?node.left:node.right,p,best);if(best.length<8||split*split<best[best.length-1].d)nearbyTree(split<0?node.right:node.left,p,best);return best;}
+function bindWear(model){
+ if(!rigReady||!faceMesh||!model)return;
+ resetRig();
+ if(!bodyTree){const points=[];for(let i=0;i<faceMesh.geometry.attributes.position.count;i++){const p=v3();faceMesh.getVertexPosition(i,p);points.push({i,p:p.applyMatrix4(faceMesh.matrixWorld)});}bodyTree=makeTree(points);}
+ const binding={parts:[],used:new Set(),bodyRest:new Map()};model.updateMatrixWorld(true);
+ model.traverse(mesh=>{if(!mesh.isMesh)return;const attr=mesh.geometry.attributes.position;if(!mesh.userData.fitBase)mesh.userData.fitBase=attr.array.slice();else{attr.array.set(mesh.userData.fitBase);attr.needsUpdate=true;}
+ const world=new Float32Array(attr.count*3),nearest=new Uint32Array(attr.count*8),weights=new Float32Array(attr.count*8);for(let i=0;i<attr.count;i++){const p=v3().fromBufferAttribute(attr,i).applyMatrix4(mesh.matrixWorld),found=nearbyTree(bodyTree,p);p.toArray(world,i*3);const total=found.reduce((a,f)=>a+1/(f.d+.0025),0);for(let j=0;j<8;j++){const f=found[j];nearest[i*8+j]=f.item.i;weights[i*8+j]=(1/(f.d+.0025))/total;binding.used.add(f.item.i);binding.bodyRest.set(f.item.i,f.item.p);}}
+ binding.parts.push({mesh,world,nearest,weights});});wearBindings.set(model,binding);
+}
+window.sav4Diagnostics=()=>({ready:rigReady,movement:activeMotion,smile:activeSmile,bones:rig.size,faceVertices:facePoints.length,garments:wearBindings.size,bounds:avatar?new T.Box3().setFromObject(avatar).getSize(v3()).toArray():null,hips:rig.get('Hips')?.getWorldPosition(v3()).toArray(),head:rig.get('Head')?.getWorldPosition(v3()).toArray(),pose:[...rig].map(([name,b])=>[name,...b.quaternion.toArray()]),faceSample:facePoints.slice(0,20).map(p=>Array.from(faceMesh.geometry.attributes.position.array.slice(p.i*3,p.i*3+3)))});
+
 
 renderer.localClippingEnabled=true;
-const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);
+const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);let blouseHemRest=null,blouseTorsoRest=null;
 const blouseGroup=new T.Group();scene.add(blouseGroup);
 let blouseModel=null,blouseLoading=false,blouseWanted=true;
 const blouseFields={size:'blouseSize',heightMeters:'blouseHeight',forwardMeters:'blouseDepth',yawDegrees:'blouseYaw',pitchDegrees:'blousePitch',rollDegrees:'blouseRoll'};
@@ -99,6 +189,8 @@ try{
 }catch(e){console.warn('Could not restore blouse fit',e);}
 window.refitBlouse=()=>{
  if(!avatar||!blouseModel)return;
+ if(rigReady)resetRig();
+ restoreWear(blouseModel);
  const val=id=>Number(document.getElementById(id).value);
  const b=new T.Box3().setFromObject(avatar),center=b.getCenter(new T.Vector3());
  blouseModel.position.set(0,0,0);blouseModel.scale.setScalar(val('blouseSize'));
@@ -112,6 +204,8 @@ window.refitBlouse=()=>{
  const crop=val('blouseCrop');
  const hemY=fullBounds.min.y+(fullBounds.max.y-fullBounds.min.y)*crop;
  blouseHemPlane.constant=-hemY;
+ blouseHemRest=blouseHemPlane.clone();blouseTorsoRest=rigReady?rig.get('Spine2').matrixWorld.clone().invert():null;
+ bindWear(blouseModel);
  document.getElementById('blouseCropValue').textContent=Math.round(crop*100)+'%';
  document.getElementById('blouseStatus').textContent=(blouseWanted?'Blouse on. ':'Blouse removed. ')+'Size '+val('blouseSize').toFixed(2)+'; height '+val('blouseHeight').toFixed(2)+' m; forward '+(val('blouseDepth')*100).toFixed(1)+' cm; rotation '+val('blouseYaw')+' / '+val('blousePitch')+' / '+val('blouseRoll')+'°. Fit still needs front, side and back inspection.';
 };
@@ -149,6 +243,8 @@ const garmentFiles={skirt:'sav4_makehuman_mini_skirt_01.glb'};
 const fittedGarments=new Map();
 function alignGarment(model,style){
  if(!avatar)return;
+ if(rigReady)resetRig();
+ restoreWear(model);
  model.position.set(0,0,0);model.rotation.set(0,0,0);model.scale.setScalar(1);
  avatar.updateMatrixWorld(true);model.updateMatrixWorld(true);
  const bodyBounds=new T.Box3().setFromObject(avatar),bodySize=bodyBounds.getSize(new T.Vector3());
@@ -180,6 +276,7 @@ function alignGarment(model,style){
  model.position.set(bodyCenter.x-center.x,waistY-garmentBounds.max.y,bodyCenter.z-center.z+depthOffset);
  model.updateMatrixWorld(true);
  status.textContent='Imported MakeHuman mini skirt loaded; width '+size.x.toFixed(2)+'m; inspect waist and hem';
+ bindWear(model);
  console.info('SAV4 imported skirt fit',dims,size,bodySize);
 }
 window.moveSkirtHeight=(delta)=>{
@@ -271,7 +368,8 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  // Removed misplaced procedural face overlay. Use source GLB eye/hair geometry only until properly rigged replacements are available.
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(5.8,fittedSize.y*3.4));controls.update();
+ setupPerformance();
  if(selectedOutfit)window.outfit(selectedOutfit);
 if(blouseWanted)window.showBlouse();
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
-function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
+function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();animatePerformance();renderer.render(scene,camera)}loop();</script></body></html>
