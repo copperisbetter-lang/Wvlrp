@@ -4,6 +4,7 @@ Requires existing WVLRP Blender MPFB extension and /tmp/mh-system.zip.
 """
 import bpy, sys, math
 from pathlib import Path
+from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
 from build_amy_mpfb import load_system_pack,add_asset,tint
@@ -38,7 +39,7 @@ tint(hair,(.76,.68,.52),.96)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
 # Remove facial helper/proxy meshes that are misplaced in the exported head.
 for obj in list(root.children_recursive):
- if obj.type=="MESH" and any(term in obj.name.lower() for term in ("teeth", "tongue", "mouth", "oral")):
+ if obj.type=="MESH" and any(term in obj.name.lower() for term in ("teeth", "tongue", "mouth", "oral", "eye", "lash", "brow")):
   bpy.data.objects.remove(obj,do_unlink=True)
 # Force a warm dusty blonde tint on copied hair materials (not just the source).
 for obj in root.children_recursive:
@@ -48,7 +49,10 @@ for obj in root.children_recursive:
     mat=original.copy();mat.diffuse_color=(.76,.68,.52,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
-      if node.type=="BSDF_PRINCIPLED":node.inputs["Base Color"].default_value=(.76,.68,.52,1)
+      if node.type=="BSDF_PRINCIPLED":
+       for link in list(mat.node_tree.links):
+        if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
+       node.inputs["Base Color"].default_value=(.76,.68,.52,1)
     obj.data.materials[idx]=mat
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
@@ -83,4 +87,20 @@ bpy.context.view_layer.objects.active=root
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",use_selection=True,export_apply=False)
 if OUT.stat().st_size<100000:raise RuntimeError("SAV4 GLB unexpectedly small")
+# Validate the serialized GLB, not just Blender's pre-export dimensions.
+import json,struct
+raw=OUT.read_bytes()
+chunk_size=struct.unpack_from("<I",raw,12)[0]
+doc=json.loads(raw[20:20+chunk_size])
+nodes=doc.get("nodes",[])
+meshes=doc.get("meshes",[])
+if not meshes:raise RuntimeError("SAV4 GLB has no meshes")
+# Reject known bad model if exported positions are implausibly small.
+positions=[]
+for mesh in meshes:
+ for primitive in mesh.get("primitives",[]):
+  accessor=doc["accessors"][primitive["attributes"]["POSITION"]]
+  if "min" in accessor and "max" in accessor:positions.append((accessor["min"],accessor["max"]))
+if not positions:raise RuntimeError("SAV4 GLB missing position bounds")
+print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
 print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
