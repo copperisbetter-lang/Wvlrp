@@ -95,7 +95,7 @@ function findFitMeshes(){
   const nodes=Array.from(v.model?.getNodes?.()||[]);
   for(const node of nodes){
    const label=String(node.name||'');
-   const materials=Array.from(node.mesh?.materials||[]).map(m=>String(m.name||'')).join(' ');
+   const materials=[...Array.from(node.mesh?.materials||[]),...Array.from(node.mesh?.primitives||[]).map(p=>p.material).filter(Boolean)].map(m=>String(m.name||'')).join(' ');
    // Exporters often rename the original attachment; accept anatomical
    // identifiers on the mesh or its materials, never the generic body.
    const signature=(label+' '+materials).toLowerCase();
