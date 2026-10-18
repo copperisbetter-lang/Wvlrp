@@ -16,6 +16,12 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check character source
+        run: |
+          test -s world-creator/scripts/build_sav4_mpfb.py
+          python3 -m py_compile world-creator/scripts/build_sav4_mpfb.py
       - name: Install Blender
         run: |
           sudo apt-get update -qq
@@ -61,6 +67,11 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+      - name: Build summary
+        if: always()
+        run: |
+          echo '## SAV 4 build' >> "$GITHUB_STEP_SUMMARY"
+          if test -s world-creator/assets/sav4-realistic.glb; then echo 'GLB file generated' >> "$GITHUB_STEP_SUMMARY"; else echo 'GLB missing — inspect sav4-build-report logs' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Save logs
         if: always()
         uses: actions/upload-artifact@v4
