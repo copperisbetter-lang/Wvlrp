@@ -37,7 +37,7 @@ eyes=add_asset(human,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
-tint(hair,(.73,.64,.49),.96)
+tint(hair,(.79,.73,.65),.94)
 # Marybeth Hutchinson / Laura Harris (The Faculty, 1998) inspired facial pass.
 # Apply to the source basemesh before making the rigged export copy, so the
 # facial changes travel with the character instead of becoming loose proxies.
@@ -100,18 +100,18 @@ for obj in root.children_recursive:
  if obj.type=="MESH" and ("hair" in obj.name.lower() or any(m and "hair" in m.name.lower() for m in obj.data.materials)):
   for idx,original in enumerate(obj.data.materials):
    if original:
-    mat=original.copy();mat.diffuse_color=(.91,.83,.68,1)
+    mat=original.copy();mat.diffuse_color=(.82,.76,.68,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
       if node.type=="BSDF_PRINCIPLED":
        for link in list(mat.node_tree.links):
         if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
-       node.inputs["Base Color"].default_value=(.73,.64,.49,1)
+       node.inputs["Base Color"].default_value=(.79,.73,.65,1)
     obj.data.materials[idx]=mat
 # Preserve the original hair mesh shape. The previous trim collapsed every
 # strand below a cutoff into a flat horizontal shelf, making the hair look fake.
 # Keep the source long01 hairstyle intact until a proper hairstyle asset is fitted.
-print("SAV4_HAIR: preserved natural strand geometry; dusty blonde material applied")
+print("SAV4_HAIR: reference-matched neutral champagne/ash blonde tint; existing long01 geometry preserved pending fitted side-swept fringe asset")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
