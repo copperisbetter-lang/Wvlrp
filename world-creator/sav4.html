@@ -169,6 +169,42 @@ function bindWear(model){
 window.sav4Diagnostics=()=>({ready:rigReady,movement:activeMotion,smile:activeSmile,bones:rig.size,faceVertices:facePoints.length,garments:wearBindings.size,bounds:avatar?new T.Box3().setFromObject(avatar).getSize(v3()).toArray():null,hips:rig.get('Hips')?.getWorldPosition(v3()).toArray(),head:rig.get('Head')?.getWorldPosition(v3()).toArray(),pose:[...rig].map(([name,b])=>[name,...b.quaternion.toArray()]),faceSample:facePoints.slice(0,20).map(p=>Array.from(faceMesh.geometry.attributes.position.array.slice(p.i*3,p.i*3+3)))});
 
 
+
+let fittedEyes=null;
+async function fitOriginalEyes(){
+ const asset=await loader.loadAsync('./assets/sav4-original-eyes.glb?v=1');
+ resetRig();avatar.updateMatrixWorld(true);faceMesh.skeleton.update();
+ const head=rig.get('Head'),positions=faceMesh.geometry.attributes.position;
+ const inverseHead=head.matrixWorld.clone().invert();
+ const eyeGroup=new T.Group();eyeGroup.name='SAV4 fitted original MPFB eyes';
+ asset.scene.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  const geometry=mesh.geometry.clone(),a=geometry.attributes.position;
+  for(let i=0;i<a.count;i++){
+   const p=v3().fromBufferAttribute(a,i);
+   // Match SAV4's actual socket centers in the base mesh, before skinning.
+   p.x+=Math.sign(p.x)*.004;p.y=1.4815+(p.y-1.4815)*.8+.0755;p.z+=.016;
+   let nearest=0,distance=Infinity;
+   for(let j=0;j<positions.count;j++){
+    if(positions.getY(j)<1.53)continue;
+    const d=p.distanceToSquared(v3().fromBufferAttribute(positions,j));
+    if(d<distance){distance=d;nearest=j;}
+   }
+   const delta=p.clone().sub(v3().fromBufferAttribute(positions,nearest));
+   faceMesh.getVertexPosition(nearest,p);
+   p.applyMatrix4(faceMesh.matrixWorld);
+   const direction=delta.applyMatrix3(new T.Matrix3().setFromMatrix4(faceMesh.matrixWorld));
+   p.add(direction).applyMatrix4(inverseHead);
+   a.setXYZ(i,p.x,p.y,p.z);
+  }
+  geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  const material=mesh.material.clone();material.transparent=true;material.depthWrite=true;material.alphaTest=.05;material.side=T.DoubleSide;
+  const eyeMesh=new T.Mesh(geometry,material);eyeMesh.name='SAV4 textured pale-blue eyes';eyeMesh.frustumCulled=false;eyeGroup.add(eyeMesh);
+ });
+ head.add(eyeGroup);fittedEyes=eyeGroup;
+ window.sav4EyeDiagnostics=()=>({ready:!!fittedEyes,meshes:eyeGroup.children.length,headAttached:eyeGroup.parent===head,vertices:eyeGroup.children.reduce((n,m)=>n+m.geometry.attributes.position.count,0)});
+}
+
 renderer.localClippingEnabled=true;
 const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);let blouseHemRest=null,blouseTorsoRest=null;
 const blouseGroup=new T.Group();scene.add(blouseGroup);
@@ -340,24 +376,6 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  // SAV4 inspection material correction: target only named hair/eye geometry.
  const blonde=new T.Color(0xb9a27c), irisBlue=new T.Color(0x9fc4d8), scleraWhite=new T.Color(0xf0ede8);
  avatar.traverse(o=>{if(!o.isMesh)return;const name=o.name.toLowerCase();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach((m,i)=>{if(!m)return;const mn=(m.name||'').toLowerCase();const isHair=/hair|scalp|strand|fringe|bang|ponytail/.test(name+' '+mn);const isEye=/eye|iris|sclera|cornea|pupil/.test(name+' '+mn);if(!isHair&&!isEye)return;const clone=m.clone();if(isHair){clone.color.copy(blonde);if(clone.map){clone.map=null;}clone.roughness=.88;}else if(/sclera|eyewhite|eye_white/.test(name+' '+mn)){clone.color.copy(scleraWhite);clone.emissive?.set(0x000000);}else if(/iris|eye/.test(name+' '+mn)&&!/lash|brow|socket|lid|pupil/.test(name+' '+mn)){clone.color.copy(irisBlue);clone.emissive?.set(0x000000);clone.emissiveIntensity=0;if(clone.map)clone.map=null;}else return;clone.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=clone;else o.material=clone;});});
- // Temporary reversible eye-position trial: only actual eye geometry, never lids or face.
- const eyeMeshes=[];
- avatar.traverse(o=>{
-  if(!o.isMesh)return;
-  const tag=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m?.name||'').join(' '):(o.material?.name||''))).toLowerCase();
-  if(!/(eyeball|sclera|iris|cornea|pupil|eye[_ .-]?(left|right|l|r|white))/.test(tag))return;
-  if(/eyelid|eyelash|brow|socket|skin|face|head/.test(tag))return;
-  eyeMeshes.push({object:o,base:o.position.clone()});
- });
- const eyeUp=.012,eyeForward=.018;
- // Source MakeHuman models generally face +Z in this viewer; inspect before final bake.
- for(const e of eyeMeshes){e.object.position.y=e.base.y+eyeUp;e.object.position.z=e.base.z+eyeForward;}
- console.info('SAV4 eye-position trial',eyeMeshes.map(e=>e.object.name),eyeUp,eyeForward);
- window.resetEyeTrial=()=>{for(const e of eyeMeshes)e.object.position.copy(e.base);};
- // Highlight absent facial parts in diagnostics instead of pretending recoloring creates geometry.
- const faceParts=[];avatar.traverse(o=>{if(o.isMesh){const n=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m?.name).join(' '):o.material?.name||'')).toLowerCase();if(/iris|sclera|eyeball|eye[_ .-]/.test(n))faceParts.push(o.name);}});
- console.info('SAV4 facial eye mesh candidates',faceParts);
- if(!faceParts.length)console.warn('SAV4: no identifiable eye meshes in imported GLB; geometry rebuild required');
  // Diagnostics expose mesh/material naming; GLB geometry repair remains necessary if eyes are missing.
  console.info('SAV4 eye/hair meshes',[]);avatar.traverse(o=>{if(o.isMesh&&/eye|iris|pupil|hair|scalp/i.test(o.name+' '+(o.material?.name||'')))console.info('SAV4 mesh',o.name,o.material?.name);});
  avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m){m.side=T.DoubleSide;m.transparent=false;m.alphaTest=0;m.depthWrite=true;m.needsUpdate=true}})}});
@@ -369,6 +387,7 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(5.8,fittedSize.y*3.4));controls.update();
  setupPerformance();
+ fitOriginalEyes().catch(e=>{console.error(e);status.textContent="Eye asset failed to load — reopen viewer to retry.";});
  if(selectedOutfit)window.outfit(selectedOutfit);
 if(blouseWanted)window.showBlouse();
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
