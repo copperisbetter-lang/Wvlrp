@@ -35,7 +35,8 @@ for sub,names,kind in [
  ("eyebrows",["eyebrow001.mhclo"],"Eyebrows"),
  ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
  # Omit teeth proxy until its alignment with the head is validated.
- # Misaligned teeth and oral helpers caused visible facial artifacts.]:
+ # Misaligned teeth and oral helpers caused visible facial artifacts.
+]:
  add_asset(human,sub,names,kind)
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
