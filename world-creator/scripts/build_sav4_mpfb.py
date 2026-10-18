@@ -70,6 +70,24 @@ for vert,p in zip(face_body.data.vertices,coords):
     if center_weight>0.05:
         vert.co.z=p.z+span*0.0015*chin_weight*center_weight*fade
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
+# Apply validated, photo-derived normalized ratios only when supplied.
+# Missing reference data must never be silently replaced with invented values.
+import json
+ratio_path=ROOT/"characters"/"sav4"/"marybeth-ratios.json"
+if ratio_path.exists():
+    report=json.loads(ratio_path.read_text())
+    if report.get("method")!="MediaPipe 2D image landmark ratios":
+        raise RuntimeError("SAV4 face ratios must come from measured photo landmarks")
+    ratios=report.get("ratios",{})
+    required=("face_height_over_width","nose_width_over_width","mouth_width_over_width")
+    if any(not isinstance(ratios.get(k),(float,int)) or ratios[k]<=0 for k in required):
+        raise RuntimeError("SAV4 incomplete facial landmark ratios")
+    # Store ratios as a traceable build reference. Mapping 2D measurements to
+    # specific MPFB mesh vertices requires calibrated head landmarks; do not
+    # deform nose/mouth blindly and risk broken eyes or facial topology.
+    print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
+else:
+    print("SAV4_REFERENCE_NOT_MEASURED: keeping conservative facial pass")
 face_body.data.update()
 print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
