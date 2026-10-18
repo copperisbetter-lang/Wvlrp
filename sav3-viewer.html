@@ -101,8 +101,10 @@ function findFitMeshes(){
    const signature=(label+' '+materials).toLowerCase();
    const isAttachment=/(vulva[ _-]*2|vulva2|vulva.*mhx2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
    const isBody=/^(body|female|human|skin|sav.?3)([ _.-]|$)/i.test(label);
-   if(isAttachment&&!isBody&&node.translation&&node.mesh){
-    fitMeshes.push({node,base:Array.from(node.translation),name:label});
+   if(isAttachment&&!isBody&&node.mesh){
+    const t=node.translation;
+    const base=t&&t.length===3?Array.from(t):[0,0,0];
+    if(base.every(Number.isFinite))fitMeshes.push({node,base,name:label});
    }
   }
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
