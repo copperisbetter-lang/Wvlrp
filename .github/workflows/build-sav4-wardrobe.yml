@@ -1,0 +1,53 @@
+name: Build SAV4 measured wardrobe GLBs
+on:
+  push:
+    paths:
+      - world-creator/scripts/build_sav4_wardrobe.py
+      - .github/workflows/build-sav4-wardrobe.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  wardrobe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6
+          curl -fL --retry 4 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+      - name: Build measured garments
+        run: |
+          set -euo pipefail
+          test -s world-creator/assets/sav4-realistic.glb
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender -b --python world-creator/scripts/build_sav4_wardrobe.py 2>&1 | tee /tmp/sav4-wardrobe.log
+          grep -q WARDROBE_PROTOTYPES_EXPORTED /tmp/sav4-wardrobe.log
+      - name: Validate outputs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          for name in ['sav4-mini-denim.glb','sav4-mini-black.glb','sav4-mini-rose.glb','sav4-tank-ivory.glb','sav4-tank-charcoal.glb','sav4-tank-sage.glb','sav4-tank-blue.glb','sav4-bikini-blue.glb','sav4-bikini-coral.glb']:
+              b=(Path('world-creator/assets')/name).read_bytes()
+              assert len(b)>1000 and b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b),name
+          PY
+      - name: Publish garments
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/sav4-mini-*.glb world-creator/assets/sav4-tank-*.glb world-creator/assets/sav4-bikini-*.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SAV4 body-measured garment prototypes"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Save build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sav4-wardrobe-report
+          path: /tmp/sav4-wardrobe.log
+          if-no-files-found: ignore
