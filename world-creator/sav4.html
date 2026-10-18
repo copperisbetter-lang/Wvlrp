@@ -96,21 +96,7 @@ loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  if(size.y<=0)throw Error('SAV 4 has invalid model bounds');
  const longest=Math.max(size.x,size.y,size.z);if(size.y<longest*.7){if(size.z>=size.x)avatar.rotation.x=-Math.PI/2;else avatar.rotation.z=Math.PI/2;avatar.updateMatrixWorld(true);}const upright=new T.Box3().setFromObject(avatar),uprightSize=upright.getSize(new T.Vector3());if(uprightSize.y>0){const factor=1.6764/uprightSize.y;avatar.scale.multiplyScalar(factor);avatar.updateMatrixWorld(true);}console.info('SAV4 bounds',size,'upright',uprightSize);
  const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
- // SAV4 face repair: replace red eye surfaces with visible pale-blue eye assemblies.
- const eyeWhite=new T.MeshStandardMaterial({color:0xf4f2ec,roughness:.36,side:T.DoubleSide,depthTest:true});
- const irisMat=new T.MeshStandardMaterial({color:0x9ec8e5,roughness:.3,side:T.DoubleSide});
- const pupilMat=new T.MeshStandardMaterial({color:0x26313a,roughness:.25,side:T.DoubleSide});
- const blondeMat=new T.MeshStandardMaterial({color:0xc7b18e,roughness:.85,side:T.DoubleSide});
- // Recolor every identifiable hair mesh, including textured hair and nonstandard material names.
- avatar.traverse(o=>{if(!o.isMesh)return;const n=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m?.name).join(' '):o.material?.name||'')).toLowerCase();if(/hair|scalp|fringe|strand|bang|lock|wig|haircap/.test(n)){const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(()=>blondeMat.clone());if(o.material.length===1)o.material=o.material[0];}});
- // The model's red sockets are left in place; opaque replacement eyeballs are drawn in front.
- const faceGroup=new T.Group();scene.add(faceGroup);
- const hh=fittedSize.y, faceY=hh*.908, faceZ=fittedSize.z*.46;
- function eyePiece(x,y,z,rx,ry,rz,material){const mesh=new T.Mesh(new T.SphereGeometry(1,28,20),material);mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);mesh.renderOrder=50;faceGroup.add(mesh);return mesh;}
- for(const side of [-1,1]){const x=side*hh*.033;eyePiece(x,faceY,faceZ,hh*.027,hh*.012,hh*.013,eyeWhite);eyePiece(x,faceY,faceZ+hh*.012,hh*.010,hh*.010,hh*.004,irisMat);eyePiece(x,faceY,faceZ+hh*.016,hh*.004,hh*.005,hh*.002,pupilMat);}
- // Apply the same model transform to the face overlay so it follows SAV4's origin.
- faceGroup.position.set(0,0,0);
- console.info('SAV4 facial eye overlay and hair material replacement enabled');
+ // Removed misplaced procedural face overlay. Use source GLB eye/hair geometry only until properly rigged replacements are available.
  clothes.position.set(0,0,0);
  controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(5.8,fittedSize.y*3.4));controls.update();
  window.outfit(selectedOutfit);
