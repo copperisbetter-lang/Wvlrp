@@ -135,10 +135,10 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    realWater.waveLength=.35;
    realWater.waveSpeed=.55;
    realWater.waveCount=18;
-   realWater.waterColor=new B.Color3(.025,.105,.075);
-   realWater.waterColor2=new B.Color3(.035,.13,.095);
-   realWater.colorBlendFactor=.28;
-   realWater.colorBlendFactor2=.32;
+   realWater.waterColor=new B.Color3(.018,.075,.045);
+   realWater.waterColor2=new B.Color3(.025,.09,.055);
+   realWater.colorBlendFactor=.82;
+   realWater.colorBlendFactor2=.82;
    realWater.bumpAffectsReflection=true;
    realWater.useWorldCoordinatesForWaveDeformation=true;
    realWater.specularColor=new B.Color3(.38,.46,.39);
@@ -150,11 +150,11 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      for(const mesh of scene.meshes){
        if(reflected.size>=55)break;
        if(reflected.has(mesh)||groups.some(g=>g.mesh===mesh)||!mesh.isEnabled()||!mesh.isVisible)continue;
-       if(/ground|terrain|landscape|water|lake|river|creek/i.test(mesh.name))continue;
+       if(/ground|terrain|landscape|water|lake|river|creek|sky/i.test(mesh.name))continue;
        const box=mesh.getBoundingInfo?.().boundingBox;
        if(!box)continue;
        const p=box.centerWorld;
-       if(!/sky/i.test(mesh.name)&&!sites.some(site=>Math.hypot(p.x-site.x,p.z-site.z)<145))continue;
+       if(!sites.some(site=>Math.hypot(p.x-site.x,p.z-site.z)<145))continue;
        reflected.add(mesh);realWater.addToRenderList(mesh);
      }
    };
