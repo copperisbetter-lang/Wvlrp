@@ -1,4 +1,4 @@
-import {installWildWaters} from "./wild-living-waters.js?v=20261018-hide-duplicate-water-v6";
+import {installWildWaters} from "./wild-living-waters.js?v=20261018-green-water-debug-v7";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
 
@@ -155,7 +155,7 @@ if(START_AT_LAKE){
  const timer=setInterval(()=>{
   const waterMeshes=scene.meshes.filter(m=>/lake|water|river|creek/i.test(m.name));
   const active=waterMeshes.filter(m=>m.isEnabled()&&m.isVisible);
-  probe.textContent="LAKE V5 | active "+active.length+" / "+waterMeshes.length+" | "+active.slice(0,3).map(m=>m.name+":"+(m.material?.name||"none")).join(", ");
+  probe.textContent="LAKE V7 | "+(window.__wildLakeMaterialStatus||"loading renderer")+" | active "+active.length+" / "+waterMeshes.length+" | "+active.slice(0,3).map(m=>m.name+":"+(m.material?.name||"none")).join(", ");
   if(++checks>=30)clearInterval(timer);
  },1000);
 }
