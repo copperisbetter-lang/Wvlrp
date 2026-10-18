@@ -5,10 +5,15 @@ on:
       - world-creator/scripts/build_sav4_wardrobe.py
       - .github/workflows/build-sav4-wardrobe.yml
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build SAV 4 adult character GLB"]
+    types: [completed]
+    branches: ["main"]
 permissions:
   contents: write
 jobs:
   wardrobe:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
