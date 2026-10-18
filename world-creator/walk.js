@@ -1,3 +1,4 @@
+import {installWildWaters} from "./wild-living-waters.js?v=20261018-v1";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
 
@@ -140,6 +141,8 @@ const masterForest=installMasterHDForest(B,scene,{
  excluded:(x,z,clearance)=>[[0,0,42],[93,77,55],[90,78,40],[90,75,40],[0,274,40],[30,333,50]]
    .some(([cx,cz,r])=>Math.hypot(x-cx,z-cz)<r+clearance)
 });
+const livingWaters=installWildWaters(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY),getPosition:()=>camera.position,seed});
+window.__wildLivingWaters=livingWaters;
 const autumnMaples=masterForest.maple;
 const nativeConifers=masterForest.conifer;
 window.__wildMasterForest=masterForest;
