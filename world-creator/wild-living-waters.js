@@ -73,7 +73,8 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    return mesh;
  }
  for(const [idx,s] of sites.entries()){
-   const lakeLevel=height(s.x,s.z)+2;
+   // Keep water below surrounding terrain instead of flooding the shoreline.
+   const lakeLevel=height(s.x,s.z)-0.35;
    const points=[[s.x,lakeLevel,s.z]],uvs=[s.x/12,s.z/12],indices=[];
    const segments=128;
    for(let i=0;i<=segments;i++){
@@ -81,7 +82,12 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      const r=1+.055*Math.sin(5*a+idx)+.025*Math.sin(11*a+idx*2);
      const x=s.x+Math.cos(a)*s.rx*r,z=s.z+Math.sin(a)*s.rz*r;
      points.push([x,lakeLevel,z]);uvs.push(x/12,z/12);
-     if(i>0)indices.push(0,i,i+1);
+     if(i>0){
+       // Reject flooded shoreline triangles where the land rises above the lake.
+       const prev=points[i],curr=points[i+1];
+       const mx=(s.x+prev[0]+curr[0])/3,mz=(s.z+prev[2]+curr[2])/3;
+       if(height(mx,mz)<lakeLevel+.08)indices.push(0,i,i+1);
+     }
    }
    const mesh=waterMesh("living lake "+(idx+1),points,mat,indices,uvs);
    mesh.setEnabled(false);
@@ -93,7 +99,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    for(let i=0;i<n;i++){
      const t=i/(n-1),z=origin.z+(t-.5)*700;
      const x=origin.x+origin.rx*.7+30*Math.sin(t*10+stream*2)+stream*75;
-     const y=height(x,z)+.08,width=2.6+1.1*Math.sin(t*12+stream);
+     const y=height(x,z)-.12,width=2.6+1.1*Math.sin(t*12+stream);
      points.push([x-width,y,z],[x+width,y,z]);
      uvs.push(0,i*.55,1,i*.55);
      if(i<n-1){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}
