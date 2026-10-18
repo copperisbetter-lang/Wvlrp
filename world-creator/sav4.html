@@ -26,9 +26,9 @@ loader.load('./assets/sav4-realistic.glb?v=51adba27331b',g=>{
  avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m){m.side=T.DoubleSide;m.transparent=false;m.alphaTest=0;m.depthWrite=true;m.needsUpdate=true}})}});
  const bounds=new T.Box3().setFromObject(avatar),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
  if(size.y<=0)throw Error('SAV 4 has invalid model bounds');
- if(size.y<1.55||size.y>1.85){status.textContent='WARNING: SAV 4 GLB height '+size.y.toFixed(2)+'m is incorrect; expected 1.68m. Rebuild required.';console.error('SAV4 invalid bounds',size);avatar.visible=false;return;}
- avatar.position.sub(center);avatar.position.y+=size.y/2;
- controls.target.set(0,size.y*.51,0);camera.position.set(0,size.y*.58,Math.max(2.7,size.y*1.8));controls.update();
- status.textContent='SAV 4 GLB loaded ('+size.y.toFixed(2)+'m model bounds; viewer revision cd482a2). Wardrobe fittings pending.';
+ if(size.y<1.55||size.y>1.85){const factor=1.6764/size.y;avatar.scale.multiplyScalar(factor);avatar.updateMatrixWorld(true);status.textContent='SAV 4 displayed at corrected 1.676m height (source GLB '+size.y.toFixed(2)+'m; asset rebuild still required).';console.warn('SAV4 source dimensions need rebuild',size,factor);}
+ const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
+ controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.58,Math.max(2.7,fittedSize.y*1.8));controls.update();
+ status.textContent='SAV 4 visible ('+fittedSize.y.toFixed(2)+'m displayed; source '+size.y.toFixed(2)+'m). Source rebuild and wardrobe fitting pending.';
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
 function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
