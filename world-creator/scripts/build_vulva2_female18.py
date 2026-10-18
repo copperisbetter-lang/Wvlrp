@@ -128,12 +128,20 @@ def fit_vulva2(root,body,rig):
     # narrow X/Z neighborhood and reject fits without reliable body contact.
     cx=sum(p[0] for p in pts)/len(pts)
     cz=sum(p[2] for p in pts)/len(pts)
-    probes=[front_surface(cx+dx,cz+dz0)
-            for dx in (-.018,-.009,0,.009,.018)
-            for dz0 in (-.025,-.012,0,.012,.025)]
-    probes=[p for p in probes if p is not None]
+    # The midline at the crotch is often an actual opening between the thighs.
+    # Scan outward/upward for nearby frontal skin instead of treating that
+    # anatomically normal gap as a missing mesh. Keep the sampled region local.
+    probes=[]
+    for dz0 in (0,.012,-.012,.025,-.025,.04,.06,.08):
+        for dx in (0,-.009,.009,-.018,.018,-.03,.03,-.045,.045):
+            hit_y=front_surface(cx+dx,cz+dz0)
+            if hit_y is not None:
+                probes.append(hit_y)
+        if len(probes)>=9:
+            break
+    print("SAV3_CROTCH_DEPTH_PROBES",len(probes),"at",round(cx,4),round(cz,4),flush=True)
     if len(probes)<5:
-        raise RuntimeError("SAV3_CROTCH_DEPTH_UNRESOLVED: no reliable midline skin")
+        raise RuntimeError("SAV3_CROTCH_DEPTH_UNRESOLVED: no reliable nearby frontal skin")
     import statistics
     target_y=statistics.median(probes)-.002
     donor_front=statistics.median(p[1] for p in pts)
