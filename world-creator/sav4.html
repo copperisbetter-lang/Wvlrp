@@ -2,13 +2,25 @@
 const clothes=new T.Group();scene.add(clothes);clothes.renderOrder=10;
 const fabric=(color)=>new T.MeshStandardMaterial({color,roughness:.88,side:T.DoubleSide});
 function cylinder(rt,rb,h,y,mat,x=0,z=0){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,32,1,false),mat);m.position.set(x,y,z);return m}
-function garment(style){const g=new T.Group(),mat=fabric(({dress:0x9c6468,bikini:0x53768c,shorts:0x506d8a,skirt:0x866b86,casual:0x738474})[style]||0x866b86),top=fabric(style==='shorts'?0xe2ddd3:style==='skirt'?0xe6d9d4:0x9c6468);
-if(style==='skirt'||style==='dress'){g.add(cylinder(.205,style==='skirt'?.295:.34,style==='skirt'?.34:.68,style==='skirt'?.83:.76,mat));g.add(cylinder(.21,.21,.045,1.015,mat));}
-if(style==='dress'){g.add(cylinder(.175,.215,.42,1.31,mat));}
-if(style==='skirt'||style==='shorts'||style==='casual'){g.add(cylinder(.18,.20,.40,1.32,top));}
-if(style==='shorts'||style==='casual'){g.add(cylinder(.22,.23,.18,.96,mat));for(const x of [-.115,.115])g.add(cylinder(.115,.12,.24,.83,mat,x));}
-if(style==='bikini'){g.add(cylinder(.175,.19,.16,1.40,mat));g.add(cylinder(.20,.21,.13,.97,mat));}
-return g}
+function garment(style){
+ const g=new T.Group();const palette={dress:0x966675,bikini:0x477f95,shorts:0x496d91,skirt:0x55758c,casual:0x738474};
+ const mat=fabric(palette[style]||0x55758c),top=fabric(style==='shorts'?0xf1e8df:style==='skirt'?0xf1e4d9:0x9c6468);
+ const add=(geo,m,x,y,z=0)=>{const part=new T.Mesh(geo,m);part.position.set(x,y,z);g.add(part);return part};
+ const tapered=(a,b,h,m,y)=>add(new T.CylinderGeometry(a,b,h,40,1,false),m,0,y);
+ if(style==='skirt'||style==='dress'){tapered(.195,style==='skirt'?.285:.32,style==='skirt'?.30:.58,mat,style==='skirt'?.87:.83);}
+ if(style==='dress'){tapered(.175,.20,.40,mat,1.30);}
+ if(style==='skirt'||style==='shorts'||style==='casual'){tapered(.172,.194,.34,top,1.32);}
+ if(style==='shorts'||style==='casual'){tapered(.20,.22,.13,mat,.98);for(const x of [-.11,.11])add(new T.CylinderGeometry(.107,.113,.16,32),mat,x,.85);}
+ if(style==='bikini'){
+  // Separate fabric cups, shoulder straps and brief; no painted-on textures.
+  for(const x of [-.085,.085]){
+   const cup=add(new T.SphereGeometry(.098,20,12,0,Math.PI*2,0,Math.PI),mat,x,1.42,.095);cup.scale.set(1,.68,.43);
+   const strap=add(new T.CylinderGeometry(.011,.011,.19,10),mat,x*.8,1.56,.065);strap.rotation.z=x<0?-.23:.23;
+  }
+  tapered(.188,.204,.115,mat,.995);
+ }
+ return g;
+}
 window.outfit=()=>{};const loaderModule=await import('three/addons/loaders/GLTFLoader.js');
 const loader=new loaderModule.GLTFLoader();
 const status=document.getElementById('note');status.textContent='Loading SAV 4 real GLB…';
@@ -31,7 +43,7 @@ window.outfit=function(style){
  if(!avatar){status.textContent='Wardrobe preview active while SAV 4 loads.';}
  // Always show the selected procedural garment preview, even when GLB has no wardrobe meshes.
  if(avatar)avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
- const preview=garment(style);preview.scale.set(1,1,1);if(false&&style==='skirt'&&realSkirt&&avatar){const bodyBox=new T.Box3().setFromObject(avatar),bodySize=bodyBox.getSize(new T.Vector3()),bodyCenter=bodyBox.getCenter(new T.Vector3());let skirtBox=new T.Box3().setFromObject(preview),skirtSize=skirtBox.getSize(new T.Vector3());if(skirtSize.y<skirtSize.z*.65){preview.rotation.x=-Math.PI/2;preview.updateMatrixWorld(true);skirtBox=new T.Box3().setFromObject(preview);skirtSize=skirtBox.getSize(new T.Vector3());}if(skirtSize.x>0&&skirtSize.y>0){const targetWidth=bodySize.x*1.12;const factor=targetWidth/skirtSize.x;preview.scale.setScalar(factor);preview.updateMatrixWorld(true);const fittedBox=new T.Box3().setFromObject(preview),fittedCenter=fittedBox.getCenter(new T.Vector3());preview.position.x+=bodyCenter.x-fittedCenter.x;preview.position.z+=bodyCenter.z-fittedCenter.z;preview.position.y+=bodyBox.min.y+bodySize.y*.64-fittedBox.max.y;}}else{preview.traverse(o=>{if(o.isMesh){o.material.depthTest=true;o.material.depthWrite=true;}});}clothes.add(preview);status.textContent=item.label+(style==='skirt'?' — visible fallback skirt; imported MakeHuman mesh needs geometry repair.':' — temporary clothing preview; fitted garment pending.');
+ const preview=garment(style);preview.scale.set(1,1,1);if(style==='skirt'&&realSkirt&&avatar){const bodyBox=new T.Box3().setFromObject(avatar),bodySize=bodyBox.getSize(new T.Vector3()),bodyCenter=bodyBox.getCenter(new T.Vector3());let skirtBox=new T.Box3().setFromObject(preview),skirtSize=skirtBox.getSize(new T.Vector3());if(skirtSize.y<skirtSize.z*.65){preview.rotation.x=-Math.PI/2;preview.updateMatrixWorld(true);skirtBox=new T.Box3().setFromObject(preview);skirtSize=skirtBox.getSize(new T.Vector3());}if(skirtSize.x>0&&skirtSize.y>0){const targetWidth=bodySize.x*1.12;const factor=targetWidth/skirtSize.x;preview.scale.setScalar(factor);preview.updateMatrixWorld(true);const fittedBox=new T.Box3().setFromObject(preview),fittedCenter=fittedBox.getCenter(new T.Vector3());preview.position.x+=bodyCenter.x-fittedCenter.x;preview.position.z+=bodyCenter.z-fittedCenter.z;preview.position.y+=bodyBox.min.y+bodySize.y*.64-fittedBox.max.y;}}else{preview.traverse(o=>{if(o.isMesh){o.material.depthTest=true;o.material.depthWrite=true;}});}clothes.add(preview);status.textContent=item.label+(style==='skirt'?' — visible fallback skirt; imported MakeHuman mesh needs geometry repair.':' — temporary clothing preview; fitted garment pending.');
 };
 loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  avatar=g.scene;body.add(avatar);
