@@ -15,8 +15,8 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
   mesh.material=material;mesh.parent=root;mesh.isPickable=false;return mesh;
  }
  for(const [idx,s] of sites.entries()){
-  const points=[[s.x,height(s.x,s.z)+1.25,s.z]];
-  for(let i=0;i<=64;i++){const a=i*Math.PI*2/64,r=1+.045*Math.sin(5*a+idx);const x=s.x+Math.cos(a)*s.rx*r,z=s.z+Math.sin(a)*s.rz*r;points.push([x,height(s.x,s.z)+.11,z]);}
+  const points=[[s.x,height(s.x,s.z)+.08,s.z]];
+  for(let i=0;i<=64;i++){const a=i*Math.PI*2/64,r=1+.045*Math.sin(5*a+idx);const x=s.x+Math.cos(a)*s.rx*r,z=s.z+Math.sin(a)*s.rz*r;points.push([x,height(x,z)+.08,z]);}
   const mesh=waterMesh("living lake "+(idx+1),points,mat);
   groups.push({mesh,x:s.x,z:s.z,range:450});
  }
