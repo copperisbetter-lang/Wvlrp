@@ -23,10 +23,10 @@ window.outfit=function(style){
 };
 loader.load('./assets/sav4-realistic.glb?v=cd482a2',g=>{
  avatar=g.scene;body.add(avatar);
- avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true}});
+ avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m){m.side=T.DoubleSide;m.transparent=false;m.alphaTest=0;m.depthWrite=true;m.needsUpdate=true}})}});
  const bounds=new T.Box3().setFromObject(avatar),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
  if(size.y<=0)throw Error('SAV 4 has invalid model bounds');
- if(size.y<1.55||size.y>1.85){status.textContent='WARNING: SAV 4 GLB height '+size.y.toFixed(2)+'m is incorrect; expected 1.68m. Rebuild required.';console.error('SAV4 invalid bounds',size);return;}
+ if(size.y<1.55||size.y>1.85){status.textContent='WARNING: SAV 4 GLB height '+size.y.toFixed(2)+'m is incorrect; expected 1.68m. Rebuild required.';console.error('SAV4 invalid bounds',size);avatar.visible=false;return;}
  avatar.position.sub(center);avatar.position.y+=size.y/2;
  controls.target.set(0,size.y*.51,0);camera.position.set(0,size.y*.58,Math.max(2.7,size.y*1.8));controls.update();
  status.textContent='SAV 4 GLB loaded ('+size.y.toFixed(2)+'m model bounds; viewer revision cd482a2). Wardrobe fittings pending.';
