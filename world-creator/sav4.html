@@ -5,7 +5,37 @@
 <label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">0°</output></label>
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
-<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">import * as T from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';const noteEarly=document.getElementById('note');window.addEventListener('error',e=>{if(noteEarly)noteEarly.textContent='Viewer error: '+e.message;});window.addEventListener('unhandledrejection',e=>{if(noteEarly)noteEarly.textContent='Viewer module error: '+(e.reason?.message||String(e.reason));});const scene=new T.Scene();scene.background=new T.Color(0x24352f);scene.add(new T.HemisphereLight(0xffffff,0x66746e,2));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(2,4,5);scene.add(sun);const camera=new T.PerspectiveCamera(38,1,.01,50);camera.position.set(0,1.25,3.8);const renderer=new T.WebGLRenderer({antialias:true});document.getElementById('stage').append(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.enableDamping=true;const skin=new T.MeshStandardMaterial({color:0xecc6b2,roughness:.84}),hair=new T.MeshStandardMaterial({color:0xbca481,roughness:.88}),eye=new T.MeshStandardMaterial({color:0x9dc6db}),dressMat=new T.MeshStandardMaterial({color:0x9c6468}),blue=new T.MeshStandardMaterial({color:0x53768c}),white=new T.MeshStandardMaterial({color:0xe2ddd3}),pink=new T.MeshStandardMaterial({color:0xb46c86});const body=new T.Group();scene.add(body);
+<button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
+ const key='wvlrp.sav4.skirtFit.v1';
+ const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
+ const show=(fit,message)=>{
+  const box=document.getElementById('savedFitCoordinates');
+  box.hidden=false;box.value=JSON.stringify(fit,null,2);
+  document.getElementById('fitSaveStatus').textContent=message;
+ };
+ window.saveSkirtFit=()=>{
+  const fit={version:1};
+  for(const [name,id] of Object.entries(fields))fit[name]=Number(document.getElementById(id).value);
+  fit.flipped=document.getElementById('skirtFlip').checked;
+  try{localStorage.setItem(key,JSON.stringify(fit));show(fit,'Saved on this browser. These settings will return when you reopen SAV4.');}
+  catch(e){show(fit,'Browser storage unavailable. Copy or screenshot these coordinates to keep them.');}
+ };
+ try{
+  const raw=localStorage.getItem(key);
+  const fit=raw?JSON.parse(raw):null;
+  if(fit&&fit.version===1&&Object.keys(fields).every(name=>typeof fit[name]==='number'&&Number.isFinite(fit[name]))&&fit.size>0&&typeof fit.flipped==='boolean'){
+   for(const [name,id] of Object.entries(fields)){
+    const input=document.getElementById(id),value=fit[name];
+    input.min=String(Math.min(Number(input.min),value));input.max=String(Math.max(Number(input.max),value));input.value=String(value);
+   }
+   document.getElementById('skirtFlip').checked=fit.flipped;
+   for(const id of ['skirtYaw','skirtPitch','skirtRoll'])document.getElementById(id+'Value').textContent=document.getElementById(id).value+'°';
+   document.getElementById('skirtHeightValue').textContent=fit.waistMeters.toFixed(2)+' m';
+   document.getElementById('skirtDepthValue').textContent=(fit.forwardMeters*100).toFixed(1)+' cm';
+   show(fit,'Saved fit restored from this browser.');
+  }
+ }catch(e){document.getElementById('fitSaveStatus').textContent='Saved fit could not be restored. You can save a new fit.';}
+})();</script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">import * as T from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';const noteEarly=document.getElementById('note');window.addEventListener('error',e=>{if(noteEarly)noteEarly.textContent='Viewer error: '+e.message;});window.addEventListener('unhandledrejection',e=>{if(noteEarly)noteEarly.textContent='Viewer module error: '+(e.reason?.message||String(e.reason));});const scene=new T.Scene();scene.background=new T.Color(0x24352f);scene.add(new T.HemisphereLight(0xffffff,0x66746e,2));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(2,4,5);scene.add(sun);const camera=new T.PerspectiveCamera(38,1,.01,50);camera.position.set(0,1.25,3.8);const renderer=new T.WebGLRenderer({antialias:true});document.getElementById('stage').append(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.enableDamping=true;const skin=new T.MeshStandardMaterial({color:0xecc6b2,roughness:.84}),hair=new T.MeshStandardMaterial({color:0xbca481,roughness:.88}),eye=new T.MeshStandardMaterial({color:0x9dc6db}),dressMat=new T.MeshStandardMaterial({color:0x9c6468}),blue=new T.MeshStandardMaterial({color:0x53768c}),white=new T.MeshStandardMaterial({color:0xe2ddd3}),pink=new T.MeshStandardMaterial({color:0xb46c86});const body=new T.Group();scene.add(body);
 const clothes=new T.Group();scene.add(clothes);clothes.renderOrder=10;
 const fabric=(color)=>new T.MeshStandardMaterial({color,roughness:.88,side:T.DoubleSide});
 function cylinder(rt,rb,h,y,mat,x=0,z=0){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,32,1,false),mat);m.position.set(x,y,z);return m}
