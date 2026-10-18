@@ -21,7 +21,7 @@ window.outfit=function(style){
  if(named.length){named.forEach(o=>o.visible=o.name.toLowerCase().includes(style));status.textContent=item.label+' selected';}
  else status.textContent='SAV 4 GLB loaded. '+item.label+' requested; fitted wardrobe meshes not yet included in GLB.';
 };
-loader.load('./assets/sav4-realistic.glb?v=691c033axis',g=>{
+loader.load('./assets/sav4-realistic.glb?v=837c16b38ee5',g=>{
  avatar=g.scene;body.add(avatar);
  avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m){m.side=T.DoubleSide;m.transparent=false;m.alphaTest=0;m.depthWrite=true;m.needsUpdate=true}})}});
  const bounds=new T.Box3().setFromObject(avatar),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
