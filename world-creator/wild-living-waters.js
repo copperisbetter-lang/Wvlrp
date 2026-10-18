@@ -1,6 +1,6 @@
 /** Streaming animated Appalachian lakes and creeks; no external assets required. */
 export function installWildWaters(B,scene,{height,getPosition,seed=1}){
- const sites=[{x:-440,z:520,rx:135,rz:95},{x:610,z:-430,rx:95,rz:72}];
+ const sites=[{x:-165,z:-180,rx:72,rz:52},{x:410,z:-340,rx:95,rz:72}];
  const root=new B.TransformNode("Wild living waters",scene);
  const mat=new B.StandardMaterial("deep reflective lake water",scene);
  mat.diffuseColor=new B.Color3(.075,.26,.29);mat.specularColor=new B.Color3(.75,.86,.84);
@@ -15,10 +15,10 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
   mesh.material=material;mesh.parent=root;mesh.isPickable=false;return mesh;
  }
  for(const [idx,s] of sites.entries()){
-  const points=[[s.x,height(s.x,s.z)+.11,s.z]];
+  const points=[[s.x,height(s.x,s.z)+1.25,s.z]];
   for(let i=0;i<=64;i++){const a=i*Math.PI*2/64,r=1+.045*Math.sin(5*a+idx);const x=s.x+Math.cos(a)*s.rx*r,z=s.z+Math.sin(a)*s.rz*r;points.push([x,height(s.x,s.z)+.11,z]);}
   const mesh=waterMesh("living lake "+(idx+1),points,mat);
-  groups.push({mesh,x:s.x,z:s.z,range:260});
+  groups.push({mesh,x:s.x,z:s.z,range:450});
  }
  // Narrow meandering streams, made from individual local ribbons rather than one enormous plane.
  for(let stream=0;stream<3;stream++){
