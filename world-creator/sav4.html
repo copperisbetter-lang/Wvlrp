@@ -1,8 +1,8 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:24dvh;overflow:auto}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="2.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="1.05" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">1.05 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
-<label>Move forward/back <input aria-label="Move skirt forward or backward" id="skirtDepth" type="range" min="-1" max="1" step="0.005" value="0" oninput="window.refitSkirt?.()"> <output id="skirtDepthValue">0.0 cm</output></label>
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:24dvh;overflow:auto}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Real GLB Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">4.02 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
+<label>Move forward/back <input aria-label="Move skirt forward or backward" id="skirtDepth" type="range" min="-1" max="1" step="0.005" value="0.09" oninput="window.refitSkirt?.()"> <output id="skirtDepthValue">9.0 cm</output></label>
 <div><button type="button" onclick="window.moveSkirtDepth?.(0.01)">Forward 1 cm</button><button type="button" onclick="window.moveSkirtDepth?.(-0.01)">Backward 1 cm</button><button type="button" onclick="window.centerSkirtDepth?.()">Center forward/back</button></div>
-<label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">0°</output></label>
-<label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">0°</output></label>
+<label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="8" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">8°</output></label>
+<label>Tilt forward/back <input aria-label="Tilt skirt forward or back" id="skirtPitch" type="range" min="-180" max="180" step="1" value="85" oninput="window.refitSkirt?.()"> <output id="skirtPitchValue">85°</output></label>
 <label>Tilt sideways <input aria-label="Tilt skirt sideways" id="skirtRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitSkirt?.()"> <output id="skirtRollValue">0°</output></label>
 <label><input id="skirtFlip" type="checkbox" onchange="window.refitSkirt?.()"> Flip skirt upside down</label>
 <button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
@@ -93,7 +93,7 @@ function alignGarment(model,style){
  // A mini should occupy the hip region, not the full avatar width or crotch.
  const sizeControl=document.getElementById('skirtSize');
  const heightControl=document.getElementById('skirtHeight');
- const desiredWidth=bodySize.y*.235*Number(sizeControl?.value||2.5);
+ const desiredWidth=bodySize.y*.235*Number(sizeControl?.value||4.5);
  const scale=desiredWidth/Math.max(dims.x,dims.z);
  // Keep size independent of rotation, then refit the rotated bounds to the waist.
  const angle=id=>Number(document.getElementById(id)?.value||0)*Math.PI/180;
@@ -105,8 +105,8 @@ function alignGarment(model,style){
  const center=garmentBounds.getCenter(new T.Vector3()),size=garmentBounds.getSize(new T.Vector3());
  const bodyCenter=bodyBounds.getCenter(new T.Vector3());
  // Explicit world-space meters: height never depends on avatar bounding-box proportions.
- const waistY=Number(heightControl?.value ?? 1.05);
- const depthOffset=Number(document.getElementById('skirtDepth')?.value ?? 0);
+ const waistY=Number(heightControl?.value ?? 4.02);
+ const depthOffset=Number(document.getElementById('skirtDepth')?.value ?? 0.09);
  // Character-space front is +Z, independent of the orbit camera.
  model.position.set(bodyCenter.x-center.x,waistY-garmentBounds.max.y,bodyCenter.z-center.z+depthOffset);
  model.updateMatrixWorld(true);
