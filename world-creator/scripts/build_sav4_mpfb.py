@@ -33,7 +33,7 @@ rig=HumanService.add_builtin_rig(human,"mixamo")
 if rig is None:raise RuntimeError("SAV4 rig missing")
 # Facial proxies previously caused severe eye protrusion and mouth cutouts.
 # Export the intact base face first; add fitted proxies only after QA.
-eyes=add_asset(human,"eyes",["low-poly.mhclo"],"Eyes")
+eyes=add_asset(human,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
@@ -70,18 +70,10 @@ for obj in root.children_recursive:
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
 eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
-for ob in eye_meshes:
- for idx,original in enumerate(ob.data.materials):
-  if original:
-   mat=original.copy();mat.name="SAV4_sclera_natural"
-   mat.diffuse_color=(.91,.91,.88,1)
-   if mat.use_nodes:
-    for node in mat.node_tree.nodes:
-     if node.type=="BSDF_PRINCIPLED":
-      for link in list(mat.node_tree.links):
-       if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
-      node.inputs["Base Color"].default_value=(.91,.91,.88,1)
-   ob.data.materials[idx]=mat
+# Use the original MPFB eye UVs and the bundled blue iris texture.
+# Do not replace the whole eye with a flat white or blue material.
+from caroline_eyes import add_light_blue_eyes
+add_light_blue_eyes(root, human, rig)
 print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes))
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
