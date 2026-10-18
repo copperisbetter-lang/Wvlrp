@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV 4 | Wardrobe Test 2026-10-18</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:74dvh}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>SAV 4 — Wardrobe Test BUILD 2026-10-18</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer>Outfits: <button onclick="outfit('dress')">Plaid dress</button><button onclick="outfit('bikini')">Bikini</button><button onclick="outfit('shorts')">Shirt & shorts</button><button onclick="outfit('skirt')">Skirt & tank</button><button onclick="outfit('casual')">Casual</button><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">import * as T from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';const scene=new T.Scene();scene.background=new T.Color(0x24352f);scene.add(new T.HemisphereLight(0xffffff,0x66746e,2));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(2,4,5);scene.add(sun);const camera=new T.PerspectiveCamera(38,1,.01,50);camera.position.set(0,1.25,3.8);const renderer=new T.WebGLRenderer({antialias:true});document.getElementById('stage').append(renderer.domElement);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.enableDamping=true;const skin=new T.MeshStandardMaterial({color:0xecc6b2,roughness:.84}),hair=new T.MeshStandardMaterial({color:0xbca481,roughness:.88}),eye=new T.MeshStandardMaterial({color:0x9dc6db}),dressMat=new T.MeshStandardMaterial({color:0x9c6468}),blue=new T.MeshStandardMaterial({color:0x53768c}),white=new T.MeshStandardMaterial({color:0xe2ddd3}),pink=new T.MeshStandardMaterial({color:0xb46c86});const body=new T.Group();scene.add(body);
+const clothes=new T.Group();scene.add(clothes);clothes.renderOrder=10;
+const fabric=(color)=>new T.MeshStandardMaterial({color,roughness:.88,side:T.DoubleSide});
+function cylinder(rt,rb,h,y,mat,x=0,z=0){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,32,1,false),mat);m.position.set(x,y,z);return m}
+function garment(style){const g=new T.Group(),mat=fabric(({dress:0x9c6468,bikini:0x53768c,shorts:0x506d8a,skirt:0x866b86,casual:0x738474})[style]||0x866b86),top=fabric(style==='shorts'?0xe2ddd3:style==='skirt'?0xe6d9d4:0x9c6468);
+if(style==='skirt'||style==='dress'){g.add(cylinder(.205,style==='skirt'?.295:.34,style==='skirt'?.34:.68,style==='skirt'?.83:.76,mat));g.add(cylinder(.21,.21,.045,1.015,mat));}
+if(style==='dress'){g.add(cylinder(.175,.215,.42,1.31,mat));}
+if(style==='skirt'||style==='shorts'||style==='casual'){g.add(cylinder(.18,.20,.40,1.32,top));}
+if(style==='shorts'||style==='casual'){g.add(cylinder(.22,.23,.18,.96,mat));for(const x of [-.115,.115])g.add(cylinder(.115,.12,.24,.83,mat,x));}
+if(style==='bikini'){g.add(cylinder(.175,.19,.16,1.40,mat));g.add(cylinder(.20,.21,.13,.97,mat));}
+return g}
+const loaderModule=await import('three/addons/loaders/GLTFLoader.js');
+const loader=new loaderModule.GLTFLoader();
+const status=document.getElementById('note');status.textContent='Loading SAV 4 real GLB…';
+const wardrobe={
+ dress:{label:'Plaid sundress',color:0x95626c},
+ bikini:{label:'Bikini',color:0x547e90},
+ shorts:{label:'Shirt & shorts',color:0xeeeeee},
+ skirt:{label:'Skirt & tank',color:0xb67587},
+ casual:{label:'Casual',color:0x738474}
+};
+let avatar=null;
+window.outfit=function(style){
+ const item=wardrobe[style]||wardrobe.dress;
+ clothes.clear();
+ if(!avatar){status.textContent='Loading SAV 4 GLB…';return}
+ // Always show the selected procedural garment preview, even when GLB has no wardrobe meshes.
+ avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
+ const preview=garment(style);preview.traverse(o=>{if(o.isMesh){o.material.depthTest=false;o.renderOrder=999;}});clothes.add(preview);status.textContent=item.label+' preview visible (approximate fit; not rigged).';
+};
+loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
+ avatar=g.scene;body.add(avatar);
+ // SAV4 inspection material correction: target only named hair/eye geometry.
+ const blonde=new T.Color(0xb9a27c), irisBlue=new T.Color(0x9fc4d8), scleraWhite=new T.Color(0xf0ede8);
+ avatar.traverse(o=>{if(!o.isMesh)return;const name=o.name.toLowerCase();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach((m,i)=>{if(!m)return;const mn=(m.name||'').toLowerCase();const isHair=/hair|scalp|strand|fringe|bang|ponytail/.test(name+' '+mn);const isEye=/eye|iris|sclera|cornea|pupil/.test(name+' '+mn);if(!isHair&&!isEye)return;const clone=m.clone();if(isHair){clone.color.copy(blonde);if(clone.map){clone.map=null;}clone.roughness=.88;}else if(/sclera|eyewhite|eye_white/.test(name+' '+mn)){clone.color.copy(scleraWhite);clone.emissive?.set(0x000000);}else if(/iris|eye/.test(name+' '+mn)&&!/lash|brow|socket|lid|pupil/.test(name+' '+mn)){clone.color.copy(irisBlue);clone.emissive?.set(0x000000);clone.emissiveIntensity=0;if(clone.map)clone.map=null;}else return;clone.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=clone;else o.material=clone;});});
+ // Diagnostics expose mesh/material naming; GLB geometry repair remains necessary if eyes are missing.
+ console.info('SAV4 eye/hair meshes',[]);avatar.traverse(o=>{if(o.isMesh&&/eye|iris|pupil|hair|scalp/i.test(o.name+' '+(o.material?.name||'')))console.info('SAV4 mesh',o.name,o.material?.name);});
+ avatar.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(m){m.side=T.DoubleSide;m.transparent=false;m.alphaTest=0;m.depthWrite=true;m.needsUpdate=true}})}});
+ const bounds=new T.Box3().setFromObject(avatar),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
+ if(size.y<=0)throw Error('SAV 4 has invalid model bounds');
+ const longest=Math.max(size.x,size.y,size.z);if(size.y<longest*.7){if(size.z>=size.x)avatar.rotation.x=-Math.PI/2;else avatar.rotation.z=Math.PI/2;avatar.updateMatrixWorld(true);}const upright=new T.Box3().setFromObject(avatar),uprightSize=upright.getSize(new T.Vector3());if(uprightSize.y>0){const factor=1.6764/uprightSize.y;avatar.scale.multiplyScalar(factor);avatar.updateMatrixWorld(true);}console.info('SAV4 bounds',size,'upright',uprightSize);
+ const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
+ clothes.position.set(0,0,0);
+ controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.58,Math.max(2.7,fittedSize.y*1.8));controls.update();
+ window.outfit('skirt');status.textContent='SAV 4 model fitted; mini skirt preview selected. '+fittedSize.x.toFixed(2)+' × '+fittedSize.y.toFixed(2)+' × '+fittedSize.z.toFixed(2)+'m (original '+size.x.toFixed(2)+'/'+size.y.toFixed(2)+'/'+size.z.toFixed(2)+').';
+},p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
+function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();</script></body></html>
