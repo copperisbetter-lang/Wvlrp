@@ -5,7 +5,7 @@ import {mayPlantTree} from "./wild-master-forest-reservations.js";
  * Other native hardwood species remain pending genuine verified models.
  * Cell occupancy is 10%; not a claim that 10% of physical acreage is covered.
  */
-export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight,excluded=()=>false,radius=900,cellSize=75,maxVisible=90}={}){
+export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight,excluded=()=>false,radius=900,cellSize=75,maxVisible=90,centerX=0,centerZ=0}={}){
  const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of [...this.placements]){const before=p.root.position.y;const result=groundTree(p.root,terrainHeight,p.x,p.z,.12);if(!result.ok){p.root.setEnabled(false);p.root.dispose(false,true);this.roots=this.roots.filter(r=>r!==p.root);this.placements=this.placements.filter(v=>v!==p);this.skipped++;continue;}if(Math.abs(p.root.position.y-before)>.025)fixed++;}this.planted=this.placements.length;this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
  state.ready=(async()=>{
@@ -18,10 +18,12 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
   }
   if(!sources.length)throw Error("No verified conifer meshes loaded");
   const half=Math.ceil(radius/cellSize);
-  for(let ix=-half;ix<=half&&state.planted<maxVisible;ix++)for(let iz=-half;iz<=half&&state.planted<maxVisible;iz++){
+  const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
+  for(let dx=-half;dx<=half&&state.planted<maxVisible;dx++)for(let dz=-half;dz<=half&&state.planted<maxVisible;dz++){
+   const ix=cx+dx,iz=cz+dz;
    if(hash(ix,iz) >= .10)continue;
    const x=(ix+(hash(ix,iz,1)-.5)*.65)*cellSize,z=(iz+(hash(ix,iz,2)-.5)*.65)*cellSize;
-   if(Math.hypot(x,z)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
+   if(Math.hypot(x-centerX,z-centerZ)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
    const src=sources[Math.floor(hash(ix,iz,3)*sources.length)];let instance,root;
    try{
     instance=src.container.instantiateModelsToScene(n=>"native10-"+ix+"-"+iz+"-"+n,false,{doNotInstantiate:false});
