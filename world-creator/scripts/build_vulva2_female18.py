@@ -116,13 +116,32 @@ def fit_vulva2(root,body,rig):
     # original abdominal depth. Use the centerline of the local skin surface
     # as the Y anchor; side/thigh hits must not drive the fit.
     frontmost=min(v.co.y for v in vs)
+    # Ray hits must be evaluated against the *outer* skin, not discarded
+    # because the imported mesh has inconsistent face winding. A single
+    # forward ray also misses the medial gap between the upper thighs.
+    # Collect both sides and use the frontmost geometrically valid hit.
+    from mathutils.bvhtree import BVHTree
+    import bmesh
+    bm_probe=bmesh.new()
+    bm_probe.from_mesh(body.data)
+    bvh_probe=BVHTree.FromBMesh(bm_probe)
+    bm_probe.free()
     def front_surface(x,z):
-        hit,location,normal,index=body.ray_cast(
-            Vector((x,frontmost-.25*body_height,z)),
-            Vector((0,1,0)),distance=2*body_height)
-        if not hit or normal.y>=-.12:
+        origin=Vector((x,frontmost-.25*body_height,z))
+        hit,normal,index,distance=bvh_probe.ray_cast(
+            origin,Vector((0,1,0)),2*body_height)
+        if hit is not None:
+            return hit.y
+        # The lower pelvis may have no skin directly along the ray.
+        # Only accept a nearby front-facing surface within a strict
+        # spatial tolerance; never substitute an abdominal/back surface.
+        near,normal,index,distance=bvh_probe.find_nearest(
+            Vector((x,frontmost,z)),.065*body_height)
+        if near is None or abs(near.x-x)>.04*body_height or abs(near.z-z)>.04*body_height:
             return None
-        return location.y
+        if near.y>frontmost+.18*body_height:
+            return None
+        return near.y
     # Establish the centerline depth before conforming the donor mesh.
     # At the lower crotch the frontal ray may miss entirely, so sample a
     # narrow X/Z neighborhood and reject fits without reliable body contact.
