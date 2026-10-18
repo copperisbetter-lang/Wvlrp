@@ -21,11 +21,11 @@ def export_face_candidates(body, destination):
     destination.parent.mkdir(parents=True,exist_ok=True)
     with destination.open("w",newline="") as out:
         writer=csv.writer(out)
-        writer.writerow(("vertex_id","x","y","z","normalized_height"))
+        writer.writerow(("vertex_id","x","y","z","normalized_height","distance_from_centerline"))
         for vertex in vertices:
             h=(vertex.co.z-zmin)/span
             if 0.865<=h<=0.995:
-                writer.writerow((vertex.index,*[round(v,7) for v in vertex.co],round(h,7)))
+                writer.writerow((vertex.index,*[round(v,7) for v in vertex.co],round(h,7),round(abs(vertex.co.x),7)))
     return destination
 
 def create_region_template(body,destination):
