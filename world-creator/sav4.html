@@ -248,21 +248,10 @@ function animatePerformance(){
  // Update transferred garment skinning from the same deforming body vertices.
  for(const [model,binding]of wearBindings){
   if(!model.visible||!model.parent)continue;
-  const rideUp=(crawl||activeMotion==='Sit — legs apart')&&binding.role==='skirt';
   const hipMatrix=rig.get('Hips').matrixWorld,up=v3(0,1,0).transformDirection(hipMatrix),back=v3(0,0,-1).transformDirection(hipMatrix);
   const hb=binding.hipBounds,hs=hb.getSize(v3()),hc=hb.getCenter(v3());
   const delta=new Map();const point=v3(),offset=v3();for(const i of binding.used){faceMesh.getVertexPosition(i,point);point.applyMatrix4(faceMesh.matrixWorld);delta.set(i,point.clone().sub(binding.bodyRest.get(i)));}
   for(const part of binding.parts){const inv=part.mesh.matrixWorld.clone().invert(),attr=part.mesh.geometry.attributes.position;for(let i=0;i<attr.count;i++){point.fromArray(part.world,i*3);offset.set(0,0,0);for(let j=0;j<8;j++)offset.addScaledVector(delta.get(part.nearest[i*8+j]),part.weights[i*8+j]);point.add(offset);
-    if(rideUp){
-     const hp=v3().fromArray(part.hipLocal,i*3);
-     const hem=1-T.MathUtils.smoothstep(hp.y,hb.min.y,hb.max.y);
-     const rear=1-T.MathUtils.smoothstep(hp.z,hc.z-hs.z*.12,hc.z+hs.z*.25);
-     // The waistband stays anchored; gather the rear for kneeling, front for the seated variation.
-     const gathering=crawl?rear:1-rear;
-     const lift=(crawl?.025+(onElbows?.125:.105)*gathering:.18*gathering)*motionScale*hem;
-     const fold=Math.sin(hem*Math.PI*8)*.006*motionScale*hem*gathering;
-     point.addScaledVector(up,lift).addScaledVector(back,(crawl?1:-1)*(.006*motionScale+fold)*hem*gathering);
-    }
     point.applyMatrix4(inv);attr.setXYZ(i,point.x,point.y,point.z);}attr.needsUpdate=true;if(binding.role==='skirt')part.mesh.geometry.computeVertexNormals();}
  }
 }
