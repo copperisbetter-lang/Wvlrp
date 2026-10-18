@@ -37,14 +37,27 @@ const skirtLoader=new loaderModule.GLTFLoader();
 skirtLoader.load('./assets/sav4_makehuman_mini_skirt_01.glb',g=>{realSkirt=g.scene;if(avatar)window.outfit('skirt');},undefined,()=>{console.warn('MakeHuman skirt GLB not yet published to site assets');});
 function measureSkirtReady(){return !!avatar&&!!realSkirt;}
 
+// Load real garment meshes only. A missing GLB is not a wearable outfit.
+const garmentFiles={dress:'sav4-plaid-dress.glb',bikini:'sav4-bikini-blue.glb',shorts:'sav4-shorts-shirt.glb',skirt:'sav4-mini-denim.glb',casual:'sav4-casual.glb'};
+const fittedGarments=new Map();
+const loadingGarments=new Set();
 window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
- if(!avatar){status.textContent='Wardrobe preview active while SAV 4 loads.';}
- // Always show the selected procedural garment preview, even when GLB has no wardrobe meshes.
- if(avatar)avatar.traverse(o=>{if(o.isMesh&&/dress|bikini|shorts|skirt|shirt|tank|casual|outfit/i.test(o.name))o.visible=false});
- const preview=garment(style);preview.scale.set(1,1,1);if(style==='skirt'&&realSkirt&&avatar){const bodyBox=new T.Box3().setFromObject(avatar),bodySize=bodyBox.getSize(new T.Vector3()),bodyCenter=bodyBox.getCenter(new T.Vector3());let skirtBox=new T.Box3().setFromObject(preview),skirtSize=skirtBox.getSize(new T.Vector3());if(skirtSize.y<skirtSize.z*.65){preview.rotation.x=-Math.PI/2;preview.updateMatrixWorld(true);skirtBox=new T.Box3().setFromObject(preview);skirtSize=skirtBox.getSize(new T.Vector3());}if(skirtSize.x>0&&skirtSize.y>0){const targetWidth=bodySize.x*1.12;const factor=targetWidth/skirtSize.x;preview.scale.setScalar(factor);preview.updateMatrixWorld(true);const fittedBox=new T.Box3().setFromObject(preview),fittedCenter=fittedBox.getCenter(new T.Vector3());preview.position.x+=bodyCenter.x-fittedCenter.x;preview.position.z+=bodyCenter.z-fittedCenter.z;preview.position.y+=bodyBox.min.y+bodySize.y*.64-fittedBox.max.y;}}else{preview.traverse(o=>{if(o.isMesh){o.material.depthTest=true;o.material.depthWrite=true;}});}clothes.add(preview);status.textContent=item.label+(style==='skirt'?' — visible fallback skirt; imported MakeHuman mesh needs geometry repair.':' — temporary clothing preview; fitted garment pending.');
+ const ready=fittedGarments.get(style);
+ if(ready){clothes.add(ready);ready.visible=true;status.textContent=item.label+' — loaded 3D garment (fit requires inspection).';return;}
+ status.textContent=item.label+' — realistic 3D garment not installed yet.';
+ if(loadingGarments.has(style))return;
+ loadingGarments.add(style);
+ loader.load('./assets/'+garmentFiles[style],g=>{
+  loadingGarments.delete(style);
+  const model=g.scene;
+  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  fittedGarments.set(style,model);
+  window.outfit(style);
+ },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — garment GLB unavailable; no fake preview shown.';});
 };
+
 loader.load('./assets/sav4-realistic.glb?v=15e5b5928fea',g=>{
  avatar=g.scene;body.add(avatar);
  // SAV4 inspection material correction: target only named hair/eye geometry.
