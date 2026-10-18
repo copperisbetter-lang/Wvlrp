@@ -44,6 +44,15 @@ tint(hair,(.79,.73,.65),.94)
 # This is a geometry approximation, not a scan or verified photographic match.
 face_body=ObjectService.find_object_of_type_amongst_nearest_relatives(human,"Basemesh")
 if face_body is None: raise RuntimeError("SAV4 face morph: source basemesh missing")
+# Save inspectable vertex coordinates before morphing, so calibrated facial
+# regions can be mapped without guessing from oblique photo pixels.
+from sav4_face_calibration import export_face_candidates, create_region_template
+calibration_dir=ROOT/"assets"/"sav4-calibration"
+export_face_candidates(face_body,calibration_dir/"face-vertices.csv")
+region_map_path=ROOT/"characters"/"sav4"/"face-region-map.json"
+if not region_map_path.exists():
+    create_region_template(face_body,calibration_dir/"face-region-map.template.json")
+print("SAV4_CALIBRATION_EXPORT",calibration_dir)
 coords=[v.co.copy() for v in face_body.data.vertices]
 zmin=min(p.z for p in coords); zmax=max(p.z for p in coords)
 xmin=min(p.x for p in coords); xmax=max(p.x for p in coords)
