@@ -187,13 +187,13 @@ function animatePerformance(){
  const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run',seated=activeMotion==='Sit'||activeMotion==='Sit — legs apart';
  const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees',onElbows=activeMotion==='Elbows and knees';
  if(poseSeat)poseSeat.visible=seated;
- const phase=t*(run?9.2:5.4),s=Math.sin(phase),step=run?.63:.34;
+ const phase=t*(run?8.8:5.2),s=Math.sin(phase),step=run?.72:.25;
  const reach=activeMotion==='Bend and pick up'?.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2):0;
  let lean=gait?(run?.12:.025):reach*.95;
  if(crawl)lean=onElbows?1.94:Math.PI/2;
  // Lean the pelvis and torso together instead of twisting only the spine.
  rotateWorld('Hips',v3(1,0,0),lean);
- if(gait)lowerHips((run?.17:.065)+(run?.014:.006)*Math.cos(phase*2));
+ if(gait)lowerHips((run?.075:.025)+(run?.012:.004)*Math.cos(phase*2));
  if(seated)lowerHips(.39);
  if(crawl){
   const legLength=limbLength('LeftUpLeg','LeftLeg'),pad=.066*motionScale;
@@ -210,13 +210,13 @@ function animatePerformance(){
   }else if(gait){
    // Each ankle follows one forward/back lane; knees bend forward toward a pole.
    const cycle=((phase/(Math.PI*2)+(side==='Left'?0:.5))%1+1)%1,stance=run?.42:.64;
-   const stride=(run?.48:.32)*motionScale,lift=(run?.20:.07)*motionScale;
+   const stride=(run?.57:.24)*motionScale,lift=(run?.16:.045)*motionScale;
    let z,y=rest.get(side+'Foot').point.y,pitch=0;
    if(cycle<stance){const q=cycle/stance;z=stride*(1-2*q);pitch=-.10+.24*q;}
    else{const q=(cycle-stance)/(1-stance),ease=q*q*(3-2*q);z=stride*(2*ease-1);y+=lift*Math.sin(Math.PI*q);pitch=.12*Math.sin(Math.PI*q);}
    const root=rig.get(side+'UpLeg').getWorldPosition(v3());
    const target=v3(rest.get(side+'UpLeg').point.x*.98,y,rest.get('Hips').point.z+z);
-   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',target,root.clone().add(v3(0,-.3,4)));
+   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',target,root.clone().add(v3(0,-.3,2.5)));
    // Fix the ankle's complete orientation, including roll; direction alone allowed twisting.
    rotateWorld(side+'Foot',v3(1,0,0),pitch);
   }else{
@@ -232,9 +232,9 @@ function animatePerformance(){
    // Palms and fingers rest forward instead of hanging beneath the wrists.
    aim(side+'Hand',side+'HandMiddle1',v3(0,-.03,1));flattenPalm(side);
   }else{
-   const swing=gait?-s*sign*(run?.54:.24):0,flex=gait?(run?1.32:.32):.10;
-   let upper=v3(sign*.065,-Math.cos(swing),Math.sin(swing));
-   let fore=v3(sign*.025,-Math.cos(swing+flex),Math.sin(swing+flex));
+   const swing=gait?-s*sign*(run?.75:.36):0,flex=gait?(run?.85:.38):.10;
+   let upper=v3(sign*(gait?.13:.065),-Math.cos(swing),Math.sin(swing));
+   let fore=v3(sign*(gait?.10:.025),-Math.cos(swing+flex),Math.sin(swing+flex));
    if(activeMotion==='Wave'&&side==='Right'){upper=v3(-.4,.75,.12);fore=v3(Math.sin(t*5)*.18,1,.10);}
    if(reach){upper=v3(sign*.10,-1,.65*reach);fore=v3(sign*.04,-1,.55*reach);}
    if(seated){upper=v3(sign*.1,-1,.20);fore=v3(sign*.05,-.65,.8);}
