@@ -20,3 +20,10 @@ SAV 4 is an adult (18), 5 ft 6 in, slender/petite character. Garments must be in
 2. Import and inspect the existing MakeHuman mini skirt; repair and fit before enabling it.
 3. Create tank tops, then bikinis and remaining skirts; test every outfit in the viewer.
 4. Publish only after mobile inspection and verified working clothing switches.
+
+## Mandatory strap fit gate
+- Measure each strap path against the actual SAV 4 shoulder and garment attachment points after the character and garment are in the same coordinate space.
+- Do not reuse generic fixed strap lengths. Adjust endpoints and mesh path so the strap follows the shoulder without hovering, sagging, penetrating the body, or extending past the garment attachment.
+- Verify both left and right straps in front, side, and back views, and in neutral, walking, sitting, and bending poses.
+- Reject and rebuild any outfit with visibly dangling or detached straps; do not publish it as fitted.
+- Validate hem, waistband, bust and shoulder clearances separately; a good strap fit alone is insufficient.
