@@ -55,6 +55,8 @@ jobs:
           set -euo pipefail
           python3 -m py_compile world-creator/scripts/build_vulva2_female18.py world-creator/scripts/vulva2_clean_hair.py world-creator/scripts/vulva2_preview_animations.py
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_vulva2_female18.py 2>&1 | tee /tmp/vulva2-build.log
+          grep SAV3_VULVA2_EXTERIOR_FIT /tmp/vulva2-build.log
+          grep SAV3_SINGLE_EXTERIOR_ANATOMY_VERIFIED /tmp/vulva2-build.log
           grep VULVA2_TRUE_AUTOFIT_SUCCESS /tmp/vulva2-build.log
           grep VULVA2_FEMALE18_BUILD_SUCCESS /tmp/vulva2-build.log
           test -s world-creator/assets/vulva2-female18-inspection.glb
