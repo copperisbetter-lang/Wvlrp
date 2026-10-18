@@ -75,8 +75,13 @@ export function installAutumnMaples(B,scene,{
     let planted=0;
     const cells=Math.ceil(radius/cellSize);
     const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
-    for(let dx=-cells;dx<=cells&&planted<count;dx++){
-      for(let dz=-cells;dz<=cells&&planted<count;dz++){
+    // Plant nearest cells first: the visible budget must not be exhausted at the far edge.
+    const offsets=[];
+    for(let dx=-cells;dx<=cells;dx++)for(let dz=-cells;dz<=cells;dz++)offsets.push({dx,dz});
+    offsets.sort((a,b)=>(a.dx*a.dx+a.dz*a.dz)-(b.dx*b.dx+b.dz*b.dz)||a.dx-b.dx||a.dz-b.dz);
+    for(const {dx,dz} of offsets){
+      if(planted>=count)break;
+      {
         const ix=cx+dx,iz=cz+dz;
         if(hash(ix,iz,0)>=density)continue;
         // Seeded placement stays identical across multiplayer clients.
