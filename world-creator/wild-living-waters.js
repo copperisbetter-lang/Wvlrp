@@ -132,11 +132,12 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    realWater.waveLength=.13;
    realWater.waveSpeed=.32;
    realWater.waveCount=18;
-   realWater.waterColor=new B.Color3(.018,.065,.045);
-   realWater.waterColor2=new B.Color3(.025,.085,.06);
-   realWater.colorBlendFactor=.82;
-   realWater.colorBlendFactor2=.82;
+   realWater.waterColor=new B.Color3(.025,.16,.105);
+   realWater.waterColor2=new B.Color3(.035,.18,.115);
+   realWater.colorBlendFactor=.12;
+   realWater.colorBlendFactor2=.12;
    realWater.bumpAffectsReflection=true;
+   realWater.specularColor=new B.Color3(.12,.18,.14);
    realWater.backFaceCulling=false;
    // Reflect a limited set of nearby shoreline scenery to preserve mobile FPS.
    const reflected=new Set();
@@ -145,6 +146,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      for(const mesh of scene.meshes){
        if(reflected.size>=55)break;
        if(reflected.has(mesh)||groups.some(g=>g.mesh===mesh)||!mesh.isEnabled()||!mesh.isVisible)continue;
+       if(/ground|terrain|landscape|sky|water|lake|river|creek/i.test(mesh.name))continue;
        const box=mesh.getBoundingInfo?.().boundingBox;
        if(!box)continue;
        const p=box.centerWorld;
