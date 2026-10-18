@@ -37,7 +37,7 @@ eyes=add_asset(human,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
-tint(hair,(.92,.83,.69),1.0)
+tint(hair,(.72,.62,.49),1.0)
 # Marybeth Hutchinson / Laura Harris (The Faculty, 1998) inspired facial pass.
 # Apply to the source basemesh before making the rigged export copy, so the
 # facial changes travel with the character instead of becoming loose proxies.
@@ -201,18 +201,18 @@ for obj in root.children_recursive:
  if obj.type=="MESH" and ("hair" in obj.name.lower() or any(m and "hair" in m.name.lower() for m in obj.data.materials)):
   for idx,original in enumerate(obj.data.materials):
    if original:
-    mat=original.copy();mat.diffuse_color=(.92,.83,.69,1)
+    mat=original.copy();mat.diffuse_color=(.72,.62,.49,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
       if node.type=="BSDF_PRINCIPLED":
        for link in list(mat.node_tree.links):
         if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
-       node.inputs["Base Color"].default_value=(.92,.83,.69,1)
+       node.inputs["Base Color"].default_value=(.72,.62,.49,1)
     obj.data.materials[idx]=mat
 # Preserve the original hair mesh shape. The previous trim collapsed every
 # strand below a cutoff into a flat horizontal shelf, making the hair look fake.
 # Keep the source long01 hairstyle intact until a proper hairstyle asset is fitted.
-print("SAV4_HAIR: lighter dusty blonde tint; existing long01 geometry preserved pending fitted side-swept fringe asset")
+print("SAV4_HAIR: muted dusty blonde tint; existing long01 geometry preserved")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
@@ -223,6 +223,13 @@ if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Reuse the proven UV-based MakeHuman blue iris texture routine.
 from caroline_eyes import add_light_blue_eyes
 add_light_blue_eyes(root, body, rig)
+# SAV4-specific eye exposure correction: keep existing UV iris/pupil detail.
+for eye_obj in eye_meshes:
+ for eye_mat in eye_obj.data.materials:
+  if eye_mat and eye_mat.use_nodes:
+   for hue in (n for n in eye_mat.node_tree.nodes if n.type=="HUE_SAT"):
+    hue.inputs["Saturation"].default_value=.42
+    hue.inputs["Value"].default_value=.72
 # Validate actual source eye mesh placement against the head before exporting.
 # A missing or detached proxy must fail the build instead of producing floating eyes.
 bpy.context.view_layer.update()
