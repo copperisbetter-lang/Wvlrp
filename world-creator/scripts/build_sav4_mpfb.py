@@ -37,7 +37,7 @@ eyes=add_asset(human,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
-tint(hair,(.82,.73,.57),.96)
+tint(hair,(.91,.83,.68),.96)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
 # Remove facial helper/proxy meshes that are misplaced in the exported head.
 for obj in list(root.children_recursive):
@@ -48,7 +48,7 @@ for obj in root.children_recursive:
  if obj.type=="MESH" and ("hair" in obj.name.lower() or any(m and "hair" in m.name.lower() for m in obj.data.materials)):
   for idx,original in enumerate(obj.data.materials):
    if original:
-    mat=original.copy();mat.diffuse_color=(.82,.73,.57,1)
+    mat=original.copy();mat.diffuse_color=(.91,.83,.68,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
       if node.type=="BSDF_PRINCIPLED":
@@ -77,6 +77,19 @@ if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Reuse the proven UV-based MakeHuman blue iris texture routine.
 from caroline_eyes import add_light_blue_eyes
 add_light_blue_eyes(root, body, rig)
+# Validate actual source eye mesh placement against the head before exporting.
+# A missing or detached proxy must fail the build instead of producing floating eyes.
+bpy.context.view_layer.update()
+head_top=max((body.matrix_world@v.co).z for v in body.data.vertices)
+head_bottom=min((body.matrix_world@v.co).z for v in body.data.vertices)
+body_height=head_top-head_bottom
+for eye_obj in eye_meshes:
+    eye_points=[eye_obj.matrix_world@v.co for v in eye_obj.data.vertices]
+    if not eye_points: raise RuntimeError("SAV4 empty eyeball geometry: "+eye_obj.name)
+    eye_center=sum(eye_points,Vector())/len(eye_points)
+    if eye_center.z < head_bottom+body_height*.77 or eye_center.z > head_top+body_height*.05:
+        raise RuntimeError(f"SAV4 detached eye mesh {eye_obj.name}: eye Z {eye_center.z:.3f}, body {head_bottom:.3f}..{head_top:.3f}")
+    print("SAV4_EYE_HEAD_ALIGNMENT",eye_obj.name,tuple(round(x,3) for x in eye_center))
 # Check eyes remain after material fitting.
 eye_meshes_after=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes_after:raise RuntimeError("SAV4 eye helper removed the eye meshes")
