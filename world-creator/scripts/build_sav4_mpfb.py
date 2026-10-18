@@ -34,12 +34,27 @@ for sub,names,kind in [
  ("eyes",["high-poly.mhclo"],"Eyes"),
  ("eyebrows",["eyebrow001.mhclo"],"Eyebrows"),
  ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
- ("teeth",["teeth_base.mhclo"],"Teeth")]:
+ # Omit teeth proxy until its alignment with the head is validated.
+ # Misaligned teeth and oral helpers caused visible facial artifacts.]:
  add_asset(human,sub,names,kind)
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
-tint(hair,(.52,.43,.30),.86)
+tint(hair,(.76,.68,.52),.96)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
+# Remove facial helper/proxy meshes that are misplaced in the exported head.
+for obj in list(root.children_recursive):
+ if obj.type=="MESH" and any(term in obj.name.lower() for term in ("teeth", "tongue", "mouth", "oral")):
+  bpy.data.objects.remove(obj,do_unlink=True)
+# Force a warm dusty blonde tint on copied hair materials (not just the source).
+for obj in root.children_recursive:
+ if obj.type=="MESH" and "hair" in obj.name.lower():
+  for mat in obj.data.materials:
+   if mat:
+    mat=mat.copy();mat.diffuse_color=(.76,.68,.52,1)
+    if mat.use_nodes:
+     for node in mat.node_tree.nodes:
+      if node.type=="BSDF_PRINCIPLED":node.inputs["Base Color"].default_value=(.76,.68,.52,1)
+    obj.data.materials[0]=mat
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
