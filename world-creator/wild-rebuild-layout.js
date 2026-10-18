@@ -109,7 +109,7 @@ export function flatlandHeight(x,z,seed,base){
     if(r>=1.18)continue;
     const bank=Math.max(0,Math.min(1,(1.18-r)/.28));
     const smooth=bank*bank*(3-2*bank);
-    h-=3.2*smooth;
+    h-=1.6*smooth;
   }
   return h;
 }
