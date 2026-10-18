@@ -77,6 +77,18 @@ for vert,p in zip(face_body.data.vertices,coords):
     vert.co.x *= 1.0-0.012*lower_face*fade
     # Keep this conservative until orthographic model comparisons exist.
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
+# Load the complete two-view landmark specification into the build for audit.
+# These are oblique image coordinates, NOT calibrated 3D mesh targets.
+landmarks_path=ROOT/"characters"/"sav4"/"laura-two-view-landmarks.json"
+if not landmarks_path.exists():
+    raise RuntimeError("SAV4 Laura landmark reference missing")
+import json
+landmarks=json.loads(landmarks_path.read_text())
+for view,keys in {"front_three_quarter":("eye_centers","nose_tip","mouth_center","chin","mouth_corners"),"profile":("nose_tip","lip_contour","chin_contour","jaw_back","ear_center")}.items():
+    if any(k not in landmarks.get(view,{}) for k in keys):
+        raise RuntimeError("SAV4 incomplete landmark specification: "+view)
+print("SAV4_TWO_VIEW_LANDMARKS_LOADED",landmarks_path)
+print("SAV4_LANDMARKS_NOT_3D_CALIBRATED: no unsafe direct vertex fitting")
 # Apply validated, photo-derived normalized ratios only when supplied.
 # Missing reference data must never be silently replaced with invented values.
 import json
