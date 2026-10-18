@@ -1,0 +1,24 @@
+{
+  "character": "SAV 4",
+  "age": 18,
+  "height_m": 1.676,
+  "build": "petite slender nearly straight silhouette, small bust",
+  "hair": "dusty blonde, layered, just past shoulders",
+  "eyes": "pale blue",
+  "reference": "Approved SAV 4 turnaround image from 2026-10-18 conversation; image upload to repository pending",
+  "outfits": [
+    "plaid sundress",
+    "bikini",
+    "tank and shorts",
+    "skirt and tank",
+    "casual shirt and shorts"
+  ],
+  "requirements": [
+    "separate SAV 4 GLB and viewer",
+    "complete watertight adult body mesh",
+    "realistic facial morphs",
+    "fully rigged walk/run/sit",
+    "no reuse of SAV 3 defective geometry"
+  ],
+  "status": "reference specification only; production GLB not yet built"
+}
