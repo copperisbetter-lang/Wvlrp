@@ -77,7 +77,10 @@ if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Reuse the proven UV-based MakeHuman blue iris texture routine.
 from caroline_eyes import add_light_blue_eyes
 add_light_blue_eyes(root, body, rig)
-print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes))
+# Check eyes remain after material fitting.
+eye_meshes_after=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
+if not eye_meshes_after:raise RuntimeError("SAV4 eye helper removed the eye meshes")
+print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes_after))
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
 for obj in [root,*root.children_recursive]:
  if obj.type=="MESH":
