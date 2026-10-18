@@ -89,9 +89,17 @@ if ratio_path.exists():
     required=("face_height_over_width","nose_width_over_width","mouth_width_over_width")
     if any(not isinstance(ratios.get(k),(float,int)) or ratios[k]<=0 for k in required):
         raise RuntimeError("SAV4 incomplete facial landmark ratios")
-    # Store ratios as a traceable build reference. Mapping 2D measurements to
-    # specific MPFB mesh vertices requires calibrated head landmarks; do not
-    # deform nose/mouth blindly and risk broken eyes or facial topology.
+    # Reference measurements alone are not enough to locate nose/mouth vertices
+    # on an arbitrary MPFB basemesh. Require a calibrated vertex-region map
+    # before enabling full-feature deformation; never silently claim a match.
+    region_map=ROOT/"characters"/"sav4"/"face-region-map.json"
+    if not region_map.exists():
+        print("SAV4_FULL_FACE_MORPH_BLOCKED: calibrated mesh region map missing",region_map)
+    else:
+        mapping=json.loads(region_map.read_text())
+        if mapping.get("mesh_vertex_count")!=len(face_body.data.vertices):
+            raise RuntimeError("SAV4 face region map incompatible with basemesh topology")
+        print("SAV4_FACE_REGION_MAP_VALIDATED",region_map)
     print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
 else:
     print("SAV4_REFERENCE_NOT_MEASURED: keeping conservative facial pass")
@@ -200,4 +208,4 @@ for mat in doc.get("materials",[]):
 # Do not mutate the parsed JSON: that would not modify the serialized GLB.
 # Bounds from accessors are mesh-local; viewer checks transformed world bounds.
 print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
-print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
+print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)\nprint("SAV4_FACE_MATCH_STATUS: conservative cheek/jaw approximation; full measured landmark morph not yet calibrated")
