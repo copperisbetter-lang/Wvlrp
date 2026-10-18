@@ -51,12 +51,12 @@ function alignGarment(model,style){
  const gb=new T.Box3().setFromObject(model),gs=gb.getSize(new T.Vector3());
  if(gs.x<.001||gs.y<.001||gs.z<.001){status.textContent='Invalid garment dimensions — needs rebuild';return;}
  const skirt=/skirt|mini/i.test(style),tank=/tank/i.test(style),bikini=/bikini/i.test(style);
- const targetWidth=as.x*(skirt?.43:tank?.43:bikini?.44:.47);
+ // The previous .43 body-width multiplier shrank the imported mini into the crotch.\n const targetWidth=as.x*(skirt?.72:tank?.43:bikini?.44:.47);
  const factor=targetWidth/gs.x;
  model.scale.setScalar(factor);model.updateMatrixWorld(true);
  const fitted=new T.Box3().setFromObject(model),fs=fitted.getSize(new T.Vector3());
  const ac=ab.getCenter(new T.Vector3()),fc=fitted.getCenter(new T.Vector3());
- const targetY=ab.min.y+as.y*(skirt?.52:tank?.69:bikini?.62:.60);
+ // Raise the mini toward the natural waist; never center it between the legs.\n const targetY=ab.min.y+as.y*(skirt?.565:tank?.69:bikini?.62:.60);
  model.position.set(ac.x-fc.x,targetY-fc.y,ac.z-fc.z);
  model.updateMatrixWorld(true);
  console.info('SAV4 measured garment bounds',style,gs,fs,'body',as);
