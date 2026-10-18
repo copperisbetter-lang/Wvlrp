@@ -62,6 +62,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  const creekMat=makeMaterial("animated Appalachian streams",true);
  const groups=[];
  const lakeVertices=[];
+ // Never show the old flat shader as a substitute for the real lake.
  function waterMesh(name,points,material,indices,uvs){
    const mesh=new B.Mesh(name,scene),positions=points.flat();
    const d=new B.VertexData();
@@ -85,6 +86,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      if(i>0)indices.push(0,i,i+1);
    }
    const mesh=waterMesh("living lake "+(idx+1),points,mat,indices,uvs);
+   mesh.setEnabled(false);
    lakeVertices.push({mesh,base:Float32Array.from(mesh.getVerticesData(B.VertexBuffer.PositionKind)),level:lakeLevel});
    groups.push({mesh,x:s.x,z:s.z,range:450});
  }
@@ -156,13 +158,14 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      if(++refreshFrames%240===0)refreshReflections();
    });
    root.metadata={...(root.metadata||{}),reflectionObserver};
-   for(const g of groups)g.mesh.material=realWater;
- }).catch(err=>console.warn("Reflective lake renderer unavailable; temporary fallback active",err));
+   for(const g of groups){g.mesh.material=realWater;g.mesh.setEnabled(false);}
+   realWater.onCompiled=null;
+ }).catch(err=>console.error("Reflective lake renderer unavailable; old flat lake hidden",err));
  let frame=0;
  const observer=scene.onBeforeRenderObservable.add(()=>{
    const t=performance.now()*.001;
    mat.setFloat("time",t);creekMat.setFloat("time",t);
-   if(++frame%4===0){
+   if(realWater&&++frame%4===0){
      for(const lake of lakeVertices){
        const vertices=lake.base.slice();
        for(let i=0;i<vertices.length;i+=3)vertices[i+1]=lake.level+waveHeight(vertices[i],vertices[i+2],t,.72,.3)*.28;
@@ -171,7 +174,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    }
    if(frame%15!==0)return;
    const p=getPosition();
-   for(const g of groups)g.mesh.setEnabled(Math.hypot(p.x-g.x,p.z-g.z)<g.range);
+   for(const g of groups)g.mesh.setEnabled(!!realWater&&Math.hypot(p.x-g.x,p.z-g.z)<g.range);
  });
  return {sites,dispose(){
    scene.onBeforeRenderObservable.remove(observer);
