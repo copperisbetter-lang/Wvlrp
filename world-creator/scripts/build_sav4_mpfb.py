@@ -31,7 +31,7 @@ HumanService.set_character_skin(skin,human,skin_type="GAMEENGINE")
 rig=HumanService.add_builtin_rig(human,"mixamo")
 if rig is None:raise RuntimeError("SAV4 rig missing")
 for sub,names,kind in [
- ("eyes",["high-poly.mhclo"],"Eyes"),
+ ("eyes",["low-poly.mhclo"],"Eyes"),
  ("eyebrows",["eyebrow001.mhclo"],"Eyebrows"),
  ("eyelashes",["eyelashes01.mhclo"],"Eyelashes"),
  # Omit teeth proxy until its alignment with the head is validated.
@@ -49,13 +49,13 @@ for obj in list(root.children_recursive):
 # Force a warm dusty blonde tint on copied hair materials (not just the source).
 for obj in root.children_recursive:
  if obj.type=="MESH" and "hair" in obj.name.lower():
-  for mat in obj.data.materials:
-   if mat:
-    mat=mat.copy();mat.diffuse_color=(.76,.68,.52,1)
+  for idx,original in enumerate(obj.data.materials):
+   if original:
+    mat=original.copy();mat.diffuse_color=(.76,.68,.52,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
       if node.type=="BSDF_PRINCIPLED":node.inputs["Base Color"].default_value=(.76,.68,.52,1)
-    obj.data.materials[0]=mat
+    obj.data.materials[idx]=mat
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
@@ -67,7 +67,17 @@ bpy.context.view_layer.update()
 verts=[body.matrix_world@v.co for v in body.data.vertices]
 height=max(p.z for p in verts)-min(p.z for p in verts)
 if height<=0:raise RuntimeError("SAV4 invalid height")
-root.scale*=1.6764/height
+scale=1.6764/height
+for obj in [root,*root.children_recursive]:
+ if obj.type=="MESH":
+  world=obj.matrix_world.copy()
+  inv=world.inverted()
+  for v in obj.data.vertices:
+   v.co=inv@((world@v.co)*scale)
+bpy.context.view_layer.update()
+check=[body.matrix_world@v.co for v in body.data.vertices]
+actual=max(v.z for v in check)-min(v.z for v in check)
+if not 1.65<actual<1.70:raise RuntimeError(f"SAV4 height validation failed: {actual:.3f}m")
 bpy.ops.object.select_all(action="DESELECT")
 root.select_set(True)
 for obj in root.children_recursive:obj.select_set(True)
