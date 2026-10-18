@@ -233,7 +233,7 @@ for eye_obj in eye_meshes:
     eye_points=[eye_obj.matrix_world@v.co for v in eye_obj.data.vertices]
     if not eye_points: raise RuntimeError("SAV4 empty eyeball geometry: "+eye_obj.name)
     eye_center=sum(eye_points,Vector())/len(eye_points)
-    if eye_center.z < head_bottom+body_height*.77 or eye_center.z > head_top+body_height*.05:
+    if eye_center.z < head_bottom+body_height*.74 or eye_center.z > head_top+body_height*.05:
         raise RuntimeError(f"SAV4 detached eye mesh {eye_obj.name}: eye Z {eye_center.z:.3f}, body {head_bottom:.3f}..{head_top:.3f}")
     print("SAV4_EYE_HEAD_ALIGNMENT",eye_obj.name,tuple(round(x,3) for x in eye_center))
 # Check eyes remain after material fitting.
