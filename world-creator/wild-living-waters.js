@@ -1,4 +1,3 @@
-import {waveHeight} from "./luminous-lake-waves.js";
 /** Animated lake water adapted for Babylon.js; preserves streamed terrain and existing lake sites. */
 export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  const sites=[{x:-165,z:-180,rx:72,rz:52},{x:410,z:-340,rx:95,rz:72}];
@@ -61,7 +60,6 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  const mat=makeMaterial("animated Appalachian lake",false);
  const creekMat=makeMaterial("animated Appalachian streams",true);
  const groups=[];
- const lakeVertices=[];
  // Never show the old flat shader as a substitute for the real lake.
  function waterMesh(name,points,material,indices,uvs){
    const mesh=new B.Mesh(name,scene),positions=points.flat();
@@ -88,7 +86,6 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    const mesh=waterMesh("living lake "+(idx+1),points,mat,indices,uvs);
    mesh.setEnabled(false);
    mesh.metadata={...(mesh.metadata||{}),wildLakeSurface:true};
-   lakeVertices.push({mesh,base:Float32Array.from(mesh.getVerticesData(B.VertexBuffer.PositionKind)),level:lakeLevel});
    groups.push({mesh,x:s.x,z:s.z,range:450});
  }
  for(let stream=0;stream<3;stream++){
@@ -137,6 +134,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    realWater.colorBlendFactor=.12;
    realWater.colorBlendFactor2=.12;
    realWater.bumpAffectsReflection=true;
+   realWater.useWorldCoordinatesForWaveDeformation=true;
    realWater.specularColor=new B.Color3(.12,.18,.14);
    realWater.backFaceCulling=false;
    // Reflect a limited set of nearby shoreline scenery to preserve mobile FPS.
@@ -146,11 +144,11 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
      for(const mesh of scene.meshes){
        if(reflected.size>=55)break;
        if(reflected.has(mesh)||groups.some(g=>g.mesh===mesh)||!mesh.isEnabled()||!mesh.isVisible)continue;
-       if(/ground|terrain|landscape|sky|water|lake|river|creek/i.test(mesh.name))continue;
+       if(/ground|terrain|landscape|water|lake|river|creek/i.test(mesh.name))continue;
        const box=mesh.getBoundingInfo?.().boundingBox;
        if(!box)continue;
        const p=box.centerWorld;
-       if(!sites.some(site=>Math.hypot(p.x-site.x,p.z-site.z)<145))continue;
+       if(!/sky/i.test(mesh.name)&&!sites.some(site=>Math.hypot(p.x-site.x,p.z-site.z)<145))continue;
        reflected.add(mesh);realWater.addToRenderList(mesh);
      }
    };
@@ -184,13 +182,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  const observer=scene.onBeforeRenderObservable.add(()=>{
    const t=performance.now()*.001;
    mat.setFloat("time",t);creekMat.setFloat("time",t);
-   if(realWater&&++frame%4===0){
-     for(const lake of lakeVertices){
-       const vertices=lake.base.slice();
-       for(let i=0;i<vertices.length;i+=3)vertices[i+1]=lake.level+waveHeight(vertices[i],vertices[i+2],t,.72,.3)*.28;
-       lake.mesh.updateVerticesData(B.VertexBuffer.PositionKind,vertices);
-     }
-   }
+   frame++;
    if(frame%15!==0)return;
    const p=getPosition();
    for(const g of groups)g.mesh.setEnabled(!!realWater&&Math.hypot(p.x-g.x,p.z-g.z)<g.range);
