@@ -101,7 +101,7 @@ function findFitMeshes(){
    const signature=(label+' '+materials).toLowerCase();
    const isAttachment=/(vulva[ _-]*2|vulva2|vulva.*mhx2|mhx2.*(anatom|genital|pelvi)|anatom.*attach)/i.test(signature);
    const isBody=/^(body|female|human|skin|sav.?3)([ _.-]|$)/i.test(label);
-   if(isAttachment&&!isBody){
+   if(isAttachment&&!isBody&&node.mesh){
     const t=node.translation;
     const base=t&&t.length===3?Array.from(t):[0,0,0];
     if(base.every(Number.isFinite))fitMeshes.push({node,base,name:label});
@@ -110,8 +110,8 @@ function findFitMeshes(){
  }catch(e){$('fitstatus').textContent='Attachment selection error: '+e.message;}
  if(!fitMeshes.length){
   setFitMode(false);$('fitdrag').disabled=true;
-  const candidates=Array.from(v.model?.getNodes?.()||[]).filter(n=>n.mesh).map(n=>String(n.name||'(unnamed)')); 
-  $('fitstatus').textContent='No independent attachment node found. Exported mesh nodes: '+(candidates.join(' | ')||'none exposed')+'. This model must be re-exported with an independently named mesh.';
+  const candidates=Array.from(v.model?.getNodes?.()||[]).map(n=>String(n.name||'(unnamed)')+(n.mesh?' [mesh]':' [transform]')); 
+  $('fitstatus').textContent='No independent attachment node found. Exported mesh nodes: '+(candidates.join(' | ')||'none exposed')+'. Check whether the live GLB contains the expected Vulva2 MHX2 mesh. If absent, rebuild and redeploy the GLB; a viewer-only fix cannot create missing geometry.';
  }else{
   $('fitdrag').disabled=false;applyFit();
   $('fitstatus').textContent='Movable attachment: '+fitMeshes.map(x=>x.name).join(', ')+'. Body stays locked.';
