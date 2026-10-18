@@ -48,6 +48,26 @@ coords=[v.co.copy() for v in face_body.data.vertices]
 zmin=min(p.z for p in coords); zmax=max(p.z for p in coords)
 xmin=min(p.x for p in coords); xmax=max(p.x for p in coords)
 span=zmax-zmin
+# Derive reversible shape-control weights from the saved image landmarks.
+# Perspective ratios drive bounded artistic adjustments, not millimeter-accurate fitting.
+import json
+reference=json.loads((ROOT/"characters"/"sav4"/"laura-two-view-landmarks.json").read_text())
+front=reference["front_three_quarter"]
+def pixel_distance(a,b):
+    return math.hypot(a[0]-b[0],a[1]-b[1])
+eye_span=pixel_distance(*front["eye_centers"])
+mouth_span=pixel_distance(*front["mouth_corners"])
+nose_to_mouth=pixel_distance(front["nose_tip"],front["mouth_center"])
+mouth_to_chin=pixel_distance(front["mouth_center"],front["chin"])
+if min(eye_span,mouth_span,nose_to_mouth,mouth_to_chin)<=0:
+    raise RuntimeError("SAV4 invalid facial landmark distances")
+mouth_eye_ratio=mouth_span/eye_span
+chin_lower_ratio=mouth_to_chin/(mouth_to_chin+nose_to_mouth)
+# Restrict inferred corrections to small bounded shifts; 3/4 perspective
+# cannot determine true 3D width or depth.
+mouth_weight=max(-1.,min(1.,(mouth_eye_ratio-0.75)/0.25))
+chin_weight_ref=max(-1.,min(1.,(chin_lower_ratio-0.59)/0.20))
+print("SAV4_MEASURED_MORPH_WEIGHTS",round(mouth_weight,4),round(chin_weight_ref,4))
 # Upper face: gently broaden cheekbones, refine lower jaw and chin, and
 # soften the temple-to-cheek transition. Limit movement to the head region.
 # Head orientation is retained; no changes to eyes, rig, or wardrobe assets.
@@ -60,7 +80,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # cheek prominence near the mid-face, narrower jaw near the lower face
     cheek=math.exp(-((h-0.928)/0.020)**2)
     jaw=math.exp(-((h-0.885)/0.017)**2)
-    factor=1.0+fade*(0.050*cheek-0.045*jaw)
+    factor=1.0+fade*((0.050+0.004*mouth_weight)*cheek-(0.045+0.006*chin_weight_ref)*jaw)
     vert.co.x=p.x*factor
     # Second pass: subtle central chin definition and a softer, slightly
     # forward midface. Keep the nose/eye sockets untouched to avoid the
@@ -68,7 +88,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     center_weight=math.exp(-((p.x/max(0.001,(xmax-xmin)*0.5))/0.30)**2)
     chin_weight=math.exp(-((h-0.879)/0.010)**2)
     if center_weight>0.05:
-        vert.co.z=p.z+span*0.0015*chin_weight*center_weight*fade
+        vert.co.z=p.z+span*(0.0015+0.0004*chin_weight_ref)*chin_weight*center_weight*fade
     # Two-view Laura reference refinement (2026-10-18): soften the
     # lower-face silhouette without changing eye sockets or nose geometry.
     # The movie stills are perspective views, not calibrated 3D scans.
@@ -220,4 +240,5 @@ for mat in doc.get("materials",[]):
 # Do not mutate the parsed JSON: that would not modify the serialized GLB.
 # Bounds from accessors are mesh-local; viewer checks transformed world bounds.
 print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
-print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)\nprint("SAV4_FACE_MATCH_STATUS: conservative cheek/jaw approximation; full measured landmark morph not yet calibrated")
+print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
+print("SAV4_FACE_MATCH_STATUS: measured-ratio-guided cheek/jaw/chin pass; full nose/eye/mouth vertex calibration pending")
