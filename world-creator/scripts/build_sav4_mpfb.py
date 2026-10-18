@@ -62,7 +62,14 @@ for vert,p in zip(face_body.data.vertices,coords):
     jaw=math.exp(-((h-0.885)/0.017)**2)
     factor=1.0+fade*(0.050*cheek-0.045*jaw)
     vert.co.x=p.x*factor
-    if abs(vert.co.x-p.x)>1e-7: changed+=1
+    # Second pass: subtle central chin definition and a softer, slightly
+    # forward midface. Keep the nose/eye sockets untouched to avoid the
+    # earlier SAV4 displaced-eye regression.
+    center_weight=math.exp(-((p.x/max(0.001,(xmax-xmin)*0.5))/0.30)**2)
+    chin_weight=math.exp(-((h-0.879)/0.010)**2)
+    if center_weight>0.05:
+        vert.co.z=p.z+span*0.0015*chin_weight*center_weight*fade
+    if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
 face_body.data.update()
 print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed)
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
