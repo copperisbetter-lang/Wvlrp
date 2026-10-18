@@ -69,6 +69,13 @@ for vert,p in zip(face_body.data.vertices,coords):
     chin_weight=math.exp(-((h-0.879)/0.010)**2)
     if center_weight>0.05:
         vert.co.z=p.z+span*0.0015*chin_weight*center_weight*fade
+    # Two-view Laura reference refinement (2026-10-18): soften the
+    # lower-face silhouette without changing eye sockets or nose geometry.
+    # The movie stills are perspective views, not calibrated 3D scans.
+    lower_face=math.exp(-((h-0.899)/0.019)**2)
+    # Gentle tapered lower jaw; blend continuously into the cheeks.
+    vert.co.x *= 1.0-0.012*lower_face*fade
+    # Keep this conservative until orthographic model comparisons exist.
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
 # Apply validated, photo-derived normalized ratios only when supplied.
 # Missing reference data must never be silently replaced with invented values.
