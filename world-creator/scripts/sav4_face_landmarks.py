@@ -30,7 +30,7 @@ def main():
         return ((p.x-q.x)**2+(p.y-q.y)**2)**0.5
     width=distance(234,454)
     if width<=0: raise SystemExit("Invalid face width")
-    ratios={
+    # Detect off-axis portraits: strong asymmetry makes direct ratios unreliable.\n    eye_l=distance(33,133); eye_r=distance(362,263)\n    if abs(eye_l-eye_r)/max(eye_l,eye_r)>0.18:\n        raise SystemExit("Reference face appears off-axis; use a more frontal image")\n    ratios={
         "face_height_over_width":distance(10,152)/width,
         "eye_corner_spacing_over_width":distance(33,263)/width,
         "left_eye_width_over_width":distance(33,133)/width,
@@ -41,6 +41,6 @@ def main():
         "mouth_to_chin_over_width":distance(13,152)/width
     }
     report={"source":str(Path(args.image).name),"method":"MediaPipe 2D image landmark ratios","units":"dimensionless","not_a_3d_scan":True,"ratios":ratios}
-    Path(args.output).write_text(json.dumps(report,indent=2)+"\\n")
+    Path(args.output).write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps(report,indent=2))
 if __name__=="__main__":main()
