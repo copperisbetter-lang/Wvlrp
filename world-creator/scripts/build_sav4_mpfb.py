@@ -33,6 +33,8 @@ rig=HumanService.add_builtin_rig(human,"mixamo")
 if rig is None:raise RuntimeError("SAV4 rig missing")
 # Facial proxies previously caused severe eye protrusion and mouth cutouts.
 # Export the intact base face first; add fitted proxies only after QA.
+eyes=add_asset(human,"eyes",["low-poly.mhclo"],"Eyes")
+if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
 tint(hair,(.82,.73,.57),.96)
@@ -60,11 +62,27 @@ for obj in root.children_recursive:
  if obj.type=="MESH" and ("hair" in obj.name.lower() or any(m and "hair" in m.name.lower() for m in obj.data.materials)):
   coords=[obj.matrix_world@v.co for v in obj.data.vertices]
   if coords:
-   cutoff=max(p.z for p in coords)-.34
+   cutoff=max(p.z for p in coords)-.30
    inv=obj.matrix_world.inverted()
    for v,p in zip(obj.data.vertices,coords):
     if p.z<cutoff:v.co=(inv@Vector((p.x,p.y,cutoff)))
   print("SAV4_HAIR_TRIM",obj.name)
+# Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
+eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and "eye" in o.name.lower() and not any(t in o.name.lower() for t in ("brow","lash"))]
+if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
+for ob in eye_meshes:
+ for idx,original in enumerate(ob.data.materials):
+  if original:
+   mat=original.copy();mat.name="SAV4_sclera_natural"
+   mat.diffuse_color=(.91,.91,.88,1)
+   if mat.use_nodes:
+    for node in mat.node_tree.nodes:
+     if node.type=="BSDF_PRINCIPLED":
+      for link in list(mat.node_tree.links):
+       if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
+      node.inputs["Base Color"].default_value=(.91,.91,.88,1)
+   ob.data.materials[idx]=mat
+print("SAV4_EYE_GEOMETRY_PRESENT",len(eye_meshes))
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
 ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
