@@ -39,7 +39,7 @@ skirtLoader.load('./assets/sav4_makehuman_mini_skirt_01.glb',g=>{realSkirt=g.sce
 function measureSkirtReady(){return !!avatar&&!!realSkirt;}
 
 // Load real garment meshes only. A missing GLB is not a wearable outfit.
-const garmentFiles={dress:'sav4-plaid-dress.glb',bikini:'sav4-bikini-blue.glb',shorts:'sav4-shorts-shirt.glb',skirt:'sav4-mini-denim.glb',casual:'sav4-casual.glb',tankIvory:'sav4-tank-ivory.glb',tankSage:'sav4-tank-sage.glb',miniBlack:'sav4-mini-black.glb',miniRose:'sav4-mini-rose.glb',bikiniCoral:'sav4-bikini-coral.glb'};
+const garmentFiles={dress:'sav4-plaid-dress.glb',bikini:'sav4-bikini-blue.glb',shorts:'sav4-shorts-shirt.glb',skirt:'sav4_makehuman_mini_skirt_01.glb',casual:'sav4-casual.glb',tankIvory:'sav4-tank-ivory.glb',tankSage:'sav4-tank-sage.glb',miniBlack:'sav4_makehuman_mini_skirt_01.glb',miniRose:'sav4_makehuman_mini_skirt_01.glb',bikiniCoral:'sav4-bikini-coral.glb'};
 const fittedGarments=new Map();
 function alignGarment(model,style){
  if(!avatar)return;
@@ -67,7 +67,7 @@ window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent=item.label+' — 3D garment loaded; check alignment and fit.';return;}
+ if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent=item.label+' — imported MakeHuman garment; inspect fit and material.';return;}
  status.textContent=item.label+' — realistic 3D garment not installed yet.';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
