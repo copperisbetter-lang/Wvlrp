@@ -8,7 +8,7 @@ import {mayPlantTree} from "./wild-master-forest-reservations.js";
 export function installAutumnMaples(B,scene,{
   assetUrl=FOREST_SPECIES_TARGETS.find(s=>s.species==="maple").asset,
   terrainHeight=()=>0, excluded=()=>false, seed=20261016,
-  cellSize=90, radius=900, density=0.18, maxVisible=180
+  cellSize=90, radius=900, density=0.18, maxVisible=180, centerX=0, centerZ=0
 }={}){
   const state={status:"loading",planted:0,error:"",roots:[],placements:[],reground(){
     let corrected=0;
@@ -74,13 +74,15 @@ export function installAutumnMaples(B,scene,{
     const count=Math.min(maxVisible,Math.ceil((2*radius/cellSize)**2*density));
     let planted=0;
     const cells=Math.ceil(radius/cellSize);
-    for(let ix=-cells;ix<=cells&&planted<count;ix++){
-      for(let iz=-cells;iz<=cells&&planted<count;iz++){
+    const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
+    for(let dx=-cells;dx<=cells&&planted<count;dx++){
+      for(let dz=-cells;dz<=cells&&planted<count;dz++){
+        const ix=cx+dx,iz=cz+dz;
         if(hash(ix,iz,0)>=density)continue;
         // Seeded placement stays identical across multiplayer clients.
         const x=(ix+(hash(ix,iz,1)-.5)*.72)*cellSize;
         const z=(iz+(hash(ix,iz,2)-.5)*.72)*cellSize;
-        if(Math.hypot(x,z)>radius||insideCabinBuffer(x,z)||excluded(x,z,16)||!mayPlantTree(x,z,2))continue;
+        if(Math.hypot(x-centerX,z-centerZ)>radius||insideCabinBuffer(x,z)||excluded(x,z,16)||!mayPlantTree(x,z,2))continue;
         const y=terrainHeight(x,z);
         if(!Number.isFinite(y))continue;
         // Each of the twelve original Acer models is treated as a master.
