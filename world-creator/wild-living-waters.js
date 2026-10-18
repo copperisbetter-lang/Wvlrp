@@ -75,19 +75,25 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  for(const [idx,s] of sites.entries()){
    // Keep water below surrounding terrain instead of flooding the shoreline.
    const lakeLevel=height(s.x,s.z)-0.35;
-   const points=[[s.x,lakeLevel,s.z]],uvs=[s.x/12,s.z/12],indices=[];
+   const points=[],uvs=[],indices=[];
    const segments=128;
-   for(let i=0;i<=segments;i++){
-     const a=i*Math.PI*2/segments;
-     const r=1+.055*Math.sin(5*a+idx)+.025*Math.sin(11*a+idx*2);
-     const x=s.x+Math.cos(a)*s.rx*r,z=s.z+Math.sin(a)*s.rz*r;
+   // Terrain-clipped grid: no center-to-edge triangles that flood dry ground.
+   const nx=80,nz=64;
+   for(let iz=0;iz<=nz;iz++)for(let ix=0;ix<=nx;ix++){
+     const x=s.x+(ix/nx*2-1)*s.rx*1.08,z=s.z+(iz/nz*2-1)*s.rz*1.08;
      points.push([x,lakeLevel,z]);uvs.push(x/12,z/12);
-     if(i>0){
-       // Reject flooded shoreline triangles where the land rises above the lake.
-       const prev=points[i],curr=points[i+1];
-       const mx=(s.x+prev[0]+curr[0])/3,mz=(s.z+prev[2]+curr[2])/3;
-       if(height(mx,mz)<lakeLevel+.08)indices.push(0,i,i+1);
-     }
+   }
+   for(let iz=0;iz<nz;iz++)for(let ix=0;ix<nx;ix++){
+     const a=iz*(nx+1)+ix,b=a+1,d=a+nx+1,e=d+1;
+     const x=s.x+((ix+.5)/nx*2-1)*s.rx*1.08;
+     const z=s.z+((iz+.5)/nz*2-1)*s.rz*1.08;
+     const dx=(x-s.x)/s.rx,dz=(z-s.z)/s.rz;
+     const angle=Math.atan2(dz,dx);
+     const radius=1+.055*Math.sin(5*angle+idx)+.025*Math.sin(11*angle+idx*2);
+     if(dx*dx+dz*dz>radius*radius)continue;
+     // Require all four corners to be submerged to prevent blue land overlays.
+     if([a,b,d,e].some(k=>height(points[k][0],points[k][2])>lakeLevel-.035))continue;
+     indices.push(a,d,b,b,d,e);
    }
    const mesh=waterMesh("living lake "+(idx+1),points,mat,indices,uvs);
    mesh.setEnabled(false);
@@ -135,10 +141,10 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    realWater.waveLength=.35;
    realWater.waveSpeed=.55;
    realWater.waveCount=18;
-   realWater.waterColor=new B.Color3(.018,.075,.045);
-   realWater.waterColor2=new B.Color3(.025,.09,.055);
-   realWater.colorBlendFactor=.82;
-   realWater.colorBlendFactor2=.82;
+   realWater.waterColor=new B.Color3(.012,.048,.031);
+   realWater.waterColor2=new B.Color3(.016,.057,.038);
+   realWater.colorBlendFactor=.98;
+   realWater.colorBlendFactor2=.98;
    realWater.bumpAffectsReflection=true;
    realWater.useWorldCoordinatesForWaveDeformation=true;
    realWater.specularColor=new B.Color3(.38,.46,.39);
