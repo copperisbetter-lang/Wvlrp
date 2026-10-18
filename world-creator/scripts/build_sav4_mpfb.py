@@ -92,7 +92,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # cheek prominence near the mid-face, narrower jaw near the lower face
     cheek=math.exp(-((h-0.928)/0.020)**2)
     jaw=math.exp(-((h-0.885)/0.017)**2)
-    factor=1.0+fade*((0.105+0.010*mouth_weight)*cheek-(0.085+0.010*chin_weight_ref)*jaw)
+    factor=1.0+fade*((0.120+0.010*mouth_weight)*cheek-(0.095+0.010*chin_weight_ref)*jaw)
     vert.co.x=p.x*factor
     # Second pass: subtle central chin definition and a softer, slightly
     # forward midface. Keep the nose/eye sockets untouched to avoid the
@@ -106,7 +106,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # The movie stills are perspective views, not calibrated 3D scans.
     lower_face=math.exp(-((h-0.899)/0.019)**2)
     # Gentle tapered lower jaw; blend continuously into the cheeks.
-    vert.co.x *= 1.0-0.022*lower_face*fade
+    vert.co.x *= 1.0-0.028*lower_face*fade
     # Keep this conservative until orthographic model comparisons exist.
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
 # Load the complete two-view landmark specification into the build for audit.
