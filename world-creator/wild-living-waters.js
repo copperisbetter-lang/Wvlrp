@@ -95,6 +95,61 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    const mesh=waterMesh("flowing mountain creek "+stream,points,creekMat,indices,uvs);
    groups.push({mesh,x:origin.x+origin.rx*.7+stream*75,z:origin.z,range:510});
  }
+ // Load Babylon's published WaterMaterial renderer, not a homemade color shader.
+ // Keep the lightweight shader as a temporary fallback until the library loads.
+ const libraryURL="https://cdn.babylonjs.com/materialsLibrary/babylon.waterMaterial.js";
+ const bumpURL="https://assets.babylonjs.com/textures/waterbump.png";
+ let realWater=null,waterBump=null,disposed=false;
+ const loadWaterLibrary=()=>new Promise((resolve,reject)=>{
+   if(B.WaterMaterial){resolve();return;}
+   const script=document.createElement("script");
+   script.src=libraryURL;script.async=true;
+   script.onload=()=>B.WaterMaterial?resolve():reject(new Error("WaterMaterial missing"));
+   script.onerror=()=>reject(new Error("WaterMaterial download failed"));
+   document.head.appendChild(script);
+ });
+ loadWaterLibrary().then(()=>{
+   if(disposed)return;
+   realWater=new B.WaterMaterial("Babylon realistic reflective lake",scene,new B.Vector2(256,256));
+   waterBump=new B.Texture(bumpURL,scene);
+   waterBump.uScale=5;waterBump.vScale=5;
+   realWater.bumpTexture=waterBump;
+   realWater.windForce=5;
+   realWater.windDirection=new B.Vector2(.7,.3);
+   realWater.waveHeight=.12;
+   realWater.bumpHeight=.16;
+   realWater.waveLength=.13;
+   realWater.waveSpeed=.32;
+   realWater.waveCount=18;
+   realWater.waterColor=new B.Color3(.045,.13,.105);
+   realWater.waterColor2=new B.Color3(.065,.15,.12);
+   realWater.colorBlendFactor=.23;
+   realWater.colorBlendFactor2=.32;
+   realWater.bumpAffectsReflection=true;
+   realWater.backFaceCulling=false;
+   // Reflect a limited set of nearby shoreline scenery to preserve mobile FPS.
+   const reflected=new Set();
+   const refreshReflections=()=>{
+     if(disposed||!realWater)return;
+     for(const mesh of scene.meshes){
+       if(reflected.size>=55)break;
+       if(reflected.has(mesh)||groups.some(g=>g.mesh===mesh)||!mesh.isEnabled()||!mesh.isVisible)continue;
+       const box=mesh.getBoundingInfo?.().boundingBox;
+       if(!box)continue;
+       const p=box.centerWorld;
+       if(!sites.some(site=>Math.hypot(p.x-site.x,p.z-site.z)<145))continue;
+       reflected.add(mesh);realWater.addToRenderList(mesh);
+     }
+   };
+   refreshReflections();
+   // Re-check as streamed terrain and trees arrive.
+   let refreshFrames=0;
+   const reflectionObserver=scene.onBeforeRenderObservable.add(()=>{
+     if(++refreshFrames%240===0)refreshReflections();
+   });
+   root.metadata={...(root.metadata||{}),reflectionObserver};
+   for(const g of groups)g.mesh.material=realWater;
+ }).catch(err=>console.warn("Reflective lake renderer unavailable; temporary fallback active",err));
  let frame=0;
  const observer=scene.onBeforeRenderObservable.add(()=>{
    const t=performance.now()*.001;
@@ -105,6 +160,8 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  });
  return {sites,dispose(){
    scene.onBeforeRenderObservable.remove(observer);
-   root.dispose(false,true);mat.dispose();creekMat.dispose();
+   disposed=true;
+   if(root.metadata?.reflectionObserver)scene.onBeforeRenderObservable.remove(root.metadata.reflectionObserver);
+   root.dispose(false,true);mat.dispose();creekMat.dispose();realWater?.dispose();waterBump?.dispose();
  }};
 }
