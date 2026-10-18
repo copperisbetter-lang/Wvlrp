@@ -70,12 +70,11 @@ verts=[body.matrix_world@v.co for v in body.data.vertices]
 height=max(p.z for p in verts)-min(p.z for p in verts)
 if height<=0:raise RuntimeError("SAV4 invalid height")
 scale=1.6764/height
-for obj in [root,*root.children_recursive]:
- if obj.type=="MESH":
-  world=obj.matrix_world.copy()
-  inv=world.inverted()
-  for v in obj.data.vertices:
-   v.co=inv@((world@v.co)*scale)
+# Scale the entire exported hierarchy, including rig and mesh positions.
+# Scaling individual vertex coordinates without the armature breaks skinning
+# and can collapse the exported GLB bounds.
+root.scale *= scale
+bpy.context.view_layer.update()
 bpy.context.view_layer.update()
 check=[body.matrix_world@v.co for v in body.data.vertices]
 actual=max(v.z for v in check)-min(v.z for v in check)
@@ -102,5 +101,10 @@ for mesh in meshes:
   accessor=doc["accessors"][primitive["attributes"]["POSITION"]]
   if "min" in accessor and "max" in accessor:positions.append((accessor["min"],accessor["max"]))
 if not positions:raise RuntimeError("SAV4 GLB missing position bounds")
+# Ensure material transparency cannot make the character disappear.
+for mat in doc.get("materials",[]):
+ mat["alphaMode"]="OPAQUE"
+ mat["doubleSided"]=True
+# Bounds from accessors are mesh-local; viewer checks transformed world bounds.
 print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
 print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
