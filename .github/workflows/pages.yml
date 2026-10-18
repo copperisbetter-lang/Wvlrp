@@ -179,7 +179,8 @@ jobs:
           base="${LIVE_URL%/}"
           echo "Verifying SAV4 viewer on $base"
           curl -fSL --retry 8 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/sav4.html?commit=${GITHUB_SHA}" -o /tmp/sav4-live.html
-          grep -q 'visible fallback skirt' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer is stale or a different site is serving it'; exit 1; }
+          grep -q 'garmentFiles' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks real GLB garment loader'; exit 1; }
+          grep -q 'fittedGarments' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks fitted garment handling'; exit 1; }
           echo 'SAV4 latest wardrobe viewer confirmed live.'
 
       - name: Verify clean Vulva2 reset GLB reached live website
