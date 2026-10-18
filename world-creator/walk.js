@@ -1,4 +1,4 @@
-import {installWildWaters} from "./wild-living-waters.js?v=20261018-v1";
+import {installWildWaters} from "./wild-living-waters.js?v=20261018-lake-basin-v2";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
 
