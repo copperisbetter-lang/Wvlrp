@@ -66,13 +66,16 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    const mesh=new B.Mesh(name,scene),positions=points.flat();
    const d=new B.VertexData();
    d.positions=positions;d.indices=indices;d.uvs=uvs;
+   // WaterMaterial requires vertex normals for its lighting/reflection shader.
+   d.normals=new Array(positions.length).fill(0);
+   for(let i=0;i<positions.length;i+=3)d.normals[i+1]=1;
    d.applyToMesh(mesh,true);
    mesh.material=material;mesh.parent=root;mesh.isPickable=false;
    return mesh;
  }
  for(const [idx,s] of sites.entries()){
    const lakeLevel=height(s.x,s.z)+2;
-   const points=[[s.x,lakeLevel,s.z]],uvs=[0,0],indices=[];
+   const points=[[s.x,lakeLevel,s.z]],uvs=[s.x/12,s.z/12],indices=[];
    const segments=128;
    for(let i=0;i<=segments;i++){
      const a=i*Math.PI*2/segments;
@@ -117,6 +120,8 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    waterBump=new B.Texture(bumpURL,scene);
    waterBump.uScale=5;waterBump.vScale=5;
    realWater.bumpTexture=waterBump;
+   realWater.disableLighting=false;
+   realWater.alpha=1;
    realWater.windForce=5;
    realWater.windDirection=new B.Vector2(.7,.3);
    realWater.waveHeight=.12;
