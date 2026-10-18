@@ -87,6 +87,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    }
    const mesh=waterMesh("living lake "+(idx+1),points,mat,indices,uvs);
    mesh.setEnabled(false);
+   mesh.metadata={...(mesh.metadata||{}),wildLakeSurface:true};
    lakeVertices.push({mesh,base:Float32Array.from(mesh.getVerticesData(B.VertexBuffer.PositionKind)),level:lakeLevel});
    groups.push({mesh,x:s.x,z:s.z,range:450});
  }
@@ -159,6 +160,21 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    });
    root.metadata={...(root.metadata||{}),reflectionObserver};
    for(const g of groups){g.mesh.material=realWater;g.mesh.setEnabled(false);}
+   // Streaming terrain can create a second blue surface. Suppress duplicate water meshes.
+   const hideOtherWater=()=>{
+     for(const mesh of scene.meshes){
+       if(groups.some(g=>g.mesh===mesh))continue;
+       if(!/lake|water|river|creek/i.test(mesh.name))continue;
+       if(mesh.metadata?.wildLakeSurface)continue;
+       if(mesh.isEnabled())mesh.setEnabled(false);
+     }
+   };
+   hideOtherWater();
+   let hideTicks=0;
+   const duplicateObserver=scene.onBeforeRenderObservable.add(()=>{
+     if(++hideTicks%120===0)hideOtherWater();
+   });
+   root.metadata={...(root.metadata||{}),duplicateObserver};
    realWater.onCompiled=null;
  }).catch(err=>console.error("Reflective lake renderer unavailable; old flat lake hidden",err));
  let frame=0;
@@ -180,6 +196,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    scene.onBeforeRenderObservable.remove(observer);
    disposed=true;
    if(root.metadata?.reflectionObserver)scene.onBeforeRenderObservable.remove(root.metadata.reflectionObserver);
+   if(root.metadata?.duplicateObserver)scene.onBeforeRenderObservable.remove(root.metadata.duplicateObserver);
    root.dispose(false,true);mat.dispose();creekMat.dispose();realWater?.dispose();waterBump?.dispose();
  }};
 }
