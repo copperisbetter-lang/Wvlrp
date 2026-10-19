@@ -284,13 +284,16 @@ if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
 # Reuse the proven UV-based MakeHuman blue iris texture routine.
 from caroline_eyes import add_light_blue_eyes
 add_light_blue_eyes(root, body, rig)
-# SAV4-specific eye exposure correction: keep existing UV iris/pupil detail.
+# SAV4 green iris tint, applied to original UV-mapped eyeballs.
 for eye_obj in eye_meshes:
  for eye_mat in eye_obj.data.materials:
   if eye_mat and eye_mat.use_nodes:
    for hue in (n for n in eye_mat.node_tree.nodes if n.type=="HUE_SAT"):
-    hue.inputs["Saturation"].default_value=.62
-    hue.inputs["Value"].default_value=.95
+    hue.label="SAV4 natural green iris"
+    hue.inputs["Hue"].default_value=.32
+    hue.inputs["Saturation"].default_value=.60
+    hue.inputs["Value"].default_value=1.05
+print("SAV4_GREEN_IRIS_MATERIAL_SET")
 # Validate actual source eye mesh placement against the head before exporting.
 # A missing or detached proxy must fail the build instead of producing floating eyes.
 bpy.context.view_layer.update()
