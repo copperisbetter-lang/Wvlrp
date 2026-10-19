@@ -15,12 +15,13 @@ try{
  scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
  const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
  const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
- const camera=new THREE.PerspectiveCamera(40,1,.001,100);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
  const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
- const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
  function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(stage);resize();
+ renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
  let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
  function style(){
   for(const mesh of meshes){
@@ -52,13 +53,13 @@ try{
  document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
  const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
- model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();if(o.name.includes('Vulva2 MHX2'))attachment=o;}});
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  status.textContent='Native fit · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
- renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
-}catch(error){status.textContent='Preview could not start';document.getElementById('error').textContent=error.message;}
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
 </script></body></html>
