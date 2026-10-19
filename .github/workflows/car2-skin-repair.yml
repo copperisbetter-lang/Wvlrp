@@ -1,0 +1,39 @@
+name: CAR2 Skin Texture Repair
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/car2-skin-repair.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy scipy pillow
+      - name: Preserve original asset and repair texture
+        run: |
+          cp world-creator/assets/car2-completed.glb /tmp/car2-original.glb
+          python scripts/car2_recolor_glb.py
+          python - <<'PY'
+          import struct,json,pathlib
+          raw=pathlib.Path('world-creator/assets/car2-completed.glb').read_bytes()
+          assert struct.unpack_from('<I',raw,8)[0]==len(raw)
+          n=struct.unpack_from('<I',raw,12)[0]
+          d=json.loads(raw[20:20+n])
+          assert len(d['meshes'])==4 and len(d['materials'])==4
+          print('Repaired GLB validated:',len(raw))
+          PY
+      - name: Commit corrected GLB
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/car2-completed.glb
+          git commit -m "Match CAR2 attachment texture to adjacent body skin" || exit 0
+          git push
