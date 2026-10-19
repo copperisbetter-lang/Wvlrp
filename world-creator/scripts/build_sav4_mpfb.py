@@ -146,7 +146,7 @@ if ratio_path.exists():
     # before enabling full-feature deformation; never silently claim a match.
     region_map=ROOT/"characters"/"sav4"/"face-region-map.json"
     if not region_map.exists():
-        print("SAV4_FULL_FACE_MORPH_BLOCKED: calibrated mesh region map missing",region_map)
+        raise RuntimeError("SAV4_FULL_FACE_MORPH_BLOCKED: calibrated mesh region map missing; see sav4-build-report/face-region-map.template.json and face-vertices.csv")
     else:
         mapping=json.loads(region_map.read_text())
         if mapping.get("mesh_vertex_count")!=len(face_body.data.vertices):
@@ -181,7 +181,7 @@ if ratio_path.exists():
         print("SAV4_FACE_REGION_MAP_VALIDATED",region_map,len(assigned))
     print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
 else:
-    print("SAV4_REFERENCE_NOT_MEASURED: keeping conservative facial pass")
+    raise RuntimeError("SAV4_FULL_FACE_MORPH_BLOCKED: measured marybeth-ratios.json missing; refusing to publish a partial morph as complete")
 # Detect accidental changes outside the intended face zone.
 # Keep the original mesh topology, rig weights and every non-face vertex.
 if len(face_body.data.vertices)!=len(coords):
