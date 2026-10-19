@@ -30,7 +30,7 @@ try{
  const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
  const camera=new THREE.PerspectiveCamera(45,1,.001,100);camera.position.set(0,.85,2.5);
  const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
  const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
  function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(stage);resize();
@@ -79,6 +79,7 @@ try{
  // Keep the attachment's own exported texture and UV layout. Previous
  // runtime override replaced the repaired GLB texture with a flat color.
  const body=meshes.find(m=>m!==attachment&&/base\\.001|character_sav4/i.test(m.name))||meshes.filter(m=>m!==attachment).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+ // Preserve original UVs; color-only changes cannot repair mismatched baked maps.
  // Keep the exported material unchanged to preserve texture, lighting and UVs.
 
  // Use the skin texture baked into the exported GLB. Do not rebuild the
@@ -97,7 +98,8 @@ try{
  probe.onclick=refresh;
  test.onclick=()=>{attachment.material=new THREE.MeshBasicMaterial({color:0xff00ff,side:THREE.DoubleSide,depthTest:false});attachment.renderOrder=999;refresh();status.textContent='DIAGNOSTIC: attachment forced MAGENTA (restore after checking)';};
  restore.onclick=()=>{attachment.material=originalMaterial;attachment.renderOrder=0;refresh();status.textContent='DIAGNOSTIC: original attachment material restored';};
- refresh();
+ // Diagnostics are opt-in; avoid flooding a small mobile viewer with JSON.
+ report.textContent='Tap Diagnose skin materials to inspect the loaded textures.';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
  const requested=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees','Crawl','Lie down'];
@@ -107,7 +109,7 @@ try{
  let clips=gltf.animations;
  if(!clips.length){try{
   count.textContent='Loading Carol’s refined movements…';
-  const source=await new GLTFLoader().loadAsync('./assets/caroline-inspection.glb');
+  const source=await Promise.race([new GLTFLoader().loadAsync('./assets/caroline-inspection.glb?v='+Date.now()),new Promise((_,reject)=>setTimeout(()=>reject(Error('Carol animation download timed out')),12000))]);
   const targetBones=new Map();model.traverse(o=>{if(o.isBone)targetBones.set(o.name.toLowerCase().replace(/[^a-z0-9]/g,''),o.name);});
   const norm=n=>n.toLowerCase().replace(/[^a-z0-9]/g,'');
   clips=source.animations.map(clip=>{
