@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-skin-material-20261019';
+const sav4AssetUrl='./assets/car2-completed.glb?v=car2-shared-atlas-20261019';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -58,65 +58,55 @@ try{
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
 
- // CAR 2 skin material correction: use the same PBR response as the body.
- // The attachment remains an independent mesh for rigging and inspection.
+ // CAR 2: derive the attachment appearance from the body's own skin material.
+ // Preserve a separate mesh for animation, but make both share the same PBR inputs.
  const candidates=meshes.filter(m=>m!==attachment&&!/hair|eye|iris|lash|brow|cloth|skirt|blouse|teeth|tongue/i.test(m.name));
  const body=candidates.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
  const skin=body&&(Array.isArray(body.material)?body.material:[body.material])[0];
  if(body&&skin){
-   // Sample a small skin-colored region of the body's actual diffuse map.
-   // Avoid sampling arbitrary nearest 3D vertices, which can select unrelated
-   // UV islands and create a gray or muddy polygon-shaped patch.
    const matched=skin.clone();
-   matched.name='CAR2 body-matched skin';
-   matched.map=null;
-   matched.vertexColors=false;
-   matched.color.copy(skin.color);
-   matched.normalMap=null;
-   matched.bumpMap=null;
-   matched.roughnessMap=null;
-   matched.metalnessMap=null;
-   matched.aoMap=null;
-   matched.emissiveMap=null;
+   matched.name='CAR2 unified body skin';
    matched.side=THREE.DoubleSide;
-   const tex=skin.map,uv=body.geometry.attributes.uv,pos=body.geometry.attributes.position;
-   if(tex?.image&&uv&&pos){
-     try{
-       const img=tex.image,cv=document.createElement('canvas');
-       cv.width=img.width||img.videoWidth;cv.height=img.height||img.videoHeight;
-       const ctx=cv.getContext('2d',{willReadFrequently:true});
-       ctx.drawImage(img,0,0,cv.width,cv.height);
-       const pixels=ctx.getImageData(0,0,cv.width,cv.height).data;
-       body.updateMatrixWorld(true);attachment.updateMatrixWorld(true);
-       const targetCenter=new THREE.Box3().setFromObject(attachment,true).getCenter(new THREE.Vector3());
-       const v=new THREE.Vector3(),samples=[];
-       const stride=Math.max(1,Math.floor(pos.count/24000));
-       for(let i=0;i<pos.count;i+=stride){
-         v.fromBufferAttribute(pos,i).applyMatrix4(body.matrixWorld);
-         const d=v.distanceToSquared(targetCenter);
-         if(!Number.isFinite(d))continue;
-         const u=((uv.getX(i)%1)+1)%1,w=((uv.getY(i)%1)+1)%1;
-         const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
-         const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
-         const j=(y*cv.width+x)*4;
-         const r=pixels[j],g=pixels[j+1],b=pixels[j+2];
-         // Reject very dark texture features, transparent areas and UV seams.
-         if(pixels[j+3]<245||r<75||g<45||b<35)continue;
-         samples.push({d,r,g,b});
+   // The attachment has independent UV coordinates, so copying the skin texture
+   // without remapping them would sample unrelated regions of the atlas.
+   // Transfer body UV coordinates by nearest surface vertex in world space.
+   const bodyPos=body.geometry?.attributes?.position;
+   const bodyUV=body.geometry?.attributes?.uv;
+   const partPos=attachment.geometry?.attributes?.position;
+   if(skin.map&&bodyPos&&bodyUV&&partPos){
+     body.updateMatrixWorld(true);attachment.updateMatrixWorld(true);
+     const bodyPoints=[];
+     const p=new THREE.Vector3();
+     for(let i=0;i<bodyPos.count;i++){
+       p.fromBufferAttribute(bodyPos,i).applyMatrix4(body.matrixWorld);
+       bodyPoints.push([p.x,p.y,p.z,bodyUV.getX(i),bodyUV.getY(i)]);
+     }
+     const transferred=new Float32Array(partPos.count*2);
+     const q=new THREE.Vector3();
+     for(let i=0;i<partPos.count;i++){
+       q.fromBufferAttribute(partPos,i).applyMatrix4(attachment.matrixWorld);
+       let best=Infinity,nearest=null;
+       for(const v of bodyPoints){
+         const dx=q.x-v[0],dy=q.y-v[1],dz=q.z-v[2];
+         const d=dx*dx+dy*dy+dz*dz;
+         if(d<best){best=d;nearest=v;}
        }
-       samples.sort((a,b)=>a.d-b.d);
-       const nearest=samples.slice(0,Math.min(128,samples.length));
-       if(nearest.length){
-         const channel=k=>nearest.map(s=>s[k]).sort((a,b)=>a-b)[Math.floor(nearest.length/2)]/255;
-         const tint=new THREE.Color().setRGB(channel('r'),channel('g'),channel('b'),THREE.SRGBColorSpace);
-         matched.color.multiply(tint);
-         status.textContent='CAR 2 · body skin material matched; inspect transition';
-       }else status.textContent='CAR 2 · body material matched (texture samples unavailable)';
-     }catch(e){console.warn('Skin sample unavailable',e);status.textContent='CAR 2 · body material matched without texture sampling';}
-   }else status.textContent='CAR 2 · shared body material settings';
-   // Geometry stays intact; avoid vertex colors and custom shader grain,
-   // which previously made the attachment look like a separate flat patch.
-   attachment.material=matched;matched.needsUpdate=true;
+       transferred[i*2]=nearest[3];transferred[i*2+1]=nearest[4];
+     }
+     // Do not mutate the original GLB geometry or its stored UVs.
+     attachment.geometry=attachment.geometry.clone();
+     attachment.geometry.setAttribute('uv',new THREE.BufferAttribute(transferred,2));
+     if(attachment.geometry.attributes.uv2)attachment.geometry.deleteAttribute('uv2');
+     status.textContent='CAR 2 · skin atlas mapped from body; inspect seam';
+   }else{
+     matched.map=null;
+     matched.vertexColors=false;
+     status.textContent='CAR 2 · shared body material (texture UV unavailable)';
+   }
+   // Vertex tint on the attachment would multiply the body's skin tone.
+   matched.vertexColors=false;
+   attachment.material=matched;
+   matched.needsUpdate=true;
  }else status.textContent='CAR 2 · body skin material unavailable';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
