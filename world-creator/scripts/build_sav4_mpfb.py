@@ -101,6 +101,14 @@ for vert,p in zip(face_body.data.vertices,coords):
     chin_weight=math.exp(-((h-0.879)/0.010)**2)
     if center_weight>0.05:
         vert.co.z=p.z+span*(0.0015+0.0004*chin_weight_ref)*chin_weight*center_weight*fade
+    # Stronger full-silhouette pass: temples, cheek volume, jaw taper and chin.
+    # The eye socket band remains protected until calibrated vertex IDs exist.
+    temple=math.exp(-((h-0.936)/0.012)**2)
+    cheek_lower=math.exp(-((h-0.914)/0.014)**2)
+    chin_taper=math.exp(-((h-0.873)/0.012)**2)
+    vert.co.x *= 1.0 + fade*(0.11*temple+0.16*cheek_lower-0.13*chin_taper)
+    # Forward cheek contour and lower chin definition without moving eye meshes.
+    vert.co.y += span*fade*(0.0018*cheek_lower-0.0008*chin_taper)
     # Two-view Laura reference refinement (2026-10-18): soften the
     # lower-face silhouette without changing eye sockets or nose geometry.
     # The movie stills are perspective views, not calibrated 3D scans.
@@ -231,8 +239,8 @@ for eye_obj in eye_meshes:
  for eye_mat in eye_obj.data.materials:
   if eye_mat and eye_mat.use_nodes:
    for hue in (n for n in eye_mat.node_tree.nodes if n.type=="HUE_SAT"):
-    hue.inputs["Saturation"].default_value=.42
-    hue.inputs["Value"].default_value=.48
+    hue.inputs["Saturation"].default_value=.62
+    hue.inputs["Value"].default_value=.95
 # Validate actual source eye mesh placement against the head before exporting.
 # A missing or detached proxy must fail the build instead of producing floating eyes.
 bpy.context.view_layer.update()
