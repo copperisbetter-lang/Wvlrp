@@ -5,6 +5,7 @@ on:
       - world-creator/scripts/build_sav4_mpfb.py
       - world-creator/scripts/caroline_eyes.py
       - world-creator/scripts/sav4_face_calibration.py
+      - world-creator/scripts/sav4_reference_ratios.py
       - world-creator/characters/sav4/**
       - .github/workflows/build-sav4.yml
   workflow_dispatch:
@@ -25,6 +26,10 @@ jobs:
         run: |
           test -s world-creator/scripts/build_sav4_mpfb.py
           python3 -m py_compile world-creator/scripts/build_sav4_mpfb.py world-creator/scripts/caroline_eyes.py
+      - name: Measure two-view reference ratios
+        run: |
+          python3 world-creator/scripts/sav4_reference_ratios.py
+          test -s world-creator/characters/sav4/laura-projected-ratios.json
       - name: Install Blender
         run: |
           sudo apt-get update -qq
@@ -107,6 +112,7 @@ jobs:
           path: |
             /tmp/sav4-build.log
             world-creator/assets/sav4-realistic.glb
+            world-creator/characters/sav4/laura-projected-ratios.json
             world-creator/assets/sav4-calibration/face-vertices.csv
             world-creator/assets/sav4-calibration/face-region-map.template.json
           if-no-files-found: ignore
