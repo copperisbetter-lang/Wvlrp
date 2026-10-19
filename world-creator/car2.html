@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 2 — Saved Character Inspection</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:26dvh;overflow:auto}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 2 — Saved Character</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><nav id="motions" aria-label="CAR 2 animation controls"><strong>Movements:</strong> <span id="motion-list">Checking exported animation clips…</span></nav><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><nav id="motions" aria-label="CAR 2 animation controls"><strong>Movements:</strong> <span id="motion-list">Loading movement library…</span></nav><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-20261019';
+const sav4AssetUrl='./assets/car2-completed.glb?v=car2-motions-20261019';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -60,7 +60,7 @@ try{
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list');
  if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of gltf.animations){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
- else{motions.textContent='No animation clips are embedded in CAR 2’s current GLB. Carol’s animations must be retargeted and exported before movement buttons can work.';}
+ else{motions.textContent='Movement library not yet exported into CAR 2. The original Carol clips need retargeting; no fake movement buttons are shown.';}
  status.textContent='Native fit · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
