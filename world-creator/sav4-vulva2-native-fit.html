@@ -483,7 +483,7 @@ window.outfit=function(style){
  },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — file failed to load: '+(e?.message||'network or format error');});
 };
 
-const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=05332fec48e6';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=66de7756027e';
 const sav4Version=document.createElement('div');sav4Version.id='sav4-version';sav4Version.style.cssText='font-size:12px;color:#b8d8c7;margin-top:5px';sav4Version.textContent='Viewer diagnostic 2026-10-18B · loading current GLB…';document.querySelector('header').appendChild(sav4Version);
 fetch(sav4AssetUrl,{method:'HEAD',cache:'no-store'}).then(r=>{sav4Version.textContent='Viewer diagnostic 2026-10-18 · GLB HTTP '+r.status+' · '+(r.headers.get('last-modified')||'no modified date')+' · '+(r.headers.get('content-length')||'unknown')+' bytes';}).catch(e=>{sav4Version.textContent='Viewer diagnostic · GLB HEAD check unavailable: '+e.message;});
 loader.load(sav4AssetUrl,g=>{
