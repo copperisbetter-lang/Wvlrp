@@ -62,7 +62,47 @@ try{
  // runtime override replaced the repaired GLB texture with a flat color.
  const body=meshes.find(m=>/base\.001|character_sav4/i.test(m.name))||meshes.find(m=>m!==attachment);
  const originalSkinMaterial=attachment.material;
- status.textContent='CAR 2 · exported GLB materials preserved';
+
+ // MakeHuman-style proxy seam treatment: blend the attachment perimeter into
+ // the underlying body instead of displaying a hard rectangular mesh border.
+ // Preserve the original texture and allow diagnostics to override the material.
+ const geom=attachment.geometry.clone();
+ const positions=geom.getAttribute('position');
+ const index=geom.getIndex();
+ const triangles=index?Array.from(index.array):Array.from({length:positions.count},(_,i)=>i);
+ const edgeCounts=new Map(),neighbors=Array.from({length:positions.count},()=>new Set());
+ const key=(a,b)=>a<b?a+':'+b:b+':'+a;
+ for(let t=0;t+2<triangles.length;t+=3){
+   const v=[triangles[t],triangles[t+1],triangles[t+2]];
+   for(let e=0;e<3;e++){const a=v[e],b=v[(e+1)%3];const k=key(a,b);
+     edgeCounts.set(k,(edgeCounts.get(k)||0)+1);neighbors[a].add(b);neighbors[b].add(a);}
+ }
+ let frontier=new Set();
+ for(const [edge,count] of edgeCounts)if(count===1){const [a,b]=edge.split(':').map(Number);frontier.add(a);frontier.add(b);}
+ const alpha=new Float32Array(positions.count).fill(1);
+ if(frontier.size>0 && frontier.size<positions.count*.8){
+   const steps=new Int16Array(positions.count).fill(-1);
+   for(const v of frontier)steps[v]=0;
+   for(let d=0;d<5;d++){const next=new Set();
+     for(const v of frontier)for(const n of neighbors[v])if(steps[n]<0){steps[n]=d+1;next.add(n);}
+     frontier=next;
+   }
+   const colors=new Float32Array(positions.count*4);
+   for(let i=0;i<positions.count;i++){
+     colors[i*4]=colors[i*4+1]=colors[i*4+2]=1;
+     colors[i*4+3]=steps[i]<0?1:Math.min(1,Math.pow(steps[i]/5,1.4));
+   }
+   geom.setAttribute('color',new THREE.BufferAttribute(colors,4));
+   attachment.geometry=geom;
+   const skin=attachment.material.clone();
+   skin.vertexColors=true;skin.transparent=true;skin.depthWrite=false;
+   skin.side=THREE.DoubleSide;skin.needsUpdate=true;
+   attachment.material=skin;
+   status.textContent='CAR 2 · skin texture with feathered proxy perimeter';
+ }else{
+   status.textContent='CAR 2 · proxy seam requires topology inspection';
+ }
+
 
  // Visible diagnostic: proves which mesh is actually rendered and which
  // material survives the GLB load. Never rely on build success alone.
