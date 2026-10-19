@@ -7,7 +7,7 @@ on:
   # Asset installers commit GLBs using GITHUB_TOKEN; these commits do not
   # trigger push workflows. Deploy after a successful installer run, too.
   workflow_run:
-    workflows: ["Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
+    workflows: ["Fit SAV4 Vulva2 with native MPFB mapping", "Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
     types: [completed]
     branches: ["main"]
 
@@ -223,4 +223,23 @@ jobs:
           magic,version,length=struct.unpack_from('<4sII',b)
           assert magic==b'glTF' and version==2 and length==len(b), "Published GLB invalid"
           print('LIVE Carolyn viewer:',len(b),'bytes: OK')
+          PY
+
+      - name: Verify native SAV4 proxy fit publication
+        if: hashFiles('world-creator/assets/sav4-vulva2-native-fit.glb') != ''
+        env:
+          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${LIVE_URL%/}"
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/sav4-vulva2-native-fit.html" -o /tmp/native-fit-viewer-live.html
+          grep -q 'sav4-vulva2-native-fit.glb' /tmp/native-fit-viewer-live.html
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/sav4-vulva2-native-fit.glb" -o /tmp/native-fit-model-live.glb
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          local=Path("world-creator/assets/sav4-vulva2-native-fit.glb").read_bytes()
+          live=Path("/tmp/native-fit-model-live.glb").read_bytes()
+          assert hashlib.sha256(local).digest()==hashlib.sha256(live).digest(), "Live native fit differs from verified build"
+          print("LIVE_NATIVE_FIT_VERIFIED",len(live))
           PY
