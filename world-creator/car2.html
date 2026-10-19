@@ -3,11 +3,22 @@
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:52dvh;min-height:280px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:40dvh;overflow:auto;padding:10px;border-top:2px solid #76ae94}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 2 — Saved Character</h1><p id="status" role="status">Loading the fitted model…</p></header><nav id="motion-shortcuts" aria-label="Quick movement controls"><button type="button" onclick="document.getElementById('motions').scrollIntoView({block:'nearest'})">Movement controls ↓</button><span id="motion-count">Loading animations…</span></nav><main id="stage"></main>
 <nav id="motions" aria-label="CAR 2 animation controls"><strong>CAR 2 Movements:</strong> <span id="motion-list">Loading movement library…</span></nav><nav id="inspection" aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><nav id="diagnostics" style="padding:10px;background:#162a24"><button id="probe" disabled>Diagnose skin materials</button><button id="test-color" disabled>Test attachment (magenta)</button><button id="restore-skin" disabled>Restore skin</button><pre id="material-report" style="white-space:pre-wrap;font-size:12px"></pre></nav><div id="error"></div>
+<script>
+(function(){
+ const status=document.getElementById('status'),err=document.getElementById('error');
+ status.textContent='Starting CAR 2 3D engine…';
+ window.car2Booted=false;
+ window.addEventListener('error',function(e){err.textContent='CAR 2 startup error: '+(e.message||'A required script could not load');});
+ window.addEventListener('unhandledrejection',function(e){err.textContent='CAR 2 loading error: '+(e.reason?.message||String(e.reason));});
+ setTimeout(function(){if(!window.car2Booted){status.textContent='CAR 2 3D engine failed to start';err.textContent='The Three.js module or one of its CDN imports failed to load. Check network access to cdn.jsdelivr.net; the model has not started downloading.';}},12000);
+})();
+</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+window.car2Booted=true;
 // Fresh GLB on every viewer load; no manually maintained version token.
 const sav4AssetUrl='./assets/car2-completed.glb?v='+Date.now();
 const status=document.getElementById('status'),stage=document.getElementById('stage');
