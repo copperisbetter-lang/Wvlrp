@@ -1601,7 +1601,10 @@
       0.7942783832550049
     ]
   ],
-  "status": "serialized boundary validated; visual review pending",
+  "status": "serialized seam and body aperture validated; visual review pending",
   "serialized_boundary_vertices": 28,
-  "serialized_max_boundary_error_m": 0.0
+  "serialized_max_boundary_error_m": 0.0,
+  "body_aperture_edge_incidence": {
+    "1": 28
+  }
 }
