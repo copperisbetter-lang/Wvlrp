@@ -491,7 +491,7 @@ loader.load(sav4AssetUrl,g=>{
  // CAR 2 only: the native attachment already uses body-projected UVs.
  // Reuse the body's exact skin shader and texture rather than a separate tint.
  // This changes appearance only; the attachment geometry remains intact.
- const car2Meshes=[];
+ avatar.updateMatrixWorld(true);\n const car2Meshes=[];
  avatar.traverse(o=>{if(o.isMesh)car2Meshes.push(o);});
  const isAttachment=o=>/vulva[ _-]?2|car[ _-]?2[ _-]?(attachment|anatomy)/i.test(o.name+' '+[].concat(o.material||[]).map(m=>m?.name||'').join(' '));
  const attachments=car2Meshes.filter(isAttachment);
@@ -505,10 +505,48 @@ loader.load(sav4AssetUrl,g=>{
    for(const attachment of attachments){
      // Sharing the actual material avoids accidental tint and color-space differences.
      // Texture UVs still must correspond to the body's atlas for a seamless result.
+     // The GLB keeps this as a separate mesh. Transfer nearby body UVs so
+     // its skin texture samples the same body atlas rather than its old UV island.
+     const bodyPos=car2Body.geometry?.getAttribute('position');
+     const bodyUV=car2Body.geometry?.getAttribute('uv');
+     const partPos=attachment.geometry?.getAttribute('position');
+     if(bodyPos&&bodyUV&&partPos&&bodyPos.count===bodyUV.count){
+       const bodyWorld=car2Body.matrixWorld,partWorld=attachment.matrixWorld;
+       const p=new T.Vector3(),q=new T.Vector3();
+       const cellSize=.035,grid=new Map(),cell=(x,y,z)=>[Math.floor(x/cellSize),Math.floor(y/cellSize),Math.floor(z/cellSize)];
+       const key=(x,y,z)=>x+','+y+','+z;
+       for(let j=0;j<bodyPos.count;j++){
+         p.fromBufferAttribute(bodyPos,j).applyMatrix4(bodyWorld);
+         const c=cell(p.x,p.y,p.z),k=key(...c);
+         if(!grid.has(k))grid.set(k,[]);
+         grid.get(k).push([p.x,p.y,p.z,j]);
+       }
+       const uv=new Float32Array(partPos.count*2);
+       let matched=0;
+       for(let i=0;i<partPos.count;i++){
+         p.fromBufferAttribute(partPos,i).applyMatrix4(partWorld);
+         const c=cell(p.x,p.y,p.z);let best=-1,bestD=Infinity;
+         for(let radius=0;radius<=3&&best<0;radius++){
+           for(let x=-radius;x<=radius;x++)for(let y=-radius;y<=radius;y++)for(let z=-radius;z<=radius;z++){
+             const entries=grid.get(key(c[0]+x,c[1]+y,c[2]+z));
+             if(!entries)continue;
+             for(const [vx,vy,vz,j] of entries){
+               const d=(vx-p.x)**2+(vy-p.y)**2+(vz-p.z)**2;
+               if(d<bestD){bestD=d;best=j;}
+             }
+           }
+         }
+         if(best>=0){uv[i*2]=bodyUV.getX(best);uv[i*2+1]=bodyUV.getY(best);matched++;}
+       }
+       if(matched===partPos.count){
+         attachment.geometry=attachment.geometry.clone();
+         attachment.geometry.setAttribute('uv',new T.BufferAttribute(uv,2));
+       }
+       colorMatchReport.attachments.push({name:attachment.name,uvMatched:matched,total:partPos.count});
+     }else colorMatchReport.attachments.push({name:attachment.name,uvMatched:0,reason:'missing body or attachment geometry/UV'});
      attachment.material=skinMaterial;
-     colorMatchReport.attachments.push(attachment.name);
    }
-   colorMatchReport.status='body material assigned; inspect UV seams';
+   colorMatchReport.status='body material and nearby body UV projection applied; inspect visually';
  }else colorMatchReport.reason='Body skin or named attachment mesh not identified';
  window.car2ColorMatchDiagnostics=()=>({...colorMatchReport});
  console.info('CAR2_SKIN_COLOR_MATCH',colorMatchReport);
