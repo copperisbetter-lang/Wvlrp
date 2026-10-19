@@ -38,181 +38,7 @@ if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse expo
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
 tint(hair,(.88,.78,.62),1.0)
-# Marybeth Hutchinson / Laura Harris (The Faculty, 1998) inspired facial pass.
-# Apply to the source basemesh before making the rigged export copy, so the
-# facial changes travel with the character instead of becoming loose proxies.
-# This is a geometry approximation, not a scan or verified photographic match.
-face_body=ObjectService.find_object_of_type_amongst_nearest_relatives(human,"Basemesh")
-if face_body is None: raise RuntimeError("SAV4 face morph: source basemesh missing")
-# Save inspectable vertex coordinates before morphing, so calibrated facial
-# regions can be mapped without guessing from oblique photo pixels.
-from sav4_face_calibration import export_face_candidates, create_region_template
-calibration_dir=ROOT/"assets"/"sav4-calibration"
-export_face_candidates(face_body,calibration_dir/"face-vertices.csv")
-from sav4_face_calibration import propose_region_candidates
-propose_region_candidates(face_body,calibration_dir/"face-region-candidates.json")
-region_map_path=ROOT/"characters"/"sav4"/"face-region-map.json"
-if not region_map_path.exists():
-    create_region_template(face_body,calibration_dir/"face-region-map.template.json")
-print("SAV4_CALIBRATION_EXPORT",calibration_dir)
-coords=[v.co.copy() for v in face_body.data.vertices]
-zmin=min(p.z for p in coords); zmax=max(p.z for p in coords)
-xmin=min(p.x for p in coords); xmax=max(p.x for p in coords)
-span=zmax-zmin
-# Derive reversible shape-control weights from the saved image landmarks.
-# Perspective ratios drive bounded artistic adjustments, not millimeter-accurate fitting.
-import json
-reference=json.loads((ROOT/"characters"/"sav4"/"laura-two-view-landmarks.json").read_text())
-front=reference["front_three_quarter"]
-def pixel_distance(a,b):
-    return math.hypot(a[0]-b[0],a[1]-b[1])
-eye_span=pixel_distance(*front["eye_centers"])
-mouth_span=pixel_distance(*front["mouth_corners"])
-nose_to_mouth=pixel_distance(front["nose_tip"],front["mouth_center"])
-mouth_to_chin=pixel_distance(front["mouth_center"],front["chin"])
-if min(eye_span,mouth_span,nose_to_mouth,mouth_to_chin)<=0:
-    raise RuntimeError("SAV4 invalid facial landmark distances")
-mouth_eye_ratio=mouth_span/eye_span
-chin_lower_ratio=mouth_to_chin/(mouth_to_chin+nose_to_mouth)
-# Restrict inferred corrections to small bounded shifts; 3/4 perspective
-# cannot determine true 3D width or depth.
-mouth_weight=max(-1.,min(1.,(mouth_eye_ratio-0.75)/0.25))
-chin_weight_ref=max(-1.,min(1.,(chin_lower_ratio-0.59)/0.20))
-print("SAV4_MEASURED_MORPH_WEIGHTS",round(mouth_weight,4),round(chin_weight_ref,4))
-# Upper face: gently broaden cheekbones, refine lower jaw and chin, and
-# soften the temple-to-cheek transition. Limit movement to the head region.
-# Head orientation is retained; no changes to eyes, rig, or wardrobe assets.
-changed=0
-for vert,p in zip(face_body.data.vertices,coords):
-    h=(p.z-zmin)/span
-    if h<0.865 or h>0.965: continue
-    # Preserve the eye socket/upper lid band. Previous eye regressions
-    # included displaced pupils and hollow-looking sockets.
-    if 0.941<=h<=0.965: continue
-    t=(h-0.865)/0.130
-    fade=math.sin(math.pi*min(1.0,max(0.0,t)))**2
-    # cheek prominence near the mid-face, narrower jaw near the lower face
-    cheek=math.exp(-((h-0.928)/0.020)**2)
-    jaw=math.exp(-((h-0.885)/0.017)**2)
-    factor=1.0+fade*((0.34+0.018*mouth_weight)*cheek-(0.25+0.015*chin_weight_ref)*jaw)
-    vert.co.x=p.x*factor
-    # Second pass: subtle central chin definition and a softer, slightly
-    # forward midface. Keep the nose/eye sockets untouched to avoid the
-    # earlier SAV4 displaced-eye regression.
-    center_weight=math.exp(-((p.x/max(0.001,(xmax-xmin)*0.5))/0.30)**2)
-    chin_weight=math.exp(-((h-0.879)/0.010)**2)
-    if center_weight>0.05:
-        vert.co.z=p.z+span*(0.0015+0.0004*chin_weight_ref)*chin_weight*center_weight*fade
-    # Stronger full-silhouette pass: temples, cheek volume, jaw taper and chin.
-    # The eye socket band remains protected until calibrated vertex IDs exist.
-    temple=math.exp(-((h-0.936)/0.012)**2)
-    cheek_lower=math.exp(-((h-0.914)/0.014)**2)
-    chin_taper=math.exp(-((h-0.873)/0.012)**2)
-    vert.co.x *= 1.0 + fade*(0.11*temple+0.16*cheek_lower-0.13*chin_taper)
-    # Forward cheek contour and lower chin definition without moving eye meshes.
-    vert.co.y += span*fade*(0.0018*cheek_lower-0.0008*chin_taper)
-    # Two-view Laura reference refinement (2026-10-18): soften the
-    # lower-face silhouette without changing eye sockets or nose geometry.
-    # The movie stills are perspective views, not calibrated 3D scans.
-    lower_face=math.exp(-((h-0.899)/0.019)**2)
-    # Gentle tapered lower jaw; blend continuously into the cheeks.
-    vert.co.x *= 1.0-0.055*lower_face*fade
-    # Keep this conservative until orthographic model comparisons exist.
-    if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
-# Intensify the already bounded cheek/jaw/chin pass without guessing eye,
-# nose, or lip topology. Reapply from original coordinates, not cumulatively.
-# This remains an artistic silhouette pass, NOT a calibrated photo likeness.
-import os
-face_intensity=float(os.environ.get("SAV4_FACE_INTENSITY","1.75"))
-if not math.isfinite(face_intensity) or not 1.0<=face_intensity<=2.0:
-    raise RuntimeError("SAV4_FACE_INTENSITY must be between 1.0 and 2.0")
-for vertex,original in zip(face_body.data.vertices,coords):
-    delta=vertex.co-original
-    if delta.length>1e-8:
-        vertex.co=original+delta*face_intensity
-print("SAV4_FACE_INTENSITY_APPLIED",face_intensity)
-# Load the complete two-view landmark specification into the build for audit.
-# These are oblique image coordinates, NOT calibrated 3D mesh targets.
-landmarks_path=ROOT/"characters"/"sav4"/"laura-two-view-landmarks.json"
-if not landmarks_path.exists():
-    raise RuntimeError("SAV4 Laura landmark reference missing")
-import json
-landmarks=json.loads(landmarks_path.read_text())
-for view,keys in {"front_three_quarter":("eye_centers","nose_tip","mouth_center","chin","mouth_corners"),"profile":("nose_tip","lip_contour","chin_contour","jaw_back","ear_center")}.items():
-    if any(k not in landmarks.get(view,{}) for k in keys):
-        raise RuntimeError("SAV4 incomplete landmark specification: "+view)
-print("SAV4_TWO_VIEW_LANDMARKS_LOADED",landmarks_path)
-print("SAV4_LANDMARKS_NOT_3D_CALIBRATED: no unsafe direct vertex fitting")
-# Apply validated, photo-derived normalized ratios only when supplied.
-# Missing reference data must never be silently replaced with invented values.
-import json
-ratio_path=ROOT/"characters"/"sav4"/"marybeth-ratios.json"
-if ratio_path.exists():
-    report=json.loads(ratio_path.read_text())
-    if report.get("method")!="MediaPipe 2D image landmark ratios":
-        raise RuntimeError("SAV4 face ratios must come from measured photo landmarks")
-    ratios=report.get("ratios",{})
-    required=("face_height_over_width","nose_width_over_width","mouth_width_over_width")
-    if any(not isinstance(ratios.get(k),(float,int)) or ratios[k]<=0 for k in required):
-        raise RuntimeError("SAV4 incomplete facial landmark ratios")
-    # Reference measurements alone are not enough to locate nose/mouth vertices
-    # on an arbitrary MPFB basemesh. Require a calibrated vertex-region map
-    # before enabling full-feature deformation; never silently claim a match.
-    region_map=ROOT/"characters"/"sav4"/"face-region-map.json"
-    if not region_map.exists():
-        raise RuntimeError("SAV4_FULL_FACE_MORPH_BLOCKED: calibrated mesh region map missing; see sav4-build-report/face-region-map.template.json and face-vertices.csv")
-    else:
-        mapping=json.loads(region_map.read_text())
-        if mapping.get("mesh_vertex_count")!=len(face_body.data.vertices):
-            raise RuntimeError("SAV4 face region map incompatible with basemesh topology")
-        # Optional explicit calibrated vertex sets. Never infer a nose or mouth
-        # from head-height alone: that previously displaced eyes and teeth.
-        # Each region lists source-basemesh vertex IDs selected in Blender.
-        # Offsets are fractions of full body height in local mesh coordinates.
-        region_specs={
-            "nose_bridge":(0.0,0.0,-0.0004),
-            "nose_tip":(0.0,0.0005,0.0),
-            "mouth_corners":(0.0005*mouth_weight,0.0,0.0),
-            "upper_lip":(0.0,0.0002,0.0),
-            "lower_lip":(0.0,0.0003,0.0),
-        }
-        assigned=set()
-        for name,offset in region_specs.items():
-            indices=mapping.get("regions",{}).get(name,[])
-            if not isinstance(indices,list) or len(indices)!=len(set(indices)):
-                raise RuntimeError("SAV4 invalid calibrated vertex list: "+name)
-            for index in indices:
-                if type(index) is not int or index<0 or index>=len(coords):
-                    raise RuntimeError("SAV4 invalid calibrated vertex index: "+name)
-                if index in assigned:
-                    raise RuntimeError("SAV4 overlapping calibrated facial regions: "+name)
-                assigned.add(index)
-                delta=Vector(offset)*span
-                if delta.length>span*0.001:
-                    raise RuntimeError("SAV4 facial region offset over safety limit")
-                face_body.data.vertices[index].co+=delta
-            print("SAV4_CALIBRATED_REGION",name,len(indices))
-        print("SAV4_FACE_REGION_MAP_VALIDATED",region_map,len(assigned))
-    print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
-else:
-    print("SAV4_UNCALIBRATED_FACE_PASS: verified photographic ratios missing; exporting conservative reference-inspired morph only")
-# Detect accidental changes outside the intended face zone.
-# Keep the original mesh topology, rig weights and every non-face vertex.
-if len(face_body.data.vertices)!=len(coords):
-    raise RuntimeError("SAV4 face morph changed vertex topology")
-max_displacement=0.0
-for vertex,original in zip(face_body.data.vertices,coords):
-    displacement=(vertex.co-original).length
-    max_displacement=max(max_displacement,displacement)
-    h=(original.z-zmin)/span
-    if displacement>1e-7 and (h<0.865 or h>0.941):
-        raise RuntimeError(f"SAV4 facial deformation escaped safe region: {h:.5f}")
-if changed==0:
-    raise RuntimeError("SAV4 face morph modified no vertices")
-if max_displacement>span*0.075:
-    raise RuntimeError(f"SAV4 facial deformation exceeded safety limit: {max_displacement:.6f}")
-face_body.data.update()
-print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed,"max_delta",round(max_displacement,6))
+# Attachment fitting starts from the clean MPFB macro body; no facial vertex edits.
 root=ExportService.create_character_copy(human,name_suffix="_sav4")
 # Remove facial helper/proxy meshes that are misplaced in the exported head.
 for obj in list(root.children_recursive):
@@ -240,41 +66,33 @@ for obj in root.children_recursive:
 print("SAV4_HAIR: muted dusty blonde tint; existing long01 geometry preserved")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
-# MPFB may construct the export copy from its own cached basemesh, losing
-# direct vertex edits made to the source face. Explicitly carry the morph
-# onto the export copy and verify the actual copied vertex coordinates.
-source_vertices=face_body.data.vertices
-export_vertices=body.data.vertices
-if len(source_vertices)!=len(export_vertices):
-    raise RuntimeError("SAV4 face morph transfer: source/export topology mismatch")
-# Measure export-copy state against the original and desired morph.
-# MPFB versions differ: some copies already contain the source edits.
-# Never apply the same deformation twice.
-morph_transferred=0
-morph_already_present=0
-max_export_error=0.0
-for index,(source_vertex,export_vertex,original) in enumerate(zip(source_vertices,export_vertices,coords)):
-    delta=source_vertex.co-original
-    if delta.length<=1e-7:
+# Materialize the active MakeHuman shape before using hm08 fitting indices.
+# The prior fitter and tests used Basis, while glTF displayed 28 macro targets.
+baked_shape_keys=0
+for obj in [root,*root.children_recursive]:
+    if obj.type!="MESH" or not obj.data.shape_keys:
         continue
-    before=export_vertex.co.copy()
-    error_before=(before-source_vertex.co).length
-    error_if_added=(before+delta-source_vertex.co).length
-    if error_if_added+1e-7<error_before:
-        export_vertex.co=before+delta
-        morph_transferred+=1
-    else:
-        morph_already_present+=1
-    max_export_error=max(max_export_error,(export_vertex.co-source_vertex.co).length)
-if morph_transferred+morph_already_present==0:
-    raise RuntimeError("SAV4 face morph: no changed vertices to verify")
-print("SAV4_MORPH_EXPORT_AUDIT", "transferred",morph_transferred,
-      "already_present",morph_already_present,
-      "max_source_export_error",round(max_export_error,7))
-if max_export_error>span*0.01:
-    raise RuntimeError("SAV4 face morph export-copy mismatch: "+str(max_export_error))
-body.data.update()
-print("SAV4_EXPORT_FACE_MORPH_TRANSFERRED",morph_transferred)
+    keys=obj.data.shape_keys
+    if not keys.use_relative:
+        raise RuntimeError("Only relative MPFB shape keys are supported")
+    mixed=[v.co.copy() for v in keys.reference_key.data]
+    for key in keys.key_blocks:
+        if key==keys.reference_key or key.mute or abs(key.value)<1e-12:
+            continue
+        if key.vertex_group:
+            raise RuntimeError("Masked shape keys require explicit evaluation")
+        baked_shape_keys+=1
+        for i,(point,relative) in enumerate(zip(key.data,key.relative_key.data)):
+            mixed[i]+=(point.co-relative.co)*key.value
+    obj.shape_key_clear()
+    for vertex,co in zip(obj.data.vertices,mixed):
+        vertex.co=co
+    obj.data.update()
+print("SAV4_ACTIVE_MACROS_BAKED",baked_shape_keys)
+# Use the same armature as the copied body, never the unexported source rig.
+export_rig=next((m.object for m in body.modifiers if m.type=="ARMATURE" and m.object),None)
+if export_rig is None:raise RuntimeError("Exported body armature missing")
+rig=export_rig
 
 # Native MPFB proxy fitting: preserve original hm08 anchors; no global placement offset.
 import json, bmesh
@@ -353,13 +171,13 @@ def fit_vulva2(root,body,rig):
     ob.matrix_world=body.matrix_world.copy()
     # The old automatically interpolated thigh weights can split the central
     # attachment during a stride. The pelvis is rigidly Hips-bound instead.
-    hips=next((b.name for b in rig.data.bones
-               if ''.join(c for c in b.name.lower() if c.isalnum())
-                  .replace("mixamorig","") in ("hips","pelvis")),None)
-    if not hips:raise RuntimeError("Missing hips bone for fixed centerline fitting")
-    pelvis_group=ob.vertex_groups.new(name=hips)
-    pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
-    mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
+    # Transfer native body weights so all seam vertices follow the same bones.
+    groups={name:ob.vertex_groups.new(name=name)
+            for name in sorted({name for weights in transferred for name in weights})}
+    for index,weights in enumerate(transferred):
+        for name,weight in weights.items():
+            groups[name].add([index],weight,"REPLACE")
+    mod=ob.modifiers.new("Vulva2 native body weight binding","ARMATURE")
     mod.object=rig
     # Make the fresh female attachment surface visible instead of recessed.
     # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
@@ -492,7 +310,7 @@ for mat in doc.get("materials",[]):
 # Bounds from accessors are mesh-local; viewer checks transformed world bounds.
 print("SAV4_EXPORTED_POSITION_BOUNDS",positions[:3])
 print("SAV4_BUILD_SUCCESS",OUT,OUT.stat().st_size)
-print("SAV4_FACE_MATCH_STATUS: measured-ratio-guided cheek/jaw/chin pass; full nose/eye/mouth vertex calibration pending")
+print("SAV4_FACE_STATUS: clean native macro body; no uncalibrated facial pass")
 
 # Save body-space fit evidence with front/rear attachment landmarks.
 attachment=[o for o in root.children_recursive if o.type=="MESH" and o.get("wvlrp_vulva2_authentic_mhx2")]
@@ -500,7 +318,8 @@ if len(attachment)!=1:
     raise RuntimeError("Expected exactly one fitted Vulva2 attachment")
 fitted=attachment[0]
 fit_points=[list(fitted.matrix_world@v.co) for v in fitted.data.vertices]
-report={"method":"native hm08 barycentric proxy morph","source_uuid":fitted["wvlrp_vulva2_source_uuid"],
+report={"method":"native hm08 barycentric proxy fitted to baked active body",
+        "baked_active_shape_keys":baked_shape_keys,"source_uuid":fitted["wvlrp_vulva2_source_uuid"],
         "global_forward_offset_m":0,"attachment_count":len(attachment),
         "vertex_count":len(fit_points),"vertices_world":fit_points,
         "status":"geometry exported; visual fit review required"}
@@ -570,3 +389,10 @@ report.update({"body_aperture_edge_incidence":dict(incidence),
                "status":"serialized seam and body aperture validated; visual review pending"})
 (OUT.parent/"sav4-vulva2-native-fit-report.json").write_text(json.dumps(report,indent=2))
 print("SAV4_NATIVE_APERTURE_VERIFIED",dict(incidence))
+
+for mesh in doc.get("meshes",[]):
+    if mesh.get("weights") or any(p.get("targets") for p in mesh["primitives"]):
+        raise RuntimeError("Unbaked morph targets would invalidate the fitting audit")
+report["unbaked_morph_targets"]=0
+(OUT.parent/"sav4-vulva2-native-fit-report.json").write_text(json.dumps(report,indent=2))
+print("SAV4_DISPLAYED_BODY_FIT_VERIFIED",baked_shape_keys,"baked_active_morphs")
