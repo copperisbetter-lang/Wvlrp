@@ -37,3 +37,28 @@ def create_region_template(body,destination):
               "status":"unmapped; fill verified basemesh vertex IDs in Blender"}
     destination.write_text(json.dumps(template,indent=2)+"\n")
     return destination
+
+def propose_region_candidates(body, destination, per_region=24):
+    """Generate review-only spatial candidate IDs; never mark as verified."""
+    import json
+    verts=list(body.data.vertices)
+    zmin=min(v.co.z for v in verts); zmax=max(v.co.z for v in verts)
+    span=zmax-zmin
+    if span<=0: raise ValueError("Invalid SAV4 mesh span")
+    # Anatomical positions are approximate, not proof of identity.
+    targets={"nose_bridge":(.953,.012),"nose_tip":(.936,.010),
+             "mouth_corners":(.912,.028),"upper_lip":(.916,.013),
+             "lower_lip":(.906,.013)}
+    result={"mesh_vertex_count":len(verts),"status":"CANDIDATES_ONLY_NOT_VERIFIED",
+            "regions":{},"note":"Review each ID against the actual mesh in Blender; do not use as face-region-map.json automatically."}
+    for name,(height,lateral) in targets.items():
+        scored=[]
+        for v in verts:
+            h=(v.co.z-zmin)/span
+            if not .865<=h<=.995: continue
+            score=((h-height)/.012)**2+((abs(v.co.x)-lateral)/.022)**2
+            scored.append((score,v.index))
+        result["regions"][name]=[i for _,i in sorted(scored)[:per_region]]
+    destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
+    destination.write_text(json.dumps(result,indent=2)+"\\n")
+    return destination
