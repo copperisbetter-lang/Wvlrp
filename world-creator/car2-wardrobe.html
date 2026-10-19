@@ -488,6 +488,27 @@ const sav4Version=document.createElement('div');sav4Version.id='sav4-version';sa
 fetch(sav4AssetUrl,{method:'HEAD',cache:'no-store'}).then(r=>{sav4Version.textContent='Viewer diagnostic 2026-10-18 · GLB HTTP '+r.status+' · '+(r.headers.get('last-modified')||'no modified date')+' · '+(r.headers.get('content-length')||'unknown')+' bytes';}).catch(e=>{sav4Version.textContent='Viewer diagnostic · GLB HEAD check unavailable: '+e.message;});
 loader.load(sav4AssetUrl,g=>{
  avatar=g.scene;body.add(avatar);
+ // CAR 2 only: the native attachment already uses body-projected UVs.
+ // Reuse the body's exact skin shader and texture rather than a separate tint.
+ // This changes appearance only; the attachment geometry remains intact.
+ const car2Meshes=[];
+ avatar.traverse(o=>{if(o.isMesh)car2Meshes.push(o);});
+ const car2Attachment=car2Meshes.find(o=>/vulva2/i.test(o.name)||[].concat(o.material||[]).some(m=>/vulva2/i.test(m?.name||'')));
+ const car2Body=car2Meshes.find(o=>o!==car2Attachment&&/base(mesh)?/i.test(o.name)&&!/eye|hair|lash|brow/i.test(o.name));
+ if(car2Attachment&&car2Body){
+   const sourceMaterials=Array.isArray(car2Body.material)?car2Body.material:[car2Body.material];
+   const skinMaterial=sourceMaterials.find(m=>m&&/skin|female|caucasian|body/i.test(m.name||''))||sourceMaterials[0];
+   if(skinMaterial){
+     const matched=skinMaterial.clone();
+     matched.name='CAR2 matched body skin (separate attachment)';
+     matched.transparent=false;matched.opacity=1;matched.depthWrite=true;matched.needsUpdate=true;
+     car2Attachment.material=matched;
+     console.info('CAR2_SKIN_COLOR_MATCH',car2Body.name,car2Attachment.name,skinMaterial.name);
+   }
+ }else{
+   console.warn('CAR2_SKIN_COLOR_MATCH_UNAVAILABLE: missing distinct body or attachment mesh');
+ }
+
  // SAV4 inspection material correction: target only named hair/eye geometry.
  const blonde=new T.Color(0xd2b991), irisBlue=new T.Color(0x7899ac), scleraWhite=new T.Color(0xf0ede8);
  avatar.traverse(o=>{if(!o.isMesh)return;const name=o.name.toLowerCase();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach((m,i)=>{if(!m)return;const mn=(m.name||'').toLowerCase();const isHair=/hair|scalp|strand|fringe|bang|ponytail/.test(name+' '+mn);const isEye=/eye|iris|sclera|cornea|pupil/.test(name+' '+mn);if(!isHair&&!isEye)return;const clone=m.clone();if(isHair){clone.color.copy(blonde);clone.roughness=.88;}else if(/sclera|eyewhite|eye_white/.test(name+' '+mn)){clone.color.copy(scleraWhite);clone.emissive?.set(0x000000);}else if(/iris|eye/.test(name+' '+mn)&&!/lash|brow|socket|lid|pupil/.test(name+' '+mn)){clone.color.copy(irisBlue);clone.emissive?.set(0x000000);clone.emissiveIntensity=0;}else return;clone.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=clone;else o.material=clone;});});
