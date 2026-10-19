@@ -49,6 +49,8 @@ if face_body is None: raise RuntimeError("SAV4 face morph: source basemesh missi
 from sav4_face_calibration import export_face_candidates, create_region_template
 calibration_dir=ROOT/"assets"/"sav4-calibration"
 export_face_candidates(face_body,calibration_dir/"face-vertices.csv")
+from sav4_face_calibration import propose_region_candidates
+propose_region_candidates(face_body,calibration_dir/"face-region-candidates.json")
 region_map_path=ROOT/"characters"/"sav4"/"face-region-map.json"
 if not region_map_path.exists():
     create_region_template(face_body,calibration_dir/"face-region-map.template.json")
