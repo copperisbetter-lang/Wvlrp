@@ -1,0 +1,15 @@
+{
+  "method": "two-view projected landmark fitting plan",
+  "reference_images": [
+    "5458.jpg",
+    "5459.jpg"
+  ],
+  "reference_ratios": {
+    "mouth_width_over_eye_spacing": 0.7512381264569112,
+    "nose_to_mouth_over_eye_spacing": 0.47395648743088775,
+    "mouth_to_chin_over_eye_spacing": 0.677388706691105,
+    "profile_nose_lip_over_lip_chin": 1.0324116146162396
+  },
+  "projection_warning": "Perspective image ratios, not 3D physical dimensions",
+  "status": "Reference measurements ready; 3D vertex correspondences and fitting pending"
+}
