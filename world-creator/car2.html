@@ -58,58 +58,50 @@ try{
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
 
- // Match the attachment to the body's actual material, not an arbitrary tint.
- // Preserve the source geometry and keep material instances separate for cutaway mode.
- const bodyCandidates=meshes.filter(m=>m!==attachment&&!/hair|eye|iris|lash|brow|cloth|skirt|blouse|teeth|tongue/i.test(m.name));
- const body=bodyCandidates.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
- const bodyMats=body?(Array.isArray(body.material)?body.material:[body.material]):[];
- const sourceSkin=bodyMats.find(m=>/skin|body|human|female/i.test(m?.name||''))||bodyMats[0];
- if(sourceSkin){
-   const matched=sourceSkin.clone();
-   matched.name='CAR2 matched body skin';
-   matched.side=THREE.DoubleSide;
-   matched.roughness=sourceSkin.roughness;
-   // Body and attachment do not necessarily share a UV atlas. A mismatched
-   // texture is worse than a flat match, so do not borrow the body's map.
-   // Keep the body's base albedo and lighting response instead.
-   matched.map=null;
-   matched.normalMap=null;
-   matched.bumpMap=null;
-   matched.roughnessMap=null;
-   matched.metalnessMap=null;
-   matched.vertexColors=false;
-   matched.color=sourceSkin.color.clone();
-   // Many GLBs store skin pigmentation in the body texture while the
-   // material base color is white. Sample the texture rather than copying white.
-   if(sourceSkin.map?.image){
+ // Transfer actual skin texture colors using the nearest body surface vertices.
+ // This avoids averaging an entire UV atlas into a flat brown patch.
+ const candidates=meshes.filter(m=>m!==attachment&&!/hair|eye|iris|lash|brow|cloth|skirt|blouse|teeth|tongue/i.test(m.name));
+ const body=candidates.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+ const skin=body&&(Array.isArray(body.material)?body.material:[body.material])[0];
+ if(body&&skin){
+   const matched=skin.clone();matched.name='CAR2 sampled skin';matched.map=null;
+   matched.normalMap=null;matched.bumpMap=null;matched.roughnessMap=null;
+   matched.side=THREE.DoubleSide;matched.color.set(0xffffff);
+   const tex=skin.map,uv=body.geometry.attributes.uv,pos=body.geometry.attributes.position;
+   const targetPos=attachment.geometry.attributes.position;
+   if(tex?.image&&uv&&pos&&targetPos){
      try{
-       const img=sourceSkin.map.image, canvas=document.createElement('canvas');
-       canvas.width=64;canvas.height=64;
-       const ctx=canvas.getContext('2d',{willReadFrequently:true});
-       ctx.drawImage(img,0,0,64,64);
-       const pixels=ctx.getImageData(0,0,64,64).data;
-       let r=0,g=0,b=0,n=0;
-       for(let i=0;i<pixels.length;i+=4){
-         if(pixels[i+3]<128)continue;
-         // Exclude near-white atlas padding and very dark unused regions.
-         const brightness=(pixels[i]+pixels[i+1]+pixels[i+2])/3;
-         if(brightness>242||brightness<35)continue;
-         r+=pixels[i];g+=pixels[i+1];b+=pixels[i+2];n++;
+       const img=tex.image,cv=document.createElement('canvas');
+       cv.width=img.width||img.videoWidth;cv.height=img.height||img.videoHeight;
+       const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,cv.width,cv.height);
+       const data=ctx.getImageData(0,0,cv.width,cv.height).data;
+       body.updateMatrixWorld(true);attachment.updateMatrixWorld(true);
+       const vertices=[],v=new THREE.Vector3();
+       const stride=Math.max(1,Math.floor(pos.count/16000));
+       for(let i=0;i<pos.count;i+=stride){
+         v.fromBufferAttribute(pos,i).applyMatrix4(body.matrixWorld);
+         vertices.push([v.x,v.y,v.z,uv.getX(i),uv.getY(i)]);
        }
-       if(n>0)matched.color.setRGB((r/n)/255,(g/n)/255,(b/n)/255,THREE.SRGBColorSpace).multiply(sourceSkin.color);
-     }catch(e){console.warn('CAR2 texture color sampling unavailable',e);}
-   }
-   // Never leave the attachment with the source's white untextured default.
-   if(matched.color.r>.9&&matched.color.g>.9&&matched.color.b>.9){
-     matched.color.set('#c99982');
-     status.textContent='CAR 2 · fallback skin tint; exact match needs texture verification';
-   }
-   matched.needsUpdate=true;
-   attachment.material=matched;
-   status.textContent='CAR 2 loaded · body-tone material matched (seam inspection required)';
- }else{
-   status.textContent='CAR 2 loaded · body skin material unavailable for matching';
- }
+       const colors=new Float32Array(targetPos.count*3),p=new THREE.Vector3(),base=new THREE.Color();
+       for(let i=0;i<targetPos.count;i++){
+         p.fromBufferAttribute(targetPos,i).applyMatrix4(attachment.matrixWorld);
+         let best=Infinity,hit=null;
+         for(const q of vertices){const dx=p.x-q[0],dy=p.y-q[1],dz=p.z-q[2],d=dx*dx+dy*dy+dz*dz;if(d<best){best=d;hit=q;}}
+         const u=((hit[3]%1)+1)%1,w=((hit[4]%1)+1)%1;
+         const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
+         const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
+         const j=(y*cv.width+x)*4;
+         base.setRGB(data[j]/255,data[j+1]/255,data[j+2]/255,THREE.SRGBColorSpace).multiply(skin.color);
+         colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;
+       }
+       attachment.geometry=attachment.geometry.clone();
+       attachment.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+       matched.vertexColors=true;
+       status.textContent='CAR 2 · nearby body skin colors transferred; inspect seam';
+     }catch(e){console.warn('Skin sampling failed',e);status.textContent='CAR 2 · texture transfer unavailable: '+e.message;}
+   }else{status.textContent='CAR 2 · body skin texture unavailable for transfer';}
+   attachment.material=matched;matched.needsUpdate=true;
+ }else status.textContent='CAR 2 · body skin material unavailable';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
  const requested=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees','Crawl','Lie down'];
