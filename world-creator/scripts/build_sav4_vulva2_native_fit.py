@@ -370,11 +370,29 @@ def fit_vulva2(root,body,rig):
     delete=[i for i,val in enumerate(bitmap) if val]
     if not 15<len(delete)<200:
         raise RuntimeError("Vulva2 original deletion mask unexpected")
-    maskgroup=body.vertex_groups.new(name="Vulva2 delete original covered faces")
-    maskgroup.add(delete,1.,"REPLACE")
-    mask=body.modifiers.new("Vulva2 original MHX2 skin opening","MASK")
-    mask.vertex_group=maskgroup.name
-    mask.invert_vertex_group=True
+    # glTF skinned exports can omit MASK modifiers with export_apply=False.
+    # Remove covered faces in the actual mesh while retaining source vertices,
+    # UV data, shape-key layers and deform weights through BMesh.
+    before_positions=[v.co.copy() for v in body.data.vertices]
+    bm=bmesh.new()
+    bm.from_mesh(body.data)
+    bm.verts.ensure_lookup_table()
+    bm.verts.index_update()
+    deleted_set=set(delete)
+    covered=[face for face in bm.faces if any(v.index in deleted_set for v in face.verts)]
+    removed_faces=len(covered)
+    if removed_faces<1:
+        bm.free()
+        raise RuntimeError("Native opening removed no body faces")
+    bmesh.ops.delete(bm,geom=covered,context="FACES_ONLY")
+    bm.to_mesh(body.data)
+    bm.free()
+    body.data.update()
+    if len(body.data.vertices)!=len(before_positions):
+        raise RuntimeError("Opening unexpectedly changed vertex indexing")
+    if any((v.co-p).length>1e-7 for v,p in zip(body.data.vertices,before_positions)):
+        raise RuntimeError("Opening changed fitted body coordinates")
+    print("SAV4_NATIVE_OPENING_BAKED",removed_faces,"body_faces_removed")
     ob["wvlrp_vulva2_authentic_mhx2"]=True
     ob["wvlrp_vulva2_source_uuid"]=proxy["uuid"]
     print("VULVA2_TRUE_AUTOFIT_SUCCESS",
