@@ -71,8 +71,10 @@ jobs:
           viewer=Path("world-creator/sav4.html")
           revision=hashlib.sha256(model.read_bytes()).hexdigest()[:12]
           html=viewer.read_text()
-          updated,count=re.subn(r"sav4-realistic\.glb\?v=[A-Za-z0-9]+", "sav4-realistic.glb?v="+revision, html)
-          if count != 1: raise RuntimeError("SAV4 viewer GLB reference not found uniquely")
+          updated,count=re.subn(r"(?<=sav4-realistic\.glb\?v=)[A-Za-z0-9]+", revision, html)
+          if count == 0:
+            updated,count=re.subn(r"(const sav4AssetUrl\s*=\s*[\x27\x22]\.\/assets\/sav4-realistic\.glb\?v=[\x27\x22]\s*\+\s*)Date\.now\(\)", r"\g<1>\x27"+revision+"\x27", html)
+          if count != 1: raise RuntimeError(f"SAV4 viewer GLB reference count {count}; expected 1")
           viewer.write_text(updated)
           print("SAV4_VIEWER_ASSET_REVISION",revision)
           PY
