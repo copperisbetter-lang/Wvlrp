@@ -17,7 +17,7 @@ body=max(bodies,key=lambda o:len(o.data.vertices))
 old=[o for o in original if o.type=="MESH" and "CAR3 Vulva1 MakeHuman fitted" in o.name]
 if len(old)!=1:raise RuntimeError("CAR3 Vulva1 ambiguous")
 bpy.data.objects.remove(old[0],do_unlink=True)
-rigs=[o for o in original if o.type=="ARMATURE"]
+rigs=[o for o in bpy.data.objects if o.type=="ARMATURE"]
 if not rigs:raise RuntimeError("CAR3 rig missing")
 rig=max(rigs,key=lambda o:len(o.data.bones))
 bpy.ops.import_scene.gltf(filepath=str(donor))
