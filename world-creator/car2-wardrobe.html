@@ -493,21 +493,30 @@ loader.load(sav4AssetUrl,g=>{
  // This changes appearance only; the attachment geometry remains intact.
  const car2Meshes=[];
  avatar.traverse(o=>{if(o.isMesh)car2Meshes.push(o);});
- const car2Attachment=car2Meshes.find(o=>/vulva2/i.test(o.name)||[].concat(o.material||[]).some(m=>/vulva2/i.test(m?.name||'')));
- const car2Body=car2Meshes.find(o=>o!==car2Attachment&&/base(mesh)?/i.test(o.name)&&!/eye|hair|lash|brow/i.test(o.name));
- if(car2Attachment&&car2Body){
-   const sourceMaterials=Array.isArray(car2Body.material)?car2Body.material:[car2Body.material];
-   const skinMaterial=sourceMaterials.find(m=>m&&/skin|female|caucasian|body/i.test(m.name||''))||sourceMaterials[0];
-   if(skinMaterial){
-     const matched=skinMaterial.clone();
-     matched.name='CAR2 matched body skin (separate attachment)';
-     matched.transparent=false;matched.opacity=1;matched.depthWrite=true;matched.needsUpdate=true;
-     car2Attachment.material=matched;
-     console.info('CAR2_SKIN_COLOR_MATCH',car2Body.name,car2Attachment.name,skinMaterial.name);
+ const isAttachment=o=>/vulva[ _-]?2|car[ _-]?2[ _-]?(attachment|anatomy)/i.test(o.name+' '+[].concat(o.material||[]).map(m=>m?.name||'').join(' '));
+ const attachments=car2Meshes.filter(isAttachment);
+ const bodyCandidates=car2Meshes.filter(o=>!isAttachment(o)&&!/eye|hair|lash|brow|teeth|tongue|clothes|skirt|blouse/i.test(o.name));
+ const scoreBody=o=>(/base(mesh)?|body|skin|human/i.test(o.name)?100:0)+(o.isSkinnedMesh?20:0)+(o.geometry?.attributes?.position?.count||0)/100000;
+ const car2Body=bodyCandidates.sort((a,b)=>scoreBody(b)-scoreBody(a))[0];
+ const skinMaterials=car2Body?(Array.isArray(car2Body.material)?car2Body.material:[car2Body.material]):[];
+ const skinMaterial=skinMaterials.find(m=>m&&/skin|female|caucasian|body/i.test(m.name||''))||skinMaterials.find(Boolean);
+ const colorMatchReport={body:car2Body?.name||null,sourceMaterial:skinMaterial?.name||null,attachments:[],status:'unavailable'};
+ if(skinMaterial&&attachments.length){
+   for(const attachment of attachments){
+     // Sharing the actual material avoids accidental tint and color-space differences.
+     // Texture UVs still must correspond to the body's atlas for a seamless result.
+     attachment.material=skinMaterial;
+     colorMatchReport.attachments.push(attachment.name);
    }
- }else{
-   console.warn('CAR2_SKIN_COLOR_MATCH_UNAVAILABLE: missing distinct body or attachment mesh');
- }
+   colorMatchReport.status='body material assigned; inspect UV seams';
+ }else colorMatchReport.reason='Body skin or named attachment mesh not identified';
+ window.car2ColorMatchDiagnostics=()=>({...colorMatchReport});
+ console.info('CAR2_SKIN_COLOR_MATCH',colorMatchReport);
+ const colorStatus=document.createElement('div');
+ colorStatus.id='car2-color-status';colorStatus.setAttribute('role','status');
+ colorStatus.textContent='CAR 2 color: '+colorMatchReport.status;
+ colorStatus.style.cssText='font-size:12px;color:#cfdfd6;margin-top:5px';
+ document.querySelector('header').appendChild(colorStatus);
 
  // SAV4 inspection material correction: target only named hair/eye geometry.
  const blonde=new T.Color(0xd2b991), irisBlue=new T.Color(0x7899ac), scleraWhite=new T.Color(0xf0ede8);
