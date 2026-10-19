@@ -57,26 +57,35 @@ current=texel(auv,src)
 # Filter out any obviously non-skin samples from atlas seams.
 good=(reference.min(axis=1)>35)&(reference.max(axis=1)<250)&(dist<np.quantile(dist,.85))
 assert good.sum()>25, 'Not enough trustworthy skin samples'
-# Correct color spatially, while retaining high-frequency attachment details.
-correction=np.clip(reference-current,-85,85)
+# Forum/MPFB lesson: a material tint cannot repair a wrong texture atlas.
+# Replace the attachment's skin baseline with a *spatial* projection from
+# the body's actual texture. Keep some fine detail from the source texture.
 xx=np.clip((np.mod(auv[:,0],1)*(width-1)).astype(int),0,width-1)
 yy=np.clip(((1-np.mod(auv[:,1],1))*(height-1)).astype(int),0,height-1)
 seeds=np.zeros((height,width),dtype=bool)
-delta=np.zeros((height,width,3),dtype=np.float32)
+sample=np.zeros((height,width,3),dtype=np.float32)
 seeds[yy[good],xx[good]]=True
-delta[yy[good],xx[good]]=correction[good]
+sample[yy[good],xx[good]]=reference[good]
 assert seeds.sum()>20
 _,indices=distance_transform_edt(~seeds,return_indices=True)
-field=delta[indices[0],indices[1]]
-# Smooth sparse nearest-neighbor projection to avoid vertex-shaped color bands.
-for c in range(3):field[:,:,c]=gaussian_filter(field[:,:,c],sigma=16)
+projected=sample[indices[0],indices[1]]
+for c in range(3):projected[:,:,c]=gaussian_filter(projected[:,:,c],sigma=28)
+# Source's large-scale flat patch is discarded; only fine surface details
+# remain. This avoids preserving the original wrong color as previous passes did.
+original=src[:,:,:3].astype(np.float32)
+fine=original.copy()
+for c in range(3):fine[:,:,c]-=gaussian_filter(original[:,:,c],sigma=12)
 mask=src[:,:,3]>10
 assert mask.sum()>100
-src[:,:,:3]=np.clip(src[:,:,:3].astype(np.float32)+field,0,255).astype(np.uint8)
-# Preserve UV layout and source alpha; never replace with a flat material.
-target=np.median(reference[good],axis=0)
-old=np.median(current[good],axis=0)
-print('Projection samples',int(good.sum()),'target',target,'old',old,'correction',np.median(correction[good],axis=0))
+src[:,:,:3][mask]=np.clip(projected[mask]+fine[mask]*.32,0,255).astype(np.uint8)
+# Align the PBR base-color multiplier with the body's material, too.
+body_pbr=doc['materials'][body['material']].get('pbrMetallicRoughness',{})
+attach_pbr=doc['materials'][attach['material']].setdefault('pbrMetallicRoughness',{})
+attach_pbr['baseColorFactor']=body_pbr.get('baseColorFactor',[1,1,1,1])[:]
+attach_pbr['metallicFactor']=body_pbr.get('metallicFactor',0)
+attach_pbr['roughnessFactor']=body_pbr.get('roughnessFactor',1)
+doc['materials'][attach['material']]['doubleSided']=True
+print('Full skin baseline projection:',int(good.sum()),'samples, median target',np.median(reference[good],axis=0),'source',np.median(current[good],axis=0),'PBR factor',attach_pbr['baseColorFactor'])
 out=io.BytesIO();Image.fromarray(src,'RGBA').save(out,format='PNG')
 new=out.getvalue()
 while len(blob)%4:blob.append(0)
