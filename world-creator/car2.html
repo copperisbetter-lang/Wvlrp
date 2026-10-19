@@ -11,6 +11,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 // Fresh GLB on every viewer load; no manually maintained version token.
 const sav4AssetUrl='./assets/car2-completed.glb?v='+Date.now();
 const status=document.getElementById('status'),stage=document.getElementById('stage');
+const loadingTimer=setTimeout(()=>{document.getElementById('error').textContent='CAR 2 is taking too long to load. Check the GLB download or browser console.';},30000);
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
  scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
@@ -57,7 +58,9 @@ try{
  // GLTFLoader streams/parses the file directly, avoiding an extra large
  // ArrayBuffer retained by fetch+parseAsync on memory-limited phones.
  // Date.now() above guarantees a new model URL on each page opening.
- const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ status.textContent='Downloading CAR 2 model…';
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl,e=>{status.textContent='Downloading CAR 2 model… '+(e.total?Math.round(e.loaded/e.total*100)+'%':(e.loaded/1048576).toFixed(1)+' MB');});
+ clearTimeout(loadingTimer);status.textContent='Preparing CAR 2…';
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
@@ -147,5 +150,5 @@ try{
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
 
-}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+}catch(error){clearTimeout(loadingTimer);status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
 </script></body></html>
