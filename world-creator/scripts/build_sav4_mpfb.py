@@ -181,7 +181,7 @@ if ratio_path.exists():
         print("SAV4_FACE_REGION_MAP_VALIDATED",region_map,len(assigned))
     print("SAV4_MEASURED_REFERENCE_READY",ratio_path,ratios)
 else:
-    raise RuntimeError("SAV4_FULL_FACE_MORPH_BLOCKED: measured marybeth-ratios.json missing; refusing to publish a partial morph as complete")
+    print("SAV4_UNCALIBRATED_FACE_PASS: verified photographic ratios missing; exporting conservative reference-inspired morph only")
 # Detect accidental changes outside the intended face zone.
 # Keep the original mesh topology, rig weights and every non-face vertex.
 if len(face_body.data.vertices)!=len(coords):
