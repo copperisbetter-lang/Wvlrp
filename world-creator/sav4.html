@@ -497,7 +497,7 @@ loader.load(sav4AssetUrl,g=>{
  const fitted=new T.Box3().setFromObject(avatar),fittedSize=fitted.getSize(new T.Vector3()),fittedCenter=fitted.getCenter(new T.Vector3());avatar.position.sub(fittedCenter);avatar.position.y+=fittedSize.y/2;
  // Removed misplaced procedural face overlay. Use source GLB eye/hair geometry only until properly rigged replacements are available.
  clothes.position.set(0,0,0);
- controls.target.set(0,fittedSize.y*.51,0);camera.position.set(0,fittedSize.y*.55,Math.max(5.8,fittedSize.y*3.4));controls.update();
+ const faceHeight=fittedSize.y*.89;controls.target.set(0,faceHeight,0);camera.position.set(0,faceHeight,Math.max(.65,fittedSize.y*.52));controls.update();
  setupPerformance();
  fitOriginalEyes().catch(e=>{console.error(e);status.textContent="Eye asset failed to load — reopen viewer to retry.";});
  if(selectedOutfit)window.outfit(selectedOutfit);
