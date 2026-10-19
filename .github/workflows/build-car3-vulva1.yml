@@ -6,7 +6,7 @@ on:
     paths:
       - world-creator/scripts/build_car3_vulva1.py
       - world-creator/assets/riley-vulva1-source.json
-      - .github/workflows/build-sav-vulva1-trial.yml
+      - .github/workflows/build-car3-vulva1.yml
   workflow_dispatch:
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
           python3 -m py_compile world-creator/scripts/build_car3_vulva1.py
           xvfb-run -a -s '-screen 0 1280x1024x24' /tmp/blender-4.2.0-linux-x64/blender --background --factory-startup --python world-creator/scripts/build_car3_vulva1.py 2>&1 | tee /tmp/car3-vulva1-build.log
           grep CAR3_VULVA1_FITTING_SUCCESS /tmp/car3-vulva1-build.log
-      - name: Verify exact donor topology and Sav skeleton
+      - name: Verify donor topology and CAR3 skeleton
         run: |
           python3 - <<'PY'
           import json,struct
