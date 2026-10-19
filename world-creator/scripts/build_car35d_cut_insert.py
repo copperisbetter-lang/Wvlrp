@@ -38,7 +38,7 @@ g=addon.vertex_groups.new(name=pelvis);g.add(list(range(len(addon.data.vertices)
 mod=addon.modifiers.new("CAR3 pelvis binding","ARMATURE");mod.object=rig
 addon.parent=rig;addon.matrix_world=world
 # Isolated CAR 3.5D test correction; never modify donor or original builds.
-FIT_LOWER_METERS = 0.045
+FIT_LOWER_METERS = 0.065
 fit_world=addon.matrix_world.copy()
 fit_world.translation.z -= FIT_LOWER_METERS
 addon.matrix_world=fit_world
