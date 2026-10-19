@@ -119,6 +119,33 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+      - name: Publish isolated SAV4 trial viewer
+        if: github.ref == 'refs/heads/sav4-fitting-test-20261019'
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git worktree add --detach /tmp/sav4-trial-publish origin/main
+          mkdir -p /tmp/sav4-trial-publish/world-creator/assets
+          cp world-creator/assets/sav4-realistic.glb /tmp/sav4-trial-publish/world-creator/assets/sav4-vulva2-trial.glb
+          cp world-creator/sav4.html /tmp/sav4-trial-publish/world-creator/sav4-vulva2-trial.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('/tmp/sav4-trial-publish/world-creator/sav4-vulva2-trial.html')
+          glb=Path('/tmp/sav4-trial-publish/world-creator/assets/sav4-vulva2-trial.glb')
+          txt=p.read_text()
+          import re
+          txt,n=re.subn(r"const sav4AssetUrl='[^']+';", "const sav4AssetUrl='./assets/sav4-vulva2-trial.glb?v="+hashlib.sha256(glb.read_bytes()).hexdigest()[:12]+"';",txt)
+          if n!=1: raise RuntimeError('Could not isolate SAV4 trial model URL')
+          txt=txt.replace('SAV 4 — Real GLB Character Viewer','SAV 4 — Experimental Fitting Viewer')
+          p.write_text(txt)
+          PY
+          cd /tmp/sav4-trial-publish
+          git add world-creator/assets/sav4-vulva2-trial.glb world-creator/sav4-vulva2-trial.html
+          git commit -m 'Publish isolated SAV4 fitting trial viewer'
+          git push origin HEAD:main
       - name: Build summary
         if: always()
         run: |
