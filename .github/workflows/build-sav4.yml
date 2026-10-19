@@ -71,10 +71,16 @@ jobs:
           viewer=Path("world-creator/sav4.html")
           revision=hashlib.sha256(model.read_bytes()).hexdigest()[:12]
           html=viewer.read_text()
-          updated,count=re.subn(r"(?<=sav4-realistic\\.glb\\?v=)[A-Za-z0-9]+", revision, html)
-          if count == 0:
-            updated,count=re.subn(r"(const sav4AssetUrl\\s*=\\s*['\"]\\./assets/sav4-realistic\\.glb\\?v=['\"]\\s*\\+\\s*)Date\\.now\\(\\)", lambda m: m.group(1)+"'"+revision+"'", html)
-          if count != 1: raise RuntimeError(f"SAV4 viewer GLB reference count {count}; expected 1")
+          old="const sav4AssetUrl='./assets/sav4-realistic.glb?v='+Date.now();"
+          updated=f"const sav4AssetUrl='./assets/sav4-realistic.glb?v={revision}';"
+          if old in html:
+            html=html.replace(old,updated,1)
+          else:
+            import re
+            pattern=r"(const sav4AssetUrl=['\\\"]\\./assets/sav4-realistic\\.glb\\?v=)[A-Za-z0-9]+(['\\\"];)"
+            html,count=re.subn(pattern,lambda m:m.group(1)+revision+m.group(2),html)
+            if count != 1: raise RuntimeError(f"SAV4 viewer GLB reference count {count}; expected 1")
+          updated=html
           viewer.write_text(updated)
           print("SAV4_VIEWER_ASSET_REVISION",revision)
           PY
