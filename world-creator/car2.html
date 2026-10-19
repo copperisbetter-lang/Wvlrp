@@ -78,7 +78,7 @@ try{
 
  // Keep the attachment's own exported texture and UV layout. Previous
  // runtime override replaced the repaired GLB texture with a flat color.
- const body=meshes.find(m=>/base\.001|character_sav4/i.test(m.name))||meshes.find(m=>m!==attachment);
+ const body=meshes.find(m=>m!==attachment&&/base\\.001|character_sav4/i.test(m.name))||meshes.filter(m=>m!==attachment).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
  // Keep the exported material unchanged to preserve texture, lighting and UVs.
 
  // Use the skin texture baked into the exported GLB. Do not rebuild the
@@ -89,11 +89,11 @@ try{
  // Visible diagnostic: proves which mesh is actually rendered and which
  // material survives the GLB load. Never rely on build success alone.
  const report=document.getElementById('material-report');
- const describe=m=>({name:m.name,mesh:m.uuid,vertices:m.geometry?.attributes?.position?.count,materials:(Array.isArray(m.material)?m.material:[m.material]).map(v=>({name:v?.name,type:v?.type,color:v?.color?.getHexString(),map:!!v?.map,opacity:v?.opacity}))});
+ const describe=m=>({name:m.name,mesh:m.uuid,vertices:m.geometry?.attributes?.position?.count,materials:(Array.isArray(m.material)?m.material:[m.material]).map(v=>({name:v?.name,type:v?.type,color:v?.color?.getHexString(),map:!!v?.map,mapUUID:v?.map?.uuid||null,mapColorSpace:v?.map?.colorSpace||null,metalness:v?.metalness,roughness:v?.roughness,side:v?.side,opacity:v?.opacity}))});
  const originalMaterial=attachment.material;
  const probe=document.getElementById('probe'),test=document.getElementById('test-color'),restore=document.getElementById('restore-skin');
  probe.disabled=test.disabled=restore.disabled=false;
- const refresh=()=>{report.textContent=JSON.stringify({modelMeshes:meshes.length,body:body&&describe(body),attachment:describe(attachment),overlappingCandidates:meshes.filter(m=>m!==attachment&&/vulva|attachment|patch/i.test(m.name)).map(describe)},null,2);};
+ const refresh=()=>{report.textContent=JSON.stringify({modelMeshes:meshes.length,body:body&&describe(body),attachment:describe(attachment),sameMaterial:body?((Array.isArray(body.material)?body.material:[body.material]).some(m=>(Array.isArray(attachment.material)?attachment.material:[attachment.material]).includes(m))):false,overlappingCandidates:meshes.filter(m=>m!==attachment&&/vulva|attachment|patch/i.test(m.name)).map(describe)},null,2);};
  probe.onclick=refresh;
  test.onclick=()=>{attachment.material=new THREE.MeshBasicMaterial({color:0xff00ff,side:THREE.DoubleSide,depthTest:false});attachment.renderOrder=999;refresh();status.textContent='DIAGNOSTIC: attachment forced MAGENTA (restore after checking)';};
  restore.onclick=()=>{attachment.material=originalMaterial;attachment.renderOrder=0;refresh();status.textContent='DIAGNOSTIC: original attachment material restored';};
