@@ -22,6 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+      # Rebuild production SAV4 after this workflow update; experimental branches never publish.
       - name: Check character source
         run: |
           test -s world-creator/scripts/build_sav4_mpfb.py
