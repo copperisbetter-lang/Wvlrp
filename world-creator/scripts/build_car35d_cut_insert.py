@@ -37,6 +37,11 @@ if not pelvis:raise RuntimeError("No compatible CAR3 pelvis bone")
 g=addon.vertex_groups.new(name=pelvis);g.add(list(range(len(addon.data.vertices))),1.0,"REPLACE")
 mod=addon.modifiers.new("CAR3 pelvis binding","ARMATURE");mod.object=rig
 addon.parent=rig;addon.matrix_world=world
+# Isolated CAR 3.5D test correction; never modify donor or original builds.
+FIT_LOWER_METERS = 0.025
+fit_world=addon.matrix_world.copy()
+fit_world.translation.z -= FIT_LOWER_METERS
+addon.matrix_world=fit_world
 # CAR2's method removes the covered pelvic faces, not the entire body.
 # Derive a conservative opening from the actual attachment's XY/Z extent,
 # and limit the cut to front-facing body faces close to the donor surface.
@@ -76,7 +81,7 @@ if len(edge_ids)>8:
  for i in edge_ids:
   v=addon.data.vertices[i]
   worldp=addon.matrix_world@v.co
-  worldp.y+=.0035
+  worldp.y+=.0060
   v.co=inv@worldp
  addon.data.update()
 for o in imported:
