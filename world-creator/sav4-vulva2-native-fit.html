@@ -28,9 +28,11 @@ try{
    mesh.visible=!only||mesh===attachment;
    for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
     if(!material)continue;
-    material.transparent=cutaway&&mesh!==attachment;
-    material.opacity=(cutaway && mesh!==attachment) ? 0.18 : 1;
-    material.depthWrite=!(cutaway&&mesh!==attachment);
+    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
+    const faded=cutaway&&mesh!==attachment;
+    material.transparent=faded||original.transparent;
+    material.opacity=faded?original.opacity*.18:original.opacity;
+    material.depthWrite=faded?false:original.depthWrite;
     material.needsUpdate=true;
    }
   }
