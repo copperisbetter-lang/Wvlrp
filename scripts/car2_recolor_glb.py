@@ -41,7 +41,11 @@ attach_img,attach_ref=get_image(attach)
 # Spatially project nearby body-skin samples onto the attachment's own UV map.
 # Do NOT reuse the body's UVs directly; they refer to a different atlas.
 tree=cKDTree(bp)
-dist,nearest=tree.query(ap,k=1)
+dist,nearest=tree.query(ap,k=8)
+# Blend multiple neighboring body samples instead of copying one potentially
+# incorrect vertex/UV island. Keep samples close to the local surface.
+weights=1/np.maximum(dist,0.002)**2
+weights/=weights.sum(axis=1,keepdims=True)
 assert len(ap)>20 and np.isfinite(dist).all()
 auv=accessor(attach['attributes']['TEXCOORD_0'])
 body_pixels=np.asarray(body_img)
@@ -52,10 +56,10 @@ def texel(uv,img):
     x=np.clip((np.mod(uv[:,0],1)*(w-1)).astype(int),0,w-1)
     y=np.clip(((1-np.mod(uv[:,1],1))*(h-1)).astype(int),0,h-1)
     return img[y,x,:3].astype(np.float32)
-reference=texel(bu[nearest],body_pixels)
+reference=(texel(bu[nearest].reshape(-1,2),body_pixels).reshape(len(ap),8,3)*weights[:,:,None]).sum(axis=1)
 current=texel(auv,src)
 # Filter out any obviously non-skin samples from atlas seams.
-good=(reference.min(axis=1)>35)&(reference.max(axis=1)<250)&(dist<np.quantile(dist,.85))
+good=(reference.min(axis=1)>35)&(reference.max(axis=1)<250)&(dist[:,0]<np.quantile(dist[:,0],.85))
 assert good.sum()>25, 'Not enough trustworthy skin samples'
 # Forum/MPFB lesson: a material tint cannot repair a wrong texture atlas.
 # Replace the attachment's skin baseline with a *spatial* projection from
