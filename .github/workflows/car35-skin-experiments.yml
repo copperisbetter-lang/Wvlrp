@@ -7,7 +7,7 @@ on:
       - world-creator/scripts/export_car3_skin_attachment_preview.py
       - .github/workflows/car35-skin-experiments.yml
 permissions:
-  contents: read
+  contents: write
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -29,3 +29,14 @@ jobs:
           name: car35-vulva1-skin-preview
           path: world-creator/assets/car3-skin-attachment-preview.glb
           if-no-files-found: error
+
+      - name: Publish CAR 3.5A preview
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f world-creator/assets/car3-skin-attachment-preview.glb
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish CAR 3.5A material test preview'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
