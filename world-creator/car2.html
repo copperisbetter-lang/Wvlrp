@@ -57,6 +57,34 @@ try{
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+
+ // Match the attachment to the body's actual material, not an arbitrary tint.
+ // Preserve the source geometry and keep material instances separate for cutaway mode.
+ const bodyCandidates=meshes.filter(m=>m!==attachment&&!/hair|eye|iris|lash|brow|cloth|skirt|blouse|teeth|tongue/i.test(m.name));
+ const body=bodyCandidates.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+ const bodyMats=body?(Array.isArray(body.material)?body.material:[body.material]):[];
+ const sourceSkin=bodyMats.find(m=>/skin|body|human|female/i.test(m?.name||''))||bodyMats[0];
+ if(sourceSkin){
+   const matched=sourceSkin.clone();
+   matched.name='CAR2 matched body skin';
+   matched.side=THREE.DoubleSide;
+   matched.roughness=sourceSkin.roughness;
+   // Body and attachment do not necessarily share a UV atlas. A mismatched
+   // texture is worse than a flat match, so do not borrow the body's map.
+   // Keep the body's base albedo and lighting response instead.
+   matched.map=null;
+   matched.normalMap=null;
+   matched.bumpMap=null;
+   matched.roughnessMap=null;
+   matched.metalnessMap=null;
+   matched.vertexColors=false;
+   matched.color=sourceSkin.color.clone();
+   matched.needsUpdate=true;
+   attachment.material=matched;
+   status.textContent='CAR 2 loaded · body-tone material matched (seam inspection required)';
+ }else{
+   status.textContent='CAR 2 loaded · body skin material unavailable for matching';
+ }
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
  const requested=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees','Crawl','Lie down'];
@@ -77,7 +105,7 @@ try{
  count.textContent=clips.length?`${clips.length} movements available`:'Movements unavailable — check rig';
  if(clips.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of clips){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
  else {const explanation=motions.textContent;motions.textContent='';const note=document.createElement('p');note.textContent=explanation||'No compatible clips in model';motions.append(note);for(const name of requested){const b=document.createElement('button');b.textContent=name+' · unavailable';b.disabled=true;b.title='Requires exported skeletal animation';motions.append(b);}}
- if(!status.textContent.includes('animation preview'))status.textContent='CAR 2 · full-body movement viewer';
+ if(!status.textContent.includes('body-tone')&&!status.textContent.includes('skin material unavailable'))status.textContent='CAR 2 · full-body movement viewer';
  document.querySelectorAll('#inspection button').forEach(b=>b.disabled=false);view('Full body');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
