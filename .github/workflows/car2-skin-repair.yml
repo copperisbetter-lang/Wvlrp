@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/car2-skin-repair.yml'
+      - 'scripts/car2_recolor_glb.py'
 permissions:
   contents: write
 jobs:
