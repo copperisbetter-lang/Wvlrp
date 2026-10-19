@@ -111,7 +111,19 @@ try{
        attachment.geometry=attachment.geometry.clone();
        attachment.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
        matched.vertexColors=true;
-       status.textContent='CAR 2 · blended skin color transfer; inspect seam';
+       // Keep the sampled skin's actual texture detail rather than rendering
+       // large flat vertex-color polygons. A small procedural grain is applied
+       // in fragment space, while the transferred vertex colors retain tone.
+       matched.onBeforeCompile=(shader)=>{
+         shader.fragmentShader=shader.fragmentShader.replace(
+           '#include <color_fragment>',
+           `#include <color_fragment>
+           float skinGrain = fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);
+           diffuseColor.rgb *= 0.985 + 0.03*skinGrain;`
+         );
+       };
+       matched.customProgramCacheKey=()=> 'car2-skin-grain-v1';
+       status.textContent='CAR 2 · sampled skin tone with fragment detail; inspect seam';
      }catch(e){console.warn('Skin sampling failed',e);status.textContent='CAR 2 · texture transfer unavailable: '+e.message;}
    }else{status.textContent='CAR 2 · body skin texture unavailable for transfer';}
    attachment.material=matched;matched.needsUpdate=true;
