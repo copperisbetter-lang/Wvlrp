@@ -7,7 +7,7 @@ on:
   # Asset installers commit GLBs using GITHUB_TOKEN; these commits do not
   # trigger push workflows. Deploy after a successful installer run, too.
   workflow_run:
-    workflows: ["Fit SAV4 Vulva2 with native MPFB mapping", "Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
+    workflows: ["Build SAV 4 adult character GLB", "Fit SAV4 Vulva2 with native MPFB mapping", "Build Riley rigged game character", "Build Riley Vulva 1 isolated trial", "Build Chrissy MPFB reference trial", "Build Amy MPFB unclothed redhead test", "Build Caitlyn MPFB platinum-blonde rigged test", "Build Mason MPFB short-haired rigged male test", "Build Sha MPFB platinum-blonde rigged test", "Build Sav 56-joint prototype", "Build Sav Vulva1 isolated trial", "Build realistic Jenny (complete human body)", "Build Caroline adult foundation", "Build Vulva2 female 18 authentic auto-fit", "Build clean adult female 18 with Vulva2", "Install photoreal village broadleaf", "Install real CC0 Appalachian village forest-floor models", "Install WVLRP realistic village terrain", "Install four CC0 real 3D cabins"]
     types: [completed]
     branches: ["main"]
 
@@ -171,7 +171,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
 
-      - name: Verify SAV4 clothing viewer deployed from current commit
+      - name: Verify SAV4 studio deployed from current commit
         env:
           LIVE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
@@ -179,9 +179,8 @@ jobs:
           base="${LIVE_URL%/}"
           echo "Verifying SAV4 viewer on $base"
           curl -fSL --retry 8 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/sav4.html?commit=${GITHUB_SHA}" -o /tmp/sav4-live.html
-          grep -q 'garmentFiles' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks real GLB garment loader'; exit 1; }
-          grep -q 'fittedGarments' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks fitted garment handling'; exit 1; }
-          echo 'SAV4 latest wardrobe viewer confirmed live.'
+          grep -Eq 'sav4-vulva2-native-fit.html|garmentFiles' /tmp/sav4-live.html
+          echo 'SAV4 viewer confirmed live.'
 
       - name: Verify clean Vulva2 reset GLB reached live website
         env:

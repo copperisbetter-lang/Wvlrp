@@ -1,67 +1,29 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Native Fit Inspection</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
-</head><body><header><h1>SAV4 — Native Fit Inspection</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
-<script type="module">
-import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=881dd2e4357a';
-const status=document.getElementById('status'),stage=document.getElementById('stage');
-try{
- const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
- scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
- const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
- const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
- const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
- const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));
- const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
- function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
- new ResizeObserver(resize).observe(stage);resize();
- renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
- let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
- function style(){
-  for(const mesh of meshes){
-   mesh.visible=!only||mesh===attachment;
-   for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
-    if(!material)continue;
-    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
-    const faded=cutaway&&mesh!==attachment;
-    material.transparent=faded||original.transparent;
-    material.opacity=faded?original.opacity*.18:original.opacity;
-    material.depthWrite=faded?false:original.depthWrite;
-    material.needsUpdate=true;
-   }
-  }
-  document.getElementById('isolate').textContent=only?'Show body':'Attachment only';
-  document.getElementById('cutaway').textContent=cutaway?'Solid body':'Body cutaway';
- }
- function view(name){
-  let box=partBounds;
-  if(name==='Full body')box=new THREE.Box3().setFromObject(model,true);
-  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
-  orbit.target.copy(center);
-  let offset=name==='Full body'?new THREE.Vector3(0,.05,Math.max(2,size.y*1.5)):new THREE.Vector3(0,-.07,.40);
-  if(name==='Rear')offset.set(0,-.06,-.40);
-  if(name==='Side')offset.set(.40,-.02,0);
-  if(name==='Underneath')offset.set(.03,-.36,.06);
-  camera.position.copy(center).add(offset);orbit.update();
- }
- document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
- document.getElementById('isolate').onclick=()=>{only=!only;style();};
- document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
- const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
- model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
- model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
- if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
- partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='Native fit · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
- document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
- // Display the exported model directly: no eye replacements, body reshaping,
- // automatic posing, added garments, or per-frame geometry fitting.
-
-}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Permanent Studio</title><style>
+*{box-sizing:border-box}body{margin:0;background:#15291f;color:#edf2ed;font:15px system-ui}header{padding:12px 16px;background:#203e30}h1{font-size:20px;margin:0 0 5px}#status{font-size:13px;margin:0;color:#cfdfd4}main{display:grid;grid-template-columns:minmax(0,1fr) 350px;height:calc(100dvh - 75px)}#stage{min-height:340px;position:relative;background:#22372f}canvas{display:block;touch-action:none}aside{overflow:auto;padding:12px;background:#1b3327}h2{font-size:16px;margin:15px 0 8px}button{background:#48755e;color:#fff;border:0;border-radius:6px;padding:10px;margin:3px;font:inherit}button[aria-pressed=true]{background:#a6d5b5;color:#142b1e}button:disabled{opacity:.4}button:focus-visible,input:focus-visible{outline:2px solid #f3df95}.buttons{display:flex;flex-wrap:wrap;gap:2px}fieldset{border:0;padding:0;margin:0}.control{padding:12px 0;border-top:1px solid #41614d}.control label{display:block;font-weight:600;margin-bottom:6px}.control input[type=range]{width:100%;margin:10px 0}.control input[type=number]{width:86px;background:#eff5ef;border:0;border-radius:4px;padding:8px;font:inherit}.hint{font-size:12px;color:#c1d2c5;line-height:1.45}#message{min-height:20px;font-size:13px;color:#eee0b7;padding-top:8px}.actions{margin-top:14px;border-top:1px solid #41614d;padding-top:10px}.actions button{width:calc(100% - 6px)}@media(max-width:740px){main{display:block;height:auto}#stage{height:54dvh;min-height:280px;position:sticky;top:0;z-index:2}aside{padding:10px 12px;max-height:44dvh;overflow:auto}header{padding:10px 12px}h1{font-size:19px}}
+</style></head><body><header><h1>SAV4 — Permanent Studio</h1><p id="status" role="status">Loading SAV4…</p></header><main><section id="stage" aria-label="SAV4 3D preview"></section><aside><h2>View</h2><div class="buttons" id="views"></div><div class="buttons"><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></div><h2>Movement</h2><div class="buttons" id="movements"></div><button id="pause" disabled>Pause</button><h2>Inner and outer controls</h2><p class="hint">1.00 is the fitted shape. The attachment boundary stays anchored while the inner detail changes.</p><fieldset id="shapeFields" disabled></fieldset><div class="actions"><button id="save" disabled>Save controls in this browser</button><button id="reset" disabled>Reset unlocked controls</button><button id="download" disabled>Download complete SAV4 GLB</button><p class="hint">The complete GLB includes the body, permanent anatomy, shape controls, and all movement clips.</p></div><div id="message" role="status"></div></aside></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';import{GLTFExporter}from'three/addons/exporters/GLTFExporter.js';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=permanent-pending';
+const names=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees'];
+const fields=[['vulva_inner_length','Inner length'],['vulva_inner_fullness','Inner fullness'],['vulva_outer_length','Outer length'],['vulva_outer_fullness','Outer fullness']];
+const $=id=>document.getElementById(id),key='wvlrp.sav4.permanent.anatomy.v1',values=Object.fromEntries(fields.map(([id])=>[id,1])),locks=Object.fromEntries(fields.map(([id])=>[id,false]));
+const stage=$('stage'),status=$('status'),message=$('message');let model,attachment,mixer,clips=[],meshes=[],only=false,cutaway=false,paused=false,activeMotion='Rest pose',activeView='Full body',lastCenter=null,orbit,camera;
+try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.version===1)for(const[id]of fields){const n=saved.values?.[id];if(Number.isFinite(n)&&n>=.5&&n<=1.75)values[id]=n;locks[id]=saved.locks?.[id]===true;}}catch{}
+function tell(text){message.textContent=text;}
+function applyControl(id){if(attachment?.morphTargetDictionary?.[id]!==undefined)attachment.morphTargetInfluences[attachment.morphTargetDictionary[id]]=values[id]-1;}
+function syncControl(id){$(id).value=values[id];$(id+'Number').value=values[id];$(id).disabled=locks[id];$(id+'Number').disabled=locks[id];$(id+'Lock').textContent=locks[id]?'🔒':'🔓';$(id+'Lock').setAttribute('aria-pressed',String(locks[id]));applyControl(id);}
+for(const[id,label]of fields){const row=document.createElement('div');row.className='control';const title=document.createElement('label');title.htmlFor=id;title.textContent=label;const range=document.createElement('input');range.type='range';range.id=id;range.min='.5';range.max='1.75';range.step='.01';range.setAttribute('aria-label',label);const number=document.createElement('input');number.type='number';number.id=id+'Number';number.min='.5';number.max='1.75';number.step='.01';number.setAttribute('aria-label',label+' value');const lock=document.createElement('button');lock.type='button';lock.id=id+'Lock';lock.setAttribute('aria-label','Lock '+label);lock.onclick=()=>{locks[id]=!locks[id];syncControl(id);};for(const input of[range,number])input.addEventListener('input',()=>{const value=Number(input.value);if(locks[id]||!Number.isFinite(value)||value<.5||value>1.75)return;values[id]=value;if(input===range)number.value=value;else range.value=value;applyControl(id);});row.append(title,range,number,lock);$('shapeFields').append(row);syncControl(id);}
+function originalStyle(material){return material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};}
+function style(){for(const mesh of meshes){mesh.visible=!only||mesh===attachment;for(const m of(Array.isArray(mesh.material)?mesh.material:[mesh.material])){if(!m)continue;const base=originalStyle(m),faded=cutaway&&mesh!==attachment;m.transparent=faded||base.transparent;m.opacity=faded?base.opacity*.18:base.opacity;m.depthWrite=faded?false:base.depthWrite;m.needsUpdate=true;}}$('isolate').textContent=only?'Show body':'Attachment only';$('cutaway').textContent=cutaway?'Solid body':'Body cutaway';}
+function updateSkeleton(){model?.updateMatrixWorld(true);for(const mesh of meshes)if(mesh.skeleton)mesh.skeleton.update();}
+function currentBounds(name){updateSkeleton();if(name==='Full body'){const body=meshes.filter(m=>m!==attachment).sort((a,b)=>b.geometry.attributes.position.count-a.geometry.attributes.position.count)[0];return new THREE.Box3().setFromObject(body,true);}return new THREE.Box3().setFromObject(attachment,true);}
+function view(name){if(!model||!attachment)return;activeView=name;const box=currentBounds(name),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());orbit.target.copy(center);let offset=new THREE.Vector3(0,-.07,.40);if(name==='Full body'){const tan=Math.tan(camera.fov*Math.PI/360),distance=Math.max(size.y/(2*tan),size.x/(2*tan*camera.aspect))*1.12;offset.set(0,.02,distance);}if(name==='Rear')offset.set(0,-.06,-.40);if(name==='Side')offset.set(.40,-.02,0);if(name==='Underneath')offset.set(.03,-.36,.06);camera.position.copy(center).add(offset);lastCenter=center.clone();orbit.update();document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===name)));}
+for(const name of['Front','Rear','Side','Underneath','Full body']){const b=document.createElement('button');b.textContent=name;b.dataset.view=name;b.disabled=true;b.onclick=()=>view(name);$('views').append(b);}
+function motion(name){if(!mixer)return;mixer.stopAllAction();for(const mesh of meshes)if(mesh.isSkinnedMesh)mesh.skeleton.pose();if(name!=='Rest pose'){const clip=THREE.AnimationClip.findByName(clips,name);if(!clip){tell('This model does not contain '+name);return;}const action=mixer.clipAction(clip);action.reset();action.setLoop(name==='Bend and pick up'?THREE.LoopOnce:THREE.LoopRepeat,Infinity);action.clampWhenFinished=true;action.play();mixer.update(0);}activeMotion=name;paused=false;mixer.timeScale=1;$('pause').textContent='Pause';document.querySelectorAll('[data-motion]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.motion===name)));updateSkeleton();if(activeView==='Full body')view('Full body');else lastCenter=currentBounds(activeView).getCenter(new THREE.Vector3());tell(name==='Rest pose'?'Original exported pose':name);}
+for(const name of['Rest pose',...names]){const b=document.createElement('button');b.textContent=name;b.dataset.motion=name;b.disabled=true;b.onclick=()=>motion(name);$('movements').append(b);}
+$('isolate').onclick=()=>{only=!only;style();};$('cutaway').onclick=()=>{cutaway=!cutaway;style();};$('pause').onclick=()=>{paused=!paused;mixer.timeScale=paused?0:1;$('pause').textContent=paused?'Resume':'Pause';};
+$('save').onclick=()=>{try{localStorage.setItem(key,JSON.stringify({version:1,model:sav4AssetUrl,values,locks}));tell('Controls saved in this browser. Download GLB to save the complete model.');}catch(error){tell('Browser save failed: '+error.message);}};
+$('reset').onclick=()=>{for(const[id]of fields)if(!locks[id]){values[id]=1;syncControl(id);}tell('Unlocked controls restored to the permanent fitted baseline.');};
+$('download').onclick=async()=>{const previous={only,cutaway,timeScale:mixer.timeScale};$('download').disabled=true;tell('Preparing the complete model…');try{mixer.timeScale=0;only=false;cutaway=false;style();updateSkeleton();const file=await new GLTFExporter().parseAsync(model,{binary:true,trs:true,animations:clips,onlyVisible:false,maxTextureSize:2048});const url=URL.createObjectURL(new Blob([file],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='sav4-permanent.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);tell('Complete SAV4 GLB prepared with anatomy, controls, and movements.');}catch(error){tell('Export failed: '+error.message);}finally{only=previous.only;cutaway=previous.cutaway;style();mixer.timeScale=previous.timeScale;$('download').disabled=false;}};
+try{const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(2,3,4);scene.add(light);const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.append(renderer.domElement);orbit=new OrbitControls(camera,renderer.domElement);orbit.target.set(0,.85,0);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(stage);resize();const clock=new THREE.Clock();renderer.setAnimationLoop(()=>{const delta=Math.min(clock.getDelta(),.1);mixer?.update(delta);updateSkeleton();if(model&&attachment&&activeView!=='Full body'&&lastCenter){const center=currentBounds(activeView).getCenter(new THREE.Vector3()),change=center.clone().sub(lastCenter);orbit.target.add(change);camera.position.add(change);lastCenter.copy(center);}orbit.update();renderer.render(scene,camera);});const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);model=gltf.scene;scene.add(model);clips=gltf.animations||[];model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m&&originalStyle(m));if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});if(!attachment)throw Error('The loaded model has no permanent attachment.');updateSkeleton();mixer=new THREE.AnimationMixer(model);const controlsReady=fields.every(([id])=>attachment.morphTargetDictionary?.[id]!==undefined);$('shapeFields').disabled=!controlsReady;for(const[id]of fields)syncControl(id);document.querySelectorAll('[data-view]').forEach(b=>b.disabled=false);document.querySelectorAll('[data-motion]').forEach(b=>b.disabled=b.dataset.motion!=='Rest pose'&&!THREE.AnimationClip.findByName(clips,b.dataset.motion));for(const id of['isolate','cutaway','download','pause'])$(id).disabled=false;$('save').disabled=!controlsReady;$('reset').disabled=!controlsReady;status.textContent='Permanent anatomy · '+clips.length+' movements · '+(controlsReady?'four anchored shape controls':'shape controls are still building');view('Full body');if(THREE.AnimationClip.findByName(clips,'Stand'))motion('Stand');}catch(error){status.textContent='Preview could not start: '+error.message;tell(error.message);}
 </script></body></html>

@@ -283,6 +283,67 @@ for obj in [root,*root.children_recursive]:
  if obj.type=="MESH":
   for m in list(obj.modifiers):
    if m.type=="MASK" and "Vulva2" not in m.name:obj.modifiers.remove(m)
+# Permanent anatomical detail controls: freeze the attachment seam and first ring.
+from collections import Counter,deque
+from mathutils.kdtree import KDTree
+part=next(o for o in root.children_recursive if o.type=="MESH" and o.get("wvlrp_vulva2_authentic_mhx2"))
+mesh=part.data
+mesh.update()
+body.data.update()
+edge_counts=Counter(tuple(sorted((int(a),int(b)))) for polygon in mesh.polygons
+                    for a,b in zip(polygon.vertices,list(polygon.vertices[1:])+[polygon.vertices[0]]))
+boundary_ids=sorted({i for edge,count in edge_counts.items() if count==1 for i in edge})
+if len(boundary_ids)!=28:raise RuntimeError("Native editable boundary changed")
+adjacency={i:set() for i in range(len(mesh.vertices))}
+for a,b in edge_counts:
+    adjacency[a].add(b);adjacency[b].add(a)
+distance={i:0 for i in boundary_ids};queue=deque(boundary_ids)
+while queue:
+    i=queue.popleft()
+    for j in adjacency[i]:
+        if j not in distance:distance[j]=distance[i]+1;queue.append(j)
+kdtree=KDTree(len(body.data.vertices))
+for vertex in body.data.vertices:kdtree.insert(vertex.co,vertex.index)
+kdtree.balance()
+base_points=[v.co.copy() for v in mesh.vertices]
+base_normals=[v.normal.copy() for v in mesh.vertices]
+matched_normals=[]
+for vertex,normal in zip(mesh.vertices,base_normals):
+    nearest,index,error=kdtree.find(vertex.co)
+    weight={0:1.,1:.8,2:.3}.get(distance.get(vertex.index,9),0.)
+    combined=normal.lerp(body.data.vertices[index].normal,weight)
+    matched_normals.append(tuple(combined.normalized()))
+mesh.normals_split_custom_set_from_vertices(matched_normals)
+part.shape_key_add(name="Basis",from_mix=False)
+ymin=min(p.y for p in base_points);ymax=max(p.y for p in base_points);depth=ymax-ymin
+center_y=ymin+depth*.30
+control_names=("vulva_inner_length","vulva_inner_fullness","vulva_outer_length","vulva_outer_fullness")
+def smoothstep(a,b,x):
+    t=max(0.,min(1.,(x-a)/(b-a)))
+    return t*t*(3-2*t)
+for name in control_names:
+    key=part.shape_key_add(name=name,from_mix=False)
+    key.slider_min=-.5;key.slider_max=.75;key.value=0.
+    for i,(p,n) in enumerate(zip(base_points,base_normals)):
+        anchor=smoothstep(1.,4.,distance.get(i,0))
+        front=smoothstep(.35,.58,(ymax-p.y)/depth)
+        inner=math.exp(-((p.x/.010)**2))
+        region=inner if "inner" in name else 1-inner
+        weight=anchor*front*region
+        delta=Vector()
+        if name.endswith("length"):
+            delta.y=(p.y-center_y)*.7*weight
+        else:
+            delta=n*((.0045 if "inner" in name else .0065)*weight)
+            if "outer" in name:delta.x+=p.x*.25*weight
+        key.data[i].co=p+delta
+    if any((key.data[i].co-base_points[i]).length>1e-8 for i in boundary_ids):
+        raise RuntimeError("Shape control moves fitted boundary: "+name)
+part["wvlrp_permanent_anatomy"]=True
+part["wvlrp_shape_controls"]=list(control_names)
+part["wvlrp_source_boundary"]=boundary_ids
+print("SAV4_ANCHORED_CONTROLS_READY",list(control_names),"seam",len(boundary_ids))
+
 # All facial skin polygons must remain visible without proxy cutout masks.
 print("SAV4_FACE_PROXY_FREE",len(body.data.vertices))
 # Preserve MPFB topology; no anatomical add-ons or disconnected geometry.
@@ -307,7 +368,7 @@ root.select_set(True)
 for obj in root.children_recursive:obj.select_set(True)
 bpy.context.view_layer.objects.active=root
 OUT.parent.mkdir(parents=True,exist_ok=True)
-bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",use_selection=True,export_apply=False)
+bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",use_selection=True,export_apply=False,export_extras=True)
 # Preserve transparency on hair/eyes, but make replacement skin opaque.
 import json,struct
 encoded_glb=OUT.read_bytes()
@@ -370,13 +431,24 @@ import numpy as np
 binary_start=20+chunk_size
 binary=raw[binary_start+8:]
 def read_accessor(index):
-    a=doc["accessors"][index];view=doc["bufferViews"][a["bufferView"]]
+    a=doc["accessors"][index]
     dtype={5126:"<f4",5125:"<u4",5123:"<u2",5121:"u1"}[a["componentType"]]
-    size={"SCALAR":1,"VEC3":3}[a["type"]]
-    if view.get("byteStride"):
-        raise RuntimeError("Seam audit requires non-interleaved export")
-    return np.frombuffer(binary,dtype=dtype,count=a["count"]*size,
-                         offset=view.get("byteOffset",0)+a.get("byteOffset",0)).reshape(-1,size)
+    size={"SCALAR":1,"VEC2":2,"VEC3":3,"VEC4":4,"MAT4":16}[a["type"]]
+    if "bufferView" in a:
+        view=doc["bufferViews"][a["bufferView"]]
+        if view.get("byteStride"):raise RuntimeError("Interleaved audit input not supported")
+        result=np.frombuffer(binary,dtype=dtype,count=a["count"]*size,
+                             offset=view.get("byteOffset",0)+a.get("byteOffset",0)).reshape(-1,size).copy()
+    else:result=np.zeros((a["count"],size),dtype=dtype)
+    if "sparse" in a:
+        sparse=a["sparse"];iv=sparse["indices"];vv=sparse["values"]
+        idtype={5125:"<u4",5123:"<u2",5121:"u1"}[iv["componentType"]]
+        indices=np.frombuffer(binary,dtype=idtype,count=sparse["count"],
+                              offset=doc["bufferViews"][iv["bufferView"]].get("byteOffset",0)+iv.get("byteOffset",0))
+        values=np.frombuffer(binary,dtype=dtype,count=sparse["count"]*size,
+                             offset=doc["bufferViews"][vv["bufferView"]].get("byteOffset",0)+vv.get("byteOffset",0)).reshape(-1,size)
+        result[indices]=values
+    return result
 attachment_nodes=[n for n in nodes if "mesh" in n and "Vulva2 MHX2" in n.get("name","")]
 if len(attachment_nodes)!=1:raise RuntimeError("Serialized attachment count mismatch")
 attachment_node=attachment_nodes[0]
@@ -436,8 +508,26 @@ report.update({"body_aperture_edge_incidence":dict(incidence),
 print("SAV4_NATIVE_APERTURE_VERIFIED",dict(incidence))
 
 for mesh in doc.get("meshes",[]):
-    if mesh.get("weights") or any(p.get("targets") for p in mesh["primitives"]):
-        raise RuntimeError("Unbaked morph targets would invalidate the fitting audit")
-report["unbaked_morph_targets"]=0
+    targets=mesh["primitives"][0].get("targets",[])
+    if not targets:continue
+    names=mesh.get("extras",{}).get("targetNames",[])
+    if set(names)!=set(control_names) or len(targets)!=4:
+        raise RuntimeError("Unbaked body morphs or unexpected anatomical controls")
+    if any(abs(weight)>1e-8 for weight in mesh.get("weights",[])):
+        raise RuntimeError("Permanent baseline must preserve approved fitting")
+    for target in targets:
+        changes=read_accessor(target["POSITION"])
+        if np.max(np.abs(changes[boundary]))>1e-7:
+            raise RuntimeError("Exported shape control moves the anchored boundary")
+base_normals_export=read_accessor(base_primitive["attributes"]["NORMAL"])
+part_normals_export=read_accessor(part_primitive["attributes"]["NORMAL"])
+normal_dots=[]
+for index in boundary:
+    nearest=int(np.linalg.norm(base_positions-part_positions[index],axis=1).argmin())
+    normal_dots.append(float(np.dot(base_normals_export[nearest],part_normals_export[index])))
+if min(normal_dots)<.99:
+    raise RuntimeError("Attachment boundary shading does not match body: "+str(min(normal_dots)))
+report.update({"unbaked_morph_targets":0,"anatomical_controls":list(control_names),
+               "minimum_seam_normal_dot":min(normal_dots),"permanent_anatomy":True})
 (OUT.parent/"sav4-vulva2-native-fit-report.json").write_text(json.dumps(report,indent=2))
-print("SAV4_DISPLAYED_BODY_FIT_VERIFIED",baked_shape_keys,"baked_active_morphs")
+print("SAV4_DISPLAYED_BODY_FIT_VERIFIED",baked_shape_keys,"baked_active_morphs",len(control_names),"anchored controls")
