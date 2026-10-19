@@ -399,7 +399,14 @@ part_primitive=meshes[attachment_node["mesh"]]["primitives"][0]
 base_positions=read_accessor(base_primitive["attributes"]["POSITION"])
 part_positions=read_accessor(part_primitive["attributes"]["POSITION"])
 triangles=read_accessor(part_primitive["indices"]).reshape(-1,3)
-edges=Counter(tuple(sorted((int(a),int(b)))) for tri in triangles
+# UV seams split render vertices; audit the physical, welded surface instead.
+canonical={}
+welded=[]
+for i,p in enumerate(part_positions):
+    key=tuple(float(value) for value in p)
+    welded.append(canonical.setdefault(key,i))
+welded_triangles=np.asarray(welded,dtype=np.int64)[triangles]
+edges=Counter(tuple(sorted((int(a),int(b)))) for tri in welded_triangles
               for a,b in zip(tri,np.roll(tri,-1)))
 boundary=sorted({i for edge,count in edges.items() if count==1 for i in edge})
 if len(boundary)!=28:raise RuntimeError("Unexpected attachment boundary topology")
