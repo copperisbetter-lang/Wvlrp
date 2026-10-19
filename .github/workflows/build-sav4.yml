@@ -134,4 +134,5 @@ jobs:
             world-creator/characters/sav4/laura-projected-ratios.json
             world-creator/assets/sav4-calibration/face-vertices.csv
             world-creator/assets/sav4-calibration/face-region-map.template.json
+            world-creator/assets/sav4-calibration/face-region-candidates.json
           if-no-files-found: ignore
