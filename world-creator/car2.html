@@ -54,10 +54,10 @@ try{
  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
  document.getElementById('isolate').onclick=()=>{only=!only;style();};
  document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
- const freshResponse=await fetch(sav4AssetUrl,{cache:'no-store'});
- if(!freshResponse.ok)throw Error('CAR 2 model fetch failed: HTTP '+freshResponse.status);
- const freshBuffer=await freshResponse.arrayBuffer();
- const gltf=await new GLTFLoader().parseAsync(freshBuffer,new URL('./assets/',location.href).href);
+ // GLTFLoader streams/parses the file directly, avoiding an extra large
+ // ArrayBuffer retained by fetch+parseAsync on memory-limited phones.
+ // Date.now() above guarantees a new model URL on each page opening.
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
