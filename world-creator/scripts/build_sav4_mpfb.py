@@ -92,7 +92,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # cheek prominence near the mid-face, narrower jaw near the lower face
     cheek=math.exp(-((h-0.928)/0.020)**2)
     jaw=math.exp(-((h-0.885)/0.017)**2)
-    factor=1.0+fade*((0.120+0.010*mouth_weight)*cheek-(0.095+0.010*chin_weight_ref)*jaw)
+    factor=1.0+fade*((0.185+0.018*mouth_weight)*cheek-(0.145+0.015*chin_weight_ref)*jaw)
     vert.co.x=p.x*factor
     # Second pass: subtle central chin definition and a softer, slightly
     # forward midface. Keep the nose/eye sockets untouched to avoid the
@@ -106,7 +106,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # The movie stills are perspective views, not calibrated 3D scans.
     lower_face=math.exp(-((h-0.899)/0.019)**2)
     # Gentle tapered lower jaw; blend continuously into the cheeks.
-    vert.co.x *= 1.0-0.028*lower_face*fade
+    vert.co.x *= 1.0-0.055*lower_face*fade
     # Keep this conservative until orthographic model comparisons exist.
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
 # Load the complete two-view landmark specification into the build for audit.
@@ -187,7 +187,7 @@ for vertex,original in zip(face_body.data.vertices,coords):
         raise RuntimeError(f"SAV4 facial deformation escaped safe region: {h:.5f}")
 if changed==0:
     raise RuntimeError("SAV4 face morph modified no vertices")
-if max_displacement>span*0.012:
+if max_displacement>span*0.024:
     raise RuntimeError(f"SAV4 facial deformation exceeded safety limit: {max_displacement:.6f}")
 face_body.data.update()
 print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed,"max_delta",round(max_displacement,6))
