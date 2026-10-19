@@ -71,16 +71,16 @@ jobs:
           viewer=Path("world-creator/sav4.html")
           revision=hashlib.sha256(model.read_bytes()).hexdigest()[:12]
           html=viewer.read_text()
-          old="const sav4AssetUrl='./assets/sav4-realistic.glb?v='+Date.now();"
-          updated=f"const sav4AssetUrl='./assets/sav4-realistic.glb?v={revision}';"
-          if old in html:
-            html=html.replace(old,updated,1)
-          else:
-            import re
-            pattern=r"(const sav4AssetUrl=['\\\"]\\./assets/sav4-realistic\\.glb\\?v=)[A-Za-z0-9]+(['\\\"];)"
-            html,count=re.subn(pattern,lambda m:m.group(1)+revision+m.group(2),html)
-            if count != 1: raise RuntimeError(f"SAV4 viewer GLB reference count {count}; expected 1")
-          updated=html
+          # Replace the single viewer declaration, regardless of its existing revision.
+          lines=html.splitlines(keepends=True)
+          matches=[i for i,line in enumerate(lines) if line.lstrip().startswith("const sav4AssetUrl=")]
+          if len(matches)!=1:
+            raise RuntimeError(f"SAV4 viewer GLB declaration count {len(matches)}; expected 1")
+          i=matches[0]
+          indent=lines[i][:len(lines[i])-len(lines[i].lstrip())]
+          newline="\n" if lines[i].endswith("\n") else ""
+          lines[i]=indent+f"const sav4AssetUrl='./assets/sav4-realistic.glb?v={revision}';"+newline
+          updated="".join(lines)
           viewer.write_text(updated)
           print("SAV4_VIEWER_ASSET_REVISION",revision)
           PY
