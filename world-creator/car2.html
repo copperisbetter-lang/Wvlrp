@@ -8,7 +8,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-projected-32dd567-feather-18a086';
+// Fresh GLB on every viewer load; no manually maintained version token.
+const sav4AssetUrl='./assets/car2-completed.glb?v='+Date.now();
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -53,7 +54,10 @@ try{
  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
  document.getElementById('isolate').onclick=()=>{only=!only;style();};
  document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
- const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ const freshResponse=await fetch(sav4AssetUrl,{cache:'no-store'});
+ if(!freshResponse.ok)throw Error('CAR 2 model fetch failed: HTTP '+freshResponse.status);
+ const freshBuffer=await freshResponse.arrayBuffer();
+ const gltf=await new GLTFLoader().parseAsync(freshBuffer,new URL('./assets/',location.href).href);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
