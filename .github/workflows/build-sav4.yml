@@ -30,6 +30,25 @@ jobs:
         run: |
           python3 world-creator/scripts/sav4_reference_ratios.py
           test -s world-creator/characters/sav4/laura-projected-ratios.json
+      - name: Check morph calibration prerequisites
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("world-creator/characters/sav4")
+          ratios=root/"marybeth-ratios.json"
+          mapping=root/"face-region-map.json"
+          if not ratios.is_file() or not mapping.is_file():
+              raise SystemExit("SAV4 calibration incomplete: missing "+", ".join(str(p) for p in (ratios,mapping) if not p.is_file())+"; use the face-vertices.csv report to calibrate actual mesh regions before another expensive Blender run")
+          data=json.loads(mapping.read_text())
+          regions=data.get("regions",{})
+          required=("nose_bridge","nose_tip","mouth_corners","upper_lip","lower_lip")
+          if any(not regions.get(k) for k in required):
+              raise SystemExit("SAV4 calibration incomplete: facial vertex region assignments missing")
+          report=json.loads(ratios.read_text())
+          if report.get("method")!="MediaPipe 2D image landmark ratios":
+              raise SystemExit("SAV4 ratios are not verified photo measurements")
+          PY
       - name: Install Blender
         run: |
           sudo apt-get update -qq
