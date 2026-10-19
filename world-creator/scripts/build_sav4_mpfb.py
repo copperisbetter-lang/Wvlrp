@@ -247,14 +247,32 @@ source_vertices=face_body.data.vertices
 export_vertices=body.data.vertices
 if len(source_vertices)!=len(export_vertices):
     raise RuntimeError("SAV4 face morph transfer: source/export topology mismatch")
+# Measure export-copy state against the original and desired morph.
+# MPFB versions differ: some copies already contain the source edits.
+# Never apply the same deformation twice.
 morph_transferred=0
+morph_already_present=0
+max_export_error=0.0
 for index,(source_vertex,export_vertex,original) in enumerate(zip(source_vertices,export_vertices,coords)):
     delta=source_vertex.co-original
-    if delta.length>1e-7:
-        export_vertex.co=export_vertex.co+delta
+    if delta.length<=1e-7:
+        continue
+    before=export_vertex.co.copy()
+    error_before=(before-source_vertex.co).length
+    error_if_added=(before+delta-source_vertex.co).length
+    if error_if_added+1e-7<error_before:
+        export_vertex.co=before+delta
         morph_transferred+=1
-if morph_transferred==0:
-    raise RuntimeError("SAV4 face morph transfer produced no changed vertices")
+    else:
+        morph_already_present+=1
+    max_export_error=max(max_export_error,(export_vertex.co-source_vertex.co).length)
+if morph_transferred+morph_already_present==0:
+    raise RuntimeError("SAV4 face morph: no changed vertices to verify")
+print("SAV4_MORPH_EXPORT_AUDIT", "transferred",morph_transferred,
+      "already_present",morph_already_present,
+      "max_source_export_error",round(max_export_error,7))
+if max_export_error>span*0.01:
+    raise RuntimeError("SAV4 face morph export-copy mismatch: "+str(max_export_error))
 body.data.update()
 print("SAV4_EXPORT_FACE_MORPH_TRANSFERRED",morph_transferred)
 
