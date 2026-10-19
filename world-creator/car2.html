@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-motions-20261019';
+const sav4AssetUrl='./assets/car2-completed.glb?v=car2-skin-material-20261019';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -58,74 +58,64 @@ try{
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
 
- // Transfer actual skin texture colors using the nearest body surface vertices.
- // This avoids averaging an entire UV atlas into a flat brown patch.
+ // CAR 2 skin material correction: use the same PBR response as the body.
+ // The attachment remains an independent mesh for rigging and inspection.
  const candidates=meshes.filter(m=>m!==attachment&&!/hair|eye|iris|lash|brow|cloth|skirt|blouse|teeth|tongue/i.test(m.name));
  const body=candidates.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
  const skin=body&&(Array.isArray(body.material)?body.material:[body.material])[0];
  if(body&&skin){
-   const matched=skin.clone();matched.name='CAR2 sampled skin';matched.map=null;
-   matched.normalMap=null;matched.bumpMap=null;matched.roughnessMap=null;
-   matched.side=THREE.DoubleSide;matched.color.set(0xffffff);
+   // Sample a small skin-colored region of the body's actual diffuse map.
+   // Avoid sampling arbitrary nearest 3D vertices, which can select unrelated
+   // UV islands and create a gray or muddy polygon-shaped patch.
+   const matched=skin.clone();
+   matched.name='CAR2 body-matched skin';
+   matched.map=null;
+   matched.vertexColors=false;
+   matched.color.copy(skin.color);
+   matched.normalMap=null;
+   matched.bumpMap=null;
+   matched.roughnessMap=null;
+   matched.metalnessMap=null;
+   matched.aoMap=null;
+   matched.emissiveMap=null;
+   matched.side=THREE.DoubleSide;
    const tex=skin.map,uv=body.geometry.attributes.uv,pos=body.geometry.attributes.position;
-   const targetPos=attachment.geometry.attributes.position;
-   if(tex?.image&&uv&&pos&&targetPos){
+   if(tex?.image&&uv&&pos){
      try{
        const img=tex.image,cv=document.createElement('canvas');
        cv.width=img.width||img.videoWidth;cv.height=img.height||img.videoHeight;
-       const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,cv.width,cv.height);
-       const data=ctx.getImageData(0,0,cv.width,cv.height).data;
+       const ctx=cv.getContext('2d',{willReadFrequently:true});
+       ctx.drawImage(img,0,0,cv.width,cv.height);
+       const pixels=ctx.getImageData(0,0,cv.width,cv.height).data;
        body.updateMatrixWorld(true);attachment.updateMatrixWorld(true);
-       const vertices=[],v=new THREE.Vector3();
-       const stride=Math.max(1,Math.floor(pos.count/16000));
+       const targetCenter=new THREE.Box3().setFromObject(attachment,true).getCenter(new THREE.Vector3());
+       const v=new THREE.Vector3(),samples=[];
+       const stride=Math.max(1,Math.floor(pos.count/24000));
        for(let i=0;i<pos.count;i+=stride){
          v.fromBufferAttribute(pos,i).applyMatrix4(body.matrixWorld);
-         vertices.push([v.x,v.y,v.z,uv.getX(i),uv.getY(i)]);
+         const d=v.distanceToSquared(targetCenter);
+         if(!Number.isFinite(d))continue;
+         const u=((uv.getX(i)%1)+1)%1,w=((uv.getY(i)%1)+1)%1;
+         const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
+         const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
+         const j=(y*cv.width+x)*4;
+         const r=pixels[j],g=pixels[j+1],b=pixels[j+2];
+         // Reject very dark texture features, transparent areas and UV seams.
+         if(pixels[j+3]<245||r<75||g<45||b<35)continue;
+         samples.push({d,r,g,b});
        }
-       const colors=new Float32Array(targetPos.count*3),p=new THREE.Vector3(),base=new THREE.Color();
-       for(let i=0;i<targetPos.count;i++){
-         p.fromBufferAttribute(targetPos,i).applyMatrix4(attachment.matrixWorld);
-         // Blend the four nearest skin samples rather than copying one
-         // vertex color over broad polygons (the source of the flat patch).
-         const nearest=[];
-         for(const q of vertices){
-           const dx=p.x-q[0],dy=p.y-q[1],dz=p.z-q[2],d=dx*dx+dy*dy+dz*dz;
-           if(nearest.length===4&&d>=nearest[3].d)continue;
-           let k=nearest.findIndex(item=>d<item.d);
-           if(k<0)k=nearest.length;
-           nearest.splice(k,0,{d,q});
-           if(nearest.length>4)nearest.pop();
-         }
-         let rr=0,gg=0,bb=0,total=0;
-         for(const item of nearest){
-           const q=item.q,u=((q[3]%1)+1)%1,w=((q[4]%1)+1)%1;
-           const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
-           const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
-           const j=(y*cv.width+x)*4;
-           base.setRGB(data[j]/255,data[j+1]/255,data[j+2]/255,THREE.SRGBColorSpace).multiply(skin.color);
-           const weight=1/Math.max(item.d,0.000001);
-           rr+=base.r*weight;gg+=base.g*weight;bb+=base.b*weight;total+=weight;
-         }
-         colors[i*3]=rr/total;colors[i*3+1]=gg/total;colors[i*3+2]=bb/total;
-       }
-       attachment.geometry=attachment.geometry.clone();
-       attachment.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
-       matched.vertexColors=true;
-       // Keep the sampled skin's actual texture detail rather than rendering
-       // large flat vertex-color polygons. A small procedural grain is applied
-       // in fragment space, while the transferred vertex colors retain tone.
-       matched.onBeforeCompile=(shader)=>{
-         shader.fragmentShader=shader.fragmentShader.replace(
-           '#include <color_fragment>',
-           `#include <color_fragment>
-           float skinGrain = fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);
-           diffuseColor.rgb *= 0.985 + 0.03*skinGrain;`
-         );
-       };
-       matched.customProgramCacheKey=()=> 'car2-skin-grain-v1';
-       status.textContent='CAR 2 · sampled skin tone with fragment detail; inspect seam';
-     }catch(e){console.warn('Skin sampling failed',e);status.textContent='CAR 2 · texture transfer unavailable: '+e.message;}
-   }else{status.textContent='CAR 2 · body skin texture unavailable for transfer';}
+       samples.sort((a,b)=>a.d-b.d);
+       const nearest=samples.slice(0,Math.min(128,samples.length));
+       if(nearest.length){
+         const channel=k=>nearest.map(s=>s[k]).sort((a,b)=>a-b)[Math.floor(nearest.length/2)]/255;
+         const tint=new THREE.Color().setRGB(channel('r'),channel('g'),channel('b'),THREE.SRGBColorSpace);
+         matched.color.multiply(tint);
+         status.textContent='CAR 2 · body skin material matched; inspect transition';
+       }else status.textContent='CAR 2 · body material matched (texture samples unavailable)';
+     }catch(e){console.warn('Skin sample unavailable',e);status.textContent='CAR 2 · body material matched without texture sampling';}
+   }else status.textContent='CAR 2 · shared body material settings';
+   // Geometry stays intact; avoid vertex colors and custom shader grain,
+   // which previously made the attachment look like a separate flat patch.
    attachment.material=matched;matched.needsUpdate=true;
  }else status.textContent='CAR 2 · body skin material unavailable';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
