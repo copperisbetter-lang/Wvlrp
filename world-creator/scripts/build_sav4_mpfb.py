@@ -240,6 +240,24 @@ for obj in root.children_recursive:
 print("SAV4_HAIR: muted dusty blonde tint; existing long01 geometry preserved")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
+# MPFB may construct the export copy from its own cached basemesh, losing
+# direct vertex edits made to the source face. Explicitly carry the morph
+# onto the export copy and verify the actual copied vertex coordinates.
+source_vertices=face_body.data.vertices
+export_vertices=body.data.vertices
+if len(source_vertices)!=len(export_vertices):
+    raise RuntimeError("SAV4 face morph transfer: source/export topology mismatch")
+morph_transferred=0
+for index,(source_vertex,export_vertex,original) in enumerate(zip(source_vertices,export_vertices,coords)):
+    delta=source_vertex.co-original
+    if delta.length>1e-7:
+        export_vertex.co=export_vertex.co+delta
+        morph_transferred+=1
+if morph_transferred==0:
+    raise RuntimeError("SAV4 face morph transfer produced no changed vertices")
+body.data.update()
+print("SAV4_EXPORT_FACE_MORPH_TRANSFERRED",morph_transferred)
+
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
 eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and ("eye" in o.name.lower() or "high-poly" in o.name.lower() or "low-poly" in o.name.lower()) and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
