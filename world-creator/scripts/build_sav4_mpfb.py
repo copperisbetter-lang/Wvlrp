@@ -37,7 +37,7 @@ eyes=add_asset(human,"eyes",["high-poly.mhclo","low-poly.mhclo"],"Eyes")
 if eyes is None:raise RuntimeError("SAV4 real eyeball proxy missing; refuse export")
 hair=add_asset(human,"hair",["long01.mhclo"],"Hair")
 if hair is None:raise RuntimeError("SAV4 shoulder hair asset missing")
-tint(hair,(.82,.72,.57),1.0)
+tint(hair,(.88,.78,.62),1.0)
 # Marybeth Hutchinson / Laura Harris (The Faculty, 1998) inspired facial pass.
 # Apply to the source basemesh before making the rigged export copy, so the
 # facial changes travel with the character instead of becoming loose proxies.
@@ -123,9 +123,9 @@ for vert,p in zip(face_body.data.vertices,coords):
 # nose, or lip topology. Reapply from original coordinates, not cumulatively.
 # This remains an artistic silhouette pass, NOT a calibrated photo likeness.
 import os
-face_intensity=float(os.environ.get("SAV4_FACE_INTENSITY","1.15"))
-if not math.isfinite(face_intensity) or not 1.0<=face_intensity<=1.25:
-    raise RuntimeError("SAV4_FACE_INTENSITY must be between 1.0 and 1.25")
+face_intensity=float(os.environ.get("SAV4_FACE_INTENSITY","1.75"))
+if not math.isfinite(face_intensity) or not 1.0<=face_intensity<=2.0:
+    raise RuntimeError("SAV4_FACE_INTENSITY must be between 1.0 and 2.0")
 for vertex,original in zip(face_body.data.vertices,coords):
     delta=vertex.co-original
     if delta.length>1e-8:
@@ -209,7 +209,7 @@ for vertex,original in zip(face_body.data.vertices,coords):
         raise RuntimeError(f"SAV4 facial deformation escaped safe region: {h:.5f}")
 if changed==0:
     raise RuntimeError("SAV4 face morph modified no vertices")
-if max_displacement>span*0.040:
+if max_displacement>span*0.075:
     raise RuntimeError(f"SAV4 facial deformation exceeded safety limit: {max_displacement:.6f}")
 face_body.data.update()
 print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed,"max_delta",round(max_displacement,6))
@@ -223,13 +223,13 @@ for obj in root.children_recursive:
  if obj.type=="MESH" and ("hair" in obj.name.lower() or any(m and "hair" in m.name.lower() for m in obj.data.materials)):
   for idx,original in enumerate(obj.data.materials):
    if original:
-    mat=original.copy();mat.diffuse_color=(.82,.72,.57,1)
+    mat=original.copy();mat.diffuse_color=(.88,.78,.62,1)
     if mat.use_nodes:
      for node in mat.node_tree.nodes:
       if node.type=="BSDF_PRINCIPLED":
        for link in list(mat.node_tree.links):
         if link.to_socket==node.inputs["Base Color"]:mat.node_tree.links.remove(link)
-       node.inputs["Base Color"].default_value=(0.82,0.72,0.57,1)
+       node.inputs["Base Color"].default_value=(0.88,0.78,0.62,1)
        # A linked image texture can override the tint; multiply it by the
        # desired blonde tone instead of disconnecting the texture detail.
        # For unlinked shaders the base color above remains authoritative.
