@@ -119,6 +119,18 @@ for vert,p in zip(face_body.data.vertices,coords):
     vert.co.x *= 1.0-0.055*lower_face*fade
     # Keep this conservative until orthographic model comparisons exist.
     if abs(vert.co.x-p.x)>1e-7 or abs(vert.co.z-p.z)>1e-7: changed+=1
+# Intensify the already bounded cheek/jaw/chin pass without guessing eye,
+# nose, or lip topology. Reapply from original coordinates, not cumulatively.
+# This remains an artistic silhouette pass, NOT a calibrated photo likeness.
+import os
+face_intensity=float(os.environ.get("SAV4_FACE_INTENSITY","1.15"))
+if not math.isfinite(face_intensity) or not 1.0<=face_intensity<=1.25:
+    raise RuntimeError("SAV4_FACE_INTENSITY must be between 1.0 and 1.25")
+for vertex,original in zip(face_body.data.vertices,coords):
+    delta=vertex.co-original
+    if delta.length>1e-8:
+        vertex.co=original+delta*face_intensity
+print("SAV4_FACE_INTENSITY_APPLIED",face_intensity)
 # Load the complete two-view landmark specification into the build for audit.
 # These are oblique image coordinates, NOT calibrated 3D mesh targets.
 landmarks_path=ROOT/"characters"/"sav4"/"laura-two-view-landmarks.json"
