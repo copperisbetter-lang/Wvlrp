@@ -59,8 +59,22 @@ try{
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list');
- if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of gltf.animations){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
- else{motions.textContent='Movement library not yet exported into CAR 2. The original Carol clips need retargeting; no fake movement buttons are shown.';}
+ // Retarget Carol's authored clips by exact bone names when the rigs agree.
+ let clips=gltf.animations;
+ if(!clips.length){try{
+  motions.textContent='Loading Carol’s refined movements…';
+  const source=await new GLTFLoader().loadAsync('./assets/caroline-inspection.glb');
+  const targetBones=new Map();model.traverse(o=>{if(o.isBone)targetBones.set(o.name.toLowerCase().replace(/[^a-z0-9]/g,''),o.name);});
+  const norm=n=>n.toLowerCase().replace(/[^a-z0-9]/g,'');
+  clips=source.animations.map(clip=>{
+   const tracks=clip.tracks.map(track=>{const dot=track.name.lastIndexOf('.');if(dot<0)return null;const bone=track.name.slice(0,dot);const target=targetBones.get(norm(bone));if(!target)return null;const copy=track.clone();copy.name=target+track.name.slice(dot);return copy;}).filter(Boolean);
+   return tracks.length>=4?new THREE.AnimationClip(clip.name,clip.duration,tracks):null;
+  }).filter(Boolean);
+  if(!clips.length)throw Error('Carol’s rig does not match CAR 2’s rig; a Blender retarget/export is required.');
+  status.textContent='CAR 2 loaded · Carol animation preview (retargeted by bone name; visual QA pending)';
+ }catch(e){motions.textContent='Carol movement transfer unavailable: '+e.message;}}
+ if(clips.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of clips){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
+ else if(!motions.textContent.startsWith('Carol movement transfer unavailable')){motions.textContent='No compatible movement clips found.';}
  status.textContent='Native fit · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
