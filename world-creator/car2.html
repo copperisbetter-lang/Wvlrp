@@ -85,19 +85,33 @@ try{
        const colors=new Float32Array(targetPos.count*3),p=new THREE.Vector3(),base=new THREE.Color();
        for(let i=0;i<targetPos.count;i++){
          p.fromBufferAttribute(targetPos,i).applyMatrix4(attachment.matrixWorld);
-         let best=Infinity,hit=null;
-         for(const q of vertices){const dx=p.x-q[0],dy=p.y-q[1],dz=p.z-q[2],d=dx*dx+dy*dy+dz*dz;if(d<best){best=d;hit=q;}}
-         const u=((hit[3]%1)+1)%1,w=((hit[4]%1)+1)%1;
-         const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
-         const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
-         const j=(y*cv.width+x)*4;
-         base.setRGB(data[j]/255,data[j+1]/255,data[j+2]/255,THREE.SRGBColorSpace).multiply(skin.color);
-         colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;
+         // Blend the four nearest skin samples rather than copying one
+         // vertex color over broad polygons (the source of the flat patch).
+         const nearest=[];
+         for(const q of vertices){
+           const dx=p.x-q[0],dy=p.y-q[1],dz=p.z-q[2],d=dx*dx+dy*dy+dz*dz;
+           if(nearest.length===4&&d>=nearest[3].d)continue;
+           let k=nearest.findIndex(item=>d<item.d);
+           if(k<0)k=nearest.length;
+           nearest.splice(k,0,{d,q});
+           if(nearest.length>4)nearest.pop();
+         }
+         let rr=0,gg=0,bb=0,total=0;
+         for(const item of nearest){
+           const q=item.q,u=((q[3]%1)+1)%1,w=((q[4]%1)+1)%1;
+           const x=Math.min(cv.width-1,Math.floor(u*(cv.width-1)));
+           const y=Math.min(cv.height-1,Math.floor((1-w)*(cv.height-1)));
+           const j=(y*cv.width+x)*4;
+           base.setRGB(data[j]/255,data[j+1]/255,data[j+2]/255,THREE.SRGBColorSpace).multiply(skin.color);
+           const weight=1/Math.max(item.d,0.000001);
+           rr+=base.r*weight;gg+=base.g*weight;bb+=base.b*weight;total+=weight;
+         }
+         colors[i*3]=rr/total;colors[i*3+1]=gg/total;colors[i*3+2]=bb/total;
        }
        attachment.geometry=attachment.geometry.clone();
        attachment.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
        matched.vertexColors=true;
-       status.textContent='CAR 2 · nearby body skin colors transferred; inspect seam';
+       status.textContent='CAR 2 · blended skin color transfer; inspect seam';
      }catch(e){console.warn('Skin sampling failed',e);status.textContent='CAR 2 · texture transfer unavailable: '+e.message;}
    }else{status.textContent='CAR 2 · body skin texture unavailable for transfer';}
    attachment.material=matched;matched.needsUpdate=true;
