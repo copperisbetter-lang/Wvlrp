@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 2 — Saved Character Inspection</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:52dvh;min-height:280px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:36dvh;overflow:auto;padding:10px;border-top:2px solid #76ae94}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:52dvh;min-height:280px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:40dvh;overflow:auto;padding:10px;border-top:2px solid #76ae94}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 2 — Saved Character</h1><p id="status" role="status">Loading the fitted model…</p></header><nav id="motion-shortcuts" aria-label="Quick movement controls"><button type="button" onclick="document.getElementById('motions').scrollIntoView({block:'nearest'})">Movement controls ↓</button><span id="motion-count">Loading animations…</span></nav><main id="stage"></main>
-<nav id="inspection" aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><nav id="motions" aria-label="CAR 2 animation controls"><strong>CAR 2 Movements:</strong> <span id="motion-list">Loading movement library…</span></nav><div id="error"></div>
+<nav id="motions" aria-label="CAR 2 animation controls"><strong>CAR 2 Movements:</strong> <span id="motion-list">Loading movement library…</span></nav><nav id="inspection" aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -88,10 +88,12 @@ try{
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
  const requested=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees','Crawl','Lie down'];
+ // Show a movement panel immediately, even while the separate Carol asset downloads.
+ motions.textContent='';for(const name of requested){const b=document.createElement('button');b.textContent=name+' (loading)';b.disabled=true;motions.append(b);}
  // Retarget Carol's authored clips by exact bone names when the rigs agree.
  let clips=gltf.animations;
  if(!clips.length){try{
-  motions.textContent='Loading Carol’s refined movements…';
+  count.textContent='Loading Carol’s refined movements…';
   const source=await new GLTFLoader().loadAsync('./assets/caroline-inspection.glb');
   const targetBones=new Map();model.traverse(o=>{if(o.isBone)targetBones.set(o.name.toLowerCase().replace(/[^a-z0-9]/g,''),o.name);});
   const norm=n=>n.toLowerCase().replace(/[^a-z0-9]/g,'');
