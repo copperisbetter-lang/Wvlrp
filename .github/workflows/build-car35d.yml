@@ -1,0 +1,34 @@
+name: Build CAR 3.5D cut insert
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - world-creator/scripts/build_car35d_cut_insert.py
+      - .github/workflows/build-car35d.yml
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
+          curl -fL --retry 4 --retry-delay 5 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+      - name: Fit and cut CAR3 pelvic opening
+        run: xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender -b --factory-startup --python world-creator/scripts/build_car35d_cut_insert.py
+      - name: Publish isolated test
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f world-creator/assets/car35d-vulva2-cut-fit.glb
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish CAR3.5D cut insert preview'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
