@@ -60,5 +60,5 @@ def propose_region_candidates(body, destination, per_region=24):
             scored.append((score,v.index))
         result["regions"][name]=[i for _,i in sorted(scored)[:per_region]]
     destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
-    destination.write_text(json.dumps(result,indent=2)+"\\n")
+    destination.write_text(json.dumps(result,indent=2)+"\n")
     return destination
