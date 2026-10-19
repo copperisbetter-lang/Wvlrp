@@ -2,6 +2,7 @@ import io,json,struct,pathlib
 import numpy as np
 from PIL import Image
 from scipy.spatial import cKDTree
+from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 path=pathlib.Path('world-creator/assets/car2-completed.glb')
 raw=path.read_bytes()
@@ -37,27 +38,45 @@ bp=accessor(body['attributes']['POSITION']);bu=accessor(body['attributes']['TEXC
 ap=accessor(attach['attributes']['POSITION'])
 body_img,_=get_image(body)
 attach_img,attach_ref=get_image(attach)
-# Select only skin vertices in proximity to attachment; never use global atlas average.
+# Spatially project nearby body-skin samples onto the attachment's own UV map.
+# Do NOT reuse the body's UVs directly; they refer to a different atlas.
 tree=cKDTree(bp)
 dist,nearest=tree.query(ap,k=1)
-radius=np.quantile(dist,0.35)
-ids=nearest[dist<=max(radius,0.03)]
-assert len(ids)>10, 'Insufficient nearby body samples'
-uv=bu[ids]
-arr=np.asarray(body_img)
-xs=np.clip((uv[:,0]%1*(arr.shape[1]-1)).astype(int),0,arr.shape[1]-1)
-ys=np.clip(((1-uv[:,1]%1)*(arr.shape[0]-1)).astype(int),0,arr.shape[0]-1)
-pixels=arr[ys,xs,:3]
-pixels=pixels[np.all(pixels>15,axis=1)]
-assert len(pixels)>10
-target=np.median(pixels,axis=0)
+assert len(ap)>20 and np.isfinite(dist).all()
+auv=accessor(attach['attributes']['TEXCOORD_0'])
+body_pixels=np.asarray(body_img)
 src=np.asarray(attach_img).copy()
+height,width=src.shape[:2]
+def texel(uv,img):
+    h,w=img.shape[:2]
+    x=np.clip((np.mod(uv[:,0],1)*(w-1)).astype(int),0,w-1)
+    y=np.clip(((1-np.mod(uv[:,1],1))*(h-1)).astype(int),0,h-1)
+    return img[y,x,:3].astype(np.float32)
+reference=texel(bu[nearest],body_pixels)
+current=texel(auv,src)
+# Filter out any obviously non-skin samples from atlas seams.
+good=(reference.min(axis=1)>35)&(reference.max(axis=1)<250)&(dist<np.quantile(dist,.85))
+assert good.sum()>25, 'Not enough trustworthy skin samples'
+# Correct color spatially, while retaining high-frequency attachment details.
+correction=np.clip(reference-current,-85,85)
+xx=np.clip((np.mod(auv[:,0],1)*(width-1)).astype(int),0,width-1)
+yy=np.clip(((1-np.mod(auv[:,1],1))*(height-1)).astype(int),0,height-1)
+seeds=np.zeros((height,width),dtype=bool)
+delta=np.zeros((height,width,3),dtype=np.float32)
+seeds[yy[good],xx[good]]=True
+delta[yy[good],xx[good]]=correction[good]
+assert seeds.sum()>20
+_,indices=distance_transform_edt(~seeds,return_indices=True)
+field=delta[indices[0],indices[1]]
+# Smooth sparse nearest-neighbor projection to avoid vertex-shaped color bands.
+for c in range(3):field[:,:,c]=gaussian_filter(field[:,:,c],sigma=16)
 mask=src[:,:,3]>10
 assert mask.sum()>100
-old=np.median(src[:,:,:3][mask],axis=0)
-# Retain fine details: scale channels gently to match the local skin baseline.
-ratio=np.clip(target/np.maximum(old,1),0.45,2.2)
-src[:,:,:3]=np.clip(src[:,:,:3].astype(float)*ratio,0,255).astype(np.uint8)
+src[:,:,:3]=np.clip(src[:,:,:3].astype(np.float32)+field,0,255).astype(np.uint8)
+# Preserve UV layout and source alpha; never replace with a flat material.
+target=np.median(reference[good],axis=0)
+old=np.median(current[good],axis=0)
+print('Projection samples',int(good.sum()),'target',target,'old',old,'correction',np.median(correction[good],axis=0))
 out=io.BytesIO();Image.fromarray(src,'RGBA').save(out,format='PNG')
 new=out.getvalue()
 while len(blob)%4:blob.append(0)
@@ -74,4 +93,4 @@ output=struct.pack('<III',magic,version,12+8+len(jsonbytes)+8+len(blob))
 output+=struct.pack('<II',len(jsonbytes),0x4e4f534a)+jsonbytes
 output+=struct.pack('<II',len(blob),0x004e4942)+blob
 path.write_bytes(output)
-print('Body-near-attachment median RGB:',target,'attachment previous RGB:',old,'ratio:',ratio,'image:',attach_img.size,'vertices:',len(ids),'new bytes:',len(output))
+print('Projected texture saved',attach_img.size,'new bytes',len(output))
