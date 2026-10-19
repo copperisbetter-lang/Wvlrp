@@ -1,0 +1,31 @@
+name: CAR 3.5 isolated skin experiments
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - world-creator/scripts/export_car3_skin_attachment_preview.py
+      - .github/workflows/car35-skin-experiments.yml
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
+          curl -fL --retry 4 --retry-delay 5 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+      - name: CAR 3.5 Vulva 1 material-only preview
+        run: |
+          python3 -m py_compile world-creator/scripts/export_car3_skin_attachment_preview.py
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender -b --factory-startup --python world-creator/scripts/export_car3_skin_attachment_preview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: car35-vulva1-skin-preview
+          path: world-creator/assets/car3-skin-attachment-preview.glb
+          if-no-files-found: error
