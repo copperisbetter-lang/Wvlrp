@@ -1,4 +1,4 @@
-name: Build SAV 4 adult character GLB
+name: Fit SAV4 Vulva2 with native MPFB mapping
 on:
   push:
     paths:
@@ -12,7 +12,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: sav4-build
+  group: sav4-vulva2-native-fit
   cancel-in-progress: false
 jobs:
   build:
@@ -96,7 +96,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import struct,json
-          p=Path("world-creator/assets/sav4-realistic.glb")
+          p=Path("world-creator/assets/sav4-vulva2-native-fit.glb")
           b=p.read_bytes()
           assert b[:4]==b"glTF"
           assert struct.unpack_from("<I",b,8)[0]==len(b)
@@ -107,52 +107,20 @@ jobs:
           assert any("eye" in (m.get("name","").lower()) or "iris" in (m.get("name","").lower()) for m in doc.get("materials",[])), "SAV4 missing eye material"
           print("SAV4_GLB_VERIFIED",len(b))
           PY
-      - name: Refresh SAV 4 viewer asset revision
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib,re
-          model=Path("world-creator/assets/sav4-realistic.glb")
-          viewer=Path("world-creator/sav4.html")
-          revision=hashlib.sha256(model.read_bytes()).hexdigest()[:12]
-          html=viewer.read_text()
-          # Replace the single viewer declaration, regardless of its existing revision.
-          lines=html.splitlines(keepends=True)
-          matches=[i for i,line in enumerate(lines) if line.lstrip().startswith("const sav4AssetUrl=")]
-          if len(matches)!=1:
-            raise RuntimeError(f"SAV4 viewer GLB declaration count {len(matches)}; expected 1")
-          i=matches[0]
-          indent=lines[i][:len(lines[i])-len(lines[i].lstrip())]
-          newline="\n" if lines[i].endswith("\n") else ""
-          lines[i]=indent+f"const sav4AssetUrl='./assets/sav4-realistic.glb?v={revision}';"+newline
-          updated="".join(lines)
-          viewer.write_text(updated)
-          print("SAV4_VIEWER_ASSET_REVISION",revision)
-          PY
-      - name: Publish SAV 4 asset
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/sav4-realistic.glb world-creator/sav4.html
-          if ! git diff --cached --quiet; then
-            git commit -m "Publish SAV 4 game-ready GLB"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
       - name: Build summary
         if: always()
         run: |
           echo '## SAV 4 build' >> "$GITHUB_STEP_SUMMARY"
-          if test -s world-creator/assets/sav4-realistic.glb; then echo 'GLB file generated' >> "$GITHUB_STEP_SUMMARY"; else echo 'GLB missing — inspect sav4-build-report logs' >> "$GITHUB_STEP_SUMMARY"; fi
+          if test -s world-creator/assets/sav4-vulva2-native-fit.glb; then echo 'GLB file generated' >> "$GITHUB_STEP_SUMMARY"; else echo 'GLB missing — inspect sav4-build-report logs' >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Save logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sav4-build-report
+          name: sav4-vulva2-native-fit-report
           path: |
             /tmp/sav4-build.log
-            world-creator/assets/sav4-realistic.glb
+            world-creator/assets/sav4-vulva2-native-fit-report.json
+            world-creator/assets/sav4-vulva2-native-fit.glb
             world-creator/characters/sav4/laura-projected-ratios.json
             world-creator/assets/sav4-calibration/face-vertices.csv
             world-creator/assets/sav4-calibration/face-region-map.template.json
