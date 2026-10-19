@@ -1602,11 +1602,5 @@
       0.778944730758667
     ]
   ],
-  "status": "serialized seam and body aperture validated; visual review pending",
-  "serialized_boundary_vertices": 28,
-  "serialized_max_boundary_error_m": 0.0,
-  "body_aperture_edge_incidence": {
-    "1": 28
-  },
-  "unbaked_morph_targets": 0
+  "status": "geometry exported; visual fit review required"
 }
