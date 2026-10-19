@@ -89,8 +89,9 @@ jobs:
       - name: Build SAV 4
         run: |
           set -o pipefail
-          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_sav4_vulva2_native_fit.py 2>&1 | tee /tmp/sav4-build.log
-          grep SAV4_BUILD_SUCCESS /tmp/sav4-build.log
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python-exit-code 1 --python world-creator/scripts/build_sav4_vulva2_native_fit.py 2>&1 | tee /tmp/sav4-build.log
+          grep SAV4_DISPLAYED_BODY_FIT_VERIFIED /tmp/sav4-build.log
+          grep SAV4_NATIVE_APERTURE_VERIFIED /tmp/sav4-build.log
       - name: Verify GLB
         run: |
           python3 - <<'PY'
