@@ -240,6 +240,114 @@ for obj in root.children_recursive:
 print("SAV4_HAIR: muted dusty blonde tint; existing long01 geometry preserved")
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,"Basemesh")
 if body is None:raise RuntimeError("SAV4 continuous body missing")
+
+# Trial attachment on exported copy before basemesh topology is modified.
+import json, bmesh
+def fit_vulva2(root,body,rig):
+    source=json.loads((ROOT/"assets"/"vulva2-mhx2-source.json").read_text())
+    assert source["proxy"]["name"]=="Vulva2"
+    assert source["license"]["author"]=="Manuel Bastioni"
+    proxy=source["proxy"]; geom=source["mesh"]
+    fit=proxy["fitting"]; vs=body.data.vertices
+    if len(fit)!=319 or len(geom["faces"])!=304 or len(geom["uv_faces"])!=304:
+        raise RuntimeError("Vulva2 source changed; geometry check failed")
+    max_id=max(i for row in fit for i in row[0])
+    if len(vs)<=max_id or len(vs)<13380:
+        raise RuntimeError("Auto-fit requires original hm08 vertex order, missing source indices")
+    scales=[]
+    # MHX2 getScales() adapted from MakeHuman's native (X,height,depth)
+    # to Blender's (X,-depth,height) coordinate system.
+    for component,axis in (("x",0),("y",2),("z",1)):
+        lo_idx,hi_idx,reference=proxy["bounding_box"][component]
+        found=abs((vs[hi_idx].co[axis]-vs[lo_idx].co[axis])/reference)
+        if not .025<found<.25:
+            raise RuntimeError("Unexpected original hm08 coordinate scales: "+str((component,found)))
+        scales.append(found)
+    sx,sy,sz=scales
+    pts=[]
+    transferred=[]
+    for ids,weights,off in fit:
+        co=sum((vs[i].co*float(w) for i,w in zip(ids,weights)),Vector())
+        co+=Vector((sx*off[0],-sz*off[2] - 0.028,sy*off[1]))
+        pts.append(tuple(co))
+        skin={}
+        for i,w in zip(ids,weights):
+            for assignment in vs[i].groups:
+                gname=body.vertex_groups[assignment.group].name
+                if gname not in rig.data.bones: continue
+                skin[gname]=skin.get(gname,0.)+float(w)*assignment.weight
+        total=sum(skin.values())
+        if total<.01:raise RuntimeError("Vulva2 automatic source rig weights unavailable")
+        transferred.append({name:weight/total for name,weight in skin.items() if weight/total>.0001})
+    zlo=min(p[2] for p in pts);zhi=max(p[2] for p in pts)
+    xlo=min(p[0] for p in pts);xhi=max(p[0] for p in pts)
+    ylo=min(p[1] for p in pts);yhi=max(p[1] for p in pts)
+    original_h=max(v.co.z for v in vs)-min(v.co.z for v in vs)
+    if not 1.3<original_h<2.2:
+        raise RuntimeError("Invalid adult source scale")
+    # Refuse a misplaced body rather than publishing another floating add-on.
+    if not .38*original_h<zlo<.65*original_h or not .39*original_h<zhi<.70*original_h:
+        raise RuntimeError("Vulva2 fitted outside adult pelvis: "+str((zlo,zhi,original_h)))
+    if not .035<xhi-xlo<.19 or not .005<yhi-ylo<.22:
+        raise RuntimeError("Vulva2 size/projection incompatible with source topology")
+    if abs((xlo+xhi)/2)>.035:
+        raise RuntimeError("Vulva2 did not land at body centerline")
+    print("VULVA2_MHX2_FIT_QA","range_x",round(xlo,4),round(xhi,4),
+          "range_y",round(ylo,4),round(yhi,4),"range_z",round(zlo,4),round(zhi,4),
+          "scales",scales,"original_body_vertices",len(vs))
+    mesh=bpy.data.meshes.new("Authentic MakeHuman Vulva2 fitted topology")
+    mesh.from_pydata(pts,[],[tuple(row) for row in geom["faces"]])
+    mesh.update()
+    if not body.data.materials or not body.data.materials[0]:
+        raise RuntimeError("Original female skin texture unavailable")
+    # Dedicated visible material lets the mobile inspection viewer isolate
+    # this attachment without hiding the woman's entire skin or face.
+    anatomy_skin=body.data.materials[0].copy()
+    anatomy_skin.name="Vulva2 anatomy attachment fitted skin"
+    mesh.materials.append(anatomy_skin)
+    uv=mesh.uv_layers.new(name="Vulva2 original MakeHuman UV")
+    for face,uv_indices in zip(mesh.polygons,geom["uv_faces"]):
+        if len(face.loop_indices)!=len(uv_indices):
+            raise RuntimeError("Vulva2 UV face inconsistent")
+        for li,src_idx in zip(face.loop_indices,uv_indices):
+            uv.data[li].uv=geom["uv_coordinates"][src_idx]
+        face.use_smooth=True
+    ob=bpy.data.objects.new("Vulva2 MHX2 true auto-fit | adult inspection",mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.parent=root
+    ob.matrix_world=body.matrix_world.copy()
+    # The old automatically interpolated thigh weights can split the central
+    # attachment during a stride. The pelvis is rigidly Hips-bound instead.
+    hips=next((b.name for b in rig.data.bones
+               if ''.join(c for c in b.name.lower() if c.isalnum())
+                  .replace("mixamorig","") in ("hips","pelvis")),None)
+    if not hips:raise RuntimeError("Missing hips bone for fixed centerline fitting")
+    pelvis_group=ob.vertex_groups.new(name=hips)
+    pelvis_group.add(list(range(len(pts))),1.,"REPLACE")
+    mod=ob.modifiers.new("Vulva2 pelvis-only binding","ARMATURE")
+    mod.object=rig
+    # Make the fresh female attachment surface visible instead of recessed.
+    # MHX2 supplies the exact underlying-vertex deletion mask. Mask instead
+    # of leaving a body surface beneath the opening (prevents dark overlap).
+    bitmap=proxy["delete_verts"]
+    if len(bitmap)>len(body.data.vertices):
+        raise RuntimeError("Vulva2 original deletion mask incompatible with body")
+    delete=[i for i,val in enumerate(bitmap) if val]
+    if not 15<len(delete)<200:
+        raise RuntimeError("Vulva2 original deletion mask unexpected")
+    maskgroup=body.vertex_groups.new(name="Vulva2 delete original covered faces")
+    maskgroup.add(delete,1.,"REPLACE")
+    mask=body.modifiers.new("Vulva2 original MHX2 skin opening","MASK")
+    mask.vertex_group=maskgroup.name
+    mask.invert_vertex_group=True
+    ob["wvlrp_vulva2_authentic_mhx2"]=True
+    ob["wvlrp_vulva2_source_uuid"]=proxy["uuid"]
+    print("VULVA2_TRUE_AUTOFIT_SUCCESS",
+          "vertices",len(mesh.vertices),"faces",len(mesh.polygons),
+          "source_mask_vertices",len(delete),"fitted_to_original_hm08",True)
+    return ob
+
+fit_vulva2(root,body,rig)
 # Fail visibly if exported copy lost eye meshes rather than publishing red eye sockets.
 eye_meshes=[o for o in root.children_recursive if o.type=="MESH" and ("eye" in o.name.lower() or "high-poly" in o.name.lower() or "low-poly" in o.name.lower()) and not any(t in o.name.lower() for t in ("brow","lash"))]
 if not eye_meshes:raise RuntimeError("SAV4 export copy missing eye geometry")
@@ -276,7 +384,7 @@ ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=Fa
 for obj in [root,*root.children_recursive]:
  if obj.type=="MESH":
   for m in list(obj.modifiers):
-   if m.type=="MASK":obj.modifiers.remove(m)
+   if m.type=="MASK" and "Vulva2" not in m.name:obj.modifiers.remove(m)
 # All facial skin polygons must remain visible without proxy cutout masks.
 print("SAV4_FACE_PROXY_FREE",len(body.data.vertices))
 # Preserve MPFB topology; no anatomical add-ons or disconnected geometry.
