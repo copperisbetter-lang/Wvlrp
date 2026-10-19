@@ -553,3 +553,20 @@ report.update({"serialized_boundary_vertices":len(boundary),
                "status":"serialized boundary validated; visual review pending"})
 (OUT.parent/"sav4-vulva2-native-fit-report.json").write_text(json.dumps(report,indent=2))
 print("SAV4_NATIVE_SEAM_VERIFIED",len(boundary),"max_error_m",max(errors))
+
+# Check topology at the aperture as well as coordinate registration.
+def position_key(p):
+    return tuple(round(float(value),6) for value in p)
+body_triangles=read_accessor(base_primitive["indices"]).reshape(-1,3)
+body_edges=Counter(tuple(sorted((position_key(base_positions[a]),position_key(base_positions[b]))))
+                   for triangle in body_triangles for a,b in zip(triangle,np.roll(triangle,-1)))
+part_boundary_edges=[edge for edge,count in edges.items() if count==1]
+incidence=Counter(body_edges.get(tuple(sorted((position_key(part_positions[a]),
+                                              position_key(part_positions[b])))),0)
+                  for a,b in part_boundary_edges)
+if incidence[1]<14 or any(count>1 and number for count,number in incidence.items()):
+    raise RuntimeError("Body aperture not open along attachment seam: "+str(dict(incidence)))
+report.update({"body_aperture_edge_incidence":dict(incidence),
+               "status":"serialized seam and body aperture validated; visual review pending"})
+(OUT.parent/"sav4-vulva2-native-fit-report.json").write_text(json.dumps(report,indent=2))
+print("SAV4_NATIVE_APERTURE_VERIFIED",dict(incidence))
