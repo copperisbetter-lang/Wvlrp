@@ -50,13 +50,16 @@ def propose_region_candidates(body, destination, per_region=24):
              "mouth_corners":(.912,.028),"upper_lip":(.916,.013),
              "lower_lip":(.906,.013)}
     result={"mesh_vertex_count":len(verts),"status":"CANDIDATES_ONLY_NOT_VERIFIED",
-            "regions":{},"note":"Review each ID against the actual mesh in Blender; do not use as face-region-map.json automatically."}
+            "regions":{},"note":"Front-facing (negative Y) spatial candidates only. Verify mesh topology and anatomy in Blender before applying any morph."}
     for name,(height,lateral) in targets.items():
         scored=[]
         for v in verts:
             h=(v.co.z-zmin)/span
             if not .865<=h<=.995: continue
-            score=((h-height)/.012)**2+((abs(v.co.x)-lateral)/.022)**2
+            # SAV4 MakeHuman head faces toward negative local Y. Exclude back-of-head
+            # and interior vertices: height/X alone previously selected wrong surfaces.
+            if v.co.y >= -0.105: continue
+            score=((h-height)/.012)**2+((abs(v.co.x)-lateral)/.022)**2 + ((v.co.y+0.155)/.050)**2
             scored.append((score,v.index))
         result["regions"][name]=[i for _,i in sorted(scored)[:per_region]]
     destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
