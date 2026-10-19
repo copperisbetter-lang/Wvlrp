@@ -65,19 +65,27 @@ jobs:
           /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
       - name: Restore cached CC0 human assets
         id: human-assets-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /tmp/mh-system.zip
-          key: makehuman-system-assets-cc0-v1
+          key: makehuman-system-assets-cc0-validated-v2
       - name: Download CC0 human assets
         if: steps.human-assets-cache.outputs.cache-hit != 'true'
         run: |
-          curl -fL --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 300 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          curl -fL --retry 2 --retry-delay 5 --connect-timeout 20 --max-time 300 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip.part
+          unzip -tq /tmp/mh-system.zip.part >/dev/null
+          mv /tmp/mh-system.zip.part /tmp/mh-system.zip
       - name: Validate CC0 human assets
         run: |
           test -s /tmp/mh-system.zip
           unzip -tq /tmp/mh-system.zip >/dev/null
           echo "MakeHuman CC0 assets validated"
+      - name: Cache validated CC0 assets
+        if: steps.human-assets-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/mh-system.zip
+          key: makehuman-system-assets-cc0-validated-v2
       - name: Build SAV 4
         run: |
           set -o pipefail
