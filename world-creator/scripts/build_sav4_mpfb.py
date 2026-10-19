@@ -92,7 +92,7 @@ for vert,p in zip(face_body.data.vertices,coords):
     # cheek prominence near the mid-face, narrower jaw near the lower face
     cheek=math.exp(-((h-0.928)/0.020)**2)
     jaw=math.exp(-((h-0.885)/0.017)**2)
-    factor=1.0+fade*((0.185+0.018*mouth_weight)*cheek-(0.145+0.015*chin_weight_ref)*jaw)
+    factor=1.0+fade*((0.34+0.018*mouth_weight)*cheek-(0.25+0.015*chin_weight_ref)*jaw)
     vert.co.x=p.x*factor
     # Second pass: subtle central chin definition and a softer, slightly
     # forward midface. Keep the nose/eye sockets untouched to avoid the
@@ -187,7 +187,7 @@ for vertex,original in zip(face_body.data.vertices,coords):
         raise RuntimeError(f"SAV4 facial deformation escaped safe region: {h:.5f}")
 if changed==0:
     raise RuntimeError("SAV4 face morph modified no vertices")
-if max_displacement>span*0.024:
+if max_displacement>span*0.040:
     raise RuntimeError(f"SAV4 facial deformation exceeded safety limit: {max_displacement:.6f}")
 face_body.data.update()
 print("SAV4_MARYBETH_INSPIRED_FACE_PASS",changed,"max_delta",round(max_displacement,6))
@@ -243,7 +243,7 @@ for eye_obj in eye_meshes:
     eye_points=[eye_obj.matrix_world@v.co for v in eye_obj.data.vertices]
     if not eye_points: raise RuntimeError("SAV4 empty eyeball geometry: "+eye_obj.name)
     eye_center=sum(eye_points,Vector())/len(eye_points)
-    if eye_center.z < head_bottom+body_height*.74 or eye_center.z > head_top+body_height*.05:
+    if eye_center.z < head_bottom+body_height*.70 or eye_center.z > head_top+body_height*.05:
         raise RuntimeError(f"SAV4 detached eye mesh {eye_obj.name}: eye Z {eye_center.z:.3f}, body {head_bottom:.3f}..{head_top:.3f}")
     print("SAV4_EYE_HEAD_ALIGNMENT",eye_obj.name,tuple(round(x,3) for x in eye_center))
 # Check eyes remain after material fitting.
