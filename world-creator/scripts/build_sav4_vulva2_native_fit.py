@@ -158,13 +158,36 @@ def fit_vulva2(root,body,rig):
     anatomy_skin=body.data.materials[0].copy()
     anatomy_skin.name="Vulva2 anatomy attachment fitted skin"
     mesh.materials.append(anatomy_skin)
-    uv=mesh.uv_layers.new(name="Vulva2 original MakeHuman UV")
-    for face,uv_indices in zip(mesh.polygons,geom["uv_faces"]):
-        if len(face.loop_indices)!=len(uv_indices):
-            raise RuntimeError("Vulva2 UV face inconsistent")
-        for li,src_idx in zip(face.loop_indices,uv_indices):
-            uv.data[li].uv=geom["uv_coordinates"][src_idx]
+    # Use the local body skin atlas rather than the asset's unrelated UV island.
+    from mathutils.bvhtree import BVHTree
+    from mathutils.geometry import barycentric_transform, closest_point_on_tri
+    body.data.calc_loop_triangles()
+    source_uv=body.data.uv_layers.active
+    if source_uv is None:raise RuntimeError("Body skin UV missing")
+    deleted_ids={i for i,value in enumerate(proxy["delete_verts"]) if value}
+    covered_polygons={p.index for p in body.data.polygons
+                      if any(i in deleted_ids for i in p.vertices)}
+    skin_triangles=[tri for tri in body.data.loop_triangles
+                    if tri.polygon_index in covered_polygons]
+    if not skin_triangles:raise RuntimeError("Skin projection patch missing")
+    surface=BVHTree.FromPolygons([v.co.copy() for v in vs],
+                                [tuple(t.vertices) for t in skin_triangles],
+                                all_triangles=True)
+    uv=mesh.uv_layers.new(name=source_uv.name)
+    for face in mesh.polygons:
+        center=sum((mesh.vertices[i].co for i in face.vertices),Vector())/len(face.vertices)
+        hit=surface.find_nearest(center)
+        if hit[2] is None:raise RuntimeError("Skin UV projection failed")
+        triangle=skin_triangles[hit[2]]
+        corners=[vs[i].co.copy() for i in triangle.vertices]
+        texture_corners=[Vector((*source_uv.data[i].uv,0)) for i in triangle.loops]
+        for li in face.loop_indices:
+            p=mesh.vertices[mesh.loops[li].vertex_index].co
+            point=closest_point_on_tri(p,*corners)
+            projected=barycentric_transform(point,*corners,*texture_corners)
+            uv.data[li].uv=(projected.x,projected.y)
         face.use_smooth=True
+    print("SAV4_LOCAL_SKIN_UV_PROJECTED",len(mesh.polygons))
     ob=bpy.data.objects.new("Vulva2 MHX2 true auto-fit | adult inspection",mesh)
     bpy.context.collection.objects.link(ob)
     ob.parent=root
@@ -285,6 +308,21 @@ for obj in root.children_recursive:obj.select_set(True)
 bpy.context.view_layer.objects.active=root
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",use_selection=True,export_apply=False)
+# Preserve transparency on hair/eyes, but make replacement skin opaque.
+import json,struct
+encoded_glb=OUT.read_bytes()
+json_length=struct.unpack_from("<I",encoded_glb,12)[0]
+export_doc=json.loads(encoded_glb[20:20+json_length])
+skin_material_names={m.name for m in body.data.materials if m}|{"Vulva2 anatomy attachment fitted skin"}
+for material in export_doc.get("materials",[]):
+    if material.get("name") in skin_material_names:
+        material["alphaMode"]="OPAQUE"
+        material.pop("alphaCutoff",None)
+json_bytes=json.dumps(export_doc,separators=(",",":")).encode()
+json_bytes+=b" "*((-len(json_bytes))%4)
+rest=encoded_glb[20+json_length:]
+OUT.write_bytes(struct.pack("<4sII",b"glTF",2,20+len(json_bytes)+len(rest))+
+                struct.pack("<I4s",len(json_bytes),b"JSON")+json_bytes+rest)
 if OUT.stat().st_size<100000:raise RuntimeError("SAV4 GLB unexpectedly small")
 # Validate the serialized GLB, not just Blender's pre-export dimensions.
 import json,struct
