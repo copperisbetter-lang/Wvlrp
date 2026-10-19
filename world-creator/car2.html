@@ -79,6 +79,31 @@ try{
    matched.metalnessMap=null;
    matched.vertexColors=false;
    matched.color=sourceSkin.color.clone();
+   // Many GLBs store skin pigmentation in the body texture while the
+   // material base color is white. Sample the texture rather than copying white.
+   if(sourceSkin.map?.image){
+     try{
+       const img=sourceSkin.map.image, canvas=document.createElement('canvas');
+       canvas.width=64;canvas.height=64;
+       const ctx=canvas.getContext('2d',{willReadFrequently:true});
+       ctx.drawImage(img,0,0,64,64);
+       const pixels=ctx.getImageData(0,0,64,64).data;
+       let r=0,g=0,b=0,n=0;
+       for(let i=0;i<pixels.length;i+=4){
+         if(pixels[i+3]<128)continue;
+         // Exclude near-white atlas padding and very dark unused regions.
+         const brightness=(pixels[i]+pixels[i+1]+pixels[i+2])/3;
+         if(brightness>242||brightness<35)continue;
+         r+=pixels[i];g+=pixels[i+1];b+=pixels[i+2];n++;
+       }
+       if(n>0)matched.color.setRGB((r/n)/255,(g/n)/255,(b/n)/255,THREE.SRGBColorSpace).multiply(sourceSkin.color);
+     }catch(e){console.warn('CAR2 texture color sampling unavailable',e);}
+   }
+   // Never leave the attachment with the source's white untextured default.
+   if(matched.color.r>.9&&matched.color.g>.9&&matched.color.b>.9){
+     matched.color.set('#c99982');
+     status.textContent='CAR 2 · fallback skin tint; exact match needs texture verification';
+   }
    matched.needsUpdate=true;
    attachment.material=matched;
    status.textContent='CAR 2 loaded · body-tone material matched (seam inspection required)';
@@ -105,7 +130,7 @@ try{
   status.textContent='CAR 2 loaded · Carol animation preview (retargeted by bone name; visual QA pending)';
  }catch(e){motions.textContent='Carol movement transfer unavailable: '+e.message;}}
  count.textContent=clips.length?`${clips.length} movements available`:'Movements unavailable — check rig';
- if(clips.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of clips){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
+ if(clips.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;mixer.setTime(0);};motions.append(stop);for(const clip of clips){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15);const looping=/walk|run/i.test(clip.name);activeAction.setLoop(looping?THREE.LoopRepeat:THREE.LoopOnce,looping?Infinity:1);activeAction.clampWhenFinished=!looping;activeAction.play();};motions.append(b);}}
  else {const explanation=motions.textContent;motions.textContent='';const note=document.createElement('p');note.textContent=explanation||'No compatible clips in model';motions.append(note);for(const name of requested){const b=document.createElement('button');b.textContent=name+' · unavailable';b.disabled=true;b.title='Requires exported skeletal animation';motions.append(b);}}
  if(!status.textContent.includes('body-tone')&&!status.textContent.includes('skin material unavailable'))status.textContent='CAR 2 · full-body movement viewer';
  document.querySelectorAll('#inspection button').forEach(b=>b.disabled=false);view('Full body');
