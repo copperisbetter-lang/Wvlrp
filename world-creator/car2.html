@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 2 — Saved Character Inspection</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:38dvh;overflow:auto}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
-</head><body><header><h1>CAR 2 — Saved Character</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:52dvh;min-height:280px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}#motions{position:sticky;bottom:0;background:#193027;z-index:3;max-height:36dvh;overflow:auto;padding:10px;border-top:2px solid #76ae94}#motion-list{display:flex;gap:6px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+</head><body><header><h1>CAR 2 — Saved Character</h1><p id="status" role="status">Loading the fitted model…</p></header><nav id="motion-shortcuts" aria-label="Quick movement controls"><button type="button" onclick="document.getElementById('motions').scrollIntoView({block:'nearest'})">Movement controls ↓</button><span id="motion-count">Loading animations…</span></nav><main id="stage"></main>
 <nav id="inspection" aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><nav id="motions" aria-label="CAR 2 animation controls"><strong>CAR 2 Movements:</strong> <span id="motion-list">Loading movement library…</span></nav><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
@@ -58,7 +58,7 @@ try{
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- const motions=document.getElementById('motion-list');
+ const motions=document.getElementById('motion-list'); const count=document.getElementById('motion-count');
  const requested=['Stand','Walk','Run','Wave','Sit','Sit — legs apart','Bend and pick up','Hands and knees','Elbows and knees','Crawl','Lie down'];
  // Retarget Carol's authored clips by exact bone names when the rigs agree.
  let clips=gltf.animations;
@@ -74,6 +74,7 @@ try{
   if(!clips.length)throw Error('Carol’s rig does not match CAR 2’s rig; a Blender retarget/export is required.');
   status.textContent='CAR 2 loaded · Carol animation preview (retargeted by bone name; visual QA pending)';
  }catch(e){motions.textContent='Carol movement transfer unavailable: '+e.message;}}
+ count.textContent=clips.length?`${clips.length} movements available`:'Movements unavailable — check rig';
  if(clips.length){mixer=new THREE.AnimationMixer(model);motions.textContent='';const stop=document.createElement('button');stop.textContent='Stop / Reset';stop.onclick=()=>{mixer.stopAllAction();activeAction=null;};motions.append(stop);for(const clip of clips){const b=document.createElement('button');b.textContent=clip.name.replace(/^Caroline\s*/i,'')||'Unnamed clip';b.onclick=()=>{if(activeAction)activeAction.fadeOut(.15);activeAction=mixer.clipAction(clip);activeAction.reset().fadeIn(.15).play();};motions.append(b);}}
  else {const explanation=motions.textContent;motions.textContent='';const note=document.createElement('p');note.textContent=explanation||'No compatible clips in model';motions.append(note);for(const name of requested){const b=document.createElement('button');b.textContent=name+' · unavailable';b.disabled=true;b.title='Requires exported skeletal animation';motions.append(b);}}
  if(!status.textContent.includes('animation preview'))status.textContent='CAR 2 · full-body movement viewer';
