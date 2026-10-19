@@ -1,0 +1,35 @@
+name: CAR2 GLB Material Audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/car2-material-audit.yml'
+      - 'world-creator/assets/car2-completed.glb'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect GLB mesh material and texture bindings
+        shell: python
+        run: |
+          import json,struct,pathlib
+          p=pathlib.Path('world-creator/assets/car2-completed.glb')
+          raw=p.read_bytes()
+          magic,version,length=struct.unpack_from('<III',raw,0)
+          assert magic==0x46546c67 and length==len(raw)
+          size,kind=struct.unpack_from('<II',raw,12)
+          assert kind==0x4e4f534a
+          doc=json.loads(raw[20:20+size])
+          mats=doc.get('materials',[])
+          print('GLB bytes:',len(raw),'meshes:',len(doc.get('meshes',[])),'materials:',len(mats))
+          for i,m in enumerate(mats):
+            pbr=m.get('pbrMetallicRoughness',{})
+            print('MATERIAL',i,m.get('name'), 'baseColor',pbr.get('baseColorFactor'),'baseTexture',pbr.get('baseColorTexture'), 'normal',m.get('normalTexture'))
+          for i,m in enumerate(doc.get('meshes',[])):
+            for j,prim in enumerate(m.get('primitives',[])):
+              attrs=prim.get('attributes',{})
+              print('MESH',i,m.get('name'),'primitive',j,'material',prim.get('material'),'POSITION',attrs.get('POSITION'),'TEXCOORD_0',attrs.get('TEXCOORD_0'),'COLOR_0',attrs.get('COLOR_0'))
+          for i,n in enumerate(doc.get('nodes',[])):
+            if 'mesh' in n:
+              print('NODE',i,n.get('name'),'mesh',n['mesh'])
