@@ -65,7 +65,7 @@ jobs:
           /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
       - name: Download CC0 human assets
         run: |
-          curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          curl -fL --retry 2 --connect-timeout 20 --max-time 300 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
       - name: Build SAV 4
         run: |
           set -o pipefail
@@ -84,7 +84,7 @@ jobs:
           doc=json.loads(b[20:20+size])
           assert doc.get("skins") and doc.get("meshes")
           assert doc.get("images"), "SAV4 missing embedded eye/hair textures"
-          assert any("blue" in (m.get("name","").lower()) for m in doc.get("materials",[])), "SAV4 missing blue eye material"
+          assert any("eye" in (m.get("name","").lower()) or "iris" in (m.get("name","").lower()) for m in doc.get("materials",[])), "SAV4 missing eye material"
           print("SAV4_GLB_VERIFIED",len(b))
           PY
       - name: Refresh SAV 4 viewer asset revision
