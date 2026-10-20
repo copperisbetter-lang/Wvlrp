@@ -14,6 +14,24 @@ export function installWildMinimap(camera){
  g.strokeStyle="#d8bb87";g.lineWidth=5;g.lineJoin="round";g.lineCap="round";
  for(const path of REBUILD_PATHS){g.beginPath();path.points.forEach(([px,pz],i)=>{const [a,b]=point(px,pz);i?g.lineTo(a,b):g.moveTo(a,b)});g.stroke();}
  for(const landmark of REBUILD_CLEARINGS){const [a,b]=point(landmark.x,landmark.z);if(Math.hypot(a-cx,b-cy)>r-7)continue;g.fillStyle="#f4d89e";g.fillRect(a-4,b-4,8,8);}
+ // Track live NPCs. Show an edge arrow when an NPC is beyond the 30m map radius.
+ const npc=window.__wildSav4Lakeside?.root;
+ if(npc&&!npc.isDisposed()){
+  const pos=npc.getAbsolutePosition();
+  const [a,b]=point(pos.x,pos.z);
+  const dx=a-cx,dy=b-cy,dist=Math.hypot(dx,dy);
+  const edge=dist>r-20,ratio=edge?(r-20)/Math.max(dist,1):1;
+  const mx=cx+dx*ratio,my=cy+dy*ratio;
+  g.save();g.translate(mx,my);
+  g.fillStyle="#ff65d5";g.strokeStyle="#21112c";g.lineWidth=3;
+  if(edge){g.rotate(Math.atan2(dy,dx)+Math.PI/2);g.beginPath();g.moveTo(0,-10);g.lineTo(-8,7);g.lineTo(8,7);g.closePath();}
+  else{g.beginPath();g.arc(0,0,7,0,Math.PI*2);}
+  g.fill();g.stroke();g.restore();
+  g.font="bold 13px system-ui";g.textAlign="center";g.lineWidth=3;
+  const labelY=my>cy+45?my-16:my+22;
+  g.strokeStyle="#172a20";g.strokeText("SAV4",Math.max(26,Math.min(194,mx)),labelY);
+  g.fillStyle="#fff";g.fillText("SAV4",Math.max(26,Math.min(194,mx)),labelY);
+ }
  const [nx,ny]=point(x,z+25);g.fillStyle="#ffdf7a";g.font="bold 16px system-ui";g.textAlign="center";g.fillText("N",nx,ny);
  g.translate(cx,cy);g.fillStyle="#fff";g.strokeStyle="#123a2d";g.lineWidth=2;g.beginPath();g.moveTo(0,-15);g.lineTo(-9,10);g.lineTo(0,6);g.lineTo(9,10);g.closePath();g.fill();g.stroke();
  g.restore();
