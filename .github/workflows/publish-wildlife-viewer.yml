@@ -1,0 +1,56 @@
+name: Publish Wildlife Inspection Models
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-wildlife-viewer.yml'
+      - 'wildlife-viewer.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wildlife-model-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download reviewed reference models
+        shell: bash
+        run: |
+          set -euo pipefail
+          for animal in deer-reference rabbit-reference squirrel-reference; do
+            export WILD_REQUEST="$animal"
+            python3 scripts/wild_asset_fetch.py
+          done
+          mkdir -p wildlife-models
+          cp wild-assets/staged/deer-standing.glb wildlife-models/
+          cp wild-assets/staged/domestic-rabbit.glb wildlife-models/
+          cp wild-assets/staged/tree-squirrel.glb wildlife-models/
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct,json
+          for p in Path("wildlife-models").glob("*.glb"):
+              d=p.read_bytes()
+              assert len(d)>20 and d[:4]==b"glTF" and struct.unpack_from("<I",d,8)[0]==len(d),f"Invalid GLB {p}"
+              print(p,len(d))
+          PY
+      - name: Commit reference models for stable live viewer URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wildlife-models/*.glb
+          if git diff --cached --quiet; then echo "No asset changes"; else
+            git commit -m "Publish validated wildlife reference models for isolated viewer"
+            git push
+          fi
