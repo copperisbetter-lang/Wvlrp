@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Native Fit Inspection</title>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+</head><body><header><h1>SAV4 — V20 Surface Normal Alignment</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=v17-native-atlas';
+const status=document.getElementById('status'),stage=document.getElementById('stage');
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
+ const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
+ const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
+ function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resize();
+ renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
+ let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
+ function style(){
+  for(const mesh of meshes){
+   mesh.visible=!only||mesh===attachment;
+   for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
+    if(!material)continue;
+    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
+    const faded=cutaway&&mesh!==attachment;
+    material.transparent=faded||original.transparent;
+    material.opacity=faded?original.opacity*.18:original.opacity;
+    material.depthWrite=faded?false:original.depthWrite;
+    material.needsUpdate=true;
+   }
+  }
+  document.getElementById('isolate').textContent=only?'Show body':'Attachment only';
+  document.getElementById('cutaway').textContent=cutaway?'Solid body':'Body cutaway';
+ }
+ function view(name){
+  let box=partBounds;
+  if(name==='Full body')box=new THREE.Box3().setFromObject(model,true);
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  orbit.target.copy(center);
+  let offset=name==='Full body'?new THREE.Vector3(0,.05,Math.max(2,size.y*1.5)):new THREE.Vector3(0,-.07,.40);
+  if(name==='Rear')offset.set(0,-.06,-.40);
+  if(name==='Side')offset.set(.40,-.02,0);
+  if(name==='Underneath')offset.set(.03,-.36,.06);
+  camera.position.copy(center).add(offset);orbit.update();
+ }
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+ document.getElementById('isolate').onclick=()=>{only=!only;style();};
+ document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
+ if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+ // Approved V14 sample A appearance, applied to SAV4's fitted attachment
+ // in-place. No second attachment mesh, no geometry changes.
+ function applyNativeSkinV19(mesh){
+   const body=meshes.filter(o=>o!==mesh)
+     .filter(o=>(Array.isArray(o.material)?o.material:[o.material]).some(m=>m?.map))
+     .sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+   const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
+   if(!bodyMat?.map)throw Error('V19 requires original body skin atlas');
+   if(!mesh.geometry.getAttribute('uv'))throw Error('V19 requires native projected UVs');
+   // V17 forced white and black on a clone, changing the source skin shader.
+   // V19 keeps the exact body shader settings and native UVs intact.
+   const mat=bodyMat.clone();
+   mat.name='V19 exact native body material';
+   mat.side=THREE.DoubleSide;
+   mat.needsUpdate=true;
+   mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
+   // V19: map each attachment UV toward its nearest body-surface UV.
+   // Preserve the original geometry and use a local spatial index to avoid
+   // the previous arbitrary full-atlas or abdomen-patch sampling.
+   const bp=body.geometry.getAttribute('position'),bu=body.geometry.getAttribute('uv');
+   const ap=mesh.geometry.getAttribute('position');
+   if(!bp||!bu||!ap)throw Error('V19 missing source geometry attributes');
+   const cell=.035,grid=new Map();
+   const key=(x,y,z)=>x+','+y+','+z;
+   for(let i=0;i<bp.count;i++){
+     const x=Math.floor(bp.getX(i)/cell),y=Math.floor(bp.getY(i)/cell),z=Math.floor(bp.getZ(i)/cell);
+     const k=key(x,y,z);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);
+   }
+   const original=mesh.geometry.getAttribute('uv');
+   const remapped=original.clone();let matched=0,largest=0;
+   for(let i=0;i<ap.count;i++){
+     const x=ap.getX(i),y=ap.getY(i),z=ap.getZ(i);
+     const gx=Math.floor(x/cell),gy=Math.floor(y/cell),gz=Math.floor(z/cell);
+     let best=-1,dist=Infinity;
+     for(let radius=0;radius<=5&&best<0;radius++){
+       for(let dx=-radius;dx<=radius;dx++)for(let dy=-radius;dy<=radius;dy++)for(let dz=-radius;dz<=radius;dz++){
+         if(radius&&Math.max(Math.abs(dx),Math.abs(dy),Math.abs(dz))!==radius)continue;
+         for(const j of grid.get(key(gx+dx,gy+dy,gz+dz))||[]){
+           const d=(x-bp.getX(j))**2+(y-bp.getY(j))**2+(z-bp.getZ(j))**2;
+           if(d<dist){dist=d;best=j;}
+         }
+       }
+     }
+     if(best>=0&&dist<.05**2){
+       const u=bu.getX(best),v=bu.getY(best);
+       // Keep mapping near its original island; reject atlas jumps.
+       if(Math.hypot(u-original.getX(i),v-original.getY(i))<.12){
+         remapped.setXY(i,original.getX(i)*.25+u*.75,original.getY(i)*.25+v*.75);
+         matched++;largest=Math.max(largest,Math.sqrt(dist));
+       }
+     }
+   }
+   mesh.geometry=mesh.geometry.clone();mesh.geometry.setAttribute('uv',remapped);
+   // V20: smoothly transfer nearby body's vertex normals to the fitted surface.
+   // Keep every position, face, and UV unchanged; only the normal attribute
+   // is adjusted to reduce a hard lighting discontinuity at the seam.
+   const bn=body.geometry.getAttribute('normal'),an=mesh.geometry.getAttribute('normal');
+   let normalMatched=0;
+   if(bn&&an){
+     const smooth=an.clone();
+     for(let i=0;i<ap.count;i++){
+       const x=ap.getX(i),y=ap.getY(i),z=ap.getZ(i);
+       const gx=Math.floor(x/cell),gy=Math.floor(y/cell),gz=Math.floor(z/cell);
+       let best=-1,dist=Infinity;
+       for(let radius=0;radius<=3;radius++){
+         for(let dx=-radius;dx<=radius;dx++)for(let dy=-radius;dy<=radius;dy++)for(let dz=-radius;dz<=radius;dz++){
+           if(radius&&Math.max(Math.abs(dx),Math.abs(dy),Math.abs(dz))!==radius)continue;
+           for(const j of grid.get(key(gx+dx,gy+dy,gz+dz))||[]){
+             const d=(x-bp.getX(j))**2+(y-bp.getY(j))**2+(z-bp.getZ(j))**2;
+             if(d<dist){dist=d;best=j;}
+           }
+         }
+         if(best>=0&&dist<.018**2)break;
+       }
+       if(best>=0&&dist<.022**2){
+         const local=new THREE.Vector3(an.getX(i),an.getY(i),an.getZ(i));
+         const target=new THREE.Vector3(bn.getX(best),bn.getY(best),bn.getZ(best));
+         // Body and attachment share the same exported model space.
+         if(local.dot(target)>0){
+           const distance=Math.sqrt(dist);
+           const influence=.72*Math.max(0,1-distance/.022);
+           local.lerp(target,influence).normalize();
+           smooth.setXYZ(i,local.x,local.y,local.z);
+           normalMatched++;
+         }
+       }
+     }
+     mesh.geometry.setAttribute('normal',smooth);
+   }
+   console.info('V20 normals matched',{normalMatched,total:ap.count});
+   console.info('V19 local body UV remap',{matched,total:ap.count,largest});
+   // Inspect the resulting UV range.
+   const uv=mesh.geometry.getAttribute('uv'),normal=mesh.geometry.getAttribute('normal');
+   let invalid=0,minU=Infinity,maxU=-Infinity,minV=Infinity,maxV=-Infinity;
+   for(let i=0;i<uv.count;i++){
+     const u=uv.getX(i),v=uv.getY(i);
+     if(!Number.isFinite(u)||!Number.isFinite(v))invalid++;
+     minU=Math.min(minU,u);maxU=Math.max(maxU,u);
+     minV=Math.min(minV,v);maxV=Math.max(maxV,v);
+   }
+   if(invalid)throw Error('V19 found '+invalid+' invalid UV coordinates');
+   console.info('V19 native UV inspection',{vertices:uv.count,u:[minU,maxU],v:[minV,maxV],normals:normal?.count,bodyMaterial:bodyMat.name});
+   return 'UV '+matched+'/'+ap.count+' · normals '+normalMatched+'/'+ap.count+' · UV '+minU.toFixed(3)+'–'+maxU.toFixed(3)+' / '+minV.toFixed(3)+'–'+maxV.toFixed(3);
+ }
+ const skinSource=applyNativeSkinV19(attachment);
+ partBounds=new THREE.Box3().setFromObject(attachment,true);
+ status.textContent='V20 normal + UV alignment ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
+ // Display the exported model directly: no eye replacements, body reshaping,
+ // automatic posing, added garments, or per-frame geometry fitting.
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+</script></body></html>
