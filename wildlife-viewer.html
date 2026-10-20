@@ -13,7 +13,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <label for="animal">Inspect animal</label><select id="animal"><option value="buck" selected>Whitetail buck — uploaded model</option><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
-<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
+<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label>Buck movement controls</label><div id="buckMotions" class="row"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
 <div id="facts" aria-live="polite">No animal loaded yet.</div><section id="rigPanel" aria-live="polite" style="margin-top:14px;padding:12px;border:1px solid #89a799;border-radius:8px;background:#10231e"><strong>Skeleton inspection</strong><div id="rigSummary" style="margin:10px 0">Waiting for model…</div><div id="rigBones" style="overflow-wrap:anywhere"></div><div id="rigTracks" style="overflow-wrap:anywhere"></div></section><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
 <script>
@@ -33,7 +33,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 const root=document.getElementById('stage'),status=document.getElementById('status'),animal=document.getElementById('animal'),clips=document.getElementById('clips'),facts=document.getElementById('facts');
 const play=document.getElementById('play'),stop=document.getElementById('stop');
 let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;let procedural=null,elapsed=0;const motionNames=["Walk","Run","Graze","Tail flick","Ear flick","Alert","Look around","Head shake","Paw ground","Stamp hoof","Resting idle","Startled jump","Lie down — legs tucked"];
-const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
+const motionPanel=document.getElementById('buckMotions');motionNames.forEach(name=>{const b=document.createElement('button');b.textContent=name;b.type='button';b.addEventListener('click',()=>{if(!model||animal.value!=='buck')return;stopMotion();procedural=name;status.textContent='Buck movement: '+name;});motionPanel.appendChild(b)});const resetMotion=document.createElement('button');resetMotion.textContent='Stop / Reset';resetMotion.addEventListener('click',()=>{stopMotion();status.textContent='Buck motion stopped'});motionPanel.appendChild(resetMotion);const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
 try{
  window.wildDiag('Importing Three.js core…');
  THREE=await import('three');
