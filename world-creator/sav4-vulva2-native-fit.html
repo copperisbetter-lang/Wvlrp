@@ -59,62 +59,32 @@ try{
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
  // Approved V14 sample A appearance, applied to SAV4's fitted attachment
  // in-place. No second attachment mesh, no geometry changes.
- function applyApprovedV14A(mesh){
-   // Match a real patch of the body's skin atlas instead of tinting an unrelated
-   // full-atlas average. Sample a clean abdomen region and retain its mottling.
-   const body=meshes.filter(o=>o!==mesh).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+ function applyNativeSkinV17(mesh){
+   // The Blender builder already projected the attachment UVs onto the
+   // original body atlas. Reuse that atlas AND the body's shading parameters.
+   const body=meshes.filter(o=>o!==mesh)
+     .filter(o=>(Array.isArray(o.material)?o.material:[o.material]).some(m=>m?.map))
+     .sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
    const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
-   const src=bodyMat?.map?.image;
-   const fallback='#e9bea9';
-   let tex=null, sampled='fallback';
-   if(src){
-     try{
-       const w=src.width||src.videoWidth,h=src.height||src.videoHeight;
-       if(!w||!h)throw Error('Body texture has no dimensions');
-       const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
-       const ctx=canvas.getContext('2d',{willReadFrequently:true});
-       // Source coordinates are relative to the 1024px skin atlas.
-       // 779,977 is the previously verified abdomen sample.
-       const cx=w*779/1024,cy=h*977/1024;
-       const patch=Math.max(12,Math.min(w,h)*.065);
-       const sx=Math.max(0,Math.min(w-patch,cx-patch/2));
-       const sy=Math.max(0,Math.min(h-patch,cy-patch/2));
-       ctx.drawImage(src,sx,sy,patch,patch,0,0,256,256);
-       // Preserve the approved V14 Sample A base shade, borrowing only
-       // gentle high-frequency mottling from the body's abdomen patch.
-       const image=ctx.getImageData(0,0,256,256),px=image.data;
-       const means=[0,0,0],base=[233,190,169];
-       for(let j=0;j<px.length;j+=4)for(let k=0;k<3;k++)means[k]+=px[j+k];
-       for(let k=0;k<3;k++)means[k]/=65536;
-       for(let j=0;j<px.length;j+=4){
-         for(let k=0;k<3;k++){
-           const variation=Math.max(-18,Math.min(18,px[j+k]-means[k]));
-           px[j+k]=Math.max(0,Math.min(255,base[k]+variation*.45));
-         }
-         px[j+3]=255;
-       }
-       ctx.putImageData(image,0,0);
-       tex=new THREE.CanvasTexture(canvas);
-       tex.colorSpace=THREE.SRGBColorSpace;
-       tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
-       tex.needsUpdate=true;sampled='abdomen atlas patch';
-     }catch(err){console.warn('Body skin patch unavailable:',err);}
-   }
-   const mat=new THREE.MeshStandardMaterial({
-     name:'V16 V14 tone plus subtle abdomen mottling',color:tex?'#ffffff':fallback,
-     map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide
-   });
-   // No emissive wash: that was flattening/differentiating the fitted piece.
-   mat.emissive.set(fallback);mat.emissiveIntensity=.18;
+   if(!bodyMat?.map)throw Error('V17 requires the original body skin texture');
+   if(!mesh.geometry.getAttribute('uv'))throw Error('V17 requires projected native attachment UVs');
+   const mat=bodyMat.clone();
+   mat.name='V17 native body atlas and matching shader';
+   mat.color.set('#ffffff');
+   mat.emissive?.set('#000000');
+   if('emissiveIntensity' in mat)mat.emissiveIntensity=0;
+   mat.side=THREE.DoubleSide;
+   mat.transparent=false;mat.opacity=1;
+   mat.depthWrite=true;mat.needsUpdate=true;
    mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
    if(mesh.geometry.hasAttribute('color')){
      mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');
    }
-   return sampled;
+   return 'native UV + body texture';
  }
- const skinSource=applyApprovedV14A(attachment);
+ const skinSource=applyNativeSkinV17(attachment);
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='V16 approved A tone + body mottling ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ status.textContent='V17 native MakeHuman skin atlas ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
