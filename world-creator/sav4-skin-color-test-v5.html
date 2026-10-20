@@ -53,33 +53,38 @@ function skinToneFromTexture(material){
  }catch(err){console.warn('Skin texture read unavailable',err);return null;}
 }
 
-// Derive a small repeatable skin tile from SAV4's ORIGINAL body texture.
-// Pick the most skin-like 48x48 patch, avoiding hair, eyes and UV background.
-function bodySkinTile(mat){
- const img=mat.map?.image;if(!img)return null;
+// Sample the actual SAV4 abdomen mesh: raycast against the front of the torso,
+// interpolate the hit triangle UV, and copy a small patch from the original map.
+function abdomenSkinTile(mesh,mat){
+ const img=mat.map?.image,uv=mesh.geometry.attributes.uv;
+ if(!img||!uv)return null;
  try{
-  const src=document.createElement('canvas');src.width=256;src.height=256;
-  const sc=src.getContext('2d',{willReadFrequently:true});sc.drawImage(img,0,0,256,256);
-  const pixels=sc.getImageData(0,0,256,256).data;
-  let best=-1,bx=0,by=0;
-  for(let y=8;y<200;y+=16)for(let x=8;x<200;x+=16){
-   let count=0,rr=0,gg=0,bb=0;
-   for(let dy=0;dy<48;dy+=4)for(let dx=0;dx<48;dx+=4){
-    const k=((y+dy)*256+x+dx)*4,r=pixels[k],g=pixels[k+1],b=pixels[k+2];
-    if(r>135&&g>95&&b>75&&r>g*1.04&&g>b*.98&&r<g*1.55&&pixels[k+3]>220){count++;rr+=r;gg+=g;bb+=b;}
+  const bounds=new THREE.Box3().setFromObject(mesh,true),c=bounds.getCenter(new THREE.Vector3()),sz=bounds.getSize(new THREE.Vector3());
+  const raycaster=new THREE.Raycaster(),hits=[];
+  // Shoot inward from both sides; choose a torso surface near waist/abdomen.
+  for(const side of [1,-1])for(const h of [.47,.52,.57,.62]){
+   const origin=new THREE.Vector3(c.x,c.y+(h-.5)*sz.y,c.z+side*(sz.z+1));
+   raycaster.set(origin,new THREE.Vector3(0,0,-side));
+   for(const hit of raycaster.intersectObject(mesh,false)){
+    if(hit.uv&&hit.face){hits.push({hit,side,h});break;}
    }
-   // Favor a broad contiguous skin area, not isolated skin-colored artifacts.
-   if(count>best){best=count;bx=x;by=y;}
   }
-  if(best<70)return null;
-  const tile=document.createElement('canvas');tile.width=64;tile.height=64;
-  tile.getContext('2d').drawImage(src,bx,by,48,48,0,0,64,64);
+  if(!hits.length)return null;
+  // Prefer front-facing central abdomen hit; skip other body parts if possible.
+  const chosen=hits.find(x=>x.side===1&&x.h===.52)||hits.find(x=>x.side===1)||hits[0];
+  const uvp=chosen.hit.uv;
+  const src=document.createElement('canvas');src.width=img.width||1024;src.height=img.height||1024;
+  const ctx=src.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,src.width,src.height);
+  const px=Math.round(uvp.x*src.width),py=Math.round((1-uvp.y)*src.height);
+  const radius=Math.max(12,Math.round(Math.min(src.width,src.height)*.025));
+  const tile=document.createElement('canvas');tile.width=128;tile.height=128;
+  tile.getContext('2d').drawImage(src,Math.max(0,Math.min(src.width-radius*2,px-radius)),Math.max(0,Math.min(src.height-radius*2,py-radius)),radius*2,radius*2,0,0,128,128);
   const tex=new THREE.CanvasTexture(tile);tex.colorSpace=THREE.SRGBColorSpace;
-  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);
-  tex.needsUpdate=true;return {tex,bx,by,score:best};
- }catch(e){console.warn('Original skin tile unavailable',e);return null;}
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);tex.needsUpdate=true;
+  return {tex,bx:px,by:py,score:chosen.h};
+ }catch(e){console.warn('Abdomen UV sampling unavailable',e);return null;}
 }
-const skinTile=bodySkinTile(skinMat);
+const skinTile=abdomenSkinTile(body,skinMat);
 const sampledTone=skinToneFromTexture(skinMat);
 // Previous automatic sampler selected gray pixels from an unrelated material.
 // Use an explicit warm skin reference for visible comparison until a calibrated
@@ -87,7 +92,7 @@ const sampledTone=skinToneFromTexture(skinMat);
 const sourceColor=new THREE.Color('#f7d1bd');
 // Some GLBs carry grayscale vertex color attributes on the attachment.
 // These must not modulate the new skin-match material.
-status.textContent=skinTile?'SAV4 TEXTURE SAMPLE v7 · real body texture patch at '+skinTile.bx+','+skinTile.by+' applied to all three samples':'SAV4 TEXTURE SAMPLE v7 · texture sampling unavailable, fallback colors';
+status.textContent=skinTile?'ABDOMEN UV SAMPLE v8 · abdomen UV patch at '+skinTile.bx+','+skinTile.by+' applied to all three samples':'ABDOMEN UV SAMPLE v8 · texture sampling unavailable, fallback colors';
 for(let i=0;i<3;i++){
  const materials=sourceMaterials.map(m=>{
   const n=new THREE.MeshStandardMaterial({name:'SAV4 skin-match '+String.fromCharCode(65+i),roughness:.88,metalness:0,side:THREE.DoubleSide});
