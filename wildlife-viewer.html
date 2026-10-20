@@ -13,7 +13,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <label for="animal">Inspect animal</label><select id="animal"><option value="buck" selected>Whitetail buck — uploaded model</option><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
-<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-10)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
+<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-11)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
 <div id="facts" aria-live="polite">No animal loaded yet.</div><section id="rigPanel" aria-live="polite" style="margin-top:14px;padding:12px;border:1px solid #89a799;border-radius:8px;background:#10231e"><strong>Skeleton inspection</strong><div id="rigSummary" style="margin:10px 0">Waiting for model…</div><div id="rigBones" style="overflow-wrap:anywhere"></div><div id="rigTracks" style="overflow-wrap:anywhere"></div></section><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
 <script>
@@ -34,7 +34,7 @@ const root=document.getElementById('stage'),status=document.getElementById('stat
 const play=document.getElementById('play'),stop=document.getElementById('stop');
 let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;let procedural=null,elapsed=0,poseBlend=0;let poseHeight=0;const motionNames=["Walk","Run","Graze","Tail flick","Ear flick","Alert","Look around","Head shake","Paw ground","Stamp hoof","Resting idle","Startled jump","Lie down — legs tucked"];
 function stopMotion(){if(activeAction)activeAction.stop();activeAction=null;procedural=null;elapsed=0;poseBlend=0;poseHeight=0;if(model?.userData.restBones)for(const [b,q] of model.userData.restBones)b.quaternion.copy(q);if(model?.userData.baseY!==undefined)model.position.y=model.userData.baseY}
-const motionPanel=document.getElementById('buckMotions');motionNames.forEach(name=>{const b=document.createElement('button');b.textContent=name;b.type='button';b.addEventListener('click',()=>{if(!model||animal.value!=='buck')return;stopMotion();if(mixer)mixer.stopAllAction();procedural=name;status.textContent='Buck movement: '+name;});motionPanel.appendChild(b)});const resetMotion=document.createElement('button');resetMotion.textContent='Stop / Reset';resetMotion.addEventListener('click',()=>{stopMotion();status.textContent='Buck motion stopped'});motionPanel.appendChild(resetMotion);document.getElementById('movementTitle').textContent='BUCK MOVEMENTS — '+motionNames.length+' CONTROLS (BUILD 20261019-10)';const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
+const motionPanel=document.getElementById('buckMotions');motionNames.forEach(name=>{const b=document.createElement('button');b.textContent=name;b.type='button';b.addEventListener('click',()=>{if(!model||animal.value!=='buck')return;stopMotion();if(mixer)mixer.stopAllAction();procedural=name;status.textContent='Buck movement: '+name;});motionPanel.appendChild(b)});const resetMotion=document.createElement('button');resetMotion.textContent='Stop / Reset';resetMotion.addEventListener('click',()=>{stopMotion();status.textContent='Buck motion stopped'});motionPanel.appendChild(resetMotion);document.getElementById('movementTitle').textContent='BUCK MOVEMENTS — '+motionNames.length+' CONTROLS (BUILD 20261019-11)';const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
 try{
  window.wildDiag('Importing Three.js core…');
  THREE=await import('three');
@@ -69,7 +69,7 @@ try{
    bonesEl.textContent='Bone names: '+(boneNames.length?boneNames.join(', '):'None detected');
    tracksEl.textContent='Animation targets: '+(trackReport.length?trackReport.map(c=>c.name+' ('+c.tracks+' tracks): '+(c.targets.join(', ')||'none')).join(' | '):'None detected');
    facts.textContent='Meshes: '+mesh+' · Triangles: '+report.triangles+' · Bones: '+bones+' · Skinned meshes: '+skinned+' · Clips: '+gltf.animations.length;const detail=document.createElement('details');detail.style.marginTop='12px';const summary=document.createElement('summary');summary.textContent='Inspect skeleton and animation tracks';detail.appendChild(summary);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px';pre.textContent=JSON.stringify(report,null,2);detail.appendChild(pre);facts.appendChild(detail);
-   window.wildDiag('BUILD 20261019-10 · Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length+' · 13 prototype motions');status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
+   window.wildDiag('BUILD 20261019-11 · Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length+' · 13 prototype motions');status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
   },undefined,err=>{console.error(err);window.wildDiag('Failed to load '+urls[id]+': '+(err?.message||String(err)));status.textContent='Could not load '+id+' model';facts.textContent='Model load failed: '+(err?.message||String(err))+'. Asset: '+urls[id];});
  }
@@ -167,7 +167,22 @@ try{
     if(leg&&lower)x=.35*k;
     if(n==='chest'||n==='pelvis')x=-.12*k;break;}
   }
-  bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,'XYZ')));
+  // The imported GLB bones have individual local orientations. Euler X is NOT
+  // the animal's sagittal hinge: it made the legs sweep sideways.
+  // Apply leg pitch around the model's anatomical lateral axis in WORLD space,
+  // converted into each bone parent's local coordinates.
+  if(leg){
+   const parentWorld=new THREE.Quaternion();
+   bone.parent.getWorldQuaternion(parentWorld);
+   const lateral=new THREE.Vector3(0,0,1).applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()));
+   const parentAxis=lateral.applyQuaternion(parentWorld.invert()).normalize();
+   const pitch=new THREE.Quaternion().setFromAxisAngle(parentAxis,x);
+   bone.quaternion.premultiply(pitch);
+   if(y||z)bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,y,z,'XYZ')));
+  }else{
+   bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,'XYZ')));
+  }
+  bone.updateMatrixWorld(true);
  }
 }
 const frame=()=>{requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);animateBuck(dt);controls.update();renderer.render(scene,camera);};frame();
