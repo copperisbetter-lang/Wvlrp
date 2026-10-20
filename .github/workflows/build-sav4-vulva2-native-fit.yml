@@ -94,6 +94,7 @@ jobs:
           grep SAV4_NATIVE_APERTURE_VERIFIED /tmp/sav4-build.log
       - name: Bake approved V21 skin into SAV4 and clone CAR 5
         run: |
+          python3 -m pip install --user numpy
           python3 world-creator/scripts/bake_sav4_v21.py world-creator/assets/sav4-vulva2-native-fit.glb
           cp world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/car-5-v21.glb
           cmp world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/car-5-v21.glb
