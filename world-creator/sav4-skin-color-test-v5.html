@@ -101,6 +101,32 @@ function liftedTexture(original,lift){
  t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);t.needsUpdate=true;return t;
 }
 const liftedTiles=adjustments.map(a=>liftedTexture(skinTile?.tex,a.lift));
+
+// Create a subtle mottled skin overlay from the SAME original abdomen texture.
+// Blend it gently over the approved V13 base shade to retain contour definition.
+function makeMottleTexture(base,shade){
+ const c=document.createElement('canvas');c.width=256;c.height=256;
+ const ctx=c.getContext('2d',{willReadFrequently:true});
+ ctx.fillStyle=shade;ctx.fillRect(0,0,256,256);
+ if(base?.image){
+  const patch=document.createElement('canvas');patch.width=256;patch.height=256;
+  patch.getContext('2d').drawImage(base.image,0,0,256,256);
+  const d=patch.getContext('2d').getImageData(0,0,256,256);
+  const out=ctx.getImageData(0,0,256,256);
+  // Preserve V13's matched average shade; borrow only texture variation.
+  const means=[0,0,0];for(let j=0;j<d.data.length;j+=4)for(let k=0;k<3;k++)means[k]+=d.data[j+k];
+  for(let k=0;k<3;k++)means[k]/=65536;
+  for(let j=0;j<d.data.length;j+=4)for(let k=0;k<3;k++){
+   const delta=Math.max(-22,Math.min(22,d.data[j+k]-means[k]));
+   out.data[j+k]=Math.max(0,Math.min(255,out.data[j+k]+delta*.42));
+  }
+  ctx.putImageData(out,0,0);
+ }
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);tex.needsUpdate=true;
+ return tex;
+}
+const mottledTiles=shades.map(shade=>makeMottleTexture(skinTile?.tex,shade));
 const sampledTone=skinToneFromTexture(skinMat);
 // Previous automatic sampler selected gray pixels from an unrelated material.
 // Use an explicit warm skin reference for visible comparison until a calibrated
@@ -108,14 +134,14 @@ const sampledTone=skinToneFromTexture(skinMat);
 const sourceColor=new THREE.Color('#efc7b2');
 // Some GLBs carry grayscale vertex color attributes on the attachment.
 // These must not modulate the new skin-match material.
-status.textContent=skinTile?'SOFT DETAIL RESTORE v13 · abdomen skin patch '+skinTile.bx+','+skinTile.by+' · soft shaded colors A #e9bea9 / B #efc7b2 / C #f3ccb8':'SOFT DETAIL RESTORE v13 · texture sampling unavailable, fallback colors';
+status.textContent=skinTile?'SKIN MOTTLE MATCH v14 · abdomen skin patch '+skinTile.bx+','+skinTile.by+' · soft mottled abdomen-derived skin texture A #e9bea9 / B #efc7b2 / C #f3ccb8':'SKIN MOTTLE MATCH v14 · texture sampling unavailable, fallback colors';
 for(let i=0;i<3;i++){
  const materials=sourceMaterials.map(m=>{
   const n=new THREE.MeshStandardMaterial({name:'SAV4 softly shaded skin '+String.fromCharCode(65+i),side:THREE.DoubleSide,roughness:.96,metalness:0,transparent:false,opacity:1});
   // Keep original attachment UV mapping; do not transplant body textures
   // whose UV islands belong to an entirely different mesh.
-  n.map=null;n.alphaMap=null;n.vertexColors=false;n.color.set(shades[i]);
-  n.emissive.set(shades[i]);n.emissiveIntensity=.32;
+  n.map=mottledTiles[i];n.alphaMap=null;n.vertexColors=false;n.color.set('#ffffff');
+  n.emissive.set(shades[i]);n.emissiveIntensity=.18;
   
   n.needsUpdate=true;return n;
  });
