@@ -80,12 +80,17 @@ try{
        const sx=Math.max(0,Math.min(w-patch,cx-patch/2));
        const sy=Math.max(0,Math.min(h-patch,cy-patch/2));
        ctx.drawImage(src,sx,sy,patch,patch,0,0,256,256);
-       // Gently soften the repeated pattern without flattening the mottling.
-       const image=ctx.getImageData(0,0,256,256);
-       const px=image.data;
+       // Preserve the approved V14 Sample A base shade, borrowing only
+       // gentle high-frequency mottling from the body's abdomen patch.
+       const image=ctx.getImageData(0,0,256,256),px=image.data;
+       const means=[0,0,0],base=[233,190,169];
+       for(let j=0;j<px.length;j+=4)for(let k=0;k<3;k++)means[k]+=px[j+k];
+       for(let k=0;k<3;k++)means[k]/=65536;
        for(let j=0;j<px.length;j+=4){
-         // Pull extreme values toward the local natural skin tone.
-         for(let k=0;k<3;k++)px[j+k]=Math.max(0,Math.min(255,px[j+k]));
+         for(let k=0;k<3;k++){
+           const variation=Math.max(-18,Math.min(18,px[j+k]-means[k]));
+           px[j+k]=Math.max(0,Math.min(255,base[k]+variation*.45));
+         }
          px[j+3]=255;
        }
        ctx.putImageData(image,0,0);
@@ -96,11 +101,11 @@ try{
      }catch(err){console.warn('Body skin patch unavailable:',err);}
    }
    const mat=new THREE.MeshStandardMaterial({
-     name:'V15 body sampled skin match',color:tex?'#ffffff':fallback,
+     name:'V16 V14 tone plus subtle abdomen mottling',color:tex?'#ffffff':fallback,
      map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide
    });
    // No emissive wash: that was flattening/differentiating the fitted piece.
-   mat.emissive.set('#000000');mat.emissiveIntensity=0;
+   mat.emissive.set(fallback);mat.emissiveIntensity=.18;
    mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
    if(mesh.geometry.hasAttribute('color')){
      mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');
@@ -109,7 +114,7 @@ try{
  }
  const skinSource=applyApprovedV14A(attachment);
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='V15 body texture blend ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ status.textContent='V16 approved A tone + body mottling ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
