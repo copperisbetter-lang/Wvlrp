@@ -72,7 +72,11 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
    const fitted=bounds(garmentMeshes);
    const targetY=region==="skirt"?body.min.y+body.size.y*.51:body.min.y+body.size.y*.76;
    const offset=new B.Vector3(body.center.x-fitted.center.x,targetY-fitted.center.y,body.center.z-fitted.center.z);
-   garmentRoot.position.addInPlace(offset);
+   // Bounds are in world coordinates; garmentRoot.position is local to the scaled/rotated resident.
+   // Convert the offset into parent-local space instead of applying world meters as local meters.
+   root.computeWorldMatrix(true);
+   const localOffset=B.Vector3.TransformNormal(offset,root.getWorldMatrix().clone().invert());
+   garmentRoot.position.addInPlace(localOffset);
    clothing.push({outfit,garmentRoot});
   }catch(e){clothingFailed=true;console.error("SAV4 approved "+region+" failed to load; resident will not be displayed undressed",e)}
  }
