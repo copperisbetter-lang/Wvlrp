@@ -1,0 +1,34 @@
+name: Build experimental whitetail rig
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/whitetail-rig.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Rig uploaded buck without replacing live model
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s whitetail-buck-rigged-v1.glb
+          mkdir -p wild-assets/rig-output
+          blender -b -t 2 --python scripts/rig_whitetail_buck.py -- whitetail-buck-rigged-v1.glb wild-assets/rig-output/whitetail-buck-experimental.glb
+          test -s wild-assets/rig-output/whitetail-buck-experimental.glb
+      - name: Upload rigged buck for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: whitetail-buck-experimental-rig
+          path: wild-assets/rig-output/whitetail-buck-experimental.glb
+          if-no-files-found: error
+          retention-days: 14
