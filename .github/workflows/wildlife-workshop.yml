@@ -1,0 +1,46 @@
+name: The Wild Wildlife Workshop
+
+on:
+  workflow_dispatch:
+    inputs:
+      animal:
+        description: 'Reference model to inspect'
+        required: true
+        type: choice
+        options:
+          - deer-reference
+          - rabbit-reference
+          - squirrel-reference
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Download source using validated asset bridge
+        env:
+          WILD_REQUEST: ${{ inputs.animal }}
+        run: python3 scripts/wild_asset_fetch.py
+      - name: Inspect model and make reference previews
+        env:
+          WILD_REQUEST: ${{ inputs.animal }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          filename="$(python3 -c 'import json,os;print(json.load(open("wild-assets/requests/"+os.environ["WILD_REQUEST"]+".json"))["filename"])')"
+          blender -b -t 2 --python scripts/wildlife_workshop.py -- "wild-assets/staged/$filename" "wild-assets/workshop-results/$WILD_REQUEST"
+      - name: Save inspection report and visual previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildlife-workshop-${{ inputs.animal }}
+          path: wild-assets/workshop-results/
+          retention-days: 14
+          if-no-files-found: error
