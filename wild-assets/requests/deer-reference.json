@@ -5,5 +5,6 @@
   "license": "CC0 1.0 (source listing); reference deer not verified whitetail",
   "allowed_hosts": [
     "www.innerscene.com"
-  ]
+  ],
+  "notes": "Retry after checkout history fix; staging only"
 }
