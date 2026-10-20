@@ -195,7 +195,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    });
    root.metadata={...(root.metadata||{}),duplicateObserver};
    realWater.onCompiled=null;
- }).catch(err=>{window.__wildLakeMaterialStatus="FAILED: "+err.message;console.error("Reflective lake renderer unavailable; old flat lake hidden",err);});
+ }).catch(err=>{window.__wildLakeMaterialStatus="fallback animated water: "+err.message;console.warn("Reflective lake unavailable; retaining animated water fallback",err);});
  let frame=0;
  const observer=scene.onBeforeRenderObservable.add(()=>{
    const t=performance.now()*.001;
@@ -203,7 +203,7 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    frame++;
    if(frame%15!==0)return;
    const p=getPosition();
-   for(const g of groups)g.mesh.setEnabled(!!realWater&&Math.hypot(p.x-g.x,p.z-g.z)<g.range);
+   for(const g of groups)g.mesh.setEnabled(Math.hypot(p.x-g.x,p.z-g.z)<g.range);
  });
  return {sites,dispose(){
    scene.onBeforeRenderObservable.remove(observer);
