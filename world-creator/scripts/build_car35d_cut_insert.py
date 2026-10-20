@@ -142,9 +142,21 @@ def ordered_loop(edges):
  return loop
 host_loop=ordered_loop(body_rim)
 insert_loop=ordered_loop(donor_rim)
-if len(host_loop)!=len(insert_loop):
- bm.free()
- raise RuntimeError("Unmatched seam vertex counts: host %d donor %d; refusing distorted bridge" % (len(host_loop),len(insert_loop)))
+# Match tessellation by splitting longest boundary edges on the shorter loop.
+# This creates vertices only on the seam; no original CAR3 or donor files change.
+def split_to_count(loop,target):
+ while len(loop)<target:
+  idx=max(range(len(loop)),key=lambda i:(loop[i].co-loop[(i+1)%len(loop)].co).length_squared)
+  edge=bm.edges.get((loop[idx],loop[(idx+1)%len(loop)]))
+  if edge is None:raise RuntimeError("Missing boundary edge during resampling")
+  result=bmesh.utils.edge_split(edge,loop[idx],0.5)
+  loop.insert(idx+1,result[1])
+ return loop
+if len(host_loop)<len(insert_loop):
+ host_loop=split_to_count(host_loop,len(insert_loop))
+elif len(insert_loop)<len(host_loop):
+ insert_loop=split_to_count(insert_loop,len(host_loop))
+bm.normal_update()
 # Align loop winding and phase by minimum total spatial distance.
 n=len(host_loop)
 best=None
