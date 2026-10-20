@@ -104,7 +104,12 @@ export function installWildWaters(B,scene,{height,getPosition,seed=1}){
    const points=[],uvs=[],indices=[],origin=sites[stream%2],n=72;
    for(let i=0;i<n;i++){
      const t=i/(n-1),z=origin.z+(t-.5)*700;
-     const x=origin.x+origin.rx*.7+30*Math.sin(t*10+stream*2)+stream*75;
+     let x=origin.x+origin.rx*.7+30*Math.sin(t*10+stream*2)+stream*75;
+     // Cabin spans x ±9, z ±7. Keep creek ribbon >=40 m from exterior.
+     const influence=Math.max(0,Math.min(1,(150-Math.abs(z))/95));
+     const eased=influence*influence*(3-2*influence);
+     const safeX=58; // 9 m half-width + 40 m clearance + 5 m margin + 4 m water half-width
+     if(Math.abs(x)<safeX && eased>0)x+=(x<0?-1:1)*(safeX-Math.abs(x))*eased;
      const y=height(x,z)-.12,width=2.6+1.1*Math.sin(t*12+stream);
      points.push([x-width,y,z],[x+width,y,z]);
      uvs.push(0,i*.55,1,i*.55);
