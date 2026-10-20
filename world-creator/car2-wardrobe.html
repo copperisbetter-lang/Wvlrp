@@ -472,13 +472,13 @@ const loadingGarments=new Set();
 window.outfit=function(style){
  selectedOutfit=style;
  const item=wardrobe[style]||wardrobe.dress;
- clothes.clear();
+ // Keep the existing garment visible until the replacement has loaded.
  const ready=fittedGarments.get(style);
- if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='SAV4 skirt loaded and anchored to CAR2 body.';return;}
+ if(ready){alignGarment(ready,style);clothes.clear();clothes.add(ready);ready.visible=true;status.textContent='SAV4 skirt loaded and anchored to CAR2 body.';return;}
  status.textContent=item.label+' — loading garment file…';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
- if(!garmentFiles[style]){status.textContent='No garment file registered for '+style;return;}
+ if(!garmentFiles[style]){loadingGarments.delete(style);status.textContent='No garment file registered for '+style;return;}
  loader.load('./assets/'+garmentFiles[style]+'?v=car2-garment-diagnostic-3',g=>{
   loadingGarments.delete(style);
   const model=g.scene;
@@ -500,7 +500,7 @@ function reportCar2Garments(){
  car2GarmentDiagnostic.textContent='CAR2 clothing | skirt: '+car2GarmentState.skirt+' | blouse: '+car2GarmentState.blouse;
 }
 window.car2GarmentDiagnostics=()=>({...car2GarmentState,skirtVisible:!!fittedGarments.get('skirt')?.visible,blouseVisible:!!blouseModel&&blouseGroup.visible});
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-garment-diagnostic-3';
+const sav4AssetUrl='./assets/car2-completed.glb?v=car2-wardrobe-fix-20261019';
 const sav4Version=document.createElement('div');sav4Version.id='sav4-version';sav4Version.style.cssText='font-size:12px;color:#b8d8c7;margin-top:5px';sav4Version.textContent='Viewer diagnostic 2026-10-18B · loading current GLB…';document.querySelector('header').appendChild(sav4Version);
 fetch(sav4AssetUrl,{method:'HEAD',cache:'no-store'}).then(r=>{sav4Version.textContent='Viewer diagnostic 2026-10-18 · GLB HTTP '+r.status+' · '+(r.headers.get('last-modified')||'no modified date')+' · '+(r.headers.get('content-length')||'unknown')+' bytes';}).catch(e=>{sav4Version.textContent='Viewer diagnostic · GLB HEAD check unavailable: '+e.message;});
 loader.load(sav4AssetUrl,g=>{
@@ -543,6 +543,7 @@ loader.load(sav4AssetUrl,g=>{
  setupPerformance();
  fitOriginalEyes().catch(e=>{console.error(e);status.textContent="Eye asset failed to load — reopen viewer to retry.";});
  if(selectedOutfit)window.outfit(selectedOutfit);
-if(blouseWanted)window.showBlouse();
+// CAR2 wardrobe: load both approved pieces automatically after avatar initialization.
+window.showBlouse();
 },p=>{if(p.total)status.textContent='Loading SAV 4: '+Math.round(p.loaded/p.total*100)+'%';},e=>{console.error(e);status.textContent='SAV 4 GLB failed to load: '+e.message;});
 function resize(){const el=document.getElementById('stage');renderer.setSize(el.clientWidth,el.clientHeight);camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();function loop(){requestAnimationFrame(loop);controls.update();animatePerformance();if(framePending){framePending=false;framePerformance();}renderer.render(scene,camera)}loop();</script></body></html>
