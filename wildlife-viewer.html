@@ -13,7 +13,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <label for="animal">Inspect animal</label><select id="animal"><option value="buck" selected>Whitetail buck — uploaded model</option><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
-<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-6)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
+<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-7)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
 <div id="facts" aria-live="polite">No animal loaded yet.</div><section id="rigPanel" aria-live="polite" style="margin-top:14px;padding:12px;border:1px solid #89a799;border-radius:8px;background:#10231e"><strong>Skeleton inspection</strong><div id="rigSummary" style="margin:10px 0">Waiting for model…</div><div id="rigBones" style="overflow-wrap:anywhere"></div><div id="rigTracks" style="overflow-wrap:anywhere"></div></section><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
 <script>
@@ -77,21 +77,21 @@ try{
  function animateBuck(dt){
  if(!procedural||!model?.userData.restBones)return;elapsed+=dt;const t=elapsed,phase=(speed=1,offset=0)=>Math.sin(t*speed+offset);
  for(const [bone,rest] of model.userData.restBones){bone.quaternion.copy(rest);const n=bone.name.toLowerCase();let x=0,y=0,z=0;
- const front=n.includes('front_'),hind=n.includes('hind_'),left=n.includes('left'),right=n.includes('right'),upper=n.includes('upper'),lower=n.includes('lower'),hoof=n.includes('hoof');
+ const front=n.startsWith('front_'),hind=n.startsWith('rear_')||n.startsWith('hind_'),left=/_l_/.test(n)||n.includes('left'),right=/_r_/.test(n)||n.includes('right'),upper=n.endsWith('_upper'),lower=n.endsWith('_lower'),hoof=n.endsWith('_hoof');
  const leg=front||hind,side=left?0:Math.PI,diagonal=hind?Math.PI:0;
  const step=(speed,amp)=>{const p=t*speed+side+diagonal; if(upper)x=amp*Math.sin(p);if(lower)x=Math.max(0,Math.sin(p+0.7))*amp*.8;if(hoof)x=-Math.max(0,Math.sin(p+0.7))*amp*.35;};
  switch(procedural){
- case 'Walk':if(leg)step(5,.24);if(n.endsWith('body'))x=.018*phase(10);if(n.endsWith('head'))x=.025*phase(5);break;
- case 'Run':if(leg)step(11,.52);if(n.endsWith('body'))x=.065*phase(22);if(n.endsWith('neck'))x=.07*phase(11);break;
- case 'Graze':if(n.endsWith('neck'))x=.32+.13*phase(1.1);if(n.endsWith('head'))x=.22+.12*phase(1.4);if(n.endsWith('jaw'))x=.09*phase(5);break;
- case 'Tail flick':if(n.endsWith('tail'))y=.48*phase(8);break;
+ case 'Walk':if(leg)step(5,.24);if(n==='spine'||n==='pelvis')x=.018*phase(10);if(n==='head')x=.025*phase(5);break;
+ case 'Run':if(leg)step(11,.52);if(n.endsWith('body'))x=.065*phase(22);if(n==='neck')x=.07*phase(11);break;
+ case 'Graze':if(n.endsWith('neck'))x=.32+.13*phase(1.1);if(n.endsWith('head'))x=.22+.12*phase(1.4);if(n==='jaw')x=.09*phase(5);break;
+ case 'Tail flick':if(n==='tail')y=.48*phase(8);break;
  case 'Ear flick':if(n.includes('ear'))z=(left?1:-1)*(.18+.24*phase(8,left?0:2));break;
  case 'Alert':if(n.endsWith('neck'))x=-.22;if(n.endsWith('head'))x=-.15;if(n.includes('ear'))y=(left?1:-1)*.2;break;
  case 'Look around':if(n.endsWith('neck'))y=.28*phase(.8);if(n.endsWith('head'))y=.24*phase(.8);break;
  case 'Head shake':if(n.endsWith('head'))y=.24*phase(13);if(n.includes('ear'))z=.14*phase(13);break;
  case 'Paw ground':if(front&&left){if(upper)x=.28*phase(5);if(lower)x=.3*Math.max(0,phase(5));}break;
  case 'Stamp hoof':if(front&&right){if(upper)x=.24*Math.max(0,phase(4));if(lower)x=.3*Math.max(0,phase(4));}break;
- case 'Resting idle':if(n.endsWith('chest'))x=.012*phase(1.8);if(n.endsWith('head'))y=.05*phase(.5);if(n.endsWith('tail'))y=.06*phase(1.4);break;
+ case 'Resting idle':if(n==='chest')x=.012*phase(1.8);if(n.endsWith('head'))y=.05*phase(.5);if(n.endsWith('tail'))y=.06*phase(1.4);break;
  case 'Lie down — legs tucked':if(leg){if(upper)x=front?-.8:1.05;if(lower)x=front?1.3:-1.45;if(hoof)x=front?-.35:.35;}if(n.endsWith('neck'))x=.16;if(n.endsWith('head'))x=-.08;break;
  case 'Startled jump':{const p=t%2.5,k=Math.max(0,Math.sin(Math.PI*Math.min(1,p/.7)));if(leg&&upper)x=(front?-.4:.5)*k;if(leg&&lower)x=.35*k;if(n.endsWith('body'))x=-.12*k;break;}
  }
