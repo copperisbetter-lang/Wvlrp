@@ -14,7 +14,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
 <div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div>
-<div id="facts" aria-live="polite">No animal loaded yet.</div><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
+<div id="facts" aria-live="polite">No animal loaded yet.</div><section id="rigPanel" aria-live="polite" style="margin-top:14px;padding:12px;border:1px solid #89a799;border-radius:8px;background:#10231e"><strong>Skeleton inspection</strong><div id="rigSummary" style="margin:10px 0">Waiting for model…</div><div id="rigBones" style="overflow-wrap:anywhere"></div><div id="rigTracks" style="overflow-wrap:anywhere"></div></section><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
 <script>
 (function(){
@@ -58,12 +58,17 @@ try{
  play.addEventListener('click',()=>{if(!mixer||!model)return;stopMotion();const i=Number(clips.value);if(!Number.isInteger(i)||!model.userData.clips?.[i])return;activeAction=mixer.clipAction(model.userData.clips[i]);activeAction.reset().play();});
  function load(){
   const id=animal.value;stopMotion();if(mixer){mixer.stopAllAction();mixer=null}if(model){scene.remove(model);model.traverse(o=>{if(o.isMesh){o.geometry?.dispose();}});model=null}
-  clips.innerHTML='<option>None detected</option>';clips.disabled=play.disabled=stop.disabled=true;facts.textContent='Loading '+id+'…';status.textContent='Loading '+id+' model…';
+  clips.innerHTML='<option>None detected</option>';clips.disabled=play.disabled=stop.disabled=true;facts.textContent='Loading '+id+'…';document.getElementById('rigSummary').textContent='Loading rig data…';document.getElementById('rigBones').textContent='';document.getElementById('rigTracks').textContent='';status.textContent='Loading '+id+' model…';
   loader.load(urls[id],gltf=>{
    model=gltf.scene;model.userData.clips=gltf.animations||[];scene.add(model);
    let mesh=0,tri=0,bones=0,skinned=0;const boneNames=[];model.traverse(o=>{if(o.isMesh){mesh++;if(o.geometry.index)tri+=o.geometry.index.count/3;else tri+=(o.geometry.attributes.position?.count||0)/3;}if(o.isBone){bones++;boneNames.push(o.name||'(unnamed bone)');}if(o.isSkinnedMesh)skinned++});
    if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);clips.innerHTML='';gltf.animations.forEach((clip,i)=>clips.add(new Option(clip.name||'Animation '+(i+1),String(i))));clips.disabled=play.disabled=stop.disabled=false;}
-   const trackReport=gltf.animations.map(c=>({name:c.name,tracks:c.tracks.length,targets:c.tracks.map(t=>t.name)}));const report={mesh,triangles:Math.round(tri),bones,skinnedMeshes:skinned,boneNames,animations:trackReport};window.wildRigReport=report;facts.textContent='Meshes: '+mesh+' · Triangles: '+report.triangles+' · Bones: '+bones+' · Skinned meshes: '+skinned+' · Clips: '+gltf.animations.length;const detail=document.createElement('details');detail.style.marginTop='12px';const summary=document.createElement('summary');summary.textContent='Inspect skeleton and animation tracks';detail.appendChild(summary);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px';pre.textContent=JSON.stringify(report,null,2);detail.appendChild(pre);facts.appendChild(detail);
+   const trackReport=gltf.animations.map(c=>({name:c.name,tracks:c.tracks.length,targets:c.tracks.map(t=>t.name)}));const report={mesh,triangles:Math.round(tri),bones,skinnedMeshes:skinned,boneNames,animations:trackReport};window.wildRigReport=report;
+   const summaryEl=document.getElementById('rigSummary'),bonesEl=document.getElementById('rigBones'),tracksEl=document.getElementById('rigTracks');
+   summaryEl.textContent='Bones: '+bones+' | Skinned meshes: '+skinned+' | Animation clips: '+gltf.animations.length;
+   bonesEl.textContent='Bone names: '+(boneNames.length?boneNames.join(', '):'None detected');
+   tracksEl.textContent='Animation targets: '+(trackReport.length?trackReport.map(c=>c.name+' ('+c.tracks+' tracks): '+(c.targets.join(', ')||'none')).join(' | '):'None detected');
+   facts.textContent='Meshes: '+mesh+' · Triangles: '+report.triangles+' · Bones: '+bones+' · Skinned meshes: '+skinned+' · Clips: '+gltf.animations.length;const detail=document.createElement('details');detail.style.marginTop='12px';const summary=document.createElement('summary');summary.textContent='Inspect skeleton and animation tracks';detail.appendChild(summary);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px';pre.textContent=JSON.stringify(report,null,2);detail.appendChild(pre);facts.appendChild(detail);
    window.wildDiag('Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length);status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
   },undefined,err=>{console.error(err);window.wildDiag('Failed to load '+urls[id]+': '+(err?.message||String(err)));status.textContent='Could not load '+id+' model';facts.textContent='Model load failed: '+(err?.message||String(err))+'. Asset: '+urls[id];});
