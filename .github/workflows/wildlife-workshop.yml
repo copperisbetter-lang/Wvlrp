@@ -1,6 +1,11 @@
 name: The Wild Wildlife Workshop
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wildlife-workshop.yml'
+      - 'scripts/wildlife_workshop.py'
   workflow_dispatch:
     inputs:
       animal:
@@ -17,6 +22,10 @@ permissions:
 
 jobs:
   inspect:
+    strategy:
+      fail-fast: false
+      matrix:
+        animal: [deer-reference, rabbit-reference, squirrel-reference]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,11 +36,11 @@ jobs:
           sudo apt-get install -y blender
       - name: Download source using validated asset bridge
         env:
-          WILD_REQUEST: ${{ inputs.animal }}
+          WILD_REQUEST: ${{ matrix.animal }}
         run: python3 scripts/wild_asset_fetch.py
       - name: Inspect model and make reference previews
         env:
-          WILD_REQUEST: ${{ inputs.animal }}
+          WILD_REQUEST: ${{ matrix.animal }}
         shell: bash
         run: |
           set -euo pipefail
@@ -40,7 +49,7 @@ jobs:
       - name: Save inspection report and visual previews
         uses: actions/upload-artifact@v4
         with:
-          name: wildlife-workshop-${{ inputs.animal }}
+          name: wildlife-workshop-${{ matrix.animal }}
           path: wild-assets/workshop-results/
           retention-days: 14
           if-no-files-found: error
