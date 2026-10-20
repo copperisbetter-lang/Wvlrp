@@ -1,0 +1,24 @@
+name: Build Laura standalone head
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'world-creator/scripts/build_laura_head.py'
+      - '.github/workflows/build-laura-head.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Export Laura head GLB
+        run: blender -b -t 2 --python world-creator/scripts/build_laura_head.py
+      - name: Check GLB output
+        run: test -s world-creator/assets/laura-head-inspection.glb
+      - name: Upload head for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: laura-head-inspection
+          path: world-creator/assets/laura-head-inspection.glb
+          if-no-files-found: error
