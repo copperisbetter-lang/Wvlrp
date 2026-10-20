@@ -13,7 +13,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <label for="animal">Inspect animal</label><select id="animal"><option value="buck" selected>Whitetail buck — uploaded model</option><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
-<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-8)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
+<div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div><label id="movementTitle" style="color:#b8ffba;font-size:1.15rem">BUCK MOVEMENTS — 13 CONTROLS (BUILD 20261019-9)</label><div id="buckMotions" class="row" style="padding:10px;border:2px solid #8fa;border-radius:10px"></div><p><small>Prototype motions use the existing 20-bone rig. Inspect joint direction and skin deformation before approval.</small></p>
 <div id="facts" aria-live="polite">No animal loaded yet.</div><section id="rigPanel" aria-live="polite" style="margin-top:14px;padding:12px;border:1px solid #89a799;border-radius:8px;background:#10231e"><strong>Skeleton inspection</strong><div id="rigSummary" style="margin:10px 0">Waiting for model…</div><div id="rigBones" style="overflow-wrap:anywhere"></div><div id="rigTracks" style="overflow-wrap:anywhere"></div></section><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
 <script>
@@ -32,9 +32,9 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <script type="module">
 const root=document.getElementById('stage'),status=document.getElementById('status'),animal=document.getElementById('animal'),clips=document.getElementById('clips'),facts=document.getElementById('facts');
 const play=document.getElementById('play'),stop=document.getElementById('stop');
-let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;let procedural=null,elapsed=0;const motionNames=["Walk","Run","Graze","Tail flick","Ear flick","Alert","Look around","Head shake","Paw ground","Stamp hoof","Resting idle","Startled jump","Lie down — legs tucked"];
-function stopMotion(){if(activeAction)activeAction.stop();activeAction=null;procedural=null;elapsed=0;if(model?.userData.restBones)for(const [b,q] of model.userData.restBones)b.quaternion.copy(q)}
-const motionPanel=document.getElementById('buckMotions');motionNames.forEach(name=>{const b=document.createElement('button');b.textContent=name;b.type='button';b.addEventListener('click',()=>{if(!model||animal.value!=='buck')return;stopMotion();if(mixer)mixer.stopAllAction();procedural=name;status.textContent='Buck movement: '+name;});motionPanel.appendChild(b)});const resetMotion=document.createElement('button');resetMotion.textContent='Stop / Reset';resetMotion.addEventListener('click',()=>{stopMotion();status.textContent='Buck motion stopped'});motionPanel.appendChild(resetMotion);document.getElementById('movementTitle').textContent='BUCK MOVEMENTS — '+motionNames.length+' CONTROLS (BUILD 20261019-8)';const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
+let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;let procedural=null,elapsed=0,poseBlend=0;let poseHeight=0;const motionNames=["Walk","Run","Graze","Tail flick","Ear flick","Alert","Look around","Head shake","Paw ground","Stamp hoof","Resting idle","Startled jump","Lie down — legs tucked"];
+function stopMotion(){if(activeAction)activeAction.stop();activeAction=null;procedural=null;elapsed=0;poseBlend=0;poseHeight=0;if(model?.userData.restBones)for(const [b,q] of model.userData.restBones)b.quaternion.copy(q);if(model?.userData.baseY!==undefined)model.position.y=model.userData.baseY}
+const motionPanel=document.getElementById('buckMotions');motionNames.forEach(name=>{const b=document.createElement('button');b.textContent=name;b.type='button';b.addEventListener('click',()=>{if(!model||animal.value!=='buck')return;stopMotion();if(mixer)mixer.stopAllAction();procedural=name;status.textContent='Buck movement: '+name;});motionPanel.appendChild(b)});const resetMotion=document.createElement('button');resetMotion.textContent='Stop / Reset';resetMotion.addEventListener('click',()=>{stopMotion();status.textContent='Buck motion stopped'});motionPanel.appendChild(resetMotion);document.getElementById('movementTitle').textContent='BUCK MOVEMENTS — '+motionNames.length+' CONTROLS (BUILD 20261019-9)';const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
 try{
  window.wildDiag('Importing Three.js core…');
  THREE=await import('three');
@@ -60,7 +60,7 @@ try{
   const id=animal.value;stopMotion();if(mixer){mixer.stopAllAction();mixer=null}if(model){scene.remove(model);model.traverse(o=>{if(o.isMesh){o.geometry?.dispose();}});model=null}
   clips.innerHTML='<option>None detected</option>';clips.disabled=play.disabled=stop.disabled=true;facts.textContent='Loading '+id+'…';document.getElementById('rigSummary').textContent='Loading rig data…';document.getElementById('rigBones').textContent='';document.getElementById('rigTracks').textContent='';status.textContent='Loading '+id+' model…';
   loader.load(urls[id],gltf=>{
-   model=gltf.scene;model.userData.clips=gltf.animations||[];scene.add(model);
+   model=gltf.scene;model.userData.clips=gltf.animations||[];scene.add(model);model.userData.baseY=model.position.y;model.userData.standingBounds=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
    let mesh=0,tri=0,bones=0,skinned=0;const boneNames=[];model.traverse(o=>{if(o.isMesh){mesh++;if(o.geometry.index)tri+=o.geometry.index.count/3;else tri+=(o.geometry.attributes.position?.count||0)/3;}if(o.isBone){bones++;boneNames.push(o.name||'(unnamed bone)');}if(o.isSkinnedMesh)skinned++});
    mixer=new THREE.AnimationMixer(model);clips.innerHTML='';gltf.animations.forEach((clip,i)=>clips.add(new Option(clip.name||'Animation '+(i+1),String(i))));if(id==='buck'){motionNames.forEach((name,i)=>clips.add(new Option('Prototype — '+name,String(gltf.animations.length+i))));model.userData.restBones=new Map();model.traverse(o=>{if(o.isBone)model.userData.restBones.set(o,o.quaternion.clone())});}clips.disabled=play.disabled=stop.disabled=clips.options.length===0;
    const trackReport=gltf.animations.map(c=>({name:c.name,tracks:c.tracks.length,targets:c.tracks.map(t=>t.name)}));const report={mesh,triangles:Math.round(tri),bones,skinnedMeshes:skinned,boneNames,animations:trackReport};window.wildRigReport=report;
@@ -69,33 +69,99 @@ try{
    bonesEl.textContent='Bone names: '+(boneNames.length?boneNames.join(', '):'None detected');
    tracksEl.textContent='Animation targets: '+(trackReport.length?trackReport.map(c=>c.name+' ('+c.tracks+' tracks): '+(c.targets.join(', ')||'none')).join(' | '):'None detected');
    facts.textContent='Meshes: '+mesh+' · Triangles: '+report.triangles+' · Bones: '+bones+' · Skinned meshes: '+skinned+' · Clips: '+gltf.animations.length;const detail=document.createElement('details');detail.style.marginTop='12px';const summary=document.createElement('summary');summary.textContent='Inspect skeleton and animation tracks';detail.appendChild(summary);const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px';pre.textContent=JSON.stringify(report,null,2);detail.appendChild(pre);facts.appendChild(detail);
-   window.wildDiag('BUILD 20261019-8 · Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length+' · 13 prototype motions');status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
+   window.wildDiag('BUILD 20261019-9 · Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length+' · 13 prototype motions');status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
   },undefined,err=>{console.error(err);window.wildDiag('Failed to load '+urls[id]+': '+(err?.message||String(err)));status.textContent='Could not load '+id+' model';facts.textContent='Model load failed: '+(err?.message||String(err))+'. Asset: '+urls[id];});
  }
  animal.value='buck';animal.addEventListener('change',load);load();
  function animateBuck(dt){
- if(!procedural||!model?.userData.restBones)return;elapsed+=dt;const t=elapsed,phase=(speed=1,offset=0)=>Math.sin(t*speed+offset);
- for(const [bone,rest] of model.userData.restBones){bone.quaternion.copy(rest);const n=bone.name.toLowerCase().replace(/^buckrig_/, '');let x=0,y=0,z=0;
- const front=n.startsWith('front_'),hind=n.startsWith('rear_')||n.startsWith('hind_'),left=/_l_/.test(n)||n.includes('left'),right=/_r_/.test(n)||n.includes('right'),upper=n.endsWith('_upper'),lower=n.endsWith('_lower'),hoof=n.endsWith('_hoof');
- const leg=front||hind,side=left?0:Math.PI,diagonal=hind?Math.PI:0;
- const step=(speed,amp)=>{const p=t*speed+side+diagonal; if(upper)x=amp*Math.sin(p);if(lower)x=Math.max(0,Math.sin(p+0.7))*amp*.8;if(hoof)x=-Math.max(0,Math.sin(p+0.7))*amp*.35;};
- switch(procedural){
- case 'Walk':if(leg)step(5,.24);if(n==='body'||n==='chest')x=.018*phase(10);if(n==='head')x=.025*phase(5);break;
- case 'Run':if(leg)step(11,.52);if(n.endsWith('body'))x=.065*phase(22);if(n==='neck')x=.07*phase(11);break;
- case 'Graze':if(n.endsWith('neck'))x=.32+.13*phase(1.1);if(n.endsWith('head'))x=.22+.12*phase(1.4);if(n==='jaw')x=.09*phase(5);break;
- case 'Tail flick':if(n.includes('tail'))y=.48*phase(8);break;
- case 'Ear flick':if(n.includes('ear'))z=(left?1:-1)*(.18+.24*phase(8,left?0:2));break;
- case 'Alert':if(n.endsWith('neck'))x=-.22;if(n.endsWith('head'))x=-.15;if(n.includes('ear'))y=(left?1:-1)*.2;break;
- case 'Look around':if(n.endsWith('neck'))y=.28*phase(.8);if(n.endsWith('head'))y=.24*phase(.8);break;
- case 'Head shake':if(n.endsWith('head'))y=.24*phase(13);if(n.includes('ear'))z=.14*phase(13);break;
- case 'Paw ground':if(front&&left){if(upper)x=.28*phase(5);if(lower)x=.3*Math.max(0,phase(5));}break;
- case 'Stamp hoof':if(front&&right){if(upper)x=.24*Math.max(0,phase(4));if(lower)x=.3*Math.max(0,phase(4));}break;
- case 'Resting idle':if(n==='chest')x=.012*phase(1.8);if(n.endsWith('head'))y=.05*phase(.5);if(n.endsWith('tail'))y=.06*phase(1.4);break;
- case 'Lie down — legs tucked':if(leg){if(upper)x=front?-.8:1.05;if(lower)x=front?1.3:-1.45;if(hoof)x=front?-.35:.35;}if(n.endsWith('neck'))x=.16;if(n.endsWith('head'))x=-.08;break;
- case 'Startled jump':{const p=t%2.5,k=Math.max(0,Math.sin(Math.PI*Math.min(1,p/.7)));if(leg&&upper)x=(front?-.4:.5)*k;if(leg&&lower)x=.35*k;if(n.endsWith('body'))x=-.12*k;break;}
- }
- bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,'XYZ')));
+ if(!procedural||!model?.userData.restBones)return;
+ elapsed+=dt;const t=elapsed;
+ const smooth=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};
+ const sin=(w,p=0)=>Math.sin(t*w+p);
+ const isLie=procedural==='Lie down — legs tucked';
+ poseBlend=smooth(Math.min(1,elapsed/(isLie?2.4:.45)));
+ // Model lowering is relative to its imported origin; keep the approved mesh and textures.
+ const box=model.userData.standingBounds;
+ const bodyHeight=box?.height||1;
+ const targetDrop=isLie?bodyHeight*.24:0;
+ poseHeight+=(targetDrop-poseHeight)*Math.min(1,dt*3.5);
+ model.position.y=model.userData.baseY-poseHeight;
+ for(const [bone,rest] of model.userData.restBones){
+  bone.quaternion.copy(rest);
+  const n=bone.name.toLowerCase().replace(/^buckrig_/,'');
+  const front=n.startsWith('front_'),rear=n.startsWith('rear_')||n.startsWith('hind_');
+  const leg=front||rear,left=/_l_/.test(n)||n.includes('left');
+  const upper=n.endsWith('_upper'),lower=n.endsWith('_lower'),hoof=n.endsWith('_hoof');
+  const side=left?0:1;
+  let x=0,y=0,z=0;
+  if(procedural==='Walk'&&leg){
+   // Four distinct footfalls: LF, RH, RF, LH; stance lasts longer than swing.
+   const p=(t*1.35+(front?(left?0:Math.PI):(left?Math.PI*1.5:Math.PI*.5)))%(Math.PI*2);
+   const u=p/(Math.PI*2),swing=u>.62?smooth((u-.62)/.38):0;
+   const stride=u<=.62?(-.22+.44*u/.62):(-.22+.44*Math.cos(Math.PI*(1-swing)));
+   if(upper)x=stride*(front?1:-1);
+   if(lower)x=(swing>0?Math.sin(Math.PI*swing):0)*(front?.42:-.55);
+   if(hoof)x=-Math.max(0,Math.sin(Math.PI*swing))*.18;
+  }
+  if(procedural==='Run'&&leg){
+   // Bounding gait: hind pair drives, fore pair catches, with paired offset.
+   const p=t*7.5+(front?Math.PI*.75:0)+(left?.12:-.12);
+   if(upper)x=(front?-.1:.08)+.48*Math.sin(p)*(front?1:-1);
+   if(lower)x=(front?.55:-.7)*Math.max(0,Math.sin(p+.65));
+   if(hoof)x=-.2*Math.max(0,Math.sin(p+.65));
+  }
+  switch(procedural){
+   case 'Walk':
+    if(n==='chest'||n==='pelvis')x=.012*sin(10);
+    if(n==='head')x=.018*sin(4);
+    break;
+   case 'Run':
+    if(n==='chest'||n==='pelvis')x=.055*sin(15);
+    if(n==='neck')x=.045*sin(7.5);
+    break;
+   case 'Graze':{
+    const lowerHead=smooth(Math.min(1,t/2.2));
+    // Distributed bend across chest, neck and head rather than a tiny head nod.
+    if(n==='chest')x=.10*lowerHead;
+    if(n==='neck')x=.82*lowerHead+.045*sin(1.3)*lowerHead;
+    if(n==='head')x=.48*lowerHead+.045*sin(1.8)*lowerHead;
+    if(n==='jaw')x=.07*sin(4.2)*lowerHead;
+    break;}
+   case 'Tail flick':
+    if(n==='tail'||n.endsWith('_tail')){y=.65*sin(6.5);z=.22*sin(6.5,Math.PI/3);}
+    break;
+   case 'Ear flick':
+    if(n.includes('ear'))z=(left?1:-1)*(.18+.24*sin(8,left?0:2));
+    break;
+   case 'Alert':
+    if(n==='neck')x=-.22;if(n==='head')x=-.15;break;
+   case 'Look around':
+    if(n==='neck')y=.28*sin(.8);if(n==='head')y=.24*sin(.8);break;
+   case 'Head shake':if(n==='head')y=.24*sin(13);break;
+   case 'Paw ground':
+    if(front&&left){if(upper)x=.28*sin(5);if(lower)x=.3*Math.max(0,sin(5));}break;
+   case 'Stamp hoof':
+    if(front&&!left){if(upper)x=.24*Math.max(0,sin(4));if(lower)x=.3*Math.max(0,sin(4));}break;
+   case 'Resting idle':
+    if(n==='chest')x=.012*sin(1.8);if(n==='head')y=.05*sin(.5);if(n==='tail')y=.06*sin(1.4);break;
+   case 'Lie down — legs tucked':
+    // Gradual, held kneeling posture, rather than instant collapse.
+    if(leg){
+     if(upper)x=(front?-.68:.95)*poseBlend;
+     if(lower)x=(front?1.18:-1.30)*poseBlend;
+     if(hoof)x=(front?-.30:.30)*poseBlend;
+    }
+    if(n==='neck')x=.13*poseBlend;
+    if(n==='head')x=-.06*poseBlend;
+    break;
+   case 'Startled jump':{
+    const p=t%2.5,k=Math.max(0,Math.sin(Math.PI*Math.min(1,p/.7)));
+    if(leg&&upper)x=(front?-.4:.5)*k;
+    if(leg&&lower)x=.35*k;
+    if(n==='chest'||n==='pelvis')x=-.12*k;break;}
+  }
+  bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,'XYZ')));
  }
 }
 const frame=()=>{requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);animateBuck(dt);controls.update();renderer.render(scene,camera);};frame();
