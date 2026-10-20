@@ -92,6 +92,11 @@ jobs:
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python-exit-code 1 --python world-creator/scripts/build_sav4_vulva2_native_fit.py 2>&1 | tee /tmp/sav4-build.log
           grep SAV4_DISPLAYED_BODY_FIT_VERIFIED /tmp/sav4-build.log
           grep SAV4_NATIVE_APERTURE_VERIFIED /tmp/sav4-build.log
+      - name: Bake approved V21 skin into SAV4 and clone CAR 5
+        run: |
+          python3 world-creator/scripts/bake_sav4_v21.py world-creator/assets/sav4-vulva2-native-fit.glb
+          cp world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/car-5-v21.glb
+          cmp world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/car-5-v21.glb
       - name: Verify GLB
         run: |
           python3 - <<'PY'
@@ -124,7 +129,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/sav4-vulva2-native-fit-report.json world-creator/sav4-vulva2-native-fit.html
+          git add world-creator/assets/sav4-vulva2-native-fit.glb world-creator/assets/car-5-v21.glb world-creator/assets/sav4-vulva2-native-fit-report.json world-creator/sav4-vulva2-native-fit.html
           if ! git diff --cached --quiet; then
             git commit -m "Publish SAV4 native proxy fit and validated seam report"
             git pull --rebase origin main
@@ -144,6 +149,7 @@ jobs:
             /tmp/sav4-build.log
             world-creator/assets/sav4-vulva2-native-fit-report.json
             world-creator/assets/sav4-vulva2-native-fit.glb
+            world-creator/assets/car-5-v21.glb
             world-creator/characters/sav4/laura-projected-ratios.json
             world-creator/assets/sav4-calibration/face-vertices.csv
             world-creator/assets/sav4-calibration/face-region-map.template.json
