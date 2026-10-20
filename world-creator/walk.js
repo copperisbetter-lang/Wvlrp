@@ -1,3 +1,4 @@
+import {installSav4LakesideResident} from "./wild-sav4-lakeside.js?v=20261019-v1";
 import {installWildWaters} from "./wild-living-waters.js?v=20261018-green-water-v11";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
@@ -145,6 +146,7 @@ const masterForest=installMasterHDForest(B,scene,{
 });
 const livingWaters=installWildWaters(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY),getPosition:()=>camera.position,seed});
 window.__wildLivingWaters=livingWaters;
+installSav4LakesideResident(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY)}).then(npc=>{window.__wildSav4Lakeside=npc;}).catch(e=>console.warn("SAV4 lakeside:",e));
 if(START_AT_LAKE){
  const probe=document.createElement("div");
  probe.id="wild-lake-build-probe";
