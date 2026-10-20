@@ -1,7 +1,8 @@
 /** SAV4 lakeside resident: 55 minutes seated, 5 minutes strolling per wall-clock hour. */
 export async function installSav4LakesideResident(B,scene,{height}={}){
  const root=new B.TransformNode("sav4-lakeside-resident",scene);
- const home={x:-165,z:-119};
+ // North bank of lake centered at (-165,-180), north radius 52; keep just outside the water.
+ const home={x:-165,z:-124};
  const ground=(x,z)=>Number(height?.(x,z))||0;
  root.position.set(home.x,ground(home.x,home.z),home.z);
  let container;
@@ -25,13 +26,14 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
   if(strolling){
    const t=(second-3300)/300;
    const x=home.x+Math.sin(t*Math.PI*2)*17;
-   const z=home.z+3*(1-Math.cos(t*Math.PI*2));
+   const z=home.z+2*(1-Math.cos(t*Math.PI*2));
    const dx=x-root.position.x,dz=z-root.position.z;
    root.position.set(x,ground(x,z),z);
    if(Math.hypot(dx,dz)>.0001)root.rotation.y=Math.atan2(dx,dz);
    play(walk);
   }else{
    root.position.set(home.x,ground(home.x,home.z),home.z);
+   root.rotation.y=Math.PI; // Face south toward the lake while seated.
    play(sit||idle);
   }
  });
