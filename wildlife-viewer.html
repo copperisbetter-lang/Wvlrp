@@ -16,16 +16,17 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 <div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div>
 <div id="facts" aria-live="polite">No animal loaded yet.</div><p><small>⚠️ Reference models only. Species accuracy, photorealism, correct rigging, and behavior are <strong>not approved</strong>. No game integration.</small></p>
 </aside></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
 const root=document.getElementById('stage'),status=document.getElementById('status'),animal=document.getElementById('animal'),clips=document.getElementById('clips'),facts=document.getElementById('facts');
 const play=document.getElementById('play'),stop=document.getElementById('stop');
 let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;
 const urls={deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
 try{
- THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/+esm');
+ THREE=await import('three');
  const [{OrbitControls},{GLTFLoader}]=await Promise.all([
- import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js/+esm'),
- import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js/+esm')]);
+ import('three/addons/controls/OrbitControls.js'),
+ import('three/addons/loaders/GLTFLoader.js')]);
  scene=new THREE.Scene();scene.background=new THREE.Color('#24382e');
  camera=new THREE.PerspectiveCamera(42,1,.02,1000);camera.position.set(3,2,5);
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -51,9 +52,9 @@ try{
    facts.textContent='Meshes: '+mesh+' · Approx. triangles: '+Math.round(tri)+' · Bones: '+bones+' · Animation clips: '+gltf.animations.length;
    status.textContent='Viewing '+id+' reference — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
-  },undefined,err=>{console.error(err);status.textContent='Could not load '+id+' model';facts.textContent='Model unavailable or invalid. Check GitHub wildlife asset import workflow.';});
+  },undefined,err=>{console.error(err);status.textContent='Could not load '+id+' model';facts.textContent='Model load failed: '+(err?.message||String(err))+'. Asset: '+urls[id];});
  }
  animal.addEventListener('change',load);load();
  const frame=()=>{requestAnimationFrame(frame);if(mixer)mixer.update(Math.min(clock.getDelta(),.05));else clock.getDelta();controls.update();renderer.render(scene,camera);};frame();
-}catch(e){console.error(e);status.textContent='3D engine could not load. Check network and browser support.';facts.textContent='Try opening this page in Chrome with an internet connection.'}
+}catch(e){console.error(e);status.textContent='3D engine could not load. Check network and browser support.';facts.textContent='3D engine error: '+(e?.message||String(e))+'. Try Chrome with an internet connection.'}
 </script></body></html>
