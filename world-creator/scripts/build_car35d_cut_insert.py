@@ -118,37 +118,55 @@ bm.normal_update()
 donor_rim=[e for e in bm.edges if e.is_boundary and all(v in newverts for v in e.verts)]
 if len(donor_rim)!=len(boundary_edges):
  bm.free();raise RuntimeError("Donor boundary changed during merge")
-try:
- bridge=bmesh.ops.bridge_loops(bm,edges=body_rim+donor_rim)
-except Exception as exc:
- bm.free();raise RuntimeError("Bridge operation failed: "+str(exc))
-if not bridge.get("faces"):
- bm.free();raise RuntimeError("No connecting bridge faces created")
-# A successful bridge can still contain stretched spikes. Reject such exports.
-bridge_faces=bridge["faces"]
-cross_lengths=[]
-donor_set=set(newverts)
-for face in bridge_faces:
- for edge in face.edges:
-  ends=[v in donor_set for v in edge.verts]
-  if ends[0] != ends[1]:
-   cross_lengths.append(edge.calc_length())
-if not cross_lengths or max(cross_lengths)>0.025:
- worst=max(cross_lengths) if cross_lengths else -1
+# Reject mismatched boundaries instead of allowing Blender to connect arbitrary edges.
+# Both rims must be single closed loops with equal vertex counts.
+def ordered_loop(edges):
+ adjacency={}
+ for edge in edges:
+  a,b=tuple(edge.verts)
+  adjacency.setdefault(a,[]).append(b)
+  adjacency.setdefault(b,[]).append(a)
+ if not adjacency or any(len(n)!=2 for n in adjacency.values()):
+  raise RuntimeError("Non-manifold seam boundary")
+ seed=next(iter(adjacency))
+ loop=[seed]
+ previous=None
+ current=seed
+ while True:
+  nxt=next(v for v in adjacency[current] if v is not previous)
+  if nxt is seed:break
+  if nxt in loop:raise RuntimeError("Multiple or self-intersecting seam loops")
+  loop.append(nxt)
+  previous,current=current,nxt
+ if len(loop)!=len(adjacency):raise RuntimeError("Disconnected seam boundary")
+ return loop
+host_loop=ordered_loop(body_rim)
+insert_loop=ordered_loop(donor_rim)
+if len(host_loop)!=len(insert_loop):
  bm.free()
- raise RuntimeError("Unsafe stretched seam: maximum cross-edge %.4f meters" % worst)
-if any(face.calc_area()<1e-9 or len(face.verts)>4 for face in bridge_faces):
- bm.free();raise RuntimeError("Degenerate bridge face detected")
-for face in bridge_faces:
- coords=[v.co for v in face.verts]
- for i in range(len(coords)):
-  a=(coords[(i-1)%len(coords)]-coords[i]).normalized()
-  b=(coords[(i+1)%len(coords)]-coords[i]).normalized()
-  if a.dot(b)>.995:
-   bm.free();raise RuntimeError("Needle-shaped bridge polygon detected")
-# Fail closed if any newly created bridge edge remains open.
+ raise RuntimeError("Unmatched seam vertex counts: host %d donor %d; refusing distorted bridge" % (len(host_loop),len(insert_loop)))
+# Align loop winding and phase by minimum total spatial distance.
+n=len(host_loop)
+best=None
+for direction in (1,-1):
+ for shift in range(n):
+  candidates=[insert_loop[(shift+direction*i)%n] for i in range(n)]
+  distances=[(host_loop[i].co-candidates[i].co).length for i in range(n)]
+  score=sum(d*d for d in distances)
+  if best is None or score<best[0]:best=(score,candidates,distances)
+_,aligned,distances=best
+if max(distances)>0.025:
+ bm.free()
+ raise RuntimeError("Seam misalignment %.4fm exceeds 25mm tolerance" % max(distances))
+for i in range(n):
+ j=(i+1)%n
+ try:
+  bm.faces.new((host_loop[i],host_loop[j],aligned[j],aligned[i]))
+ except ValueError as exc:
+  bm.free();raise RuntimeError("Failed to stitch matched seam: "+str(exc))
+bm.normal_update()
 if any(e.is_boundary for e in body_rim+donor_rim):
- bm.free();raise RuntimeError("Unsealed bridge perimeter")
+ bm.free();raise RuntimeError("Unsealed seam")
 bm.to_mesh(body.data);bm.free();body.data.update()
 # Donor material now lives on the connected host mesh; remove separate overlay.
 bpy.data.objects.remove(addon,do_unlink=True)
