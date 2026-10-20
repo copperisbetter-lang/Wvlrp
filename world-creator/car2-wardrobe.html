@@ -15,7 +15,7 @@
 <label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label><input id="blouseFlip" type="checkbox" onchange="window.refitBlouse?.()">Flip blouse upside down</label>
 </div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
- const key='wvlrp.car2.skirtFit.v1';
+ const key='wvlrp.car2.skirtFit.v2';
  const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
  const show=(fit,message)=>{
   const box=document.getElementById('savedFitCoordinates');
@@ -469,7 +469,23 @@ window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='Real skirt loaded. Adjust size, height, flip and rotation to fit.';return;}
+ if(style==='skirt'){
+  // The imported GLB was appearing as a horizontal strip at thigh height.
+  // Use the upright SAV4 skirt pattern, fitted in CAR2 character coordinates.
+  const skirt=new T.Group(),denim=fabric(0x866b86);
+  skirt.add(cylinder(.205,.295,.34,.83,denim));
+  skirt.add(cylinder(.21,.21,.045,1.015,denim));
+  avatar.updateMatrixWorld(true);
+  const bb=new T.Box3().setFromObject(avatar),bs=bb.getSize(new T.Vector3());
+  const hipWidth=bs.x*.56, waistY=bb.min.y+bs.y*.58;
+  const factor=hipWidth/.59;
+  skirt.scale.setScalar(factor);
+  skirt.position.set(bb.getCenter(new T.Vector3()).x,waistY-1.0375*factor,bb.getCenter(new T.Vector3()).z);
+  clothes.add(skirt);
+  status.textContent='SAV4 skirt pattern fitted upright to CAR2 waist and hips.';
+  return;
+ }
+ if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='Garment loaded';return;}
  status.textContent=item.label+' — loading garment file…';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
