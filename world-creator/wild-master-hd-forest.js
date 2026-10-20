@@ -15,7 +15,7 @@ export function installMasterHDForest(B,scene,{seed,terrainHeight,excluded=()=>f
  let active=null,pending=null,disposed=false,lastX=NaN,lastZ=NaN;
  const state={
    campsites:FOREST_CAMPS.length,plantingRadiusMetres:radius,streaming:true,
-   pendingSpecies:FOREST_SPECIES_TARGETS.filter(s=>s.status.startsWith("pending")).map(s=>s.species),
+   pendingSpecies:FOREST_SPECIES_TARGETS.filter(s=>s.status.startsWith("pending")&&s.species!=="oak").map(s=>s.species),
    get maple(){return active?.maple||pending?.maple||{status:"loading",placements:[],planted:0};},
    get oak(){return active?.oak||pending?.oak||{status:"loading",placements:[],planted:0};},
    get conifer(){return active?.conifer||pending?.conifer||{status:"loading",placements:[],planted:0};},
@@ -43,7 +43,7 @@ export function installMasterHDForest(B,scene,{seed,terrainHeight,excluded=()=>f
      console.info("HD_FOREST_REGION",{x:cx,z:cz,planted:state.planted});
    }).catch(err=>{
      console.warn("HD forest region failed",err);
-     batch.maple.dispose();batch.conifer.dispose();pending=null;
+     batch.maple.dispose();batch.conifer.dispose();batch.oak.dispose();pending=null;
    });
  };
  const p=getPosition();start(p.x,p.z);
