@@ -88,6 +88,7 @@ def in_poly(x,z):
   if (a.z>z)!=(b.z>z) and x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x:hit=not hit
  return hit
 bm=bmesh.new();bm.from_mesh(body.data);bm.faces.ensure_lookup_table()
+preexisting_boundary={tuple(sorted(v.index for v in e.verts)) for e in bm.edges if e.is_boundary}
 ys=[p.y for p in perimeter]
 faces=[]
 for face in bm.faces:
@@ -98,7 +99,7 @@ if not 5<len(faces)<450:
 bmesh.ops.delete(bm,geom=faces,context="FACES")
 bm.verts.ensure_lookup_table();bm.edges.ensure_lookup_table()
 # Collect the newly opened rim, restricting to the insert neighborhood.
-body_rim=[e for e in bm.edges if e.is_boundary and any((body.matrix_world@v.co-Vector((sum(p.x for p in perimeter)/len(perimeter),sum(p.y for p in perimeter)/len(perimeter),sum(p.z for p in perimeter)/len(perimeter)))).length<.3 for v in e.verts)]
+body_rim=[e for e in bm.edges if e.is_boundary and tuple(sorted(v.index for v in e.verts)) not in preexisting_boundary]
 if len(body_rim)<8:
  bm.free();raise RuntimeError("Body cut produced no stitchable rim")
 
@@ -109,7 +110,20 @@ mat_offset=len(body.data.materials)
 for mat in addon.data.materials:body.data.materials.append(mat)
 uv_layer=bm.loops.layers.uv.verify()
 source_uv=addon.data.uv_layers.active.data
-newverts=[bm.verts.new(addon_local@v.co) for v in addon.data.vertices]
+# Transfer host skin weights to the inserted vertices so animation cannot tear the seam.
+from mathutils.kdtree import KDTree
+host_verts=list(bm.verts)
+tree=KDTree(len(host_verts))
+for i,v in enumerate(host_verts):tree.insert(v.co,i)
+tree.balance()
+deform=bm.verts.layers.deform.verify()
+newverts=[]
+for source_vertex in addon.data.vertices:
+ v=bm.verts.new(addon_local@source_vertex.co)
+ _,nearest,_=tree.find(v.co)
+ for group_index,weight in host_verts[nearest][deform].items():
+  v[deform][group_index]=weight
+ newverts.append(v)
 bm.verts.index_update()
 for poly in addon.data.polygons:
  nf=bm.faces.new([newverts[i] for i in poly.vertices]);nf.material_index=mat_offset+poly.material_index
@@ -179,6 +193,8 @@ for i in range(n):
 bm.normal_update()
 if any(e.is_boundary for e in body_rim+donor_rim):
  bm.free();raise RuntimeError("Unsealed seam")
+if sum(1 for e in bm.edges if e.is_boundary)>len(preexisting_boundary):
+ bm.free();raise RuntimeError("New unsealed geometry detected")
 bm.to_mesh(body.data);bm.free();body.data.update()
 # Donor material now lives on the connected host mesh; remove separate overlay.
 bpy.data.objects.remove(addon,do_unlink=True)
