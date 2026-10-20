@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 2 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:28dvh;overflow:auto}summary{cursor:pointer;padding:10px;background:#2c473d;border-radius:6px}button[aria-pressed="true"]{background:#83b799;color:#10291c}button:disabled{opacity:.45}.performance{margin-bottom:8px}#motionStatus,#smileStatus{font-size:13px;color:#cfdfd6;margin:4px}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>CAR 2 — Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer><div class="performance"><div aria-label="Movement controls"><button type="button" data-motion="Stand" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Stand</button><button type="button" data-motion="Walk" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Walk</button><button type="button" data-motion="Run" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Run</button><button type="button" data-motion="Wave" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Wave</button><button type="button" data-motion="Sit" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit</button><button type="button" data-motion="Sit — legs apart" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit — legs apart</button><button type="button" data-motion="Bend and pick up" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Bend and pick up</button><button type="button" data-motion="Hands and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Hands and knees</button><button type="button" data-motion="Elbows and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Elbows and knees</button></div><div id="motionStatus" role="status">Loading movement rig…</div><div aria-label="Smile controls"><button type="button" data-smile="Neutral" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Neutral</button><button type="button" data-smile="Flirty" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Flirty smile</button><button type="button" data-smile="Happy" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Happy smile</button><button type="button" data-smile="Cute" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Cute smile</button></div><div id="smileStatus" role="status">Neutral expression.</div></div><details id="clothingMenu"><summary>Clothing &amp; fit adjustments</summary>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="4.5" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="4.02" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">0.00 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 2 | Character Studio</title><style>body{margin:0;background:#14221e;color:#eee;font:15px system-ui}header,footer{padding:12px;background:#233a32}main{height:68dvh;min-height:400px}footer{max-height:28dvh;overflow:auto}summary{cursor:pointer;padding:10px;background:#2c473d;border-radius:6px}button[aria-pressed="true"]{background:#83b799;color:#10291c}button:disabled{opacity:.45}.performance{margin-bottom:8px}#motionStatus,#smileStatus{font-size:13px;color:#cfdfd6;margin:4px}button{margin:4px;padding:9px;background:#496d60;color:white;border:0;border-radius:6px}button:focus{outline:2px solid gold}</style></head><body><header><b>CAR 2 — Character Viewer</b><div>18 years · 5′6″ · dusty blonde · pale blue eyes · slender frame</div></header><main id="stage"></main><footer><div class="performance"><div aria-label="Movement controls"><button type="button" data-motion="Stand" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Stand</button><button type="button" data-motion="Walk" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Walk</button><button type="button" data-motion="Run" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Run</button><button type="button" data-motion="Wave" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Wave</button><button type="button" data-motion="Sit" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit</button><button type="button" data-motion="Sit — legs apart" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Sit — legs apart</button><button type="button" data-motion="Bend and pick up" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Bend and pick up</button><button type="button" data-motion="Hands and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Hands and knees</button><button type="button" data-motion="Elbows and knees" aria-pressed="false" disabled onclick="window.setMotion?.(this.dataset.motion)">Elbows and knees</button></div><div id="motionStatus" role="status">Loading movement rig…</div><div aria-label="Smile controls"><button type="button" data-smile="Neutral" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Neutral</button><button type="button" data-smile="Flirty" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Flirty smile</button><button type="button" data-smile="Happy" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Happy smile</button><button type="button" data-smile="Cute" aria-pressed="false" disabled onclick="window.setSmile?.(this.dataset.smile)">Cute smile</button></div><div id="smileStatus" role="status">Neutral expression.</div></div><details id="clothingMenu"><summary>Clothing &amp; fit adjustments</summary>Outfits: <button onclick="outfit('skirt')">Real MakeHuman mini skirt</button><button type="button" onclick="window.removeSkirt?.()">Remove skirt</button><div style="margin:8px 0">Skirt size <input id="skirtSize" type="range" min="0.5" max="8" step="0.1" value="1" oninput="window.refitSkirt?.()"> Waist height <input aria-label="Skirt waist height in meters" id="skirtHeight" type="range" min="-1" max="5" step="0.01" value="0" oninput="window.refitSkirt?.()"> <output id="skirtHeightValue">0.00 m</output><button type="button" onclick="window.moveSkirtHeight?.(0.10)">Raise 10 cm</button><button type="button" onclick="window.moveSkirtHeight?.(-0.10)">Lower 10 cm</button></div><div style="margin:8px 0;display:grid;gap:8px">
 <label>Move forward/back <input aria-label="Move skirt forward or backward" id="skirtDepth" type="range" min="-1" max="1" step="0.005" value="0.09" oninput="window.refitSkirt?.()"> <output id="skirtDepthValue">0.0 cm</output></label>
 <div><button type="button" onclick="window.moveSkirtDepth?.(0.01)">Forward 1 cm</button><button type="button" onclick="window.moveSkirtDepth?.(-0.01)">Backward 1 cm</button><button type="button" onclick="window.centerSkirtDepth?.()">Center forward/back</button></div>
 <label>Rotate skirt <input aria-label="Rotate skirt" id="skirtYaw" type="range" min="-180" max="180" step="1" value="8" oninput="window.refitSkirt?.()"> <output id="skirtYawValue">8°</output></label>
@@ -8,14 +8,14 @@
 <button type="button" onclick="window.resetSkirtOrientation?.()">Reset skirt rotation</button></div><div style="margin:8px 0"><button type="button" onclick="window.saveSkirtFit()">Save fit coordinates</button><div id="fitSaveStatus" role="status">Fit has not been saved on this browser.</div><textarea id="savedFitCoordinates" aria-label="Saved skirt fit coordinates" readonly rows="4" style="box-sizing:border-box;width:100%;margin-top:6px" hidden></textarea></div><details style="margin:12px 0;border-top:1px solid #81998e;padding-top:8px"><summary>Loose peasant blouse</summary><button type="button" onclick="window.showBlouse?.()">Put on blouse</button><button type="button" onclick="window.removeBlouse?.()">Remove blouse</button><div style="display:grid;gap:8px">
 <label>Crop bottom <input id="blouseCrop" type="range" min="0" max="0.75" step="0.01" value="0.35" oninput="window.refitBlouse?.()"> <output id="blouseCropValue">35%</output></label><small>0% restores the full blouse. Increase to raise the straight hem above the back opening.</small>
 <label>Blouse size <input id="blouseSize" type="range" min="0.1" max="12" step="0.05" value="4.6" oninput="window.refitBlouse?.()"></label>
-<label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="5.67" oninput="window.refitBlouse?.()"></label>
+<label>Blouse height <input id="blouseHeight" type="range" min="-1" max="8" step="0.01" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse forward/back <input id="blouseDepth" type="range" min="-2" max="2" step="0.005" value="0.04" oninput="window.refitBlouse?.()"></label>
 <label>Blouse rotate <input id="blouseYaw" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse tilt forward/back <input id="blousePitch" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label><input id="blouseFlip" type="checkbox" onchange="window.refitBlouse?.()">Flip blouse upside down</label>
 </div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
- const key='wvlrp.sav4.skirtFit.v1';
+ const key='wvlrp.car2.skirtFit.repaired.v1';
  const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
  const show=(fit,message)=>{
   const box=document.getElementById('savedFitCoordinates');
@@ -321,7 +321,7 @@ const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);let blouseHemRest=null,
 const blouseGroup=new T.Group();scene.add(blouseGroup);
 let blouseModel=null,blouseLoading=false,blouseWanted=true;
 const blouseFields={size:'blouseSize',heightMeters:'blouseHeight',forwardMeters:'blouseDepth',yawDegrees:'blouseYaw',pitchDegrees:'blousePitch',rollDegrees:'blouseRoll'};
-const blouseKey='wvlrp.sav4.peasantBlouseFit.v1';
+const blouseKey='wvlrp.car2.blouseFit.repaired.v1';
 let blouseRestored=false;
 try{
  const fit=JSON.parse(localStorage.getItem(blouseKey)||'null');
@@ -344,7 +344,7 @@ window.refitBlouse=()=>{
  blouseModel.rotation.set((val('blousePitch')+(document.getElementById('blouseFlip').checked?180:0))*Math.PI/180,val('blouseYaw')*Math.PI/180,val('blouseRoll')*Math.PI/180,'YXZ');
  blouseModel.updateMatrixWorld(true);
  const bounds=new T.Box3().setFromObject(blouseModel),c=bounds.getCenter(new T.Vector3());
- blouseModel.position.set(center.x-c.x,val('blouseHeight')-bounds.max.y,center.z-c.z+val('blouseDepth'));
+ blouseModel.position.set(center.x-c.x,b.min.y+b.getSize(new T.Vector3()).y*.89-bounds.max.y+Math.max(-.15,Math.min(.15,val('blouseHeight'))),center.z-c.z+val('blouseDepth'));
  blouseModel.updateMatrixWorld(true);
  // Crop only this garment, after its fit is applied. Original mesh and fit stay intact.
  const fullBounds=new T.Box3().setFromObject(blouseModel);
@@ -363,12 +363,12 @@ window.showBlouse=()=>{
  if(blouseModel){window.refitBlouse();return;}
  if(blouseLoading)return;
  blouseLoading=true;document.getElementById('blouseStatus').textContent='Loading real peasant blouse…';
- loader.load('./assets/sav4-peasant-blouse.glb',g=>{
+ loader.load('./assets/sav4-peasant-blouse.glb?v=car2-repair-1',g=>{
   blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);
   blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;m.clippingPlanes=[blouseHemPlane];m.clipShadows=true;m.needsUpdate=true;}}});
   // Use Doug's saved blouse defaults unless a browser fit was restored.
   blouseGroup.visible=blouseWanted;window.refitBlouse();
- },undefined,e=>{blouseLoading=false;document.getElementById('blouseStatus').textContent='Blouse file failed to load. Tap Put on blouse to retry.';console.error(e);});
+ },undefined,e=>{blouseLoading=false;document.getElementById('blouseStatus').textContent='Blouse asset missing or failed to load: sav4-peasant-blouse.glb';console.error(e);});
 };
 window.saveBlouseFit=()=>{
  const fit={version:1};for(const [k,id] of Object.entries(blouseFields))fit[k]=Number(document.getElementById(id).value);
@@ -406,7 +406,7 @@ function alignGarment(model,style){
  const sizeControl=document.getElementById('skirtSize');
  const heightControl=document.getElementById('skirtHeight');
  // Saved size coordinates use the approved height, not pose-dependent skinned bounds.
- const desiredWidth=1.6764*.235*Number(sizeControl?.value||4.5);
+ const desiredWidth=bodySize.x*.76*Number(sizeControl?.value||1);
  const scale=desiredWidth/Math.max(dims.x,dims.z);
  // Keep size independent of rotation, then refit the rotated bounds to the waist.
  const angle=id=>Number(document.getElementById(id)?.value||0)*Math.PI/180;
@@ -418,7 +418,7 @@ function alignGarment(model,style){
  const center=garmentBounds.getCenter(new T.Vector3()),size=garmentBounds.getSize(new T.Vector3());
  const bodyCenter=bodyBounds.getCenter(new T.Vector3());
  // Explicit world-space meters: height never depends on avatar bounding-box proportions.
- const waistY=Number(heightControl?.value ?? 4.02);
+ const waistY=bodyBounds.min.y+bodySize.y*.565+Math.max(-.2,Math.min(.2,Number(heightControl?.value||0)));
  const depthOffset=Number(document.getElementById('skirtDepth')?.value ?? 0.09);
  // Character-space front is +Z, independent of the orbit camera.
  model.position.set(bodyCenter.x-center.x,waistY-garmentBounds.max.y,bodyCenter.z-center.z+depthOffset);
@@ -469,7 +469,7 @@ window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='Real skirt loaded. Adjust size, height, flip and rotation to fit.';return;}
+ if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='SAV4 skirt loaded and anchored to CAR2 body.';return;}
  status.textContent=item.label+' — loading garment file…';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
