@@ -57,34 +57,11 @@ try{
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
- // Approved V14 sample A appearance, applied to SAV4's fitted attachment
- // in-place. No second attachment mesh, no geometry changes.
- function applyNativeSkinV17(mesh){
-   // The Blender builder already projected the attachment UVs onto the
-   // original body atlas. Reuse that atlas AND the body's shading parameters.
-   const body=meshes.filter(o=>o!==mesh)
-     .filter(o=>(Array.isArray(o.material)?o.material:[o.material]).some(m=>m?.map))
-     .sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
-   const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
-   if(!bodyMat?.map)throw Error('V17 requires the original body skin texture');
-   if(!mesh.geometry.getAttribute('uv'))throw Error('V17 requires projected native attachment UVs');
-   const mat=bodyMat.clone();
-   mat.name='V17 native body atlas and matching shader';
-   mat.color.set('#ffffff');
-   mat.emissive?.set('#000000');
-   if('emissiveIntensity' in mat)mat.emissiveIntensity=0;
-   mat.side=THREE.DoubleSide;
-   mat.transparent=false;mat.opacity=1;
-   mat.depthWrite=true;mat.needsUpdate=true;
-   mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
-   if(mesh.geometry.hasAttribute('color')){
-     mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');
-   }
-   return 'native UV + body texture';
- }
- const skinSource=applyNativeSkinV17(attachment);
+ // Inspect the baked V21 GLB exactly as exported; do not replace its material or strip vertex colors.
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='V17 native MakeHuman skin atlas ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ const bakedMaterial=(Array.isArray(attachment.material)?attachment.material:[attachment.material]).map(m=>m?.name||'unnamed').join(', ');
+ const hasVertexColors=attachment.geometry.hasAttribute('color');
+ status.textContent='V21 baked GLB · '+attachment.geometry.attributes.position.count+' attachment vertices · material: '+bakedMaterial+' · vertex colors: '+(hasVertexColors?'yes':'no');
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
