@@ -1,0 +1,95 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Skin Match Lab</title><style>body{margin:0;background:#1a2924;color:#f2f6f2;font:15px system-ui}header,footer{padding:12px}h1{font-size:20px;margin:0 0 6px}#stage{height:70dvh;min-height:380px}canvas{display:block;touch-action:none}nav{display:flex;gap:8px;flex-wrap:wrap;padding:10px}button{padding:12px;background:#426d5c;color:white;border:1px solid #769787;border-radius:8px;font:inherit}button:focus{outline:3px solid #e5cc85}#status{font-size:13px}#legend{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;font-size:12px;padding:8px}#error{color:#ffceae;padding:10px}</style></head><body><header><h1>SAV4 — Four-Way Skin Match</h1><div id="status">Loading SAV4's fitted model…</div><small>One SAV4 and three attachment-only samples. Geometry and production asset unchanged.</small></header><div id="stage"></div><div id="swatches" style="display:flex;gap:8px;padding:10px"><div style="background:#dba48d;color:#24140f;flex:1;padding:12px;text-align:center">A · #DBA48D</div><div style="background:#dfa88e;color:#24140f;flex:1;padding:12px;text-align:center">B · #DFA88E</div><div style="background:#e3ad91;color:#24140f;flex:1;padding:12px;text-align:center">C · #E3AD91</div></div><div id="diagnostic" style="font-size:12px;padding:8px">3D material check pending</div><div id="legend"><span>SAV4</span><span>A · cooler</span><span>B · matched</span><span>C · warmer</span></div><nav><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="rear">Rear</button><button data-view="full">Full body</button><button id="reset">Reset</button></nav><footer>Choose the closest skin match visually. These are live shader comparisons only; nothing is applied to SAV4.</footer><div id="error"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const stage=document.getElementById('stage'),status=document.getElementById('status');
+try {
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
+const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
+const camera=new THREE.PerspectiveCamera(38,1,.001,100),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.append(renderer.domElement);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.03;orbit.maxDistance=12;
+new ResizeObserver(()=>{renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix()}).observe(stage);
+renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});
+const gltf=await new GLTFLoader().loadAsync('./assets/sav4-vulva2-native-fit.glb?v=skin-lab-isolated-5');
+const model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+let attachment=null,body=null;
+model.traverse(o=>{if(!o.isMesh)return;const mats=Array.isArray(o.material)?o.material:[o.material];
+if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;
+else if(!body||o.geometry.attributes.position.count>body.geometry.attributes.position.count)body=o;});
+if(!attachment||!body)throw Error('Original SAV4 body or fitted attachment missing');
+const bodyMaterials=Array.isArray(body.material)?body.material:[body.material];
+const skinMat=bodyMaterials.find(m=>m?.map && /skin|body|human|female|basemesh/i.test(m.name||''))||bodyMaterials.find(m=>m?.map)||bodyMaterials[0];
+const originalSkinColor=skinMat.color?.clone()||new THREE.Color(0xffffff);
+const partBox=new THREE.Box3().setFromObject(attachment,true),center=partBox.getCenter(new THREE.Vector3()),size=partBox.getSize(new THREE.Vector3());
+const fullBox=new THREE.Box3().setFromObject(model,true);
+const spacing=Math.max(.22,size.x*2.0),positions=[spacing*.95,spacing*2.0,spacing*3.05];
+const shades=['#dba48d','#dfa88e','#e3ad91'];
+// Standalone meshes: never clone the character, armature, or skin.
+const sourceMaterials=Array.isArray(attachment.material)?attachment.material:[attachment.material];
+// A textured body material commonly has a WHITE multiplier. Sample its real
+// albedo texture, rather than copying that white multiplier to an untextured mesh.
+function skinToneFromTexture(material){
+ const img=material.map?.image;
+ if(!img)return null;
+ try {
+  const c=document.createElement('canvas');c.width=64;c.height=64;
+  const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,64,64);
+  const rgba=ctx.getImageData(0,0,64,64).data;
+  const pixels=[];
+  for(let j=0;j<rgba.length;j+=4){
+   const r=rgba[j],g=rgba[j+1],b=rgba[j+2],a=rgba[j+3];
+   if(a<230||r<65||g<40||b<30||r>245&&g>245&&b>245)continue;
+   // Skin has warm red/yellow bias; exclude eyes, hair, background and dark UV gaps.
+   if(r<g*.98||g<b*.95||r>g*1.9||g>b*1.9)continue;
+   pixels.push([r,g,b]);
+  }
+  if(pixels.length<30)return null;
+  const median=k=>{const sorted=pixels.map(p=>p[k]).sort((a,b)=>a-b);return sorted[Math.floor(sorted.length/2)]/255;};
+  const tint=material.color||new THREE.Color(0xffffff);
+  return new THREE.Color().setRGB(median(0),median(1),median(2),THREE.SRGBColorSpace).multiply(tint);
+ }catch(err){console.warn('Skin texture read unavailable',err);return null;}
+}
+const sampledTone=skinToneFromTexture(skinMat);
+// Previous automatic sampler selected gray pixels from an unrelated material.
+// Use an explicit warm skin reference for visible comparison until a calibrated
+// skin UV sample is available. Do not silently fall back to gray.
+const sourceColor=new THREE.Color('#dfa88e');
+// Some GLBs carry grayscale vertex color attributes on the attachment.
+// These must not modulate the new skin-match material.
+status.textContent='NEW VIEWER v5 · explicit skin shades A '+shades[0]+' · B '+shades[1]+' · C '+shades[2];
+for(let i=0;i<3;i++){
+ const materials=sourceMaterials.map(m=>{
+  const n=new THREE.MeshStandardMaterial({name:'SAV4 skin-match '+String.fromCharCode(65+i),roughness:.88,metalness:0,side:THREE.DoubleSide});
+  // Keep original attachment UV mapping; do not transplant body textures
+  // whose UV islands belong to an entirely different mesh.
+  n.map=null;n.vertexColors=false;n.color.set(shades[i]);
+  n.emissive.set(shades[i]);n.emissiveIntensity=.08;
+  n.needsUpdate=true;return n;
+ });
+ const geometry=attachment.geometry.clone();
+if(geometry.hasAttribute('color'))geometry.deleteAttribute('color');
+const sample=new THREE.Mesh(geometry,Array.isArray(attachment.material)?materials:materials[0]);
+ document.getElementById('diagnostic').textContent+=' | '+sample.name+' '+materials[0].color.getHexString()+' vertexColors='+materials[0].vertexColors;
+ sample.name='Standalone Vulva2 sample '+String.fromCharCode(65+i);
+ sample.applyMatrix4(attachment.matrixWorld);
+ sample.position.x+=positions[i];
+ sample.frustumCulled=false;
+ scene.add(sample);
+}
+
+function view(name){model.updateMatrixWorld(true);const target=center.clone();target.x=positions[1]*.55;
+if(name==='full'){target.y=fullBox.getCenter(new THREE.Vector3()).y;}
+orbit.target.copy(target);const distance=name==='full'?Math.max(2.7,fullBox.getSize(new THREE.Vector3()).y*1.65):Math.max(.85,positions[2]*2.5);
+const offset=name==='side'?new THREE.Vector3(distance,0,0):name==='rear'?new THREE.Vector3(0,0,-distance):new THREE.Vector3(0,0,distance);
+camera.position.copy(target).add(offset);orbit.update();}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+document.getElementById('reset').onclick=()=>view('front');
+document.querySelector('#legend').innerHTML='<span>SAV4 original</span><span>A · slightly cooler</span><span>B · body color</span><span>C · slightly warmer</span>';
+document.querySelector('small').textContent='One SAV4, three independent fitted-attachment samples. SAV4 body uses the original native-fit MakeHuman skin material, without experimental lightening.';
+status.textContent+=' · clean materials; no inherited gray vertex colors; SAV4 unchanged.';
+view('front');
+}catch(e){status.textContent='Viewer error: '+e.message;document.getElementById('error').textContent=e.stack||e.message;}
+</script></body></html>
