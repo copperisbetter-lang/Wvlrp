@@ -43,14 +43,14 @@ g=addon.vertex_groups.new(name=pelvis);g.add(list(range(len(addon.data.vertices)
 mod=addon.modifiers.new("CAR3 pelvis binding","ARMATURE");mod.object=rig
 addon.parent=rig;addon.matrix_world=world
 # Isolated CAR 3.5D test correction; never modify donor or original builds.
-FIT_LOWER_METERS = 0.065
+FIT_LOWER_METERS = 0.0
 fit_world=addon.matrix_world.copy()
 fit_world.translation.z -= FIT_LOWER_METERS
 addon.matrix_world=fit_world
 # Offset the insert slightly toward the viewer to prevent depth fighting with
 # the host skin when zoom changes; keep the approved geometry and texture.
 fit_world=addon.matrix_world.copy()
-fit_world.translation.y -= 0.004
+fit_world.translation.y -= 0.0
 addon.matrix_world=fit_world
 # Build a connected body/insert mesh, not a detached overlay.
 # A failed bridge aborts the build instead of publishing broken geometry.
@@ -181,9 +181,20 @@ for direction in (1,-1):
   score=sum(d*d for d in distances)
   if best is None or score<best[0]:best=(score,candidates,distances)
 _,aligned,distances=best
-if max(distances)>0.025:
+if max(distances)>0.008:
  bm.free()
- raise RuntimeError("Seam misalignment %.4fm exceeds 25mm tolerance" % max(distances))
+ raise RuntimeError("Seam misalignment %.4fm exceeds 8mm tolerance" % max(distances))
+# Prevent twisted or excessively stretched seam quads from being exported.
+# A successful Blender export alone is not evidence of a valid seam.
+for i in range(n):
+ j=(i+1)%n
+ a,b,c,d=host_loop[i].co,host_loop[j].co,aligned[j].co,aligned[i].co
+ if min((b-a).length,(c-b).length,(d-c).length,(a-d).length)<0.000001:
+  bm.free();raise RuntimeError("Degenerate seam quad at "+str(i))
+ normal1=(b-a).cross(d-a)
+ normal2=(c-b).cross(d-b)
+ if normal1.length<1e-9 or normal2.length<1e-9 or normal1.dot(normal2)<0:
+  bm.free();raise RuntimeError("Twisted seam quad at "+str(i))
 for i in range(n):
  j=(i+1)%n
  try:
