@@ -4,6 +4,7 @@ on:
     paths:
       - world-creator/scripts/build_sav4_vulva2_native_fit.py
       - world-creator/scripts/bake_sav4_v21.py
+      - world-creator/sav4-vulva2-native-fit.html
       - world-creator/scripts/caroline_eyes.py
       - world-creator/scripts/sav4_face_calibration.py
       - world-creator/scripts/sav4_reference_ratios.py
