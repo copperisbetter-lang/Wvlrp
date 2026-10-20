@@ -13,7 +13,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.append(renderer.domEl
 const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.03;orbit.maxDistance=12;
 new ResizeObserver(()=>{renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix()}).observe(stage);
 renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});
-const gltf=await new GLTFLoader().loadAsync('./assets/sav4-vulva2-native-fit.glb?v=skin-lab-standalone-3');
+const gltf=await new GLTFLoader().loadAsync('./assets/sav4-vulva2-native-fit.glb?v=skin-lab-peach-4');
 const model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
 let attachment=null,body=null;
 model.traverse(o=>{if(!o.isMesh)return;const mats=Array.isArray(o.material)?o.material:[o.material];
@@ -26,7 +26,7 @@ const originalSkinColor=skinMat.color?.clone()||new THREE.Color(0xffffff);
 const partBox=new THREE.Box3().setFromObject(attachment,true),center=partBox.getCenter(new THREE.Vector3()),size=partBox.getSize(new THREE.Vector3());
 const fullBox=new THREE.Box3().setFromObject(model,true);
 const spacing=Math.max(.22,size.x*2.0),positions=[spacing*.95,spacing*2.0,spacing*3.05];
-const factors=[new THREE.Color(.985,.995,1.005),new THREE.Color(1,1,1),new THREE.Color(1.015,1.005,.99)];
+const shades=['#dba48d','#dfa88e','#e3ad91'];
 // Standalone meshes: never clone the character, armature, or skin.
 const sourceMaterials=Array.isArray(attachment.material)?attachment.material:[attachment.material];
 // A textured body material commonly has a WHITE multiplier. Sample its real
@@ -53,17 +53,20 @@ function skinToneFromTexture(material){
  }catch(err){console.warn('Skin texture read unavailable',err);return null;}
 }
 const sampledTone=skinToneFromTexture(skinMat);
-const sourceColor=sampledTone||new THREE.Color('#d7a58e');
+// Previous automatic sampler selected gray pixels from an unrelated material.
+// Use an explicit warm skin reference for visible comparison until a calibrated
+// skin UV sample is available. Do not silently fall back to gray.
+const sourceColor=new THREE.Color('#dfa88e');
 // Some GLBs carry grayscale vertex color attributes on the attachment.
 // These must not modulate the new skin-match material.
-status.textContent=sampledTone?'Skin tone sampled from SAV4 body texture.':'Using warm skin-tone fallback; body texture could not be sampled.';
+status.textContent='Explicit peach skin shades: A '+shades[0]+' · B '+shades[1]+' · C '+shades[2];
 for(let i=0;i<3;i++){
  const materials=sourceMaterials.map(m=>{
   const n=new THREE.MeshStandardMaterial({name:'SAV4 skin-match '+String.fromCharCode(65+i),roughness:.88,metalness:0,side:THREE.DoubleSide});
   // Keep original attachment UV mapping; do not transplant body textures
   // whose UV islands belong to an entirely different mesh.
-  n.map=null;n.vertexColors=false;n.color.copy(sourceColor).multiply(factors[i]);
-  n.color.copy(sourceColor).multiply(factors[i]);
+  n.map=null;n.vertexColors=false;n.color.set(shades[i]);
+  n.emissive.set(shades[i]);n.emissiveIntensity=.08;
   n.needsUpdate=true;return n;
  });
  const geometry=attachment.geometry.clone();
@@ -85,7 +88,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset
 document.getElementById('reset').onclick=()=>view('front');
 document.querySelector('#legend').innerHTML='<span>SAV4 original</span><span>A · slightly cooler</span><span>B · body color</span><span>C · slightly warmer</span>';
 document.querySelector('small').textContent='One SAV4, three independent fitted-attachment samples. SAV4 body uses the original native-fit MakeHuman skin material, without experimental lightening.';
-status.textContent+=(sampledTone?' Three subtle shades derived from actual skin texture.':' Three subtle warm shades; texture sampling unavailable.')+' Gray vertex colors removed; production asset unchanged.';
+status.textContent+=' · clean materials; no inherited gray vertex colors; SAV4 unchanged.';
 view('front');
 }catch(e){status.textContent='Viewer error: '+e.message;document.getElementById('error').textContent=e.stack||e.message;}
 </script></body></html>
