@@ -50,6 +50,14 @@ if(jennyQuestButton&&jennyQuestPanel){
   });
 }
 
+// Gameplay HUD is intentionally minimal. Diagnostics remain available with ?debug=1.
+const wildDebugMode=new URLSearchParams(location.search).get("debug")==="1";
+if(!wildDebugMode){
+  const cleanHud=document.createElement("style");
+  cleanHud.id="wild-clean-gameplay-hud";
+  cleanHud.textContent=`#wild-lake-build-probe,#maple-ground-debug,.brand,#message,#info{display:none!important;}`;
+  document.head.appendChild(cleanHud);
+}
 const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 // Direct link ?spawn=ranger places the walking player outside the ranger porch.
 // Hearthside remains the default on ordinary walk links; resident NPCs stay put.
