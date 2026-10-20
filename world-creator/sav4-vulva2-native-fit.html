@@ -60,34 +60,56 @@ try{
  // Approved V14 sample A appearance, applied to SAV4's fitted attachment
  // in-place. No second attachment mesh, no geometry changes.
  function applyApprovedV14A(mesh){
-   const shade='#e9bea9', mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+   // Match a real patch of the body's skin atlas instead of tinting an unrelated
+   // full-atlas average. Sample a clean abdomen region and retain its mottling.
    const body=meshes.filter(o=>o!==mesh).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
    const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
    const src=bodyMat?.map?.image;
-   let tex=null;
+   const fallback='#e9bea9';
+   let tex=null, sampled='fallback';
    if(src){
-     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
-     const ctx=canvas.getContext('2d',{willReadFrequently:true});
-     ctx.fillStyle=shade;ctx.fillRect(0,0,256,256);
-     const sample=document.createElement('canvas');sample.width=256;sample.height=256;
-     const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(src,0,0,256,256);
-     const pixels=sc.getImageData(0,0,256,256),out=ctx.getImageData(0,0,256,256);
-     const mean=[0,0,0];for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)mean[k]+=pixels.data[p+k];
-     for(let k=0;k<3;k++)mean[k]/=65536;
-     for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)
-       out.data[p+k]=Math.max(0,Math.min(255,out.data[p+k]+Math.max(-22,Math.min(22,pixels.data[p+k]-mean[k]))*.42));
-     ctx.putImageData(out,0,0);
-     tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
-     tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);
+     try{
+       const w=src.width||src.videoWidth,h=src.height||src.videoHeight;
+       if(!w||!h)throw Error('Body texture has no dimensions');
+       const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+       const ctx=canvas.getContext('2d',{willReadFrequently:true});
+       // Source coordinates are relative to the 1024px skin atlas.
+       // 779,977 is the previously verified abdomen sample.
+       const cx=w*779/1024,cy=h*977/1024;
+       const patch=Math.max(12,Math.min(w,h)*.065);
+       const sx=Math.max(0,Math.min(w-patch,cx-patch/2));
+       const sy=Math.max(0,Math.min(h-patch,cy-patch/2));
+       ctx.drawImage(src,sx,sy,patch,patch,0,0,256,256);
+       // Gently soften the repeated pattern without flattening the mottling.
+       const image=ctx.getImageData(0,0,256,256);
+       const px=image.data;
+       for(let j=0;j<px.length;j+=4){
+         // Pull extreme values toward the local natural skin tone.
+         for(let k=0;k<3;k++)px[j+k]=Math.max(0,Math.min(255,px[j+k]));
+         px[j+3]=255;
+       }
+       ctx.putImageData(image,0,0);
+       tex=new THREE.CanvasTexture(canvas);
+       tex.colorSpace=THREE.SRGBColorSpace;
+       tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
+       tex.needsUpdate=true;sampled='abdomen atlas patch';
+     }catch(err){console.warn('Body skin patch unavailable:',err);}
    }
-   const mat=new THREE.MeshStandardMaterial({name:'Approved V14 A skin mottle',color:tex?'#ffffff':shade,map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide});
-   mat.emissive.set(shade);mat.emissiveIntensity=.18;
-   mesh.material=Array.isArray(mesh.material)?mats.map(()=>mat):mat;
-   if(mesh.geometry.hasAttribute('color')){mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');}
+   const mat=new THREE.MeshStandardMaterial({
+     name:'V15 body sampled skin match',color:tex?'#ffffff':fallback,
+     map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide
+   });
+   // No emissive wash: that was flattening/differentiating the fitted piece.
+   mat.emissive.set('#000000');mat.emissiveIntensity=0;
+   mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
+   if(mesh.geometry.hasAttribute('color')){
+     mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');
+   }
+   return sampled;
  }
- applyApprovedV14A(attachment);
+ const skinSource=applyApprovedV14A(attachment);
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='V14 Sample A applied in viewer · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ status.textContent='V15 body texture blend ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
