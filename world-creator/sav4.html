@@ -187,13 +187,13 @@ function animatePerformance(){
  const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run',seated=activeMotion==='Sit'||activeMotion==='Sit — legs apart';
  const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees',onElbows=activeMotion==='Elbows and knees';
  if(poseSeat)poseSeat.visible=seated;
- const phase=t*(run?8.8:5.2),s=Math.sin(phase),step=run?.72:.25;
+ const phase=t*(run?9.4:5.4),s=Math.sin(phase),step=run?.52:.23;
  const reach=activeMotion==='Bend and pick up'?.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2):0;
  let lean=gait?(run?.12:.025):reach*.95;
  if(crawl)lean=onElbows?1.94:Math.PI/2;
  // Lean the pelvis and torso together instead of twisting only the spine.
  rotateWorld('Hips',v3(1,0,0),lean);
- if(gait)lowerHips((run?.075:.025)+(run?.012:.004)*Math.cos(phase*2));
+ if(gait)lowerHips((run?.045:.018)+(run?.012:.004)*Math.cos(phase*2));
  if(seated)lowerHips(.39);
  if(crawl){
   const legLength=limbLength('LeftUpLeg','LeftLeg'),pad=.066*motionScale;
@@ -210,13 +210,13 @@ function animatePerformance(){
   }else if(gait){
    // Each ankle follows one forward/back lane; knees bend forward toward a pole.
    const cycle=((phase/(Math.PI*2)+(side==='Left'?0:.5))%1+1)%1,stance=run?.42:.64;
-   const stride=(run?.57:.24)*motionScale,lift=(run?.16:.045)*motionScale;
+   const stride=(run?.36:.18)*motionScale,lift=(run?.115:.045)*motionScale;
    let z,y=rest.get(side+'Foot').point.y,pitch=0;
    if(cycle<stance){const q=cycle/stance;z=stride*(1-2*q);pitch=-.10+.24*q;}
    else{const q=(cycle-stance)/(1-stance),ease=q*q*(3-2*q);z=stride*(2*ease-1);y+=lift*Math.sin(Math.PI*q);pitch=.12*Math.sin(Math.PI*q);}
    const root=rig.get(side+'UpLeg').getWorldPosition(v3());
-   const target=v3(rest.get(side+'UpLeg').point.x*.98,y,rest.get('Hips').point.z+z);
-   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',target,root.clone().add(v3(0,-.3,2.5)));
+   const target=v3(root.x,y,rest.get('Hips').point.z+z);
+   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',target,root.clone().add(v3(0,-.25,.35*motionScale)));
    // Fix the ankle's complete orientation, including roll; direction alone allowed twisting.
    rotateWorld(side+'Foot',v3(1,0,0),pitch);
   }else{
