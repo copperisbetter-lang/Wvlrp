@@ -57,8 +57,37 @@ try{
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+ // Approved V14 sample A appearance, applied to SAV4's fitted attachment
+ // in-place. No second attachment mesh, no geometry changes.
+ function applyApprovedV14A(mesh){
+   const shade='#e9bea9', mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+   const body=meshes.filter(o=>o!==mesh).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+   const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
+   const src=bodyMat?.map?.image;
+   let tex=null;
+   if(src){
+     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+     ctx.fillStyle=shade;ctx.fillRect(0,0,256,256);
+     const sample=document.createElement('canvas');sample.width=256;sample.height=256;
+     const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(src,0,0,256,256);
+     const pixels=sc.getImageData(0,0,256,256),out=ctx.getImageData(0,0,256,256);
+     const mean=[0,0,0];for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)mean[k]+=pixels.data[p+k];
+     for(let k=0;k<3;k++)mean[k]/=65536;
+     for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)
+       out.data[p+k]=Math.max(0,Math.min(255,out.data[p+k]+Math.max(-22,Math.min(22,pixels.data[p+k]-mean[k]))*.42));
+     ctx.putImageData(out,0,0);
+     tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+     tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);
+   }
+   const mat=new THREE.MeshStandardMaterial({name:'Approved V14 A skin mottle',color:tex?'#ffffff':shade,map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide});
+   mat.emissive.set(shade);mat.emissiveIntensity=.18;
+   mesh.material=Array.isArray(mesh.material)?mats.map(()=>mat):mat;
+   if(mesh.geometry.hasAttribute('color')){mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');}
+ }
+ applyApprovedV14A(attachment);
  partBounds=new THREE.Box3().setFromObject(attachment,true);
- status.textContent='Native fit · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ status.textContent='V14 Sample A applied in viewer · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
