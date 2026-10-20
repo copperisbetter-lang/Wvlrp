@@ -52,48 +52,64 @@ addon.matrix_world=fit_world
 fit_world=addon.matrix_world.copy()
 fit_world.translation.y -= 0.004
 addon.matrix_world=fit_world
-# CAR2's method removes the covered pelvic faces, not the entire body.
-# Derive a conservative opening from the actual attachment's XY/Z extent,
-# and limit the cut to front-facing body faces close to the donor surface.
+# Geometry-aware CAR 3.5D integration: use the donor's actual silhouette,
+# rather than cutting a rectangular hole or displacing its edge by a fixed 6 mm.
 bpy.context.view_layer.update()
-pts=[addon.matrix_world@v.co for v in addon.data.vertices]
-xs=[p.x for p in pts];ys=[p.y for p in pts];zs=[p.z for p in pts]
-xmin,xmax=min(xs),max(xs);zmin,zmax=min(zs),max(zs)
-if not .025<xmax-xmin<.4 or not .02<zmax-zmin<.5:raise RuntimeError("Donor size outside safe fit bounds")
-center_x=(xmin+xmax)/2;center_z=(zmin+zmax)/2
-# CAR3 faces front toward negative Y; cut only in the attachment's inner footprint.
-half_x=(xmax-xmin)*.37;half_z=(zmax-zmin)*.37
-bm=bmesh.new();bm.from_mesh(body.data)
+from mathutils.bvhtree import BVHTree
+from mathutils import Vector
+from math import sqrt
+
+# Build a silhouette polygon in XZ from donor vertices.  The projected convex
+# hull is deliberately conservative; no face is removed unless its center is
+# also close to the donor surface in depth.
+points=[addon.matrix_world @ v.co for v in addon.data.vertices]
+coords=sorted(set((round(p.x,7),round(p.z,7)) for p in points))
+def cross(o,a,b):return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])
+lower=[]
+for p in coords:
+ while len(lower)>1 and cross(lower[-2],lower[-1],p)<=0:lower.pop()
+ lower.append(p)
+upper=[]
+for p in reversed(coords):
+ while len(upper)>1 and cross(upper[-2],upper[-1],p)<=0:upper.pop()
+ upper.append(p)
+hull=lower[:-1]+upper[:-1]
+if len(hull)<3:raise RuntimeError("Invalid donor projected silhouette")
+def inside(x,z):
+ sign=None
+ for i in range(len(hull)):
+  c=cross(hull[i],hull[(i+1)%len(hull)],(x,z))
+  if abs(c)<1e-9:continue
+  s=c>0
+  if sign is not None and sign!=s:return False
+  sign=s
+ return True
+
+# Work in body-local coordinates to avoid incorrect world/local cuts.
+bm=bmesh.new();bm.from_mesh(body.data);bm.faces.ensure_lookup_table()
 body_world=body.matrix_world
+min_y=min(p.y for p in points);max_y=max(p.y for p in points)
 faces=[]
 for face in bm.faces:
- c=body_world@face.calc_center_median()
- if abs(c.x-center_x)<half_x and abs(c.z-center_z)<half_z:
-  if abs(c.y-sum(ys)/len(ys))<.13:
-   faces.append(face)
+ c=body_world @ face.calc_center_median()
+ if inside(c.x,c.z) and min_y-.035 <= c.y <= max_y+.035:
+  faces.append(face)
 if not 5<len(faces)<450:
- bm.free();raise RuntimeError("Unsafe cut region; refusing export: "+str(len(faces)))
+ bm.free();raise RuntimeError("Unsafe silhouette cut: "+str(len(faces)))
 bmesh.ops.delete(bm,geom=faces,context="FACES_ONLY")
 bm.to_mesh(body.data);bm.free();body.data.update()
-# Recess the donor perimeter slightly into the existing skin to hide the seam.
-# Only boundary vertices move; visible central anatomy is preserved.
-edge_ids=set()
-for e in addon.data.edges:
- if e.is_loose:continue
+
+# Never pull all donor boundary vertices along Y: that produced the spikes
+# shown in the mobile screenshots.  Keep the approved donor shape untouched.
+# Report boundary counts for validation and subsequent edge-bridge work.
 edge_counts={}
 for poly in addon.data.polygons:
  for k in poly.edge_keys:
   key=tuple(sorted(k));edge_counts[key]=edge_counts.get(key,0)+1
+edge_ids=set()
 for (a,b),count in edge_counts.items():
  if count==1:edge_ids.update((a,b))
-if len(edge_ids)>8:
- inv=addon.matrix_world.inverted_safe()
- for i in edge_ids:
-  v=addon.data.vertices[i]
-  worldp=addon.matrix_world@v.co
-  worldp.y+=.0060
-  v.co=inv@worldp
- addon.data.update()
+if len(edge_ids)<8:raise RuntimeError("Donor boundary missing")
 for o in imported:
  if o!=addon:bpy.data.objects.remove(o,do_unlink=True)
 bpy.ops.export_scene.gltf(filepath=str(output),export_format="GLB",export_skins=True,export_animations=True)
