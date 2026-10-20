@@ -79,23 +79,40 @@ for seed in adj:
  loops.append(loop)
 if len(loops)!=1:raise RuntimeError("Multiple donor boundary loops: "+str(len(loops)))
 
-# Cut only body faces whose centers are inside the projected donor boundary.
-# Keep a narrow outer rim for stitching; no large rectangular hole.
+# Use the native MHX2 deletion mask, as in the approved SAV4 fitter.
+# Never guess the opening by projecting a donor outline onto large thigh faces.
+source_path=root/"assets/vulva2-mhx2-source.json"
+source=json.loads(source_path.read_text())
+mask=source["proxy"]["delete_verts"]
+if len(body.data.vertices)<len(mask) or len(body.data.vertices)<13380:
+ raise RuntimeError("CAR3 host topology incompatible with SAV4 native deletion mask")
+marked={i for i,value in enumerate(mask) if value}
+if not 15<len(marked)<200:
+ raise RuntimeError("Native deletion mask has unexpected vertex count")
+# Confirm mask anchors occupy the actual donor region, not the thighs or another mesh.
+mask_points=[body.matrix_world@body.data.vertices[i].co for i in marked]
 perimeter=[addon.matrix_world@addon.data.vertices[i].co for i in loops[0]]
-def in_poly(x,z):
- hit=False
- for a,b in zip(perimeter,perimeter[1:]+perimeter[:1]):
-  if (a.z>z)!=(b.z>z) and x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x:hit=not hit
- return hit
-bm=bmesh.new();bm.from_mesh(body.data);bm.faces.ensure_lookup_table()
+from mathutils.kdtree import KDTree
+rim_tree=KDTree(len(perimeter))
+for i,p in enumerate(perimeter):rim_tree.insert(p,i)
+rim_tree.balance()
+# Refuse incompatible vertex ordering instead of destroying the host geometry.
+mask_center=sum(mask_points,Vector())/len(mask_points)
+donor_center=sum(perimeter,Vector())/len(perimeter)
+if (mask_center-donor_center).length>0.06:
+ raise RuntimeError("Native mask and fitted donor disagree; host topology may differ")
+bm=bmesh.new();bm.from_mesh(body.data);bm.verts.ensure_lookup_table();bm.verts.index_update()
 preexisting_boundary={tuple(sorted(v.index for v in e.verts)) for e in bm.edges if e.is_boundary}
-ys=[p.y for p in perimeter]
-faces=[]
-for face in bm.faces:
- p=body.matrix_world@face.calc_center_median()
- if in_poly(p.x,p.z) and min(ys)-.035<p.y<max(ys)+.035:faces.append(face)
+faces=[face for face in bm.faces if any(v.index in marked for v in face.verts)]
 if not 5<len(faces)<450:
- bm.free();raise RuntimeError("Unsafe donor-footprint cut: "+str(len(faces)))
+ bm.free();raise RuntimeError("Unsafe native-mask cut: "+str(len(faces)))
+# Limit opening size relative to the attachment's own fitted bounds.
+xs=[p.x for p in perimeter];zs=[p.z for p in perimeter]
+for face in faces:
+ for v in face.verts:
+  p=body.matrix_world@v.co
+  if not (min(xs)-.025<=p.x<=max(xs)+.025 and min(zs)-.025<=p.z<=max(zs)+.025):
+   bm.free();raise RuntimeError("Native mask would remove geometry beyond donor footprint")
 bmesh.ops.delete(bm,geom=faces,context="FACES")
 bm.verts.ensure_lookup_table();bm.edges.ensure_lookup_table()
 # Collect the newly opened rim, restricting to the insert neighborhood.
