@@ -26,7 +26,9 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
    b=bounds();
   }
   if(b.size.y>0){root.scaling.scaleInPlace(1.6764/b.size.y);b=bounds();}
-  // Preserve the vertical correction when the resident moves or sits.\n  const groundOffset=ground(home.x,home.z)-b.min.y;\n  root.position.y+=groundOffset;
+  // Preserve the vertical correction when the resident moves or sits.
+  const groundOffset=ground(home.x,home.z)-b.min.y;
+  root.position.y+=groundOffset;
   // Match the SAV4 viewer's approved hair/eye material corrections.
   for(const mesh of bodyMeshes){
    const n=(mesh.name+' '+(mesh.material?.name||'')).toLowerCase();
@@ -97,7 +99,7 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
    if(Math.hypot(dx,dz)>.0001)root.rotation.y=Math.atan2(dx,dz);
    play(walk);
   }else{
-   root.position.set(home.x,ground(home.x,home.z),home.z);
+   root.position.set(home.x,ground(home.x,home.z)+groundOffset,home.z);
    root.rotation.y=Math.PI; // Face south toward the lake while seated.
    play(sit||idle);
   }
