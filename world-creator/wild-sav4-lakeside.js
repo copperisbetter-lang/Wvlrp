@@ -11,6 +11,35 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
   container.addAllToScene();
   const nodes=container.meshes.filter(m=>!m.parent);
   for(const node of nodes)node.parent=root;
+  // Match the approved SAV4 viewer's upright orientation and 1.6764 m height.
+  // The raw GLB is not guaranteed to have viewer-ready axes or scale.
+  const bodyMeshes=container.meshes.filter(m=>m.getTotalVertices?.()>0);
+  const bounds=()=>{
+   let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);
+   for(const mesh of bodyMeshes){mesh.computeWorldMatrix(true);const bb=mesh.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,bb.minimumWorld);max=B.Vector3.Maximize(max,bb.maximumWorld)}
+   return {min,max,size:max.subtract(min)};
+  };
+  let b=bounds();
+  if(b.size.y<Math.max(b.size.x,b.size.z)*.7){
+   root.rotation.x=b.size.z>=b.size.x?-Math.PI/2:0;
+   root.rotation.z=b.size.x>b.size.z?Math.PI/2:0;
+   b=bounds();
+  }
+  if(b.size.y>0){root.scaling.scaleInPlace(1.6764/b.size.y);b=bounds();}
+  root.position.y+=ground(home.x,home.z)-b.min.y;
+  // Match the SAV4 viewer's approved hair/eye material corrections.
+  for(const mesh of bodyMeshes){
+   const n=(mesh.name+' '+(mesh.material?.name||'')).toLowerCase();
+   const mat=mesh.material;
+   if(!mat||!mat.albedoColor)continue;
+   if(/hair|scalp|strand|fringe|bang|ponytail/.test(n)){
+    mesh.material=mat.clone(mat.name+'-sav4-approved-hair');mesh.material.albedoColor=B.Color3.FromHexString('#d2b991');mesh.material.roughness=.88;
+   }else if(/sclera|eyewhite|eye_white/.test(n)){
+    mesh.material=mat.clone(mat.name+'-sav4-approved-sclera');mesh.material.albedoColor=B.Color3.FromHexString('#f0ede8');
+   }else if(/iris|eye/.test(n)&&!/lash|brow|socket|lid|pupil/.test(n)){
+    mesh.material=mat.clone(mat.name+'-sav4-approved-iris');mesh.material.albedoColor=B.Color3.FromHexString('#7899ac');
+   }
+  }
  }catch(err){console.warn("SAV4 lakeside model unavailable",err);root.dispose();return null;}
  // The approved SAV4 viewer dresses this same base GLB with two separate assets.
  // Fit the garments against the resident's actual world-space body bounds.
