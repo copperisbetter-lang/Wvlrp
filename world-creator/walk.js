@@ -1,4 +1,4 @@
-import {installSav4LakesideResident} from "./wild-sav4-lakeside.js?v=20261019-v1";
+import {installSav4LakesideResident} from "./wild-sav4-lakeside.js?v=20261020-shore";
 import {installWildWaters} from "./wild-living-waters.js?v=20261018-green-water-v11";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
 import {installMasterHDForest} from "./wild-master-hd-forest.js?v=20261018-density-73f9";
@@ -60,7 +60,8 @@ const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
 const START_AT_LAKE=betaParams.get("spawn")==="lake";
-const LAKE_SPAWN=Object.freeze({x:-165,z:-120});
+// Spawn a few steps east of SAV4 on the dry north shore, facing the lake.
+const LAKE_SPAWN=Object.freeze({x:-161,z:-122});
 const START_AT_RANGER=betaParams.get("spawn")==="ranger";
 const START_AT_PHOTO_RANGER=betaParams.get("spawn")==="ranger-photo";
 const CAITLYN_PATROL=betaParams.get("caitlyn")==="patrol";
