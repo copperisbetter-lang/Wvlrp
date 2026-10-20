@@ -15,7 +15,7 @@
 <label>Blouse tilt sideways <input id="blouseRoll" type="range" min="-180" max="180" step="1" value="0" oninput="window.refitBlouse?.()"></label>
 <label><input id="blouseFlip" type="checkbox" onchange="window.refitBlouse?.()">Flip blouse upside down</label>
 </div><button type="button" onclick="window.saveBlouseFit?.()">Save blouse fit</button><div id="blouseStatus" role="status">Real blouse waiting for character.</div><textarea id="blouseCoordinates" aria-label="Blouse fit coordinates" readonly rows="4" style="width:100%;box-sizing:border-box" hidden></textarea><small>Peasant blouse by Elvaerwyn, CC-BY, from MakeHuman shirts03. Static fitting preview; animation fit pending.</small></details></details><div id="note">Rotate with one finger; pinch to zoom. Loading SAV 4 real GLB; wardrobe fitting pending.</div></footer><script>(()=>{
- const key='wvlrp.car2.sav4OutfitFit.v1';
+ const key='wvlrp.sav4.skirtFit.v1';
  const fields={size:'skirtSize',waistMeters:'skirtHeight',forwardMeters:'skirtDepth',yawDegrees:'skirtYaw',pitchDegrees:'skirtPitch',rollDegrees:'skirtRoll'};
  const show=(fit,message)=>{
   const box=document.getElementById('savedFitCoordinates');
@@ -321,7 +321,7 @@ const blouseHemPlane=new T.Plane(new T.Vector3(0,1,0),0);let blouseHemRest=null,
 const blouseGroup=new T.Group();scene.add(blouseGroup);
 let blouseModel=null,blouseLoading=false,blouseWanted=true;
 const blouseFields={size:'blouseSize',heightMeters:'blouseHeight',forwardMeters:'blouseDepth',yawDegrees:'blouseYaw',pitchDegrees:'blousePitch',rollDegrees:'blouseRoll'};
-const blouseKey='wvlrp.car2.peasantBlouseFit.v1';
+const blouseKey='wvlrp.sav4.peasantBlouseFit.v1';
 let blouseRestored=false;
 try{
  const fit=JSON.parse(localStorage.getItem(blouseKey)||'null');
