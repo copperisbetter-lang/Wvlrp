@@ -469,51 +469,17 @@ window.outfit=function(style){
  const item=wardrobe[style]||wardrobe.dress;
  clothes.clear();
  const ready=fittedGarments.get(style);
- if(style==='skirt'){
-  // The imported GLB was appearing as a horizontal strip at thigh height.
-  // Use the upright SAV4 skirt pattern, fitted in CAR2 character coordinates.
-  const skirt=new T.Group(),denim=fabric(0x866b86);
-  skirt.add(cylinder(.205,.295,.34,.83,denim));
-  skirt.add(cylinder(.21,.21,.045,1.015,denim));
-  avatar.updateMatrixWorld(true);
-  const bb=new T.Box3().setFromObject(avatar),bs=bb.getSize(new T.Vector3());
-  const hipWidth=bs.x*.56, waistY=bb.min.y+bs.y*.58;
-  const factor=hipWidth/.59;
-  skirt.scale.setScalar(factor);
-  skirt.position.set(bb.getCenter(new T.Vector3()).x,waistY-1.0375*factor,bb.getCenter(new T.Vector3()).z);
-  clothes.add(skirt);
-  status.textContent='SAV4 skirt pattern fitted upright to CAR2 waist and hips.';
-  return;
- }
- if(ready){alignGarment(ready,style);clothes.add(ready);ready.visible=true;status.textContent='Garment loaded';return;}
- status.textContent=item.label+' — loading garment file…';
+ if(ready){clothes.add(ready);ready.visible=true;status.textContent='SAV4 original fitted garment on CAR2, no resizing.';return;}
+ status.textContent='Loading original SAV4 fitted '+item.label+'…';
  if(loadingGarments.has(style))return;
+ const source=style==='skirt'?'sav4-mini-denim.glb':null;
+ if(!source){status.textContent='SAV4 fitted '+style+' asset not available; no substitute geometry used.';return;}
  loadingGarments.add(style);
- if(style==='shorts'){
-  // Clone SAV4's original shirt-and-shorts garment geometry and palette.
-  // CAR2 shares SAV4's body proportions; keep both pieces as one outfit.
-  loadingGarments.delete(style);
-  const g=new T.Group(),denim=fabric(0x506d8a),shirt=fabric(0xe2ddd3);
-  g.add(cylinder(.18,.20,.40,1.32,shirt));
-  g.add(cylinder(.22,.23,.18,.96,denim));
-  for(const x of [-.115,.115])g.add(cylinder(.115,.12,.24,.83,denim,x));
-  fittedGarments.set(style,g);
-  if(selectedOutfit===style){
-   avatar.updateMatrixWorld(true);g.updateMatrixWorld(true);
-   const bb=new T.Box3().setFromObject(avatar),bs=bb.getSize(new T.Vector3());
-   const gb=new T.Box3().setFromObject(g),gs=gb.getSize(new T.Vector3());
-   g.scale.setScalar(Math.min(bs.x*.62/gs.x,bs.y*.43/gs.y));g.updateMatrixWorld(true);
-   const fit=new T.Box3().setFromObject(g),fc=fit.getCenter(new T.Vector3()),bc=bb.getCenter(new T.Vector3());
-   g.position.set(bc.x-fc.x,bb.min.y+bs.y*.57-fit.min.y,bc.z-fc.z);
-   clothes.add(g);status.textContent='SAV4 shorts fitted to CAR2 hip and waist measurements.';
-  }
-  return;
- }
- if(!garmentFiles[style]){loadingGarments.delete(style);status.textContent='No garment file registered for '+style;return;}
- loader.load('./assets/'+garmentFiles[style],g=>{
+ loader.load('./assets/'+source,g=>{
   loadingGarments.delete(style);
   const model=g.scene;
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  model.position.set(0,0,0);model.rotation.set(0,0,0);model.scale.setScalar(1);
   fittedGarments.set(style,model);
   if(selectedOutfit===style)window.outfit(style);
  },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — file failed to load: '+(e?.message||'network or format error');});
