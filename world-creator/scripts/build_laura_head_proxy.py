@@ -73,6 +73,32 @@ for sign in (-1,1):
 for i in range(11):
     x=(i-5)*.125
     ellipsoid("Soft fringe %02d"%i, (x,-.49,.78-abs(x)*.12), (.092,.10,.33), hairmat, 24, 16)
+
+# Independent facial expression controls. These are inspection-grade movable
+# objects; production topology and skinning are still required for realism.
+# Named Blender animation clips export to GLB and can be previewed independently.
+bpy.context.scene.frame_start = 1
+bpy.context.scene.frame_end = 30
+def action_clip(label, transforms):
+    # Exporter collects active actions as independent GLB animation clips.
+    for ob in bpy.data.objects:
+        if ob.type != 'MESH': continue
+        ob.animation_data_clear()
+    for ob_name, frames in transforms.items():
+        ob = bpy.data.objects.get(ob_name)
+        if ob is None: continue
+        origin = ob.location.copy()
+        for frame, delta, scale in frames:
+            ob.location = origin + Vector(delta)
+            ob.scale = scale
+            ob.keyframe_insert(data_path='location',frame=frame)
+            ob.keyframe_insert(data_path='scale',frame=frame)
+        ob.location=origin
+        ob.scale=(1,1,1)
+    for ob in bpy.data.objects:
+        if ob.animation_data and ob.animation_data.action:
+            ob.animation_data.action.name=label
+# GLB viewer drives explicit named facial objects so both eyes can wink separately.
 # Inspection collection is explicitly NOT the approved SAV4 mesh.
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.export_scene.gltf(filepath=str(out), export_format="GLB", use_selection=False)
