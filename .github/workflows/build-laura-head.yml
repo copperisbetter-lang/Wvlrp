@@ -5,6 +5,8 @@ on:
     paths:
       - 'world-creator/scripts/build_laura_head.py'
       - '.github/workflows/build-laura-head.yml'
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,3 +24,13 @@ jobs:
           name: laura-head-inspection
           path: world-creator/assets/laura-head-inspection.glb
           if-no-files-found: error
+
+      - name: Publish generated GLB for the live viewer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f world-creator/assets/laura-head-inspection.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Laura head inspection model"
+            git push
+          fi
