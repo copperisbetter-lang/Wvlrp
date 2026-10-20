@@ -52,6 +52,9 @@ html:not(.wild-debug) #tree-inspection-controls,
 html:not(.wild-debug) #tree-inspection-status,
 html:not(.wild-debug) #info,
 html:not(.wild-debug) #help {display:none!important}
+
+/* Keep developer telemetry available in code, but never cover the playable world. */
+#wild-lake-build-probe,#maple-ground-debug,#tree-test-status,#tree-inspection-controls,#tree-build-proof,#message,#players{display:none!important}
 </style>
 </head>
 <body>
