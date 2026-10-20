@@ -25,6 +25,11 @@ imported=[o for o in bpy.data.objects if o not in original]
 addons=[o for o in imported if o.type=="MESH" and "vulva2" in o.name.lower()]
 if len(addons)!=1:raise RuntimeError("Standalone Vulva2 donor missing or ambiguous")
 addon=addons[0]
+# The donor is a thin surface: keep both sides visible at all camera distances.
+for material in addon.data.materials:
+ if material:
+  material.use_backface_culling=False
+  if hasattr(material,"surface_render_method"): material.surface_render_method="DITHERED"
 if not addon.data.materials or not addon.data.uv_layers.active:raise RuntimeError("Approved colored donor missing texture/UV")
 # Preserve the approved donor's actual material. Do not recolor CAR3.
 world=addon.matrix_world.copy()
@@ -41,6 +46,11 @@ addon.parent=rig;addon.matrix_world=world
 FIT_LOWER_METERS = 0.065
 fit_world=addon.matrix_world.copy()
 fit_world.translation.z -= FIT_LOWER_METERS
+addon.matrix_world=fit_world
+# Offset the insert slightly toward the viewer to prevent depth fighting with
+# the host skin when zoom changes; keep the approved geometry and texture.
+fit_world=addon.matrix_world.copy()
+fit_world.translation.y -= 0.004
 addon.matrix_world=fit_world
 # CAR2's method removes the covered pelvic faces, not the entire body.
 # Derive a conservative opening from the actual attachment's XY/Z extent,
