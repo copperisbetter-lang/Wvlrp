@@ -1,10 +1,8 @@
 import {FOREST_SPECIES_TARGETS} from "./wild-master-forest-registry.js";
 import {groundTree} from "./wild-hd-tree-ground.js";
 import {mayPlantTree} from "./wild-master-forest-reservations.js";
-/** Seeded 10% oak placement pass using verified upright CC0 PBR assets.
- * Other native hardwood species remain pending genuine verified models.
- * Cell occupancy is 10%; not a claim that 10% of physical acreage is covered.
- */
+import {isCommunityClearing,isVillagePrototypeExclusion,isVillageMountainSightline,pathDistance} from "./wild-reference-layout.js";
+/** Deterministic oak planting. Preserve village, campsites, paths and water. */
 export function installNativeOakScatter(B,scene,{seed=20261016,terrainHeight,excluded=()=>false,radius=900,cellSize=75,maxVisible=90,centerX=0,centerZ=0}={}){
  const isWater=(x,z,pad=5)=>{const lakes=[[-165,-180,72,52],[410,-340,95,72]];if(lakes.some(([cx,cz,rx,rz])=>((x-cx)/(rx+pad))**2+((z-cz)/(rz+pad))**2<=1))return true;for(let stream=0;stream<3;stream++){const origin=lakes[stream%2];for(let i=0;i<72;i++){const t=i/71,zz=origin[1]+(t-.5)*700,xx=origin[0]+origin[2]*.7+30*Math.sin(t*10+stream*2)+stream*75;if(Math.hypot(x-xx,z-zz)<pad+5)return true;}}return false;};
  const state={status:"loading",planted:0,roots:[],placements:[],skipped:0,reground(){let fixed=0;for(const p of [...this.placements]){const before=p.root.position.y;const result=groundTree(p.root,terrainHeight,p.x,p.z,.12);if(!result.ok){p.root.setEnabled(false);p.root.dispose(false,true);this.roots=this.roots.filter(r=>r!==p.root);this.placements=this.placements.filter(v=>v!==p);this.skipped++;continue;}if(Math.abs(p.root.position.y-before)>.025)fixed++;}this.planted=this.placements.length;this.lastCorrections=fixed;return fixed;},dispose(){if(this.observer)scene.onBeforeRenderObservable.remove(this.observer);for(const r of this.roots)r.dispose(false,true);this.roots.length=0;}};
@@ -28,7 +26,7 @@ export function installNativeOakScatter(B,scene,{seed=20261016,terrainHeight,exc
    const ix=cx+dx,iz=cz+dz;
    if(hash(ix,iz) >= .25)continue;
    const x=(ix+(hash(ix,iz,1)-.5)*.65)*cellSize,z=(iz+(hash(ix,iz,2)-.5)*.65)*cellSize;
-   if(isWater(x,z,5)||Math.hypot(x-centerX,z-centerZ)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
+   if(isWater(x,z,9)||isCommunityClearing(x,z)||isVillagePrototypeExclusion(x,z,12)||isVillageMountainSightline(x,z)||pathDistance(x,z)<7||Math.hypot(x-centerX,z-centerZ)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
    const src=sources[Math.floor(hash(ix,iz,3)*sources.length)];let instance,root;
    try{
     instance=src.container.instantiateModelsToScene(n=>"native-oak-"+ix+"-"+iz+"-"+n,false,{doNotInstantiate:false});
