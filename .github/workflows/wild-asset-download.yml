@@ -1,0 +1,48 @@
+name: Wild Asset Download Bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wild-assets/requests/*.json'
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: 'Approved request name (without .json)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select reviewed asset request
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUEST_INPUT: ${{ inputs.request_id }}
+          CHANGED_FILE: ${{ github.event.head_commit.added[0] }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            request="$REQUEST_INPUT"
+          else
+            request="$(git diff-tree --no-commit-id --name-only -r HEAD | grep '^wild-assets/requests/[a-z0-9_-]*\.json$' | head -n 1 | sed -e 's|.*/||' -e 's|\.json$||')"
+          fi
+          [[ "$request" =~ ^[a-z0-9][a-z0-9_-]{0,63}$ ]] || exit 1
+          test -f "wild-assets/requests/$request.json"
+          echo "WILD_REQUEST=$request" >> "$GITHUB_ENV"
+      - name: Fetch verified-format asset to staging
+        run: python3 scripts/wild_asset_fetch.py
+      - name: Upload asset for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: wild-asset-${{ env.WILD_REQUEST }}
+          path: wild-assets/staged/
+          retention-days: 14
+          if-no-files-found: error
