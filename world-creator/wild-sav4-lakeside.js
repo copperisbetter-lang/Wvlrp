@@ -15,6 +15,7 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
  // The approved SAV4 viewer dresses this same base GLB with two separate assets.
  // Fit the garments against the resident's actual world-space body bounds.
  const clothing=[];
+ let clothingFailed=false;
  async function dress(filename,region,desiredWidth){
   try{
    const outfit=await B.SceneLoader.LoadAssetContainerAsync("./assets/",filename,scene);
@@ -42,10 +43,11 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
    const offset=new B.Vector3(body.center.x-fitted.center.x,targetY-fitted.center.y,body.center.z-fitted.center.z);
    garmentRoot.position.addInPlace(offset);
    clothing.push({outfit,garmentRoot});
-  }catch(e){console.warn("SAV4 approved "+region+" failed to load",e)}
+  }catch(e){clothingFailed=true;console.error("SAV4 approved "+region+" failed to load; resident will not be displayed undressed",e)}
  }
  await dress("sav4_makehuman_mini_skirt_01.glb","skirt",.95);
  await dress("sav4-peasant-blouse.glb","blouse",1.18);
+ if(clothingFailed||clothing.length!==2){clothing.forEach(c=>{c.outfit.dispose();c.garmentRoot.dispose()});container.dispose();root.dispose();return null;}
  const groups=container.animationGroups||[];
  const pick=(name)=>groups.find(g=>name.test(g.name));
  const walk=pick(/walk/i),sit=pick(/sit/i),idle=pick(/idle|breath/i);
