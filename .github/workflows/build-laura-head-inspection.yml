@@ -15,7 +15,7 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
       - name: Build independent Laura head
         run: blender -b --python world-creator/scripts/build_laura_head_proxy.py
       - name: Verify GLB
