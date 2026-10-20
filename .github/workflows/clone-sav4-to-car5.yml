@@ -1,0 +1,50 @@
+name: Clone approved SAV4 asset to CAR5
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Validate and duplicate approved binary without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=world-creator/assets/sav4-realistic.glb
+          dest=world-creator/assets/car5-realistic.glb
+          test -s "$src" || { echo "Approved SAV4 GLB missing; refuse to reconstruct clone"; exit 1; }
+          cp "$src" "$dest"
+          cmp "$src" "$dest"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,struct,json
+          src=Path('world-creator/assets/sav4-realistic.glb')
+          dst=Path('world-creator/assets/car5-realistic.glb')
+          b=dst.read_bytes()
+          assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b)
+          length,kind=struct.unpack_from('<II',b,12)
+          doc=json.loads(b[20:20+length])
+          assert doc.get('meshes') and doc.get('skins')
+          assert hashlib.sha256(src.read_bytes()).digest()==hashlib.sha256(b).digest()
+          print('CAR5_BYTE_IDENTICAL_TO_SAV4',hashlib.sha256(b).hexdigest())
+          PY
+      - name: Publish CAR5 independent asset
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/car5-realistic.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Create CAR5 byte-identical clone of approved SAV4 asset"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Save clone proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: car5-clone-proof
+          path: world-creator/assets/car5-realistic.glb
