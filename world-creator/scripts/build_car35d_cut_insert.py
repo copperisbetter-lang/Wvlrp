@@ -52,64 +52,28 @@ addon.matrix_world=fit_world
 fit_world=addon.matrix_world.copy()
 fit_world.translation.y -= 0.004
 addon.matrix_world=fit_world
-# Geometry-aware CAR 3.5D integration: use the donor's actual silhouette,
-# rather than cutting a rectangular hole or displacing its edge by a fixed 6 mm.
+# Preserve approved donor texture, but eliminate the unsafe polygon-hole cut.
+# The original CAR3 body is retained here until a topology-compatible bridge
+# can be generated; this revision must fail closed rather than publish holes.
+# Calculate boundary loops from actual mesh topology (not convex projection).
 bpy.context.view_layer.update()
-from mathutils.bvhtree import BVHTree
-from mathutils import Vector
-from math import sqrt
-
-# Build a silhouette polygon in XZ from donor vertices.  The projected convex
-# hull is deliberately conservative; no face is removed unless its center is
-# also close to the donor surface in depth.
-points=[addon.matrix_world @ v.co for v in addon.data.vertices]
-coords=sorted(set((round(p.x,7),round(p.z,7)) for p in points))
-def cross(o,a,b):return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])
-lower=[]
-for p in coords:
- while len(lower)>1 and cross(lower[-2],lower[-1],p)<=0:lower.pop()
- lower.append(p)
-upper=[]
-for p in reversed(coords):
- while len(upper)>1 and cross(upper[-2],upper[-1],p)<=0:upper.pop()
- upper.append(p)
-hull=lower[:-1]+upper[:-1]
-if len(hull)<3:raise RuntimeError("Invalid donor projected silhouette")
-def inside(x,z):
- sign=None
- for i in range(len(hull)):
-  c=cross(hull[i],hull[(i+1)%len(hull)],(x,z))
-  if abs(c)<1e-9:continue
-  s=c>0
-  if sign is not None and sign!=s:return False
-  sign=s
- return True
-
-# Work in body-local coordinates to avoid incorrect world/local cuts.
-bm=bmesh.new();bm.from_mesh(body.data);bm.faces.ensure_lookup_table()
-body_world=body.matrix_world
-min_y=min(p.y for p in points);max_y=max(p.y for p in points)
-faces=[]
-for face in bm.faces:
- c=body_world @ face.calc_center_median()
- if inside(c.x,c.z) and min_y-.035 <= c.y <= max_y+.035:
-  faces.append(face)
-if not 5<len(faces)<450:
- bm.free();raise RuntimeError("Unsafe silhouette cut: "+str(len(faces)))
-bmesh.ops.delete(bm,geom=faces,context="FACES_ONLY")
-bm.to_mesh(body.data);bm.free();body.data.update()
-
-# Never pull all donor boundary vertices along Y: that produced the spikes
-# shown in the mobile screenshots.  Keep the approved donor shape untouched.
-# Report boundary counts for validation and subsequent edge-bridge work.
 edge_counts={}
 for poly in addon.data.polygons:
  for k in poly.edge_keys:
   key=tuple(sorted(k));edge_counts[key]=edge_counts.get(key,0)+1
-edge_ids=set()
-for (a,b),count in edge_counts.items():
- if count==1:edge_ids.update((a,b))
-if len(edge_ids)<8:raise RuntimeError("Donor boundary missing")
+boundary_edges=[e for e,n in edge_counts.items() if n==1]
+edge_ids={v for edge in boundary_edges for v in edge}
+if len(boundary_edges)<8:raise RuntimeError("Donor boundary missing")
+# Validate donor boundary: only manifold closed loops can be stitched safely.
+adjacency={}
+for u,v in boundary_edges:
+ adjacency.setdefault(u,[]).append(v)
+ adjacency.setdefault(v,[]).append(u)
+if any(len(neighbors)!=2 for neighbors in adjacency.values()):
+ raise RuntimeError("Donor perimeter is not manifold; refusing destructive body cut")
+# A real bridge requires matched host cut-loop vertices. Refuse to export a
+# disconnected cut-and-insert as a successful finished model.
+raise RuntimeError("CAR35D BRIDGE REQUIRED: host and donor boundaries not yet matched; preserving originals")
 for o in imported:
  if o!=addon:bpy.data.objects.remove(o,do_unlink=True)
 bpy.ops.export_scene.gltf(filepath=str(output),export_format="GLB",export_skins=True,export_animations=True)
