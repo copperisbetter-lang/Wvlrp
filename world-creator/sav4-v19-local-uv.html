@@ -73,7 +73,45 @@ try{
    mat.side=THREE.DoubleSide;
    mat.needsUpdate=true;
    mesh.material=Array.isArray(mesh.material)?mesh.material.map(()=>mat):mat;
-   // V19: map each attachment UV toward its nearest body-surface UV.\n   // Preserve the original geometry and use a local spatial index to avoid\n   // the previous arbitrary full-atlas or abdomen-patch sampling.\n   const bp=body.geometry.getAttribute('position'),bu=body.geometry.getAttribute('uv');\n   const ap=mesh.geometry.getAttribute('position');\n   if(!bp||!bu||!ap)throw Error('V19 missing source geometry attributes');\n   const cell=.035,grid=new Map();\n   const key=(x,y,z)=>x+','+y+','+z;\n   for(let i=0;i<bp.count;i++){\n     const x=Math.floor(bp.getX(i)/cell),y=Math.floor(bp.getY(i)/cell),z=Math.floor(bp.getZ(i)/cell);\n     const k=key(x,y,z);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);\n   }\n   const original=mesh.geometry.getAttribute('uv');\n   const remapped=original.clone();let matched=0,largest=0;\n   for(let i=0;i<ap.count;i++){\n     const x=ap.getX(i),y=ap.getY(i),z=ap.getZ(i);\n     const gx=Math.floor(x/cell),gy=Math.floor(y/cell),gz=Math.floor(z/cell);\n     let best=-1,dist=Infinity;\n     for(let radius=0;radius<=5&&best<0;radius++){\n       for(let dx=-radius;dx<=radius;dx++)for(let dy=-radius;dy<=radius;dy++)for(let dz=-radius;dz<=radius;dz++){\n         if(radius&&Math.max(Math.abs(dx),Math.abs(dy),Math.abs(dz))!==radius)continue;\n         for(const j of grid.get(key(gx+dx,gy+dy,gz+dz))||[]){\n           const d=(x-bp.getX(j))**2+(y-bp.getY(j))**2+(z-bp.getZ(j))**2;\n           if(d<dist){dist=d;best=j;}\n         }\n       }\n     }\n     if(best>=0&&dist<.05**2){\n       const u=bu.getX(best),v=bu.getY(best);\n       // Keep mapping near its original island; reject atlas jumps.\n       if(Math.hypot(u-original.getX(i),v-original.getY(i))<.12){\n         remapped.setXY(i,original.getX(i)*.25+u*.75,original.getY(i)*.25+v*.75);\n         matched++;largest=Math.max(largest,Math.sqrt(dist));\n       }\n     }\n   }\n   mesh.geometry=mesh.geometry.clone();mesh.geometry.setAttribute('uv',remapped);\n   console.info('V19 local body UV remap',{matched,total:ap.count,largest});\n   // Inspect the resulting UV range.
+   // V19: map each attachment UV toward its nearest body-surface UV.
+   // Preserve the original geometry and use a local spatial index to avoid
+   // the previous arbitrary full-atlas or abdomen-patch sampling.
+   const bp=body.geometry.getAttribute('position'),bu=body.geometry.getAttribute('uv');
+   const ap=mesh.geometry.getAttribute('position');
+   if(!bp||!bu||!ap)throw Error('V19 missing source geometry attributes');
+   const cell=.035,grid=new Map();
+   const key=(x,y,z)=>x+','+y+','+z;
+   for(let i=0;i<bp.count;i++){
+     const x=Math.floor(bp.getX(i)/cell),y=Math.floor(bp.getY(i)/cell),z=Math.floor(bp.getZ(i)/cell);
+     const k=key(x,y,z);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(i);
+   }
+   const original=mesh.geometry.getAttribute('uv');
+   const remapped=original.clone();let matched=0,largest=0;
+   for(let i=0;i<ap.count;i++){
+     const x=ap.getX(i),y=ap.getY(i),z=ap.getZ(i);
+     const gx=Math.floor(x/cell),gy=Math.floor(y/cell),gz=Math.floor(z/cell);
+     let best=-1,dist=Infinity;
+     for(let radius=0;radius<=5&&best<0;radius++){
+       for(let dx=-radius;dx<=radius;dx++)for(let dy=-radius;dy<=radius;dy++)for(let dz=-radius;dz<=radius;dz++){
+         if(radius&&Math.max(Math.abs(dx),Math.abs(dy),Math.abs(dz))!==radius)continue;
+         for(const j of grid.get(key(gx+dx,gy+dy,gz+dz))||[]){
+           const d=(x-bp.getX(j))**2+(y-bp.getY(j))**2+(z-bp.getZ(j))**2;
+           if(d<dist){dist=d;best=j;}
+         }
+       }
+     }
+     if(best>=0&&dist<.05**2){
+       const u=bu.getX(best),v=bu.getY(best);
+       // Keep mapping near its original island; reject atlas jumps.
+       if(Math.hypot(u-original.getX(i),v-original.getY(i))<.12){
+         remapped.setXY(i,original.getX(i)*.25+u*.75,original.getY(i)*.25+v*.75);
+         matched++;largest=Math.max(largest,Math.sqrt(dist));
+       }
+     }
+   }
+   mesh.geometry=mesh.geometry.clone();mesh.geometry.setAttribute('uv',remapped);
+   console.info('V19 local body UV remap',{matched,total:ap.count,largest});
+   // Inspect the resulting UV range.
    const uv=mesh.geometry.getAttribute('uv'),normal=mesh.geometry.getAttribute('normal');
    let invalid=0,minU=Infinity,maxU=-Infinity,minV=Infinity,maxV=-Infinity;
    for(let i=0;i<uv.count;i++){
