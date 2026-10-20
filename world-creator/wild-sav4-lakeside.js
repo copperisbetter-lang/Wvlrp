@@ -65,13 +65,22 @@ export async function installSav4LakesideResident(B,scene,{height}={}){
    const garmentMeshes=outfit.meshes.filter(m=>m.getTotalVertices?.()>0);
    const body=bounds(bodyMeshes),garment=bounds(garmentMeshes);
    if(!Number.isFinite(garment.size.y)||garment.size.y<=0)throw Error("invalid garment bounds");
-   const width=body.size.x*desiredWidth;
-   const factor=width/Math.max(.001,garment.size.x);
+   // Use the approved fit saved by SAV4 studio, not arbitrary body-width fitting.
+   const key=region==="skirt"?"wvlrp.sav4.skirtFit.v1":"wvlrp.sav4.peasantBlouseFit.v1";
+   let fit=null;
+   try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved?.version===1&&Number.isFinite(saved.size)&&saved.size>0)fit=saved;}catch(e){console.warn("SAV4 saved fit unreadable",e);}
+   if(!fit)throw Error("Missing approved "+region+" fit; refusing unapproved automatic fitting");
+   const factor=region==="skirt"
+     ?(1.6764*.235*fit.size/Math.max(.001,garment.size.x,garment.size.z))
+     :fit.size;
+   const radians=Math.PI/180;
+   garmentRoot.rotation.set(((fit.pitchDegrees||0)+(fit.flipped?180:0))*radians,(fit.yawDegrees||0)*radians,(fit.rollDegrees||0)*radians,"YXZ");
    garmentRoot.scaling.scaleInPlace(factor);
    garmentRoot.computeWorldMatrix(true);
    const fitted=bounds(garmentMeshes);
-   const targetY=region==="skirt"?body.min.y+body.size.y*.51:body.min.y+body.size.y*.76;
-   const offset=new B.Vector3(body.center.x-fitted.center.x,targetY-fitted.center.y,body.center.z-fitted.center.z);
+   const topY=region==="skirt"?fit.waistMeters:fit.heightMeters;
+   if(!Number.isFinite(topY))throw Error("Approved garment height missing");
+   const offset=new B.Vector3(body.center.x-fitted.center.x,body.min.y+topY-fitted.max.y,body.center.z-fitted.center.z+(fit.forwardMeters||0));
    // Bounds are in world coordinates; garmentRoot.position is local to the scaled/rotated resident.
    // Convert the offset into parent-local space instead of applying world meters as local meters.
    root.computeWorldMatrix(true);
