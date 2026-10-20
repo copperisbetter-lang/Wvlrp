@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Native Fit Inspection</title>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+</head><body><header><h1>SAV4 — Sample A Installed · V14</h1><p id="status" role="status">Loading V14 Sample A…</p></header><main id="stage"></main>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=v14-sample-a';
+const status=document.getElementById('status'),stage=document.getElementById('stage');
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
+ const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
+ const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
+ function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resize();
+ renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
+ let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
+ function style(){
+  for(const mesh of meshes){
+   mesh.visible=!only||mesh===attachment;
+   for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
+    if(!material)continue;
+    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
+    const faded=cutaway&&mesh!==attachment;
+    material.transparent=faded||original.transparent;
+    material.opacity=faded?original.opacity*.18:original.opacity;
+    material.depthWrite=faded?false:original.depthWrite;
+    material.needsUpdate=true;
+   }
+  }
+  document.getElementById('isolate').textContent=only?'Show body':'Attachment only';
+  document.getElementById('cutaway').textContent=cutaway?'Solid body':'Body cutaway';
+ }
+ function view(name){
+  let box=partBounds;
+  if(name==='Full body')box=new THREE.Box3().setFromObject(model,true);
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  orbit.target.copy(center);
+  let offset=name==='Full body'?new THREE.Vector3(0,.05,Math.max(2,size.y*1.5)):new THREE.Vector3(0,-.07,.40);
+  if(name==='Rear')offset.set(0,-.06,-.40);
+  if(name==='Side')offset.set(.40,-.02,0);
+  if(name==='Underneath')offset.set(.03,-.36,.06);
+  camera.position.copy(center).add(offset);orbit.update();
+ }
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+ document.getElementById('isolate').onclick=()=>{only=!only;style();};
+ document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
+ if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+ // Approved V14 sample A appearance, applied to SAV4's fitted attachment
+ // in-place. No second attachment mesh, no geometry changes.
+ function applyApprovedV14A(mesh){
+   const shade='#e9bea9', mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+   const body=meshes.filter(o=>o!==mesh).sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+   const bodyMat=(Array.isArray(body?.material)?body.material:[body?.material]).find(m=>m?.map);
+   const src=bodyMat?.map?.image;
+   let tex=null;
+   if(src){
+     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+     ctx.fillStyle=shade;ctx.fillRect(0,0,256,256);
+     const sample=document.createElement('canvas');sample.width=256;sample.height=256;
+     const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(src,0,0,256,256);
+     const pixels=sc.getImageData(0,0,256,256),out=ctx.getImageData(0,0,256,256);
+     const mean=[0,0,0];for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)mean[k]+=pixels.data[p+k];
+     for(let k=0;k<3;k++)mean[k]/=65536;
+     for(let p=0;p<pixels.data.length;p+=4)for(let k=0;k<3;k++)
+       out.data[p+k]=Math.max(0,Math.min(255,out.data[p+k]+Math.max(-22,Math.min(22,pixels.data[p+k]-mean[k]))*.42));
+     ctx.putImageData(out,0,0);
+     tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+     tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);
+   }
+   const mat=new THREE.MeshStandardMaterial({name:'Approved V14 A skin mottle',color:tex?'#ffffff':shade,map:tex,roughness:.96,metalness:0,side:THREE.DoubleSide});
+   mat.emissive.set(shade);mat.emissiveIntensity=.18;
+   mesh.material=Array.isArray(mesh.material)?mats.map(()=>mat):mat;
+   if(mesh.geometry.hasAttribute('color')){mesh.geometry=mesh.geometry.clone();mesh.geometry.deleteAttribute('color');}
+ }
+ applyApprovedV14A(attachment);
+ partBounds=new THREE.Box3().setFromObject(attachment,true);
+ status.textContent='V14 Sample A applied in viewer · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
+ // Display the exported model directly: no eye replacements, body reshaping,
+ // automatic posing, added garments, or per-frame geometry fitting.
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+</script></body></html>
