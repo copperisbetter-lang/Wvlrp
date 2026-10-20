@@ -363,12 +363,12 @@ window.showBlouse=()=>{
  if(blouseModel){window.refitBlouse();return;}
  if(blouseLoading)return;
  blouseLoading=true;document.getElementById('blouseStatus').textContent='Loading real peasant blouse…';
- loader.load('./assets/sav4-peasant-blouse.glb?v=car2-repair-1',g=>{
-  blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);
+ loader.load('./assets/sav4-peasant-blouse.glb?v=car2-garment-diagnostic-3',g=>{
+  blouseLoading=false;blouseModel=g.scene;blouseGroup.add(blouseModel);car2GarmentState.blouse='loaded';reportCar2Garments();
   blouseModel.traverse(o=>{if(o.isMesh){o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.side=T.DoubleSide;m.roughness=.9;m.clippingPlanes=[blouseHemPlane];m.clipShadows=true;m.needsUpdate=true;}}});
   // Use Doug's saved blouse defaults unless a browser fit was restored.
   blouseGroup.visible=blouseWanted;window.refitBlouse();
- },undefined,e=>{blouseLoading=false;document.getElementById('blouseStatus').textContent='Blouse asset missing or failed to load: sav4-peasant-blouse.glb';console.error(e);});
+ },undefined,e=>{blouseLoading=false;car2GarmentState.blouse='ERROR '+(e?.message||'load failed');reportCar2Garments();document.getElementById('blouseStatus').textContent='Blouse failed to load: '+(e?.message||'unknown error');console.error(e);});
 };
 window.saveBlouseFit=()=>{
  const fit={version:1};for(const [k,id] of Object.entries(blouseFields))fit[k]=Number(document.getElementById(id).value);
@@ -474,16 +474,28 @@ window.outfit=function(style){
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
  if(!garmentFiles[style]){status.textContent='No garment file registered for '+style;return;}
- loader.load('./assets/'+garmentFiles[style],g=>{
+ loader.load('./assets/'+garmentFiles[style]+'?v=car2-garment-diagnostic-3',g=>{
   loadingGarments.delete(style);
   const model=g.scene;
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-  fittedGarments.set(style,model);
+  fittedGarments.set(style,model);if(style==='skirt'){car2GarmentState.skirt='loaded';reportCar2Garments();}
   if(selectedOutfit===style)window.outfit(style);
- },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);status.textContent=item.label+' — file failed to load: '+(e?.message||'network or format error');});
+ },undefined,e=>{loadingGarments.delete(style);console.warn('SAV4 garment unavailable',style,e);if(style==='skirt'){car2GarmentState.skirt='ERROR '+(e?.message||'load failed');reportCar2Garments();}status.textContent=item.label+' — file failed to load: '+(e?.message||'network or format error');});
 };
 
-const sav4AssetUrl='./assets/car2-completed.glb?v=car2-wardrobe-1';
+
+// CAR2 garment load diagnostics: use real SAV4 assets and make failures visible.
+const car2GarmentDiagnostic=document.createElement('div');
+car2GarmentDiagnostic.id='car2-garment-diagnostic';
+car2GarmentDiagnostic.style.cssText='padding:6px;font-size:13px;color:#f5e9c6;background:#26372f';
+car2GarmentDiagnostic.textContent='CAR2 clothing: checking skirt and blouse…';
+document.querySelector('header').appendChild(car2GarmentDiagnostic);
+const car2GarmentState={skirt:'pending',blouse:'pending'};
+function reportCar2Garments(){
+ car2GarmentDiagnostic.textContent='CAR2 clothing | skirt: '+car2GarmentState.skirt+' | blouse: '+car2GarmentState.blouse;
+}
+window.car2GarmentDiagnostics=()=>({...car2GarmentState,skirtVisible:!!fittedGarments.get('skirt')?.visible,blouseVisible:!!blouseModel&&blouseGroup.visible});
+const sav4AssetUrl='./assets/car2-completed.glb?v=car2-garment-diagnostic-3';
 const sav4Version=document.createElement('div');sav4Version.id='sav4-version';sav4Version.style.cssText='font-size:12px;color:#b8d8c7;margin-top:5px';sav4Version.textContent='Viewer diagnostic 2026-10-18B · loading current GLB…';document.querySelector('header').appendChild(sav4Version);
 fetch(sav4AssetUrl,{method:'HEAD',cache:'no-store'}).then(r=>{sav4Version.textContent='Viewer diagnostic 2026-10-18 · GLB HTTP '+r.status+' · '+(r.headers.get('last-modified')||'no modified date')+' · '+(r.headers.get('content-length')||'unknown')+' bytes';}).catch(e=>{sav4Version.textContent='Viewer diagnostic · GLB HEAD check unavailable: '+e.message;});
 loader.load(sav4AssetUrl,g=>{
