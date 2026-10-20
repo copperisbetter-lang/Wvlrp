@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Skin Match Lab</title><style>body{margin:0;background:#1a2924;color:#f2f6f2;font:15px system-ui}header,footer{padding:12px}h1{font-size:20px;margin:0 0 6px}#stage{height:70dvh;min-height:380px}canvas{display:block;touch-action:none}nav{display:flex;gap:8px;flex-wrap:wrap;padding:10px}button{padding:12px;background:#426d5c;color:white;border:1px solid #769787;border-radius:8px;font:inherit}button:focus{outline:3px solid #e5cc85}#status{font-size:13px}#legend{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;font-size:12px;padding:8px}#error{color:#ffceae;padding:10px}</style></head><body><header><h1>SAV4 — Four-Way Skin Match</h1><div id="status">Loading SAV4's fitted model…</div><small>One SAV4 and three attachment-only samples. Geometry and production asset unchanged.</small></header><div id="stage"></div><div id="swatches" style="display:flex;gap:8px;padding:10px"><div style="background:#f4cdb7;color:#24140f;flex:1;padding:12px;text-align:center">A · #F4CDB7</div><div style="background:#f7d1bd;color:#24140f;flex:1;padding:12px;text-align:center">B · #F7D1BD</div><div style="background:#f9d5bd;color:#24140f;flex:1;padding:12px;text-align:center">C · #F9D5BD</div></div><div id="diagnostic" style="font-size:12px;padding:8px">3D material check pending</div><div id="legend"><span>SAV4</span><span>A · +12% light</span><span>B · +24% light</span><span>C · +36% light</span></div><nav><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="rear">Rear</button><button data-view="full">Full body</button><button id="reset">Reset</button></nav><footer>Choose the closest skin match visually. These are live shader comparisons only; nothing is applied to SAV4.</footer><div id="error"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Skin Match Lab</title><style>body{margin:0;background:#1a2924;color:#f2f6f2;font:15px system-ui}header,footer{padding:12px}h1{font-size:20px;margin:0 0 6px}#stage{height:70dvh;min-height:380px}canvas{display:block;touch-action:none}nav{display:flex;gap:8px;flex-wrap:wrap;padding:10px}button{padding:12px;background:#426d5c;color:white;border:1px solid #769787;border-radius:8px;font:inherit}button:focus{outline:3px solid #e5cc85}#status{font-size:13px}#legend{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;font-size:12px;padding:8px}#error{color:#ffceae;padding:10px}</style></head><body><header><h1>SAV4 — Four-Way Skin Match</h1><div id="status">Loading SAV4's fitted model…</div><small>One SAV4 and three attachment-only samples. Geometry and production asset unchanged.</small></header><div id="stage"></div><div id="swatches" style="display:flex;gap:8px;padding:10px"><div style="background:#f4cdb7;color:#24140f;flex:1;padding:12px;text-align:center">A · 22% lift</div><div style="background:#f7d1bd;color:#24140f;flex:1;padding:12px;text-align:center">B · 38% lift</div><div style="background:#f9d5bd;color:#24140f;flex:1;padding:12px;text-align:center">C · 54% lift</div></div><div id="diagnostic" style="font-size:12px;padding:8px">3D material check pending</div><div id="legend"><span>SAV4</span><span>A · 22% lift</span><span>B · 38% lift</span><span>C · 54% lift</span></div><nav><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="rear">Rear</button><button data-view="full">Full body</button><button id="reset">Reset</button></nav><footer>Choose the closest skin match visually. These are live shader comparisons only; nothing is applied to SAV4.</footer><div id="error"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -27,7 +27,7 @@ const partBox=new THREE.Box3().setFromObject(attachment,true),center=partBox.get
 const fullBox=new THREE.Box3().setFromObject(model,true);
 const spacing=Math.max(.22,size.x*2.0),positions=[spacing*.95,spacing*2.0,spacing*3.05];
 const shades=['#f4cdb7','#f7d1bd','#f9d5bd'];
-const adjustments=[{exposure:1.12,roughness:.92},{exposure:1.24,roughness:.88},{exposure:1.36,roughness:.84}];
+const adjustments=[{lift:.22,roughness:.92},{lift:.38,roughness:.88},{lift:.54,roughness:.84}];
 // Standalone meshes: never clone the character, armature, or skin.
 const sourceMaterials=Array.isArray(attachment.material)?attachment.material:[attachment.material];
 // A textured body material commonly has a WHITE multiplier. Sample its real
@@ -86,6 +86,21 @@ function abdomenSkinTile(mesh,mat){
  }catch(e){console.warn('Abdomen UV sampling unavailable',e);return null;}
 }
 const skinTile=abdomenSkinTile(body,skinMat);
+function liftedTexture(original,lift){
+ if(!original?.image)return null;
+ const c=document.createElement('canvas');c.width=128;c.height=128;
+ const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(original.image,0,0,128,128);
+ const data=ctx.getImageData(0,0,128,128);
+ // Lift the ACTUAL texture RGB toward a natural light skin target, rather
+ // than multiplying a shader color that can clip at white.
+ const target=[255,224,208];
+ for(let p=0;p<data.data.length;p+=4)for(let k=0;k<3;k++)
+   data.data[p+k]=Math.round(data.data[p+k]*(1-lift)+target[k]*lift);
+ ctx.putImageData(data,0,0);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+ t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);t.needsUpdate=true;return t;
+}
+const liftedTiles=adjustments.map(a=>liftedTexture(skinTile?.tex,a.lift));
 const sampledTone=skinToneFromTexture(skinMat);
 // Previous automatic sampler selected gray pixels from an unrelated material.
 // Use an explicit warm skin reference for visible comparison until a calibrated
@@ -93,13 +108,13 @@ const sampledTone=skinToneFromTexture(skinMat);
 const sourceColor=new THREE.Color('#f7d1bd');
 // Some GLBs carry grayscale vertex color attributes on the attachment.
 // These must not modulate the new skin-match material.
-status.textContent=skinTile?'LIGHTING MATCH v9 · abdomen skin patch '+skinTile.bx+','+skinTile.by+' · exposure A 1.12x / B 1.24x / C 1.36x':'LIGHTING MATCH v9 · texture sampling unavailable, fallback colors';
+status.textContent=skinTile?'TEXTURE PIXEL LIFT v10 · abdomen skin patch '+skinTile.bx+','+skinTile.by+' · pixel lift A 22% / B 38% / C 54%':'TEXTURE PIXEL LIFT v10 · texture sampling unavailable, fallback colors';
 for(let i=0;i<3;i++){
  const materials=sourceMaterials.map(m=>{
   const n=new THREE.MeshStandardMaterial({name:'SAV4 skin-match '+String.fromCharCode(65+i),roughness:adjustments[i].roughness,metalness:0,side:THREE.DoubleSide});
   // Keep original attachment UV mapping; do not transplant body textures
   // whose UV islands belong to an entirely different mesh.
-  n.map=skinTile?.tex||null;n.vertexColors=false;n.color.set(skinTile?'#ffffff':shades[i]).multiplyScalar(adjustments[i].exposure);
+  n.map=liftedTiles[i]||null;n.vertexColors=false;n.color.set(skinTile?'#ffffff':shades[i]);
   n.emissive.set('#000000');n.emissiveIntensity=0;
   n.needsUpdate=true;return n;
  });
