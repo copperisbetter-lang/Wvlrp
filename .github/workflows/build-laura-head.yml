@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender
-        run: sudo apt-get update && sudo apt-get install -y blender
+        run: sudo apt-get update && sudo apt-get install -y blender python3-numpy
       - name: Export Laura head GLB
         run: blender -b -t 2 --python world-creator/scripts/build_laura_head.py
       - name: Check GLB output
