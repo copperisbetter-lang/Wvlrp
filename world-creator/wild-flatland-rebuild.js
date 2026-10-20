@@ -31,9 +31,10 @@ function makeFootpaths(B,scene,track,{cx,cy,seed,base,material}){
       const nx=-tz/len,nz=tx/len;
       if(k)run+=Math.hypot(x-prevX,z-prevZ);
       for(const side of [-1,1]){
-        const px=x+nx*side*1.75,pz=z+nz*side*1.75;
+        const irregular=.90+.10*Math.sin(run*.61+route.id.length)+.07*Math.sin(run*1.77+side*3);
+        const px=x+nx*side*1.75*irregular,pz=z+nz*side*1.75*irregular;
         verts.push(px-cx,flatlandHeight(px,pz,seed,base)+.046,pz-cy);
-        uvs.push(side===-1?0:1,run/3.2);
+        uvs.push(side===-1?0:1,run/2.5);
       }
       if(k){const n=k*2;indices.push(n-2,n-1,n,n-1,n+1,n);}
     }
@@ -119,11 +120,18 @@ export function renderRebuiltLandscape(B,scene,track,{cx,cy,seed,mobile=false,li
     ground.getVerticesData(B.VertexBuffer.PositionKind),
     ground.getIndices(),196,subdivisions,cx,cy);
 
-  // Clean photographic test: no legacy paths, pads, buildings, trees, rocks,
+  // HD photo-ground trails restored; no legacy pads, buildings, trees, rocks,
   // giant mountain walls, or decorative mesh passes. The cabin and its people
   // are separate permanent scene objects and remain untouched by tile loads.
   // Terrain elevation and the ~84 m streaming trigger remain active.
-  const paths=0,pads=0;
+  const trailMat=track(new B.StandardMaterial("HD Appalachian woodland footpaths",scene));
+  trailMat.diffuseColor=new B.Color3(.91,.88,.83);
+  trailMat.specularColor=new B.Color3(.012,.012,.01);
+  trailMat.diffuseTexture=track(new B.Texture("./assets/village-terrain-forest_ground_05-1k-diffuse.jpg",scene));
+  trailMat.bumpTexture=track(new B.Texture("./assets/village-terrain-forest_ground_05-1k-normal.jpg",scene));
+  trailMat.bumpTexture.level=.32;
+  trailMat.diffuseTexture.wrapU=trailMat.diffuseTexture.wrapV=B.Texture.WRAP_ADDRESSMODE;
+  const paths=makeFootpaths(B,scene,track,{cx,cy,seed,base,material:trailMat}),pads=0;
   const buildings=buildNorthRangerStation(B,scene,track,
     {cx,cy,seed,base,surfaceHeight})+
     buildPhotoRangerStation(B,scene,track,
