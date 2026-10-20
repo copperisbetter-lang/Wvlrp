@@ -5,5 +5,6 @@
   "license": "CC0 1.0 (source listing); species not verified gray squirrel",
   "allowed_hosts": [
     "www.innerscene.com"
-  ]
+  ],
+  "notes": "Retry after runner checkout fix, reference only"
 }
