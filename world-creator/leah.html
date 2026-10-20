@@ -187,13 +187,14 @@ function animatePerformance(){
  const gait=activeMotion==='Walk'||activeMotion==='Run',run=activeMotion==='Run',seated=activeMotion==='Sit'||activeMotion==='Sit — legs apart';
  const crawl=activeMotion==='Hands and knees'||activeMotion==='Elbows and knees',onElbows=activeMotion==='Elbows and knees';
  if(poseSeat)poseSeat.visible=seated;
- const phase=t*(run?8.2:5.4),s=Math.sin(phase),step=run?.38:.23;
+ const phase=t*(run?9.2:5.6),s=Math.sin(phase),step=run?.38:.23;
  const reach=activeMotion==='Bend and pick up'?.5-.5*Math.cos(Math.min(t/2.5,1)*Math.PI*2):0;
  let lean=gait?(run?.055:.025):reach*.95;
  if(crawl)lean=onElbows?1.94:Math.PI/2;
  // Lean the pelvis and torso together instead of twisting only the spine.
  rotateWorld('Hips',v3(1,0,0),lean);
- if(gait)lowerHips((run?.045:.018)+(run?.012:.004)*Math.cos(phase*2));
+ if(gait)lowerHips((run?.025:.012)+(run?.012:.006)*Math.cos(phase*2));
+ if(gait){rotateWorld('Spine',v3(0,1,0),.035*Math.sin(phase));rotateWorld('Spine1',v3(0,0,1),.014*Math.sin(phase));}
  if(seated)lowerHips(.39);
  if(crawl){
   const legLength=limbLength('LeftUpLeg','LeftLeg'),pad=.066*motionScale;
@@ -207,28 +208,25 @@ function animatePerformance(){
    const ankle=v3(root.x,groundY+.106*motionScale,root.z-limbLength(side+'Leg',side+'Foot'));
    solveLimb(side+'UpLeg',side+'Leg',side+'Foot',ankle,root.clone().add(v3(0,-3,-.1)));
    aim(side+'Foot',side+'ToeBase',v3(0,-.05,-1));
-  }else if(run){
-   // Running uses a stable forward-kinematic stride. Avoid IK knee pole flips
-   // and overextended ankles that made the previous run look unnatural.
-   const swing=Math.sin(phase+(side==='Right'?Math.PI:0));
-   const recover=Math.max(0,-swing);
-   const thigh=v3(0,-Math.cos(.52*swing),Math.sin(.52*swing));
-   const shin=v3(0,-Math.cos(.18+.68*recover),Math.sin(.18+.68*recover));
-   aim(side+'UpLeg',side+'Leg',thigh);
-   aim(side+'Leg',side+'Foot',shin);
-   aim(side+'Foot',side+'ToeBase',v3(0,-.12,1));
   }else if(gait){
-   // Each ankle follows one forward/back lane; knees bend forward toward a pole.
-   const cycle=((phase/(Math.PI*2)+(side==='Left'?0:.5))%1+1)%1,stance=run?.42:.64;
-   const stride=(run?.36:.18)*motionScale,lift=(run?.115:.045)*motionScale;
-   let z,y=rest.get(side+'Foot').point.y,pitch=0;
-   if(cycle<stance){const q=cycle/stance;z=stride*(1-2*q);pitch=-.10+.24*q;}
-   else{const q=(cycle-stance)/(1-stance),ease=q*q*(3-2*q);z=stride*(2*ease-1);y+=lift*Math.sin(Math.PI*q);pitch=.12*Math.sin(Math.PI*q);}
-   const root=rig.get(side+'UpLeg').getWorldPosition(v3());
-   const target=v3(root.x,y,rest.get('Hips').point.z+z);
-   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',target,root.clone().add(v3(0,-.25,.35*motionScale)));
-   // Fix the ankle's complete orientation, including roll; direction alone allowed twisting.
-   rotateWorld(side+'Foot',v3(1,0,0),pitch);
+   // A continuous foot trajectory: planted stance, lifted recovery, and forward knee pole.
+   const offset=side==='Left'?0:.5;
+   const cycle=((phase/(Math.PI*2)+offset)%1+1)%1;
+   const stance=run?.40:.62;
+   const stride=(run?.28:.155)*motionScale;
+   const lift=(run?.105:.07)*motionScale;
+   const q=cycle<stance?cycle/stance:(cycle-stance)/(1-stance);
+   const swing=cycle>=stance;
+   const ease=q*q*(3-2*q);
+   const z=swing?stride*(2*ease-1):stride*(1-2*q);
+   const y=rest.get(side+'Foot').point.y+(swing?lift*Math.sin(Math.PI*q):0);
+   const hip=rig.get(side+'UpLeg').getWorldPosition(v3());
+   const ankle=v3(hip.x,y,rest.get('Hips').point.z+z);
+   const kneePole=hip.clone().add(v3(0,-.12*motionScale,.65*motionScale));
+   solveLimb(side+'UpLeg',side+'Leg',side+'Foot',ankle,kneePole);
+   // Lift the toes in recovery, settle them during stance.
+   const toeAngle=swing?.18*Math.sin(Math.PI*q):(-.06+.12*q);
+   rotateWorld(side+'Foot',v3(1,0,0),toeAngle);
   }else{
    let thigh=v3(sign*.025,-1,0),shin=v3(0,-1,0);
    if(seated){const spread=activeMotion==='Sit — legs apart'?.90:.10;thigh=v3(sign*spread,-.06,1);shin=v3(0,-1,.04);}
@@ -242,7 +240,7 @@ function animatePerformance(){
    // Palms and fingers rest forward instead of hanging beneath the wrists.
    aim(side+'Hand',side+'HandMiddle1',v3(0,-.03,1));flattenPalm(side);
   }else{
-   const swing=gait?-s*sign*(run?.42:.36):0,flex=gait?(run?.52:.38):.10;
+   const swing=gait?-s*sign*(run?.48:.34):0,flex=gait?(run?.45:.30):.10;
    let upper=v3(sign*(gait?.13:.065),-Math.cos(swing),Math.sin(swing));
    let fore=v3(sign*(gait?.10:.025),-Math.cos(swing+flex),Math.sin(swing+flex));
    if(activeMotion==='Wave'&&side==='Right'){upper=v3(-.4,.75,.12);fore=v3(Math.sin(t*5)*.18,1,.10);}
