@@ -473,7 +473,19 @@ window.outfit=function(style){
  status.textContent=item.label+' — loading garment file…';
  if(loadingGarments.has(style))return;
  loadingGarments.add(style);
- if(!garmentFiles[style]){status.textContent='No garment file registered for '+style;return;}
+ if(style==='shorts'){
+  // Clone SAV4's original shirt-and-shorts garment geometry and palette.
+  // CAR2 shares SAV4's body proportions; keep both pieces as one outfit.
+  loadingGarments.delete(style);
+  const g=new T.Group(),denim=fabric(0x506d8a),shirt=fabric(0xe2ddd3);
+  g.add(cylinder(.18,.20,.40,1.32,shirt));
+  g.add(cylinder(.22,.23,.18,.96,denim));
+  for(const x of [-.115,.115])g.add(cylinder(.115,.12,.24,.83,denim,x));
+  fittedGarments.set(style,g);
+  if(selectedOutfit===style){clothes.add(g);status.textContent='SAV4 shirt and shorts cloned onto CAR2 — inspect fit and motion.';}
+  return;
+ }
+ if(!garmentFiles[style]){loadingGarments.delete(style);status.textContent='No garment file registered for '+style;return;}
  loader.load('./assets/'+garmentFiles[style],g=>{
   loadingGarments.delete(style);
   const model=g.scene;
