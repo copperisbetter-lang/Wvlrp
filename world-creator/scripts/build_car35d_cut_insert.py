@@ -124,6 +124,28 @@ except Exception as exc:
  bm.free();raise RuntimeError("Bridge operation failed: "+str(exc))
 if not bridge.get("faces"):
  bm.free();raise RuntimeError("No connecting bridge faces created")
+# A successful bridge can still contain stretched spikes. Reject such exports.
+bridge_faces=bridge["faces"]
+cross_lengths=[]
+donor_set=set(newverts)
+for face in bridge_faces:
+ for edge in face.edges:
+  ends=[v in donor_set for v in edge.verts]
+  if ends[0] != ends[1]:
+   cross_lengths.append(edge.calc_length())
+if not cross_lengths or max(cross_lengths)>0.025:
+ worst=max(cross_lengths) if cross_lengths else -1
+ bm.free()
+ raise RuntimeError("Unsafe stretched seam: maximum cross-edge %.4f meters" % worst)
+if any(face.calc_area()<1e-9 or len(face.verts)>4 for face in bridge_faces):
+ bm.free();raise RuntimeError("Degenerate bridge face detected")
+for face in bridge_faces:
+ coords=[v.co for v in face.verts]
+ for i in range(len(coords)):
+  a=(coords[(i-1)%len(coords)]-coords[i]).normalized()
+  b=(coords[(i+1)%len(coords)]-coords[i]).normalized()
+  if a.dot(b)>.995:
+   bm.free();raise RuntimeError("Needle-shaped bridge polygon detected")
 # Fail closed if any newly created bridge edge remains open.
 if any(e.is_boundary for e in body_rim+donor_rim):
  bm.free();raise RuntimeError("Unsealed bridge perimeter")
