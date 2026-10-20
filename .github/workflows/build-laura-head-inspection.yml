@@ -1,0 +1,37 @@
+name: Build Laura Head Inspection GLB
+on:
+  workflow_dispatch:
+  push:
+    branches: [sav4-laura-one-pass-inspection]
+    paths:
+      - 'world-creator/scripts/build_laura_head_proxy.py'
+      - 'world-creator/characters/sav4/laura-two-view-landmarks.json'
+      - '.github/workflows/build-laura-head-inspection.yml'
+jobs:
+  head:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Build independent Laura head
+        run: blender -b --python world-creator/scripts/build_laura_head_proxy.py
+      - name: Verify GLB
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          p=Path('world-creator/assets/laura-head-inspection-proxy.glb')
+          data=p.read_bytes()
+          assert len(data)>10000, 'GLB unexpectedly small'
+          magic,version,length=struct.unpack_from('<4sII',data)
+          assert magic==b'glTF' and version==2 and length==len(data), 'Invalid GLB'
+          print('Validated:',p,'bytes:',len(data))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: laura-head-inspection-glb
+          path: world-creator/assets/laura-head-inspection-proxy.glb
+          if-no-files-found: error
