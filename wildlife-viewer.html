@@ -10,7 +10,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 </style></head><body>
 <h1>🐊 The Wild — Wildlife Inspection</h1><p>Inspect the actual downloaded animal geometry before anything enters the forest. Drag to rotate, pinch or scroll to zoom. Animation controls only enable if the model contains real animation clips.</p>
 <main><section id="stage"><div id="status" role="status" aria-live="polite">Starting 3D viewer…</div></section><aside>
-<label for="animal">Inspect animal</label><select id="animal"><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
+<label for="animal">Inspect animal</label><select id="animal"><option value="buck">Whitetail buck — uploaded model</option><option value="deer">Deer — reference</option><option value="rabbit">Rabbit — reference</option><option value="squirrel">Squirrel — reference</option></select>
 <div class="row"><button id="front">Front</button><button id="side">Side</button><button id="reset">Fit model</button></div>
 <label for="clips">Available animation</label><select id="clips" disabled><option>None detected</option></select>
 <div class="row"><button id="play" disabled>Play</button><button id="stop" disabled>Stop</button></div>
@@ -33,7 +33,7 @@ aside{background:#1d3029;border:1px solid #52675b;border-radius:12px;padding:16p
 const root=document.getElementById('stage'),status=document.getElementById('status'),animal=document.getElementById('animal'),clips=document.getElementById('clips'),facts=document.getElementById('facts');
 const play=document.getElementById('play'),stop=document.getElementById('stop');
 let THREE,scene,camera,renderer,controls,loader,mixer,model,clock,activeAction;
-const urls={deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
+const urls={buck:'whitetail-buck-rigged-v1.glb',deer:'wildlife-models/deer-standing.glb',rabbit:'wildlife-models/domestic-rabbit.glb',squirrel:'wildlife-models/tree-squirrel.glb'};
 try{
  window.wildDiag('Importing Three.js core…');
  THREE=await import('three');
@@ -61,10 +61,10 @@ try{
   clips.innerHTML='<option>None detected</option>';clips.disabled=play.disabled=stop.disabled=true;facts.textContent='Loading '+id+'…';status.textContent='Loading '+id+' model…';
   loader.load(urls[id],gltf=>{
    model=gltf.scene;model.userData.clips=gltf.animations||[];scene.add(model);
-   let mesh=0,tri=0,bones=0;model.traverse(o=>{if(o.isMesh){mesh++;if(o.geometry.index)tri+=o.geometry.index.count/3;else tri+=(o.geometry.attributes.position?.count||0)/3;}if(o.isBone)bones++});
+   let mesh=0,tri=0,bones=0,skinned=0;model.traverse(o=>{if(o.isMesh){mesh++;if(o.geometry.index)tri+=o.geometry.index.count/3;else tri+=(o.geometry.attributes.position?.count||0)/3;}if(o.isBone)bones++;if(o.isSkinnedMesh)skinned++});
    if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);clips.innerHTML='';gltf.animations.forEach((clip,i)=>clips.add(new Option(clip.name||'Animation '+(i+1),String(i))));clips.disabled=play.disabled=stop.disabled=false;}
-   facts.textContent='Meshes: '+mesh+' · Approx. triangles: '+Math.round(tri)+' · Bones: '+bones+' · Animation clips: '+gltf.animations.length;
-   window.wildDiag('Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length);status.textContent='Viewing '+id+' reference — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
+   facts.textContent='Meshes: '+mesh+' · Approx. triangles: '+Math.round(tri)+' · Bones: '+bones+' · Skinned meshes: '+skinned+' · Animation clips: '+gltf.animations.length;
+   window.wildDiag('Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length);status.textContent='Viewing '+id+' — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
   },undefined,err=>{console.error(err);window.wildDiag('Failed to load '+urls[id]+': '+(err?.message||String(err)));status.textContent='Could not load '+id+' model';facts.textContent='Model load failed: '+(err?.message||String(err))+'. Asset: '+urls[id];});
  }
