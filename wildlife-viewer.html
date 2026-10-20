@@ -62,7 +62,7 @@ try{
   loader.load(urls[id],gltf=>{
    model=gltf.scene;model.userData.clips=gltf.animations||[];scene.add(model);
    let mesh=0,tri=0,bones=0;model.traverse(o=>{if(o.isMesh){mesh++;if(o.geometry.index)tri+=o.geometry.index.count/3;else tri+=(o.geometry.attributes.position?.count||0)/3;}if(o.isBone)bones++});
-   if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);clips.innerHTML='';gltf.animations.forEach((clip,i)=>clips.add(new Option(clip.name||'Animation '+(i+1),String(i)));clips.disabled=play.disabled=stop.disabled=false;}
+   if(gltf.animations.length){mixer=new THREE.AnimationMixer(model);clips.innerHTML='';gltf.animations.forEach((clip,i)=>clips.add(new Option(clip.name||'Animation '+(i+1),String(i))));clips.disabled=play.disabled=stop.disabled=false;}
    facts.textContent='Meshes: '+mesh+' · Approx. triangles: '+Math.round(tri)+' · Bones: '+bones+' · Animation clips: '+gltf.animations.length;
    window.wildDiag('Loaded '+id+' · meshes '+mesh+' · clips '+gltf.animations.length);status.textContent='Viewing '+id+' reference — '+(gltf.animations.length?'animation clips available':'STATIC: no built-in animation');
    fit();
