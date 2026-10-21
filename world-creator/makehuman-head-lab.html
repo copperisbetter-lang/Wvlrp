@@ -21,44 +21,55 @@ const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:tru
 const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;
 scene.add(new THREE.HemisphereLight(0xffffff,0x64766a,2));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(2,3,4);scene.add(sun);
 let model=null, originals=[];
+function captureMeshes(){
+ originals=[];model.updateMatrixWorld(true);
+ model.traverse(o=>{if(!o.isMesh||!o.geometry?.attributes?.position)return;
+ o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;
+ originals.push({mesh:o,base:new Float32Array(a.array),count:a.count});});
+ // The largest mesh is the face skin. Keep eyes, hair and accessories unchanged.
+ const primary=originals.reduce((a,b)=>!a||b.count>a.count?b:a,null);
+ if(primary){const box=new THREE.Box3().setFromObject(primary.mesh);primary.bounds=box;}
+ return primary;
+}
 function status(s){$('status').textContent=s}
 function fit(){const box=new THREE.Box3().setFromObject(model),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());orbit.target.copy(center);const max=Math.max(size.x,size.y,size.z,.1);camera.position.copy(center).add(new THREE.Vector3(0,0,max*2.5));camera.near=Math.max(.001,max/1000);camera.far=max*1000;camera.updateProjectionMatrix();orbit.update()}
 function apply(){
  if(!model)return;
  const t=Number($('strength').value)/100;
- const w=Number($('width').value)/100, l=Number($('length').value)/100;
+ const w=Number($('width').value)/100,l=Number($('length').value)/100;
+ const primary=originals.find(o=>o.bounds);
  let moved=0;
- for(const {mesh,base} of originals){
-  const a=mesh.geometry.attributes.position;
-  const b=mesh.geometry.boundingBox || (mesh.geometry.computeBoundingBox(),mesh.geometry.boundingBox);
-  const cy=(b.min.y+b.max.y)/2, ry=Math.max((b.max.y-b.min.y)/2,0.001);
-  const rx=Math.max((b.max.x-b.min.x)/2,0.001);
-  const rz=Math.max((b.max.z-b.min.z)/2,0.001);
-  for(let i=0;i<a.count;i++){
-   const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
-   const nx=x/rx,ny=(y-cy)/ry,nz=z/rz;
-   const cheek=Math.exp(-Math.pow((Math.abs(nx)-.48)/.27,2)-Math.pow((ny+.05)/.33,2));
-   const nose=Math.exp(-Math.pow(nx/.24,2)-Math.pow((ny-.04)/.28,2));
-   const lips=Math.exp(-Math.pow(nx/.38,2)-Math.pow((ny+.37)/.14,2));
-   const chin=Math.exp(-Math.pow(nx/.42,2)-Math.pow((ny+.7)/.19,2));
-   const eyes=Math.exp(-Math.pow((Math.abs(nx)-.38)/.23,2)-Math.pow((ny-.32)/.15,2));
-   const jaw=Math.exp(-Math.pow((Math.abs(nx)-.57)/.32,2)-Math.pow((ny+.57)/.23,2));
-   const dx=x*((w-1)*t +t*(.18*cheek-.10*nose+.08*jaw+.10*eyes));
-   const dy=(y-cy)*(l-1)*t + ry*t*(.045*cheek-.045*lips-.075*chin+.025*eyes);
-   const dz=rz*t*(.16*nose+.09*lips+.08*cheek-.06*chin+.045*eyes);
-   a.setXYZ(i,x+dx,y+dy,z+dz);
-   if(Math.abs(dx)+Math.abs(dy)+Math.abs(dz)>1e-6)moved++;
-  }
-  a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();mesh.geometry.computeBoundingBox();
+ if(primary){
+ const {mesh,base,bounds}=primary,a=mesh.geometry.attributes.position;
+ const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
+ const rx=Math.max(size.x/2,1e-5),ry=Math.max(size.y/2,1e-5),rz=Math.max(size.z/2,1e-5);
+ const inv=mesh.matrixWorld.clone().invert(),world=new THREE.Vector3(),local=new THREE.Vector3();
+ for(let i=0;i<a.count;i++){
+  const k=i*3;local.set(base[k],base[k+1],base[k+2]);world.copy(local).applyMatrix4(mesh.matrixWorld);
+  const nx=(world.x-center.x)/rx,ny=(world.y-center.y)/ry;
+  const cheek=Math.exp(-((Math.abs(nx)-.5)/.29)**2-((ny+.05)/.3)**2);
+  const nose=Math.exp(-(nx/.23)**2-((ny-.02)/.29)**2);
+  const lips=Math.exp(-(nx/.38)**2-((ny+.37)/.14)**2);
+  const chin=Math.exp(-(nx/.43)**2-((ny+.7)/.19)**2);
+  const eyes=Math.exp(-((Math.abs(nx)-.4)/.23)**2-((ny-.31)/.15)**2);
+  const jaw=Math.exp(-((Math.abs(nx)-.56)/.31)**2-((ny+.56)/.24)**2);
+  const dx=(world.x-center.x)*t*(w-1+.18*cheek-.10*nose+.08*jaw+.10*eyes);
+  const dy=(world.y-center.y)*t*(l-1)+ry*t*(.045*cheek-.045*lips-.075*chin+.025*eyes);
+  const dz=rz*t*(.16*nose+.09*lips+.08*cheek-.06*chin+.045*eyes);
+  world.add(new THREE.Vector3(dx,dy,dz)).applyMatrix4(inv);
+  a.setXYZ(i,world.x,world.y,world.z);
+  if(Math.abs(dx)+Math.abs(dy)+Math.abs(dz)>1e-6)moved++;
  }
- $('pct').textContent=Math.round(t*100)+'%';
- $('widthOut').textContent=$('width').value+'%';$('lengthOut').textContent=$('length').value+'%';
- status('LIVE vertex morph '+Math.round(t*100)+'% · '+moved+' changed vertices · cheeks, eyes, nose, lips, jaw and chin. Test 0% vs 100%.');
+ a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();mesh.geometry.computeBoundingBox();
+ }
+ $('pct').textContent=Math.round(t*100)+'%';$('widthOut').textContent=$('width').value+'%';$('lengthOut').textContent=$('length').value+'%';
+ status('Morph '+Math.round(t*100)+'%: '+moved+' face vertices changed (hair and eyes protected).');
 }
-$('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{status('Loading imported GLB…');const bytes=await file.arrayBuffer();const gltf=await new GLTFLoader().parseAsync(bytes,'');if(model)scene.remove(model);model=gltf.scene;originals=[];model.traverse(o=>{if(!o.isMesh)return;o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;if(a)originals.push({mesh:o,base:new Float32Array(a.array)})});scene.add(model);fit();$('export').disabled=false;apply()}catch(err){status('Import failed: '+err.message)}};
+$('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{status('Loading imported GLB…');const bytes=await file.arrayBuffer();const gltf=await new GLTFLoader().parseAsync(bytes,'');if(model)scene.remove(model);model=gltf.scene;captureMeshes();scene.add(model);fit();$('export').disabled=false;apply()}catch(err){status('Import failed: '+err.message)}};
 for(const id of ['strength','width','length'])$(id).oninput=apply;
 $('reset').onclick=()=>{$('strength').value=0;$('width').value=115;$('length').value=110;apply()};
 $('export').onclick=async()=>{if(!model)return;try{const data=await new GLTFExporter().parseAsync(model,{binary:true});const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='wvlrp-makehuman-head-morph.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);status('GLB exported. Validate imported mesh and rig in Blender before game use.')}catch(e){status('Export failed: '+e.message)}};
-async function loadExample(){try{const response=await fetch('./assets/morph-head-clone.glb',{cache:'no-store'});if(!response.ok)throw new Error('Clone not published yet (HTTP '+response.status+')');const gltf=await new GLTFLoader().parseAsync(await response.arrayBuffer(),'');model=gltf.scene;originals=[];model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;if(a)originals.push({mesh:o,base:new Float32Array(a.array)})}});scene.add(model);fit();$('export').disabled=false;apply();status('MPFB Morph Head Clone loaded. Original Head Example remains untouched.')}catch(err){status('Waiting for generated MPFB head assets: '+err.message+'. You can also import a GLB manually.')}}loadExample();\nnew ResizeObserver(()=>{camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)}).observe(stage);
+async function loadExample(){try{const response=await fetch('./assets/morph-head-clone.glb',{cache:'no-store'});if(!response.ok)throw new Error('Clone not published yet (HTTP '+response.status+')');const gltf=await new GLTFLoader().parseAsync(await response.arrayBuffer(),'');model=gltf.scene;captureMeshes();scene.add(model);fit();$('export').disabled=false;apply();status('MPFB Morph Head Clone loaded. Original Head Example remains untouched.')}catch(err){status('Waiting for generated MPFB head assets: '+err.message+'. You can also import a GLB manually.')}}loadExample();
+new ResizeObserver(()=>{camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)}).observe(stage);
 function tick(){requestAnimationFrame(tick);orbit.update();renderer.render(scene,camera)}tick();
 </script></body></html>
