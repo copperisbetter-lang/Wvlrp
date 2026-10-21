@@ -18,11 +18,25 @@ new GLTFLoader().load('assets/morph-head-clone.glb',g=>{
  if(/hair|scalp|fringe|bang/.test(name))hairs.push(o);
  else if(/head|face|skin/.test(name))heads.push(o);
  // Preserve original eye textures and transparency; avoid flattening irises into solid colors.
- if(/eye|iris|sclera|cornea/.test(name)){const arr=Array.isArray(o.material)?o.material:[o.material];const fixed=arr.map(m=>{const v=m.clone();if(v.emissive)v.emissive.set('#000000');if('emissiveIntensity' in v)v.emissiveIntensity=0;v.depthWrite=!(/cornea/.test(name));if(/cornea/.test(name)){v.transparent=true;v.opacity=Math.min(v.opacity,0.22);v.depthWrite=false;}return v;});o.material=Array.isArray(o.material)?fixed:fixed[0];}
+ if(/eye|iris|sclera|cornea/.test(name)){const arr=Array.isArray(o.material)?o.material:[o.material];const fixed=arr.map(m=>{const v=m.clone();if(v.emissive)v.emissive.set('#000000');if(/eye|iris|sclera/.test(name)&&!v.map){v.color.set(/sclera/.test(name)?'#eee9df':/iris/.test(name)?'#6a806d':'#d5d4cc');}if('metalness' in v)v.metalness=0;if('emissiveIntensity' in v)v.emissiveIntensity=0;v.depthWrite=!(/cornea/.test(name));if(/cornea/.test(name)){v.transparent=true;v.opacity=Math.min(v.opacity,0.22);v.depthWrite=false;}return v;});o.material=Array.isArray(o.material)?fixed:fixed[0];}
  });
- // Do not guess hair placement from bounding boxes: preserve authored scalp attachment.
- // Hair can be adjusted in the source asset if it is genuinely detached.
- if(heads.length&&hairs.length){hairs.forEach(h=>{h.visible=true;h.frustumCulled=false;});}
+ // MPFB hair is sometimes exported with an incorrect local offset. Align its
+ // upper hair cap to the upper head without modifying the original GLB asset.
+ if(heads.length&&hairs.length){
+   root.updateMatrixWorld(true);
+   const skinBox=new THREE.Box3();heads.forEach(h=>skinBox.expandByObject(h));
+   const hb=new THREE.Box3();hairs.forEach(h=>hb.expandByObject(h));
+   if(!skinBox.isEmpty()&&!hb.isEmpty()){
+     const skin=skinBox.getSize(new THREE.Vector3()),hair=hb.getSize(new THREE.Vector3());
+     const dx=skinBox.getCenter(new THREE.Vector3()).x-hb.getCenter(new THREE.Vector3()).x;
+     const dy=(skinBox.max.y+skin.y*.025)-hb.max.y;
+     // Only repair clearly displaced hair; never apply a speculative large shift.
+     if(Math.abs(dx)<skin.x*.7&&Math.abs(dy)<skin.y*.8){
+       hairs.forEach(h=>{const delta=new THREE.Vector3(dx,dy,0);h.parent.worldToLocal(h.getWorldPosition(new THREE.Vector3()).add(delta)).sub(h.position);h.position.add(delta);});
+     }
+   }
+   hairs.forEach(h=>{h.visible=true;h.frustumCulled=false;});
+ }
  root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  root.position.sub(center);const scale=2.4/Math.max(size.x,size.y,size.z,.001);root.scale.setScalar(scale);
@@ -33,7 +47,7 @@ new GLTFLoader().load('assets/morph-head-clone.glb',g=>{
  const meshReport=[];root.traverse(o=>{if(o.isMesh){const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name||'unnamed').join('/');meshReport.push(o.name+' ['+mats+']')}});status.textContent='MakeHuman loaded · '+meshReport.length+' meshes. Model parts: '+meshReport.slice(0,24).join(' | ');
 },undefined,e=>{status.textContent='MakeHuman head asset not published yet. Run the head extraction workflow, then reload. '+(e?.message||'');});
 function morph(){const t=Number(document.getElementById('mhMorph').value)/100;document.getElementById('mhAmount').textContent=Math.round(t*100)+'%';
- for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position,box=new THREE.Box3().setFromBufferAttribute(a),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+ for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position;const baseAttr=new THREE.Float32BufferAttribute(base,3),box=new THREE.Box3().setFromBufferAttribute(baseAttr),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());const name=(mesh.name+' '+(mesh.material?.name||'')).toLowerCase();if(/hair|lash|brow|eye|iris|sclera|cornea/.test(name))continue;
  for(let i=0;i<a.count;i++){const x=base[3*i],y=base[3*i+1],z=base[3*i+2];const nx=(x-mid.x)/Math.max(sz.x,.001),ny=(y-mid.y)/Math.max(sz.y,.001);const cheek=Math.exp(-Math.pow((Math.abs(nx)-.27)/.21,2)-Math.pow((ny-.04)/.28,2));a.setXYZ(i,x*(1+t*.09*cheek),y,z);}
  a.needsUpdate=true;mesh.geometry.computeVertexNormals();}
 }
@@ -60,11 +74,25 @@ new GLTFLoader().load('assets/original-head-example.glb',g=>{
  if(/hair|scalp|fringe|bang/.test(name))hairs.push(o);
  else if(/head|face|skin/.test(name))heads.push(o);
  // Preserve original eye textures and transparency; avoid flattening irises into solid colors.
- if(/eye|iris|sclera|cornea/.test(name)){const arr=Array.isArray(o.material)?o.material:[o.material];const fixed=arr.map(m=>{const v=m.clone();if(v.emissive)v.emissive.set('#000000');if('emissiveIntensity' in v)v.emissiveIntensity=0;v.depthWrite=!(/cornea/.test(name));if(/cornea/.test(name)){v.transparent=true;v.opacity=Math.min(v.opacity,0.22);v.depthWrite=false;}return v;});o.material=Array.isArray(o.material)?fixed:fixed[0];}
+ if(/eye|iris|sclera|cornea/.test(name)){const arr=Array.isArray(o.material)?o.material:[o.material];const fixed=arr.map(m=>{const v=m.clone();if(v.emissive)v.emissive.set('#000000');if(/eye|iris|sclera/.test(name)&&!v.map){v.color.set(/sclera/.test(name)?'#eee9df':/iris/.test(name)?'#6a806d':'#d5d4cc');}if('metalness' in v)v.metalness=0;if('emissiveIntensity' in v)v.emissiveIntensity=0;v.depthWrite=!(/cornea/.test(name));if(/cornea/.test(name)){v.transparent=true;v.opacity=Math.min(v.opacity,0.22);v.depthWrite=false;}return v;});o.material=Array.isArray(o.material)?fixed:fixed[0];}
  });
- // Do not guess hair placement from bounding boxes: preserve authored scalp attachment.
- // Hair can be adjusted in the source asset if it is genuinely detached.
- if(heads.length&&hairs.length){hairs.forEach(h=>{h.visible=true;h.frustumCulled=false;});}
+ // MPFB hair is sometimes exported with an incorrect local offset. Align its
+ // upper hair cap to the upper head without modifying the original GLB asset.
+ if(heads.length&&hairs.length){
+   root.updateMatrixWorld(true);
+   const skinBox=new THREE.Box3();heads.forEach(h=>skinBox.expandByObject(h));
+   const hb=new THREE.Box3();hairs.forEach(h=>hb.expandByObject(h));
+   if(!skinBox.isEmpty()&&!hb.isEmpty()){
+     const skin=skinBox.getSize(new THREE.Vector3()),hair=hb.getSize(new THREE.Vector3());
+     const dx=skinBox.getCenter(new THREE.Vector3()).x-hb.getCenter(new THREE.Vector3()).x;
+     const dy=(skinBox.max.y+skin.y*.025)-hb.max.y;
+     // Only repair clearly displaced hair; never apply a speculative large shift.
+     if(Math.abs(dx)<skin.x*.7&&Math.abs(dy)<skin.y*.8){
+       hairs.forEach(h=>{const delta=new THREE.Vector3(dx,dy,0);h.parent.worldToLocal(h.getWorldPosition(new THREE.Vector3()).add(delta)).sub(h.position);h.position.add(delta);});
+     }
+   }
+   hairs.forEach(h=>{h.visible=true;h.frustumCulled=false;});
+ }
  root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
  root.position.sub(center);const scale=2.4/Math.max(size.x,size.y,size.z,.001);root.scale.setScalar(scale);
@@ -75,7 +103,7 @@ new GLTFLoader().load('assets/original-head-example.glb',g=>{
  const meshReport=[];root.traverse(o=>{if(o.isMesh){const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name||'unnamed').join('/');meshReport.push(o.name+' ['+mats+']')}});status.textContent='MakeHuman loaded · '+meshReport.length+' meshes. Model parts: '+meshReport.slice(0,24).join(' | ');
 },undefined,e=>{status.textContent='MakeHuman head asset not published yet. Run the head extraction workflow, then reload. '+(e?.message||'');});
 function morph(){const t=Number(document.getElementById('mhMorphB').value)/100;document.getElementById('mhAmountB').textContent=Math.round(t*100)+'%';
- for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position,box=new THREE.Box3().setFromBufferAttribute(a),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+ for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position;const baseAttr=new THREE.Float32BufferAttribute(base,3),box=new THREE.Box3().setFromBufferAttribute(baseAttr),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());const name=(mesh.name+' '+(mesh.material?.name||'')).toLowerCase();if(/hair|lash|brow|eye|iris|sclera|cornea/.test(name))continue;
  for(let i=0;i<a.count;i++){const x=base[3*i],y=base[3*i+1],z=base[3*i+2];const nx=(x-mid.x)/Math.max(sz.x,.001),ny=(y-mid.y)/Math.max(sz.y,.001);const cheek=Math.exp(-Math.pow((Math.abs(nx)-.27)/.21,2)-Math.pow((ny-.04)/.28,2));a.setXYZ(i,x*(1+t*.09*cheek),y,z);}
  a.needsUpdate=true;mesh.geometry.computeVertexNormals();}
 }
