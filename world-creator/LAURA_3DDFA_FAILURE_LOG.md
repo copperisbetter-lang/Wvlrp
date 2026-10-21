@@ -1,6 +1,6 @@
 # Laura 2 — 3DDFA_V2 free CPU reconstruction failure register
 
-Keep this alongside the workflow so future reruns do not repeat solved failures. Source: GitHub Actions run logs for `.github/workflows/test-laura-free-3ddfa.yml`. **No successful OBJ confirmed yet.**
+Keep this alongside the workflow so future reruns do not repeat solved failures. Source: GitHub Actions run logs for `.github/workflows/test-laura-free-3ddfa.yml`. **Successful OBJ export confirmed in run #10.**
 
 | Run | GitHub run | Actual failure | Applied remedy | Result |
 |---|---|---|---|---|
@@ -13,7 +13,9 @@ Keep this alongside the workflow so future reruns do not repeat solved failures.
 
 | 7 | [#7](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669377331) | Rebuild command attempted nonexistent `FaceBoxes/setup.py` | Read upstream `build.sh`; use `(cd FaceBoxes && sh ./build_cpu_nms.sh)` | Pending verification in #8 |
 
-| 8 | [#8](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669892867) | `ValueError: Buffer dtype mismatch, expected 'int_t' but got 'int'` in NMS after patching `np.int` to `np.int32` | Use `np.int64` to match Cython `int_t` buffer type; rebuild with upstream script | Pending verification in #10; #9 was inadvertently identical to #8 |
+| 8 | [#8](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669892867) | `ValueError: Buffer dtype mismatch, expected 'int_t' but got 'int'` in NMS after patching `np.int` to `np.int32` | Use `np.int64` to match Cython `int_t` buffer type; rebuild with upstream script | Fixed in #10; #9 was inadvertently identical to #8 |
+
+| 10 | [#10 — SUCCESS](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39670216797) | No error; 3DDFA reconstructed sample OBJ and uploaded artifact `free-3ddfa-sample-obj` (artifact ID `12379351616`, 2,302,375 bytes compressed) | Preserve this workflow as known-good baseline | **PASSED** |
 
 ## Reusable installation sequence
 
@@ -30,3 +32,5 @@ Keep this alongside the workflow so future reruns do not repeat solved failures.
 - Use public sample image only in public workflow; never upload Laura's private images to public repository.
 - An OBJ face is **not** MakeHuman-compatible topology or a rigged full body. Head-to-body fit and facial rigging are separate steps.
 - No paid API or commercial reconstruction service is involved.
+- Verified successful artifact: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39670216797/artifacts/12379351616
+- Next: validate OBJ geometry counts and prepare private Laura photo input and head-to-body transfer. Do not overwrite the working workflow without a tested backup.
