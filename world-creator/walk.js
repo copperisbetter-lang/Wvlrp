@@ -68,6 +68,7 @@ const betaParams=new URLSearchParams(window.location.search);
 const LITE_MODE=mobile&&(betaParams.get("lite")==="1"||
   (Number(navigator.deviceMemory)>0&&Number(navigator.deviceMemory)<=4));
 const BETA_MODE=betaParams.get("mode")==="beta";
+const START_AT_GIRLS_CABIN=betaParams.get("spawn")==="girls-cabin";
 const START_AT_LAKE=betaParams.get("spawn")==="lake";
 // Spawn a few steps east of SAV4 on the dry north shore, facing the lake.
 const LAKE_SPAWN=Object.freeze({x:-161,z:-122});
@@ -826,6 +827,10 @@ if(START_AT_MATERIALS){
   camera.rotation.set(0,Math.PI,0);
   document.querySelector(".brand small").textContent="Living Lake · shoreline inspection";
   status("Living Lake · water should be straight ahead.");
+}else if(START_AT_GIRLS_CABIN){
+  resetToCabin();
+  document.querySelector(".brand small").textContent="Girls cabin · Hearthside residents";
+  status("Girls cabin · you are outside the cabin with the resident avatars.");
 }else if(START_AT_PHOTO_RANGER){
   // Direct URL ?spawn=ranger-photo must NEVER reset to Hearthside Cabin.
   goToPhotoRanger();
@@ -889,7 +894,7 @@ window.__wildDiagnostics=()=>({
    communityBuildings:habitat?.communityBuildings??0,
     communityFirePits:habitat?.communityFirePits??0,
    communityPaths:habitat?.communityPaths??0,
-   spawnLocation:START_AT_LAKE?"lake":START_AT_PHOTO_RANGER?"ranger-photo":START_AT_RANGER?"ranger":"hearthside",
+   spawnLocation:START_AT_GIRLS_CABIN?"girls-cabin":START_AT_LAKE?"lake":START_AT_PHOTO_RANGER?"ranger-photo":START_AT_RANGER?"ranger":"hearthside",
     betaMode:BETA_MODE,
     multiplayerPeers:multiplayer?.getPeerCount()??0,
     multiplayerStatus:multiplayer?.getStatus()??(BETA_MODE?"connecting":"disabled"),
