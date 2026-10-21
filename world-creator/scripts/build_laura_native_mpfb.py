@@ -61,14 +61,18 @@ if len(found)<3:
 # Conservative first-pass MPFB identity morph. Each displacement comes from an
 # official .target file, never a synthetic face sphere or ARKit expression.
 # Filename polarity is explicit; uncertain targets are excluded.
+# Reference-led first-pass identity morph; preserve native topology.
+# Source: Laura 2 reference images and face-measurement-spec.json.
+# These are provisional weights, not a completed calibrated 3D fit.
 recipe={
- 'eyes': (('eye','large'),.16),
- 'nose': (('nose','narrow'),.22),
- 'mouth': (('mouth','wide'),.06),
- 'chin': (('chin','round'),.18),
- 'jaw': (('jaw','narrow'),.17),
- 'cheeks': (('cheek','full'),.18),
+ 'eyes': (('eye','large'),.27),
+ 'nose': (('nose','narrow'),.32),
+ 'mouth': (('mouth','wide'),.04),
+ 'chin': (('chin','round'),.28),
+ 'jaw': (('jaw','narrow'),.27),
+ 'cheeks': (('cheek','full'),.30),
 }
+
 selected={}
 for feature,(terms,weight) in recipe.items():
     matches=[p for p in found.get(feature,[]) if all(t in p.stem.lower() for t in terms)]
