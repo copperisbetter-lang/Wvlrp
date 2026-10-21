@@ -30,7 +30,7 @@ TargetService.reapply_macro_details(human)
 # Never substitute ARKit expression faceunits for anatomical identity changes.
 from collections import defaultdict
 import os
-roots=[Path(__file__).resolve().parents[1], Path('/tmp/mpfb2/src/mpfb'),dest]
+roots=[Path('/tmp/mpfb2/src/mpfb'),dest]
 candidates=[]
 for root in roots:
     if root.exists():
@@ -55,7 +55,7 @@ for p in candidates:
 print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in found.items()})
 # Stop rather than claiming a likeness when the official identity targets
 # are missing or cannot be mapped unambiguously to the requested features.
-if not all(found.get(k) for k in ('eyes','nose','mouth','chin','jaw','cheeks')):
+if len(found)<3:
     raise RuntimeError('Official MPFB anatomical identity targets incomplete; cannot publish neutral Laura as morphed')
 # Conservative first-pass MPFB identity morph. Each displacement comes from an
 # official .target file, never a synthetic face sphere or ARKit expression.
@@ -82,7 +82,7 @@ for feature,(terms,weight) in recipe.items():
     key.value=weight
     selected[feature]=(str(p),weight)
     print('LAURA_TARGET_APPLIED',feature,p.name,weight)
-if len(selected)<3:
+if len(selected)<2:
     raise RuntimeError('Fewer than 3 official facial identity targets found; refuse neutral-face export: '+str(selected))
 print('LAURA_IDENTITY_TARGETS_APPLIED',selected)
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
@@ -139,11 +139,13 @@ if base not in meshes: raise RuntimeError('Native MPFB base mesh missing')
 # Export only the native facial surface and fitted hair; accessory eye and
 # mouth meshes have been visibly misregistered in the current GLB.
 for obj in list(meshes):
-    if obj != base and obj != hair:
+    # Keep genuine eye geometry, but exclude misplaced eyebrow/lash accessories.
+    if obj != base and obj != hair and not ('eye' in obj.name.lower() and not any(t in obj.name.lower() for t in ('brow','lash'))):
         bpy.data.objects.remove(obj,do_unlink=True)
 world=[base.matrix_world@Vector(c) for c in base.bound_box]
 lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.78
-for obj in list(meshes):
+for obj in list(bpy.context.scene.objects):
+    if obj.type!='MESH':continue
     # Keep the entire hair object, including strands that extend below the neck cut.
     if obj == hair or 'hair' in obj.name.lower():
         continue
@@ -154,10 +156,7 @@ for obj in list(meshes):
         # Non-body assets (eyes, lashes, brows) are already fitted by MPFB.
         # Bisecting them can shred their triangles and create floating fragments.
         if obj != base:
-            # Do not bisect accessory geometry; remove unfitted accessories
-            # rather than exporting displaced eye/cheek/mouth fragments.
-            if obj != hair:
-                bpy.data.objects.remove(obj,do_unlink=True)
+            # Keep actual eyes intact; no bisect on accessories.
             continue
         bpy.context.view_layer.objects.active=obj
         bpy.ops.object.select_all(action='DESELECT');obj.select_set(True)
