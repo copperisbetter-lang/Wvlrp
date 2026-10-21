@@ -15,7 +15,7 @@ const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamp
 let model=null,dist=4,center=new THREE.Vector3();let parts={};function named(prefix){return Object.values(parts).filter(o=>o.name.startsWith(prefix))}function neutral(){for(const ob of Object.values(parts)){if(ob.userData.base){ob.position.copy(ob.userData.base.position);ob.scale.copy(ob.userData.base.scale)}}}function move(prefix,dy=0,dz=0,sx=1,sy=1,sz=1){for(const ob of named(prefix)){ob.position.y+=dy;ob.position.z+=dz;ob.scale.multiply(new THREE.Vector3(sx,sy,sz))}}
 function fit(){if(!model)return;const box=new THREE.Box3().setFromObject(model);box.getCenter(center);const size=box.getSize(new THREE.Vector3());const radius=Math.max(size.x,size.y,size.z);dist=Math.max(radius*1.65,.5);controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(0,0,dist));controls.update();}
 
-function sculptLauraHead(root){
+function deprecatedSculptDisabled(root){
  const candidates=[];
  root.traverse(o=>{if(o.isMesh&&o.geometry?.attributes?.position&&o.geometry.attributes.position.count>1500)candidates.push(o)});
  if(!candidates.length)return 0;
@@ -43,7 +43,7 @@ function sculptLauraHead(root){
  return a.count;
 }
 
-function repairPresentation(root){
+function deprecatedRepairDisabled(root){
  // One-pass cleanup: preserve MPFB face and skin; remove the failed
  // procedural overlays rather than adding more eyes or a helmet.
  root.updateMatrixWorld(true);
@@ -71,11 +71,11 @@ function repairPresentation(root){
    }
  }
 }
-function load(url){status.textContent='Loading genuine MPFB mesh: '+url;new GLTFLoader().load(url,g=>{if(model)scene.remove(model);model=g.scene;const sculpted=0;parts={};model.traverse(o=>{if(o.isMesh){parts[o.name]=o;o.userData.base={position:o.position.clone(),scale:o.scale.clone()}}});scene.add(model);fit();status.textContent='Laura combined Blender head loaded; source mesh sculpted during export · Loaded '+url+' · '+Object.keys(parts).length+' meshes. Drag to rotate or pinch to zoom. Expression buttons require matching morph targets.'},undefined,e=>{status.textContent='Could not load GLB: '+e.message;});}
+function load(url){status.textContent='Loading genuine MPFB mesh: '+url;new GLTFLoader().load(url,g=>{if(model)scene.remove(model);model=g.scene;parts={};model.traverse(o=>{if(o.isMesh){parts[o.name]=o;o.userData.base={position:o.position.clone(),scale:o.scale.clone()}}});scene.add(model);fit();status.textContent='Laura native MPFB export loaded (visual appearance not yet approved) · Loaded '+url+' · '+Object.keys(parts).length+' meshes. Drag to rotate or pinch to zoom. Expression controls work only when the GLB contains matching morph targets.'},undefined,e=>{status.textContent='Could not load GLB: '+e.message;});}
 document.querySelector('#file').addEventListener('change',e=>{const f=e.target.files[0];if(f)load(URL.createObjectURL(f));});
 for(const [id,dir] of Object.entries({front:[0,0,1],left:[-1,0,0],right:[1,0,0],back:[0,0,-1]}))document.querySelector('#'+id).onclick=()=>{camera.position.copy(center).add(new THREE.Vector3(...dir).multiplyScalar(dist));controls.update();};
 document.querySelector('#reset').onclick=fit;document.querySelector('#neutral').onclick=neutral;document.querySelector('#mouth').onclick=()=>{neutral();move('Lower lip',0,-.14);move('Upper lip',0,.05)};document.querySelector('#smile').onclick=()=>{neutral();move('Upper lip',0,.035,1.2,.9,.85);move('Lower lip',0,.035,1.2,.9,.85)};document.querySelector('#blink').onclick=()=>{neutral();move('Upper eyelid',0,-.105,1,1,2.6)};document.querySelector('#winkL').onclick=()=>{neutral();move('Upper eyelid -1',0,-.105,1,1,2.6)};document.querySelector('#winkR').onclick=()=>{neutral();move('Upper eyelid 1',0,-.105,1,1,2.6)};document.querySelector('#brows').onclick=()=>{neutral();move('Eyebrow',0,.12)};
 function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(view);function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
-const remote=new URLSearchParams(location.search).get('model');load(remote || './assets/laura-head-combined.glb?v=laura-build-20261021c');
+const remote=new URLSearchParams(location.search).get('model');load(remote || './assets/laura-head-combined.glb?v=laura-native-20261021');
 </script></body></html>
