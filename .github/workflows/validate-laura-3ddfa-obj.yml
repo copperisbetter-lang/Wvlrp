@@ -1,0 +1,25 @@
+name: Validate successful 3DDFA run 10 OBJ
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/validate-laura-3ddfa-obj.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download preserved successful run 10 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/laura-obj
+          gh run download 39670216797 -R "${{ github.repository }}" -n free-3ddfa-sample-obj -D /tmp/laura-obj
+          find /tmp/laura-obj -type f -maxdepth 2 -print
+      - name: Validate OBJ geometry
+        run: |
+          find /tmp/laura-obj -type f -name '*.obj' -print0 | xargs -0 -r -n1 python world-creator/validate_3ddfa_obj.py
+          test "$(find /tmp/laura-obj -type f -name '*.obj' | wc -l)" -gt 0
