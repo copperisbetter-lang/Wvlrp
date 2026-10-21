@@ -162,6 +162,19 @@ jobs:
               assert p.stat().st_size>100000
               print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
           PY
+      - name: Verify Laura dual MakeHuman viewer in artifact
+        run: |
+          set -euo pipefail
+          page=world-creator/sophie-morph-lab.html
+          test -s "$page"
+          grep -q 'Laura — MakeHuman head morph A' "$page"
+          grep -q 'Laura — MakeHuman head morph B' "$page"
+          grep -q 'style="display:none !important"' "$page"
+          test -s world-creator/assets/original-head-example.glb
+          test -s world-creator/assets/morph-head-clone.glb
+          cmp world-creator/assets/original-head-example.glb world-creator/assets/morph-head-clone.glb
+          echo "LAURA_DUAL_MAKEHUMAN_ARTIFACT_READY"
+
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
@@ -170,6 +183,18 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+
+      - name: Verify Laura MakeHuman viewer published live
+        env:
+          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          base="${LIVE_URL%/}"
+          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/sophie-morph-lab.html?commit=${GITHUB_SHA}" -o /tmp/laura-live.html
+          grep -q 'Laura — MakeHuman head morph A' /tmp/laura-live.html
+          grep -q 'Laura — MakeHuman head morph B' /tmp/laura-live.html
+          grep -q 'style="display:none !important"' /tmp/laura-live.html
+          echo "LAURA_DUAL_MAKEHUMAN_LIVE_VERIFIED"
 
       - name: Verify SAV4 clothing viewer deployed from current commit
         env:
