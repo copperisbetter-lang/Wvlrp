@@ -56,7 +56,7 @@ for p in candidates:
 print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in found.items()},flush=True)
 # Stop rather than claiming a likeness when the official identity targets
 # are missing or cannot be mapped unambiguously to the requested features.
-if len(found)<3:
+if len(found)<len(features):
     raise RuntimeError('LAURA_MORPH_PREFLIGHT: Found only '+str(len(found))+' official face target categories. Available targets: '+str([p.name for p in candidates[:40]]))
 # Conservative first-pass MPFB identity morph. Each displacement comes from an
 # official .target file, never a synthetic face sphere or ARKit expression.
@@ -82,14 +82,26 @@ for feature,(terms,weight) in recipe.items():
         continue
     matches.sort(key=lambda p:(len(p.stem),str(p)))
     p=matches[0]
+    # Native MakeHuman targets are vertex-indexed: reject out-of-range indices before loading.
+    with p.open('rt', encoding='utf-8', errors='replace') as target_file:
+        indices=[]
+        for line in target_file:
+            line=line.strip()
+            if not line or line.startswith('#'): continue
+            try: indices.append(int(line.split()[0]))
+            except (ValueError, IndexError): raise RuntimeError('Malformed native target: '+str(p))
+    if not indices or min(indices)<0 or max(indices)>=len(human.data.vertices):
+        raise RuntimeError('Target incompatible with Laura base mesh: '+str(p)+' vertex count '+str(len(human.data.vertices)))
     key=TargetService.load_target(human,str(p),weight=weight,name='Laura2 '+feature)
     if key is None:raise RuntimeError('Failed to load MPFB identity target '+str(p))
     key.value=weight
     selected[feature]=(str(p),weight)
     print('LAURA_TARGET_APPLIED',feature,p.name,weight)
-if len(selected)<3:
-    raise RuntimeError('LAURA_MORPH_PREFLIGHT: Need at least 3 applied official facial identity targets; selected='+str(selected)+'; discovered='+str({k:[p.name for p in v[:12]] for k,v in found.items()}))
-print('LAURA_IDENTITY_TARGETS_APPLIED',selected)
+if len(selected)<len(recipe):
+    raise RuntimeError('LAURA_MORPH_PREFLIGHT: Need all 6 applied official facial identity targets; selected='+str(selected)+'; discovered='+str({k:[p.name for p in v[:12]] for k,v in found.items()}))
+print('LAURA_IDENTITY_TARGETS_APPLIED',selected,flush=True)
+# This is a provisional native-target deformation, not a verified photo likeness.
+# Never label a successful export as a calibrated facial match.
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
 for sub,names,kind in []: # Disable unaligned facial accessories until socket-fitting is verified
