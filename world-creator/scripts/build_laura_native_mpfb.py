@@ -77,6 +77,10 @@ print('LAURA_NATIVE_MAKEHUMAN_HAIR',hair_path.name)
 # Export native MPFB whole head geometry by cutting only after targets are evaluated.
 bpy.context.view_layer.update()
 meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
+# Hair must be an actual mesh in the export, not merely a successful add_asset call.
+hair_meshes=[o for o in meshes if o == hair or 'hair' in o.name.lower()]
+if not hair_meshes or not any(len(o.data.polygons)>100 for o in hair_meshes):
+    raise RuntimeError('Laura hair was not present as exportable mesh; reject bald GLB')
 base=max(meshes,key=lambda o:len(o.data.vertices))
 world=[base.matrix_world@Vector(c) for c in base.bound_box]
 lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.865
@@ -102,6 +106,8 @@ for obj in list(meshes):
         bm.to_mesh(obj.data);bm.free()
 for obj in list(bpy.context.scene.objects):
     if obj.type!='MESH':bpy.data.objects.remove(obj,do_unlink=True)
+if not any(o.type=='MESH' and ('hair' in o.name.lower() or o == hair) for o in bpy.context.scene.objects):
+    raise RuntimeError('Head extraction discarded Laura hair; refuse to export')
 for obj in bpy.context.scene.objects:
     obj.parent=None
     for mod in list(obj.modifiers):
