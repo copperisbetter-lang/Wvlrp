@@ -30,7 +30,7 @@ jobs:
         working-directory: /tmp/3DDFA_V2
         run: |
           python -m pip install --upgrade pip 'setuptools<70' wheel
-          python -m pip install 'numpy<2' 'Cython<3' 'opencv-python-headless<5' pyyaml scipy matplotlib onnxruntime
+          python -m pip install 'numpy<2' 'Cython<3' 'opencv-python-headless<5' pyyaml scipy matplotlib onnx onnxruntime
           python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           sh ./build.sh
       - name: Reconstruct included public sample as OBJ
