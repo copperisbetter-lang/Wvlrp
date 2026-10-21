@@ -35,9 +35,10 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
  })).then(()=>{state.status=assets.size?"ready":"awaiting-real-assets";rebuild();});
  let region="",generation=0,frame=0;
  function prohibited(x,z,margin){
-  if(excluded(x,z,margin)&&Math.hypot(x,z)>22)return true;\n  if(forestExclusion(x,z,margin))return true;
+  if(excluded(x,z,margin)&&Math.hypot(x,z)>22)return true;
+  if(forestExclusion(x,z,margin))return true;
   if(FOREST_CAMPS.some(c=>Math.hypot(x-(c.x??c.centerX??1e8),z-(c.z??c.centerZ??1e8))<22+margin))return true;
-  if([[0,0,19],[93,77,55],[0,274,36],[30,333,40]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r+margin))return true;
+  if([[0,0,11],[93,77,55],[0,274,36],[30,333,40]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r+margin))return true;
   // Preserve paths: trails near village and the girls' cabin remain unobstructed.
   if(Math.abs(x-93)<5&&z>30&&z<150)return true;
   return false;
@@ -82,7 +83,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
  }
  // Permanent PBR inspection specimens, five metres beyond the +Z front steps.
  const inspection=new B.TransformNode("Girls cabin inspection planting",scene);
- const specimens=[["rock",-7,17],["fern",-4,17],["shrub",-1,17],["rock",2,17],["fern",5,17],["shrub",8,17]];
+ const specimens=[["rock",-7,21],["fern",-4,21],["shrub",-1,21],["rock",2,21],["fern",5,21],["shrub",8,21]];
  ready.then(()=>{for(const [kind,x,z] of specimens){const asset=assets.get(kind);if(!asset)continue;
   try{const inst=asset.instantiateModelsToScene(n=>"inspection-"+kind+"-"+n,false,{doNotInstantiate:false});
    const holder=new B.TransformNode("inspection "+kind,scene);
