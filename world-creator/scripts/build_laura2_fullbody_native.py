@@ -42,5 +42,25 @@ code = code.replace("('jaw','narrow')", "('jaw','scale-horiz-decr')")
 code = code.replace("('cheek','full')", "('cheek','volume-incr')")
 
 code = code.replace("out=ROOT/'assets/laura-head-combined.glb'", "out=ROOT/'assets/laura-2-native-fullbody.glb'")
+# Add mirrored anatomical targets instead of deforming only the left side.
+code = code.replace("('eye','scale')", "('eye','scale')")
+code = code.replace("('cheek','volume-incr')", "('cheek','volume-incr')")
+code = code.replace("('jaw','scale-horiz-decr')", "('jaw','width-decr')")
+# Apply matching right-side targets with the same weights when the left is selected.
+needle = "print('LAURA_IDENTITY_TARGETS_APPLIED',selected)"
+mirrors = """
+for feature in ('eyes', 'cheeks'):
+    if feature not in selected: continue
+    left_path, weight = selected[feature]
+    left = Path(left_path)
+    if left.name.startswith('l-'):
+        right = left.with_name('r-' + left.name[2:])
+        if not right.exists(): raise RuntimeError('Missing symmetric target '+str(right))
+        key = TargetService.load_target(human,str(right),weight=weight,name='Laura2 '+feature+' right')
+        if key is None: raise RuntimeError('Could not load mirrored target '+str(right))
+        key.value = weight
+        print('LAURA_MIRRORED_TARGET_APPLIED',feature,right.name,weight)
+"""
+code = code.replace(needle, mirrors + "\\n" + needle)
 code = code.replace("LAURA_NATIVE_MPFB_SUCCESS", "LAURA_NATIVE_MPFB_FULLBODY_SUCCESS")
 exec(compile(code, str(source), 'exec'), {'__name__':'__main__','__file__':str(source)})
