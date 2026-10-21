@@ -1,7 +1,7 @@
 /** Streamed photographic forest floor; no fallen logs. */
 import {hash} from "./world-core.js";
 import {FOREST_CAMPS,forestExclusion} from "./wild-master-forest-reservations.js";
-const SOURCES=[["fern","./assets/village-floor-fern_02.glb"],["rock","./assets/village-floor-rock_moss_set_01.glb"],["shrub","./assets/village-floor-fern_02.glb"]];
+const SOURCES=[["fern","./assets/village-floor-fern_02.glb"],["rock","./assets/village-floor-rock_moss_set_01.glb"],["stump","./assets/village-floor-tree_stump_01.glb"]];
 const LAKES=[[-165,-180,72,52],[410,-340,95,72]];
 function shore(x,z){
  let d=Infinity;
@@ -58,7 +58,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
     const edge=shore(px,pz),wet=edge<13;
     const roll=hash(x,z,seed+993);
     const kind=wet?(roll<.55?"fern":roll<.87?"rock":null):
-      (roll<.50?"fern":roll<.68?"rock":roll<.72?"stump":null);
+      (roll<.50?"fern":roll<.68?"rock":roll<.76?"stump":null);
     if(!kind||prohibited(px,pz,wet?1.5:3))continue;
     const c=assets.get(kind);if(!c)continue;
     try{
@@ -73,7 +73,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
       minY=Math.min(minY,b.minimumWorld.y);
       m.isPickable=false;m.checkCollisions=false;
      }
-     const size=kind==="fern"?.8:kind==="rock"?(wet?1.5:1.1):.95;
+     const size=kind==="fern"?1.35:kind==="rock"?(wet?1.5:1.1):.95;
      holder.scaling.setAll(size/Math.max(.01,hi-lo));
      holder.rotation.y=hash(x,z,seed+994)*Math.PI*2;
      holder.position.set(px,terrainHeight(px,pz)-minY*holder.scaling.x-.04,pz);
@@ -83,7 +83,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
  }
  // Permanent PBR inspection specimens, five metres beyond the +Z front steps.
  const inspection=new B.TransformNode("Girls cabin inspection planting",scene);
- const specimens=[["rock",-7,21],["fern",-4,21],["shrub",-1,21],["rock",2,21],["fern",5,21],["shrub",8,21]];
+ const specimens=[["rock",-7,21],["fern",-4,21],["stump",-1,21],["rock",2,21],["fern",5,21],["stump",8,21]];
  ready.then(()=>{for(const [kind,x,z] of specimens){const asset=assets.get(kind);if(!asset)continue;
   try{const inst=asset.instantiateModelsToScene(n=>"inspection-"+kind+"-"+n,false,{doNotInstantiate:false});
    const holder=new B.TransformNode("inspection "+kind,scene);
@@ -95,7 +95,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
     minY=Math.min(minY,b.minimumWorld.y);minX=Math.min(minX,b.minimumWorld.x);
     maxX=Math.max(maxX,b.maximumWorld.x);minZ=Math.min(minZ,b.minimumWorld.z);maxZ=Math.max(maxZ,b.maximumWorld.z);
     m.isPickable=false;m.checkCollisions=false;}
-   const scale=(kind==="rock"?1.3:.85)/Math.max(.01,maxX-minX,maxZ-minZ);
+   const scale=(kind==="rock"?1.3:kind==="fern"?1.35:.85)/Math.max(.01,maxX-minX,maxZ-minZ);
    holder.scaling.setAll(scale);
    holder.position.set(x-(minX+maxX)*.5*scale,terrainHeight(x,z)-minY*scale-.03,z-(minZ+maxZ)*.5*scale);
    holder.parent=inspection;state.inspectionPlanted=(state.inspectionPlanted||0)+1;
