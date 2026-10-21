@@ -134,8 +134,38 @@ print('LAURA_IDENTITY_TARGETS_APPLIED',selected,flush=True)
 # never infer eye/nose/chin vertex IDs from an unrelated model.
 landmark_indices=photo_spec.get('mesh_landmark_vertex_indices')
 if not landmark_indices:
-    print('LAURA_FIT_BLOCKED','No calibrated mesh_landmark_vertex_indices in photo spec; refusing fabricated photo-fit',flush=True)
-    raise RuntimeError('LAURA_PHOTO_FIT_NEEDS_MESH_LANDMARKS: annotate eye centers, nose tip, mouth center, chin on native MakeHuman base mesh')
+    # Produce an actual mesh-derived vertex map instead of requiring manual indices.
+    # The points are candidates, not anatomically verified landmarks. Store them
+    # for inspection and halt before optimization if geometry is ambiguous.
+    verts=human.data.vertices
+    xs=[v.co.x for v in verts]; zs=[v.co.z for v in verts]
+    xmin,xmax=min(xs),max(xs);zmin,zmax=min(zs),max(zs)
+    height=zmax-zmin;width=xmax-xmin
+    if height<=0 or width<=0:raise RuntimeError('Empty or degenerate MakeHuman mesh')
+    # Approximate facial search bands relative to the top of the full-body mesh.
+    # Determine front-facing axis from the most protruding vertices in head band.
+    head=[(i,v.co) for i,v in enumerate(verts) if v.co.z>zmin+.78*height]
+    if len(head)<100:raise RuntimeError('No plausible MakeHuman head vertices')
+    hx=[v.x for _,v in head]; hz=[v.z for _,v in head]
+    hxmin,hxmax=min(hx),max(hx);hzmin,hzmax=min(hz),max(hz)
+    hwidth=hxmax-hxmin;hheight=hzmax-hzmin;mid=(hxmax+hxmin)/2
+    # Emit candidate indices using relative head bands and near-surface depth.
+    # Do not guess which Y direction is the face; inspect both orientations.
+    bands={'left_eye':(-.24,.14),'right_eye':(.24,.14),'nose_tip':(0.,-.06),'mouth_center':(0.,-.24),'chin':(0.,-.43)}
+    def candidate(sign):
+        output={}
+        for name,(xx,zz) in bands.items():
+            target_x=mid+xx*hwidth
+            target_z=(hzmax+hzmin)/2+zz*hheight
+            shortlist=sorted(head,key=lambda iv:((iv[1].x-target_x)/hwidth)**2+((iv[1].z-target_z)/hheight)**2)[:max(20,len(head)//50)]
+            output[name]=max(shortlist,key=lambda iv:sign*iv[1].y)[0]
+        return output
+    maps={'positive_y':candidate(1),'negative_y':candidate(-1)}
+    print('LAURA_MESH_LANDMARK_CANDIDATES',json.dumps(maps,sort_keys=True),flush=True)
+    diagnostic=ROOT/'assets/laura-2-mesh-landmark-candidates.json'
+    diagnostic.parent.mkdir(parents=True,exist_ok=True)
+    diagnostic.write_text(json.dumps({'status':'unverified_geometry_candidates','maps':maps,'head_bounds':{'x':[hxmin,hxmax],'z':[hzmin,hzmax]}},indent=2))
+    raise RuntimeError('LAURA_MESH_LANDMARK_REVIEW_REQUIRED: candidates written to '+str(diagnostic))
 if any(k not in landmark_indices for k in required):
     raise RuntimeError('LAURA_PHOTO_FIT_INCOMPLETE_MESH_LANDMARKS')
 if any(not isinstance(landmark_indices[k],int) or not 0<=landmark_indices[k]<len(human.data.vertices) for k in required):
