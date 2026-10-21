@@ -15,13 +15,13 @@ const FILES=Object.freeze({
   stump:"tree_stump_01",
   log:"dead_tree_trunk"
 });
-const CAPS_MOBILE=Object.freeze({fern:65,rock:14,stump:7,log:7});
-const CAPS_DESKTOP=Object.freeze({fern:110,rock:24,stump:12,log:12});
+const CAPS_MOBILE=Object.freeze({fern:105,rock:28,stump:0,log:0});
+const CAPS_DESKTOP=Object.freeze({fern:190,rock:48,stump:0,log:0});
 
 export function planVillageForestFloor(seed,mobile=false){
   const caps=mobile?CAPS_MOBILE:CAPS_DESKTOP;
   const counts={fern:0,rock:0,stump:0,log:0},items=[];
-  const spacing=mobile?5.2:4.3;
+  const spacing=mobile?3.9:3.15;
   for(let x=VILLAGE_SECTION.minX+2;x<VILLAGE_SECTION.maxX-1;x+=spacing){
     for(let z=VILLAGE_SECTION.minZ+2;z<VILLAGE_SECTION.maxZ-1;z+=spacing){
       const px=x+(hash(x,z,seed+3401)-.5)*spacing*.7;
@@ -33,8 +33,7 @@ export function planVillageForestFloor(seed,mobile=false){
       if(Math.hypot(px-VILLAGE_CLEARING.centerX,pz-VILLAGE_CLEARING.centerZ)<41)continue;
       if(pz>120&&px>68&&px<118)continue; // mountain sightline
       const roll=hash(x,z,seed+3403);
-      const kind=roll<.39?"fern":roll<.445?"rock":
-        roll<.467?"log":roll<.485?"stump":null;
+      const kind=roll<.72?"fern":roll<.90?"rock":null;
       if(!kind||counts[kind]>=caps[kind])continue;
       const distanceToPath=pathDistance(px,pz);
       const distanceToBuilding=Math.min(...COMMUNITY_SITES.map(site=>siteDistance(px,pz,site)));
