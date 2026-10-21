@@ -62,7 +62,19 @@ for mat in hair.data.materials:
                 if link.to_node==node and link.to_socket.name=='Base Color':
                     mat.node_tree.links.remove(link)
             node.inputs['Base Color'].default_value=(.48,.33,.19,1)
+            # Two-sided opaque hair prevents camera-angle disappearance.
+            node.inputs['Alpha'].default_value=1.0
+            for link in list(mat.node_tree.links):
+                if link.to_node==node and link.to_socket.name=='Alpha':
+                    mat.node_tree.links.remove(link)
+    mat.use_backface_culling=False
+    if hasattr(mat,'surface_render_method'):mat.surface_render_method='DITHERED'
 print('LAURA_NATIVE_MAKEHUMAN_HAIR',hair_path.name)
+# Keep the eye assets, but do not export the misregistered facial accessory meshes.
+# Their transforms must be repaired against the MPFB eye sockets before reintroduction.
+for ob in list(bpy.context.scene.objects):
+    if ob.type=='MESH' and ob != human and ob != hair and any(k in ob.name.lower() for k in ('eyelash','eyebrow')):
+        bpy.data.objects.remove(ob,do_unlink=True)
 # Export native MPFB whole head geometry by cutting only after targets are evaluated.
 bpy.context.view_layer.update()
 meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
