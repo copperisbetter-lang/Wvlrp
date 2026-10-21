@@ -129,6 +129,67 @@ for feature,(terms,weight) in recipe.items():
 if len(selected)<len(recipe):
     raise RuntimeError('LAURA_MORPH_PREFLIGHT: Need all 6 applied official facial identity targets; selected='+str(selected)+'; discovered='+str({k:[p.name for p in v[:12]] for k,v in found.items()}))
 print('LAURA_IDENTITY_TARGETS_APPLIED',selected,flush=True)
+# PHOTO-DRIVEN FITTER: optimize real native shape-key weights against landmark ratios.
+# Vertex correspondences must be calibrated on this exact MakeHuman topology;
+# never infer eye/nose/chin vertex IDs from an unrelated model.
+landmark_indices=photo_spec.get('mesh_landmark_vertex_indices')
+if not landmark_indices:
+    print('LAURA_FIT_BLOCKED','No calibrated mesh_landmark_vertex_indices in photo spec; refusing fabricated photo-fit',flush=True)
+    raise RuntimeError('LAURA_PHOTO_FIT_NEEDS_MESH_LANDMARKS: annotate eye centers, nose tip, mouth center, chin on native MakeHuman base mesh')
+if any(k not in landmark_indices for k in required):
+    raise RuntimeError('LAURA_PHOTO_FIT_INCOMPLETE_MESH_LANDMARKS')
+if any(not isinstance(landmark_indices[k],int) or not 0<=landmark_indices[k]<len(human.data.vertices) for k in required):
+    raise RuntimeError('LAURA_PHOTO_FIT_INVALID_VERTEX_INDEX')
+# Pure-Python coordinate descent, no extra Blender dependencies. Projection is
+# orthographic XY for a frontal model aligned with Blender's X/Z head axes.
+# A camera-calibrated projection is required before reporting verified likeness.
+def mesh_ratios():
+    coords={k:human.data.vertices[landmark_indices[k]].co for k in required}
+    def distance(a,b):
+        return hypot(coords[a].x-coords[b].x,coords[a].z-coords[b].z)
+    eye_distance=distance('left_eye','right_eye')
+    if eye_distance<=1e-8:raise RuntimeError('Degenerate mesh eye landmark spacing')
+    mid=((coords['left_eye'].x+coords['right_eye'].x)/2,(coords['left_eye'].z+coords['right_eye'].z)/2)
+    def dist_mid(k):return hypot(coords[k].x-mid[0],coords[k].z-mid[1])/eye_distance
+    return {'nose_to_eye_spacing':dist_mid('nose_tip'),'mouth_to_eye_spacing':dist_mid('mouth_center'),'chin_to_eye_spacing':dist_mid('chin'),'mouth_nose_vertical_ratio':abs(coords['mouth_center'].z-coords['nose_tip'].z)/eye_distance}
+def fit_loss():
+    values=mesh_ratios()
+    return sum((values[k]-ratios[k])**2 for k in ratios)
+keys={k:human.data.shape_keys.key_blocks.get('Laura2 '+k) for k in selected}
+if any(v is None for v in keys.values()):raise RuntimeError('LAURA_FIT_SHAPEKEY_MISSING')
+# Shape key coordinates must be evaluated through the dependency graph.
+def evaluated_ratios():
+    bpy.context.view_layer.update()
+    dg=bpy.context.evaluated_depsgraph_get()
+    obj=human.evaluated_get(dg)
+    mesh=obj.to_mesh()
+    try:
+        coords={k:mesh.vertices[landmark_indices[k]].co.copy() for k in required}
+    finally:obj.to_mesh_clear()
+    spacing=hypot(coords['right_eye'].x-coords['left_eye'].x,coords['right_eye'].z-coords['left_eye'].z)
+    if spacing<=1e-8:raise RuntimeError('Invalid evaluated eye spacing')
+    midx=(coords['left_eye'].x+coords['right_eye'].x)/2
+    midz=(coords['left_eye'].z+coords['right_eye'].z)/2
+    def ratio(k):return hypot(coords[k].x-midx,coords[k].z-midz)/spacing
+    return {'nose_to_eye_spacing':ratio('nose_tip'),'mouth_to_eye_spacing':ratio('mouth_center'),'chin_to_eye_spacing':ratio('chin'),'mouth_nose_vertical_ratio':abs(coords['mouth_center'].z-coords['nose_tip'].z)/spacing}
+def objective():
+    got=evaluated_ratios()
+    return sum((got[k]-ratios[k])**2 for k in ratios)
+loss=objective()
+for step in (.2,.1,.05,.025):
+    for _ in range(3):
+        improved=False
+        for feature,key in keys.items():
+            original=key.value; best=original; best_loss=loss
+            for trial in (max(0.,original-step),min(1.,original+step)):
+                key.value=trial
+                score=objective()
+                if score<best_loss:best_loss=score;best=trial
+            key.value=best
+            if best_loss<loss:loss=best_loss;improved=True
+        if not improved:break
+print('LAURA_PHOTO_FIT_RESULT',json.dumps({'loss':loss,'weights':{k:v.value for k,v in keys.items()},'reference_ratios':ratios,'mesh_ratios':evaluated_ratios()}),flush=True)
+
 # This is a provisional native-target deformation, not a verified photo likeness.
 # Never label a successful export as a calibrated facial match.
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
