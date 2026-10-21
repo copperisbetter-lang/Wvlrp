@@ -1,0 +1,42 @@
+{
+  "subject": "Laura 2",
+  "purpose": "MPFB identity morph fitting to existing two-view Laura references",
+  "source_files": [
+    "world-creator/characters/sav4/laura-two-view-landmarks.json",
+    "world-creator/characters/sav4/laura-photo-fit-plan.json"
+  ],
+  "reference_images": [
+    "5458.jpg",
+    "5459.jpg"
+  ],
+  "reference_image_bytes_in_repo": false,
+  "measurement_status": "partial: recorded 2D landmarks; uncalibrated perspective; not 3D measurements",
+  "existing_ratios": {
+    "mouth_width_over_eye_spacing": 0.7512381264569112,
+    "nose_to_mouth_over_eye_spacing": 0.47395648743088775,
+    "mouth_to_chin_over_eye_spacing": 0.677388706691105,
+    "profile_nose_lip_over_lip_chin": 1.0324116146162396
+  },
+  "required_reference_landmarks": [
+    "left/right inner and outer eye corners",
+    "upper/lower eyelid curves and iris centers",
+    "left/right eyebrow inner arch outer",
+    "nose root bridge tip alar left/right nostril",
+    "mouth left/right corners cupid bow upper/lower lip vermilion",
+    "chin tip chin width jaw angles",
+    "cheekbone left/right and cheek fullness",
+    "temples forehead hairline",
+    "ear left/right top bottom tragus",
+    "profile forehead bridge nose tip lips chin and jaw contour"
+  ],
+  "required_3d_preflight": [
+    "identify Laura 2 body/head mesh and vertex topology",
+    "determine whether base GLB uses native MakeHuman topology or retopologized mesh",
+    "confirm official MPFB target vertex indices and compatible topology",
+    "measure matching landmarks on fixed camera front and profile renders",
+    "check whether rig and facial accessories follow morphs",
+    "confirm neutral full body and approved attachment remain unchanged"
+  ],
+  "safety": "No guessed 3D dimensions or procedural sculpt. Do not overwrite Sophie 1, SAV4, or Laura 2 base.",
+  "next": "Obtain or locate original two images and complete landmarks; then run actual MPFB target discovery and topology check before fitting."
+}
