@@ -94,14 +94,19 @@ try{
   for(let i=0;i<positions.count;i++){
    const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
    const nx=Math.abs((x-cx)/sx),ny=(y-bb.min.y)/sy;
-   const lower=THREE.MathUtils.smoothstep(ny,.04,.20)*(1-THREE.MathUtils.smoothstep(ny,.55,.80));
-   const outerBand=THREE.MathUtils.smoothstep(nx,.07,.15)*(1-THREE.MathUtils.smoothstep(nx,.27,.40));
-   const innerBand=1-THREE.MathUtils.smoothstep(nx,.025,.13);
+   // Extend the influence into the lower tip rather than fading it out there.
+   // ny=0 is the low end of this attachment, ny=1 its upper end.
+   const lower=1-THREE.MathUtils.smoothstep(ny,.56,.84);
+   const tip=1-THREE.MathUtils.smoothstep(ny,.15,.68);
+   const outerBand=THREE.MathUtils.smoothstep(nx,.055,.13)*(1-THREE.MathUtils.smoothstep(nx,.32,.46));
+   const innerBand=1-THREE.MathUtils.smoothstep(nx,.035,.13);
    const outerWeight=Math.max(0,lower*outerBand);
    const innerWeight=Math.max(0,lower*innerBand);
-   positions.array[k]=x+Math.sign(x-cx)*sx*.10*fullness*outerWeight;
-   positions.array[k+1]=y-sy*(.15*length*outerWeight+.12*inner*innerWeight);
-   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.10*fullness*outerWeight;
+   // Drop the lower outer fold, with maximum travel toward the free end.
+   positions.array[k+1]=y-sy*(.28*length*outerWeight*(.40+.60*tip)+.14*inner*innerWeight*(.40+.60*tip));
+   // Fullness expands the outer fold laterally and forward, not the mound.
+   positions.array[k]=x+Math.sign(x-cx)*sx*.14*fullness*outerWeight;
+   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.20*fullness*outerWeight;
   }
   positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
   document.getElementById('lengthValue').textContent=Math.round(length*100)+'%';
