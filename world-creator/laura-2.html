@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laura 2 — Morphing Base</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:53dvh;min-height:300px}.moves{display:flex;flex-wrap:wrap;gap:7px;padding:10px}.moves button{padding:10px}.moves button:disabled{opacity:.45}section{padding:10px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>Laura 2 — Independent Morphing Base</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section><strong>Laura 2 — All Movement Controls</strong><p id="rigStatus">Checking available rig and animations…</p><div class="moves" id="moves"></div><button id="stopMotion" disabled>Stop / Reset Pose</button></section><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section><strong>Laura 2 — Face Morph Lab</strong><p id="faceStatus">Checking genuine morph targets in the cloned mesh…</p><div id="faceMorphs" style="display:grid;gap:8px"></div><button id="resetFace" disabled>Reset Face Morphs</button><p>Only embedded mesh morph targets are applied. Sophie 1 and the saved Laura 2 GLB are never modified by these controls.</p></section><section><strong>Laura 2 — All Movement Controls</strong><p id="rigStatus">Checking available rig and animations…</p><div class="moves" id="moves"></div><button id="stopMotion" disabled>Stop / Reset Pose</button></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -55,6 +55,24 @@ try{
  document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
  const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ const faceMeshes=[];model.traverse(o=>{if(o.isMesh&&o.morphTargetDictionary&&Object.keys(o.morphTargetDictionary).length)faceMeshes.push(o);});
+ const faceTargets=new Map();
+ for(const mesh of faceMeshes)for(const [name,index] of Object.entries(mesh.morphTargetDictionary)){
+   if(!faceTargets.has(name))faceTargets.set(name,[]);
+   faceTargets.get(name).push({mesh,index});
+ }
+ const morphContainer=document.getElementById('faceMorphs');
+ document.getElementById('faceStatus').textContent=faceMeshes.length+' morph-enabled meshes · '+faceTargets.size+' named morph targets.';
+ if(!faceTargets.size)document.getElementById('faceStatus').textContent+=' This GLB has no embedded face morphs; MPFB target export is required before likeness sliders can work.';
+ for(const [name,targets] of faceTargets){
+   const label=document.createElement('label');label.textContent=name+' ';
+   const input=document.createElement('input');input.type='range';input.min='0';input.max='100';input.value='0';
+   const output=document.createElement('output');output.textContent='0%';
+   input.addEventListener('input',()=>{const value=Number(input.value)/100;for(const {mesh,index} of targets)mesh.morphTargetInfluences[index]=value;output.textContent=input.value+'%';});
+   label.append(input,output);morphContainer.append(label);
+ }
+ document.getElementById('resetFace').disabled=!faceTargets.size;
+ document.getElementById('resetFace').onclick=()=>{for(const input of morphContainer.querySelectorAll('input')){input.value='0';input.dispatchEvent(new Event('input'));}};
  const clips=gltf.animations||[];const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
  const actions=['Idle','Walk','Run','Turn Left','Turn Right','Crouch','Kneel','Crawl','Bend','Pick Up','Sit','Stand','Lie Down','Hands and Knees','Elbows and Knees','Wave','Smile','Blink','Wink','Shimmy'];
  const aliases={'Hands and Knees':['handsandknees','allfours'],'Elbows and Knees':['elbowsandknees'],'Pick Up':['pickup'],'Turn Left':['turnleft'],'Turn Right':['turnright']};
