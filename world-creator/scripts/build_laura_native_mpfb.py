@@ -82,7 +82,7 @@ for feature,(terms,weight) in recipe.items():
     key.value=weight
     selected[feature]=(str(p),weight)
     print('LAURA_TARGET_APPLIED',feature,p.name,weight)
-if len(selected)<2:
+if len(selected)<3:
     raise RuntimeError('Fewer than 3 official facial identity targets found; refuse neutral-face export: '+str(selected))
 print('LAURA_IDENTITY_TARGETS_APPLIED',selected)
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
@@ -142,48 +142,8 @@ for obj in list(meshes):
     # Keep genuine eye geometry, but exclude misplaced eyebrow/lash accessories.
     if obj != base and obj != hair and not ('eye' in obj.name.lower() and not any(t in obj.name.lower() for t in ('brow','lash'))):
         bpy.data.objects.remove(obj,do_unlink=True)
-world=[base.matrix_world@Vector(c) for c in base.bound_box]
-lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.78
-for obj in list(bpy.context.scene.objects):
-    if obj.type!='MESH':continue
-    # Keep the entire hair object, including strands that extend below the neck cut.
-    if obj == hair or 'hair' in obj.name.lower():
-        continue
-    zs=[(obj.matrix_world@Vector(c)).z for c in obj.bound_box]
-    if max(zs)<cut:
-        bpy.data.objects.remove(obj,do_unlink=True);continue
-    if min(zs)<cut:
-        # Non-body assets (eyes, lashes, brows) are already fitted by MPFB.
-        # Bisecting them can shred their triangles and create floating fragments.
-        if obj != base:
-            # Keep actual eyes intact; no bisect on accessories.
-            continue
-        bpy.context.view_layer.objects.active=obj
-        bpy.ops.object.select_all(action='DESELECT');obj.select_set(True)
-        # Bake MPFB shape keys before cutting the head.
-        if obj.data.shape_keys:
-            for key in obj.data.shape_keys.key_blocks:
-                if key.name!='Basis' and key.value:
-                    pass
-            deps=bpy.context.evaluated_depsgraph_get()
-            evaluated=obj.evaluated_get(deps)
-            baked=bpy.data.meshes.new_from_object(evaluated,preserve_all_data_layers=True,depsgraph=deps)
-            old=obj.data;obj.data=baked
-        bm=bmesh.new();bm.from_mesh(obj.data)
-        local_cut=(obj.matrix_world.inverted()@Vector((0,0,cut))).z
-        bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),dist=.00001,plane_co=(0,0,local_cut),plane_no=(0,0,1),clear_inner=True,clear_outer=False)
-        bm.to_mesh(obj.data);bm.free()
-        # Close the neck boundary after bisecting the body.
-        bm=bmesh.new();bm.from_mesh(obj.data)
-        boundary=[e for e in bm.edges if e.is_boundary and all(abs((obj.matrix_world@v.co).z-cut)<.005 for v in e.verts)]
-        if boundary:
-            bmesh.ops.holes_fill(bm,edges=boundary,sides=0)
-        bm.to_mesh(obj.data);bm.free()
-        # Reject an open cut instead of silently publishing a hollow head.
-        bm=bmesh.new();bm.from_mesh(obj.data)
-        cut_edges=[e for e in bm.edges if e.is_boundary and all(abs((obj.matrix_world@v.co).z-cut)<.01 for v in e.verts)]
-        if cut_edges: raise RuntimeError('Laura neck remains open: '+str(len(cut_edges))+' boundary edges')
-        bm.free()
+# Preserve the complete MakeHuman body, with MPFB identity morphs applied.
+# Never bisect Laura 2 at the neck.
 for obj in list(bpy.context.scene.objects):
     if obj.type!='MESH':bpy.data.objects.remove(obj,do_unlink=True)
 if not any(o.type=='MESH' and ('hair' in o.name.lower() or o == hair) for o in bpy.context.scene.objects):
@@ -206,8 +166,8 @@ for obj in bpy.context.scene.objects:
     obj.parent=None
     for mod in list(obj.modifiers):
         if mod.type=='ARMATURE':obj.modifiers.remove(mod)
-out=ROOT/'assets/laura-head-combined.glb'
+out=ROOT/'assets/laura-2-native-morphed-fullbody.glb'
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_animations=False,export_skins=False)
 assert out.stat().st_size>10000
-print('LAURA_NATIVE_MPFB_SUCCESS',out.stat().st_size,sorted(selected),hair_path.name)
+print('LAURA_NATIVE_FULLBODY_MORPH_SUCCESS',out.stat().st_size,sorted(selected),hair_path.name)
 
