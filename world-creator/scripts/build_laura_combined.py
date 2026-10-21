@@ -1,5 +1,5 @@
 """Build Laura head as a separate GLB; preserve original MakeHuman assets."""
-import bpy, math
+import bpy, bmesh, math
 from pathlib import Path
 from mathutils import Vector
 root=Path(__file__).resolve().parents[1]
@@ -51,8 +51,9 @@ cap.name='Laura fitted blonde hair cap'
 cap.scale=(width*.48,depth*.49,height*.30)
 cap.data.materials.append(blonde)
 # Remove lower hemisphere: hair should not cover the face.
-for poly in cap.data.polygons:
-    if poly.center.z < -.06: poly.hide_render=True
+bm=bmesh.new();bm.from_mesh(cap.data)
+bmesh.ops.delete(bm,geom=[v for v in bm.verts if v.co.z < -.06],context='VERTS')
+bm.to_mesh(cap.data);bm.free()
 # Side hair uses layered tapered ribbons rather than floating eyeball-like primitives.
 for side in (-1,1):
     for i in range(18):
