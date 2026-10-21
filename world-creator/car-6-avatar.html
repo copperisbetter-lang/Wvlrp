@@ -2,12 +2,13 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 6 — Working Model</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:55dvh;min-height:300px} section{padding:12px} .moves{display:flex;flex-wrap:wrap;gap:7px} .moves button{padding:9px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 6 — MakeHuman Working Model (Not Final)</h1><p id="status" role="status">Loading the fitted model…</p></header><p style="padding:8px 12px;margin:0;background:#614d29">Working copy only: MakeHuman geometry rebuild and reference matching not yet completed. CAR 5 and SAV4 unchanged.</p><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="display:none;padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><strong>CAR 6 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="display:none;padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><button id="exportCar6" disabled>Export CAR 6 GLB</button><p id="exportStatus">Export preserves the current working model without changing CAR 5 or SAV4.</p></section><section><strong>CAR 6 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=car5-fixed-shape-20261020';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
@@ -126,7 +127,21 @@ try{
   for(const id of ['labiaLength','labiaFullness','innerLength'])document.getElementById(id).value=0;
   applyLabiaMorph();
  };
- const skinSource='baked GLB (no viewer-only adjustments)';
+ const exportButton=document.getElementById('exportCar6');
+ exportButton.disabled=false;
+ exportButton.onclick=async()=>{
+  const message=document.getElementById('exportStatus');
+  exportButton.disabled=true;message.textContent='Preparing GLB…';
+  try{
+   const binary=await new GLTFExporter().parseAsync(model,{binary:true,onlyVisible:false,animations:clips});
+   const objectUrl=URL.createObjectURL(new Blob([binary],{type:'model/gltf-binary'}));
+   const link=document.createElement('a');link.href=objectUrl;link.download='car-6-working.glb';link.click();
+   setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+   message.textContent='Export prepared. Check your browser downloads.';
+  }catch(e){message.textContent='Export failed: '+e.message;}
+  finally{exportButton.disabled=false;}
+ };
+ const skinSource='editable working copy (separate GLB export)';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  status.textContent='CAR 6 working copy — original geometry ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('[data-view],#isolate,#cutaway,#resetMorph').forEach(b=>b.disabled=false);applyLabiaMorph();view('Front');
