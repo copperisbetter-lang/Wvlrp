@@ -1,0 +1,50 @@
+name: Publish first 3DDFA sample head to website
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/publish-first-3ddfa-head.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install converter
+        run: python -m pip install 'trimesh>=4,<5' 'numpy<3'
+      - name: Retrieve successful sample face artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/face
+          gh run download 39670216797 -R "${{ github.repository }}" -n free-3ddfa-sample-obj -D /tmp/face
+      - name: Validate and export public sample face
+        run: |
+          python - <<'PY'
+          import pathlib, subprocess, trimesh
+          objs=list(pathlib.Path('/tmp/face').rglob('*.obj'))
+          assert objs, 'Missing sample OBJ from successful run 10'
+          obj=objs[0]
+          subprocess.run(['python','world-creator/validate_3ddfa_obj.py',str(obj)],check=True)
+          scene=trimesh.load(str(obj),force='scene',process=False)
+          assert scene.geometry, 'Empty mesh'
+          out=pathlib.Path('world-creator/3ddfa-sample-0.glb')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_bytes(scene.export(file_type='glb'))
+          check=trimesh.load(str(out),force='scene')
+          assert check.geometry, 'Exported GLB cannot reload'
+          print('Published GLB size:',out.stat().st_size)
+          PY
+      - name: Commit model into existing website
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/3ddfa-sample-0.glb
+          if git diff --cached --quiet; then echo 'Model already published'; exit 0; fi
+          git commit -m 'Publish verified first 3DDFA sample head GLB for web viewer'
+          git push origin HEAD:main
