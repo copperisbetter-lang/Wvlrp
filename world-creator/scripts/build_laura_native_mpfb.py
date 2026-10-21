@@ -57,11 +57,34 @@ print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in f
 # are missing or cannot be mapped unambiguously to the requested features.
 if not all(found.get(k) for k in ('eyes','nose','mouth','chin','jaw','cheeks')):
     raise RuntimeError('Official MPFB anatomical identity targets incomplete; cannot publish neutral Laura as morphed')
-# Target application requires verified target polarity and reference ratios.
-# No arbitrary slider weights: produce a diagnostic report until calibration
-# is provided, rather than damaging Laura's mesh.
-raise RuntimeError('Laura identity target paths discovered; calibrated target weights still required before safe export')
+# Conservative first-pass MPFB identity morph. Each displacement comes from an
+# official .target file, never a synthetic face sphere or ARKit expression.
+# Filename polarity is explicit; uncertain targets are excluded.
+recipe={
+ 'eyes': (('eye','large'),.16),
+ 'nose': (('nose','narrow'),.22),
+ 'mouth': (('mouth','wide'),.06),
+ 'chin': (('chin','round'),.18),
+ 'jaw': (('jaw','narrow'),.17),
+ 'cheeks': (('cheek','full'),.18),
+}
 selected={}
+for feature,(terms,weight) in recipe.items():
+    matches=[p for p in found.get(feature,[]) if all(t in p.stem.lower() for t in terms)]
+    # Do not guess a polarity if MakeHuman names its modifier differently.
+    if not matches:
+        print('LAURA_TARGET_NOT_FOUND',feature,terms)
+        continue
+    matches.sort(key=lambda p:(len(p.stem),str(p)))
+    p=matches[0]
+    key=TargetService.load_target(human,str(p),weight=weight,name='Laura2 '+feature)
+    if key is None:raise RuntimeError('Failed to load MPFB identity target '+str(p))
+    key.value=weight
+    selected[feature]=(str(p),weight)
+    print('LAURA_TARGET_APPLIED',feature,p.name,weight)
+if len(selected)<3:
+    raise RuntimeError('Fewer than 3 official facial identity targets found; refuse neutral-face export: '+str(selected))
+print('LAURA_IDENTITY_TARGETS_APPLIED',selected)
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
 for sub,names,kind in []: # Disable unaligned facial accessories until socket-fitting is verified
