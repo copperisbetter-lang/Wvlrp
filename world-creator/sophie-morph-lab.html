@@ -56,35 +56,51 @@ new GLTFLoader().load('assets/morph-head-clone.glb',g=>{
  fitHead();window.addEventListener('resize',fitHead);
  const meshReport=[];root.traverse(o=>{if(o.isMesh){const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name||'unnamed').join('/');meshReport.push(o.name+' ['+mats+']')}});status.textContent='MakeHuman loaded · '+meshReport.length+' meshes. Model parts: '+meshReport.slice(0,8).map(x=>x.slice(0,80)).join(' | ');
 },undefined,e=>{status.textContent='MakeHuman head asset not published yet. Run the head extraction workflow, then reload. '+(e?.message||'');});
-function morph(){const t=Number(document.getElementById('mhMorph').value)/100;document.getElementById('mhAmount').textContent=Math.round(t*100)+'%';
+function morph(){
+ const t=Number(document.getElementById('mhMorph').value)/100;
+ document.getElementById('mhAmount').textContent=Math.round(t*100)+'%';
  const v=id=>Number(document.getElementById(id).value)/100;
  const jaw=v('jaw'),cheek=v('cheek'),length=v('length'),depth=v('depth'),nose=v('nose'),eyes=v('eyes'),mouth=v('mouth'),chin=v('chin');
- let changed=0,maxDelta=0;
+ const gaussian=(x,c,w)=>Math.exp(-Math.pow((x-c)/w,2));
+ let changed=0,maxDelta=0,faceMeshes=0;
  for(const {mesh,base} of meshes){
-  const a=mesh.geometry.attributes.position;
-  const name=(mesh.name+' '+(mesh.material?.name||'')).toLowerCase();
+  const name=(mesh.name+' '+(Array.isArray(mesh.material)?mesh.material.map(m=>m.name).join(' '):mesh.material?.name||'')).toLowerCase();
   if(/hair|lash|brow|eye|iris|sclera|cornea|teeth|tongue/.test(name))continue;
-  const box=new THREE.Box3().setFromBufferAttribute(new THREE.Float32BufferAttribute(base,3)),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
-  if(sz.y<.08||sz.x<.08)continue;
+  const a=mesh.geometry.attributes.position;
+  const box=new THREE.Box3().setFromBufferAttribute(new THREE.Float32BufferAttribute(base,3));
+  const mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+  if(sz.y<.12||sz.x<.12)continue;
+  faceMeshes++;
+  // Anatomical regions in the original MPFB head's normalized coordinate space.
+  // Every displacement is derived from the untouched base, so 0% is exact and 100% is complete.
   for(let i=0;i<a.count;i++){
-   const k=3*i,x=base[k],y=base[k+1],z=base[k+2];
+   const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
    const nx=(x-mid.x)/Math.max(sz.x,.001),ny=(y-mid.y)/Math.max(sz.y,.001);
-   const lower=THREE.MathUtils.smoothstep(-ny,-.08,.46),upper=1-lower;
-   const cheekMask=Math.exp(-Math.pow((Math.abs(nx)-.24)/.22,2)-Math.pow((ny+.02)/.25,2));
-   const jawMask=Math.exp(-Math.pow((ny+.30)/.19,2));
-   const noseMask=Math.exp(-Math.pow(nx/.15,2)-Math.pow((ny-.04)/.22,2));
-   const eyeMask=Math.exp(-Math.pow((Math.abs(nx)-.20)/.12,2)-Math.pow((ny-.17)/.12,2));
-   const mouthMask=Math.exp(-Math.pow(nx/.25,2)-Math.pow((ny+.23)/.12,2));
-   const chinMask=Math.exp(-Math.pow(nx/.19,2)-Math.pow((ny+.40)/.12,2));
-   const dx=(x-mid.x)*t*((jaw-1)*.75*jawMask+(cheek-1)*.8*cheekMask+(eyes-1)*.35*eyeMask+(mouth-1)*.5*mouthMask+.24*cheekMask+.12*jawMask);
-   const dy=(y-mid.y)*t*((length-1)*.7+.09)+(chin-1)*t*sz.y*.13*chinMask;
-   const dz=(z-mid.z)*t*((depth-1)*.6)+t*sz.z*(.18*noseMask*(nose)+.07*cheekMask+.08*chinMask*chin);
+   const cheekMask=gaussian(Math.abs(nx),.26,.19)*gaussian(ny,-.025,.22);
+   const jawMask=gaussian(ny,-.30,.17);
+   const noseMask=gaussian(nx,0,.105)*gaussian(ny,.035,.20);
+   const nostrilMask=gaussian(Math.abs(nx),.09,.065)*gaussian(ny,-.085,.075);
+   const eyeMask=gaussian(Math.abs(nx),.20,.115)*gaussian(ny,.16,.12);
+   const lidMask=gaussian(Math.abs(nx),.20,.12)*gaussian(ny,.11,.075);
+   const browMask=gaussian(Math.abs(nx),.21,.15)*gaussian(ny,.29,.075);
+   const mouthMask=gaussian(nx,0,.24)*gaussian(ny,-.235,.095);
+   const lipMask=gaussian(nx,0,.19)*gaussian(ny,-.245,.05);
+   const chinMask=gaussian(nx,0,.20)*gaussian(ny,-.405,.105);
+   const foreheadMask=gaussian(nx,0,.40)*gaussian(ny,.35,.20);
+   const templeMask=gaussian(Math.abs(nx),.40,.13)*gaussian(ny,.25,.22);
+   const neckFade=THREE.MathUtils.smoothstep(ny,-.48,-.28);
+   const dx=sz.x*t*neckFade*(Math.sign(nx)*(.065*cheekMask+.047*jawMask-.028*templeMask+.020*foreheadMask+.026*eyeMask+.024*nostrilMask+.038*mouthMask+.020*chinMask)
+      +nx*((jaw-1)*.55*jawMask+(cheek-1)*.65*cheekMask+(eyes-1)*.55*eyeMask+(mouth-1)*.65*mouthMask));
+   const dy=sz.y*t*neckFade*(.040*eyeMask+.025*browMask-.025*lidMask+.022*noseMask-.018*nostrilMask+.027*lipMask-.024*chinMask
+      +(length-1)*ny*.55+(chin-1)*.16*chinMask);
+   const dz=sz.z*t*neckFade*(.24*noseMask*nose+.095*nostrilMask+.12*cheekMask+.085*eyeMask+.060*lidMask+.045*browMask+.12*lipMask+.075*mouthMask+.11*chinMask*chin+.035*foreheadMask
+      +(depth-1)*((z-mid.z)/Math.max(sz.z,.001))*.55);
    a.setXYZ(i,x+dx,y+dy,z+dz);
    const delta=Math.hypot(dx,dy,dz);if(delta>1e-7){changed++;maxDelta=Math.max(maxDelta,delta);}
   }
-  a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();
+  a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();mesh.geometry.computeBoundingBox();
  }
- status.textContent='Morph A: '+changed+' vertices changed; maximum displacement '+maxDelta.toFixed(4)+' model units. '+(changed?'Actual mesh deformation active.':'WARNING: no vertices changed.');
+ status.textContent='Full-face morph '+Math.round(t*100)+'% · '+faceMeshes+' head mesh(es), '+changed+' vertices, max displacement '+maxDelta.toFixed(4)+'. Cheeks, nose, eyes, eyelids, brows, mouth, lips, chin, jaw and forehead included.';
 }
 document.getElementById('mhMorph').addEventListener('input',morph);
 document.getElementById('mhExport').addEventListener('click',()=>{if(!root){status.textContent='Head clone not loaded; cannot export.';return;}new GLTFExporter().parse(root,blob=>{const url=URL.createObjectURL(new Blob([blob],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='laura-makehuman-morph.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000)},e=>{status.textContent='Export failed: '+e.message},{binary:true});});
