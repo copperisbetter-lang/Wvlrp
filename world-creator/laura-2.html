@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laura 2 — Morphing Base</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:53dvh;min-height:300px}.moves{display:flex;flex-wrap:wrap;gap:7px;padding:10px}.moves button{padding:10px}.moves button:disabled{opacity:.45}section{padding:10px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
-</head><body><header><h1>Laura 2 — Independent Morphing Base</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
+</head><body><header><h1>Laura 2 — Native MPFB Repair</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
 <nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section><strong>Laura 2 — Face Morph Lab</strong><p id="faceStatus">Checking genuine morph targets in the cloned mesh…</p><div id="faceMorphs" style="display:grid;gap:8px"></div><button id="resetFace" disabled>Reset Face Morphs</button><p>Only embedded mesh morph targets are applied. Sophie 1 and the saved Laura 2 GLB are never modified by these controls.</p></section><section><strong>Laura 2 — All Movement Controls</strong><p id="rigStatus">Checking available rig and animations…</p><div class="moves" id="moves"></div><button id="stopMotion" disabled>Stop / Reset Pose</button></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/laura-2-base.glb?v=laura2-independent-20261021';
+const sav4AssetUrl='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/fix/laura2-fullbody-mpfb/world-creator/assets/laura-2-native-fullbody.glb?v=ed49b8b';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -89,13 +89,14 @@ try{
  document.getElementById('stopMotion').disabled=false;
  document.getElementById('stopMotion').onclick=()=>{mixer?.stopAllAction();if(mixer)mixer.setTime(0);model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});};
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
- if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+ if(!attachment)attachment=meshes.find(m=>/body|human|skin/i.test(m.name))||meshes[0];
+ if(!attachment)throw Error('Native model contains no visible mesh.');
  // Inspect the baked V21 GLB exactly as exported; do not replace its material or strip vertex colors.
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  const bakedMaterial=(Array.isArray(attachment.material)?attachment.material:[attachment.material]).map(m=>m?.name||'unnamed').join(', ');
  const hasVertexColors=attachment.geometry.hasAttribute('color');
- status.textContent='V21 baked GLB · '+attachment.geometry.attributes.position.count+' attachment vertices · material: '+bakedMaterial+' · vertex colors: '+(hasVertexColors?'yes':'no');
- document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
+ status.textContent='Native MPFB full-body repair · '+meshes.length+' meshes · material: '+bakedMaterial+' · vertex colors: '+(hasVertexColors?'yes':'no');
+ document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Full body');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
 
