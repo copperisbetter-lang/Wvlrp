@@ -42,7 +42,50 @@ function sculptLauraHead(root){
  a.needsUpdate=true;face.geometry.computeVertexNormals();face.geometry.computeBoundingSphere();
  return a.count;
 }
-function load(url){status.textContent='Loading genuine MPFB mesh: '+url;new GLTFLoader().load(url,g=>{if(model)scene.remove(model);model=g.scene;const sculpted=sculptLauraHead(model);parts={};model.traverse(o=>{if(o.isMesh){parts[o.name]=o;o.userData.base={position:o.position.clone(),scale:o.scale.clone()}}});scene.add(model);fit();status.textContent='Laura sculpt applied to '+sculpted+' mesh vertices · Loaded '+url+' · '+Object.keys(parts).length+' meshes. Drag to rotate or pinch to zoom. Expression buttons require matching morph targets.'},undefined,e=>{status.textContent='Could not load GLB: '+e.message;});}
+
+function repairPresentation(root){
+ const meshes=[];root.traverse(o=>{if(o.isMesh)meshes.push(o)});
+ const skin=meshes.sort((a,b)=>(b.geometry?.attributes?.position?.count||0)-(a.geometry?.attributes?.position?.count||0))[0];
+ if(!skin)return;
+ root.updateMatrixWorld(true);
+ const bb=new THREE.Box3().setFromObject(skin),size=bb.getSize(new THREE.Vector3()),ctr=bb.getCenter(new THREE.Vector3());
+ const H=size.y,W=size.x,D=size.z;
+ // Remove defective hair cards, which were exported as blocky lateral panels.
+ for(const o of meshes){if(/hair|scalp|fringe|strand/i.test(o.name))o.visible=false;}
+ const blonde=new THREE.MeshStandardMaterial({color:0xb39a73,roughness:.91,side:THREE.DoubleSide});
+ const darkBlonde=new THREE.MeshStandardMaterial({color:0x897455,roughness:.95});
+ const scalp=new THREE.Mesh(new THREE.SphereGeometry(1,48,32,0,Math.PI*2,0,Math.PI*.52),blonde);
+ scalp.name='Laura replacement scalp';scalp.position.set(ctr.x,bb.max.y-H*.13,ctr.z-D*.08);scalp.scale.set(W*.49,H*.31,D*.53);root.add(scalp);
+ // Natural flowing hair silhouette built from tapered curves, rather than sideways hair cards.
+ for(const side of [-1,1])for(let i=0;i<34;i++){
+  const t=i/33, x=side*W*(.20+.29*t);
+  const curve=new THREE.CatmullRomCurve3([
+   new THREE.Vector3(ctr.x+x*.68,bb.max.y-H*.07,ctr.z+D*.22),
+   new THREE.Vector3(ctr.x+x,bb.max.y-H*.24,ctr.z+D*.32),
+   new THREE.Vector3(ctr.x+x*1.10,ctr.y-H*.10,ctr.z+D*.16),
+   new THREE.Vector3(ctr.x+x*.98,ctr.y-H*.51,ctr.z+D*.03)
+  ]);
+  const strand=new THREE.Mesh(new THREE.TubeGeometry(curve,20,W*(.004+.003*(i%3)),4,false),i%5===0?darkBlonde:blonde);
+  strand.name='Laura flowing blonde hair';root.add(strand);
+ }
+ // Suppress red emissive eye materials while preserving the imported geometry.
+ root.traverse(o=>{if(!o.isMesh||!o.material)return;
+  const materials=Array.isArray(o.material)?o.material:[o.material];
+  for(const m of materials){if(m.emissive&&m.emissive.r>m.emissive.g*1.4){m.emissive.setRGB(0,0,0);m.emissiveIntensity=0;}}
+ });
+ const iris=new THREE.MeshStandardMaterial({color:0x718c99,roughness:.34});
+ const pupil=new THREE.MeshStandardMaterial({color:0x171b20,roughness:.22});
+ const white=new THREE.MeshStandardMaterial({color:0xe8ded4,roughness:.4});
+ // Eye covers are intentionally subtle and do not modify the source GLB.
+ for(const side of [-1,1]){
+  const ex=ctr.x+side*W*.205,ey=ctr.y+H*.135,ez=bb.max.z+D*.008;
+  for(const [rad,depth,mat] of [[W*.090,0,white],[W*.045,D*.012,iris],[W*.020,D*.018,pupil]]){
+   const eye=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat);
+   eye.name='Laura repaired eye';eye.position.set(ex,ey,ez+depth);eye.scale.set(rad,rad*.55,D*.028);root.add(eye);
+  }
+ }
+}
+function load(url){status.textContent='Loading genuine MPFB mesh: '+url;new GLTFLoader().load(url,g=>{if(model)scene.remove(model);model=g.scene;const sculpted=sculptLauraHead(model);repairPresentation(model);parts={};model.traverse(o=>{if(o.isMesh){parts[o.name]=o;o.userData.base={position:o.position.clone(),scale:o.scale.clone()}}});scene.add(model);fit();status.textContent='Laura hair/eye repair + sculpt applied to '+sculpted+' mesh vertices · Loaded '+url+' · '+Object.keys(parts).length+' meshes. Drag to rotate or pinch to zoom. Expression buttons require matching morph targets.'},undefined,e=>{status.textContent='Could not load GLB: '+e.message;});}
 document.querySelector('#file').addEventListener('change',e=>{const f=e.target.files[0];if(f)load(URL.createObjectURL(f));});
 for(const [id,dir] of Object.entries({front:[0,0,1],left:[-1,0,0],right:[1,0,0],back:[0,0,-1]}))document.querySelector('#'+id).onclick=()=>{camera.position.copy(center).add(new THREE.Vector3(...dir).multiplyScalar(dist));controls.update();};
 document.querySelector('#reset').onclick=fit;document.querySelector('#neutral').onclick=neutral;document.querySelector('#mouth').onclick=()=>{neutral();move('Lower lip',0,-.14);move('Upper lip',0,.05)};document.querySelector('#smile').onclick=()=>{neutral();move('Upper lip',0,.035,1.2,.9,.85);move('Lower lip',0,.035,1.2,.9,.85)};document.querySelector('#blink').onclick=()=>{neutral();move('Upper eyelid',0,-.105,1,1,2.6)};document.querySelector('#winkL').onclick=()=>{neutral();move('Upper eyelid -1',0,-.105,1,1,2.6)};document.querySelector('#winkR').onclick=()=>{neutral();move('Upper eyelid 1',0,-.105,1,1,2.6)};document.querySelector('#brows').onclick=()=>{neutral();move('Eyebrow',0,.12)};
