@@ -1,0 +1,47 @@
+name: Convert verified 3DDFA OBJ to GLB viewer asset
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/convert-laura-3ddfa-glb.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  convert:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mesh conversion tools
+        run: python -m pip install 'trimesh>=4,<5' 'numpy<3'
+      - name: Download preserved run 10 OBJ
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/face
+          gh run download 39670216797 -R "${{ github.repository }}" -n free-3ddfa-sample-obj -D /tmp/face
+      - name: Validate and convert face mesh to GLB
+        run: |
+          mkdir -p /tmp/converted
+          python - <<'PY'
+          import pathlib, subprocess, trimesh
+          objs=list(pathlib.Path('/tmp/face').rglob('*.obj'))
+          assert objs, 'No OBJ in run 10 artifact'
+          for i, obj in enumerate(objs):
+              subprocess.run(['python','world-creator/validate_3ddfa_obj.py',str(obj)],check=True)
+              scene=trimesh.load(str(obj),force='scene',process=False)
+              assert len(scene.geometry)>0, 'Empty scene'
+              dest=pathlib.Path('/tmp/converted')/f'3ddfa-sample-{i}.glb'
+              dest.write_bytes(scene.export(file_type='glb'))
+              assert dest.stat().st_size>1024, 'GLB unexpectedly small'
+              check=trimesh.load(str(dest),force='scene')
+              assert len(check.geometry)>0, 'GLB reload failed'
+              print('VALID GLB',dest, dest.stat().st_size)
+          PY
+      - name: Upload GLB for mobile inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-3ddfa-sample-glb
+          path: /tmp/converted/*.glb
+          if-no-files-found: error
