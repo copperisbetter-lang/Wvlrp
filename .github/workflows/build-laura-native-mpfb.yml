@@ -65,6 +65,14 @@ jobs:
             curl -fL --retry 4 --connect-timeout 30 --speed-time 120 --speed-limit 1024 'https://files2.makehumancommunity.org/functional/faceunits01.zip' -o /tmp/mh-faceunits.zip
           fi
           unzip -t /tmp/mh-faceunits.zip | tail -n 2
+      - name: Download official MakeHuman anatomical targets
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mh-targets
+          curl -fL --retry 4 'https://github.com/makehumancommunity/makehuman/archive/refs/heads/master.zip' -o /tmp/makehuman-source.zip
+          unzip -q /tmp/makehuman-source.zip '*/makehuman/data/targets/*' -d /tmp/mh-targets
+          find /tmp/mh-targets -name '*.target' | head -n 15
+          test "$(find /tmp/mh-targets -name '*.target' | wc -l)" -gt 100
       - name: Generate native MPFB Laura 2 full-body morph
         run: |
           set -euo pipefail
