@@ -3,9 +3,32 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 const stage=document.getElementById('stage'),status=document.getElementById('status');const scene=new THREE.Scene();scene.background=new THREE.Color(0x263b34);scene.add(new THREE.HemisphereLight(0xffffff,0x667f75,2.6));const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(3,5,5);scene.add(light);const camera=new THREE.PerspectiveCamera(38,1,.001,100);const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.04;orbit.maxDistance=12;function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(stage);resize();renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});
 try{const gltf=await new GLTFLoader().loadAsync('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/fix/laura2-fullbody-mpfb/world-creator/assets/laura-2-native-fullbody.glb');const model=gltf.scene;scene.add(model);
 // Hair-only inspection override: keep native body, face, rig and exported GLB untouched.
-const hairMeshes=[], unwantedMeshes=[];model.traverse(o=>{if(!o.isMesh)return;const names=[o.name,o.parent?.name,...(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name)].join(' ').toLowerCase();if(/hair|eyebrow|eyelash|scalp|fringe|bangs|ponytail/.test(names)&&!/eyebrow|eyelash/.test(names)){hairMeshes.push(o);o.visible=true; for(const m of (Array.isArray(o.material)?o.material:[o.material])){if(!m)continue;m.side=THREE.DoubleSide;m.transparent=false;m.opacity=1;m.depthWrite=true;m.alphaTest=0;m.needsUpdate=true;}}});
-let hairVisible=true;const hairButton=document.getElementById('hair');hairButton.textContent=hairMeshes.length?'Hide hair ('+hairMeshes.length+')':'Hair not identified';hairButton.disabled=!hairMeshes.length;hairButton.onclick=()=>{hairVisible=!hairVisible;hairMeshes.forEach(o=>o.visible=hairVisible);hairButton.textContent=hairVisible?'Hide hair':'Show hair';};
-// Suppress only independently named unwanted anatomical attachments; never cut the approved body mesh.
-model.traverse(o=>{if(!o.isMesh)return;const n=[o.name,o.parent?.name].join(' ').toLowerCase();if(/penis|phallus|male_genital|genital_male/.test(n)){o.visible=false;unwantedMeshes.push(o.name);}});
-const bounds=new THREE.Box3().setFromObject(model);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());const head=new THREE.Vector3(center.x,bounds.max.y-size.y*.115,center.z);function view(which){const full=which==='body';const target=full?center:head;const distance=full?size.y*1.65:Math.max(.22,size.y*.22);orbit.target.copy(target);let offset=new THREE.Vector3(0,0,distance);if(which==='side')offset.set(distance,0,0);if(which==='other')offset.set(-distance,0,0);camera.position.copy(target).add(offset);orbit.update()}document.getElementById('front').onclick=()=>view('front');document.getElementById('side').onclick=()=>view('side');document.getElementById('other').onclick=()=>view('other');document.getElementById('body').onclick=()=>view('body');view('front');status.textContent='Loaded. Drag to rotate; pinch to zoom. Native MPFB full-body GLB. Hair materials repaired: '+hairMeshes.length+'. Unwanted separate attachments hidden: '+unwantedMeshes.length+'.'}catch(e){status.textContent='Model unavailable: '+e.message;}
+// Diagnose anonymous GLB meshes by spatial location, not only exporter names.
+const hairMeshes=[],unwantedMeshes=[],diagnostics=[];
+const overall=new THREE.Box3().setFromObject(model),height=overall.max.y-overall.min.y;
+const boxOf=o=>new THREE.Box3().setFromObject(o);
+model.traverse(o=>{
+ if(!o.isMesh)return;
+ const box=boxOf(o),sz=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+ const mats=Array.isArray(o.material)?o.material:[o.material];
+ const n=[o.name,o.parent?.name,...mats.map(m=>m?.name)].join(' ').toLowerCase();
+ const headZone=box.min.y>overall.min.y+height*.70;
+ const strandLike=headZone&&sz.y>height*.08&&sz.x<height*.34&&sz.z<height*.32;
+ const hairNamed=/hair|scalp|fringe|bangs|ponytail|wig|strand/.test(n)&&!/eyebrow|eyelash/.test(n);
+ if(hairNamed||strandLike){
+   hairMeshes.push(o);
+   mats.forEach(m=>{if(!m)return;m.side=THREE.DoubleSide;m.depthWrite=true;m.needsUpdate=true;});
+   // The obstructing curtain is safest hidden until a correctly fitted hair asset is exported.
+   o.visible=false;
+ }
+ if(/penis|phallus|male_genital|genital_male/.test(n)){o.visible=false;unwantedMeshes.push(o);}
+ diagnostics.push(o.name+': '+sz.toArray().map(v=>v.toFixed(3)).join(' x '));
+});
+let hairVisible=false;
+const hairButton=document.getElementById('hair');
+hairButton.textContent=hairMeshes.length?'Show hair ('+hairMeshes.length+')':'Hair not identified';
+hairButton.disabled=!hairMeshes.length;
+hairButton.onclick=()=>{hairVisible=!hairVisible;hairMeshes.forEach(o=>o.visible=hairVisible);hairButton.textContent=hairVisible?'Hide hair':'Show hair';};
+const report=document.createElement('details');report.innerHTML='<summary>Mesh diagnostic ('+diagnostics.length+')</summary><pre style="white-space:pre-wrap;font-size:11px">'+diagnostics.join('\\n')+'</pre>';document.body.append(report);
+const bounds=new THREE.Box3().setFromObject(model);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());const head=new THREE.Vector3(center.x,bounds.max.y-size.y*.115,center.z);function view(which){const full=which==='body';const target=full?center:head;const distance=full?size.y*1.65:Math.max(.22,size.y*.22);orbit.target.copy(target);let offset=new THREE.Vector3(0,0,distance);if(which==='side')offset.set(distance,0,0);if(which==='other')offset.set(-distance,0,0);camera.position.copy(target).add(offset);orbit.update()}document.getElementById('front').onclick=()=>view('front');document.getElementById('side').onclick=()=>view('side');document.getElementById('other').onclick=()=>view('other');document.getElementById('body').onclick=()=>view('body');view('front');status.textContent='Loaded. Drag to rotate; pinch to zoom. Native MPFB full-body GLB. Hair isolated: '+hairMeshes.length+'. Unwanted separate attachments hidden: '+unwantedMeshes.length+'. Meshes: '+diagnostics.length+'.'}catch(e){status.textContent='Model unavailable: '+e.message;}
 </script></body></html>
