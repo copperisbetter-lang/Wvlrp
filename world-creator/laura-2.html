@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laura 2 — Morphing Base</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:53dvh;min-height:300px}.moves{display:flex;flex-wrap:wrap;gap:7px;padding:10px}.moves button{padding:10px}.moves button:disabled{opacity:.45}section{padding:10px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>Laura 2 — Independent Morphing Base</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section><strong>Laura 2 — All Movement Controls</strong><p id="rigStatus">Checking available rig and animations…</p><div class="moves" id="moves"></div><button id="stopMotion" disabled>Stop / Reset Pose</button></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -21,7 +21,7 @@ try{
  const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
  function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(stage);resize();
- renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
+ const clock=new THREE.Clock();let mixer=null;renderer.setAnimationLoop(()=>{if(mixer)mixer.update(clock.getDelta());else clock.getDelta();orbit.update();renderer.render(scene,camera);});
  let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
  function style(){
   for(const mesh of meshes){
@@ -55,6 +55,21 @@ try{
  document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
  const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ const clips=gltf.animations||[];const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
+ const actions=['Idle','Walk','Run','Turn Left','Turn Right','Crouch','Kneel','Crawl','Bend','Pick Up','Sit','Stand','Lie Down','Hands and Knees','Elbows and Knees','Wave','Smile','Blink','Wink','Shimmy'];
+ const aliases={'Hands and Knees':['handsandknees','allfours'],'Elbows and Knees':['elbowsandknees'],'Pick Up':['pickup'],'Turn Left':['turnleft'],'Turn Right':['turnright']};
+ const normalize=x=>x.toLowerCase().replace(/[^a-z0-9]/g,'');
+ mixer=clips.length?new THREE.AnimationMixer(model):null;
+ document.getElementById('rigStatus').textContent=bones.length+' bones · '+clips.length+' animation clips. Controls without a matching clip are shown but disabled; no simulated motions.';
+ for(const name of actions){
+   const terms=(aliases[name]||[name]).map(normalize);
+   const clip=clips.find(c=>terms.some(t=>normalize(c.name)===t||normalize(c.name).startsWith(t+'animation')));
+   const b=document.createElement('button');b.textContent=name;b.disabled=!clip;b.title=clip?'Play '+clip.name:'Animation not available in Laura 2 GLB';
+   b.onclick=()=>{if(!clip||!mixer)return;mixer.stopAllAction();const action=mixer.clipAction(clip);action.reset();action.setLoop(THREE.LoopRepeat,Infinity);action.play();};
+   document.getElementById('moves').append(b);
+ }
+ document.getElementById('stopMotion').disabled=false;
+ document.getElementById('stopMotion').onclick=()=>{mixer?.stopAllAction();if(mixer)mixer.setTime(0);model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});};
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
  if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
  // Inspect the baked V21 GLB exactly as exported; do not replace its material or strip vertex colors.
