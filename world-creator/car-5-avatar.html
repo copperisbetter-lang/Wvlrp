@@ -2,13 +2,13 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Native Fit Inspection</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:55dvh;min-height:300px} section{padding:12px} .moves{display:flex;flex-wrap:wrap;gap:7px} .moves button{padding:9px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 5 — Independent V21 Avatar</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><strong>CAR 5 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="display:none;padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><strong>CAR 5 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=v17-native-atlas';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=car5-fixed-shape-20261020';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -86,10 +86,10 @@ try{
  const cz=(bb.min.z+bb.max.z)/2;
  const sx=Math.max(span.x,1e-6),sy=Math.max(span.y,1e-6),sz=Math.max(span.z,1e-6);
  function applyLabiaMorph(){
-  const length=Number(document.getElementById('labiaLength').value)/100;
-  const fullness=Number(document.getElementById('labiaFullness').value)/100;
-  const inner=Number(document.getElementById('innerLength').value)/100;
-  const slit=Number(document.getElementById('slitHeight').value)/100;
+  const length=0.88;
+  const fullness=0.75;
+  const inner=0.28;
+  const slit=0.75;
   // Localized falloffs: never scale the entire attachment or its outer rim.
   // The central mound is excluded from displacement by the lower-region mask.
   for(let i=0;i<positions.count;i++){
@@ -100,8 +100,8 @@ try{
    // Hang affects ONLY the bottom of each outer fold; upper attachment stays anchored.
    const tipWeight=1-THREE.MathUtils.smoothstep(ny,.08,.43);
    // Fullness is spread along the full outer fold, tapered only at the root.
-   const fullHeight=THREE.MathUtils.smoothstep(ny,.01,.10)*(1-THREE.MathUtils.smoothstep(ny,.85,.99));
-   const outerBand=THREE.MathUtils.smoothstep(nx,.055,.13)*(1-THREE.MathUtils.smoothstep(nx,.32,.46));
+   const fullHeight=(1-THREE.MathUtils.smoothstep(ny,.78,.98));
+   const outerBand=THREE.MathUtils.smoothstep(nx,.035,.10)*(1-THREE.MathUtils.smoothstep(nx,.34,.49));
    const innerBand=1-THREE.MathUtils.smoothstep(nx,.035,.13);
    const hangWeight=Math.max(0,tipWeight*outerBand);
    const fullnessWeight=Math.max(0,fullHeight*outerBand);
@@ -129,7 +129,7 @@ try{
  const skinSource='baked GLB (no viewer-only adjustments)';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  status.textContent='CAR 5 V21 baked skin ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
- document.querySelectorAll('[data-view],#isolate,#cutaway,#resetMorph').forEach(b=>b.disabled=false);view('Front');
+ document.querySelectorAll('[data-view],#isolate,#cutaway,#resetMorph').forEach(b=>b.disabled=false);applyLabiaMorph();view('Front');
  // Display the exported model directly: no eye replacements, body reshaping,
  // automatic posing, added garments, or per-frame geometry fitting.
 
