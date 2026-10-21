@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WVLRP | MakeHuman Head Lab</title>
+<style>body{margin:0;background:#12231e;color:#e8f5ed;font:16px system-ui}header,aside{padding:16px;background:#20382e}h1{font-size:1.3rem}main{display:grid;grid-template-columns:minmax(260px,340px) 1fr}label{display:block;margin:15px 0}input{max-width:100%}input[type=range]{width:100%}button{padding:10px;margin:4px;background:#a5d4a3;border:0;border-radius:6px}#stage{height:75vh;min-height:450px;touch-action:none}#status{padding:12px;color:#cde1d1}small{color:#bcd0c4}@media(max-width:700px){main{display:block}#stage{height:60vh}}</style></head>
+<body><header><h1>WVLRP · MakeHuman Head Lab</h1><small>Independent import and deformation test — does not change SAV4 or Laura's approved assets</small></header>
+<main><aside><label>Import MakeHuman / MPFB head or full-character GLB<input id="file" type="file" accept=".glb,.gltf,model/gltf-binary"></label>
+<label>Head morph strength: <output id="pct">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
+<label>Face width <output id="widthOut">100%</output><input id="width" type="range" min="75" max="125" value="100"></label>
+<label>Face length <output id="lengthOut">100%</output><input id="length" type="range" min="80" max="120" value="100"></label>
+<button id="reset">Reset</button><button id="export" disabled>Export adjusted GLB</button>
+<p><small>Start by exporting a genuine MakeHuman/MPFB mesh as GLB from Blender. The sliders deform imported mesh vertices rather than adding floating facial primitives. This is a manual deformation prototype; photo landmark fitting and anatomically selective morph targets are not yet implemented. Use a head-only GLB for best results.</small></p></aside>
+<div><div id="stage"></div><div id="status" role="status">Import a MakeHuman GLB to begin. No fake placeholder head is shown.</div></div></main>
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.161.0';
+import {OrbitControls} from 'https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'https://esm.sh/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'https://esm.sh/three@0.161.0/examples/jsm/exporters/GLTFExporter.js';
+const $=id=>document.getElementById(id),stage=$('stage'),scene=new THREE.Scene();scene.background=new THREE.Color('#1a3029');
+const camera=new THREE.PerspectiveCamera(35,1,.01,1000);camera.position.set(0,0,3);
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));stage.append(renderer.domElement);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x64766a,2));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(2,3,4);scene.add(sun);
+let model=null, originals=[];
+function status(s){$('status').textContent=s}
+function fit(){const box=new THREE.Box3().setFromObject(model),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());orbit.target.copy(center);const max=Math.max(size.x,size.y,size.z,.1);camera.position.copy(center).add(new THREE.Vector3(0,0,max*2.5));camera.near=Math.max(.001,max/1000);camera.far=max*1000;camera.updateProjectionMatrix();orbit.update()}
+function apply(){if(!model)return;const t=+$('strength').value/100,w=1+((+$('width').value/100)-1)*t,l=1+((+$('length').value/100)-1)*t;for(const {mesh,base} of originals){const a=mesh.geometry.attributes.position;for(let i=0;i<a.count;i++){a.setXYZ(i,base[i*3]*w,base[i*3+1]*l,base[i*3+2])}a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere()}$('pct').textContent=Math.round(t*100)+'%';$('widthOut').textContent=$('width').value+'%';$('lengthOut').textContent=$('length').value+'%';status('Imported real mesh · manual morph '+Math.round(t*100)+'% · '+originals.length+' editable meshes.')}
+$('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{status('Loading imported GLB…');const bytes=await file.arrayBuffer();const gltf=await new GLTFLoader().parseAsync(bytes,'');if(model)scene.remove(model);model=gltf.scene;originals=[];model.traverse(o=>{if(!o.isMesh)return;o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;if(a)originals.push({mesh:o,base:new Float32Array(a.array)})});scene.add(model);fit();$('export').disabled=false;apply()}catch(err){status('Import failed: '+err.message)}};
+for(const id of ['strength','width','length'])$(id).oninput=apply;
+$('reset').onclick=()=>{$('strength').value=0;$('width').value=100;$('length').value=100;apply()};
+$('export').onclick=async()=>{if(!model)return;try{const data=await new GLTFExporter().parseAsync(model,{binary:true});const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='wvlrp-makehuman-head-morph.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);status('GLB exported. Validate imported mesh and rig in Blender before game use.')}catch(e){status('Export failed: '+e.message)}};
+new ResizeObserver(()=>{camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)}).observe(stage);
+function tick(){requestAnimationFrame(tick);orbit.update();renderer.render(scene,camera)}tick();
+</script></body></html>
