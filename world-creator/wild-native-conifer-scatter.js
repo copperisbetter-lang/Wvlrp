@@ -10,7 +10,8 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
  const hash=(x,z,k=0)=>{let n=Math.imul(x^seed,374761393)^Math.imul(z,668265263)^Math.imul(k,2246822519);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296};
  state.ready=(async()=>{
   const manifest=await fetch("./assets/village-grove-sources.json").then(r=>r.json());
-  const ids=FOREST_SPECIES_TARGETS.find(s=>s.species==="conifer").assetIds;
+  // Only locally downloaded photographic Poly Haven PBR tree meshes.
+  const ids=["pine_sapling_medium","pine_sapling_small","fir_tree_01","fir_sapling_medium","fir_sapling"];
   const sources=[];
   for(const id of ids){const a=manifest.find(v=>v.id===id&&v.license==="CC0");if(!a)continue;
    try{const c=await B.SceneLoader.LoadAssetContainerAsync("",a.url,scene);if(c.meshes.some(m=>m.getTotalVertices?.()>0))sources.push({id,container:c});}
@@ -29,6 +30,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
   candidates.sort((a,b)=>a.rank-b.rank);
   const worldPlacements=candidates.slice(0,PINE_COUNT+SPRUCE_COUNT).map((p,i)=>({...p,species:i<PINE_COUNT?"white-pine":"spruce"}));
   state.worldTargets={whitePine:PINE_COUNT,spruce:SPRUCE_COUNT};
+  state.assetPolicy="downloaded-CC0-PBR-only";
   const half=Math.ceil(radius/cellSize);
   const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
   const nearby=worldPlacements.filter(p=>Math.hypot(p.x-centerX,p.z-centerZ)<=radius).sort((a,b)=>Math.hypot(a.x-centerX,a.z-centerZ)-Math.hypot(b.x-centerX,b.z-centerZ));
@@ -103,7 +105,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const plantedBase=bounds(trunks).lo.y;
     if(!Number.isFinite(plantedBase)||Math.abs(plantedBase-ground)>0.35)throw Error("Tree root not planted");
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
-    root.metadata={kind:"native-conifer",species:p.species,source:src.id,visualStandIn:true};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
+    root.metadata={kind:"native-conifer",requestedSpecies:p.species,source:src.id,photographicPBR:true,exactSpeciesVerified:false};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
   }
   state.reground();
