@@ -35,7 +35,7 @@ selected={}
 print('LAURA_NEUTRAL_FACE_NO_EXPRESSION_DEFORMATION')
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
-for sub,names,kind in [('eyes',['high-poly.mhclo','low-poly.mhclo'],'Eyes'),('eyebrows',['eyebrow001.mhclo'],'Eyebrows'),('eyelashes',['eyelashes01.mhclo'],'Eyelashes')]:
+for sub,names,kind in []: # Disable unaligned facial accessories until socket-fitting is verified
     for name in names:
         path=AssetService.find_asset_absolute_path(name,asset_subdir=sub)
         if path:
@@ -82,7 +82,13 @@ meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 hair_meshes=[o for o in meshes if o == hair or 'hair' in o.name.lower()]
 if not hair_meshes or not any(len(o.data.polygons)>100 for o in hair_meshes):
     raise RuntimeError('Laura hair was not present as exportable mesh; reject bald GLB')
-base=max(meshes,key=lambda o:len(o.data.vertices))
+base=human
+if base not in meshes: raise RuntimeError('Native MPFB base mesh missing')
+# Export only the native facial surface and fitted hair; accessory eye and
+# mouth meshes have been visibly misregistered in the current GLB.
+for obj in list(meshes):
+    if obj != base and obj != hair:
+        bpy.data.objects.remove(obj,do_unlink=True)
 world=[base.matrix_world@Vector(c) for c in base.bound_box]
 lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.78
 for obj in list(meshes):
@@ -115,6 +121,12 @@ for obj in list(meshes):
         bm=bmesh.new();bm.from_mesh(obj.data)
         local_cut=(obj.matrix_world.inverted()@Vector((0,0,cut))).z
         bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),dist=.00001,plane_co=(0,0,local_cut),plane_no=(0,0,1),clear_inner=True,clear_outer=False)
+        bm.to_mesh(obj.data);bm.free()
+        # Close the neck boundary after bisecting the body.
+        bm=bmesh.new();bm.from_mesh(obj.data)
+        boundary=[e for e in bm.edges if e.is_boundary and all(abs((obj.matrix_world@v.co).z-cut)<.005 for v in e.verts)]
+        if boundary:
+            bmesh.ops.holes_fill(bm,edges=boundary,sides=0)
         bm.to_mesh(obj.data);bm.free()
 for obj in list(bpy.context.scene.objects):
     if obj.type!='MESH':bpy.data.objects.remove(obj,do_unlink=True)
