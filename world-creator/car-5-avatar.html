@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SAV4 Native Fit Inspection</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>CAR 5 — Independent V21 Avatar</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="padding:12px;display:grid;gap:10px"><strong>CAR5 · Outer labia shape (experimental mesh morph)</strong><label>Length <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -60,6 +60,41 @@ try{
  // Approved V14 sample A appearance, applied to SAV4's fitted attachment
  // in-place. No second attachment mesh, no geometry changes.
 
+ // Reversible MakeHuman-style target: base vertices + weighted displacement.
+ // Restrict deformation to the central lower region of the fitted attachment.
+ const geo=attachment.geometry;
+ const positions=geo.attributes.position;
+ const base=new Float32Array(positions.array);
+ geo.computeBoundingBox();
+ const bb=geo.boundingBox, span=new THREE.Vector3();bb.getSize(span);
+ const cx=(bb.min.x+bb.max.x)/2, cy=(bb.min.y+bb.max.y)/2;
+ const cz=(bb.min.z+bb.max.z)/2;
+ const sx=Math.max(span.x,1e-6),sy=Math.max(span.y,1e-6),sz=Math.max(span.z,1e-6);
+ function applyLabiaMorph(){
+  const length=Number(document.getElementById('labiaLength').value)/100;
+  const fullness=Number(document.getElementById('labiaFullness').value)/100;
+  for(let i=0;i<positions.count;i++){
+   const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
+   const nx=Math.abs((x-cx)/sx),ny=Math.abs((y-cy)/sy);
+   // Smooth central mask: preserve outer seam, rim and nearby body.
+   const wx=1-THREE.MathUtils.smoothstep(nx,.08,.32);
+   const wy=1-THREE.MathUtils.smoothstep(ny,.10,.43);
+   const weight=Math.max(0,wx*wy);
+   positions.array[k]=x+((x-cx)*fullness*.24*weight);
+   positions.array[k+1]=y+(y-cy)*length*.38*weight;
+   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.13*fullness*weight;
+  }
+  positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
+  document.getElementById('lengthValue').textContent=Math.round(length*100)+'%';
+  document.getElementById('fullnessValue').textContent=Math.round(fullness*100)+'%';
+ }
+ for(const id of ['labiaLength','labiaFullness']){
+  const input=document.getElementById(id);input.disabled=false;input.addEventListener('input',applyLabiaMorph);
+ }
+ document.getElementById('resetMorph').onclick=()=>{
+  document.getElementById('labiaLength').value=0;
+  document.getElementById('labiaFullness').value=0;applyLabiaMorph();
+ };
  const skinSource='baked GLB (no viewer-only adjustments)';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  status.textContent='CAR 5 V21 baked skin ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
