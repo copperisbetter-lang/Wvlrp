@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 5 Side Studio — CAR 6 Working Copy</title>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:55dvh;min-height:300px} section{padding:12px} .moves{display:flex;flex-wrap:wrap;gap:7px} .moves button{padding:9px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1} #stage{position:relative;overflow:hidden}#photoOverlay{position:absolute;left:50%;top:50%;width:65%;max-height:100%;object-fit:contain;transform:translate(-50%,-50%);pointer-events:none;display:none;opacity:.5;z-index:3}#photoTools{padding:12px;background:#193027;display:grid;gap:9px}#photoTools label{display:flex;gap:12px;align-items:center;justify-content:space-between}#photoTools input[type=range]{width:55%}</style>
+</head><body><header><h1>CAR 5 Side Studio · CAR 6 Working Copy</h1><p id="status" role="status">Loading the fitted model…</p></header><p style="padding:8px 12px;margin:0;background:#614d29">Working copy only: MakeHuman geometry rebuild and reference matching not yet completed. CAR 5 and SAV4 unchanged.</p><main id="stage"><img id="photoOverlay" alt="Private reference overlay"></main><section id="photoTools"><strong>Photo registration · CAR 6 preview only</strong><label>Load reference photo <input id="photoFile" type="file" accept="image/*"></label><label>Transparency <input id="photoOpacity" type="range" min="0" max="100" value="50"></label><label>Horizontal alignment <input id="photoX" type="range" min="-100" max="100" value="0"></label><label>Vertical alignment <input id="photoY" type="range" min="-100" max="100" value="0"></label><label>Photo scale <input id="photoScale" type="range" min="20" max="250" value="100"></label><label>Photo rotation <input id="photoRotate" type="range" min="-180" max="180" value="0"></label><button id="clearPhoto">Clear private photo</button><small>Reference stays in this browser session and is not uploaded by this page. Align the photo over the 3D model; these controls do not yet reconstruct or export a new mesh.</small></section>
+<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="display:none;padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><strong>CAR 6 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
+<script>
+(()=>{const img=document.getElementById('photoOverlay'),file=document.getElementById('photoFile');let url=null;const ids=['photoOpacity','photoX','photoY','photoScale','photoRotate'];function update(){const [opacity,x,y,scale,rotation]=ids.map(id=>+document.getElementById(id).value);img.style.opacity=opacity/100;img.style.transform='translate(calc(-50% + '+x+'%),calc(-50% + '+y+'%)) rotate('+rotation+'deg) scale('+(scale/100)+')';}ids.forEach(id=>document.getElementById(id).addEventListener('input',update));file.addEventListener('change',()=>{if(url)URL.revokeObjectURL(url);url=file.files[0]?URL.createObjectURL(file.files[0]):null;img.style.display=url?'block':'none';if(url)img.src=url;else img.removeAttribute('src');});document.getElementById('clearPhoto').onclick=()=>{if(url)URL.revokeObjectURL(url);url=null;file.value='';img.style.display='none';img.removeAttribute('src');};update();})();
+</script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=car5-fixed-shape-20261020';
+const status=document.getElementById('status'),stage=document.getElementById('stage');
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x76867e,2.3));
+ const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(2,3,4);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(-2,0,-3);scene.add(fill);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
+ const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
+ function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resize();
+ let mixer=null,activeAction=null;renderer.setAnimationLoop(()=>{const dt=clock.getDelta();if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera);});const clock=new THREE.Clock();
+ let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
+ function style(){
+  for(const mesh of meshes){
+   mesh.visible=!only||mesh===attachment;
+   for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
+    if(!material)continue;
+    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
+    const faded=cutaway&&mesh!==attachment;
+    material.transparent=faded||original.transparent;
+    material.opacity=faded?original.opacity*.18:original.opacity;
+    material.depthWrite=faded?false:original.depthWrite;
+    material.needsUpdate=true;
+   }
+  }
+  document.getElementById('isolate').textContent=only?'Show body':'Attachment only';
+  document.getElementById('cutaway').textContent=cutaway?'Solid body':'Body cutaway';
+ }
+ function view(name){
+  let box=partBounds;
+  if(name==='Full body')box=new THREE.Box3().setFromObject(model,true);
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  orbit.target.copy(center);
+  let offset=name==='Full body'?new THREE.Vector3(0,.05,Math.max(2,size.y*1.5)):new THREE.Vector3(0,-.07,.40);
+  if(name==='Rear')offset.set(0,-.06,-.40);
+  if(name==='Side')offset.set(.40,-.02,0);
+  if(name==='Underneath')offset.set(.03,-.36,.06);
+  camera.position.copy(center).add(offset);orbit.update();
+ }
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
+ document.getElementById('isolate').onclick=()=>{only=!only;style();};
+ document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ const clips=gltf.animations||[];const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
+ const actions=['Idle','Walk','Run','Turn Left','Turn Right','Crouch','Kneel','Crawl','Bend','Pick Up','Sit','Stand','Lie Down','Hands and Knees','Elbows and Knees','Wave','Smile','Blink','Wink','Shimmy'];
+ const moves=document.getElementById('moves');mixer=clips.length?new THREE.AnimationMixer(model):null;
+ const rigStatus=document.getElementById('rigStatus');
+ rigStatus.textContent=bones.length+' bones · '+clips.length+' animation clips. Unavailable motions are disabled.';
+ const alias={'Hands and Knees':['hands','allfours'],'Elbows and Knees':['elbows'],'Pick Up':['pickup','pick_up'],'Turn Left':['turnleft'],'Turn Right':['turnright']};
+ for(const name of actions){
+  const terms=alias[name]||[name.toLowerCase().replace(/\s/g,'')];
+  const clip=clips.find(c=>terms.some(t=>c.name.toLowerCase().replace(/[\s_-]/g,'').includes(t.replace(/[\s_-]/g,''))));
+  const b=document.createElement('button');b.textContent=name;b.disabled=!clip;b.title=clip?'Play '+clip.name:'No matching animation clip in this GLB';
+  b.onclick=()=>{if(!clip||!mixer)return;mixer.stopAllAction();activeAction=mixer.clipAction(clip);activeAction.reset().play();activeAction.setLoop(THREE.LoopRepeat);};
+  moves.append(b);
+ }
+ document.getElementById('stopMotion').onclick=()=>{mixer?.stopAllAction();mixer?.uncacheRoot(model);mixer=clips.length?new THREE.AnimationMixer(model):null;model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});};
+
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
+ if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
+ // Approved V14 sample A appearance, applied to SAV4's fitted attachment
+ // in-place. No second attachment mesh, no geometry changes.
+
+ // Reversible MakeHuman-style target: base vertices + weighted displacement.
+ // Restrict deformation to the central lower region of the fitted attachment.
+ const geo=attachment.geometry;
+ const positions=geo.attributes.position;
+ const base=new Float32Array(positions.array);
+ geo.computeBoundingBox();
+ const bb=geo.boundingBox, span=new THREE.Vector3();bb.getSize(span);
+ const cx=(bb.min.x+bb.max.x)/2, cy=(bb.min.y+bb.max.y)/2;
+ const cz=(bb.min.z+bb.max.z)/2;
+ const sx=Math.max(span.x,1e-6),sy=Math.max(span.y,1e-6),sz=Math.max(span.z,1e-6);
+ function applyLabiaMorph(){
+  const length=0;
+  const fullness=0;
+  const inner=0;
+  const slit=0;
+  // Localized falloffs: never scale the entire attachment or its outer rim.
+  // The central mound is excluded from displacement by the lower-region mask.
+  for(let i=0;i<positions.count;i++){
+   const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
+   const nx=Math.abs((x-cx)/sx),ny=(y-bb.min.y)/sy;
+   // Extend the influence into the lower tip rather than fading it out there.
+   // ny=0 is the low end of this attachment, ny=1 its upper end.
+   // Hang affects ONLY the bottom of each outer fold; upper attachment stays anchored.
+   const tipWeight=1-THREE.MathUtils.smoothstep(ny,.08,.43);
+   // Fullness is spread along the full outer fold, tapered only at the root.
+   const fullHeight=(1-THREE.MathUtils.smoothstep(ny,.78,.98));
+   const outerBand=THREE.MathUtils.smoothstep(nx,.035,.10)*(1-THREE.MathUtils.smoothstep(nx,.34,.49));
+   const innerBand=1-THREE.MathUtils.smoothstep(nx,.035,.13);
+   const hangWeight=Math.max(0,tipWeight*outerBand);
+   const fullnessWeight=Math.max(0,fullHeight*outerBand);
+   const innerWeight=Math.max(0,(1-THREE.MathUtils.smoothstep(ny,.62,.86))*innerBand);
+   // Raise the upper central seam without dragging the surrounding mound.
+   const upperSeam=(1-THREE.MathUtils.smoothstep(nx,.025,.095))*THREE.MathUtils.smoothstep(ny,.38,.62)*(1-THREE.MathUtils.smoothstep(ny,.85,.98));
+   positions.array[k+1]=y-sy*(.34*length*hangWeight+.14*inner*innerWeight)+sy*.12*slit*upperSeam;
+   // Fluff the entire length: widen both outer folds and add forward volume.
+   positions.array[k]=x+Math.sign(x-cx)*sx*.17*fullness*fullnessWeight;
+   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.22*fullness*fullnessWeight;
+  }
+  positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
+  document.getElementById('lengthValue').textContent=Math.round(length*100)+'%';
+  document.getElementById('fullnessValue').textContent=Math.round(fullness*100)+'%';
+  document.getElementById('innerValue').textContent=Math.round(inner*100)+'%';
+  document.getElementById('slitValue').textContent=Math.round(slit*100)+'%';
+ }
+ for(const id of ['labiaLength','labiaFullness','innerLength','slitHeight']){
+  const input=document.getElementById(id);input.disabled=false;input.addEventListener('input',applyLabiaMorph);
+ }
+ document.getElementById('resetMorph').onclick=()=>{
+  for(const id of ['labiaLength','labiaFullness','innerLength'])document.getElementById(id).value=0;
+  applyLabiaMorph();
+ };
+ const skinSource='baked GLB (no viewer-only adjustments)';
+ partBounds=new THREE.Box3().setFromObject(attachment,true);
+ status.textContent='CAR 6 working copy — original geometry ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
+ document.querySelectorAll('[data-view],#isolate,#cutaway,#resetMorph').forEach(b=>b.disabled=false);applyLabiaMorph();view('Front');
+ // Display the exported model directly: no eye replacements, body reshaping,
+ // automatic posing, added garments, or per-frame geometry fitting.
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+</script></body></html>
