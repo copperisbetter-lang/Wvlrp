@@ -61,6 +61,6 @@ for feature in ('eyes', 'cheeks'):
         key.value = weight
         print('LAURA_MIRRORED_TARGET_APPLIED',feature,right.name,weight)
 """
-code = code.replace(needle, mirrors + "\\n" + needle)
+code = code.replace(needle, mirrors + "\n" + needle)
 code = code.replace("LAURA_NATIVE_MPFB_SUCCESS", "LAURA_NATIVE_MPFB_FULLBODY_SUCCESS")
 exec(compile(code, str(source), 'exec'), {'__name__':'__main__','__file__':str(source)})
