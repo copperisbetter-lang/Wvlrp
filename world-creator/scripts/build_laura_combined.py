@@ -24,14 +24,29 @@ hi=Vector((max(p[i] for p in pts) for i in range(3)))
 center=(lo+hi)/2
 width=hi.x-lo.x;height=hi.z-lo.z;depth=hi.y-lo.y
 assert width>0 and height>0 and depth>0
-# IMPORTANT: A cropped GLB has no editable MPFB target stack.
-# Never fake a native MakeHuman morph with direct vertex deformation.
-# Official targets must be applied to an MPFB basemesh before extraction.
-raise RuntimeError(
-    "Laura native MPFB morph not configured: rebuild from an MPFB basemesh "
-    "using TargetService.load_target() and official MakeHuman .target assets "
-    "BEFORE cropping the head. Refusing to publish a fake morph."
-)
+# Inspection-only mesh pass. This is NOT a native MPFB target morph.
+# The input clone is never overwritten. Native photo fitting remains pending.
+# Apply a bounded, continuous sculpt to the facial surface while preserving eyes.
+# Only alter the largest skin mesh; do not deform separate eye/eyelid meshes.
+from math import exp
+if body.type == 'MESH':
+    mesh=body.data
+    # Coordinates are local to the skin mesh, measured from its own bounds.
+    coords=[v.co.copy() for v in mesh.vertices]
+    xmin=min(v.x for v in coords);xmax=max(v.x for v in coords)
+    ymin=min(v.y for v in coords);ymax=max(v.y for v in coords)
+    zmin=min(v.z for v in coords);zmax=max(v.z for v in coords)
+    sx=max(xmax-xmin,1e-6);sy=max(ymax-ymin,1e-6);sz=max(zmax-zmin,1e-6)
+    cx=(xmin+xmax)*.5
+    # Restrained cheek and jaw adjustments; avoids seams by Gaussian falloff.
+    for v in mesh.vertices:
+        x,y,z=v.co
+        nx=(x-cx)/sx;nz=(z-zmin)/sz
+        cheek=exp(-((abs(nx)-.25)/.16)**2-((nz-.52)/.14)**2)
+        jaw=exp(-((abs(nx)-.22)/.17)**2-((nz-.22)/.13)**2)
+        v.co.x += (1 if nx>=0 else -1)*sx*(.025*cheek-.014*jaw)
+    mesh.update()
+print('LAURA_INSPECTION_SCULPT_APPLIED: not photo calibrated or native MPFB')
 # Build a continuous blonde cap conforming to the top of the head.
 blonde=bpy.data.materials.new('Laura natural dark blonde')
 blonde.diffuse_color=(.49,.35,.22,1)
