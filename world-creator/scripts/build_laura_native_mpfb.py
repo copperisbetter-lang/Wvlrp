@@ -28,22 +28,11 @@ for key,value in [('gender',0.0),('age',.38),('weight',.40),('muscle',.28),('hei
 TargetService.reapply_macro_details(human)
 # Apply actual official .target data to MPFB base topology, not guessed vertex math.
 # Faceunits are expression targets, not identity reconstruction from photos.
+# Faceunits are expression morphs, not likeness sliders. Applying these as
+# permanent geometry broke the nose/mouth in the previous export.
+# Preserve neutral MakeHuman face until reviewed identity targets are available.
 selected={}
-with zipfile.ZipFile(faces) as z:
-    for entry in z.infolist():
-        if entry.is_dir() or not entry.filename.lower().endswith(('.target','.target.gz')):continue
-        name=Path(entry.filename).name.lower().replace('_','').replace('-','')
-        for feature,token in [('smile','mouthsmile'),('brow','browinnerup'),('eye','eyesquint')]:
-            if feature not in selected and token in name:
-                p=Path('/tmp')/('laura_'+feature+'.target')
-                if entry.filename.lower().endswith('.gz'):p=p.with_suffix('.target.gz')
-                with z.open(entry) as src,open(p,'wb') as out:shutil.copyfileobj(src,out)
-                selected[feature]=p
-assert 'smile' in selected, 'Official MakeHuman smile target not found'
-for feature,path in selected.items():
-    key=TargetService.load_target(human,str(path),weight={'smile':.12,'brow':.10,'eye':.08}[feature],name='Laura MPFB '+feature)
-    if key is None:raise RuntimeError('Native MPFB target load failed: '+feature)
-    print('LAURA_NATIVE_TARGET',feature,path.name)
+print('LAURA_NEUTRAL_FACE_NO_EXPRESSION_DEFORMATION')
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
 for sub,names,kind in [('eyes',['high-poly.mhclo','low-poly.mhclo'],'Eyes'),('eyebrows',['eyebrow001.mhclo'],'Eyebrows'),('eyelashes',['eyelashes01.mhclo'],'Eyelashes')]:
@@ -85,10 +74,17 @@ base=max(meshes,key=lambda o:len(o.data.vertices))
 world=[base.matrix_world@Vector(c) for c in base.bound_box]
 lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.865
 for obj in list(meshes):
+    # Keep the entire hair object, including strands that extend below the neck cut.
+    if obj == hair or 'hair' in obj.name.lower():
+        continue
     zs=[(obj.matrix_world@Vector(c)).z for c in obj.bound_box]
     if max(zs)<cut:
         bpy.data.objects.remove(obj,do_unlink=True);continue
     if min(zs)<cut:
+        # Non-body assets (eyes, lashes, brows) are already fitted by MPFB.
+        # Bisecting them can shred their triangles and create floating fragments.
+        if obj != base:
+            continue
         bpy.context.view_layer.objects.active=obj
         bpy.ops.object.select_all(action='DESELECT');obj.select_set(True)
         # Bake MPFB shape keys before cutting the head.
