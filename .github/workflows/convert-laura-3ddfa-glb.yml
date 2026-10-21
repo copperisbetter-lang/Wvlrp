@@ -28,10 +28,24 @@ jobs:
           import pathlib, subprocess, trimesh
           objs=list(pathlib.Path('/tmp/face').rglob('*.obj'))
           assert objs, 'No OBJ in run 10 artifact'
+          assert len(objs) == 1, f'Expected one OBJ, found {len(objs)}: {objs}'
           for i, obj in enumerate(objs):
               subprocess.run(['python','world-creator/validate_3ddfa_obj.py',str(obj)],check=True)
               scene=trimesh.load(str(obj),force='scene',process=False)
               assert len(scene.geometry)>0, 'Empty scene'
+              # 3DDFA can export separate face components. Keep only the main
+              # connected surface, not detached duplicate heads or fragments.
+              import numpy as np
+              parts=[]
+              for mesh in scene.dump():
+                  if not isinstance(mesh,trimesh.Trimesh): continue
+                  parts.extend(mesh.split(only_watertight=False))
+              assert parts, 'No mesh components found'
+              parts.sort(key=lambda m: len(m.faces),reverse=True)
+              main=parts[0]
+              assert len(main.faces)>100, 'Main face component too small'
+              print('Components:',[(len(p.vertices),len(p.faces)) for p in parts], 'keeping largest')
+              scene=trimesh.Scene(main)
               dest=pathlib.Path('/tmp/converted')/f'3ddfa-sample-{i}.glb'
               dest.write_bytes(scene.export(file_type='glb'))
               assert dest.stat().st_size>1024, 'GLB unexpectedly small'
