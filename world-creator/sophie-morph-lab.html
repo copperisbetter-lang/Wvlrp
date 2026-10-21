@@ -25,7 +25,7 @@ new GLTFLoader().load('assets/morph-head-clone.glb',g=>{
  root.position.sub(center);const scale=2.4/Math.max(size.x,size.y,size.z,.001);root.scale.setScalar(scale);
  root.traverse(o=>{if(o.isMesh){const copy=o.geometry.clone();o.geometry=copy;meshes.push({mesh:o,base:new Float32Array(copy.attributes.position.array)});}});
  camera.position.set(0,0,4.8);controls.target.set(0,0,0);controls.update();
- status.textContent='MakeHuman clone loaded. Independent morph ready.';
+ const meshReport=[];root.traverse(o=>{if(o.isMesh){const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name||'unnamed').join('/');meshReport.push(o.name+' ['+mats+']')}});status.textContent='MakeHuman loaded · '+meshReport.length+' meshes. Model parts: '+meshReport.slice(0,24).join(' | ');
 },undefined,e=>{status.textContent='MakeHuman head asset not published yet. Run the head extraction workflow, then reload. '+(e?.message||'');});
 function morph(){const t=Number(document.getElementById('mhMorph').value)/100;document.getElementById('mhAmount').textContent=Math.round(t*100)+'%';
  for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position,box=new THREE.Box3().setFromBufferAttribute(a),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
@@ -62,7 +62,7 @@ new GLTFLoader().load('assets/original-head-example.glb',g=>{
  root.position.sub(center);const scale=2.4/Math.max(size.x,size.y,size.z,.001);root.scale.setScalar(scale);
  root.traverse(o=>{if(o.isMesh){const copy=o.geometry.clone();o.geometry=copy;meshes.push({mesh:o,base:new Float32Array(copy.attributes.position.array)});}});
  camera.position.set(0,0,4.8);controls.target.set(0,0,0);controls.update();
- status.textContent='MakeHuman clone loaded. Independent morph ready.';
+ const meshReport=[];root.traverse(o=>{if(o.isMesh){const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>m?.name||'unnamed').join('/');meshReport.push(o.name+' ['+mats+']')}});status.textContent='MakeHuman loaded · '+meshReport.length+' meshes. Model parts: '+meshReport.slice(0,24).join(' | ');
 },undefined,e=>{status.textContent='MakeHuman head asset not published yet. Run the head extraction workflow, then reload. '+(e?.message||'');});
 function morph(){const t=Number(document.getElementById('mhMorphB').value)/100;document.getElementById('mhAmountB').textContent=Math.round(t*100)+'%';
  for(const {mesh,base} of meshes){const a=mesh.geometry.attributes.position,box=new THREE.Box3().setFromBufferAttribute(a),mid=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
