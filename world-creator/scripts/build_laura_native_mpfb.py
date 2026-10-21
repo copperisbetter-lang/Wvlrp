@@ -51,6 +51,29 @@ for sub,names,kind in [('eyes',['high-poly.mhclo','low-poly.mhclo'],'Eyes'),('ey
         path=AssetService.find_asset_absolute_path(name,asset_subdir=sub)
         if path:
             HumanService.add_mhclo_asset(path,human,asset_type=kind,material_type='GAMEENGINE');break
+# Select a genuine MakeHuman hairstyle asset, never a procedural sphere/cap.
+# Keep this explicit so a missing hair asset cannot masquerade as completion.
+hair_assets=sorted((dest/'hair').rglob('*.mhclo')) if (dest/'hair').exists() else []
+if not hair_assets:
+    raise RuntimeError('No MakeHuman hair .mhclo available; cannot claim Laura has hair')
+# Favor long hair, then medium hair, over short hair where filenames describe length.
+def hair_priority(p):
+    n=p.stem.lower()
+    return (0 if any(t in n for t in ('long','shoulder','wave')) else 1 if 'medium' in n else 2, str(p))
+hair_path=sorted(hair_assets,key=hair_priority)[0]
+hair=HumanService.add_mhclo_asset(str(hair_path),human,asset_type='Hair',material_type='GAMEENGINE')
+if hair is None:raise RuntimeError('MakeHuman hair failed to attach: '+str(hair_path))
+# Blonde recolor only; preserve official MakeHuman hairstyle geometry.
+for mat in hair.data.materials:
+    if not mat:continue
+    mat.use_nodes=True
+    for node in mat.node_tree.nodes:
+        if node.type=='BSDF_PRINCIPLED':
+            for link in list(mat.node_tree.links):
+                if link.to_node==node and link.to_socket.name=='Base Color':
+                    mat.node_tree.links.remove(link)
+            node.inputs['Base Color'].default_value=(.48,.33,.19,1)
+print('LAURA_NATIVE_MAKEHUMAN_HAIR',hair_path.name)
 # Export native MPFB whole head geometry by cutting only after targets are evaluated.
 bpy.context.view_layer.update()
 meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
@@ -86,5 +109,5 @@ for obj in bpy.context.scene.objects:
 out=ROOT/'assets/laura-head-combined.glb'
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_animations=False,export_skins=False)
 assert out.stat().st_size>10000
-print('LAURA_NATIVE_MPFB_SUCCESS',out.stat().st_size,sorted(selected))
+print('LAURA_NATIVE_MPFB_SUCCESS',out.stat().st_size,sorted(selected),hair_path.name)
 
