@@ -50,15 +50,15 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
   const token=++generation;
   for(const child of root.getChildren())child.dispose(false,true);
   state.planted=0;for(const k of Object.keys(state.counts))state.counts[k]=0;
-  const step=mobile?5:4,limit=mobile?320:580;
+  const step=mobile?5:4,limit=mobile?420:760;
   for(let x=cx-150;x<=cx+150&&state.planted<limit;x+=step)
    for(let z=cz-150;z<=cz+150&&state.planted<limit;z+=step){
     if(token!==generation)return;
     const px=x+(hash(x,z,seed+991)-.5)*step*.75,pz=z+(hash(x,z,seed+992)-.5)*step*.75;
     const edge=shore(px,pz),wet=edge<13;
     const roll=hash(x,z,seed+993);
-    const kind=wet?(roll<.55?"fern":roll<.87?"rock":null):
-      (roll<.50?"fern":roll<.68?"rock":roll<.76?"stump":null);
+    const kind=wet?(roll<.82?"rock":roll<.88?"fern":null):
+      (roll<.17?"rock":roll<.25?"fern":roll<.32?"stump":null);
     if(!kind||prohibited(px,pz,wet?1.5:3))continue;
     const c=assets.get(kind);if(!c)continue;
     try{
@@ -73,10 +73,11 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
       minY=Math.min(minY,b.minimumWorld.y);
       m.isPickable=false;m.checkCollisions=false;
      }
-     const size=kind==="fern"?1.35:kind==="rock"?(wet?1.5:1.1):.95;
+     const variant=hash(x,z,seed+995);
+     const size=kind==="fern"?1.35:kind==="rock"?(wet?.38+variant*1.95:.3+variant*1.6):.95;
      holder.scaling.setAll(size/Math.max(.01,hi-lo));
      holder.rotation.y=hash(x,z,seed+994)*Math.PI*2;
-     holder.position.set(px,terrainHeight(px,pz)-minY*holder.scaling.x-.04,pz);
+     holder.position.set(px,terrainHeight(px,pz)-minY*holder.scaling.x-(kind==="rock"?.08+variant*.2:.04),pz);
      holder.parent=root;state.planted++;state.counts[kind]++;
     }catch(e){console.warn("Understory instance failed",kind,e);}
    }
