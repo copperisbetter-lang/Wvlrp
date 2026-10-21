@@ -24,31 +24,14 @@ hi=Vector((max(p[i] for p in pts) for i in range(3)))
 center=(lo+hi)/2
 width=hi.x-lo.x;height=hi.z-lo.z;depth=hi.y-lo.y
 assert width>0 and height>0 and depth>0
-# Facial proportion adjustment, spatially tapered to avoid altering the back of skull.
-inv=body.matrix_world.inverted()
-for vert in body.data.vertices:
-    p=body.matrix_world@vert.co
-    u=(p.x-center.x)/(width/2)
-    v=(p.z-center.z)/(height/2)
-    front=max(0,min(1,(center.y-p.y)/(depth*.42)))
-    # Face-specific influence: keep skull, ears and neck stable.
-    face=front*max(0,min(1,(v+.82)/.22))
-    brow=math.exp(-((abs(u)-.32)/.19)**2-((v-.32)/.12)**2)
-    eyes=math.exp(-((abs(u)-.29)/.21)**2-((v-.17)/.12)**2)
-    mouth=math.exp(-(u/.32)**2-((v+.38)/.12)**2)
-    upperlip=math.exp(-(u/.26)**2-((v+.32)/.065)**2)
-    lowerlip=math.exp(-(u/.28)**2-((v+.43)/.07)**2)
-    bridge=math.exp(-(u/.12)**2-((v+.01)/.31)**2)
-    nostril=math.exp(-((abs(u)-.14)/.11)**2-((v-.17)/.10)**2)
-    cheek=math.exp(-((abs(u)-.42)/.29)**2-((v+.02)/.33)**2)
-    jaw=max(0,min(1,(-v-.2)/.6))
-    chin=math.exp(-(u/.32)**2-((v+.75)/.22)**2)
-    nose=math.exp(-(u/.16)**2-((v-.02)/.22)**2)
-    p.x=center.x+(p.x-center.x)*(1+face*(.11*cheek-.16*jaw-.05*eyes+.025*brow))
-    p.z+=height*face*(.017*brow-.018*eyes-.019*chin+.010*upperlip-.006*lowerlip)
-    p.y+=depth*face*(.018*cheek+.018*eyes-.085*nose-.025*bridge+.018*nostril-.048*upperlip-.038*lowerlip+.012*mouth)
-    vert.co=inv@p
-body.data.update()
+# IMPORTANT: A cropped GLB has no editable MPFB target stack.
+# Never fake a native MakeHuman morph with direct vertex deformation.
+# Official targets must be applied to an MPFB basemesh before extraction.
+raise RuntimeError(
+    "Laura native MPFB morph not configured: rebuild from an MPFB basemesh "
+    "using TargetService.load_target() and official MakeHuman .target assets "
+    "BEFORE cropping the head. Refusing to publish a fake morph."
+)
 # Build a continuous blonde cap conforming to the top of the head.
 blonde=bpy.data.materials.new('Laura natural dark blonde')
 blonde.diffuse_color=(.49,.35,.22,1)
