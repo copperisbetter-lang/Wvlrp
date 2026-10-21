@@ -1,7 +1,7 @@
 /** Streamed photographic forest floor; no fallen logs. */
 import {hash} from "./world-core.js";
-import {FOREST_CAMPS} from "./wild-master-forest-reservations.js";
-const SOURCES=[["fern","./assets/village-floor-fern_02.glb"],["rock","./assets/village-floor-rock_moss_set_01.glb"],["stump","./assets/village-floor-tree_stump_01.glb"]];
+import {FOREST_CAMPS,forestExclusion} from "./wild-master-forest-reservations.js";
+const SOURCES=[["fern","./assets/village-floor-fern_02.glb"],["rock","./assets/village-floor-rock_moss_set_01.glb"],["shrub","./assets/village-floor-fern_02.glb"]];
 const LAKES=[[-165,-180,72,52],[410,-340,95,72]];
 function shore(x,z){
  let d=Infinity;
@@ -9,13 +9,16 @@ function shore(x,z){
   const r=Math.hypot((x-cx)/rx,(z-cz)/rz);
   d=Math.min(d,Math.abs(r-1)*Math.min(rx,rz));
  }
- // The existing three creek ribbons follow the same formula as wild-living-waters.
+ // Match the actual water ribbon, including its cabin-clearance bend.
  for(let stream=0;stream<3;stream++){
   const [ox,oz,rx]=LAKES[stream%2];
   const t=(z-oz)/700+.5;
   if(t<0||t>1)continue;
-  const cx=ox+rx*.7+30*Math.sin(t*10+stream*2)+stream*75;
-  d=Math.min(d,Math.abs(x-cx));
+  let sx=ox+rx*.7+30*Math.sin(t*10+stream*2)+stream*75;
+  const influence=Math.max(0,Math.min(1,(150-Math.abs(z))/95));
+  const eased=influence*influence*(3-2*influence);
+  if(Math.abs(sx)<58&&eased>0)sx+=(sx<0?-1:1)*(58-Math.abs(sx))*eased;
+  d=Math.min(d,Math.abs(x-sx));
  }
  return d;
 }
@@ -32,9 +35,9 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
  })).then(()=>{state.status=assets.size?"ready":"awaiting-real-assets";rebuild();});
  let region="",generation=0,frame=0;
  function prohibited(x,z,margin){
-  if(excluded(x,z,margin))return true;
+  if(excluded(x,z,margin)&&Math.hypot(x,z)>22)return true;\n  if(forestExclusion(x,z,margin))return true;
   if(FOREST_CAMPS.some(c=>Math.hypot(x-(c.x??c.centerX??1e8),z-(c.z??c.centerZ??1e8))<22+margin))return true;
-  if([[0,0,26],[93,77,55],[0,274,36],[30,333,40]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r+margin))return true;
+  if([[0,0,19],[93,77,55],[0,274,36],[30,333,40]].some(([a,b,r])=>Math.hypot(x-a,z-b)<r+margin))return true;
   // Preserve paths: trails near village and the girls' cabin remain unobstructed.
   if(Math.abs(x-93)<5&&z>30&&z<150)return true;
   return false;
@@ -46,7 +49,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
   const token=++generation;
   for(const child of root.getChildren())child.dispose(false,true);
   state.planted=0;for(const k of Object.keys(state.counts))state.counts[k]=0;
-  const step=mobile?8:6,limit=mobile?190:340;
+  const step=mobile?5:4,limit=mobile?320:580;
   for(let x=cx-150;x<=cx+150&&state.planted<limit;x+=step)
    for(let z=cz-150;z<=cz+150&&state.planted<limit;z+=step){
     if(token!==generation)return;
@@ -69,7 +72,7 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
       minY=Math.min(minY,b.minimumWorld.y);
       m.isPickable=false;m.checkCollisions=false;
      }
-     const size=kind==="fern"?.8:kind==="rock"?(wet?1.5:1.1):1;
+     const size=kind==="fern"?.8:kind==="rock"?(wet?1.5:1.1):.95;
      holder.scaling.setAll(size/Math.max(.01,hi-lo));
      holder.rotation.y=hash(x,z,seed+994)*Math.PI*2;
      holder.position.set(px,terrainHeight(px,pz)-minY*holder.scaling.x-.04,pz);
