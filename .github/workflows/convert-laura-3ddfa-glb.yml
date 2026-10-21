@@ -44,7 +44,14 @@ jobs:
               parts.sort(key=lambda m: len(m.faces),reverse=True)
               main=parts[0]
               assert len(main.faces)>100, 'Main face component too small'
+              assert len(parts) == 1, f'DIAGNOSTIC: {len(parts)} disconnected components; refusing to publish an unverified face'
               print('Components:',[(len(p.vertices),len(p.faces)) for p in parts], 'keeping largest')
+              assert main.visual.kind in ('texture', 'vertex'), f'No valid face appearance data: {main.visual.kind}'
+              if main.visual.kind == 'texture':
+                  uv=main.visual.uv
+                  assert uv is not None and len(uv)==len(main.vertices), 'Missing or mismatched UV coordinates'
+                  assert np.isfinite(uv).all(), 'Nonfinite texture UVs'
+                  print('UV bounds:',uv.min(axis=0),uv.max(axis=0))
               scene=trimesh.Scene(main)
               dest=pathlib.Path('/tmp/converted')/f'3ddfa-sample-{i}.glb'
               dest.write_bytes(scene.export(file_type='glb'))
