@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CAR 5 Side Studio — CAR 6 Working Copy</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:55dvh;min-height:300px} section{padding:12px} .moves{display:flex;flex-wrap:wrap;gap:7px} .moves button{padding:9px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1} #stage{position:relative;overflow:hidden}#photoOverlay{position:absolute;left:50%;top:50%;width:65%;max-height:100%;object-fit:contain;transform:translate(-50%,-50%);pointer-events:none;display:none;opacity:.5;z-index:3}#photoTools{padding:12px;background:#193027;display:grid;gap:9px}#photoTools label{display:flex;gap:12px;align-items:center;justify-content:space-between}#photoTools input[type=range]{width:55%}</style>
-</head><body><header><h1>CAR 5 Side Studio · CAR 6 Working Copy</h1><p id="status" role="status">Loading the fitted model…</p></header><p style="padding:8px 12px;margin:0;background:#614d29">Working copy only: MakeHuman geometry rebuild and reference matching not yet completed. CAR 5 and SAV4 unchanged.</p><main id="stage"><img id="photoOverlay" alt="Private reference overlay"></main><section id="photoTools"><strong>Photo registration · CAR 6 preview only</strong><label>Reference view <select id="photoView"><option value="Front">Front</option><option value="Underneath">Underneath</option><option value="Elbows and knees">Elbows and knees</option></select></label><button id="savePhotoView">Save alignment for this view</button><button id="saveSession">Export alignment JSON</button><label>Import alignment JSON <input id="loadSession" type="file" accept=".json,application/json"></label><label>Load reference photo <input id="photoFile" type="file" accept="image/*"></label><label>Transparency <input id="photoOpacity" type="range" min="0" max="100" value="50"></label><label>Horizontal alignment <input id="photoX" type="range" min="-100" max="100" value="0"></label><label>Vertical alignment <input id="photoY" type="range" min="-100" max="100" value="0"></label><label>Photo scale <input id="photoScale" type="range" min="20" max="250" value="100"></label><label>Photo rotation <input id="photoRotate" type="range" min="-180" max="180" value="0"></label><button id="clearPhoto">Clear private photo</button><small>Reference stays in this browser session and is not uploaded by this page. Three view registrations are independent. JSON stores alignment settings only, never photographs. Photo wrapping and mesh reconstruction are not implemented yet.</small></section>
+</head><body><header><h1>CAR 5 Side Studio · CAR 6 Working Copy</h1><p id="status" role="status">Loading the fitted model…</p></header><p style="padding:8px 12px;margin:0;background:#614d29">Working copy only: MakeHuman geometry rebuild and reference matching not yet completed. CAR 5 and SAV4 unchanged.</p><main id="stage"><img id="photoOverlay" alt="Private reference overlay"></main><section id="photoTools"><strong>Photo registration · CAR 6 preview only</strong><label>Reference view <select id="photoView"><option value="Front">Front</option><option value="Underneath">Underneath</option><option value="Elbows and knees">Elbows and knees</option></select></label><button id="savePhotoView">Save alignment for this view</button><button id="saveSession">Export alignment JSON</button><label>Import alignment JSON <input id="loadSession" type="file" accept=".json,application/json"></label><label>Load reference photo <input id="photoFile" type="file" accept="image/*"></label><label>Transparency <input id="photoOpacity" type="range" min="0" max="100" value="50"></label><label>Horizontal alignment <input id="photoX" type="range" min="-100" max="100" value="0"></label><label>Vertical alignment <input id="photoY" type="range" min="-100" max="100" value="0"></label><label>Photo scale <input id="photoScale" type="range" min="20" max="250" value="100"></label><label>Photo rotation <input id="photoRotate" type="range" min="-180" max="180" value="0"></label><button id="clearPhoto">Clear private photo</button><label>Image relief strength <input id="reliefStrength" type="range" min="0" max="100" value="0"></label><button id="fitPhoto" disabled>Apply photo relief to mesh</button><button id="exportFit" disabled>Export edited GLB</button><small id="fitStatus">Experimental image-derived surface relief; not a calibrated reconstruction.</small><small>Reference stays in this browser session and is not uploaded by this page. Three view registrations are independent. JSON stores alignment settings only, never photographs. Photo wrapping and mesh reconstruction are not implemented yet.</small></section>
 <nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><section id="morphPanel" style="display:none;padding:12px;display:grid;gap:10px"><strong>CAR5 · Localized labial morph controls</strong><label>Outer lip hang <input id="labiaLength" type="range" min="-100" max="100" value="0" disabled> <output id="lengthValue">0%</output></label><label>Outer lip fullness <input id="labiaFullness" type="range" min="-100" max="100" value="0" disabled> <output id="fullnessValue">0%</output></label><label>Upper slit height <input id="slitHeight" type="range" min="-100" max="100" value="0" disabled> <output id="slitValue">0%</output></label><label>Inner fold length <input id="innerLength" type="range" min="-100" max="100" value="0" disabled> <output id="innerValue">0%</output></label><button id="resetMorph" disabled>Reset shape</button><small>Local, reversible mesh preview; does not overwrite the saved GLB. Inspect from front and side before approval.</small></section><section><strong>CAR 6 — Movement controls</strong><p id="rigStatus">Checking skeleton and animation clips…</p><div class="moves" id="moves"></div><button id="stopMotion">Stop / Reset Pose</button></section><div id="error"></div>
 <script>
 (()=>{const img=document.getElementById('photoOverlay'),file=document.getElementById('photoFile');let url=null;const views={};let current='Front';const picker=document.getElementById('photoView');const ids=['photoOpacity','photoX','photoY','photoScale','photoRotate'];function update(){const [opacity,x,y,scale,rotation]=ids.map(id=>+document.getElementById(id).value);img.style.opacity=opacity/100;img.style.transform='translate(calc(-50% + '+x+'%),calc(-50% + '+y+'%)) rotate('+rotation+'deg) scale('+(scale/100)+')';}ids.forEach(id=>document.getElementById(id).addEventListener('input',update));function store(){views[current]={settings:ids.map(id=>+document.getElementById(id).value),url};}
@@ -16,6 +16,7 @@ file.addEventListener('change',()=>{if(url)URL.revokeObjectURL(url);url=file.fil
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 const sav4AssetUrl='./assets/sav4-vulva2-native-fit.glb?v=car5-fixed-shape-20261020';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
@@ -134,7 +135,38 @@ try{
   for(const id of ['labiaLength','labiaFullness','innerLength'])document.getElementById(id).value=0;
   applyLabiaMorph();
  };
- const skinSource='baked GLB (no viewer-only adjustments)';
+ const fitButton=document.getElementById('fitPhoto'),exportButton=document.getElementById('exportFit'),fitStatus=document.getElementById('fitStatus');
+ fitButton.disabled=false;exportButton.disabled=false;
+ fitButton.onclick=async()=>{
+  const img=document.getElementById('photoOverlay');
+  if(!img.complete||!img.naturalWidth){fitStatus.textContent='Load a reference image first.';return;}
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,256,256);
+  const pixels=ctx.getImageData(0,0,256,256).data;
+  const amount=Number(document.getElementById('reliefStrength').value)/100;
+  const smooth=t=>t*t*(3-2*t);
+  for(let i=0;i<positions.count;i++){
+   const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
+   const u=(x-bb.min.x)/sx,v=1-(y-bb.min.y)/sy;
+   const px=Math.max(0,Math.min(255,Math.round(u*255))),py=Math.max(0,Math.min(255,Math.round(v*255)));
+   const p=(py*256+px)*4,brightness=(.2126*pixels[p]+.7152*pixels[p+1]+.0722*pixels[p+2])/255;
+   const edge=smooth(Math.min(1,u*8))*smooth(Math.min(1,(1-u)*8))*smooth(Math.min(1,v*8))*smooth(Math.min(1,(1-v)*8));
+   positions.array[k]=x;positions.array[k+1]=y;
+   positions.array[k+2]=z+sz*.16*amount*(.5-brightness)*edge;
+  }
+  positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
+  fitStatus.textContent='Image-based relief applied to '+positions.count+' vertices. Inspect all views before using.';
+ };
+ exportButton.onclick=async()=>{
+  try{
+   fitStatus.textContent='Exporting working GLB…';
+   const binary=await new GLTFExporter().parseAsync(model,{binary:true,onlyVisible:false,animations:clips});
+   const url=URL.createObjectURL(new Blob([binary],{type:'model/gltf-binary'}));
+   const a=document.createElement('a');a.href=url;a.download='car6-photo-relief-preview.glb';a.click();
+   setTimeout(()=>URL.revokeObjectURL(url),1000);fitStatus.textContent='GLB export prepared.';
+  }catch(e){fitStatus.textContent='Export error: '+e.message;}
+ };
+ const skinSource='editable photo-relief working preview';
  partBounds=new THREE.Box3().setFromObject(attachment,true);
  status.textContent='CAR 6 working copy — original geometry ('+skinSource+') · '+attachment.geometry.attributes.position.count+' attachment vertices · original exported pose';
  document.querySelectorAll('[data-view],#isolate,#cutaway,#resetMorph').forEach(b=>b.disabled=false);applyLabiaMorph();view('Front');
