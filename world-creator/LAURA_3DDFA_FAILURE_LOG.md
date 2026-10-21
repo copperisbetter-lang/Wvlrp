@@ -11,13 +11,15 @@ Keep this alongside the workflow so future reruns do not repeat solved failures.
 | 5 | [#5](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39668758850) | `AttributeError: module numpy has no attribute long` in `bfm/bfm.py` | Patch `astype(np.long)` to `astype(np.int64)` after cloning | Passed this step in #6 |
 | 6 | [#6](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39668992318) | `AttributeError: module numpy has no attribute int` in compiled `FaceBoxes/utils/nms/cpu_nms.pyx` | Patch `np.int` to `np.int32` and rebuild Cython extension | Pending verification in #7 |
 
+| 7 | [#7](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669377331) | Rebuild command attempted nonexistent `FaceBoxes/setup.py` | Read upstream `build.sh`; use `(cd FaceBoxes && sh ./build_cpu_nms.sh)` | Pending verification in #8 |
+
 ## Reusable installation sequence
 
 1. Clone upstream `cleardusk/3DDFA_V2` (record upstream SHA).
 2. Python 3.9, `numpy<2`, `Cython<3`, `setuptools<70`, OpenCV headless, SciPy, PyYAML, Matplotlib, ONNX, ONNX Runtime.
 3. CPU PyTorch **and torchvision** from official PyTorch CPU wheel index.
 4. `sh build.sh`.
-5. Apply the two NumPy source compatibility patches and rebuild `FaceBoxes` Cython NMS extension.
+5. Apply the two NumPy source compatibility patches and rebuild `FaceBoxes` Cython NMS extension with upstream `FaceBoxes/build_cpu_nms.sh` (not `setup.py`).
 6. Run `python demo.py -f examples/inputs/emma.jpg -o obj --onnx --show_flag false`.
 7. Validate an OBJ exists and has geometry, then upload artifact. Do not declare success based on dependency install alone.
 
