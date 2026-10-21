@@ -5,7 +5,7 @@ on:
     paths:
       - .github/workflows/convert-laura-3ddfa-glb.yml
 permissions:
-  contents: read
+  contents: write
   actions: read
 jobs:
   convert:
@@ -45,3 +45,13 @@ jobs:
           name: free-3ddfa-sample-glb
           path: /tmp/converted/*.glb
           if-no-files-found: error
+
+      - name: Publish model into mobile web viewer
+        run: |
+          mkdir -p world-creator/assets
+          cp /tmp/converted/3ddfa-sample-0.glb world-creator/assets/3ddfa-build10.glb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/3ddfa-build10.glb
+          git commit -m "Publish successful 3DDFA build 10 head for browser viewer" || exit 0
+          git push
