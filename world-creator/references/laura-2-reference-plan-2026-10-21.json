@@ -1,0 +1,35 @@
+{
+  "subject": "Laura 2",
+  "date": "2026-10-21",
+  "status": "visual-estimates-pending-calibrated-landmark-extraction",
+  "references": [
+    "3786.jpg",
+    "3787.webp",
+    "3788.jpg",
+    "3789.jpg"
+  ],
+  "reference_roles": {
+    "primary_detail": "3786.jpg",
+    "frontal_proportions": "3788.jpg",
+    "three_quarter": [
+      "3787.webp",
+      "3789.jpg"
+    ]
+  },
+  "features": {
+    "eyes": "large almond, softly hooded",
+    "nose": "narrow bridge, softly rounded tip",
+    "cheeks": "soft midface fullness",
+    "jaw": "gentle taper, rounded chin",
+    "lips": "defined cupid bow, fuller lower lip",
+    "hair": "long straight golden blonde with fine bangs"
+  },
+  "constraints": [
+    "No true profile: depth not measured",
+    "Do not substitute expression faceunits for identity morphs",
+    "Do not modify Sophie 1, SAV4, or existing Laura 2 GLB until validation",
+    "Use official MPFB identity targets with verified names and ranges",
+    "Export and inspect eye meshes, opacity, hair, and closed head before publishing"
+  ],
+  "note": "These are qualitative targets, not fabricated millimeter measurements or applied morph settings."
+}
