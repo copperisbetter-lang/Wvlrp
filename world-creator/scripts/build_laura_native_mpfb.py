@@ -30,7 +30,7 @@ TargetService.reapply_macro_details(human)
 # Never substitute ARKit expression faceunits for anatomical identity changes.
 from collections import defaultdict
 import os
-roots=[Path('/tmp/mpfb2/src/mpfb'),dest]
+roots=[Path('/tmp/mpfb2/src/mpfb'),Path('/tmp/mh-targets'),dest]
 candidates=[]
 for root in roots:
     if root.exists():
