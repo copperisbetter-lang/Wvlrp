@@ -3,7 +3,7 @@
 <title>WVLRP | MakeHuman Head Lab</title>
 <style>body{margin:0;background:#12231e;color:#e8f5ed;font:16px system-ui}header,aside{padding:16px;background:#20382e}h1{font-size:1.3rem}main{display:grid;grid-template-columns:minmax(260px,340px) 1fr}label{display:block;margin:15px 0}input{max-width:100%}input[type=range]{width:100%}button{padding:10px;margin:4px;background:#a5d4a3;border:0;border-radius:6px}#stage{height:75vh;min-height:450px;touch-action:none}#status{padding:12px;color:#cde1d1}small{color:#bcd0c4}@media(max-width:700px){main{display:block}#stage{height:60vh}}</style></head>
 <body><header><h1>WVLRP · MakeHuman Head Lab</h1><small>Independent import and deformation test — does not change SAV4 or Laura's approved assets</small></header>
-<main><aside><label>Import MakeHuman / MPFB head or full-character GLB<input id="file" type="file" accept=".glb,.gltf,model/gltf-binary"></label>
+<nav style="padding:12px 16px;background:#294538;display:flex;gap:12px;flex-wrap:wrap"><a style="color:#d9f9dc" href="./laura-head-viewer.html">Open Laura head inspection viewer</a><a style="color:#d9f9dc" href="./sophie-morph-lab.html">Open photo morph lab</a></nav><main><aside><label>Import 3D head (.GLB only — JPG photos cannot be imported here)<input id="file" type="file" accept=".glb,.gltf,model/gltf-binary"></label>
 <label>Head morph strength: <output id="pct">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
 <label>Face width <output id="widthOut">100%</output><input id="width" type="range" min="75" max="125" value="115"></label>
 <label>Face length <output id="lengthOut">100%</output><input id="length" type="range" min="80" max="120" value="110"></label>
@@ -27,7 +27,7 @@ function captureMeshes(){
  o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;
  originals.push({mesh:o,base:new Float32Array(a.array),count:a.count});});
  // The largest mesh is the face skin. Keep eyes, hair and accessories unchanged.
- const primary=originals.reduce((a,b)=>!a||b.count>a.count?b:a,null);
+ const primary=originals.filter(o=>/head|face|skin/i.test(o.mesh.name)).reduce((a,b)=>!a||b.count>a.count?b:a,null)||originals.reduce((a,b)=>!a||b.count>a.count?b:a,null);
  if(primary){const box=new THREE.Box3().setFromObject(primary.mesh);primary.bounds=box;}
  return primary;
 }
@@ -65,7 +65,7 @@ function apply(){
  $('pct').textContent=Math.round(t*100)+'%';$('widthOut').textContent=$('width').value+'%';$('lengthOut').textContent=$('length').value+'%';
  status('Morph '+Math.round(t*100)+'%: '+moved+' face vertices changed (hair and eyes protected).');
 }
-$('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{status('Loading imported GLB…');const bytes=await file.arrayBuffer();const gltf=await new GLTFLoader().parseAsync(bytes,'');if(model)scene.remove(model);model=gltf.scene;captureMeshes();scene.add(model);fit();$('export').disabled=false;apply()}catch(err){status('Import failed: '+err.message)}};
+$('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;if(!/\.(glb|gltf)$/i.test(file.name)){status('This viewer requires a 3D GLB/GLTF model. A JPG photograph is not a 3D mesh. Use the photo morph lab link above.');e.target.value='';return;}try{status('Loading imported GLB…');const bytes=await file.arrayBuffer();const gltf=await new GLTFLoader().parseAsync(bytes,'');if(model)scene.remove(model);model=gltf.scene;captureMeshes();scene.add(model);fit();$('export').disabled=false;apply()}catch(err){status('Import failed: '+err.message)}};
 for(const id of ['strength','width','length'])$(id).oninput=apply;
 $('reset').onclick=()=>{$('strength').value=0;$('width').value=115;$('length').value=110;apply()};
 $('export').onclick=async()=>{if(!model)return;try{const data=await new GLTFExporter().parseAsync(model,{binary:true});const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='wvlrp-makehuman-head-morph.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);status('GLB exported. Validate imported mesh and rig in Blender before game use.')}catch(e){status('Export failed: '+e.message)}};
