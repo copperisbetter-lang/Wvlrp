@@ -1,0 +1,57 @@
+{
+  "subject": "Laura",
+  "status": "landmark-reference-only",
+  "source": "sav4-face-reference-2026-10-18.md",
+  "photo_files_expected": [
+    "5458.jpg",
+    "5459.jpg"
+  ],
+  "photo_files_in_repo": false,
+  "views": {
+    "three_quarter": {
+      "file": "5458.jpg",
+      "eye_centers": [
+        [
+          687,
+          359
+        ],
+        [
+          816,
+          333
+        ]
+      ],
+      "nose_tip": [
+        758,
+        427
+      ],
+      "mouth_center": [
+        771,
+        488
+      ],
+      "chin": [
+        776,
+        577
+      ]
+    },
+    "left_profile": {
+      "file": "5459.jpg",
+      "nose_tip": [
+        831,
+        387
+      ],
+      "lip_contour": [
+        837,
+        455
+      ],
+      "chin_contour": [
+        841,
+        521
+      ],
+      "ear_center": [
+        1086,
+        388
+      ]
+    }
+  },
+  "notes": "Perspective landmarks only; not real-world dimensions. No image bytes stored. Do not assert photo reconstruction or auto-load."
+}
