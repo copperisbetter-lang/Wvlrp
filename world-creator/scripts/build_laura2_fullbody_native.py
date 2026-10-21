@@ -19,6 +19,39 @@ if hair not in meshes or len(hair.data.polygons) < 100:
 for obj in list(meshes):
     if obj not in (human, hair) and not ('eye' in obj.name.lower() and 'brow' not in obj.name.lower() and 'lash' not in obj.name.lower()):
         bpy.data.objects.remove(obj, do_unlink=True)
+# Repair the native body geometry before export. Preserve the principal connected
+# skin surface and discard any detached pelvic appendage / accessory islands.
+import bmesh
+bm = bmesh.new()
+bm.from_mesh(human.data)
+bm.verts.ensure_lookup_table()
+seen = set()
+components = []
+for v in bm.verts:
+    if v in seen: continue
+    stack = [v]; seen.add(v); component = []
+    while stack:
+        cur = stack.pop(); component.append(cur)
+        for e in cur.link_edges:
+            other = e.other_vert(cur)
+            if other not in seen:
+                seen.add(other); stack.append(other)
+    components.append(component)
+components.sort(key=len, reverse=True)
+if not components or len(components[0]) < 10000:
+    bm.free()
+    raise RuntimeError('Cannot identify Laura main body surface; refusing unsafe export')
+removed = sum(len(c) for c in components[1:])
+if removed:
+    bmesh.ops.delete(bm, geom=[v for c in components[1:] for v in c], context='VERTS')
+    bm.to_mesh(human.data)
+bm.free()
+print('LAURA_DETACHED_BODY_VERTICES_REMOVED', removed)
+# Hide the defective fringe by excluding it from the published model. The
+# original hair asset remains available for later refitting, but is not exported.
+if hair and hair.name in bpy.data.objects:
+    bpy.data.objects.remove(hair, do_unlink=True)
+print('LAURA_OBSTRUCTING_HAIR_REMOVED_FROM_EXPORT')
 print('LAURA_FULLBODY_VERTEX_COUNT', len(human.data.vertices))
 """
 code = code[:begin] + replacement + code[finish:]
