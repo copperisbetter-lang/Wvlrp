@@ -96,17 +96,19 @@ try{
    const nx=Math.abs((x-cx)/sx),ny=(y-bb.min.y)/sy;
    // Extend the influence into the lower tip rather than fading it out there.
    // ny=0 is the low end of this attachment, ny=1 its upper end.
-   const lower=1-THREE.MathUtils.smoothstep(ny,.56,.84);
-   const tip=1-THREE.MathUtils.smoothstep(ny,.15,.68);
+   // Hang affects ONLY the bottom of each outer fold; upper attachment stays anchored.
+   const tipWeight=1-THREE.MathUtils.smoothstep(ny,.08,.43);
+   // Fullness is spread along the full outer fold, tapered only at the root.
+   const fullHeight=THREE.MathUtils.smoothstep(ny,.01,.10)*(1-THREE.MathUtils.smoothstep(ny,.85,.99));
    const outerBand=THREE.MathUtils.smoothstep(nx,.055,.13)*(1-THREE.MathUtils.smoothstep(nx,.32,.46));
    const innerBand=1-THREE.MathUtils.smoothstep(nx,.035,.13);
-   const outerWeight=Math.max(0,lower*outerBand);
-   const innerWeight=Math.max(0,lower*innerBand);
-   // Drop the lower outer fold, with maximum travel toward the free end.
-   positions.array[k+1]=y-sy*(.28*length*outerWeight*(.40+.60*tip)+.14*inner*innerWeight*(.40+.60*tip));
-   // Fullness expands the outer fold laterally and forward, not the mound.
-   positions.array[k]=x+Math.sign(x-cx)*sx*.14*fullness*outerWeight;
-   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.20*fullness*outerWeight;
+   const hangWeight=Math.max(0,tipWeight*outerBand);
+   const fullnessWeight=Math.max(0,fullHeight*outerBand);
+   const innerWeight=Math.max(0,(1-THREE.MathUtils.smoothstep(ny,.62,.86))*innerBand);
+   positions.array[k+1]=y-sy*(.34*length*hangWeight+.14*inner*innerWeight);
+   // Fluff the entire length: widen both outer folds and add forward volume.
+   positions.array[k]=x+Math.sign(x-cx)*sx*.17*fullness*fullnessWeight;
+   positions.array[k+2]=z+Math.sign(z-cz||1)*sz*.22*fullness*fullnessWeight;
   }
   positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
   document.getElementById('lengthValue').textContent=Math.round(length*100)+'%';
