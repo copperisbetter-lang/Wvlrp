@@ -7,7 +7,7 @@ on:
       - .github/workflows/test-laura2-fullbody.yml
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,6 +44,14 @@ jobs:
           xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python-exit-code 1 --python world-creator/scripts/build_laura2_fullbody_native.py 2>&1 | tee /tmp/laura2-fullbody.log
           grep LAURA_NATIVE_MPFB_FULLBODY_SUCCESS /tmp/laura2-fullbody.log
           test -s world-creator/assets/laura-2-native-fullbody.glb
+      - name: Publish model to inspection branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f world-creator/assets/laura-2-native-fullbody.glb
+          git commit -m "Publish Laura 2 native full-body inspection GLB" || exit 0
+          git push origin HEAD:fix/laura2-fullbody-mpfb
       - uses: actions/upload-artifact@v4
         if: always()
         with:
