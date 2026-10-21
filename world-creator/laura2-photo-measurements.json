@@ -1,0 +1,53 @@
+{
+  "schema": "laura2.reference.v1",
+  "status": "provisional",
+  "references": [
+    "3789.jpg",
+    "3786.jpg",
+    "3787.webp",
+    "3788.jpg"
+  ],
+  "landmarks": {
+    "source": "3788.jpg",
+    "image_size": [
+      1536,
+      956
+    ],
+    "approximate_pixel_coordinates": {
+      "left_eye": [
+        690,
+        413
+      ],
+      "right_eye": [
+        928,
+        412
+      ],
+      "nose_tip": [
+        806,
+        565
+      ],
+      "mouth_center": [
+        815,
+        673
+      ],
+      "chin": [
+        810,
+        798
+      ]
+    },
+    "uncertainty_px": 35
+  },
+  "constraints": {
+    "face": "soft tapered oval",
+    "jaw": "soft",
+    "chin": "rounded",
+    "nose": "narrow",
+    "lips": "moderate fullness"
+  },
+  "limitations": [
+    "three-quarter photographs",
+    "no calibrated camera",
+    "no reliable depth measurement"
+  ],
+  "verification": "Compare against rendered baseline before mapping to native target weights"
+}
