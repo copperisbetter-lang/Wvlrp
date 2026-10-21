@@ -128,11 +128,30 @@ for obj in list(meshes):
         if boundary:
             bmesh.ops.holes_fill(bm,edges=boundary,sides=0)
         bm.to_mesh(obj.data);bm.free()
+        # Reject an open cut instead of silently publishing a hollow head.
+        bm=bmesh.new();bm.from_mesh(obj.data)
+        cut_edges=[e for e in bm.edges if e.is_boundary and all(abs((obj.matrix_world@v.co).z-cut)<.01 for v in e.verts)]
+        if cut_edges: raise RuntimeError('Laura neck remains open: '+str(len(cut_edges))+' boundary edges')
+        bm.free()
 for obj in list(bpy.context.scene.objects):
     if obj.type!='MESH':bpy.data.objects.remove(obj,do_unlink=True)
 if not any(o.type=='MESH' and ('hair' in o.name.lower() or o == hair) for o in bpy.context.scene.objects):
     raise RuntimeError('Head extraction discarded Laura hair; refuse to export')
 for obj in bpy.context.scene.objects:
+    if obj.type=='MESH':
+        # Face surfaces must be opaque and render from both sides.
+        for mat in obj.data.materials:
+            if not mat: continue
+            mat.use_backface_culling=False
+            if hasattr(mat,'surface_render_method'): mat.surface_render_method='DITHERED'
+            if mat.use_nodes:
+                for node in mat.node_tree.nodes:
+                    if node.type=='BSDF_PRINCIPLED':
+                        alpha=node.inputs.get('Alpha')
+                        if alpha:
+                            for link in list(mat.node_tree.links):
+                                if link.to_socket==alpha: mat.node_tree.links.remove(link)
+                            alpha.default_value=1.0
     obj.parent=None
     for mod in list(obj.modifiers):
         if mod.type=='ARMATURE':obj.modifiers.remove(mod)
