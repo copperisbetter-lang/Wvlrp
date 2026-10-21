@@ -35,7 +35,8 @@ candidates=[]
 for root in roots:
     if root.exists():
         candidates.extend(p for p in root.rglob('*.target') if 'faceunit' not in str(p).lower() and 'expression' not in str(p).lower())
-print('LAURA_IDENTITY_TARGET_CANDIDATES',len(candidates))
+print('LAURA_IDENTITY_TARGET_CANDIDATES',len(candidates),flush=True)
+print('LAURA_IDENTITY_TARGET_SAMPLE',[str(p) for p in candidates[:60]],flush=True)
 # Anatomical categories are deliberately constrained to the face; never load
 # an unreviewed body or expression target based on a loose filename match.
 features={
@@ -52,11 +53,11 @@ for p in candidates:
     if not any(t in str(p).lower() for t in ('face','head','nose','eye','mouth','lip','chin','jaw','cheek')):continue
     for feature,terms in features.items():
         if any(term in name for term in terms):found[feature].append(p)
-print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in found.items()})
+print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in found.items()},flush=True)
 # Stop rather than claiming a likeness when the official identity targets
 # are missing or cannot be mapped unambiguously to the requested features.
 if len(found)<3:
-    raise RuntimeError('Official MPFB anatomical identity targets incomplete; cannot publish neutral Laura as morphed')
+    raise RuntimeError('LAURA_MORPH_PREFLIGHT: Found only '+str(len(found))+' official face target categories. Available targets: '+str([p.name for p in candidates[:40]]))
 # Conservative first-pass MPFB identity morph. Each displacement comes from an
 # official .target file, never a synthetic face sphere or ARKit expression.
 # Filename polarity is explicit; uncertain targets are excluded.
@@ -83,7 +84,7 @@ for feature,(terms,weight) in recipe.items():
     selected[feature]=(str(p),weight)
     print('LAURA_TARGET_APPLIED',feature,p.name,weight)
 if len(selected)<3:
-    raise RuntimeError('Fewer than 3 official facial identity targets found; refuse neutral-face export: '+str(selected))
+    raise RuntimeError('LAURA_MORPH_PREFLIGHT: Need at least 3 applied official facial identity targets; selected='+str(selected)+'; discovered='+str({k:[p.name for p in v[:12]] for k,v in found.items()}))
 print('LAURA_IDENTITY_TARGETS_APPLIED',selected)
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
