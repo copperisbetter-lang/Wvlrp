@@ -38,28 +38,39 @@ mesh=bpy.data.meshes.new('Laura oval face topology');mesh.from_pydata(verts,[],f
 head=bpy.data.objects.new('Laura face - oval cheeks tapered jaw',mesh);bpy.context.collection.objects.link(head);head.data.materials.append(skin)
 for p in mesh.polygons:p.use_smooth=True
 # Named pieces correspond to independent viewer expression controls.
-uv('Nose bridge',(0,.10,.476),(.105,.38,.135),skin)
-uv('Nose soft rounded tip',(0,-.13,.59),(.15,.125,.16),skin)
+uv('Nose bridge',(0,.12,.448),(.075,.245,.078),skin)
+uv('Nose soft rounded tip',(0,-.105,.505),(.125,.085,.093),skin)
+for side in (-1,1):
+ uv('Nose alar wing '+str(side),(side*.095,-.145,.467),(.060,.052,.060),skin)
 for s,label in [(-1,'Left'),(1,'Right')]:
  x=s*.34
- uv(label+' sclera',(x,.28,.415),(.215,.105,.068),white)
- uv(label+' pale blue iris',(x,.28,.479),(.092,.091,.027),iris)
- uv(label+' pupil',(x,.28,.504),(.039,.047,.015),dark)
+ uv(label+' sclera',(x,.28,.415),(.188,.082,.055),white)
+ uv(label+' pale blue iris',(x,.28,.479),(.075,.073,.021),iris)
+ uv(label+' pupil',(x,.28,.504),(.031,.038,.012),dark)
  uv('Upper eyelid '+label,(x,.392,.474),(.228,.040,.045),skin)
  uv('Lower eyelid '+label,(x,.18,.470),(.220,.026,.04),skin)
  uv('Eyebrow '+label,(x,.54,.46),(.235,.037,.050),brow)
  uv('Ear '+label,(s*.79,-.06,-.025),(.135,.28,.105),skin)
-uv('Upper lip',(0,-.35,.424),(.275,.068,.064),lip)
-uv('Lower lip',(0,-.445,.412),(.26,.074,.069),lip)
-# Fine straight hair, scalp and smooth face-framing strands.
-uv('Ash blonde scalp',(0,.91,-.03),(.72,.37,.46),hair)
-for i in range(13):
- x=-.62+i*.103
- uv('Fringe %02d'%i,(x,.79,.40),(.061,.27,.071),hair,16,12)
+uv('Upper lip',(0,-.34,.415),(.235,.035,.035),lip)
+uv('Lower lip',(0,-.405,.414),(.232,.041,.039),lip)
+# Layered scalp cap and tapered curve-based hair.
+uv('Ash blonde scalp',(0,.94,-.055),(.70,.31,.44),hair)
+def strand(name, points, thickness=.018):
+ curve=bpy.data.curves.new(name,'CURVE');curve.dimensions='3D'
+ curve.resolution_u=16;curve.bevel_depth=thickness;curve.bevel_resolution=3
+ spline=curve.splines.new('BEZIER');spline.bezier_points.add(len(points)-1)
+ for p,xyz in zip(spline.bezier_points,points):
+  p.co=xyz;p.handle_left_type='AUTO';p.handle_right_type='AUTO'
+ obj=bpy.data.objects.new(name,curve);bpy.context.collection.objects.link(obj)
+ obj.data.materials.append(hair)
+ return obj
+for i in range(25):
+ t=(i-12)/12;x=t*.64
+ strand('Swept fringe %02d'%i,[(x*.78,1.14,.22),(x*.96,.92,.405),(x,.68-.10*(1-abs(t)),.47)],.012)
 for side in (-1,1):
- for j in range(5):
-  x=side*(.65+j*.035)
-  uv('Long straight hair %s %d'%(side,j),(x,-.22,-.18-j*.015),(.075,.93,.08),hair,16,16)
+ for j in range(19):
+  t=j/18;x=side*(.54+.15*t)
+  strand('Face framing hair %s %02d'%(side,j),[(side*(.38+.22*t),1.10,.10),(x,.56,.22),(x+side*.055,-.14,.08),(x+side*.07,-.70,-.17-.07*t)],.016)
 # Expression shape keys on eyelids and lips (real glTF morph targets).
 for o in list(bpy.data.objects):
  if o.name.startswith(('Upper eyelid','Upper lip','Lower lip','Eyebrow')):
