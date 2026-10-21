@@ -80,6 +80,26 @@ export function installWildUnderstoryExpansion(B,scene,{seed=1,terrainHeight,get
     }catch(e){console.warn("Understory instance failed",kind,e);}
    }
  }
+ // Permanent PBR inspection specimens, five metres beyond the +Z front steps.
+ const inspection=new B.TransformNode("Girls cabin inspection planting",scene);
+ const specimens=[["rock",-7,17],["fern",-4,17],["shrub",-1,17],["rock",2,17],["fern",5,17],["shrub",8,17]];
+ ready.then(()=>{for(const [kind,x,z] of specimens){const asset=assets.get(kind);if(!asset)continue;
+  try{const inst=asset.instantiateModelsToScene(n=>"inspection-"+kind+"-"+n,false,{doNotInstantiate:false});
+   const holder=new B.TransformNode("inspection "+kind,scene);
+   for(const node of inst.rootNodes)node.parent=holder;
+   const meshes=holder.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0);
+   if(!meshes.length){holder.dispose(false,true);continue;}
+   let minY=Infinity,minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+   for(const m of meshes){m.computeWorldMatrix(true);const b=m.getBoundingInfo().boundingBox;
+    minY=Math.min(minY,b.minimumWorld.y);minX=Math.min(minX,b.minimumWorld.x);
+    maxX=Math.max(maxX,b.maximumWorld.x);minZ=Math.min(minZ,b.minimumWorld.z);maxZ=Math.max(maxZ,b.maximumWorld.z);
+    m.isPickable=false;m.checkCollisions=false;}
+   const scale=(kind==="rock"?1.3:.85)/Math.max(.01,maxX-minX,maxZ-minZ);
+   holder.scaling.setAll(scale);
+   holder.position.set(x-(minX+maxX)*.5*scale,terrainHeight(x,z)-minY*scale-.03,z-(minZ+maxZ)*.5*scale);
+   holder.parent=inspection;state.inspectionPlanted=(state.inspectionPlanted||0)+1;
+  }catch(e){console.warn("Inspection planting failed",kind,e);}
+ }});
  const observer=scene.onBeforeRenderObservable.add(()=>{if(++frame%180===0&&assets.size)rebuild();});
  ready.catch(e=>{state.status="error";state.error=String(e);});
  state.ready=ready;return state;
