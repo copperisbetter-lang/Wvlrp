@@ -5,7 +5,7 @@ Usage: KEENTOOLS_API_KEY=... python reconstruct_laura_keentools.py --photos /pri
 import argparse, json, os, time, urllib.request, urllib.parse
 from pathlib import Path
 
-BASE="https://api.keenface.ai/v1"
+BASE="https://api.keentools.io/v1"
 def request(url, method="GET", data=None, token=None, content_type="application/json"):
     headers={"Content-Type":content_type}
     if token: headers["Authorization"]="Bearer "+token
