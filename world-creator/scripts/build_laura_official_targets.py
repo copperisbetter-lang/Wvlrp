@@ -43,9 +43,8 @@ for name, value in (("gender", 0.0), ("age", .38), ("weight", .40),
     HumanObjectProperties.set_value(name, value, entity_reference=human)
 TargetService.reapply_macro_details(human)
 for name, weight, path in rows:
-    TargetService.load_target(human, path, weight=weight)
-for name, weight, _ in rows:
-    if abs(TargetService.get_target_value(human, name) - weight) > .0001:
+    key = TargetService.load_target(human, str(path), weight=weight, name=name)
+    if abs(key.value - weight) > .0001:
         raise RuntimeError("Target verification failed: " + name)
 out = ROOT / "assets" / "laura-mpfb-native-stage.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(out))
