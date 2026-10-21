@@ -17,10 +17,14 @@ jobs:
         run: |
           set -e
           sudo apt-get update -qq
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
       - name: Extract original and clone
         run: |
-          blender --background --python world-creator/scripts/extract_example_head.py
+          set -euo pipefail
+          blender --version
+          blender --background --python-exit-code 1 --python world-creator/scripts/extract_example_head.py
+          test -s world-creator/assets/original-head-example.glb
+          test -s world-creator/assets/morph-head-clone.glb
           cmp world-creator/assets/original-head-example.glb world-creator/assets/morph-head-clone.glb
       - name: Publish example assets
         run: |
