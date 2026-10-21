@@ -37,6 +37,7 @@ jobs:
         working-directory: /tmp/3DDFA_V2
         run: |
           mkdir -p examples/results
+          sed -i 's/astype(np.long)/astype(np.int64)/g' bfm/bfm.py
           python demo.py -f examples/inputs/emma.jpg -o obj --onnx --show_flag false
           find examples/results -maxdepth 1 -name '*_obj.obj' -size +1k -print | tee /tmp/obj-files.txt
           ls -lah examples/results
