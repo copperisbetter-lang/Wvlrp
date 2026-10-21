@@ -22,6 +22,25 @@ for obj in list(meshes):
 print('LAURA_FULLBODY_VERTEX_COUNT', len(human.data.vertices))
 """
 code = code[:begin] + replacement + code[finish:]
+# MPFB distributes its native anatomical targets compressed as .target.gz.
+# Use the official installed target directory, as in MPFB script sample 02.
+a = code.index("roots=[Path('/tmp/mpfb2/src/mpfb'),dest]")
+b = code.index("print('LAURA_IDENTITY_TARGET_CANDIDATES'", a)
+code = code[:a] + """roots=[Path(LocationService.get_mpfb_data('targets'))]
+candidates=[]
+for root in roots:
+    if root.exists():
+        candidates.extend(root.rglob('*.target.gz'))
+""" + code[b:]
+code = code.replace("name=p.stem.lower()", "name=p.name.lower()")
+code = code.replace("p.stem.lower()", "p.name.lower()")
+code = code.replace("('eye','large')", "('eye','scale')")
+code = code.replace("('nose','narrow')", "('nose','scale-horiz-decr')")
+code = code.replace("('mouth','wide')", "('mouth','scale-horiz-incr')")
+code = code.replace("('chin','round')", "('chin','')")
+code = code.replace("('jaw','narrow')", "('jaw','scale-horiz-decr')")
+code = code.replace("('cheek','full')", "('cheek','volume-incr')")
+
 code = code.replace("out=ROOT/'assets/laura-head-combined.glb'", "out=ROOT/'assets/laura-2-native-fullbody.glb'")
 code = code.replace("LAURA_NATIVE_MPFB_SUCCESS", "LAURA_NATIVE_MPFB_FULLBODY_SUCCESS")
 exec(compile(code, str(source), 'exec'), {'__name__':'__main__','__file__':str(source)})
