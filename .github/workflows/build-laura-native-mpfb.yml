@@ -71,8 +71,14 @@ jobs:
           mkdir -p /tmp/mh-targets
           curl -fL --retry 4 'https://github.com/makehumancommunity/makehuman/archive/refs/heads/master.zip' -o /tmp/makehuman-source.zip
           unzip -q /tmp/makehuman-source.zip '*/makehuman/data/targets/*' -d /tmp/mh-targets
-          find /tmp/mh-targets -name '*.target' | head -n 15
-          test "$(find /tmp/mh-targets -name '*.target' | wc -l)" -gt 100
+          python3 - <<'PY'
+          from pathlib import Path
+          files = sorted(Path('/tmp/mh-targets').rglob('*.target'))
+          print('MAKEHUMAN_ANATOMICAL_TARGET_COUNT', len(files), flush=True)
+          print('MAKEHUMAN_ANATOMICAL_TARGET_SAMPLES', [str(p) for p in files[:15]], flush=True)
+          if len(files) <= 100:
+              raise SystemExit('MakeHuman anatomical target archive contains fewer than 101 .target files')
+          PY
       - name: Generate native MPFB Laura 2 full-body morph
         run: |
           set -euo pipefail
