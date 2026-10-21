@@ -9,7 +9,7 @@
 <label>Face length <output id="lengthOut">100%</output><input id="length" type="range" min="80" max="120" value="100"></label>
 <button id="reset">Reset</button><button id="export" disabled>Export adjusted GLB</button>
 <p><small>Start by exporting a genuine MakeHuman/MPFB mesh as GLB from Blender. The sliders deform imported mesh vertices rather than adding floating facial primitives. This is a manual deformation prototype; photo landmark fitting and anatomically selective morph targets are not yet implemented. Use a head-only GLB for best results.</small></p></aside>
-<div><div id="stage"></div><div id="status" role="status">Import a MakeHuman GLB to begin. No fake placeholder head is shown.</div></div></main>
+<div><div id="stage"></div><div id="status" role="status">Loading the morph clone from the MPFB example assets…</div></div></main>
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.161.0';
 import {OrbitControls} from 'https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js';
@@ -28,6 +28,6 @@ $('file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{
 for(const id of ['strength','width','length'])$(id).oninput=apply;
 $('reset').onclick=()=>{$('strength').value=0;$('width').value=100;$('length').value=100;apply()};
 $('export').onclick=async()=>{if(!model)return;try{const data=await new GLTFExporter().parseAsync(model,{binary:true});const url=URL.createObjectURL(new Blob([data],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='wvlrp-makehuman-head-morph.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);status('GLB exported. Validate imported mesh and rig in Blender before game use.')}catch(e){status('Export failed: '+e.message)}};
-new ResizeObserver(()=>{camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)}).observe(stage);
+async function loadExample(){try{const response=await fetch('./assets/morph-head-clone.glb',{cache:'no-store'});if(!response.ok)throw new Error('Clone not published yet (HTTP '+response.status+')');const gltf=await new GLTFLoader().parseAsync(await response.arrayBuffer(),'');model=gltf.scene;originals=[];model.traverse(o=>{if(o.isMesh){o.geometry=o.geometry.clone();const a=o.geometry.attributes.position;if(a)originals.push({mesh:o,base:new Float32Array(a.array)})}});scene.add(model);fit();$('export').disabled=false;apply();status('MPFB Morph Head Clone loaded. Original Head Example remains untouched.')}catch(err){status('Waiting for generated MPFB head assets: '+err.message+'. You can also import a GLB manually.')}}loadExample();\nnew ResizeObserver(()=>{camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();renderer.setSize(stage.clientWidth,stage.clientHeight)}).observe(stage);
 function tick(){requestAnimationFrame(tick);orbit.update();renderer.render(scene,camera)}tick();
 </script></body></html>
