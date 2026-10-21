@@ -73,6 +73,25 @@ photo_spec=json.loads(measurement_file.read_text())
 if photo_spec.get('status')!='provisional' or not photo_spec.get('landmarks',{}).get('approximate_pixel_coordinates'):
     raise RuntimeError('Laura 2 photo landmarks unavailable or invalid')
 print('LAURA_REFERENCE_LANDMARKS_LOADED',photo_spec['landmarks'],flush=True)
+# Convert photo pixel coordinates to scale-invariant 2D proportions.
+# This is an observable fitting target, NOT a guessed MakeHuman slider mapping.
+pts=photo_spec['landmarks']['approximate_pixel_coordinates']
+required=('left_eye','right_eye','nose_tip','mouth_center','chin')
+if any(k not in pts or len(pts[k])!=2 for k in required):
+    raise RuntimeError('Incomplete Laura reference landmarks')
+from math import hypot
+interocular=hypot(pts['right_eye'][0]-pts['left_eye'][0],pts['right_eye'][1]-pts['left_eye'][1])
+if interocular<=0: raise RuntimeError('Invalid reference eye spacing')
+eye_mid=((pts['left_eye'][0]+pts['right_eye'][0])/2,(pts['left_eye'][1]+pts['right_eye'][1])/2)
+ratios={
+ 'nose_to_eye_spacing':hypot(pts['nose_tip'][0]-eye_mid[0],pts['nose_tip'][1]-eye_mid[1])/interocular,
+ 'mouth_to_eye_spacing':hypot(pts['mouth_center'][0]-eye_mid[0],pts['mouth_center'][1]-eye_mid[1])/interocular,
+ 'chin_to_eye_spacing':hypot(pts['chin'][0]-eye_mid[0],pts['chin'][1]-eye_mid[1])/interocular,
+ 'mouth_nose_vertical_ratio':(pts['mouth_center'][1]-pts['nose_tip'][1])/interocular,
+}
+if not all(0<v<5 for v in ratios.values()): raise RuntimeError('Implausible Laura landmark ratios')
+print('LAURA_PHOTO_NORMALIZED_RATIOS',json.dumps(ratios,sort_keys=True),flush=True)
+
 print('LAURA_MORPH_STATUS','UNFITTED: weights below are provisional and not optimized to photographs',flush=True)
 recipe={
  'eyes': (('eye','large'),.27),
