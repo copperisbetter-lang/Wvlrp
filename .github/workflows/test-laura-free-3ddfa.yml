@@ -38,6 +38,8 @@ jobs:
         run: |
           mkdir -p examples/results
           sed -i 's/astype(np.long)/astype(np.int64)/g' bfm/bfm.py
+          sed -i 's/np.int\b/np.int32/g' FaceBoxes/utils/nms/cpu_nms.pyx
+          (cd FaceBoxes && python setup.py build_ext --inplace)
           python demo.py -f examples/inputs/emma.jpg -o obj --onnx --show_flag false
           find examples/results -maxdepth 1 -name '*_obj.obj' -size +1k -print | tee /tmp/obj-files.txt
           ls -lah examples/results
