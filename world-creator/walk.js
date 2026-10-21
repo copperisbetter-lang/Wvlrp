@@ -1,3 +1,4 @@
+import {installWildUnderstoryExpansion} from "./wild-understory-expansion.js?v=20261020-v1";
 import {installSav4LakesideResident} from "./wild-sav4-lakeside.js?v=20261020-shore";
 import {installWildWaters} from "./wild-living-waters.js?v=20261018-green-water-v11";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
@@ -155,6 +156,13 @@ const masterForest=installMasterHDForest(B,scene,{
 });
 const livingWaters=installWildWaters(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY),getPosition:()=>camera.position,seed});
 window.__wildLivingWaters=livingWaters;
+const wildUnderstory=installWildUnderstoryExpansion(B,scene,{
+ seed,mobile,terrainHeight:(x,z)=>flatlandHeight(x,z,seed,cabinY),
+ getPosition:()=>({x:camera.position.x,z:camera.position.z}),
+ excluded:(x,z,margin)=>[[0,0,42],[93,77,55],[90,78,40],[90,75,40],[0,274,40],[30,333,50]]
+ .some(([a,b,r])=>Math.hypot(x-a,z-b)<r+margin)
+});
+window.__wildUnderstory=wildUnderstory;
 installSav4LakesideResident(B,scene,{height:(x,z)=>flatlandHeight(x,z,seed,cabinY)}).then(npc=>{window.__wildSav4Lakeside=npc;}).catch(e=>console.warn("SAV4 lakeside:",e));
 if(START_AT_LAKE){
  const probe=document.createElement("div");
