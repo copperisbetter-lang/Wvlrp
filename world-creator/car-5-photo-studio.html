@@ -145,18 +145,20 @@ try{
   const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,256,256);
   const pixels=ctx.getImageData(0,0,256,256).data;
   const amount=Number(document.getElementById('reliefStrength').value)/100;
+  const smoothed=new Float32Array(256*256);
+  for(let yy=0;yy<256;yy++)for(let xx=0;xx<256;xx++){let sum=0,count=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const px=Math.max(0,Math.min(255,xx+dx)),py=Math.max(0,Math.min(255,yy+dy)),p=(py*256+px)*4;sum+=(.2126*pixels[p]+.7152*pixels[p+1]+.0722*pixels[p+2])/255;count++;}smoothed[yy*256+xx]=sum/count;}
   const smooth=t=>t*t*(3-2*t);
   for(let i=0;i<positions.count;i++){
    const k=i*3,x=base[k],y=base[k+1],z=base[k+2];
    const u=(x-bb.min.x)/sx,v=1-(y-bb.min.y)/sy;
    const px=Math.max(0,Math.min(255,Math.round(u*255))),py=Math.max(0,Math.min(255,Math.round(v*255)));
-   const p=(py*256+px)*4,brightness=(.2126*pixels[p]+.7152*pixels[p+1]+.0722*pixels[p+2])/255;
+   const brightness=smoothed[py*256+px];
    const edge=smooth(Math.min(1,u*8))*smooth(Math.min(1,(1-u)*8))*smooth(Math.min(1,v*8))*smooth(Math.min(1,(1-v)*8));
    positions.array[k]=x;positions.array[k+1]=y;
    positions.array[k+2]=z+sz*.16*amount*(.5-brightness)*edge;
   }
   positions.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
-  fitStatus.textContent='Image-based relief applied to '+positions.count+' vertices. Inspect all views before using.';
+  fitStatus.textContent='Smoothed front-view relief applied to '+positions.count+' vertices. This is an approximation, not a verified match.';
  };
  exportButton.onclick=async()=>{
   try{
