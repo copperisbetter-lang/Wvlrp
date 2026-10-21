@@ -120,24 +120,24 @@ if(new URLSearchParams(location.search).get("carolTest")==="1"){
  import("./carol-cabin-test.js?v=20261016-porchfix2").then(m=>new Promise(resolve=>setTimeout(resolve,1200)).then(()=>m.startCarolTest(B,scene,camera,cabinGrade,seed))).catch(e=>console.error("Carol test:",e));
 }
 
-// Clear, sunny afternoon: enough diffuse skylight reaches forest-floor plants
-// beneath the dense native canopy, without making all foliage fluorescent.
-scene.clearColor=new B.Color4(.67,.82,.95,1);
+// Bright, golden autumn afternoon: warm direct sunlight and strong forest-floor bounce.
+// Keep mild contrast and distant atmospheric haze without gloomy undergrowth.
+scene.clearColor=new B.Color4(.79,.84,.91,1);
 scene.fogMode=B.Scene.FOGMODE_EXP2;
 // Let players see real ridgelines roughly 1–2 km beyond the flat valley.
-scene.fogDensity=.00038;
-scene.fogColor=new B.Color3(.67,.79,.87);
+scene.fogDensity=.00029;
+scene.fogColor=new B.Color3(.82,.78,.70);
 scene.skipPointerMovePicking=true;
-scene.imageProcessingConfiguration.exposure=1.14;
-scene.imageProcessingConfiguration.contrast=1.05;
+scene.imageProcessingConfiguration.exposure=1.34;
+scene.imageProcessingConfiguration.contrast=1.02;
 const sky=new B.HemisphericLight("blue-sky bounce",new B.Vector3(.35,1,.21),scene);
-sky.intensity=1.2;
-sky.diffuse=new B.Color3(.94,.97,1);
-sky.groundColor=new B.Color3(.39,.43,.34);
+sky.intensity=1.65;
+sky.diffuse=new B.Color3(1,.94,.83);
+sky.groundColor=new B.Color3(.60,.52,.37);
 const sunLook=new B.Vector3(.25,.77,-.58).normalize();
 const sun=new B.DirectionalLight("bright Appalachian afternoon sun",sunLook.scale(-1),scene);
-sun.diffuse=new B.Color3(1,.96,.85);
-sun.intensity=1.55;
+sun.diffuse=new B.Color3(1,.76,.47);
+sun.intensity=2.05;
 const EYE_HEIGHT=1.98; // taller adult walking viewpoint, measured from visible terrain
 const camera=new B.FreeCamera("first-person explorer",
   new B.Vector3(START_AT_LAKE?LAKE_SPAWN.x:START_AT_PHOTO_RANGER?PHOTO_RANGER_SPAWN.x:START_AT_RANGER?RANGER_SPAWN.x:START_AT_MATERIALS?MATERIAL_YARD.spawnX:0,
