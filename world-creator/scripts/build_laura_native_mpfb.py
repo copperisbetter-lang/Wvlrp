@@ -64,6 +64,16 @@ if len(found)<len(features):
 # Reference-led first-pass identity morph; preserve native topology.
 # Source: Laura 2 reference images and face-measurement-spec.json.
 # These are provisional weights, not a completed calibrated 3D fit.
+# Read the reference measurements instead of claiming the weights below are photo-derived.
+import json
+measurement_file=ROOT/'laura2-photo-measurements.json'
+if not measurement_file.is_file():
+    raise RuntimeError('Laura 2 photo measurement file missing')
+photo_spec=json.loads(measurement_file.read_text())
+if photo_spec.get('status')!='provisional' or not photo_spec.get('landmarks',{}).get('approximate_pixel_coordinates'):
+    raise RuntimeError('Laura 2 photo landmarks unavailable or invalid')
+print('LAURA_REFERENCE_LANDMARKS_LOADED',photo_spec['landmarks'],flush=True)
+print('LAURA_MORPH_STATUS','UNFITTED: weights below are provisional and not optimized to photographs',flush=True)
 recipe={
  'eyes': (('eye','large'),.27),
  'nose': (('nose','narrow'),.32),
