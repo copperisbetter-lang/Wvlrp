@@ -13,6 +13,8 @@ Keep this alongside the workflow so future reruns do not repeat solved failures.
 
 | 7 | [#7](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669377331) | Rebuild command attempted nonexistent `FaceBoxes/setup.py` | Read upstream `build.sh`; use `(cd FaceBoxes && sh ./build_cpu_nms.sh)` | Pending verification in #8 |
 
+| 8 | [#8](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39669892867) | `ValueError: Buffer dtype mismatch, expected 'int_t' but got 'int'` in NMS after patching `np.int` to `np.int32` | Use `np.int64` to match Cython `int_t` buffer type; rebuild with upstream script | Pending verification in #10; #9 was inadvertently identical to #8 |
+
 ## Reusable installation sequence
 
 1. Clone upstream `cleardusk/3DDFA_V2` (record upstream SHA).
