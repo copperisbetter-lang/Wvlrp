@@ -1,0 +1,53 @@
+name: Test Laura 2 native full-body MPFB
+on:
+  push:
+    branches: [fix/laura2-fullbody-mpfb]
+    paths:
+      - world-creator/scripts/build_laura2_fullbody_native.py
+      - .github/workflows/test-laura2-fullbody.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/blender-4.2.0-linux-x64
+            /tmp/mpfb2
+            /tmp/mh-system.zip
+            /tmp/mh-faceunits.zip
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+      - name: Prepare Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp/
+          fi
+      - name: Prepare MPFB
+        run: |
+          if [ ! -d /tmp/mpfb2/src/mpfb ]; then git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2; fi
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/wvlrp-mpfb-ext.zip .)
+          mkdir -p /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
+          if [ ! -s /tmp/mh-system.zip ]; then curl -fL --retry 4 https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip -o /tmp/mh-system.zip; fi
+          if [ ! -s /tmp/mh-faceunits.zip ]; then curl -fL --retry 4 https://files2.makehumancommunity.org/functional/faceunits01.zip -o /tmp/mh-faceunits.zip; fi
+      - name: Build full-body Laura 2
+        run: |
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python-exit-code 1 --python world-creator/scripts/build_laura2_fullbody_native.py 2>&1 | tee /tmp/laura2-fullbody.log
+          grep LAURA_NATIVE_MPFB_FULLBODY_SUCCESS /tmp/laura2-fullbody.log
+          test -s world-creator/assets/laura-2-native-fullbody.glb
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: laura2-fullbody-test
+          path: |
+            world-creator/assets/laura-2-native-fullbody.glb
+            /tmp/laura2-fullbody.log
