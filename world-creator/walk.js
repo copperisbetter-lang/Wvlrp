@@ -1,4 +1,4 @@
-import {installWildUnderstoryExpansion} from "./wild-understory-expansion.js?v=20261020-v1";
+import {installWildUnderstoryExpansion} from "./wild-understory-expansion.js?v=20261020-cabin-fix-v2";
 import {installSav4LakesideResident} from "./wild-sav4-lakeside.js?v=20261020-shore";
 import {installWildWaters} from "./wild-living-waters.js?v=20261018-green-water-v11";
 import {flatlandHeight} from "./wild-rebuild-layout.js";
