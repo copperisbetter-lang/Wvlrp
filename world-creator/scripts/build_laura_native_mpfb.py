@@ -84,7 +84,7 @@ if not hair_meshes or not any(len(o.data.polygons)>100 for o in hair_meshes):
     raise RuntimeError('Laura hair was not present as exportable mesh; reject bald GLB')
 base=max(meshes,key=lambda o:len(o.data.vertices))
 world=[base.matrix_world@Vector(c) for c in base.bound_box]
-lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.865
+lo=min(v.z for v in world);hi=max(v.z for v in world);cut=lo+(hi-lo)*.78
 for obj in list(meshes):
     # Keep the entire hair object, including strands that extend below the neck cut.
     if obj == hair or 'hair' in obj.name.lower():
@@ -96,6 +96,10 @@ for obj in list(meshes):
         # Non-body assets (eyes, lashes, brows) are already fitted by MPFB.
         # Bisecting them can shred their triangles and create floating fragments.
         if obj != base:
+            # Do not bisect accessory geometry; remove unfitted accessories
+            # rather than exporting displaced eye/cheek/mouth fragments.
+            if obj != hair:
+                bpy.data.objects.remove(obj,do_unlink=True)
             continue
         bpy.context.view_layer.objects.active=obj
         bpy.ops.object.select_all(action='DESELECT');obj.select_set(True)
