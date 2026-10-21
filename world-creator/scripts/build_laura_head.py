@@ -26,7 +26,7 @@ def uv(name,loc,scale,material,segments=40,rings=24):
  return o
 # Front faces +Z; eyes at positive Z, jaw taper made with mesh rings.
 verts=[];faces=[];N=64
-rings=[(-1.10,.17,.17,.10),(-.96,.39,.31,.01),(-.72,.62,.40,.0),(-.35,.76,.44,0),(.06,.82,.48,0),(.42,.80,.46,0),(.77,.69,.43,0),(1.06,.48,.34,-.02),(1.21,.12,.14,-.04)]
+rings=[(-1.10,.18,.17,.10),(-.96,.38,.29,.01),(-.72,.58,.39,.0),(-.35,.70,.43,0),(.06,.84,.49,0),(.42,.81,.46,0),(.77,.67,.42,0),(1.06,.46,.33,-.02),(1.21,.12,.14,-.04)]
 for y,rx,rz,zc in rings:
  for i in range(N):
   a=2*math.pi*i/N;verts.append((rx*math.cos(a),y,zc+rz*math.sin(a)))
@@ -36,22 +36,33 @@ for j in range(len(rings)-1):
 faces.extend([tuple(reversed(tuple(range(N)))),tuple((len(rings)-1)*N+i for i in range(N))])
 mesh=bpy.data.meshes.new('Laura oval face topology');mesh.from_pydata(verts,[],faces);mesh.update()
 head=bpy.data.objects.new('Laura face - oval cheeks tapered jaw',mesh);bpy.context.collection.objects.link(head);head.data.materials.append(skin)
+# Reversible whole-face Laura likeness morph: cheek fullness, jaw taper and chin roundness.
+head.shape_key_add(name='Basis')
+laura_key=head.shape_key_add(name='LauraFaceMorph')
+for v in laura_key.data:
+ x,y,z=v.co
+ cheek=math.exp(-((y-.02)/.37)**2)
+ jaw=math.exp(-((y+.68)/.27)**2)
+ chin=math.exp(-((y+.99)/.15)**2)
+ v.co.x=x*(1+.085*cheek-.09*jaw+.025*chin)
+ v.co.z=z*(1+.035*cheek)
+laura_key.value=1.0
 for p in mesh.polygons:p.use_smooth=True
 # Named pieces correspond to independent viewer expression controls.
 uv('Nose bridge',(0,.12,.448),(.075,.245,.078),skin)
-uv('Nose soft rounded tip',(0,-.105,.505),(.125,.085,.093),skin)
+uv('Nose soft rounded tip',(0,-.105,.505),(.112,.080,.086),skin)
 for side in (-1,1):
  uv('Nose alar wing '+str(side),(side*.095,-.145,.467),(.060,.052,.060),skin)
 for s,label in [(-1,'Left'),(1,'Right')]:
  x=s*.34
- uv(label+' sclera',(x,.28,.415),(.188,.082,.055),white)
+ uv(label+' sclera',(x,.28,.415),(.194,.074,.052),white)
  uv(label+' pale blue iris',(x,.28,.479),(.075,.073,.021),iris)
  uv(label+' pupil',(x,.28,.504),(.031,.038,.012),dark)
  uv('Upper eyelid '+label,(x,.392,.474),(.228,.040,.045),skin)
  uv('Lower eyelid '+label,(x,.18,.470),(.220,.026,.04),skin)
  uv('Eyebrow '+label,(x,.54,.46),(.235,.037,.050),brow)
  uv('Ear '+label,(s*.79,-.06,-.025),(.135,.28,.105),skin)
-uv('Upper lip',(0,-.34,.415),(.235,.035,.035),lip)
+uv('Upper lip',(0,-.34,.415),(.244,.033,.034),lip)
 uv('Lower lip',(0,-.405,.414),(.232,.041,.039),lip)
 # Layered scalp cap and tapered curve-based hair.
 uv('Ash blonde scalp',(0,.94,-.055),(.70,.31,.44),hair)
@@ -88,4 +99,5 @@ out=os.path.abspath('world-creator/assets/laura-head-inspection.glb')
 os.makedirs(os.path.dirname(out),exist_ok=True)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=out,export_format='GLB',export_morph=True,export_materials='EXPORT')
+print('LAURA_MORPH', 'LauraFaceMorph', laura_key.value)
 print('LAURA_HEAD_EXPORTED',out,os.path.getsize(out))
