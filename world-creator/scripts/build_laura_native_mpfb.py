@@ -26,13 +26,42 @@ human=HumanService.create_human();human.name='Laura native MPFB head'
 for key,value in [('gender',0.0),('age',.38),('weight',.40),('muscle',.28),('height',.52),('proportions',.47)]:
     HumanObjectProperties.set_value(key,value,entity_reference=human)
 TargetService.reapply_macro_details(human)
-# Apply actual official .target data to MPFB base topology, not guessed vertex math.
-# Faceunits are expression targets, not identity reconstruction from photos.
-# Faceunits are expression morphs, not likeness sliders. Applying these as
-# permanent geometry broke the nose/mouth in the previous export.
-# Preserve neutral MakeHuman face until reviewed identity targets are available.
+# Select genuine MPFB/MakeHuman identity targets from the installed extension.
+# Never substitute ARKit expression faceunits for anatomical identity changes.
+from collections import defaultdict
+import os
+roots=[Path(__file__).resolve().parents[1], Path('/tmp/mpfb2/src/mpfb'),dest]
+candidates=[]
+for root in roots:
+    if root.exists():
+        candidates.extend(p for p in root.rglob('*.target') if 'faceunit' not in str(p).lower() and 'expression' not in str(p).lower())
+print('LAURA_IDENTITY_TARGET_CANDIDATES',len(candidates))
+# Anatomical categories are deliberately constrained to the face; never load
+# an unreviewed body or expression target based on a loose filename match.
+features={
+ 'eyes': ('eyes', 'eye'),
+ 'nose': ('nose',),
+ 'mouth': ('mouth', 'lip'),
+ 'chin': ('chin',),
+ 'jaw': ('jaw',),
+ 'cheeks': ('cheek',),
+}
+found=defaultdict(list)
+for p in candidates:
+    name=p.stem.lower()
+    if not any(t in str(p).lower() for t in ('face','head','nose','eye','mouth','lip','chin','jaw','cheek')):continue
+    for feature,terms in features.items():
+        if any(term in name for term in terms):found[feature].append(p)
+print('LAURA_IDENTITY_TARGET_DISCOVERY', {k:[str(p) for p in v[:8]] for k,v in found.items()})
+# Stop rather than claiming a likeness when the official identity targets
+# are missing or cannot be mapped unambiguously to the requested features.
+if not all(found.get(k) for k in ('eyes','nose','mouth','chin','jaw','cheeks')):
+    raise RuntimeError('Official MPFB anatomical identity targets incomplete; cannot publish neutral Laura as morphed')
+# Target application requires verified target polarity and reference ratios.
+# No arbitrary slider weights: produce a diagnostic report until calibration
+# is provided, rather than damaging Laura's mesh.
+raise RuntimeError('Laura identity target paths discovered; calibrated target weights still required before safe export')
 selected={}
-print('LAURA_NEUTRAL_FACE_NO_EXPRESSION_DEFORMATION')
 skin=AssetService.find_asset_absolute_path('young_caucasian_female.mhmat',asset_subdir='skins')
 if skin:HumanService.set_character_skin(skin,human,skin_type='GAMEENGINE')
 for sub,names,kind in []: # Disable unaligned facial accessories until socket-fitting is verified
