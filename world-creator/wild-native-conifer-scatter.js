@@ -17,18 +17,27 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
    catch(e){console.warn("Native conifer source unavailable",id,e);}
   }
   if(!sources.length)throw Error("No verified conifer meshes loaded");
+  // Stable world-wide species assignments: 235 pine and 167 spruce/fir visual stand-ins.
+  // Only nearby placements are rendered, avoiding hundreds of simultaneous GLBs.
+  const WORLD_RADIUS=2100, PINE_COUNT=235, SPRUCE_COUNT=167;
+  const candidates=[];
+  for(let i=-42;i<=42;i++)for(let j=-42;j<=42;j++){
+    const x=(i+(hash(i,j,11)-.5)*.7)*50,z=(j+(hash(i,j,12)-.5)*.7)*50;
+    if(Math.hypot(x,z)>WORLD_RADIUS||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32)continue;
+    candidates.push({x,z,rank:hash(i,j,13)});
+  }
+  candidates.sort((a,b)=>a.rank-b.rank);
+  const worldPlacements=candidates.slice(0,PINE_COUNT+SPRUCE_COUNT).map((p,i)=>({...p,species:i<PINE_COUNT?"white-pine":"spruce"}));
+  state.worldTargets={whitePine:PINE_COUNT,spruce:SPRUCE_COUNT};
   const half=Math.ceil(radius/cellSize);
   const cx=Math.round(centerX/cellSize),cz=Math.round(centerZ/cellSize);
-  const offsets=[];
-  for(let dx=-half;dx<=half;dx++)for(let dz=-half;dz<=half;dz++)offsets.push({dx,dz});
-  offsets.sort((a,b)=>(a.dx*a.dx+a.dz*a.dz)-(b.dx*b.dx+b.dz*b.dz)||a.dx-b.dx||a.dz-b.dz);
-  for(const {dx,dz} of offsets){
+  const nearby=worldPlacements.filter(p=>Math.hypot(p.x-centerX,p.z-centerZ)<=radius).sort((a,b)=>Math.hypot(a.x-centerX,a.z-centerZ)-Math.hypot(b.x-centerX,b.z-centerZ));
+  for(const p of nearby){
    if(state.planted>=maxVisible)break;
-   const ix=cx+dx,iz=cz+dz;
-   if(hash(ix,iz) >= .24)continue;
-   const x=(ix+(hash(ix,iz,1)-.5)*.65)*cellSize,z=(iz+(hash(ix,iz,2)-.5)*.65)*cellSize;
-   if(Math.hypot(x-centerX,z-centerZ)>radius||!mayPlantTree(x,z,3)||excluded(x,z,25)||Math.abs(x)<35&&Math.abs(z)<32){state.skipped++;continue;}
-   const src=sources[Math.floor(hash(ix,iz,3)*sources.length)];let instance,root;
+   const x=p.x,z=p.z,ix=Math.round(x/50),iz=Math.round(z/50);
+   const matching=sources.filter(s=>p.species==="white-pine"?/pine/i.test(s.id):/fir/i.test(s.id));
+   if(!matching.length){state.skipped++;continue;}
+   const src=matching[Math.floor(hash(ix,iz,3)*matching.length)];let instance,root;
    try{
     instance=src.container.instantiateModelsToScene(n=>"native10-"+ix+"-"+iz+"-"+n,false,{doNotInstantiate:false});
     root=new B.TransformNode("native10-anchor-"+ix+"-"+iz,scene);
@@ -94,7 +103,7 @@ export function installNativeConiferScatter(B,scene,{seed=20261016,terrainHeight
     const plantedBase=bounds(trunks).lo.y;
     if(!Number.isFinite(plantedBase)||Math.abs(plantedBase-ground)>0.35)throw Error("Tree root not planted");
     for(const m of meshes){m.isPickable=false;m.checkCollisions=false;}
-    root.metadata={kind:"native-conifer",source:src.id};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
+    root.metadata={kind:"native-conifer",species:p.species,source:src.id,visualStandIn:true};state.roots.push(root);state.placements.push({root,trunks,meshes,x,z});state.planted++;
    }catch(e){root?.dispose(false,true);instance?.rootNodes?.forEach(n=>n.dispose(false,true));console.warn("Native conifer planting skipped",e);}
   }
   state.reground();
