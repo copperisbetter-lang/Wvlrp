@@ -34,3 +34,12 @@ Keep this alongside the workflow so future reruns do not repeat solved failures.
 - No paid API or commercial reconstruction service is involved.
 - Verified successful artifact: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39670216797/artifacts/12379351616
 - Next: validate OBJ geometry counts and prepare private Laura photo input and head-to-body transfer. Do not overwrite the working workflow without a tested backup.
+
+## 2026-10-21 confirmed THREE-head root cause and fix (after Build 10)
+
+- **Direct evidence from run 10 job #119465809591:** log says `Detect 3 faces` while processing `examples/inputs/emma.jpg`, then serializes all detected faces into the same OBJ. The upstream 3DDFA_V2 `demo.py` passes all boxes to `tddfa(img, boxes)`, then all meshes to `ser_to_obj`. Therefore three spatially separate reconstructed faces are the expected result of this sample. This is NOT a MakeHuman problem.
+- **New source control fix:** `world-creator/scripts/patch_3ddfa_single_face.py` patches upstream `demo.py` to sort detected bounding boxes by pixel area, select the largest ONE, assert exactly one fitted param and ROI box, and fail if the upstream patch anchor changes.
+- **Workflow change:** `.github/workflows/test-laura-free-3ddfa.yml` now checks out the project, applies the one-face patch after dependency repairs, and reconstructs only the selected face.
+- **Verification outstanding:** execute the patched workflow and inspect its logs for `WVLRP single-face gate: selected 1 of 3 detections`, artifact creation, mesh geometry, and a phone-visible single-head viewer before claiming visual success. Existing Build 10 artifact remains an uncorrected THREE-face sample; do NOT present it as repaired.
+- For Laura's future images, avoid automatic largest-face selection if the subject is ambiguous; require face/subject confirmation. Photograph privacy and separate body-fit work still apply.
+- This solves the `three faces exported` mechanism, but not yet photo likeness, deformation, mesh completeness, texture distortion, or rig/body fit. Those each require their own QA.
