@@ -63,6 +63,11 @@ async function loadParts(THREE,loader,source){
     // Bake source hierarchy into each part before instancing, preserving its PBR materials.
     const geometry=mesh.geometry.clone();
     geometry.applyMatrix4(mesh.matrixWorld);
+    // These CC0 GLBs arrived on inconsistent source axes: broadleaf is Z-up,
+    // fir sapling is X-up. Without correction the crowns lie flat on the soil.
+    // Rotate baked geometry BEFORE measuring/grounding its union bounds.
+    if(source.id==="photo-understory-broadleaf")geometry.rotateX(-Math.PI/2);
+    else if(source.id==="natural-fir-sapling")geometry.rotateZ(Math.PI/2);
     geometry.computeBoundingBox();
     if(!geometry.boundingBox||geometry.boundingBox.isEmpty())return;
     box.union(geometry.boundingBox);
@@ -114,7 +119,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
   }
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
-  options.report?.(legacyForest?"Experimental forest test — loading older models…":"Loading detailed oaks, real PBR understory trees and young firs…");
+  options.report?.(legacyForest?"Experimental forest test — loading older models…":"Loading upright PBR broadleaf trees and fir saplings…");
   const loader=new GLTFLoader();
   // A large full-size fir and oak have excessive polygon cost. Avoid a heavy startup
   // download + simultaneous GLB decode on phones. ?forest=full opts in.
@@ -164,7 +169,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     });
     records.push({source,pool,batches,height:loaded.height});
     status.planted+=pool.length;
-    status.sources.push({name:source.id,available:pool.length,parts:loaded.parts.length});
+    status.sources.push({name:source.id,available:pool.length,parts:loaded.parts.length,heightMetres:+loaded.height.toFixed(2)});
   }
   scene.add(group);
   const bySource=new Map(records.map((rec)=>[sources.indexOf(rec.source),rec]));
