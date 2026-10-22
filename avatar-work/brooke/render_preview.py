@@ -19,8 +19,9 @@ for pos,power,size in [((2,-3,4),650,4),((-3,-2,2),350,3)]:
  bpy.ops.object.light_add(type='AREA',location=pos)
  light=bpy.context.object;light.data.energy=power;light.data.shape='DISK';light.data.size=size
 scene=bpy.context.scene
-scene.render.engine='CYCLES'
-scene.cycles.samples=24
+scene.render.engine='BLENDER_EEVEE_NEXT' if bpy.app.version >= (4, 2, 0) else 'BLENDER_EEVEE'
+# Eevee avoids Cycles OpenImageDenoiser dependency missing on GitHub's apt Blender.
+scene.render.film_transparent=False
 scene.render.resolution_x=800;scene.render.resolution_y=800
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'
