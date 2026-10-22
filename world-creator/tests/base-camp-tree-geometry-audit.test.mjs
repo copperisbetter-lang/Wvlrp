@@ -50,7 +50,15 @@ function auditGlb(filename) {
       nodes,positionBounds:positionBounds.slice(0,8)},
     triangles,drawParts,vertices,materials:doc.materials?.length??0,
     alphaModes,images:doc.images?.length??0,
-    imageKinds:(doc.images??[]).slice(0,12).map(im=>({mime:im.mimeType,name:im.name,uri:im.uri?.slice(0,50)})),
+    imageKinds:(doc.images??[]).slice(0,12).map(im=>{
+      const view=doc.bufferViews?.[im.bufferView];
+      const binStart=28+len+(view?.byteOffset??0);
+      const container=bytes.toString('ascii',binStart,binStart+4);
+      const tag=bytes.toString('ascii',binStart+12,binStart+16);
+      const vp8xFlags=tag==='VP8X'?bytes[binStart+20]:null;
+      return {mime:im.mimeType,name:im.name,container,tag,
+        alphaFlag:vp8xFlags===null?null:Boolean(vp8xFlags&0x10)};
+    }),
     materialsInfo:(doc.materials??[]).slice(0,6).map(mat=>({
       name:mat.name,alphaMode:mat.alphaMode,doubleSided:mat.doubleSided,
       baseColorTexture:mat.pbrMetallicRoughness?.baseColorTexture?.index,
