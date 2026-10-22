@@ -4,6 +4,7 @@ on:
     paths:
       - 'avatar-work/brooke/single-head-morph-test.html'
       - 'avatar-work/brooke/test-single-head.mjs'
+      - 'avatar-work/brooke/browser-smoke.mjs'
       - '.github/workflows/brooke-single-head-check.yml'
   workflow_dispatch:
 jobs:
@@ -16,3 +17,16 @@ jobs:
           node-version: '22'
       - name: Check single-head prototype structure
         run: node avatar-work/brooke/test-single-head.mjs
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Render and export head in Chromium
+        run: node avatar-work/brooke/browser-smoke.mjs
+      - name: Upload screenshot even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-single-head-screenshot
+          path: brooke-single-head-smoke.png
+          if-no-files-found: ignore
