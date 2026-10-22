@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;right:0;top:0;width:55vw;height:100vh;touch-action:none}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>FOUNDATION VIEWER — photographic ground-material test; vegetation and buildings are not installed yet.</small><p id="info">Loading world…</p><small id="panoramaStatus">Loading Grandview overlook panorama</small><small id="assetStatus">Loading photographic ground material…</small><small id="forestStatus">Preparing photo-textured tree models…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;right:0;top:0;width:55vw;height:100vh;touch-action:none}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Mobile-optimized photographic forest streams nearby; approved buildings are still pending.</small><p id="info">Loading world…</p><small id="panoramaStatus">Loading Grandview overlook panorama</small><small id="assetStatus">Loading photographic ground material…</small><small id="forestStatus">Preparing photo-textured tree models…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
 import * as THREE from 'three';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
 import {installBaseCampRealForest} from './real-forest.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.fog=new THREE.FogExp2(0xa1b8b6,.0014);
@@ -14,8 +14,13 @@ grandviewLoader.load(grandviewUrl,texture=>{
  scene.add(vista);
  document.getElementById('panoramaStatus').textContent='Grandview overlook photo: Aparkswv, CC BY-SA 4.0 (partial panorama)';
 },undefined,()=>{document.getElementById('panoramaStatus').textContent='Grandview image could not load — CDN or WebGL restriction';});
-const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
-const hemi=new THREE.HemisphereLight(0xe7f5ff,0x43503d,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff1d8,2.4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
+const params=new URLSearchParams(location.search);
+const mobileProfile=matchMedia("(pointer:coarse)").matches||innerWidth<820;
+const safeMode=params.has("safe");
+const fullForest=params.get("forest")==="full";
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);
+const renderer=new THREE.WebGLRenderer({antialias:!mobileProfile,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobileProfile?1:1.6));renderer.shadowMap.enabled=!mobileProfile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();document.getElementById('forestStatus').textContent='Graphics memory exhausted. Reopen this address with ?safe=1 to disable HD trees.';});
+const hemi=new THREE.HemisphereLight(0xe7f5ff,0x43503d,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff1d8,2.4);sun.castShadow=true;sun.shadow.mapSize.set(mobileProfile?512:1024,mobileProfile?512:1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
 // Five-acre recessed lake, positioned north of Base Camp; nearest bank ~92 feet from center.
 // Lake footprint: 5.00 acres nominal; irregular outline is numerically integrated for audit.
 const LAKE_ACRES=5,ACRE_M2=4046.8564224;
@@ -86,14 +91,24 @@ for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
 // Base Camp building meshes intentionally not fabricated from generic geometry. Approved models pending.
 // Forest replacement: licensed photographic PBR GLBs instanced in view-cullable chunks.
 // Do NOT import the original Wild world, and do not silently fall back to polygon trees.
-installBaseCampRealForest(THREE,scene,{
- radius:BASE_CAMP_RADIUS_M,terrainY,lakeRadius,beachZone,pathDistance,
- paths:[beachPath,lakeTrail,...trailBranches],perimeterClearings,interiorClearings,
- report:message=>document.getElementById('forestStatus').textContent=message
-}).catch(error=>{
- document.getElementById('forestStatus').textContent='Forest assets failed: '+String(error.message||error);
- console.error('Base Camp PBR forest failed',error);
-});
+let activeForest=null;
+// Give Android several real frames before beginning network/GLB decoding.
+// Emergency URL: ?safe=1 (world is navigable without loading large trees).
+if(safeMode){
+ document.getElementById('forestStatus').textContent='Safe mode: HD forest disabled for diagnostics';
+}else{
+ setTimeout(()=>{
+  installBaseCampRealForest(THREE,scene,{
+   radius:BASE_CAMP_RADIUS_M,terrainY,lakeRadius,beachZone,pathDistance,
+   paths:[beachPath,lakeTrail,...trailBranches],perimeterClearings,interiorClearings,
+   startX:0,startZ:15,lowPower:mobileProfile,fullForest,
+   report:message=>document.getElementById('forestStatus').textContent=message
+  }).then(result=>{activeForest=result}).catch(error=>{
+   document.getElementById('forestStatus').textContent='Forest assets failed: '+String(error.message||error);
+   console.error('Base Camp PBR forest failed',error);
+  });
+ },900);
+}
 
 
 const pos=new THREE.Vector3(0,terrainY(0,0)+2,15);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
@@ -101,5 +116,5 @@ pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);drag=e
 const look=document.getElementById('look');let last=null;look.addEventListener('pointerdown',e=>{look.setPointerCapture(e.pointerId);last=[e.clientX,e.clientY]});look.addEventListener('pointermove',e=>{if(!last)return;yaw-=(e.clientX-last[0])*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-(e.clientY-last[1])*.004));last=[e.clientX,e.clientY]});look.addEventListener('pointerup',()=>last=null);
 document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,15);yaw=0;pitch=0};
 const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudToggle');hudToggle.onclick=()=>{const compact=hud.classList.toggle('compact');hudToggle.textContent=compact?'Show details':'Hide details';hudToggle.setAttribute('aria-expanded',String(!compact));};
-const clock=document.getElementById('clock');let previous=performance.now();function tick(now){requestAnimationFrame(tick);let dt=Math.min(.05,(now-previous)/1000);previous=now;const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00`;renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const clock=document.getElementById('clock');let previous=performance.now(),lastHudUpdate=0;function tick(now){requestAnimationFrame(tick);let dt=Math.min(.05,(now-previous)/1000);previous=now;const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;activeForest?.update?.(pos.x,pos.z);camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
