@@ -35,7 +35,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
   assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=basecamp-oak-repair-v8-20261021/);
+  assert.match(page,/rev=basecamp-trees-restored-v9-20261021/);
   assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
@@ -91,4 +91,19 @@ test('broken 625-draw-call artificial oak is excluded from default phone forest'
   assert.match(forest,/fullForest\?\[0,1,2\]:\[1,2\]/);
   assert.match(forest,/cosHalfCone=lowPower\?Math\.cos\(halfHorizontalFov\+\.16\)/);
   assert.match(forest,/const drawRadius=lowPower\?155:390/);
+});
+
+test('tree planner actually produces visible mobile forest placements without runtime errors',()=>{
+  const start=forest.indexOf('const SEED = 20261021;');
+  const end=forest.indexOf('async function loadParts(',start);
+  assert.ok(start>=0&&end>start,'extract real forest placement function');
+  const createPositions=new Function(forest.slice(start,end)+'; return createPositions;')();
+  const placements=createPositions({
+    radius:402,terrainY:()=>0,lakeRadius:()=>Infinity,beachZone:()=>false,
+    pathDistance:()=>Infinity,paths:[],perimeterClearings:[],interiorClearings:[],
+    lowPower:true,fullForest:false
+  });
+  assert.ok(placements.length>100,'forest is actually populated');
+  assert.ok(placements.every(tree=>tree.source===1||tree.source===2),
+    'mobile trees are photo-textured sources; artificial oak remains excluded');
 });
