@@ -61,7 +61,7 @@ output{width:32px;text-align:right;font-variant-numeric:tabular-nums}
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {installLauren3Eyes} from './world-creator/lauren3-eye-rig-v10.js?v=eye-rig-v10-rgb-repair-20261022';
+// Eye module is imported after the face is visible, so a rig failure never blanks the viewer.
 const stage=document.querySelector('#stage'),status=document.querySelector('#status'),loadBanner=document.querySelector('#loadBanner');
 const scene=new THREE.Scene();scene.background=new THREE.Color('#344d60');
 // Soft, balanced studio lights for movable eyes. The saved photographic
@@ -103,7 +103,7 @@ async function load(){
  const face=gltf.scene;
  const mesh=[];face.traverse(o=>{if(o.isMesh)mesh.push(o);});
  if(mesh.length!==1)throw Error('Expected only one face, got '+mesh.length);
- rig=installLauren3Eyes(face);
+ // First show the intact original face; then install experimental eyes separately.
  // The previous eye viewer applied strong new directional lights to a head
  // whose photo-derived skin appearance was ALREADY baked into vertex colors.
  // This made identical model data look muddy/dark and change as it rotated.
@@ -151,11 +151,30 @@ async function load(){
  };
  faceMaterial.customProgramCacheKey=()=> 'lauren3-v10-precise-eye-only-face-cutouts';
  scene.add(face);
+ status.textContent='Original Laura face loaded — preparing movable eyes…';
+ loadBanner.textContent='Face loaded. Installing Version 10 eye rig…';
+ // Allow the original face to paint on mobile before eye setup starts.
+ await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+ try {
+  const {installLauren3Eyes}=await import('./world-creator/lauren3-eye-rig-v10.js?v=eye-rig-v10-rgb-repair-2');
+  const experimentalFace=face.clone(true);
+  rig=installLauren3Eyes(experimentalFace);
+  // Mirror the photo-preserving unlit skin shader and its cutouts onto the clone.
+  // The material has been patched on the original mesh above.
+  scene.add(experimentalFace);
+  scene.remove(face);
+ } catch(eyeError) {
+  console.error('Eye rig v10 failed, original face remains visible:',eyeError);
+  rig=null;
+  loadBanner.hidden=false;
+  loadBanner.textContent='Original head loaded; Version 10 eyes failed: '+eyeError.message;
+  status.textContent='Original head visible; eye-rig error: '+eyeError.message;
+ }
  const bounds=new THREE.Box3().setFromObject(face),bcenter=bounds.getCenter(new THREE.Vector3());
  center.set(bcenter.x,bcenter.y,bcenter.z);
  lookAtFront();
- loadBanner.hidden=true;
- status.textContent='Lauren 3 v10 loaded — feathered hazel iris, sealed corners, light-matched sclera, original eyelid flesh and every original face triangle preserved, no v9 dark cavity wedges. Laura 2.5 protected. Drag to inspect.';
+ if(rig)loadBanner.hidden=true;
+ status.textContent=rig?'Lauren 3 v10 loaded — feathered hazel iris, sealed corners, light-matched sclera, original eyelid flesh and every original face triangle preserved, no v9 dark cavity wedges. Laura 2.5 protected. Drag to inspect.':status.textContent;
 }
 load().catch(err=>{console.error(err);loadBanner.hidden=false;loadBanner.textContent='3D head loading error: '+err.message;status.textContent='Unable to load eye rig: '+err.message;});
 function cancelSpin(){turning=false;document.querySelector('#spin').textContent='Rotate';}
