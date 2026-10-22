@@ -1,0 +1,76 @@
+name: Brooke photo-based 3DDFA reconstruction
+on:
+  workflow_dispatch:
+    inputs:
+      photo_url:
+        description: 'Direct HTTPS URL of authorized Brooke front-face reference photograph'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  reconstruct:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential libgl1 libglib2.0-0
+      - name: Get 3DDFA_V2 and dependencies
+        run: |
+          git clone --depth 1 https://github.com/cleardusk/3DDFA_V2.git /tmp/3DDFA_V2
+          git -C /tmp/3DDFA_V2 rev-parse HEAD
+          python -m pip install --upgrade pip 'setuptools<70' wheel
+          python -m pip install 'numpy<2' 'Cython<3' 'opencv-python-headless<5' pyyaml scipy matplotlib onnx onnxruntime
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          (cd /tmp/3DDFA_V2 && sh ./build.sh)
+      - name: Fetch and validate reference photograph
+        env:
+          PHOTO_URL: ${{ inputs.photo_url }}
+        run: |
+          python - <<'PY'
+          import os,urllib.parse,urllib.request,cv2
+          u=os.environ['PHOTO_URL']
+          assert urllib.parse.urlparse(u).scheme=='https', 'HTTPS photo URL required'
+          req=urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'})
+          with urllib.request.urlopen(req,timeout=35) as response:
+              data=response.read(12_000_001)
+          assert len(data)<12_000_001, 'Photo exceeds 12 MB'
+          os.makedirs('/tmp/3DDFA_V2/examples/inputs',exist_ok=True)
+          path='/tmp/3DDFA_V2/examples/inputs/brooke-reference.jpg'
+          open(path,'wb').write(data)
+          img=cv2.imread(path)
+          assert img is not None and min(img.shape[:2])>=256, 'Reference is not a valid >=256px photograph'
+          print('Validated image dimensions:',img.shape[:2])
+          PY
+      - name: Reconstruct one face from Brooke photograph
+        working-directory: /tmp/3DDFA_V2
+        run: |
+          sed -i 's/astype(np.long)/astype(np.int64)/g' bfm/bfm.py
+          sed -i 's/np.int\b/np.int64/g' FaceBoxes/utils/nms/cpu_nms.pyx
+          (cd FaceBoxes && sh ./build_cpu_nms.sh)
+          python "${{ github.workspace }}/world-creator/scripts/patch_3ddfa_single_face.py" demo.py
+          python demo.py -f examples/inputs/brooke-reference.jpg -o obj --onnx --show_flag false
+          find examples/results -maxdepth 1 -name '*_obj.obj' -size +1k -print | tee /tmp/brooke-objs.txt
+          test -s /tmp/brooke-objs.txt
+          python - <<'PY'
+          import glob
+          paths=glob.glob('examples/results/*_obj.obj')
+          assert len(paths)==1, f'Expected one reconstructed OBJ, got {paths}'
+          s=open(paths[0]).readlines()
+          v=sum(x.startswith('v ') for x in s)
+          f=sum(x.startswith('f ') for x in s)
+          assert v>100 and f>100, (v,f)
+          print('Photo reconstruction OBJ:',v,'vertices',f,'faces')
+          PY
+      - name: Upload photo-reconstructed OBJ
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-photo-reconstruction-obj
+          path: /tmp/3DDFA_V2/examples/results/*_obj.obj
+          if-no-files-found: error
