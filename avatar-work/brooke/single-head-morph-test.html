@@ -8,11 +8,12 @@
 <label>Jaw width <input id="jaw" type="range" min="-100" max="100" value="0"></label>
 <label>Cheek width <input id="cheek" type="range" min="-100" max="100" value="0"></label>
 <label>Chin length <input id="chin" type="range" min="-100" max="100" value="0"></label>
-<button id="front">Front</button><button id="side">Side</button><button id="reset">Reset</button>
+<button id="export">Export GLB</button><button id="front">Front</button><button id="side">Side</button><button id="reset">Reset</button>
 <p id="status" role="status"></p></aside><div id="stage"></div></main>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/+esm';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js/+esm';
+import {GLTFExporter} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/exporters/GLTFExporter.js/+esm';
 const stage=document.querySelector('#stage'),scene=new THREE.Scene();scene.background=new THREE.Color(0x18232c);
 const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,0,5.5);
 const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
@@ -38,6 +39,7 @@ $('value').textContent=Math.round(strength*100)+'%';
 $('status').textContent='Head surface count: '+scene.children.filter(x=>x===head).length+'; head mesh vertices: '+a.count+'. No duplicate face shells.';
 }
 for(const id of ['strength','jaw','cheek','chin'])$(id).addEventListener('input',apply);
+$('export').onclick=async()=>{const button=$('export');button.disabled=true;try{const exporter=new GLTFExporter();const glb=await exporter.parseAsync(head,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='brooke-neutral-morph-prototype.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('status').textContent='Exported one-head GLB prototype; NOT photo-matched.';}catch(error){$('status').textContent='GLB export failed: '+error.message;}finally{button.disabled=false}};
 $('front').onclick=()=>camera.position.set(0,0,5.5);$('side').onclick=()=>camera.position.set(5.5,0,0);
 $('reset').onclick=()=>{for(const id of ['strength','jaw','cheek','chin'])$(id).value=0;apply()};
 document.querySelectorAll('[data-photo]').forEach(input=>input.onchange=()=>{const file=input.files[0];if(!file)return;const img=$('p'+input.dataset.photo);if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);img.dataset.url=URL.createObjectURL(file);img.src=img.dataset.url;});
