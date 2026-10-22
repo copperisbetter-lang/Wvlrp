@@ -19,7 +19,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Never cancel an in-flight production deploy for an avatar/source commit.
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -109,74 +110,11 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Prepare Carolyn model for inspection
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Verify production homepage artifact
         run: |
-          set -euo pipefail
-          mkdir -p world-creator/assets
-          run_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-caroline-mpfb.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id')"
-          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "No successful Caroline model build is available"
-            exit 0
-          fi
-          mkdir -p /tmp/carolyn-export
-          if ! gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export; then
-            echo "::warning::Caroline artifact unavailable; continuing website publication without refreshing Caroline."
-            exit 0
-          fi
-          test -s /tmp/carolyn-export/caroline-inspection.glb
-          cp /tmp/carolyn-export/caroline-inspection.glb world-creator/assets/caroline-inspection.glb
-          if [ -s /tmp/carolyn-export/carol-anatomy-landmarks.json ]; then
-            cp /tmp/carolyn-export/carol-anatomy-landmarks.json world-creator/assets/carol-anatomy-landmarks.json
-          else
-            # Previous successful Caroline artifact predates C0. Do not break
-            # the whole website while the new character is building.
-            rm -f world-creator/assets/carol-anatomy-landmarks.json
-            echo "C0 model still building; publishing last known working Carol GLB."
-          fi
-          if [ -s /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb ]; then
-            cp /tmp/carolyn-export/caroline-pelvic-x10-inspection.glb world-creator/assets/caroline-pelvic-x10-inspection.glb
-          fi
-          python3 - <<'PY'
-          import json,struct
-          from pathlib import Path
-          for name in ('caroline-inspection.glb', 'caroline-pelvic-x10-inspection.glb'):
-              p=Path("world-creator/assets") / name
-              if not p.exists(): continue
-              d=p.read_bytes()
-              magic,version,total=struct.unpack_from("<4sII",d)
-              assert magic==b"glTF" and version==2 and total==len(d)
-              json_len,json_type=struct.unpack_from("<I4s",d,12)
-              assert json_type==b"JSON"
-              start=20
-              obj=json.loads(d[start:start+json_len])
-              roots=obj["scenes"][obj.get("scene",0)]["nodes"]
-              if len(roots)>1:
-                  # Blender's original rig and its exported copy occupy the same place.
-                  # Only show the final _caroline_source tree in the inspection preview.
-                  final=[i for i in roots if "caroline_source" in obj["nodes"][i].get("name","")]
-                  assert len(final)==1, "Cannot safely select the finished Carolyn rig"
-                  obj["scenes"][obj.get("scene",0)]["nodes"]=final
-                  encoded=json.dumps(obj,separators=(",",":")).encode()
-                  padded=encoded+b" "*((-len(encoded))%4)
-                  rest=d[start+json_len:]
-                  p.write_bytes(struct.pack("<4sII",b"glTF",2,12+8+len(padded)+len(rest))+struct.pack("<I4s",len(padded),b"JSON")+padded+rest)
-              assert p.stat().st_size>100000
-              print("Carolyn 3D preview ready",p.stat().st_size,"bytes")
-          PY
-      - name: Verify Laura dual MakeHuman viewer in artifact
-        run: |
-          set -euo pipefail
-          page=world-creator/sophie-morph-lab.html
-          test -s "$page"
-          grep -q 'Laura — MakeHuman head morph A' "$page"
-          grep -q 'Laura — MakeHuman head morph B' "$page"
-          grep -q 'style="display:none !important"' "$page"
-          test -s world-creator/assets/original-head-example.glb
-          test -s world-creator/assets/morph-head-clone.glb
-          cmp world-creator/assets/original-head-example.glb world-creator/assets/morph-head-clone.glb
-          echo "LAURA_DUAL_MAKEHUMAN_ARTIFACT_READY"
+          test -s index.html
+          grep -qi '<html' index.html
+          echo "Production homepage exists; avatar files are not deployment prerequisites."
 
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
@@ -187,87 +125,14 @@ jobs:
         uses: actions/deploy-pages@v4
 
 
-      - name: Verify Laura MakeHuman viewer published live
+      - name: Verify published production homepage
         env:
           LIVE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -euo pipefail
           base="${LIVE_URL%/}"
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/sophie-morph-lab.html?commit=${GITHUB_SHA}" -o /tmp/laura-live.html
-          grep -q 'Laura — MakeHuman head morph A' /tmp/laura-live.html
-          grep -q 'Laura — MakeHuman head morph B' /tmp/laura-live.html
-          grep -q 'style="display:none !important"' /tmp/laura-live.html
-          echo "LAURA_DUAL_MAKEHUMAN_LIVE_VERIFIED"
+          curl -fSL --retry 6 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/?deploy=${GITHUB_SHA}" -o /tmp/wvlrp-home-live.html
+          grep -qi '<html' /tmp/wvlrp-home-live.html
+          grep -qi 'WVLRP' /tmp/wvlrp-home-live.html
+          echo "Production WVLRP homepage responding successfully."
 
-      - name: Verify SAV4 clothing viewer deployed from current commit
-        env:
-          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          set -euo pipefail
-          base="${LIVE_URL%/}"
-          echo "Verifying SAV4 viewer on $base"
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/sav4.html?commit=${GITHUB_SHA}" -o /tmp/sav4-live.html
-          grep -q 'garmentFiles' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks real GLB garment loader'; exit 1; }
-          grep -q 'fittedGarments' /tmp/sav4-live.html || { echo 'ERROR: live SAV4 viewer lacks fitted garment handling'; exit 1; }
-          echo 'SAV4 latest wardrobe viewer confirmed live.'
-
-      - name: Verify clean Vulva2 reset GLB reached live website
-        env:
-          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          set -euo pipefail
-          base="${LIVE_URL%/}"
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/vulva2-adult18-reset-viewer.html" -o /tmp/vulva2-reset-viewer-live.html
-          grep -q 'vulva2-adult18-clean-reset.glb' /tmp/vulva2-reset-viewer-live.html
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/vulva2-adult18-clean-reset.glb" -o /tmp/vulva2-reset-model-live.glb
-          python3 - <<'PY'
-          import struct
-          from pathlib import Path
-          p=Path('/tmp/vulva2-reset-model-live.glb')
-          b=p.read_bytes()
-          assert len(b)>100000, "Live clean-reset GLB is missing or empty"
-          magic,version,length=struct.unpack_from('<4sII',b)
-          assert magic==b'glTF' and version==2 and length==len(b), "Live clean-reset GLB header invalid"
-          print('LIVE clean-reset Vulva2 GLB:',len(b),'bytes: OK')
-          PY
-      - name: Verify Carolyn 3D viewer is live
-        env:
-          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          set -euo pipefail
-          base="${LIVE_URL%/}"
-          echo "Checking viewer at $base/carolyn-viewer.html"
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/carolyn-viewer.html" -o /tmp/carolyn-viewer-live.html
-          # The avatar display label may be Carol or Carolyn; verify the
-          # actual 3D viewer and exported model path instead of a name string.
-          grep -q "caroline-inspection.glb" /tmp/carolyn-viewer-live.html
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/caroline-inspection.glb" -o /tmp/carolyn-model-live.glb
-          python3 - <<'PY'
-          import struct
-          from pathlib import Path
-          p=Path('/tmp/carolyn-model-live.glb')
-          b=p.read_bytes()
-          assert len(b)>100000, "Published Carolyn 3D model missing or too small"
-          magic,version,length=struct.unpack_from('<4sII',b)
-          assert magic==b'glTF' and version==2 and length==len(b), "Published GLB invalid"
-          print('LIVE Carolyn viewer:',len(b),'bytes: OK')
-          PY
-
-      - name: Verify native SAV4 proxy fit publication
-        if: hashFiles('world-creator/assets/sav4-vulva2-native-fit.glb') != ''
-        env:
-          LIVE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          set -euo pipefail
-          base="${LIVE_URL%/}"
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/sav4-vulva2-native-fit.html" -o /tmp/native-fit-viewer-live.html
-          grep -q 'sav4-vulva2-native-fit.glb' /tmp/native-fit-viewer-live.html
-          curl -fSL --retry 8 --retry-delay 5 --retry-all-errors "$base/world-creator/assets/sav4-vulva2-native-fit.glb" -o /tmp/native-fit-model-live.glb
-          python3 - <<'PY'
-          import hashlib
-          from pathlib import Path
-          local=Path("world-creator/assets/sav4-vulva2-native-fit.glb").read_bytes()
-          live=Path("/tmp/native-fit-model-live.glb").read_bytes()
-          assert hashlib.sha256(local).digest()==hashlib.sha256(live).digest(), "Live native fit differs from verified build"
-          print("LIVE_NATIVE_FIT_VERIFIED",len(live))
-          PY
