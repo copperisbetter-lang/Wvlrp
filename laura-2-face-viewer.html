@@ -37,7 +37,7 @@
     <button id="spin" aria-pressed="false">Rotate</button>
   </div>
   <div id="status" role="status">Loading Laura's 3D model…</div>
-  <p class="note">This is the first-pass, single-face reconstruction: 38,365 vertices and one connected surface. The back of the skull, hair mesh, and rigging still need to be completed. Only the model—not the source photographs—is published here.</p>
+  <p class="note">Forehead hair contamination cleaned in Laura 2 only. Eyes not yet movable. This is the first-pass, single-face reconstruction: 38,365 vertices and one connected surface. The back of the skull, hair mesh, and rigging still need to be completed. Only the model—not the source photographs—is published here.</p>
 </main>
 <script>
 (async function () {
@@ -46,10 +46,10 @@
   const spin = document.querySelector('#spin');
   let assetUrl = null;
   const root = './world-creator/assets/laura-2-face/';
-  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64');
+  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64?forehead-clean-v1');
   try {
     const chunks = await Promise.all(paths.map(async (url, i) => {
-      const r = await fetch(url, {cache:'force-cache'});
+      const r = await fetch(url, {cache:'no-store'});
       if (!r.ok) throw Error('Model section ' + (i+1) + ' unavailable (HTTP ' + r.status + ')');
       return (await r.text()).trim();
     }));
