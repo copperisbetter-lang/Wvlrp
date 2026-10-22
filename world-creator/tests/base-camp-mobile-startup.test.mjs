@@ -66,3 +66,17 @@ test('Base Camp inline browser module still parses as JavaScript',()=>{
   const result=spawnSync(process.execPath,['--input-type=module','--check'],{input:m[1],encoding:'utf8'});
   assert.equal(result.status,0,result.stderr||result.stdout);
 });
+
+test('looking left or right works from the whole screen outside the joystick and HUD',()=>{
+  assert.match(page,/#look\{[^}]*inset:0;[^}]*width:100vw/);
+  assert.match(page,/#look\{[^}]*z-index:1/);
+  assert.match(page,/#pad\{[^}]*z-index:2/);
+  assert.match(page,/#hud\{[^}]*z-index:3/);
+  assert.doesNotMatch(page,/width:55vw/);
+  assert.match(page,/yaw-=dx\*\.004/);
+  assert.match(page,/e\.pointerId!==lookPointer/);
+  assert.match(page,/look\.setPointerCapture\(e\.pointerId\)/);
+  assert.match(page,/drag===e\.pointerId/);
+  assert.match(page,/pointercancel','lostpointercapture/);
+  assert.match(page,/addEventListener\('blur'/);
+});
