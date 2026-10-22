@@ -1,0 +1,41 @@
+name: Check Laura mobile viewer live URL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-laura-mobile-viewer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Probe Laura viewer and 3D sections over HTTPS and HTTP
+        shell: bash
+        run: |
+          set -eu
+          for root in 'https://wvlrp.com' 'http://wvlrp.com' 'https://copperisbetter-lang.github.io/Wvlrp'; do
+            echo "Checking $root/laura-3d-viewer.html"
+            code=$(curl -L --connect-timeout 8 --max-time 30 -o /tmp/laura-live-viewer.html -w '%{http_code}' "$root/laura-3d-viewer.html" || true)
+            echo "Viewer HTTP status: $code"
+            if [ "$code" != "200" ]; then continue; fi
+            if ! grep -q 'face.part' /tmp/laura-live-viewer.html; then
+              echo 'Page is not the new Laura viewer'; continue
+            fi
+            echo "Viewer HTML is live: $(wc -c </tmp/laura-live-viewer.html) bytes"
+            count=0
+            for i in $(seq -w 0 9); do
+              partcode=$(curl -L --connect-timeout 8 --max-time 30 -o /tmp/laura-part.txt -w '%{http_code}' "$root/world-creator/assets/laura-3d/face.part${i}.b64" || true)
+              echo "Part $i: HTTP $partcode, bytes $(wc -c </tmp/laura-part.txt)"
+              if [ "$partcode" = "200" ]; then count=$((count+1)); fi
+            done
+            echo "LIVE_LAURA_RESULT: $root viewer=200 parts=$count/10"
+            if [ "$count" -eq 10 ]; then exit 0; fi
+          done
+          echo 'No tested address served the viewer with all 10 model pieces.'
+          exit 1
