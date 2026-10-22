@@ -75,7 +75,7 @@ async function loadParts(THREE,loader,source){
     let material=mesh.material;
     // Leaf cutout textures must discard their transparent pixels. Otherwise
     // phone GPUs render their quad cards as rectangular green walls.
-    if(material.map && (/leaf|foliage|fern|branch|card/.test(name) || material.alphaTest>0 || material.transparent)){
+    if(material.map && (/leaf|leaves|twig|needle|foliage|fern|branch|card/.test(name) || material.alphaTest>0 || material.transparent)){
       material=material.clone();
       material.alphaTest=Math.max(.42,material.alphaTest||0);
       material.transparent=false;
