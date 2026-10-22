@@ -2,6 +2,14 @@
 Date: 2026-10-21
 Owner direction: BUILD A SEPARATE ORIENTATION WORLD. DO NOT REPLACE OR MODIFY THE EXISTING LARGE WILD WORLD.
 
+## LATEST APPROVED CAMPSITE DECISION — 2026-10-21 (OVERRIDES EARLIER FURNISHING LANGUAGE)
+- ALL approximately 166 perimeter campsite locations are **CLEARINGS ONLY** during the first build. NO tents, fire pits, benches, tables, shelters, cabins, constructed pads, or other campsite furnishings/structures at these locations yet.
+- Keep approximately 50-foot arc-length spacing around the circular outer edge, with spectacular uninterrupted mountain/valley views and organic natural forest surroundings. These are future campsite locations, not furnished campsites at launch.
+- Interior campsite locations are ALSO **CLEARINGS ONLY**: scattered organically within the circle, never within 200 feet (60.96 m) of the CENTER of Base Camp, and with appropriate clearance from village structures/paths. No tents, fire pits, benches, or campsite structures there either.
+- Preserve a clear, navigable path to each clearing without making them identical artificial cutouts; use varied natural ground textures and vegetation edges. Mark their positions in metadata so furnishings can be added in a later phase, without loading detailed campsite props now.
+- The central Base Camp village is the only exception: its approved CENTRAL communal campfire and benches remain part of the village design. This exception must NOT be copied to perimeter/interior clearings.
+- Verify initial version consists of clearings only. Do not pre-populate campsite assets or quietly add props as placeholders.
+
 ## Immediate instructions for the next Gator
 1. Read this entire file before changing code. Inspect current repo architecture, existing world routes, scene assets, and deployment/build workflow.
 2. Create a NEW independent scene/route for "The Wild: Base Camp" (Orientation World). Preserve the existing large Wild scene, its locations, characters, quests, data, multiplayer and routing. Use separate world IDs and scene-loading boundaries; avoid accidentally loading the big world in Base Camp.
@@ -19,12 +27,12 @@ Owner direction: BUILD A SEPARATE ORIENTATION WORLD. DO NOT REPLACE OR MODIFY TH
 - The SUN MUST BE INDEPENDENT OF THE PANORAMA: separate movable directional light and visible sun treatment with configurable time-of-day cycle, solar azimuth/elevation, shadow direction/length, sky brightness, exposure and ambient fill. Do not bake the sun into the panoramic texture; avoid double suns. Shadows must actually move with time of day. Provide controls or time presets for review.
 - A panorama alone does NOT prevent downloading/rendering off-scene terrain. Explicitly scope chunk generation, vegetation instantiation, network asset requests, physics, AI, and draw distance to the Base Camp scene. Never load the main Wild's trees/mountains behind the panorama. Use compressed, mipmapped textures, LOD, instancing, occlusion/frustum culling, and measured mobile performance without compromising close-up quality.
 - Preserve and reuse existing avatar, inventory, quest, and multiplayer systems when feasible, but keep Base Camp content and world state separately keyed. Add an obvious later gateway to the full Wild, without loading the big world.
-- Scenic campsites should feel like individually appealing overlooks, with safe walkable pads, realistic camping details and unobstructed views. Never sacrifice phone performance by eagerly rendering all ~166 at full detail.
+- Campsite CLEARINGS should feel like individually appealing natural overlooks with clear ground and unobstructed views. Do not create physical camp furnishings or constructed pads in this phase. Never sacrifice phone performance by eagerly rendering all ~166 at full detail.
 
 ## Acceptance criteria
 - Existing main Wild remains operational and unchanged.
 - Base Camp launches independently on Android via a live web viewer.
-- World footprint circular; Base Camp precisely centered; 200-ft central exclusion for interior campsites; perimeter sites sampled at 50-ft intervals (or documented user-approved deviation).
+- World footprint circular; Base Camp precisely centered; 200-ft central exclusion for interior campsite clearings; perimeter clearing locations sampled at 50-ft intervals (or documented user-approved deviation). All perimeter and interior campsite spots are CLEARINGS ONLY with no campsite structures/furnishings; only central Base Camp communal campfire/benches permitted.
 - Panoramic mountain scenery covers 360 degrees with no visible square boundary; sun/light moves independently and casts changing shadows.
 - No off-world forest assets loaded; network and render inspection confirms this.
 - Ranger Station looks photorealistic and matches approved references, not a generic model.
