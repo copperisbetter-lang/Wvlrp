@@ -12,7 +12,8 @@ head=heads[0]
 bm=bmesh.new()
 bm.from_mesh(head.data)
 assert len(bm.verts)>1000, 'Head unexpectedly sparse'
-assert all(e.is_manifold for e in bm.edges), 'Head has nonmanifold edges'
+bad_edges=[e for e in bm.edges if not e.is_manifold]
+assert not bad_edges, f'Head has {len(bad_edges)} nonmanifold edges (vertices={len(bm.verts)}, faces={len(bm.faces)})'
 remaining=set(bm.verts)
 parts=0
 while remaining:
@@ -25,9 +26,11 @@ while remaining:
             if other in remaining:
                 remaining.remove(other)
                 stack.append(other)
-assert parts==1, 'Disconnected head geometry'
+assert parts==1, f'Disconnected head geometry: {parts} components'
 keys=set(head.data.shape_keys.key_blocks.keys()) if head.data.shape_keys else set()
-assert {'Basis','FaceWidth','JawWidth','NoseProjection'}<=keys, 'Missing shape keys'
+print('Imported mesh names:', [o.name for o in meshes], flush=True)
+print('Imported morph names:', sorted(keys), flush=True)
+assert {'Basis','FaceWidth','JawWidth','NoseProjection'}<=keys, f'Missing shape keys: {sorted(set(["Basis","FaceWidth","JawWidth","NoseProjection"])-keys)}'
 for side in ('Left','Right'):
     for part in ('Eyeball','Iris','Pupil'):
         assert any(o.name.startswith(side+'_'+part) for o in meshes), 'Missing eye component'
