@@ -11,8 +11,8 @@
 <button id="front">Front</button><button id="side">Side</button><button id="reset">Reset</button>
 <p id="status" role="status"></p></aside><div id="stage"></div></main>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/+esm';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js/+esm';
 const stage=document.querySelector('#stage'),scene=new THREE.Scene();scene.background=new THREE.Color(0x18232c);
 const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,0,5.5);
 const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
