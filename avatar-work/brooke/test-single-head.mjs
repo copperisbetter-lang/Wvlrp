@@ -10,5 +10,7 @@ assert.equal(occurrences(/data-photo="[012]"/g),3,'Expected three reference-phot
 for(const id of ['strength','jaw','cheek','chin','depth','eyes','nose','mouth'])assert.ok(src.includes('id="'+id+'"'),'Missing '+id+' control');
 assert.ok(src.includes('geometry.computeVertexNormals()'),'Morph must recompute normals');
 assert.ok(src.includes('a.needsUpdate=true'),'Morph must upload changed vertices');
-assert.ok(src.includes('automated photo fitting is not implemented'),'Prototype must not misrepresent photo fitting');
+assert.ok(src.includes('full photo-based likeness fitting is not implemented'),'Prototype must not misrepresent photo fitting');
+for(const id of ['depth','eyes','nose','mouth']) assert.ok(src.includes(id+"=+$('"+id+"').value/100"),'Missing morph variable declaration: '+id);
+assert.ok(src.includes("['strength','jaw','cheek','chin','depth','eyes','nose','mouth'])$(id).value=0"),'Reset must clear every slider');
 console.log('PASS: Brooke morph prototype has one head mesh, three photo inputs, four sliders, and geometry refresh hooks.');
