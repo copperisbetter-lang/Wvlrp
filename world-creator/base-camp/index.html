@@ -59,44 +59,37 @@ for(let i=0;i<=shoreSegments;i++){const a=Math.PI*.16+(Math.PI*.68)*i/shoreSegme
 sand.setAttribute('position',new THREE.Float32BufferAttribute(sandVertices,3));sand.setIndex(sandIndices);sand.computeVertexNormals();const beachMesh=new THREE.Mesh(sand,sandMaterial);scene.add(beachMesh);
 // Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
 // Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
-const trailMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.98,side:THREE.DoubleSide,depthWrite:false});
-const edgeMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false});
-// The trail surface is an actual photograph cut from the lower, ground-facing
-// portion of WVLRP's approved Woodland Trail 360 panorama, NOT drawn geometry art.
-// Crop a clean ground patch at runtime and tile it lengthwise along the flat path.
-// Keep the path's only geometry a thin terrain-conforming surface.
-const trailPhoto=new THREE.ImageLoader();
-trailPhoto.load('../../assets/woodland-trail-hd.webp',photo=>{
- const tile=document.createElement('canvas');tile.width=512;tile.height=512;
- const ctx=tile.getContext('2d');if(!ctx)return;
- // Equirectangular panorama: lower rows represent the trail/leaf-litter ground.
- // Use the forward-facing center section and avoid horizon/sky.
- const sw=Math.min(photo.width*.19,photo.height*.50);
- const sh=Math.min(photo.height*.25,photo.width*.14);
- const sx=(photo.width-sw)*.5,sy=Math.min(photo.height-sh,photo.height*.70);
- ctx.drawImage(photo,sx,sy,sw,sh,0,0,512,512);
- const texture=new THREE.CanvasTexture(tile);texture.colorSpace=THREE.SRGBColorSpace;
- texture.wrapS=THREE.ClampToEdgeWrapping;texture.wrapT=THREE.RepeatWrapping;
- texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
- trailMaterial.color.set(0xffffff);trailMaterial.map=texture;trailMaterial.needsUpdate=true;
- edgeMaterial.map=texture;edgeMaterial.needsUpdate=true;
- document.getElementById('assetStatus').textContent='Woodland Trail 360 photographic path surface loaded';
-},undefined,()=>{document.getElementById('assetStatus').textContent='Woodland Trail path photo unavailable — check source asset';});
-
-function addTrail(points,width=1.65){
+// PHOTO-GROUND TRAILS: use the same leaf-litter photographic ground material
+// as the forest floor, not an opaque brown strip. Only a subtle darker footprint
+// distinguishes the path until an approved dedicated trail photograph is cropped.
+const trailMaterial=new THREE.MeshStandardMaterial({color:0xb2a48d,roughness:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+const trailPhoto=new THREE.TextureLoader();
+trailPhoto.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{
+ tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ trailMaterial.map=tex;trailMaterial.needsUpdate=true;
+ document.getElementById('assetStatus').textContent='Photographic leaf-litter trail surface loaded';
+},undefined,()=>{document.getElementById('assetStatus').textContent='Trail photograph unavailable';});
+function addTrail(points,width=1.6){
  const spline=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],0,p[1])),false,'centripetal');
- const steps=Math.max(48,Math.ceil(spline.getLength()/1.25));
- function strip(extra,material,raise){const v=[],uv=[],ids=[];
-  for(let i=0;i<=steps;i++){const t=i/steps,p=spline.getPoint(t),dir=spline.getTangent(t),l=Math.hypot(dir.x,dir.z)||1,nx=-dir.z/l,nz=dir.x/l;
-   const drift=.16*Math.sin(t*39+points.length)+.09*Math.sin(t*83);
-   const taper=1+.09*Math.sin(t*27)+.055*Math.sin(t*61+2);
-   for(const side of [-1,1]){const w=(width*taper+extra)*.5, x=p.x+nx*(side*w+drift),z=p.z+nz*(side*w+drift);
-    v.push(x,terrainY(x,z)+raise,z);uv.push(side===-1?0:1,t*steps/8);}
-   if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k);}
+ const steps=Math.max(64,Math.ceil(spline.getLength()/.65));
+ const v=[],uv=[],ids=[];
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,p=spline.getPoint(t),d=spline.getTangent(t),l=Math.hypot(d.x,d.z)||1,nx=-d.z/l,nz=d.x/l;
+  const drift=.12*Math.sin(t*37)+.07*Math.sin(t*83);
+  for(const side of [-1,1]){
+   const w=width*(1+.09*Math.sin(t*27))*.5;
+   const x=p.x+nx*(side*w+drift),z=p.z+nz*(side*w+drift);
+   v.push(x,terrainY(x,z)+.055,z);
+   // Photograph remains world-scale, avoiding the stretched ribbon effect.
+   uv.push(x/8,z/8);
   }
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ids);g.computeVertexNormals();const mesh=new THREE.Mesh(g,material);mesh.renderOrder=extra?1:2;scene.add(mesh);
+  if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k);}
  }
- strip(.75,edgeMaterial,.14);strip(0,trailMaterial,.18);
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+ g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+ g.setIndex(ids);g.computeVertexNormals();
+ scene.add(new THREE.Mesh(g,trailMaterial));
 }
 [beachPath,lakeTrail,...trailBranches].forEach(p=>addTrail(p));
 
