@@ -33,10 +33,10 @@ assert parts==1, f'Disconnected head geometry: {parts} components'
 keys=set(head.data.shape_keys.key_blocks.keys()) if head.data.shape_keys else set()
 print('Imported mesh names:', [o.name for o in meshes], flush=True)
 print('Imported morph names:', sorted(keys), flush=True)
-assert {'Basis','FaceWidth','JawWidth','NoseProjection'}<=keys, f'Missing shape keys: {sorted(set(["Basis","FaceWidth","JawWidth","NoseProjection"])-keys)}'
+assert {'Basis','FaceWidth','JawWidth','NoseProjection','CheekFullness','ChinProjection'}<=keys, f'Missing shape keys: {sorted(set(["Basis","FaceWidth","JawWidth","NoseProjection"])-keys)}'
 for side in ('Left','Right'):
     for part in ('Eyeball','Iris','Pupil'):
         assert any(o.name.startswith(side+'_'+part) for o in meshes), 'Missing eye component'
 assert not [o.name for o in meshes if o!=head and any(t in o.name.lower() for t in ('face_shell','face_plane','head_skin'))], 'Duplicate face shell'
-print('PASS: single connected manifold head, three morphs, two eyes')
+print('PASS: single connected manifold head, five morphs, two eyes')
 bm.free()
