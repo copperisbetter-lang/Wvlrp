@@ -62,34 +62,63 @@ export function installLauren3Eyes(root){
  const pupilMat=new THREE.MeshBasicMaterial({color:0x080a0b,side:THREE.DoubleSide});
  const highlightMat=new THREE.MeshBasicMaterial({color:0xffffff,depthWrite:false});
  const lidMat=new THREE.MeshStandardMaterial({color:0xd3a783,side:THREE.DoubleSide,roughness:1});
- const edgeMat=new THREE.MeshStandardMaterial({color:0x9b6954,roughness:.88});
+ const edgeMat=new THREE.MeshStandardMaterial({color:0x987c6e,roughness:1});
+// Each eye remains a genuine independently rotatable 3D globe. Mask ALL
+// visible eye materials in HEAD-LOCAL coordinates, not sphere coordinates,
+// to stop whites/iris bleeding through cheeks during rotation.
+const inverseHeadWorld=new THREE.Matrix4();
+function apertureMaterial(base,s){
+ const material=base.clone();
+ const clipUniforms={
+  eyeMaskInverse:{value:inverseHeadWorld},
+  eyeMaskOrigin:{value:new THREE.Vector2(s.x,s.y)},
+  eyeMaskRadii:{value:new THREE.Vector2(s.rx-1.5,s.ry-1.25)}
+ };
+ material.onBeforeCompile=shader=>{
+  Object.assign(shader.uniforms,clipUniforms);
+  const vp='#include <project_vertex>';
+  const fp='#include <clipping_planes_fragment>';
+  if(!shader.vertexShader.includes(vp)||!shader.fragmentShader.includes(fp))
+   throw Error('Three.js eye shader anchors changed');
+  shader.vertexShader='uniform mat4 eyeMaskInverse;\nvarying vec3 vEyeHeadPosition;\n'+
+   shader.vertexShader.replace(vp,vp+'\nvEyeHeadPosition=(eyeMaskInverse * modelMatrix * vec4(transformed,1.0)).xyz;');
+  shader.fragmentShader='uniform vec2 eyeMaskOrigin;\nuniform vec2 eyeMaskRadii;\nvarying vec3 vEyeHeadPosition;\n'+
+   shader.fragmentShader.replace(fp,fp+'\nvec2 aperture=(vEyeHeadPosition.xy-eyeMaskOrigin)/eyeMaskRadii;\nif(dot(aperture,aperture)>1.0) discard;');
+ };
+ material.customProgramCacheKey=()=>('lauren3-aperture-v4-'+s.id);
+ return material;
+}
+
  for(const s of eyespecs){
   const depths=[];
   for(let i=0;i<pos.count;i++)if(Math.abs(pos.getX(i)-s.x)<10&&Math.abs(pos.getY(i)-s.y)<7)depths.push(pos.getZ(i));
   if(depths.length<12)throw Error('Cannot estimate eye depth for '+s.id);
   depths.sort((a,b)=>a-b);
-  const frontZ=depths[Math.floor(depths.length*.67)]+5;
+  // Old +5 placement left the spherical globe pushing through face skin.
+  // Fit the globe and rim independently to measured original mesh depths.
+  const rimZ=depths[Math.floor(depths.length*.67)]+3;
+  const frontZ=depths[Math.floor(depths.length*.5)]-3;
   const centerZ=frontZ-s.r;
   const socket=new THREE.Group();socket.name=s.id+'_EYE_SOCKET';socket.position.set(s.x,s.y,centerZ);root.add(socket);
   const globe=new THREE.Group();globe.name=s.id+'_MOVABLE_EYE';socket.add(globe);
-  globe.add(new THREE.Mesh(new THREE.SphereGeometry(s.r,40,30),scleraMat));
+  globe.add(new THREE.Mesh(new THREE.SphereGeometry(s.r,40,30),apertureMaterial(scleraMat,s)));
   const iris=new THREE.Group();iris.position.z=s.r+.15;globe.add(iris);
   const circles=[[17,irisOuter,.1],[15.2,irisInner,.4],[9.2,irisGold,.65],[6.9,pupilMat,1.2]];
-  for(const [radius,mat,z] of circles){const disc=curvedDisc(radius,z,mat);disc.name=s.id+'_iris_or_pupil';iris.add(disc);}
-  const glint=new THREE.Mesh(new THREE.SphereGeometry(1.85,10,8),highlightMat);
+  for(const [radius,mat,z] of circles){const disc=curvedDisc(radius,z,apertureMaterial(mat,s));disc.name=s.id+'_iris_or_pupil';iris.add(disc);}
+  const glint=new THREE.Mesh(new THREE.SphereGeometry(1.85,10,8),apertureMaterial(highlightMat,s));
   glint.position.set(-5,6,1.95);iris.add(glint);
   const rims=[];
   for(const upper of [true,false]){
    const points=[];
    for(let i=0;i<=40;i++){
      const u=-1+2*i/40;
-     points.push(new THREE.Vector3(s.x+u*s.rx,s.y+(upper?1:-1)*s.ry*Math.sqrt(Math.max(0,1-u*u)),frontZ+1.4-9*u*u));
+     points.push(new THREE.Vector3(s.x+u*s.rx,s.y+(upper?1:-1)*s.ry*Math.sqrt(Math.max(0,1-u*u)),rimZ+1.1-9*u*u));
    }
-   const rim=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),48,upper?2.5:2.15,7),edgeMat);
+   const rim=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),48,upper?1.55:1.25,7),edgeMat);
    rim.name=s.id+(upper?'_UPPER_LID':'_LOWER_LID');root.add(rim);rims.push(rim);
   }
   const lid=new THREE.Mesh(new THREE.BufferGeometry(),lidMat);root.add(lid);lid.visible=false;
-  eyeObjects.push({s,socket,globe,frontZ,lid,yaw:0,pitch:0,trimX:0,trimY:0,blink:0,blinkStart:0,blinkDuration:0});
+  eyeObjects.push({s,socket,globe,frontZ,rimZ,lid,yaw:0,pitch:0,trimX:0,trimY:0,blink:0,blinkStart:0,blinkDuration:0});
  }
  function refresh(e){
   e.globe.rotation.y=clamp(e.yaw+e.trimX,-28,28)*RAD;
@@ -102,7 +131,7 @@ export function installLauren3Eyes(root){
   for(let i=0;i<=N;i++){
    const u=-1+2*i/N,arc=Math.sqrt(Math.max(0,1-u*u));
    const top=s.y+s.ry*arc,lower=s.y+s.ry*arc*(1-1.9*t);
-   const x=s.x+u*s.rx,z=e.frontZ+5-7*u*u;
+   const x=s.x+u*s.rx,z=e.rimZ+1.8-7*u*u;
    pts.push(x,top,z,x,lower,z+.7);
   }
   for(let i=0;i<N;i++){const j=i*2;indices.push(j,j+1,j+2,j+1,j+3,j+2);}
@@ -110,13 +139,15 @@ export function installLauren3Eyes(root){
   g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));g.setIndex(indices);g.computeVertexNormals();
   e.lid.geometry.dispose();e.lid.geometry=g;
  }
+ root.updateMatrixWorld(true);
+ inverseHeadWorld.copy(root.matrixWorld).invert();
  eyeObjects.forEach(refresh);
  return {
   eyes:eyeObjects,removed,sculpted,maxDelta,
   look(which='both',yaw=0,pitch=0){eyeObjects.forEach(e=>{if(which==='both'||which===e.s.id){e.yaw=yaw;e.pitch=pitch;refresh(e);}});},
   trim(which,axis,amount){eyeObjects.forEach(e=>{if(which==='both'||which===e.s.id){if(axis==='x')e.trimX=clamp(amount,-12,12);if(axis==='y')e.trimY=clamp(amount,-10,10);refresh(e);}});},
   blink(which='both'){eyeObjects.forEach(e=>{if(which==='both'||which===e.s.id){e.blinkStart=performance.now();e.blinkDuration=300;}});},
-  tick(time){eyeObjects.forEach(e=>{if(e.blinkDuration){const t=clamp((time-e.blinkStart)/e.blinkDuration,0,1);e.blink=t<1?Math.sin(Math.PI*t)**2:0;refresh(e);if(t>=1)e.blinkDuration=0;}});},
+  tick(time){root.updateMatrixWorld(true);inverseHeadWorld.copy(root.matrixWorld).invert();eyeObjects.forEach(e=>{if(e.blinkDuration){const t=clamp((time-e.blinkStart)/e.blinkDuration,0,1);e.blink=t<1?Math.sin(Math.PI*t)**2:0;refresh(e);if(t>=1)e.blinkDuration=0;}});},
   reset(){eyeObjects.forEach(e=>{e.yaw=e.pitch=e.trimX=e.trimY=e.blink=e.blinkDuration=0;refresh(e);});}
  };
 }
