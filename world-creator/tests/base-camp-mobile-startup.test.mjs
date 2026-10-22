@@ -35,7 +35,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
   assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=basecamp-spatial-v6-20261021/);
+  assert.match(page,/rev=basecamp-perf-v7-20261021/);
   assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
@@ -75,4 +75,13 @@ test('mobile forest avoids whole-world scans, culls remote tree geometry, and ma
   assert.match(page,/renderScale=Math\.max\(\.58/);
   assert.match(page,/Math\.min\(\.08,elapsed\/1000\)/);
   assert.match(page,/fps/);
+});
+
+test('steady 25 FPS must trigger mobile adaptation even above 23 FPS',()=>{
+  assert.match(page,/fps<34 \|\| slowFrames>17/);
+  assert.match(page,/next=Math\.max\(32,current-\(fps<27\?16:8\)\)/);
+  assert.match(page,/fps>50 && fastFrames>65/);
+  assert.match(page,/renderer\.info\.render\.calls/);
+  assert.match(page,/renderer\.info\.render\.triangles/);
+  assert.match(forest,/now-lastBuild<280/);
 });
