@@ -27,3 +27,10 @@
 - Correction commit 85fb2c4: select Eevee renderer compatible with the installed Blender instead of Cycles; no dependency on OpenImageDenoiser.
 - Status: geometry issue confirmed resolved by round-trip validation; preview correction submitted, awaiting build confirmation.
 - Reusable lesson: use a render engine supported by the actual CI Blender package; test image generation independently of geometry validation.
+
+## 2026-10-22: Eevee preview missing EGL runtime
+- Run 39845949509 (commit 7544eea): failed at Render preview PNG; log reports "Couldn't open libEGL.so.1" and Blender exit code 134. GLB build and validation completed before render.
+- Root cause: GitHub Ubuntu runner's Blender/Eevee path requires EGL/OpenGL shared libraries not installed by the initial CI package step.
+- Correction commit 29b136a: install libegl1, libgl1, libgles2, libopengl0, libx11-6, libxext6, libxrender1, libxi6, libxkbcommon0, libsm6, libice6 before invoking Blender.
+- Status: fix committed; do not mark resolved until PNG and GLB both pass verification and upload as artifacts.
+- Prevention for all character pipelines: document runtime renderer dependencies in CI; geometry validation passing does not imply headless preview rendering works.
