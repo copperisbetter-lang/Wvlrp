@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;right:0;top:0;width:55vw;height:100vh;touch-action:none}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Mobile-optimized photographic forest streams nearby; approved buildings are still pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="forestStatus">Preparing photo-textured tree models…</small><small id="understoryStatus">Ground-level foliage not yet loaded…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><label>Tree density <input id="treeDensity" type="range" min="8" max="128" step="4" value="96"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;right:0;top:0;width:55vw;height:100vh;touch-action:none}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Mobile-optimized photographic forest streams nearby; approved buildings are still pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="forestStatus">Preparing photo-textured tree models…</small><small id="perfStatus">Measuring GPU load…</small><small id="understoryStatus">Ground-level foliage not yet loaded…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><label>Tree density <input id="treeDensity" type="range" min="8" max="128" step="4" value="96"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
 import * as THREE from 'three';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
 import {installBaseCampRealForest} from './real-forest.js?rev=basecamp-spatial-v6-20261021';
 import {installBaseCampUnderstory} from './real-understory.js?rev=basecamp-ground-audit-v5-20261021';
@@ -134,25 +134,27 @@ frameSum+=elapsed;frameCount++;
 if(now-lastFpsAt>1200){fps=Math.round(frameCount*1000/Math.max(1,frameSum));frameSum=frameCount=0;lastFpsAt=now;}
 if(mobileProfile&&activeForest){
  if(dt>.043)slowFrames++;else if(dt<.023)fastFrames++;
- if(now-lastAdaptive>3200){
-  const current=+treeDensity.value;
-  let next=current;
-  // Drop GPU pixel fill before stripping away the visible trees. A slow phone
-  // should still have a woodland, not a barren plain.
-  if(slowFrames>17){
-    if(renderScale>.58){
-      renderScale=Math.max(.58,Math.round((renderScale-.07)*100)/100);
-      renderer.setPixelRatio(renderScale);
-    }else next=Math.max(48,current-8);
-  }else if(fastFrames>125){
-    if(renderScale<.85){
-      renderScale=Math.min(.85,Math.round((renderScale+.04)*100)/100);
-      renderer.setPixelRatio(renderScale);
-    }else if(current<96)next=Math.min(96,current+4);
-  }
-  if(next!==current){treeDensity.value=String(next);activeForest.setDensity(next,pos.x,pos.z,yaw);}
-  slowFrames=0;fastFrames=0;lastAdaptive=now;
+ if(now-lastAdaptive>3000){
+   const current=+treeDensity.value;
+   let next=current;
+   // The old >43ms/frame test did not notice steady 25 FPS (~40ms).
+   // Respond to measured frame rate, not just exceptionally slow frames.
+   const struggling=fps>0 && (fps<34 || slowFrames>17);
+   const recovering=fps>50 && fastFrames>65;
+   if(struggling){
+     if(renderScale>.58){
+       renderScale=Math.max(.58,Math.round((renderScale-.07)*100)/100);
+       renderer.setPixelRatio(renderScale);
+     }else next=Math.max(32,current-(fps<27?16:8));
+   }else if(recovering){
+     if(renderScale<.85){
+       renderScale=Math.min(.85,Math.round((renderScale+.04)*100)/100);
+       renderer.setPixelRatio(renderScale);
+     }else if(current<96)next=Math.min(96,current+4);
+   }
+   if(next!==current){treeDensity.value=String(next);activeForest.setDensity(next,pos.x,pos.z,yaw);}
+   slowFrames=0;fastFrames=0;lastAdaptive=now;
  }
 }
-const f=moveForward.set(-Math.sin(yaw),0,-Math.cos(yaw)),r=moveRight.set(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;activeForest?.update?.(pos.x,pos.z,yaw);activeUnderstory?.update?.(pos.x,pos.z);camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00 · ${fps} FPS · ${Math.round(renderScale*100)}% resolution`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const f=moveForward.set(-Math.sin(yaw),0,-Math.cos(yaw)),r=moveRight.set(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;activeForest?.update?.(pos.x,pos.z,yaw);activeUnderstory?.update?.(pos.x,pos.z);camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00 · ${fps} FPS · ${Math.round(renderScale*100)}% resolution`;document.getElementById('perfStatus').textContent=`GPU ${renderer.info.render.calls} draws · ${Math.round(renderer.info.render.triangles/1000)}k triangles · ${activeForest?.visible??0} trees · auto target 34+ FPS`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
