@@ -1,10 +1,13 @@
 name: Brooke photo-based 3DDFA reconstruction
 on:
+  push:
+    paths:
+      - .github/workflows/brooke-photo-3ddfa.yml
   workflow_dispatch:
     inputs:
       photo_url:
         description: 'Direct HTTPS URL of authorized Brooke front-face reference photograph'
-        required: true
+        required: false
         type: string
 permissions:
   contents: read
@@ -31,7 +34,7 @@ jobs:
           (cd /tmp/3DDFA_V2 && sh ./build.sh)
       - name: Fetch and validate reference photograph
         env:
-          PHOTO_URL: ${{ inputs.photo_url }}
+          PHOTO_URL: ${{ inputs.photo_url || 'https://austin.culturemap.com/media-library/brooklyn-decker.jpg?coordinates=134%2C0%2C116%2C0&height=1200&id=31517422&width=1200' }}
         run: |
           python - <<'PY'
           import os,urllib.parse,urllib.request,cv2
