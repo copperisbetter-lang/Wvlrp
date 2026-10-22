@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke Head — Geometry Test</title><style>body{margin:0;background:#15191e;color:#eee;font:15px system-ui}header{padding:12px 16px}canvas{display:block}small{color:#aab}button{padding:8px;margin:5px}</style></head><body><header><b>Brooke — geometry test v0.1</b><div><small>Generic starter mesh only — NOT a photo-matched Brooklyn Decker likeness. Drag to rotate, pinch/scroll to zoom.</small></div><button id="front">Front</button><button id="side">Side</button><button id="blink">Blink</button></header><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x15191e);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/(innerHeight-100),.1,100);camera.position.set(0,.05,5.7);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight-100);document.body.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x44382f,2.3));const key=new THREE.DirectionalLight(0xffffff,2.5);key.position.set(-2,4,5);scene.add(key);
+const skin=new THREE.MeshStandardMaterial({color:0xd4a184,roughness:.85});const white=new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.3});const iris=new THREE.MeshStandardMaterial({color:0x718f86,roughness:.4});const pupil=new THREE.MeshStandardMaterial({color:0x171c20,roughness:.2});
+const head=new THREE.Group();scene.add(head);
+function ellipsoid(mat,x,y,z,sx,sy,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);head.add(m);return m}
+ellipsoid(skin,0,0,0,.84,1.16,.72);ellipsoid(skin,0,-1.18,0,.34,.38,.35);
+ellipsoid(skin,0,-.17,.70,.19,.32,.23);
+for(const s of [-1,1]){ellipsoid(skin,s*.84,-.1,-.02,.15,.31,.14);
+ellipsoid(white,s*.34,.18,.655,.215,.15,.12);ellipsoid(iris,s*.34,.18,.762,.09,.095,.025);ellipsoid(pupil,s*.34,.18,.786,.046,.055,.013);
+ellipsoid(skin,s*.35,.35,.69,.26,.09,.12)}
+ellipsoid(new THREE.MeshStandardMaterial({color:0xa96965,roughness:.8}),0,-.62,.62,.31,.075,.07);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,-.1,0);controls.enableDamping=true;
+document.getElementById('front').onclick=()=>camera.position.set(0,.05,5.7);
+document.getElementById('side').onclick=()=>camera.position.set(5.7,.05,0);
+let closed=false;document.getElementById('blink').onclick=()=>{closed=!closed;head.children.filter(x=>x.material===white||x.material===iris||x.material===pupil).forEach(x=>x.visible=!closed)};
+addEventListener('resize',()=>{camera.aspect=innerWidth/(innerHeight-100);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight-100)});
+function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();
+</script></body></html>
