@@ -58,3 +58,25 @@ EVERY visible element of the Orientation World must target photorealism: terrain
 - The approved New River Gorge/Grandview picture is still a PARTIAL wide vista, not a seamless licensed 360° equirectangular panorama. Source identification and photographer permission/seamless wrap remain unresolved. Do not label it a full 360 panorama.
 - User explicitly prohibited using TinyFish. Do not use it for page checks or other workflow; continue through GitHub and other non-TinyFish methods.
 - Next priorities: verify the live tree GLBs load with correct texture/pivots and acceptable phone FPS, match WV native forest species/ground realism, ensure campsite paths are navigable, finish full licensed WV 360° panorama, and construct the three approved photoreal Base Camp buildings using their real reference assets.
+
+
+## NIGHT CHECKPOINT — October 22, 2026 (LATEST; OVERRIDES OLDER FOREST IMPLEMENTATION NOTES)
+
+**Owner directive:** Stop for tonight. Preserve the current clean Base Camp and do not start more experimental tree fixes without a new request. This checkpoint supersedes the 2026-10-21 note describing active photoreal tree loading.
+
+### State to preserve
+- Base Camp is the SEPARATE orientation world at `https://wvlrp.com/world-creator/base-camp/`, independent of the original large Wild world.
+- Owner rejected the fake trees, shrubs, foliage cards, and boxy vegetation after repeated failed repairs. **ALL TREE/SHRUB/FERN/DEADWOOD LOADING IS REMOVED FROM THE ACTIVE BASE CAMP SCENE, BY EXPLICIT OWNER REQUEST.** Do not silently reactivate `real-forest.js` or `real-understory.js`, including `?forest=full`, `?forest=legacy` or `?details=1`. Their source files remain in GitHub only as inactive prior experiments, not approved assets. Last bare-world cleanup commit `6f9885bc9a01824bea9f6d7bbc5733acb3750f04`; vegetation regression tests commit `c98c924a87a554cc37b3e1475eaf3b931ddfa7f8`.
+- Preserve the circular quarter-mile-radius terrain, exactly 41 perimeter natural clearings around 200 feet apart, 24 interior natural clearings outside the central exclusion, linked trails, five-acre recessed lake and graded beach, movable sun/time-of-day control, and phone joystick / camera / FPS HUD. All the campsite clearings are currently empty, without furnishings.
+- The existing lake is generic/not yet HD. Player currently walks *on the water surface* because the movement code keeps the player at lake water height; owner explicitly said **this is not a priority tonight**. Do not start water/wading/swimming fixes until requested.
+- The owner reported **improved frame rate** after clearing vegetation. Do not invent a post-cleanup numeric FPS; the earlier 34–42 FPS screenshots were with unacceptable vegetation, and the 89 FPS screenshot was with a broken empty forest. Preserve smooth mobile performance while subsequently restoring visually approved scenery.
+- Touch control repair: rightward looking/turning was intermittent. `world-creator/base-camp/index.html` now gives look gestures the entire play area behind the HUD and joystick, tracks looking and walking with separate pointer IDs, and handles pointer cancellation/lost capture. Camera fix commit `a0499182b5cefc664c0175bef78d32ef818d6c5c`; regression test commit `41a8b17875cc22847370244a63ee5e89a2d46e8f`. GitHub website deployment succeeded. Owner had not separately confirmed right-turn reliability after this specific build; check naturally next session.
+- The current bare-world and look-control focused tests passed (Base Camp source and inline module syntax); the broader World Creator suite still has three failing pre-existing checks in unrelated large-Wild areas. Do not falsely report the entire suite green.
+
+### Next session, only when owner requests
+1. Resume from the published **bare Base Camp**, not from any legacy tree attempt. Ask user or inspect screenshots for actual touch-turn performance only if necessary.
+2. Prioritize preserving frame rate and responsiveness. Add no trees, shrubs, or other vegetation until there is a genuinely new, visual-approved, performance-tested native West Virginia asset strategy. Never resurrect green cards or generic placeholder forest.
+3. Later work includes an authentic New River Gorge/Grandview 360-degree backdrop (currently unresolved), approved realistic village buildings, high-quality terrain and lake/water physics. These are **deferred**, not completed; generic water walking remains intentionally unfixed.
+4. No TinyFish; user prohibited it. Do not make user download or deploy anything to review; use the mobile-accessible hosted viewer.
+
+**Tonight's stop point:** Source changes already committed and website published; this handoff note is documentation only. No additional feature/code changes requested.
