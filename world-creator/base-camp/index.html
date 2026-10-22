@@ -4,14 +4,15 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.f
 // Grandview Overlook, New River Gorge. Photo by Aparkswv, CC BY-SA 4.0.
 // https://commons.wikimedia.org/wiki/File:Grandview_Overlook,_New_River.jpg
 // This is a wide scenic photo, not a full 360 equirectangular panorama.
-const grandviewUrl='https://commons.wikimedia.org/wiki/Special:Redirect/file/Grandview_Overlook%2C_New_River.jpg';
-new THREE.TextureLoader().load(grandviewUrl,texture=>{
+const grandviewUrl='https://upload.wikimedia.org/wikipedia/commons/2/23/Grandview_Overlook%2C_New_River.jpg';
+const grandviewLoader=new THREE.TextureLoader();grandviewLoader.setCrossOrigin('anonymous');
+grandviewLoader.load(grandviewUrl,texture=>{
  texture.colorSpace=THREE.SRGBColorSpace;
  const vista=new THREE.Mesh(new THREE.CylinderGeometry(1100,1100,650,96,1,true,-1.8,3.6),new THREE.MeshBasicMaterial({map:texture,side:THREE.BackSide,fog:false,depthWrite:false}));
- vista.position.y=90;
+ vista.position.y=90;vista.rotation.y=Math.PI;
  scene.add(vista);
  document.getElementById('panoramaStatus').textContent='Grandview overlook photo: Aparkswv, CC BY-SA 4.0 (partial panorama)';
-},undefined,()=>{document.getElementById('panoramaStatus').textContent='Grandview panorama could not load';});
+},undefined,()=>{document.getElementById('panoramaStatus').textContent='Grandview image could not load — CDN or WebGL restriction';});
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
 const hemi=new THREE.HemisphereLight(0xe7f5ff,0x43503d,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff1d8,2.4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
 // Five-acre recessed lake, positioned north of Base Camp; nearest bank ~92 feet from center.
