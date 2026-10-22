@@ -96,7 +96,7 @@ if(safeMode){
    report:message=>document.getElementById('forestStatus').textContent=message
   }).then(result=>{
    activeForest=result;
-   treeDensity.max=mobileProfile?'128':'320';
+   treeDensity.max=mobileProfile?(fullForest?'128':'64'):'320';
    activeForest?.setDensity?.(+treeDensity.value,pos.x,pos.z,yaw);
    if(legacyForest)return; // isolate old foliage for explicit side-by-side QA
    // Suspicious green-card GLBs: mobile defers these expensive details until
@@ -126,7 +126,7 @@ pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);drag=e
 const look=document.getElementById('look');let last=null;look.addEventListener('pointerdown',e=>{look.setPointerCapture(e.pointerId);last=[e.clientX,e.clientY]});look.addEventListener('pointermove',e=>{if(!last)return;yaw-=(e.clientX-last[0])*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-(e.clientY-last[1])*.004));last=[e.clientX,e.clientY]});look.addEventListener('pointerup',()=>last=null);
 document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,15);yaw=0;pitch=0};
 const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudToggle');hudToggle.onclick=()=>{const compact=hud.classList.toggle('compact');hudToggle.textContent=compact?'Show details':'Hide details';hudToggle.setAttribute('aria-expanded',String(!compact));};
-const clock=document.getElementById('clock'),treeDensity=document.getElementById('treeDensity');treeDensity.oninput=()=>activeForest?.setDensity?.(+treeDensity.value,pos.x,pos.z,yaw);const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
+const clock=document.getElementById('clock'),treeDensity=document.getElementById('treeDensity');treeDensity.value=mobileProfile?'48':'96';treeDensity.oninput=()=>activeForest?.setDensity?.(+treeDensity.value,pos.x,pos.z,yaw);const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
 let slowFrames=0,fastFrames=0,lastAdaptive=performance.now();
 let frameSum=0,frameCount=0,lastFpsAt=performance.now(),fps=0;
 function tick(now){requestAnimationFrame(tick);const elapsed=now-previous;let dt=Math.min(.08,elapsed/1000);previous=now;
