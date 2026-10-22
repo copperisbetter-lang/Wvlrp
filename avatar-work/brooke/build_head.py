@@ -62,7 +62,7 @@ head.data.update()
 head.data.materials.append(skin)
 for p in head.data.polygons: p.use_smooth = True
 head.shape_key_add(name='Basis')
-for name,axis,weight in [('FaceWidth','x',.10),('JawWidth','jaw',.12),('NoseProjection','nose',.06)]:
+for name,axis,weight in [('FaceWidth','x',.10),('JawWidth','jaw',.12),('NoseProjection','nose',.06),('CheekFullness','cheek',.045),('ChinProjection','chin',.045)]:
     key = head.shape_key_add(name=name)
     for v in key.data:
         x,y,z = v.co
@@ -70,6 +70,8 @@ for name,axis,weight in [('FaceWidth','x',.10),('JawWidth','jaw',.12),('NoseProj
         elif axis == 'jaw' and z < -.30: v.co.x = x*(1+weight)
         elif axis == 'nose' and y < 0:
             v.co.y -= weight*math.exp(-((x/.14)**2+((z-.015)/.24)**2))
+        elif axis == 'cheek' and y < 0: v.co.y -= weight*(math.exp(-(((x-.30)/.18)**2+((z+.025)/.19)**2))+math.exp(-(((x+.30)/.18)**2+((z+.025)/.19)**2)))
+        elif axis == 'chin' and y < 0: v.co.y -= weight*math.exp(-((x/.24)**2+((z+.58)/.14)**2))
     key.value = 0
 
 # Eyes are independent spherical objects, not extra facial skin shells.
