@@ -18,8 +18,7 @@ try{
  if(errors.length)throw Error('Browser errors: '+errors.join('; '));
  const status=await page.locator('#status').textContent();
  if(!status.includes('Head surface count: 1'))throw Error('Incorrect head count: '+status);
- await page.locator('#export').click();
- const download=await page.waitForEvent('download',{timeout:30000});
+ const [download]=await Promise.all([page.waitForEvent('download',{timeout:30000}),page.locator('#export').click()]);
  if(!download.suggestedFilename().endsWith('.glb'))throw Error('GLB export missing');
  console.log('PASS: WebGL rendered one head; controls worked; GLB download started.');
 }finally{await browser.close()}
