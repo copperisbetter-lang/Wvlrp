@@ -98,8 +98,15 @@ export function installLauren3Eyes(root){
      '\nfloat n=max(0.0,u*eyeMaskInnerSide);'+
      '\nfloat mid=eyeMaskOrigin.y-1.55*eyeMaskInnerSide*u-0.45*n*n;'+
      '\nfloat halfH=eyeMaskRadii.y*pow(max(0.0,1.0-u*u),0.67);'+
-     '\nif(vHeadEyePosition.y>=mid+halfH*(.94-.025*n)||vHeadEyePosition.y<=mid-halfH*(1.05+.015*n))discard;'+
-     (isSclera?'\nfloat lidFade=clamp(abs(vHeadEyePosition.y-mid)/(halfH+.01),0.0,1.0);diffuseColor.rgb*=1.0-.19*lidFade*lidFade-.045*u*u;':''));
+     '\nif(vHeadEyePosition.y>=mid+halfH*(.94-.025*n)||vHeadEyePosition.y<=mid-halfH*(1.05+.015*n))discard;');
+   // diffuseColor is declared AFTER clipping_planes_fragment in Three.js.
+   // Apply the subtle shading only after color_fragment to avoid a GLSL compile failure.
+   if(isSclera){
+    const colorAnchor='#include <color_fragment>';
+    if(!sh.fragmentShader.includes(colorAnchor))throw Error('Sclera shader color anchor missing');
+    sh.fragmentShader=sh.fragmentShader.replace(colorAnchor,colorAnchor+
+     '\nfloat lidFade=clamp(abs(vHeadEyePosition.y-mid)/(halfH+.01),0.0,1.0);diffuseColor.rgb*=1.0-.19*lidFade*lidFade-.045*u*u;');
+   }
   };
   m.customProgramCacheKey=()=>('lauren-v11-mask-'+s.id+'-'+(base.map?'iris':'sclera'));
   return m;
