@@ -90,9 +90,9 @@ def ball(name, pos, scale, mat):
     return o
 for side,label in [(-1,'Left'),(1,'Right')]:
     x=side*.28
-    ball(label+'_Eyeball',(x,-.455,.24),(.145,.145,.14),white)
-    ball(label+'_Iris',(x,-.586,.24),(.073,.018,.073),iris)
-    ball(label+'_Pupil',(x,-.604,.24),(.030,.009,.030),pupil)
+    ball(label+'_Eyeball',(x,-.414,.24),(.118,.118,.115),white)
+    ball(label+'_Iris',(x,-.524,.24),(.059,.012,.059),iris)
+    ball(label+'_Pupil',(x,-.539,.24),(.026,.008,.026),pupil)
 
 out=Path('avatar-work/brooke/brooke-head-prototype.glb').resolve()
 out.parent.mkdir(parents=True,exist_ok=True)
