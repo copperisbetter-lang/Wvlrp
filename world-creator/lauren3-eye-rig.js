@@ -3,7 +3,9 @@
 import * as THREE from 'three';
 const RAD = Math.PI/180;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const eyespecs=[{id:'left',x:697,y:541,rx:53,ry:19,r:49},{id:'right',x:955,y:541,rx:58,ry:19,r:49}];
+// Relax the wide, circular default eyes into a human almond-shaped resting gaze.
+// Offset the visible opening slightly downward to let upper lids overlap the irises.
+const eyespecs=[{id:'left',x:697,y:541,rx:53,ry:14.5,offsetY:-2.2,r:49},{id:'right',x:955,y:541,rx:58,ry:14.5,offsetY:-2.2,r:49}];
 const gauss=(x,y,cx,cy,sx,sy,amp)=>amp*Math.exp(-.5*((x-cx)/sx)**2-.5*((y-cy)/sy)**2);
 function curvedDisc(rad,depth,mat){
  const pts=[0,0,0], inds=[];
@@ -26,14 +28,16 @@ export function installLauren3Eyes(root){
   const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
   let dz=0;
   for(const s of eyespecs){
-    dz+=gauss(x,y,s.x,500,34,13,2.0); // small under-eye pad
-    dz+=gauss(x,y,s.x,483,50,24,.65); // soften into upper cheeks
-    dz+=gauss(x,y,s.x,576,38,13,1.45); // small upper-lid puff
-    dz+=gauss(x,y,s.x,593,52,21,.45); // fade into orbital ridge
+    // Real orbital volume immediately outside the eyelids, smoothly feathered
+    // into the preserved face; no sharp band boundaries or independent head.
+    dz+=gauss(x,y,s.x,512,39,11,4.6); // lower-lid pad
+    dz+=gauss(x,y,s.x,492,53,25,.85); // feather into cheek
+    dz+=gauss(x,y,s.x,566,40,10.5,4.0); // subtle upper eyelid cushion
+    dz+=gauss(x,y,s.x,590,56,22,.85); // fade toward the brow
   }
   if(dz>.0005){pos.setZ(i,z+dz);sculpted++;maxDelta=Math.max(maxDelta,dz);}
  }
- if(maxDelta>3.2||sculpted<1500)throw Error('Safety: orbital sculpt outside intended range');
+ if(maxDelta>6.2||sculpted<1500)throw Error('Safety: orbital sculpt outside intended range');
  pos.needsUpdate=true;
  // Holes remove the baked photo-eye colors only on this runtime clone,
  // never change base vertex positions/X/Y or the archived source.
@@ -45,7 +49,7 @@ export function installLauren3Eyes(root){
   let eye=-1;
   for(let k=0;k<2;k++){
     const s=eyespecs[k];
-    if(((mx-s.x)/s.rx)**2+((my-s.y)/s.ry)**2<.96){eye=k;break;}
+    if(((mx-s.x)/s.rx)**2+((my-(s.y+s.offsetY))/s.ry)**2<.96){eye=k;break;}
   }
   if(eye===-1)kept.push(a,b,c);else removed[eye]++;
  }
@@ -55,7 +59,7 @@ export function installLauren3Eyes(root){
  }
  geo.setIndex(kept);geo.computeVertexNormals();geo.computeBoundingSphere();face.geometry=geo;
  const eyeObjects=[];
- const scleraMat=new THREE.MeshPhysicalMaterial({color:0xf0e8dc,roughness:.31,clearcoat:.45});
+ const scleraMat=new THREE.MeshPhysicalMaterial({color:0xece7df,roughness:.48,clearcoat:.22});
  const irisOuter=new THREE.MeshStandardMaterial({color:0x414d39,roughness:.55,side:THREE.DoubleSide});
  const irisInner=new THREE.MeshStandardMaterial({color:0x708065,roughness:.52,side:THREE.DoubleSide});
  const irisGold=new THREE.MeshStandardMaterial({color:0xa58752,roughness:.57,side:THREE.DoubleSide});
@@ -71,7 +75,7 @@ function apertureMaterial(base,s){
  const material=base.clone();
  const clipUniforms={
   eyeMaskInverse:{value:inverseHeadWorld},
-  eyeMaskOrigin:{value:new THREE.Vector2(s.x,s.y)},
+  eyeMaskOrigin:{value:new THREE.Vector2(s.x,s.y+s.offsetY)},
   eyeMaskRadii:{value:new THREE.Vector2(s.rx-1.5,s.ry-1.25)}
  };
  material.onBeforeCompile=shader=>{
@@ -85,7 +89,7 @@ function apertureMaterial(base,s){
   shader.fragmentShader='uniform vec2 eyeMaskOrigin;\nuniform vec2 eyeMaskRadii;\nvarying vec3 vEyeHeadPosition;\n'+
    shader.fragmentShader.replace(fp,fp+'\nvec2 aperture=(vEyeHeadPosition.xy-eyeMaskOrigin)/eyeMaskRadii;\nif(dot(aperture,aperture)>1.0) discard;');
  };
- material.customProgramCacheKey=()=>('lauren3-aperture-v4-'+s.id);
+ material.customProgramCacheKey=()=>('lauren3-aperture-v6-relaxed-'+s.id);
  return material;
 }
 
@@ -112,7 +116,7 @@ function apertureMaterial(base,s){
    const points=[];
    for(let i=0;i<=40;i++){
      const u=-1+2*i/40;
-     points.push(new THREE.Vector3(s.x+u*s.rx,s.y+(upper?1:-1)*s.ry*Math.sqrt(Math.max(0,1-u*u)),rimZ+1.1-9*u*u));
+     points.push(new THREE.Vector3(s.x+u*s.rx,s.y+s.offsetY+(upper?1:-1)*s.ry*Math.sqrt(Math.max(0,1-u*u)),rimZ+1.1-9*u*u));
    }
    const rim=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),48,upper?1.55:1.25,7),edgeMat);
    rim.name=s.id+(upper?'_UPPER_LID':'_LOWER_LID');root.add(rim);rims.push(rim);
@@ -130,7 +134,7 @@ function apertureMaterial(base,s){
   const s=e.s,pts=[],indices=[],N=36;
   for(let i=0;i<=N;i++){
    const u=-1+2*i/N,arc=Math.sqrt(Math.max(0,1-u*u));
-   const top=s.y+s.ry*arc,lower=s.y+s.ry*arc*(1-1.9*t);
+   const top=s.y+s.offsetY+s.ry*arc,lower=s.y+s.offsetY+s.ry*arc*(1-1.9*t);
    const x=s.x+u*s.rx,z=e.rimZ+1.8-7*u*u;
    pts.push(x,top,z,x,lower,z+.7);
   }
