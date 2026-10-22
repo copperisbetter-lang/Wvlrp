@@ -14,14 +14,15 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender --version
+          blender -b --python-exit-code 1 --python-expr "import numpy; print('NumPy available:', numpy.__version__)"
       - name: Build Brooke head GLB
-        run: blender -b --python avatar-work/brooke/build_head.py
+        run: blender -b --python-exit-code 1 --python avatar-work/brooke/build_head.py
       - name: Validate exported head
-        run: blender -b --python avatar-work/brooke/validate_build.py -- avatar-work/brooke/brooke-head-prototype.glb
+        run: blender -b --python-exit-code 1 --python avatar-work/brooke/validate_build.py -- avatar-work/brooke/brooke-head-prototype.glb
       - name: Render preview PNG
-        run: blender -b --python avatar-work/brooke/render_preview.py
+        run: blender -b --python-exit-code 1 --python avatar-work/brooke/render_preview.py
       - name: Verify generated GLB and PNG files
         run: |
           python3 - <<'PY'
