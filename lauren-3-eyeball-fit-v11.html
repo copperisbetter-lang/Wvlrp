@@ -156,7 +156,7 @@ async function load(){
  // Allow the original face to paint on mobile before eye setup starts.
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  try {
-  const {installLauren3Eyes}=await import('./world-creator/lauren3-eye-rig-v11.js?v=eye-rig-v11-iris-20261022');
+  const {installLauren3Eyes}=await import('./world-creator/lauren3-eye-rig-v11.js?v=eye-rig-v11-shaderfix-20261022b');
   const experimentalFace=face.clone(true);
   rig=installLauren3Eyes(experimentalFace);
   // Mirror the photo-preserving unlit skin shader and its cutouts onto the clone.
