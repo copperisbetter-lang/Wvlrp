@@ -20,3 +20,10 @@
 - Commit 68acf982: welds coincident vertices in the *imported inspection BMesh* before manifold checking, to account for glTF vertex splits at UV/material seams. This does **not** change the GLB or excuse true holes; validation must still fail if edges remain open. **Pending verification.**
 - Reusable lesson: distinguish true open geometry from serialization-induced duplicate vertex seams; validate both the original mesh and round-tripped GLB; log numeric edge counts and test outcomes, not just workflow pass/fail.
 - Next: inspect the first completed run containing commit 68acf982; if it fails, capture exact traceback and investigate face/edge incidence before modifying more code.
+
+## 2026-10-22: Head topology resolved; preview renderer failed
+- Run 39845680242: **PASS** imported GLB: one connected manifold head, three morphs, two eyes. Imported names and morphs matched expected values.
+- Same run failed at Render preview PNG: Blender reported "Build without OpenImageDenoiser" when using Cycles.
+- Correction commit 85fb2c4: select Eevee renderer compatible with the installed Blender instead of Cycles; no dependency on OpenImageDenoiser.
+- Status: geometry issue confirmed resolved by round-trip validation; preview correction submitted, awaiting build confirmation.
+- Reusable lesson: use a render engine supported by the actual CI Blender package; test image generation independently of geometry validation.
