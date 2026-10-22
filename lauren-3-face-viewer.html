@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101d2a">
-  <title>Lauren 3 — Real 3D Eye Sculpt | WVLRP</title>
+  <title>Lauren 3 — Recovered 3D Face | WVLRP</title>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -25,7 +25,7 @@
 <body>
 <main>
   <header>
-    <h1>Lauren 3 — Sculpted 3D Eyes</h1>
+    <h1>Lauren 3 — Recovered Working Face</h1>
     <p>From your original reference image • Drag to turn • Pinch to zoom</p>
   </header>
   <model-viewer id="viewer" camera-controls camera-orbit="0deg 90deg auto" camera-target="auto auto auto" exposure="1.2" environment-image="neutral" interaction-prompt="none" alt="Lauren 3 working clone of the saved Laura 2.5 face"></model-viewer>
@@ -37,7 +37,7 @@
     <button id="spin" aria-pressed="false">Rotate</button>
   </div>
   <div id="status" role="status">Loading Lauren 3 model…</div>
-  <p class="note">Lauren 3 now has subtle 3D-mesh fullness above both upper eyelids and beneath both lower eyelids, blended into her cheeks. This is geometry sculpting on the real 38,365-vertex model—not a generated picture. Iris/eye texture and skin color are preserved. Independently movable eyeballs are the next stage; the back of the skull, hair and body are not yet attached. Laura 2.5 remains protected.</p>
+  <p class="note">Lauren 3: intact 38,365-vertex face recovered from Laura 2.5 after eye morph produced torn horizontal mesh strips. Eye-area geometry is temporarily rolled back for safety. We will fit genuine movable eyes without damaging the face. Laura 2.5 is independently preserved; skin tone remains unchanged.</p>
 </main>
 <script>
 (async function () {
@@ -46,7 +46,7 @@
   const spin = document.querySelector('#spin');
   let assetUrl = null;
   const root = './world-creator/assets/lauren-3-face/';
-  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64?lauren3-eye-sculpt-v1');
+  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64?lauren3-safe-recovery-v2');
   try {
     const chunks = await Promise.all(paths.map(async (url, i) => {
       const r = await fetch(url, {cache:'no-store'});
@@ -60,12 +60,18 @@
     if (bytes.length !== 1527736 || String.fromCharCode(...bytes.subarray(0, 4)) !== 'glTF'
         || new DataView(bytes.buffer).getUint32(8,true) !== bytes.length)
       throw Error('3D model data failed validation.');
+    if (globalThis.crypto?.subtle) {
+      const result = await crypto.subtle.digest('SHA-256',bytes);
+      const checksum = [...new Uint8Array(result)].map(x=>x.toString(16).padStart(2,'0')).join('');
+      if (checksum !== '27931d29e5366c452af77e7d182dd4eea3f444eebcc8e660134f7aa961c6298e')
+        throw Error('Mixed or stale face sections detected. Reload to get the intact recovered head.');
+    }
     assetUrl = URL.createObjectURL(new Blob([bytes], {type:'model/gltf-binary'}));
     view.src = assetUrl;
-    view.addEventListener('load', () => status.textContent = 'Lauren 3 eye-area sculpt loaded. Rotate or pinch to inspect both eyelids.', {once:true});
+    view.addEventListener('load', () => status.textContent = 'Lauren 3 intact face recovered. Drag to inspect. Eye fitting is next.', {once:true});
     view.addEventListener('error', () => status.textContent = 'Unable to display the 3D model. Please reload.', {once:true});
   } catch(err) {
-    status.textContent = 'Unable to load Laura: ' + err.message;
+    status.textContent = 'Unable to load Lauren 3: ' + err.message;
   }
   function angle(a) {
     view.removeAttribute('auto-rotate');
