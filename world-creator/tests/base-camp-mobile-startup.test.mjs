@@ -23,7 +23,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.match(page,/const safeMode=params\.has\("safe"\)/);
   assert.match(page,/if\(safeMode\)/);
   assert.match(page,/setTimeout\(\(\)=>\{/);
-  assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z\)/);
+  assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z,yaw\)/);
   assert.match(forest,/const maxVisible=lowPower\?128:320/);
   assert.match(forest,/const CELL=48,positionCells=new Map\(\)/);
   assert.match(page,/id="treeDensity"/);
