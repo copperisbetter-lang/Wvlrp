@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "subject": "Brooke",
+  "status": "awaiting-authorized-reference-images",
+  "notes": "Populate only from licensed/authorized reference photographs. Do not infer landmark positions from online thumbnails.",
+  "views": [
+    {
+      "view": "front",
+      "image_path": null,
+      "image_width": null,
+      "image_height": null,
+      "landmarks_normalized": {
+        "left_eye_outer": null,
+        "left_eye_inner": null,
+        "right_eye_inner": null,
+        "right_eye_outer": null,
+        "nose_tip": null,
+        "mouth_left": null,
+        "mouth_right": null,
+        "chin": null,
+        "left_jaw": null,
+        "right_jaw": null
+      }
+    },
+    {"view": "left_three_quarter", "image_path": null, "image_width": null, "image_height": null, "landmarks_normalized": {}},
+    {"view": "right_three_quarter", "image_path": null, "image_width": null, "image_height": null, "landmarks_normalized": {}}
+  ],
+  "coordinate_convention": "Each landmark is [x,y] in 0..1; x increases rightward and y increases downward in the source photograph.",
+  "license_record": null
+}
