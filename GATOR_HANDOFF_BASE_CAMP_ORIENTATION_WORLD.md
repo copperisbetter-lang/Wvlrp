@@ -41,3 +41,7 @@ Owner direction: BUILD A SEPARATE ORIENTATION WORLD. DO NOT REPLACE OR MODIFY TH
 
 ## Handoff / reporting
 Use this file as the single master brief. Create a separate implementation checklist and log of commits/build URLs once work starts. Request reference assets if approved originals cannot be located; do not silently substitute low-quality ones.
+
+
+## Mandatory visual quality — photorealism (2026-10-21)
+EVERY visible element of the Orientation World must target photorealism: terrain, Appalachian trees, underbrush, rocks, soil, leaf litter, paths, campsite clearings, distant ridges, sky, lighting, shadows, and Base Camp. No cartoon, low-poly, stylized, placeholder, or generic-looking assets in the player-facing build. Use high-quality physically based materials, convincing varied native vegetation, realistic scale, natural terrain transitions, detailed distant panoramas, and a separate physically plausible moving sun casting dynamic shadows. Optimize with LOD/instancing/culling rather than sacrificing close-up visual fidelity. Campsites remain EMPTY NATURAL CLEARINGS ONLY. Do not claim photorealism achieved until screenshots and the playable viewer demonstrate it.
