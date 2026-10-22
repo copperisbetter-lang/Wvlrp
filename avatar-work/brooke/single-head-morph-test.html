@@ -4,7 +4,7 @@
 <style>body{margin:0;background:#151b20;color:#f2f4f6;font:15px system-ui}header,aside{padding:14px}main{display:grid;grid-template-columns:310px 1fr}#stage{height:78vh;min-height:420px;touch-action:none}input[type=range]{width:100%}label{display:block;margin:12px 0}img{width:90px;height:90px;object-fit:contain}button{padding:9px;margin:4px}@media(max-width:700px){main{display:block}#stage{height:55vh}}</style>
 <header><h2>Brooke — single-head morph prototype</h2><small>One continuous procedural head surface. Reference photos are previews only; automated photo fitting is not implemented. No likeness claim.</small></header>
 <main><aside><label>Front photo <input type="file" accept="image/*" data-photo="0"><img id="p0"></label><label>Left photo <input type="file" accept="image/*" data-photo="1"><img id="p1"></label><label>Right photo <input type="file" accept="image/*" data-photo="2"><img id="p2"></label>
-<label>Morph strength <output id="value">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
+<button id="analyze" type="button">Estimate face proportions from front photo</button><p id="analysis" aria-live="polite">Photo analysis has not run.</p><label>Morph strength <output id="value">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
 <label>Jaw width <input id="jaw" type="range" min="-100" max="100" value="0"></label>
 <label>Cheek width <input id="cheek" type="range" min="-100" max="100" value="0"></label>
 <label>Chin length <input id="chin" type="range" min="-100" max="100" value="0"></label>
@@ -24,6 +24,25 @@ const base=Float32Array.from(geometry.attributes.position.array);
 const head=new THREE.Mesh(geometry,material);scene.add(head);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
 const $=id=>document.getElementById(id);
+$('analyze').onclick=async()=>{
+ const input=document.querySelector('[data-photo="0"]'),file=input.files?.[0];
+ if(!file){$('analysis').textContent='Choose a front-facing photo first.';return}
+ if(!('FaceDetector' in window)){$('analysis').textContent='Automatic face detection is unavailable in this browser. Adjust the sliders manually; no measurements were guessed.';return}
+ try{
+  const bitmap=await createImageBitmap(file);
+  const detector=new FaceDetector({fastMode:false,maxDetectedFaces:1});
+  const faces=await detector.detect(bitmap);
+  if(faces.length!==1)throw Error('Exactly one clearly visible face is required.');
+  const b=faces[0].boundingBox;
+  if(b.width<=0||b.height<=0)throw Error('Invalid face bounding box.');
+  // Coarse front-view estimate only; a bounding box cannot recover full 3D geometry.
+  const ratio=b.width/b.height;
+  const estimate=Math.max(-100,Math.min(100,Math.round((ratio-.74)*180)));
+  $('jaw').value=estimate;$('cheek').value=estimate;
+  $('strength').value=100;apply();
+  $('analysis').textContent='Estimated overall face width from the front image. Jaw and cheek sliders updated. This is a rough 2D estimate, not a Brooke likeness reconstruction.';
+ }catch(e){$('analysis').textContent='Photo analysis could not finish: '+e.message}
+};
 function apply(){
 const strength=+$('strength').value/100,jaw=+$('jaw').value/100,cheek=+$('cheek').value/100,chin=+$('chin').value/100;
 const a=geometry.attributes.position;
