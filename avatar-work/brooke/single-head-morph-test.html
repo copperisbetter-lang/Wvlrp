@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brooke — Single Mesh Morph Test</title>
+<style>body{margin:0;background:#151b20;color:#f2f4f6;font:15px system-ui}header,aside{padding:14px}main{display:grid;grid-template-columns:310px 1fr}#stage{height:78vh;min-height:420px;touch-action:none}input[type=range]{width:100%}label{display:block;margin:12px 0}img{width:90px;height:90px;object-fit:contain}button{padding:9px;margin:4px}@media(max-width:700px){main{display:block}#stage{height:55vh}}</style>
+<header><h2>Brooke — single-head morph prototype</h2><small>One continuous procedural head surface. Reference photos are previews only; automated photo fitting is not implemented. No likeness claim.</small></header>
+<main><aside><label>Front photo <input type="file" accept="image/*" data-photo="0"><img id="p0"></label><label>Left photo <input type="file" accept="image/*" data-photo="1"><img id="p1"></label><label>Right photo <input type="file" accept="image/*" data-photo="2"><img id="p2"></label>
+<label>Morph strength <output id="value">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
+<label>Jaw width <input id="jaw" type="range" min="-100" max="100" value="0"></label>
+<label>Cheek width <input id="cheek" type="range" min="-100" max="100" value="0"></label>
+<label>Chin length <input id="chin" type="range" min="-100" max="100" value="0"></label>
+<button id="front">Front</button><button id="side">Side</button><button id="reset">Reset</button>
+<p id="status" role="status"></p></aside><div id="stage"></div></main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+const stage=document.querySelector('#stage'),scene=new THREE.Scene();scene.background=new THREE.Color(0x18232c);
+const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,0,5.5);
+const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x494038,2.4));const light=new THREE.DirectionalLight(0xffffff,2.3);light.position.set(-3,4,6);scene.add(light);
+const material=new THREE.MeshStandardMaterial({color:0xd6a48a,roughness:.85,side:THREE.FrontSide});
+const geometry=new THREE.SphereGeometry(1,96,64);
+const base=Float32Array.from(geometry.attributes.position.array);
+const head=new THREE.Mesh(geometry,material);scene.add(head);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+const $=id=>document.getElementById(id);
+function apply(){
+const strength=+$('strength').value/100,jaw=+$('jaw').value/100,cheek=+$('cheek').value/100,chin=+$('chin').value/100;
+const a=geometry.attributes.position;
+for(let i=0;i<a.count;i++){
+const x=base[i*3],y=base[i*3+1],z=base[i*3+2];
+const jawMask=Math.max(0,Math.min(1,(-y+.15)/.65));
+const cheekMask=Math.exp(-Math.pow((y-.04)/.32,2));
+const chinMask=Math.max(0,Math.min(1,(-y-.48)/.48));
+a.setXYZ(i,x*.82*(1+strength*(jaw*.22*jawMask+cheek*.17*cheekMask)),y*1.13-strength*chin*.18*chinMask,z*.76);
+}
+a.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();
+$('value').textContent=Math.round(strength*100)+'%';
+$('status').textContent='Head surface count: '+scene.children.filter(x=>x===head).length+'; head mesh vertices: '+a.count+'. No duplicate face shells.';
+}
+for(const id of ['strength','jaw','cheek','chin'])$(id).addEventListener('input',apply);
+$('front').onclick=()=>camera.position.set(0,0,5.5);$('side').onclick=()=>camera.position.set(5.5,0,0);
+$('reset').onclick=()=>{for(const id of ['strength','jaw','cheek','chin'])$(id).value=0;apply()};
+document.querySelectorAll('[data-photo]').forEach(input=>input.onchange=()=>{const file=input.files[0];if(!file)return;const img=$('p'+input.dataset.photo);if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);img.dataset.url=URL.createObjectURL(file);img.src=img.dataset.url;});
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);renderer.setPixelRatio(Math.min(devicePixelRatio,2))}
+new ResizeObserver(resize).observe(stage);apply();function frame(){requestAnimationFrame(frame);controls.update();renderer.render(scene,camera)}frame();
+</script></html>
