@@ -34,7 +34,20 @@ function auditGlb(filename) {
     }
     meshes.push({name:mesh.name??'',triangles:meshTriangles});
   }
+  // Position bounds, model orientation, and node hierarchy diagnose grounded tree cards.
+  const positionBounds=(doc.meshes??[]).flatMap(mesh=>(mesh.primitives??[]).map(p=>{
+    const a=doc.accessors[p.attributes?.POSITION];
+    return {name:mesh.name??'',min:a?.min,max:a?.max};
+  })).filter(p=>Array.isArray(p.min)&&Array.isArray(p.max))
+    .sort((a,b)=>(b.max[0]-b.min[0])-(a.max[0]-a.min[0]));
+  const nodes=(doc.nodes??[]).slice(0,12).map(n=>({
+    name:n.name,mesh:n.mesh,rotation:n.rotation,translation:n.translation,
+    scale:n.scale,matrix:n.matrix,children:n.children?.length
+  }));
   return {filename,megabytes:Math.round(bytes.length/10000)/100,
+    modelOrientation:{upAxis:doc.asset?.extras?.upAxis,scene:doc.scene,
+      sceneRoots:doc.scenes?.[doc.scene??0]?.nodes, nodeCount:doc.nodes?.length,
+      nodes,positionBounds:positionBounds.slice(0,8)},
     triangles,drawParts,vertices,materials:doc.materials?.length??0,
     alphaModes,images:doc.images?.length??0,
     topMeshes:meshes.sort((a,b)=>b.triangles-a.triangles).slice(0,6)};
