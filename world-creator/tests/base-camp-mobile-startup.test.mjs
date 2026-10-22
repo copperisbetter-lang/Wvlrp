@@ -35,7 +35,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
   assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=basecamp-trees-restored-v9-20261021/);
+  assert.match(page,/rev=basecamp-upright-forest-v10-20261021/);
   assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
@@ -106,4 +106,15 @@ test('tree planner actually produces visible mobile forest placements without ru
   assert.ok(placements.length>100,'forest is actually populated');
   assert.ok(placements.every(tree=>tree.source===1||tree.source===2),
     'mobile trees are photo-textured sources; artificial oak remains excluded');
+});
+
+test('photo trees are oriented upright BEFORE deriving their placement height',()=>{
+  const bake=forest.indexOf('geometry.applyMatrix4(mesh.matrixWorld);');
+  const measure=forest.indexOf('geometry.computeBoundingBox();',bake);
+  assert.ok(bake>=0&&measure>bake);
+  const segment=forest.slice(bake,measure);
+  assert.match(segment,/photo-understory-broadleaf/);
+  assert.match(segment,/geometry.rotateX\(-Math.PI\/2\)/);
+  assert.match(segment,/natural-fir-sapling/);
+  assert.match(segment,/geometry.rotateZ\(Math.PI\/2\)/);
 });
