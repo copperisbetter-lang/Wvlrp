@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/lauren3-eye-browser-smoke.yml'
+      - 'world-creator/lauren3-eye-rig.js'
+      - 'lauren-3-face-viewer.html'
 permissions:
   contents: read
 jobs:
@@ -44,8 +46,8 @@ jobs:
             page.on('pageerror',e=>errors.push(e.message));
             page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text())});
             page.on('response',r=>{if(r.status()>=400)httpErrors.push(r.status()+' '+r.url())});
-            await page.goto('https://wvlrp.com/lauren-3-face-viewer.html?eye-smoke=3',{waitUntil:'domcontentloaded',timeout:40000});
-            await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Lauren 3 loaded'),{timeout:65000});
+            await page.goto('https://wvlrp.com/lauren-3-face-viewer.html?eye-smoke=7',{waitUntil:'domcontentloaded',timeout:40000});
+            await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Lauren 3 v7 loaded'),{timeout:65000});
             const neutral=await page.locator('#stage canvas').screenshot();
             await page.locator('[data-look="-18,0"]').click();
             await page.waitForTimeout(180);
