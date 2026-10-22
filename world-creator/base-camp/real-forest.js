@@ -35,7 +35,7 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     const isEvergreen=rand()<.27;
     placements.push({x,z,y:terrainY(x,z)-.07,
       source:isEvergreen?1:0,
-      height:isEvergreen?18+rand()*14:21+rand()*17,
+      height:isEvergreen?19+rand()*10:16+rand()*8,
       angle:rand()*Math.PI*2,priority:rand()});
   }
   // Do not truncate by grid traversal order: that leaves the opposite
@@ -69,8 +69,12 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // Keep all 2,050 candidate positions as WORLD DATA, not 2,050 live GPU trees.
   // An Android GPU cannot draw an entire 0.25-mile forest at full PBR resolution.
   const lowPower=!!options.lowPower,fullForest=!!options.fullForest;
-  const maxVisible=lowPower?88:320;
-  const drawRadius=lowPower?112:205;
+  // A small source tree stretched into a 38m giant made its crown into a
+  // continuous leaf-card wall. Display properly scaled PBR trees, spaced as
+  // individual woodland crowns. Keep the full forest placement data untouched.
+  const maxVisible=lowPower?64:160;
+  const drawRadius=lowPower?132:205;
+  let densityBudget=Math.min(maxVisible,Math.max(8,options.visibleTreeBudget??(lowPower?28:100)));
   const positions=createPositions(options);
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
@@ -116,22 +120,37 @@ export async function installBaseCampRealForest(THREE,scene,options){
   const dummy=new THREE.Object3D();
   let lastX=NaN,lastZ=NaN;
   const update=(x,z,force=false)=>{
-    if(!force && Math.hypot(x-lastX,z-lastZ)<14)return;
+    if(!force && Math.hypot(x-lastX,z-lastZ)<8)return;
     lastX=x;lastZ=z;
     let visible=0;
     // The visible set moves with the player. This keeps high-resolution
     // source meshes at eye level without uploading distant campsite trees.
-    const perSourceCap=Math.max(1,Math.floor(maxVisible/Math.max(1,records.length)));
+    // No artificial 'green fence': distribute separate crowns with open gaps.
+    // Pick nearby trees by distance, but keep at least 23m of separation
+    // between selected mobile trunks; never take the 28 nearest blindly.
+    const occupied=[];
+    const minSpacing=lowPower?23:19;
+    const selectedLimit=densityBudget;
+    const pool=[];
     for(const rec of records){
-      const near=[];
       for(const t of rec.pool){
         const d2=(t.x-x)**2+(t.z-z)**2;
-        if(d2<=drawRadius*drawRadius)near.push({t,d2});
+        if(d2<=drawRadius*drawRadius)pool.push({rec,t,d2});
       }
-      near.sort((a,b)=>a.d2-b.d2);
-      const count=Math.min(perSourceCap,near.length);
-      for(let k=0;k<count;k++){
-        const t=near[k].t;
+    }
+    pool.sort((a,b)=>a.d2-b.d2);
+    const selectedByRecord=new Map(records.map(rec=>[rec,[]]));
+    for(const item of pool){
+      if(visible>=selectedLimit)break;
+      if(occupied.some(t=>(t.x-item.t.x)**2+(t.z-item.t.z)**2<minSpacing*minSpacing))continue;
+      occupied.push(item.t);
+      selectedByRecord.get(item.rec).push(item.t);
+      visible++;
+    }
+    for(const rec of records){
+      const trees=selectedByRecord.get(rec);
+      for(let k=0;k<trees.length;k++){
+        const t=trees[k];
         dummy.position.set(t.x,t.y,t.z);
         dummy.rotation.set(0,t.angle,0);
         dummy.scale.setScalar(t.height/rec.height);
@@ -139,18 +158,18 @@ export async function installBaseCampRealForest(THREE,scene,options){
         for(const mesh of rec.batches)mesh.setMatrixAt(k,dummy.matrix);
       }
       for(const mesh of rec.batches){
-        mesh.count=count;
+        mesh.count=trees.length;
         mesh.instanceMatrix.needsUpdate=true;
       }
-      visible+=count;
     }
     status.visible=visible;
-    options.report?.(visible+" nearby photo-textured trees active · "+status.planted+
+    options.report?.(visible+" spaced photo-textured trees active · "+status.planted+
       " mapped across the world"+(lowPower&&!fullForest?" · phone-safe mode":"")+
       (status.failures.length?" · "+status.failures.length+" asset error(s)":""));
   };
   status.group=group;
   status.update=update;
+  status.setDensity=(count,x,z)=>{densityBudget=Math.max(8,Math.min(maxVisible,Math.round(count)));update(x,z,true);};
   status.state=records.length?"ready":"error";
   if(records.length)update(options.startX??0,options.startZ??15,true);
   else options.report?.("Forest source files unavailable — no fake trees substituted");
