@@ -98,9 +98,10 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // individual woodland crowns. Keep the full forest placement data untouched.
   // Keep CPU/GPU draw budgets bounded, but show the whole visible landscape:
   // the previous 40-tree nearest-only cap made 80% of each vista look empty.
-  const maxVisible=lowPower?208:320;
-  const drawRadius=lowPower?315:390;
-  let densityBudget=Math.min(maxVisible,Math.max(48,options.visibleTreeBudget??(lowPower?176:260)));
+  // Keep the dense world map, but draw only camera-facing trees on phones.
+  const maxVisible=lowPower?128:320;
+  const drawRadius=lowPower?205:390;
+  let densityBudget=Math.min(maxVisible,Math.max(36,options.visibleTreeBudget??(lowPower?96:260)));
   const positions=createPositions({...options,legacyForest});
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
@@ -144,10 +145,15 @@ export async function installBaseCampRealForest(THREE,scene,options){
   }
   scene.add(group);
   const dummy=new THREE.Object3D();
-  let lastX=NaN,lastZ=NaN;
-  const update=(x,z,force=false)=>{
-    if(!force && Math.hypot(x-lastX,z-lastZ)<8)return;
-    lastX=x;lastZ=z;
+  let lastX=NaN,lastZ=NaN,lastYaw=NaN,lastBuild=-Infinity;
+  const update=(x,z,yaw=0,force=false)=>{
+    const now=performance.now();
+    const yawDelta=Math.abs(Math.atan2(Math.sin(yaw-lastYaw),Math.cos(yaw-lastYaw)));
+    if(!force && (now-lastBuild<170 ||
+       (Math.hypot(x-lastX,z-lastZ)<6 && yawDelta<.23)))return;
+    lastX=x;lastZ=z;lastYaw=yaw;lastBuild=now;
+    const viewX=-Math.sin(yaw),viewZ=-Math.cos(yaw);
+    const cosHalfCone=lowPower?.26:-.2;
     // The visible set moves with the player; ring-balanced draw selection
     // avoids an empty horizon while retaining natural open spaces.
     // Ring-balanced draw selection is essential: using the nearest N
@@ -156,9 +162,11 @@ export async function installBaseCampRealForest(THREE,scene,options){
     const rings=[[],[],[]];
     for(const rec of records){
       for(const t of rec.pool){
-        const d2=(t.x-x)**2+(t.z-z)**2;
+        const dx=t.x-x,dz=t.z-z,d2=dx*dx+dz*dz;
         if(d2>drawRadius*drawRadius)continue;
-        rings[d2<108*108?0:d2<215*215?1:2].push({rec,t,d2});
+        // For mobile, discard trees behind/off-camera with a generous view cone.
+        if(lowPower&&d2>17*17&&dx*viewX+dz*viewZ<cosHalfCone*Math.sqrt(d2))continue;
+        rings[d2<85*85?0:d2<152*152?1:2].push({rec,t,d2});
       }
     }
     rings[0].sort((a,b)=>a.d2-b.d2);
@@ -166,7 +174,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     // Far trees are dispersed around the full view, not clustered at one
     // edge of the middle ring. All use the same real PBR GLB geometry.
     rings[2].sort((a,b)=>a.t.priority-b.t.priority);
-    const quotas=[Math.round(selectedLimit*.61),Math.round(selectedLimit*.26),0];
+    const quotas=[Math.round(selectedLimit*.69),Math.round(selectedLimit*.24),0];
     quotas[2]=selectedLimit-quotas[0]-quotas[1];
     const occupied=[],selectedByRecord=new Map(records.map(rec=>[rec,[]]));
     let visible=0;
@@ -181,7 +189,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
         visible++;n++;
       }
     }
-    take(rings[0],quotas[0],lowPower?9.8:9.1);
+    take(rings[0],quotas[0],lowPower?9.6:9.1);
     take(rings[1],quotas[1],lowPower?14.0:13);
     take(rings[2],quotas[2],lowPower?21:19);
     // Fill any spare slots after ensuring distant treeline coverage.
@@ -212,9 +220,12 @@ export async function installBaseCampRealForest(THREE,scene,options){
   };
   status.group=group;
   status.update=update;
-  status.setDensity=(count,x,z)=>{densityBudget=Math.max(8,Math.min(maxVisible,Math.round(count)));update(x,z,true);};
+  status.setDensity=(count,x,z,yaw=lastYaw||0)=>{
+    densityBudget=Math.max(12,Math.min(maxVisible,Math.round(count)));
+    update(x,z,yaw,true);
+  };
   status.state=records.length?"ready":"error";
-  if(records.length)update(options.startX??0,options.startZ??15,true);
+  if(records.length)update(options.startX??0,options.startZ??15,options.startYaw??0,true);
   else options.report?.("Forest source files unavailable — no fake trees substituted");
   console.info("BASE_CAMP_REAL_FOREST",JSON.stringify({state:status.state,mapped:status.planted,
     requested:status.requested,active:status.visible,profile:status.profile,sources:status.sources,
