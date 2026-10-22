@@ -34,6 +34,17 @@ const trailMaterial=new THREE.MeshStandardMaterial({color:0x786b50,roughness:1,s
 function addTrail(points,width=2.4){const v=[],ids=[];for(let i=0;i<points.length;i++){const p=points[i],prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],l=Math.hypot(dx,dz)||1,nx=-dz/l,nz=dx/l;for(const sign of [-1,1]){const x=p[0]+nx*width*sign/2,z=p[1]+nz*width*sign/2;v.push(x,terrainY(x,z)+.2,z)}if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k)}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(ids);g.computeVertexNormals();scene.add(new THREE.Mesh(g,trailMaterial))}
 [beachPath,lakeTrail,...trailBranches].forEach(p=>addTrail(p));
 
+// Interior future campsites: natural empty clearings, outside Base Camp's 200-foot exclusion.
+const interiorClearings=[];let siteSeed=32178;function siteRandom(){siteSeed=(Math.imul(siteSeed,1664525)+1013904223)>>>0;return siteSeed/4294967296}
+for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
+ const radius=75+siteRandom()*260,a=siteRandom()*Math.PI*2,x=Math.cos(a)*radius,z=Math.sin(a)*radius;
+ if(lakeRadius(x,z)<1.45||beachZone(x,z))continue;
+ if(pathDistance(x,z,beachPath)<11||pathDistance(x,z,lakeTrail)<11||trailBranches.some(p=>pathDistance(x,z,p)<11))continue;
+ if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<32))continue;
+ interiorClearings.push({id:'interior-'+String(interiorClearings.length+1).padStart(2,'0'),x,z,type:'natural-unfurnished-clearing'});
+ const patch=new THREE.Mesh(new THREE.CircleGeometry(5.5,28),clearMat);patch.rotation.x=-Math.PI/2;patch.position.set(x,terrainY(x,z)+.3,z);scene.add(patch);
+}
+
 // Base Camp building meshes intentionally not fabricated from generic geometry. Approved models pending.
 // Deterministic, mobile-friendly native-forest layout. Proxy silhouettes are NOT final photorealistic assets.
 let seed=93471;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
@@ -51,7 +62,7 @@ while(trees.length<treeLimit&&attempts++<treeLimit*24){
  const radius=Math.sqrt(rnd())*(BASE_CAMP_RADIUS_M-12),theta=rnd()*Math.PI*2,x=Math.cos(theta)*radius,z=Math.sin(theta)*radius;
  if(radius<47||lakeRadius(x,z)<1.28||beachZone(x,z))continue;
  if(pathDistance(x,z,beachPath)<7||pathDistance(x,z,lakeTrail)<7||trailBranches.some(p=>pathDistance(x,z,p)<7))continue;
- if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<11))continue;
+ if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<11)||interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<12))continue;
  const typeIndex=Math.floor(rnd()*forestTypes.length),type=forestTypes[typeIndex],scale=.65+rnd()*.8;
  trees.push({x,z,y:terrainY(x,z),typeIndex,height:type.height*scale,crown:type.crown*scale});
 }
@@ -67,5 +78,5 @@ const pos=new THREE.Vector3(0,terrainY(0,0)+2,15);let yaw=0,pitch=0;const pad=do
 pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);drag=e.pointerId;updatePad(e)});pad.addEventListener('pointermove',e=>{if(drag===e.pointerId)updatePad(e)});function updatePad(e){const r=pad.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),s=Math.min(43,len)/len;moveX=dx*s/43;moveY=dy*s/43;nub.style.transform=`translate(${dx*s}px,${dy*s}px)`}function stop(){drag=null;moveX=moveY=0;nub.style.transform=''}pad.addEventListener('pointerup',stop);pad.addEventListener('pointercancel',stop);
 const look=document.getElementById('look');let last=null;look.addEventListener('pointerdown',e=>{look.setPointerCapture(e.pointerId);last=[e.clientX,e.clientY]});look.addEventListener('pointermove',e=>{if(!last)return;yaw-=(e.clientX-last[0])*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-(e.clientY-last[1])*.004));last=[e.clientX,e.clientY]});look.addEventListener('pointerup',()=>last=null);
 document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,15);yaw=0;pitch=0};
-const clock=document.getElementById('clock');let previous=performance.now();function tick(now){requestAnimationFrame(tick);let dt=Math.min(.05,(now-previous)/1000);previous=now;const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);document.getElementById('info').textContent=`${perimeterClearings.length} empty perimeter clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00`;renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const clock=document.getElementById('clock');let previous=performance.now();function tick(now){requestAnimationFrame(tick);let dt=Math.min(.05,(now-previous)/1000);previous=now;const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00`;renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
