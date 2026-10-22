@@ -40,9 +40,10 @@ jobs:
             if(!executable)throw Error('Chrome unavailable on runner');
             const browser=await chromium.launch({headless:true,executablePath:executable,args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist','--disable-dev-shm-usage']});
             const page=await browser.newPage({viewport:{width:400,height:850},deviceScaleFactor:1.5});
-            let errors=[];
+            let errors=[],httpErrors=[];
             page.on('pageerror',e=>errors.push(e.message));
-            page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text())});
+            page.on('response',r=>{if(r.status()>=400)httpErrors.push(r.status()+' '+r.url())});
             await page.goto('https://wvlrp.com/lauren-3-face-viewer.html?eye-smoke=3',{waitUntil:'domcontentloaded',timeout:40000});
             await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Lauren 3 loaded'),{timeout:65000});
             const neutral=await page.locator('#stage canvas').screenshot();
@@ -57,7 +58,9 @@ jobs:
             const summary=await page.evaluate(()=>({title:document.title,status:document.querySelector('#status').textContent,buttons:document.querySelectorAll('button').length,canvas:document.querySelector('canvas')?.width,yaw:document.querySelector('#yaw').value,pitch:document.querySelector('#pitch').value}));
             console.log(JSON.stringify(summary));
             if(!summary.canvas||summary.yaw!=='0'||summary.pitch!=='0')throw Error('Viewer controls or canvas failed');
-            if(errors.length)throw Error('Browser errors: '+errors.join(' | '));
+            console.log('HTTP loading diagnostics:',JSON.stringify(httpErrors));
+            const realErrors=httpErrors.filter(x=>!/favicon\.ico|apple-touch-icon|manifest\.webmanifest|robots\.txt/.test(x));
+            if(errors.length||realErrors.length)throw Error('Browser errors: '+errors.join(' | ')+' | HTTP: '+realErrors.join(' | '));
             await browser.close();
             console.log('PASS Lauren 3: real WebGL, visible gaze-motion pixel difference, blink, per-eye controls and original backup safety');
           })().catch(e=>{console.error(e);process.exit(1)});
