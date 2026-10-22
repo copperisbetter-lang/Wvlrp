@@ -1,0 +1,49 @@
+name: Publish Brooke 3D Viewer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'avatar-work/brooke/head-viewer.html'
+      - 'public-models/brooke-head.glb'
+      - '.github/workflows/publish-brooke-viewer.yml'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare public viewer
+        run: |
+          mkdir -p _site/brooke
+          cp avatar-work/brooke/head-viewer.html _site/brooke/index.html
+          cp public-models/brooke-head.glb _site/brooke/brooke-head.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('_site/brooke/index.html')
+          html=p.read_text()
+          html=html.replace('https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@main/public-models/brooke-head.glb','./brooke-head.glb')
+          html=html.replace('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-models/brooke-head.glb','./brooke-head.glb')
+          p.write_text(html)
+          PY
+          touch _site/.nojekyll
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4
