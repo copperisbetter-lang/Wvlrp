@@ -72,8 +72,10 @@ jobs:
           assert v>100 and f>100, (v,f)
           print('Photo reconstruction OBJ:',v,'vertices',f,'faces')
           PY
-      - name: Install Blender
-        run: sudo apt-get install -y blender
+      - name: Install Blender and Blender Python NumPy
+        run: |
+          sudo apt-get install -y blender python3-numpy
+          blender -b --python-exit-code 1 --python-expr "import numpy; print('Blender NumPy:', numpy.__version__)"
       - name: Build complete cranium and neck GLB
         run: |
           OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
