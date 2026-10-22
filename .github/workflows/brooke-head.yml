@@ -22,6 +22,21 @@ jobs:
         run: blender -b --python avatar-work/brooke/validate_build.py -- avatar-work/brooke/brooke-head-prototype.glb
       - name: Render preview PNG
         run: blender -b --python avatar-work/brooke/render_preview.py
+      - name: Verify generated GLB and PNG files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          glb=Path('avatar-work/brooke/brooke-head-prototype.glb')
+          png=Path('avatar-work/brooke/brooke-preview.png')
+          assert glb.is_file() and glb.stat().st_size>1024, 'Missing or empty GLB'
+          raw=glb.read_bytes()
+          assert raw[:4]==b'glTF', 'Invalid GLB magic'
+          assert struct.unpack_from('<I',raw,8)[0]==len(raw), 'GLB byte length mismatch'
+          assert png.is_file() and png.stat().st_size>1024, 'Missing or empty preview'
+          assert png.read_bytes()[:8]==b'\\x89PNG\\r\\n\\x1a\\n', 'Invalid PNG signature'
+          print('PASS: GLB and PNG generated with valid headers and nonzero sizes')
+          PY
       - name: Upload model and preview
         uses: actions/upload-artifact@v4
         with:
