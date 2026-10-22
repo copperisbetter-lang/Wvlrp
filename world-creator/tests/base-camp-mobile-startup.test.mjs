@@ -9,6 +9,7 @@ import {BASE_CAMP_RADIUS_M,PERIMETER_COUNT,perimeterClearings,CENTER_EXCLUSION_M
 const dirname=path.dirname(fileURLToPath(import.meta.url));
 const page=readFileSync(path.join(dirname,'../base-camp/index.html'),'utf8');
 const forest=readFileSync(path.join(dirname,'../base-camp/real-forest.js'),'utf8');
+const understory=readFileSync(path.join(dirname,'../base-camp/real-understory.js'),'utf8');
 
 test('Base Camp perimeter sites retain approved 200-foot spacing',()=>{
   assert.equal(PERIMETER_COUNT,41);
@@ -24,14 +25,18 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.match(page,/setTimeout\(\(\)=>\{/);
   assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z\)/);
   assert.match(forest,/const maxVisible=lowPower\?64:160/);
-  assert.match(forest,/const minSpacing=legacyForest\?\(lowPower\?23:19\):\(lowPower\?29:25\)/);
+  assert.match(forest,/const minSpacing=legacyForest\?\(lowPower\?23:19\):\(lowPower\?17:15\)/);
   assert.match(page,/id="treeDensity"/);
   assert.doesNotMatch(page,/Grandview|grandviewUrl|panoramaStatus/);
-  assert.match(forest,/legacyForest&&lowPower&&!fullForest\?\[0\]:\[0,1\]/);
-  assert.match(forest,/oak_tree\.glb/);
-  assert.match(forest,/oak_tree_small\.glb/);
+  assert.match(forest,/legacyForest\?\(lowPower&&!fullForest\?\[0\]:\[0,1\]\):\[0,1,2\]/);
+  assert.match(forest,/village-oak-detailed\.glb/);
+  assert.match(forest,/village-pbr-tree_small_02\.glb/);
+  assert.match(forest,/village-pbr-fir_sapling\.glb/);
+  assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
-  assert.match(page,/rev=oak-fix-20261021/);
+  assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
+  assert.match(page,/rev=woodland-photo-v2-20261021/);
+  assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
 });
@@ -45,5 +50,19 @@ test('viewer inline browser module parses as JavaScript',()=>{
 
 test('forest loader JavaScript syntax parses',()=>{
   const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-forest.js')],{encoding:'utf8'});
+  assert.equal(run.status,0,run.stderr||run.stdout);
+});
+
+test('real forest-floor mesh details are streamed without hiding campsites or paths',()=>{
+  assert.match(understory,/village-floor-fern_02\\.glb/);
+  assert.match(understory,/village-floor-rock_moss_set_01\\.glb/);
+  assert.match(understory,/village-floor-dead_tree_trunk\\.glb/);
+  assert.match(understory,/perimeterClearings\\.some/);
+  assert.match(understory,/interiorClearings\\.some/);
+  assert.match(understory,/new THREE\\.InstancedMesh/);
+  assert.doesNotMatch(understory,/THREE\\.ConeGeometry/);
+});
+test('understory JavaScript syntax parses',()=>{
+  const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-understory.js')],{encoding:'utf8'});
   assert.equal(run.status,0,run.stderr||run.stdout);
 });
