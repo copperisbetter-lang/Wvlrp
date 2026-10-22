@@ -34,3 +34,12 @@
 - Correction commit 29b136a: install libegl1, libgl1, libgles2, libopengl0, libx11-6, libxext6, libxrender1, libxi6, libxkbcommon0, libsm6, libice6 before invoking Blender.
 - Status: fix committed; do not mark resolved until PNG and GLB both pass verification and upload as artifacts.
 - Prevention for all character pipelines: document runtime renderer dependencies in CI; geometry validation passing does not imply headless preview rendering works.
+
+## Verified green baseline — 2026-10-22
+- Run 39846399597 (commit 29b136a): Brooke Head Prototype completed **successfully**.
+- Run 39846490326 (commit 7964274): Brooke Head Prototype completed **successfully**.
+- Verified uploaded artifact: `brooke-head-prototype`, artifact ID 12454544004, 766183 bytes, from run 39846490326. Bundle contains GLB and PNG as required by workflow upload step; individual file contents not visually reviewed yet.
+- **Confirmed resolution:** imported mesh topology checks, morph/eye checks, preview renderer, file verification, and artifact upload all passed.
+- Baseline for future changes: commit 79642740af6d1bea4fc3ef95988d8de8111a6be8, run 39846490326.
+- Important: this is a valid **placeholder** head prototype, not yet a reference-photo-matched likeness. Keep this known-good baseline and change likeness parameters incrementally.
+- Separate `Publish WVLRP` workflow remains failing on the same commit; Brooke's standalone workflow is green, not the entire site deployment.
