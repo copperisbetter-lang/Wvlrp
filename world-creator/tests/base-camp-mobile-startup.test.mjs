@@ -24,8 +24,8 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.match(page,/if\(safeMode\)/);
   assert.match(page,/setTimeout\(\(\)=>\{/);
   assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z\)/);
-  assert.match(forest,/const maxVisible=lowPower\?64:160/);
-  assert.match(forest,/const minSpacing=legacyForest\?\(lowPower\?23:19\):\(lowPower\?17:15\)/);
+  assert.match(forest,/const maxVisible=lowPower\?128:320/);
+  assert.match(forest,/const CELL=48,positionCells=new Map\(\)/);
   assert.match(page,/id="treeDensity"/);
   assert.doesNotMatch(page,/Grandview|grandviewUrl|panoramaStatus/);
   assert.match(forest,/legacyForest\?\(lowPower&&!fullForest\?\[0\]:\[0,1\]\):\[0,1,2\]/);
@@ -35,7 +35,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
   assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=woodland-photo-v2-20261021/);
+  assert.match(page,/rev=basecamp-spatial-v6-20261021/);
   assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
@@ -55,7 +55,7 @@ test('forest loader JavaScript syntax parses',()=>{
 
 test('real forest-floor mesh details are streamed without hiding campsites or paths',()=>{
   assert.match(understory,/village-floor-fern_02\.glb/);
-  assert.match(understory,/village-floor-rock_moss_set_01\.glb/);
+  assert.match(understory,/material\.alphaTest=Math\.max\(\.5/);
   assert.match(understory,/village-floor-dead_tree_trunk\.glb/);
   assert.match(understory,/perimeterClearings\.some/);
   assert.match(understory,/interiorClearings\.some/);
@@ -65,4 +65,14 @@ test('real forest-floor mesh details are streamed without hiding campsites or pa
 test('understory JavaScript syntax parses',()=>{
   const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-understory.js')],{encoding:'utf8'});
   assert.equal(run.status,0,run.stderr||run.stdout);
+});
+
+test('mobile forest avoids whole-world scans, culls remote tree geometry, and manages render resolution',()=>{
+  assert.match(forest,/positionCells\.get\(ix\+":"\+iz\)/);
+  assert.match(forest,/mesh\.frustumCulled=true/);
+  assert.match(forest,/mesh\.computeBoundingSphere\(\)/);
+  assert.match(page,/renderer\.setPixelRatio\(renderScale\)/);
+  assert.match(page,/renderScale=Math\.max\(\.58/);
+  assert.match(page,/Math\.min\(\.08,elapsed\/1000\)/);
+  assert.match(page,/fps/);
 });
