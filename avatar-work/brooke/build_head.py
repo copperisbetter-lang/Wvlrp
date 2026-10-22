@@ -51,6 +51,14 @@ bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.to_mesh(head.data)
 bm.free()
 head.data.update()
+# Explicitly triangulate before glTF export; avoid implicit exporter triangulation
+# creating unmatched UV seam vertices in the imported mesh.
+bm = bmesh.new()
+bm.from_mesh(head.data)
+bmesh.ops.triangulate(bm, faces=bm.faces[:])
+bm.to_mesh(head.data)
+bm.free()
+head.data.update()
 head.data.materials.append(skin)
 for p in head.data.polygons: p.use_smooth = True
 head.shape_key_add(name='Basis')
