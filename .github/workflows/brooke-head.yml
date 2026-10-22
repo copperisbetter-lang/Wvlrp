@@ -5,6 +5,8 @@ on:
     paths:
       - 'avatar-work/brooke/**'
       - '.github/workflows/brooke-head.yml'
+permissions:
+  contents: write
 jobs:
   build-and-validate:
     runs-on: ubuntu-latest
@@ -46,3 +48,14 @@ jobs:
             avatar-work/brooke/brooke-head-prototype.glb
             avatar-work/brooke/brooke-preview.png
           if-no-files-found: error
+      - name: Publish verified Brooke model for 3D viewer
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p public-models
+          cp avatar-work/brooke/brooke-head-prototype.glb public-models/brooke-head.glb
+          cp avatar-work/brooke/brooke-preview.png public-models/brooke-preview.png
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-models/brooke-head.glb public-models/brooke-preview.png
+          git commit -m "Publish verified Brooke viewer model [skip ci]" || exit 0
+          git push
