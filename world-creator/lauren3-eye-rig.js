@@ -5,11 +5,11 @@ const RAD = Math.PI/180;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Relax the wide, circular default eyes into a human almond-shaped resting gaze.
 // Offset the visible opening slightly downward to let upper lids overlap the irises.
-const eyespecs=[{id:'left',x:697,y:541,rx:53,ry:14.5,offsetY:-2.2,r:49},{id:'right',x:955,y:541,rx:58,ry:14.5,offsetY:-2.2,r:49}];
+const eyespecs=[{id:'left',x:697,y:541,rx:42,ry:13.2,offsetY:-2.2,r:45},{id:'right',x:955,y:541,rx:43,ry:13.2,offsetY:-2.2,r:45}];
 const gauss=(x,y,cx,cy,sx,sy,amp)=>amp*Math.exp(-.5*((x-cx)/sx)**2-.5*((y-cy)/sy)**2);
-function curvedDisc(rad,depth,mat){
+function curvedDisc(rad,depth,mat,globeRadius){
  const pts=[0,0,0], inds=[];
- for(let i=0;i<=64;i++){let a=2*Math.PI*i/64;pts.push(rad*Math.cos(a),rad*Math.sin(a),-rad*rad/(2*49)+depth);}
+ for(let i=0;i<=64;i++){let a=2*Math.PI*i/64;pts.push(rad*Math.cos(a),rad*Math.sin(a),-rad*rad/(2*globeRadius)+depth);}
  for(let i=1;i<=64;i++)inds.push(0,i,i+1);
  const geo=new THREE.BufferGeometry();
  geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));geo.setIndex(inds);geo.computeVertexNormals();
@@ -76,7 +76,7 @@ function apertureMaterial(base,s){
  const clipUniforms={
   eyeMaskInverse:{value:inverseHeadWorld},
   eyeMaskOrigin:{value:new THREE.Vector2(s.x,s.y+s.offsetY)},
-  eyeMaskRadii:{value:new THREE.Vector2(s.rx-1.5,s.ry-1.25)}
+  eyeMaskRadii:{value:new THREE.Vector2(s.rx-2,s.ry-1.1)}
  };
  material.onBeforeCompile=shader=>{
   Object.assign(shader.uniforms,clipUniforms);
@@ -89,7 +89,7 @@ function apertureMaterial(base,s){
   shader.fragmentShader='uniform vec2 eyeMaskOrigin;\nuniform vec2 eyeMaskRadii;\nvarying vec3 vEyeHeadPosition;\n'+
    shader.fragmentShader.replace(fp,fp+'\nvec2 aperture=(vEyeHeadPosition.xy-eyeMaskOrigin)/eyeMaskRadii;\nif(dot(aperture,aperture)>1.0) discard;');
  };
- material.customProgramCacheKey=()=>('lauren3-aperture-v6-relaxed-'+s.id);
+ material.customProgramCacheKey=()=>('lauren3-aperture-v7-recessed-'+s.id);
  return material;
 }
 
@@ -101,16 +101,27 @@ function apertureMaterial(base,s){
   // Old +5 placement left the spherical globe pushing through face skin.
   // Fit the globe and rim independently to measured original mesh depths.
   const rimZ=depths[Math.floor(depths.length*.67)]+3;
-  const frontZ=depths[Math.floor(depths.length*.5)]-3;
+  const frontZ=depths[Math.floor(depths.length*.5)]-7;
   const centerZ=frontZ-s.r;
+  // A real shaded backing beneath the smaller globes seals any uncovered
+  // corner triangles in the image-derived facial shell. It belongs to the
+  // disposable runtime rig, NEVER the approved source mesh.
+  const cavity=new THREE.Mesh(
+    new THREE.CircleGeometry(1,72),
+    new THREE.MeshBasicMaterial({color:0xad7f76,side:THREE.DoubleSide,depthWrite:true,toneMapped:false})
+  );
+  cavity.name=s.id+'_SEALED_EYE_CAVITY';
+  cavity.position.set(s.x,s.y+s.offsetY,frontZ-16);
+  cavity.scale.set(s.rx+8,s.ry+7,1);
+  root.add(cavity);
   const socket=new THREE.Group();socket.name=s.id+'_EYE_SOCKET';socket.position.set(s.x,s.y,centerZ);root.add(socket);
   const globe=new THREE.Group();globe.name=s.id+'_MOVABLE_EYE';socket.add(globe);
   globe.add(new THREE.Mesh(new THREE.SphereGeometry(s.r,40,30),apertureMaterial(scleraMat,s)));
   const iris=new THREE.Group();iris.position.z=s.r+.15;globe.add(iris);
-  const circles=[[17,irisOuter,.1],[15.2,irisInner,.4],[9.2,irisGold,.65],[6.9,pupilMat,1.2]];
-  for(const [radius,mat,z] of circles){const disc=curvedDisc(radius,z,apertureMaterial(mat,s));disc.name=s.id+'_iris_or_pupil';iris.add(disc);}
+  const circles=[[15.6,irisOuter,.1],[13.9,irisInner,.4],[8.4,irisGold,.65],[6.2,pupilMat,1.2]];
+  for(const [radius,mat,z] of circles){const disc=curvedDisc(radius,z,apertureMaterial(mat,s),s.r);disc.name=s.id+'_iris_or_pupil';iris.add(disc);}
   const glint=new THREE.Mesh(new THREE.SphereGeometry(1.85,10,8),apertureMaterial(highlightMat,s));
-  glint.position.set(-5,6,1.95);iris.add(glint);
+  glint.position.set(-4.5,5.4,1.8);iris.add(glint);
   const rims=[];
   for(const upper of [true,false]){
    const points=[];
