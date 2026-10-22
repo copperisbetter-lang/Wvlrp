@@ -36,10 +36,12 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     placements.push({x,z,y:terrainY(x,z)-.07,
       source:isEvergreen?1:0,
       height:isEvergreen?18+rand()*14:21+rand()*17,
-      angle:rand()*Math.PI*2});
-    if(placements.length>=2050)return placements;
+      angle:rand()*Math.PI*2,priority:rand()});
   }
-  return placements;
+  // Do not truncate by grid traversal order: that leaves the opposite
+  // side of the circular world bare. Spread the mobile mesh budget evenly.
+  placements.sort((a,b)=>a.priority-b.priority);
+  return placements.slice(0,2050);
 }
 async function loadParts(THREE,loader,source){
   const gltf=await loader.loadAsync(source.url);
