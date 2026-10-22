@@ -7,7 +7,7 @@
 <button id="analyze" type="button">Estimate face proportions from front photo</button><p id="analysis" aria-live="polite">Photo analysis has not run.</p><label>Morph strength <output id="value">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
 <label>Jaw width <input id="jaw" type="range" min="-100" max="100" value="0"></label>
 <label>Cheek width <input id="cheek" type="range" min="-100" max="100" value="0"></label>
-<label>Head depth <input id="depth" type="range" min="-100" max="100" value="0"></label><label>Chin length <input id="chin" type="range" min="-100" max="100" value="0"></label>
+<label>Eye-line height <input id="eyes" type="range" min="-100" max="100" value="0"></label><label>Nose projection <input id="nose" type="range" min="-100" max="100" value="0"></label><label>Mouth width <input id="mouth" type="range" min="-100" max="100" value="0"></label><label>Head depth <input id="depth" type="range" min="-100" max="100" value="0"></label><label>Chin length <input id="chin" type="range" min="-100" max="100" value="0"></label>
 <button id="export">Export GLB</button><button id="front">Front</button><button id="side">Side</button><button id="reset">Reset</button>
 <p id="status" role="status"></p></aside><div id="stage"></div></main>
 <script type="module">
@@ -51,13 +51,16 @@ const x=base[i*3],y=base[i*3+1],z=base[i*3+2];
 const jawMask=Math.max(0,Math.min(1,(-y+.15)/.65));
 const cheekMask=Math.exp(-Math.pow((y-.04)/.32,2));
 const chinMask=Math.max(0,Math.min(1,(-y-.48)/.48));
-a.setXYZ(i,x*.82*(1+strength*(jaw*.22*jawMask+cheek*.17*cheekMask)),y*1.13-strength*chin*.18*chinMask,z*.76*(1+strength*depth*.3));
+const eyeRegion=Math.exp(-Math.pow((y-.2)/.16,2))*Math.exp(-Math.pow((Math.abs(x)-.42)/.24,2));
+const noseRegion=Math.exp(-Math.pow((x)/.17,2))*Math.exp(-Math.pow((y+.12)/.27,2))*Math.max(0,z);
+const mouthRegion=Math.exp(-Math.pow((y+.48)/.14,2))*Math.exp(-Math.pow(x/.4,2));
+a.setXYZ(i,x*.82*(1+strength*(jaw*.22*jawMask+cheek*.17*cheekMask+mouth*.10*mouthRegion)),y*1.13-strength*chin*.18*chinMask+strength*eyes*.10*eyeRegion,z*.76*(1+strength*depth*.3)+strength*nose*.16*noseRegion);
 }
 a.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();
 $('value').textContent=Math.round(strength*100)+'%';
 $('status').textContent='Head surface count: '+scene.children.filter(x=>x===head).length+'; head mesh vertices: '+a.count+'. No duplicate face shells.';
 }
-for(const id of ['strength','jaw','cheek','chin','depth'])$(id).addEventListener('input',apply);
+for(const id of ['strength','jaw','cheek','chin','depth','eyes','nose','mouth'])$(id).addEventListener('input',apply);
 $('export').onclick=async()=>{const button=$('export');button.disabled=true;try{const exporter=new GLTFExporter();const glb=await exporter.parseAsync(head,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='brooke-neutral-morph-prototype.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('status').textContent='Exported one-head GLB prototype; NOT photo-matched.';}catch(error){$('status').textContent='GLB export failed: '+error.message;}finally{button.disabled=false}};
 $('front').onclick=()=>camera.position.set(0,0,5.5);$('side').onclick=()=>camera.position.set(5.5,0,0);
 $('reset').onclick=()=>{for(const id of ['strength','jaw','cheek','chin'])$(id).value=0;apply()};
