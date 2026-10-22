@@ -32,7 +32,30 @@ const beachPath=[[0,0],[8,-18],[10,-35],[7,-49],[0,-57]];
 const lakeTrail=[[35,-48],[69,-28],[107,-38],[140,-70],[175,-85],[220,-112],[275,-145],[340,-165]];
 const trailBranches=[[[140,-70],[163,-30],[198,0],[239,28]],[[220,-112],[252,-82],[298,-58],[347,-43]]];
 
-const N=160,verts=[],idx=[];for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){let xx=(x/N*2-1)*BASE_CAMP_RADIUS_M,zz=(z/N*2-1)*BASE_CAMP_RADIUS_M;verts.push(xx,terrainY(xx,zz),zz)}for(let z=0;z<N;z++)for(let x=0;x<N;x++){let a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;{const mx=(x+.5)/N*2-1,mz=(z+.5)/N*2-1;if(Math.hypot(mx,mz)<=1.002)idx.push(a,c,b,b,c,d)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);const uvs=[];for(let z=0;z<=N;z++)for(let x=0;x<=N;x++)uvs.push(x/N,z/N);geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geo.computeVertexNormals();const groundMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});const ground=new THREE.Mesh(geo,groundMaterial);const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(95,95);groundMaterial.map=tex;groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor photo texture loaded';textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_nor_gl_1k.png',normal=>{normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(95,95);groundMaterial.normalMap=normal;groundMaterial.normalScale.set(.6,.6);groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor color + normal maps loaded';});},undefined,()=>{groundMaterial.color.set(0x536c43);document.getElementById('assetStatus').textContent='Texture unavailable — diagnostic fallback active';});ground.receiveShadow=true;scene.add(ground);
+// Circular terrain edge: radial topology avoids the stair-step square-grid border.
+const verts=[0,terrainY(0,0),0],uvs=[.5,.5],idx=[];
+const RADIAL_STEPS=82,ANGLE_STEPS=320;
+for(let ring=1;ring<=RADIAL_STEPS;ring++){
+ const radius=BASE_CAMP_RADIUS_M*ring/RADIAL_STEPS;
+ for(let side=0;side<ANGLE_STEPS;side++){
+  const angle=2*Math.PI*side/ANGLE_STEPS;
+  const x=radius*Math.cos(angle),z=radius*Math.sin(angle);
+  verts.push(x,terrainY(x,z),z);
+  uvs.push((x/BASE_CAMP_RADIUS_M+1)*.5,(z/BASE_CAMP_RADIUS_M+1)*.5);
+ }
+}
+const ringVertex=(ring,side)=>1+(ring-1)*ANGLE_STEPS+(side%ANGLE_STEPS);
+for(let side=0;side<ANGLE_STEPS;side++)idx.push(0,ringVertex(1,side+1),ringVertex(1,side));
+for(let ring=1;ring<RADIAL_STEPS;ring++)for(let side=0;side<ANGLE_STEPS;side++){
+ const a=ringVertex(ring,side),b=ringVertex(ring,side+1);
+ const c=ringVertex(ring+1,side),d=ringVertex(ring+1,side+1);
+ idx.push(a,b,c,b,d,c);
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+geo.setIndex(idx);geo.computeVertexNormals();
+const groundMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});const ground=new THREE.Mesh(geo,groundMaterial);const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(95,95);groundMaterial.map=tex;groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor photo texture loaded';textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_nor_gl_1k.png',normal=>{normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(95,95);groundMaterial.normalMap=normal;groundMaterial.normalScale.set(.6,.6);groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor color + normal maps loaded';});},undefined,()=>{groundMaterial.color.set(0x536c43);document.getElementById('assetStatus').textContent='Texture unavailable — diagnostic fallback active';});ground.receiveShadow=true;scene.add(ground);
 // The terrain mesh itself is circular; no painted boundary ring is shown.
 // Perimeter clearings are unfurnished natural forest openings, NOT raised circular pads.
 // Their ground retains the photographic forest-floor material; the PBR tree placer
