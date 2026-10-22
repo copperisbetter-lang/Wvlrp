@@ -3,10 +3,32 @@ import * as THREE from 'three';import {BASE_CAMP_RADIUS_M,perimeterClearings,sun
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.fog=new THREE.FogExp2(0xa1b8b6,.0014);
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
 const hemi=new THREE.HemisphereLight(0xe7f5ff,0x43503d,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff1d8,2.4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
-const terrainY=(x,z)=>7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43);
+// Five-acre recessed lake, positioned north of Base Camp; nearest bank ~92 feet from center.
+const LAKE={x:0,z:-108,rx:82,rz:78,waterLevel:-4.5};
+function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz,dx);const waviness=1+.025*Math.sin(5*angle)+.018*Math.cos(9*angle);return Math.hypot(dx/LAKE.rx,dz/LAKE.rz)/waviness}
+function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
+function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
+function terrainY(x,z){const r=lakeRadius(x,z),base=baseTerrainY(x,z);if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
+function pathDistance(x,z,points){let best=Infinity;for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz)));best=Math.min(best,Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz))}return best}
+const beachPath=[[0,0],[8,-18],[10,-35],[7,-49],[0,-57]];
+const lakeTrail=[[35,-48],[69,-28],[107,-38],[140,-70],[175,-85],[220,-112],[275,-145],[340,-165]];
+const trailBranches=[[[140,-70],[163,-30],[198,0],[239,28]],[[220,-112],[252,-82],[298,-58],[347,-43]]];
+
 const N=160,verts=[],idx=[];for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){let xx=(x/N*2-1)*BASE_CAMP_RADIUS_M,zz=(z/N*2-1)*BASE_CAMP_RADIUS_M;verts.push(xx,terrainY(xx,zz),zz)}for(let z=0;z<N;z++)for(let x=0;x<N;x++){let a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;{const mx=(x+.5)/N*2-1,mz=(z+.5)/N*2-1;if(Math.hypot(mx,mz)<=1.002)idx.push(a,c,b,b,c,d)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);const uvs=[];for(let z=0;z<=N;z++)for(let x=0;x<=N;x++)uvs.push(x/N,z/N);geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geo.computeVertexNormals();const groundMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});const ground=new THREE.Mesh(geo,groundMaterial);const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(95,95);groundMaterial.map=tex;groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor photo texture loaded';textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_nor_gl_1k.png',normal=>{normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(95,95);groundMaterial.normalMap=normal;groundMaterial.normalScale.set(.6,.6);groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor color + normal maps loaded';});},undefined,()=>{groundMaterial.color.set(0x536c43);document.getElementById('assetStatus').textContent='Texture unavailable — diagnostic fallback active';});ground.receiveShadow=true;scene.add(ground);
 // The terrain mesh itself is circular; no painted boundary ring is shown.
 const clearGeo=new THREE.CircleGeometry(4.8,32),clearMat=new THREE.MeshStandardMaterial({color:0x75674c,roughness:1,side:THREE.DoubleSide});for(const p of perimeterClearings){const inward=.985;const x=p.x*inward,z=p.z*inward;const m=new THREE.Mesh(clearGeo,clearMat);m.rotation.x=-Math.PI/2;m.position.set(x,terrainY(x,z)+.32,z);scene.add(m)}
+
+// Water is a distinct, low-set reflective surface; final photorealistic water shader pending.
+const waterShape=new THREE.Shape();for(let i=0;i<=192;i++){const a=i/192*Math.PI*2,w=1+.025*Math.sin(5*a)+.018*Math.cos(9*a),x=LAKE.rx*Math.cos(a)*w,z=LAKE.rz*Math.sin(a)*w;if(i===0)waterShape.moveTo(x,z);else waterShape.lineTo(x,z)}
+const water=new THREE.Mesh(new THREE.ShapeGeometry(waterShape,192),new THREE.MeshPhysicalMaterial({color:0x376d78,metalness:.12,roughness:.13,transparent:true,opacity:.83,clearcoat:1,clearcoatRoughness:.08,side:THREE.DoubleSide,depthWrite:false}));water.rotation.x=-Math.PI/2;water.position.set(LAKE.x,LAKE.waterLevel,LAKE.z);scene.add(water);
+const sandMaterial=new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:1,side:THREE.DoubleSide});
+const sand=new THREE.BufferGeometry(),sandVertices=[],sandIndices=[];const shoreSegments=90;
+for(let i=0;i<=shoreSegments;i++){const a=Math.PI*.16+(Math.PI*.68)*i/shoreSegments,cs=Math.cos(a),sn=Math.sin(a);for(const radius of [.88,1.18]){const x=LAKE.x+LAKE.rx*radius*cs,z=LAKE.z+LAKE.rz*radius*sn;sandVertices.push(x,terrainY(x,z)+.16,z)}if(i<shoreSegments){const k=2*i;sandIndices.push(k,k+1,k+2,k+1,k+3,k+2)}}
+sand.setAttribute('position',new THREE.Float32BufferAttribute(sandVertices,3));sand.setIndex(sandIndices);sand.computeVertexNormals();const beachMesh=new THREE.Mesh(sand,sandMaterial);scene.add(beachMesh);
+const trailMaterial=new THREE.MeshStandardMaterial({color:0x786b50,roughness:1,side:THREE.DoubleSide});
+function addTrail(points,width=2.4){const v=[],ids=[];for(let i=0;i<points.length;i++){const p=points[i],prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],l=Math.hypot(dx,dz)||1,nx=-dz/l,nz=dx/l;for(const sign of [-1,1]){const x=p[0]+nx*width*sign/2,z=p[1]+nz*width*sign/2;v.push(x,terrainY(x,z)+.2,z)}if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k)}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(ids);g.computeVertexNormals();scene.add(new THREE.Mesh(g,trailMaterial))}
+[beachPath,lakeTrail,...trailBranches].forEach(p=>addTrail(p));
+
 // Base Camp building meshes intentionally not fabricated from generic geometry. Approved models pending.
 // Deterministic, mobile-friendly native-forest layout. Proxy silhouettes are NOT final photorealistic assets.
 let seed=93471;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
@@ -22,7 +44,8 @@ const canopyMats=forestTypes.map(t=>new THREE.MeshStandardMaterial({color:t.colo
 const treeLimit=900,trees=[];let attempts=0;
 while(trees.length<treeLimit&&attempts++<treeLimit*24){
  const radius=Math.sqrt(rnd())*(BASE_CAMP_RADIUS_M-12),theta=rnd()*Math.PI*2,x=Math.cos(theta)*radius,z=Math.sin(theta)*radius;
- if(radius<47)continue;
+ if(radius<47||lakeRadius(x,z)<1.28||beachZone(x,z))continue;
+ if(pathDistance(x,z,beachPath)<7||pathDistance(x,z,lakeTrail)<7||trailBranches.some(p=>pathDistance(x,z,p)<7))continue;
  if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<11))continue;
  const typeIndex=Math.floor(rnd()*forestTypes.length),type=forestTypes[typeIndex],scale=.65+rnd()*.8;
  trees.push({x,z,y:terrainY(x,z),typeIndex,height:type.height*scale,crown:type.crown*scale});
