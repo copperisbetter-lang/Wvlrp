@@ -35,7 +35,7 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.doesNotMatch(forest,/id:"oak-canopy"/);
   assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
   assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=basecamp-upright-forest-v10-20261021/);
+  assert.match(page,/rev=basecamp-upright-alpha-v11-20261021/);
   assert.match(page,/installBaseCampUnderstory/);
   assert.match(page,/legacyForest/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
@@ -117,4 +117,10 @@ test('photo trees are oriented upright BEFORE deriving their placement height',(
   assert.match(segment,/geometry.rotateX\(-Math.PI\/2\)/);
   assert.match(segment,/natural-fir-sapling/);
   assert.match(segment,/geometry.rotateZ\(Math.PI\/2\)/);
+});
+
+test('fir twigs must receive alpha-tested cutout foliage materials',()=>{
+  assert.match(forest,/leaf\|leaves\|twig\|needle\|foliage\|fern\|branch\|card/);
+  assert.match(forest,/material\.alphaTest=Math\.max\(\.42/);
+  assert.match(forest,/material\.transparent=false/);
 });
