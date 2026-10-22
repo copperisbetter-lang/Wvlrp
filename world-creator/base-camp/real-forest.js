@@ -167,7 +167,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
   const update=(x,z,yaw=0,force=false)=>{
     const now=performance.now();
     const yawDelta=Math.abs(Math.atan2(Math.sin(yaw-lastYaw),Math.cos(yaw-lastYaw)));
-    if(!force && (now-lastBuild<170 ||
+    if(!force && (now-lastBuild<280 ||
        (Math.hypot(x-lastX,z-lastZ)<6 && yawDelta<.23)))return;
     lastX=x;lastZ=z;lastYaw=yaw;lastBuild=now;
     const viewX=-Math.sin(yaw),viewZ=-Math.cos(yaw);
