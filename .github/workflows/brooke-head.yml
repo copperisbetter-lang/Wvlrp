@@ -34,7 +34,7 @@ jobs:
           assert raw[:4]==b'glTF', 'Invalid GLB magic'
           assert struct.unpack_from('<I',raw,8)[0]==len(raw), 'GLB byte length mismatch'
           assert png.is_file() and png.stat().st_size>1024, 'Missing or empty preview'
-          assert png.read_bytes()[:8]==b'\\x89PNG\\r\\n\\x1a\\n', 'Invalid PNG signature'
+          assert png.read_bytes()[:8]==bytes.fromhex('89504e470d0a1a0a'), 'Invalid PNG signature'
           print('PASS: GLB and PNG generated with valid headers and nonzero sizes')
           PY
       - name: Upload model and preview
