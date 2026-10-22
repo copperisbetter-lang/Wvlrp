@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'avatar-work/brooke/build_head.py'
-      - 'avatar-work/brooke/validate_build.py'
+      - 'avatar-work/brooke/**'
       - '.github/workflows/brooke-head.yml'
 jobs:
   build-and-validate:
@@ -21,9 +20,13 @@ jobs:
         run: blender -b --python avatar-work/brooke/build_head.py
       - name: Validate exported head
         run: blender -b --python avatar-work/brooke/validate_build.py -- avatar-work/brooke/brooke-head-prototype.glb
-      - name: Upload GLB artifact
+      - name: Render preview PNG
+        run: blender -b --python avatar-work/brooke/render_preview.py
+      - name: Upload model and preview
         uses: actions/upload-artifact@v4
         with:
           name: brooke-head-prototype
-          path: avatar-work/brooke/brooke-head-prototype.glb
+          path: |
+            avatar-work/brooke/brooke-head-prototype.glb
+            avatar-work/brooke/brooke-preview.png
           if-no-files-found: error
