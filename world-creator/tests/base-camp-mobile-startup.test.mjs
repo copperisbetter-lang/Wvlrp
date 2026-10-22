@@ -11,7 +11,7 @@ const page=readFileSync(path.join(dirname,'../base-camp/index.html'),'utf8');
 const forest=readFileSync(path.join(dirname,'../base-camp/real-forest.js'),'utf8');
 const understory=readFileSync(path.join(dirname,'../base-camp/real-understory.js'),'utf8');
 
-test('Base Camp perimeter sites retain approved 200-foot spacing',()=>{
+test('the 41 approved 200-foot perimeter clearings survive the reset',()=>{
   assert.equal(PERIMETER_COUNT,41);
   assert.equal(perimeterClearings.length,41);
   assert.equal(CENTER_EXCLUSION_M,60.96);
@@ -19,108 +19,50 @@ test('Base Camp perimeter sites retain approved 200-foot spacing',()=>{
   assert.ok(perimeterClearings.every(p=>p.furnished===false));
 });
 
-test('phone startup has safe bypass and deferred photo-real forest streaming',()=>{
-  assert.match(page,/const safeMode=params\.has\("safe"\)/);
-  assert.match(page,/if\(safeMode\)/);
-  assert.match(page,/setTimeout\(\(\)=>\{/);
-  assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z,yaw\)/);
-  assert.match(forest,/const maxVisible=lowPower\?\(fullForest\?128:64\):320/);
-  assert.match(forest,/const CELL=48,positionCells=new Map\(\)/);
-  assert.match(page,/id="treeDensity"/);
-  assert.doesNotMatch(page,/Grandview|grandviewUrl|panoramaStatus/);
-  assert.match(forest,/fullForest\?\[0,1,2\]:\[1,2\]/);
-  assert.match(forest,/village-oak-detailed\.glb/);
-  assert.match(forest,/village-pbr-tree_small_02\.glb/);
-  assert.match(forest,/village-pbr-fir_sapling\.glb/);
-  assert.doesNotMatch(forest,/id:"oak-canopy"/);
-  assert.match(forest,/const sources=legacyForest\?LEGACY_SOURCES:STABLE_SOURCES/);
-  assert.match(forest,/Math\.min\(2, t\.height\/rec\.height\)/);
-  assert.match(page,/rev=basecamp-upright-alpha-v11-20261021/);
-  assert.match(page,/installBaseCampUnderstory/);
-  assert.match(page,/legacyForest/);
-  assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
+test('all vegetation loaders, render batches and tree UI are ABSENT from active Base Camp',()=>{
+  assert.doesNotMatch(page,/installBaseCampRealForest|installBaseCampUnderstory/);
+  assert.doesNotMatch(page,/from ['"].*real-(forest|understory)\.js/);
+  assert.doesNotMatch(page,/activeForest|activeUnderstory|treeDensity/);
+  assert.doesNotMatch(page,/forestStatus|understoryStatus|GLTFLoader|InstancedMesh/);
+  assert.doesNotMatch(page,/new THREE\.(ConeGeometry|CylinderGeometry)/);
+  assert.doesNotMatch(page,/new THREE\.TextureLoader\(\).*tree/i);
+  assert.doesNotMatch(page,/params\.get\(['"](?:forest|details)['"]\)/);
+  assert.match(page,/id="vegetationStatus"/);
+  assert.match(page,/vegetation-free clearings/);
+  assert.match(page,/vegetation 0/);
+  assert.ok(forest.includes('installBaseCampRealForest'),
+    'old experimental forest source is retained for a future rebuild only');
+  assert.ok(understory.includes('installBaseCampUnderstory'),
+    'old experimental understory source is retained outside the live scene');
 });
 
-test('viewer inline browser module parses as JavaScript',()=>{
-  const match=page.match(/<script type="module">([\s\S]*?)<\/script>/i);
-  assert.ok(match,'inline module is present');
-  const run=spawnSync(process.execPath,['--input-type=module','--check'],{input:match[1],encoding:'utf8'});
-  assert.equal(run.status,0,run.stderr||run.stdout);
+test('circular terrain, lake, beach, trails, sunshine, and campsites remain',()=>{
+  assert.match(page,/RADIAL_STEPS=82,ANGLE_STEPS=320/);
+  assert.match(page,/scene\.add\(ground\)/);
+  assert.match(page,/scene\.add\(water\)/);
+  assert.match(page,/scene\.add\(beachMesh\)/);
+  assert.match(page,/trailBranches/);
+  assert.match(page,/interiorClearings\.length<24/);
+  assert.match(page,/perimeterClearings\.length/);
+  assert.match(page,/sunDirection\(\+clock\.value\)/);
+  assert.match(page,/document\.getElementById\('reset'\)\.onclick/);
 });
 
-test('forest loader JavaScript syntax parses',()=>{
-  const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-forest.js')],{encoding:'utf8'});
-  assert.equal(run.status,0,run.stderr||run.stdout);
-});
-
-test('real forest-floor mesh details are streamed without hiding campsites or paths',()=>{
-  assert.match(understory,/village-floor-fern_02\.glb/);
-  assert.match(understory,/material\.alphaTest=Math\.max\(\.5/);
-  assert.match(understory,/village-floor-dead_tree_trunk\.glb/);
-  assert.match(understory,/perimeterClearings\.some/);
-  assert.match(understory,/interiorClearings\.some/);
-  assert.match(understory,/new THREE\.InstancedMesh/);
-  assert.doesNotMatch(understory,/THREE\.ConeGeometry/);
-});
-test('understory JavaScript syntax parses',()=>{
-  const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-understory.js')],{encoding:'utf8'});
-  assert.equal(run.status,0,run.stderr||run.stdout);
-});
-
-test('mobile forest avoids whole-world scans, culls remote tree geometry, and manages render resolution',()=>{
-  assert.match(forest,/positionCells\.get\(ix\+":"\+iz\)/);
-  assert.match(forest,/mesh\.frustumCulled=true/);
-  assert.match(forest,/mesh\.computeBoundingSphere\(\)/);
+test('mobile joystick, look controls, FPS HUD and resolution adaptation survive',()=>{
+  assert.match(page,/id="pad"/);
+  assert.match(page,/id="look"/);
+  assert.match(page,/id="hudToggle"/);
   assert.match(page,/renderer\.setPixelRatio\(renderScale\)/);
-  assert.match(page,/renderScale=Math\.max\(\.58/);
-  assert.match(page,/Math\.min\(\.08,elapsed\/1000\)/);
-  assert.match(page,/fps/);
-});
-
-test('steady 25 FPS must trigger mobile adaptation even above 23 FPS',()=>{
-  assert.match(page,/fps<34 \|\| slowFrames>17/);
-  assert.match(page,/next=Math\.max\(12,current-\(fps<27\?12:6\)\)/);
-  assert.match(page,/fps>50 && fastFrames>65/);
+  assert.match(page,/fps<30/);
+  assert.match(page,/fps>48/);
   assert.match(page,/renderer\.info\.render\.calls/);
   assert.match(page,/renderer\.info\.render\.triangles/);
-  assert.match(forest,/now-lastBuild<280/);
+  assert.match(page,/renderer\.render\(scene,camera\)/);
 });
 
-test('broken 625-draw-call artificial oak is excluded from default phone forest',()=>{
-  assert.match(page,/visibleTreeBudget:mobileProfile\?48:96/);
-  assert.match(forest,/fullForest\?\[0,1,2\]:\[1,2\]/);
-  assert.match(forest,/cosHalfCone=lowPower\?Math\.cos\(halfHorizontalFov\+\.16\)/);
-  assert.match(forest,/const drawRadius=lowPower\?155:390/);
-});
-
-test('tree planner actually produces visible mobile forest placements without runtime errors',()=>{
-  const start=forest.indexOf('const SEED = 20261021;');
-  const end=forest.indexOf('async function loadParts(',start);
-  assert.ok(start>=0&&end>start,'extract real forest placement function');
-  const createPositions=new Function(forest.slice(start,end)+'; return createPositions;')();
-  const placements=createPositions({
-    radius:402,terrainY:()=>0,lakeRadius:()=>Infinity,beachZone:()=>false,
-    pathDistance:()=>Infinity,paths:[],perimeterClearings:[],interiorClearings:[],
-    lowPower:true,fullForest:false
-  });
-  assert.ok(placements.length>100,'forest is actually populated');
-  assert.ok(placements.every(tree=>tree.source===1||tree.source===2),
-    'mobile trees are photo-textured sources; artificial oak remains excluded');
-});
-
-test('photo trees are oriented upright BEFORE deriving their placement height',()=>{
-  const bake=forest.indexOf('geometry.applyMatrix4(mesh.matrixWorld);');
-  const measure=forest.indexOf('geometry.computeBoundingBox();',bake);
-  assert.ok(bake>=0&&measure>bake);
-  const segment=forest.slice(bake,measure);
-  assert.match(segment,/photo-understory-broadleaf/);
-  assert.match(segment,/geometry.rotateX\(-Math.PI\/2\)/);
-  assert.match(segment,/natural-fir-sapling/);
-  assert.match(segment,/geometry.rotateZ\(Math.PI\/2\)/);
-});
-
-test('fir twigs must receive alpha-tested cutout foliage materials',()=>{
-  assert.match(forest,/leaf\|leaves\|twig\|needle\|foliage\|fern\|branch\|card/);
-  assert.match(forest,/material\.alphaTest=Math\.max\(\.42/);
-  assert.match(forest,/material\.transparent=false/);
+test('Base Camp inline browser module still parses as JavaScript',()=>{
+  const m=page.match(/<script type="module">([\s\S]*?)<\/script>/i);
+  assert.ok(m,'script module exists');
+  const result=spawnSync(process.execPath,['--input-type=module','--check'],{input:m[1],encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr||result.stdout);
 });
