@@ -42,6 +42,15 @@ for v in head.data.vertices:
     nose = math.exp(-((x/.135)**2 + ((z-.015)/.24)**2))
     if y < 0:
         v.co.y -= .10*nose
+# Weld coincident UV sphere vertices before export to avoid split seams.
+import bmesh
+bm = bmesh.new()
+bm.from_mesh(head.data)
+bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.00001)
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+bm.to_mesh(head.data)
+bm.free()
+head.data.update()
 head.data.materials.append(skin)
 for p in head.data.polygons: p.use_smooth = True
 head.shape_key_add(name='Basis')
