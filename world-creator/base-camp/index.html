@@ -8,6 +8,33 @@ const N=160,verts=[],idx=[];for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){let xx=(x
 // The terrain mesh itself is circular; no painted boundary ring is shown.
 const clearGeo=new THREE.CircleGeometry(4.8,32),clearMat=new THREE.MeshStandardMaterial({color:0x75674c,roughness:1,side:THREE.DoubleSide});for(const p of perimeterClearings){const inward=.985;const x=p.x*inward,z=p.z*inward;const m=new THREE.Mesh(clearGeo,clearMat);m.rotation.x=-Math.PI/2;m.position.set(x,terrainY(x,z)+.32,z);scene.add(m)}
 // Base Camp building meshes intentionally not fabricated from generic geometry. Approved models pending.
+// Deterministic, mobile-friendly native-forest layout. Proxy silhouettes are NOT final photorealistic assets.
+let seed=93471;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+const forestTypes=[
+ {name:'oak',weight:4,height:18,crown:5,color:0x3e6433},
+ {name:'maple',weight:3,height:16,crown:4.5,color:0x52733a},
+ {name:'beech',weight:2,height:17,crown:4,color:0x608044},
+ {name:'hemlock',weight:3,height:21,crown:4.3,color:0x254c37}
+];
+const trunkGeometry=new THREE.CylinderGeometry(.19,.34,1,6),leafGeometry=new THREE.IcosahedronGeometry(1,1),coneGeometry=new THREE.ConeGeometry(1,1,7);
+const trunkMat=new THREE.MeshStandardMaterial({color:0x514233,roughness:1});
+const canopyMats=forestTypes.map(t=>new THREE.MeshStandardMaterial({color:t.color,roughness:1}));
+const treeLimit=900,trees=[];let attempts=0;
+while(trees.length<treeLimit&&attempts++<treeLimit*24){
+ const radius=Math.sqrt(rnd())*(BASE_CAMP_RADIUS_M-12),theta=rnd()*Math.PI*2,x=Math.cos(theta)*radius,z=Math.sin(theta)*radius;
+ if(radius<47)continue;
+ if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<11))continue;
+ const typeIndex=Math.floor(rnd()*forestTypes.length),type=forestTypes[typeIndex],scale=.65+rnd()*.8;
+ trees.push({x,z,y:terrainY(x,z),typeIndex,height:type.height*scale,crown:type.crown*scale});
+}
+const trunkInstances=new THREE.InstancedMesh(trunkGeometry,trunkMat,trees.length);trunkInstances.castShadow=true;trunkInstances.receiveShadow=true;
+const canopyInstances=forestTypes.map((t,i)=>{const n=trees.filter(v=>v.typeIndex===i).length;const mesh=new THREE.InstancedMesh(i===3?coneGeometry:leafGeometry,canopyMats[i],n);mesh.castShadow=true;mesh.receiveShadow=true;return mesh});
+const counters=forestTypes.map(()=>0),dummy=new THREE.Object3D();
+trees.forEach((t,i)=>{dummy.position.set(t.x,t.y+t.height*.28,t.z);dummy.scale.set(1,t.height*.56,1);dummy.updateMatrix();trunkInstances.setMatrixAt(i,dummy.matrix);
+ dummy.position.set(t.x,t.y+t.height*.79,t.z);dummy.scale.set(t.crown,t.height*.43,t.crown);dummy.updateMatrix();canopyInstances[t.typeIndex].setMatrixAt(counters[t.typeIndex]++,dummy.matrix)});
+trunkInstances.instanceMatrix.needsUpdate=true;scene.add(trunkInstances);canopyInstances.forEach(m=>{m.instanceMatrix.needsUpdate=true;scene.add(m)});
+document.getElementById('assetStatus').textContent+=' · '+trees.length+' native-species layout proxies';
+
 const pos=new THREE.Vector3(0,terrainY(0,0)+2,15);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
 pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);drag=e.pointerId;updatePad(e)});pad.addEventListener('pointermove',e=>{if(drag===e.pointerId)updatePad(e)});function updatePad(e){const r=pad.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),s=Math.min(43,len)/len;moveX=dx*s/43;moveY=dy*s/43;nub.style.transform=`translate(${dx*s}px,${dy*s}px)`}function stop(){drag=null;moveX=moveY=0;nub.style.transform=''}pad.addEventListener('pointerup',stop);pad.addEventListener('pointercancel',stop);
 const look=document.getElementById('look');let last=null;look.addEventListener('pointerdown',e=>{look.setPointerCapture(e.pointerId);last=[e.clientX,e.clientY]});look.addEventListener('pointermove',e=>{if(!last)return;yaw-=(e.clientX-last[0])*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-(e.clientY-last[1])*.004));last=[e.clientX,e.clientY]});look.addEventListener('pointerup',()=>last=null);
