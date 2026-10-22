@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brooke head inspection</title>
+<style>body{margin:0;background:#15191e;color:#f5f5f5;font:16px system-ui}header{padding:12px 20px}main{height:76vh}model-viewer{width:100%;height:100%;background:#252a32}small{color:#cbd5df}</style>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script></head>
+<body><header><h2>Brooke — 3D head inspection</h2><small>Prototype only. Load a GLB exported by the GitHub Actions workflow; no photo likeness verified yet.</small>
+<p><label>Open local GLB: <input id="file" type="file" accept=".glb,model/gltf-binary"></label></p></header>
+<main><model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" ar-status="not-presenting" alt="Rotatable Brooke prototype head"></model-viewer></main>
+<script>let oldURL;document.getElementById('file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;if(oldURL)URL.revokeObjectURL(oldURL);oldURL=URL.createObjectURL(f);document.getElementById('viewer').src=oldURL;});</script></body></html>
