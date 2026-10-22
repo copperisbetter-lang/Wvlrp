@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101d2a">
-  <title>Lauren 3 — Eye Work | WVLRP</title>
+  <title>Lauren 3 — Real 3D Eye Sculpt | WVLRP</title>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -25,7 +25,7 @@
 <body>
 <main>
   <header>
-    <h1>Lauren 3 — Working 3D Face</h1>
+    <h1>Lauren 3 — Sculpted 3D Eyes</h1>
     <p>From your original reference image • Drag to turn • Pinch to zoom</p>
   </header>
   <model-viewer id="viewer" camera-controls camera-orbit="0deg 90deg auto" camera-target="auto auto auto" exposure="1.2" environment-image="neutral" interaction-prompt="none" alt="Lauren 3 working clone of the saved Laura 2.5 face"></model-viewer>
@@ -37,7 +37,7 @@
     <button id="spin" aria-pressed="false">Rotate</button>
   </div>
   <div id="status" role="status">Loading Lauren 3 model…</div>
-  <p class="note">Lauren 3 is an independent copy of approved Laura 2.5. Forehead hair artifacts removed. Eye work is next; eyes are NOT movable yet. Preserve skin tone until matched to body. This is the first-pass, single-face reconstruction: 38,365 vertices and one connected surface. The back of the skull, hair mesh, and rigging still need to be completed. Only the model—not the source photographs—is published here.</p>
+  <p class="note">Lauren 3 now has subtle 3D-mesh fullness above both upper eyelids and beneath both lower eyelids, blended into her cheeks. This is geometry sculpting on the real 38,365-vertex model—not a generated picture. Iris/eye texture and skin color are preserved. Independently movable eyeballs are the next stage; the back of the skull, hair and body are not yet attached. Laura 2.5 remains protected.</p>
 </main>
 <script>
 (async function () {
@@ -46,7 +46,7 @@
   const spin = document.querySelector('#spin');
   let assetUrl = null;
   const root = './world-creator/assets/lauren-3-face/';
-  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64?forehead-clean-v1');
+  const paths = Array.from({length:10}, (_, i) => root + 'face.part' + String(i).padStart(2,'0') + '.b64?lauren3-eye-sculpt-v1');
   try {
     const chunks = await Promise.all(paths.map(async (url, i) => {
       const r = await fetch(url, {cache:'no-store'});
@@ -62,7 +62,7 @@
       throw Error('3D model data failed validation.');
     assetUrl = URL.createObjectURL(new Blob([bytes], {type:'model/gltf-binary'}));
     view.src = assetUrl;
-    view.addEventListener('load', () => status.textContent = 'Lauren 3 loaded. Drag to rotate or pinch to zoom.', {once:true});
+    view.addEventListener('load', () => status.textContent = 'Lauren 3 eye-area sculpt loaded. Rotate or pinch to inspect both eyelids.', {once:true});
     view.addEventListener('error', () => status.textContent = 'Unable to display the 3D model. Please reload.', {once:true});
   } catch(err) {
     status.textContent = 'Unable to load Laura: ' + err.message;
