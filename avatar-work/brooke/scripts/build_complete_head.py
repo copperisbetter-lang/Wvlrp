@@ -40,10 +40,9 @@ bpy.ops.object.select_all(action='SELECT')
 bpy.context.view_layer.objects.active=face
 bpy.ops.object.join()
 head=bpy.context.object;head.name='Brooke head and neck — photo fit WIP'
-remesh=head.modifiers.new('Unify face skull neck','REMESH')
-remesh.mode='VOXEL';remesh.voxel_size=max(w,h)/180
+head.data.remesh_voxel_size=max(w,h)/180
 bpy.context.view_layer.objects.active=head
-bpy.ops.object.modifier_apply(modifier=remesh.name)
+bpy.ops.object.voxel_remesh()
 bpy.ops.object.mode_set(mode='EDIT')
 bpy.ops.mesh.select_all(action='SELECT')
 bpy.ops.mesh.normals_make_consistent(inside=False) if hasattr(bpy.ops.mesh,'normals_make_consistent') else None
