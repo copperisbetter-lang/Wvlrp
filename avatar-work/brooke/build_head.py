@@ -41,7 +41,13 @@ for v in head.data.vertices:
     # Soft integrated nose prominence along central front surface.
     nose = math.exp(-((x/.135)**2 + ((z-.015)/.24)**2))
     if y < 0:
-        v.co.y -= .10*nose
+        # Sculpt features on the same continuous head mesh; preserve watertightness.
+        cheeks = math.exp(-(((x-.31)/.17)**2 + ((z+.015)/.18)**2)) + math.exp(-(((x+.31)/.17)**2 + ((z+.015)/.18)**2))
+        nose_tip = math.exp(-((x/.10)**2 + ((z+.13)/.09)**2))
+        upper_lip = math.exp(-((x/.18)**4 + ((z+.31)/.055)**2))
+        lower_lip = math.exp(-((x/.19)**4 + ((z+.40)/.06)**2))
+        chin = math.exp(-((x/.23)**2 + ((z+.58)/.14)**2))
+        v.co.y -= (.10*nose + .026*cheeks + .06*nose_tip + .022*upper_lip + .027*lower_lip + .03*chin)
 # Weld coincident UV sphere vertices before export to avoid split seams.
 import bmesh
 bm = bmesh.new()
