@@ -15,6 +15,10 @@ try{
  await page.locator('#nose').fill('45');
  await page.locator('#depth').fill('20');
  await page.screenshot({path:'brooke-single-head-smoke.png'});
+ const canvas=await page.locator('#stage canvas').count();
+ if(canvas!==1)throw Error('Expected one WebGL canvas, found '+canvas);
+ const pixels=await page.locator('#stage canvas').evaluate(canvas=>{const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');return gl?Array.from(gl.getParameter(gl.VIEWPORT)):null});
+ if(!pixels||pixels[2]<100||pixels[3]<100)throw Error('WebGL viewport not initialized');
  if(errors.length)throw Error('Browser errors: '+errors.join('; '));
  const status=await page.locator('#status').textContent();
  if(!status.includes('Head surface count: 1'))throw Error('Incorrect head count: '+status);
