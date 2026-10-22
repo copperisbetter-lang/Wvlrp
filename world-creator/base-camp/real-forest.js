@@ -148,12 +148,8 @@ export async function installBaseCampRealForest(THREE,scene,options){
   const update=(x,z,force=false)=>{
     if(!force && Math.hypot(x-lastX,z-lastZ)<8)return;
     lastX=x;lastZ=z;
-    let visible=0;
-    // The visible set moves with the player. This keeps high-resolution
-    // source meshes at eye level without uploading distant campsite trees.
-    // No artificial 'green fence': distribute separate crowns with open gaps.
-    // Pick nearby trees by distance, but keep at least 23m of separation
-    // between selected mobile trunks; never take the 28 nearest blindly.
+    // The visible set moves with the player; ring-balanced draw selection
+    // avoids an empty horizon while retaining natural open spaces.
     // Ring-balanced draw selection is essential: using the nearest N
     // positions leaves an obvious vacant horizon, even with thousands planted.
     const selectedLimit=densityBudget;
