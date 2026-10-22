@@ -21,7 +21,7 @@ const LEGACY_SOURCES = [
 const SEED = 20261021;
 function generator(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296};}
 function angularGap(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
-function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false}){
+function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false,fullForest=false}){
   const rand=generator(SEED),placements=[];
     const spacing=9.2,cells=Math.ceil((radius-11)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
@@ -39,7 +39,7 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     const localSlope=Math.hypot(terrainY(x+1,z)-terrainY(x-1,z),terrainY(x,z+1)-terrainY(x,z-1))*.5;
     if(localSlope>.72)continue;
     const speciesRoll=rand(),source=legacyForest?(speciesRoll<.27?1:0):
-      (!options.fullForest?(speciesRoll<.79?1:2):
+      (!fullForest?(speciesRoll<.79?1:2):
       (speciesRoll<.66?0:speciesRoll<.88?1:2));
     // Do not multiply a small tree's leaf/branch geometry 5x; source models
     // are naturally 4-9m high. Use 3 age bands rather than identical giants.
