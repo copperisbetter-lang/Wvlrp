@@ -121,7 +121,10 @@ jobs:
             exit 0
           fi
           mkdir -p /tmp/carolyn-export
-          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export
+          if ! gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name caroline-adult-foundation --dir /tmp/carolyn-export; then
+            echo "::warning::Caroline artifact unavailable; continuing website publication without refreshing Caroline."
+            exit 0
+          fi
           test -s /tmp/carolyn-export/caroline-inspection.glb
           cp /tmp/carolyn-export/caroline-inspection.glb world-creator/assets/caroline-inspection.glb
           if [ -s /tmp/carolyn-export/carol-anatomy-landmarks.json ]; then
