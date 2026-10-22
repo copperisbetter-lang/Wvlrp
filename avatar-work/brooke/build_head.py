@@ -31,13 +31,13 @@ head.name = 'Brooke_Head_Skin'
 for v in head.data.vertices:
     x,y,z = v.co
     # Z up, Y negative toward face/front.
-    v.co = (x*.72, y*.54, z*1.08)
+    v.co = (x*.70, y*.57, z*.94)
     x,y,z = v.co
     # Narrow the upper cranium and sculpt a tapered lower face on the shared skin shell.
     if z > .30:
         v.co.x *= 1 - .075 * min(1, (z-.30)/.60)
     if z < -.05:
-        v.co.x *= 1 - .13 * min(1, (-z-.05)/.75)
+        v.co.x *= 1 - .23 * min(1, (-z-.05)/.75)
     x,y,z = v.co
     # Slight chin taper and cheek fullness, no detached facial pieces.
     if z < -.32:
@@ -56,7 +56,7 @@ for v in head.data.vertices:
         brow = math.exp(-(((abs(x)-.28)/.17)**2 + ((z-.39)/.10)**2))
         eye_socket = math.exp(-(((abs(x)-.28)/.15)**2 + ((z-.24)/.115)**2))
         bridge = math.exp(-((x/.09)**2 + ((z-.13)/.24)**2))
-        v.co.y -= (.10*nose + .026*cheeks + .06*nose_tip + .022*upper_lip + .027*lower_lip + .03*chin + .038*brow + .035*bridge - .075*eye_socket)
+        v.co.y -= (.11*nose + .038*cheeks + .105*nose_tip + .045*upper_lip + .043*lower_lip + .045*chin + .023*brow + .055*bridge - .115*eye_socket)
 # Weld coincident UV sphere vertices before export to avoid split seams.
 import bmesh
 bm = bmesh.new()
@@ -99,9 +99,9 @@ def ball(name, pos, scale, mat):
     return o
 for side,label in [(-1,'Left'),(1,'Right')]:
     x=side*.28
-    ball(label+'_Eyeball',(x,-.405,.24),(.088,.088,.083),white)
-    ball(label+'_Iris',(x,-.489,.24),(.046,.009,.046),iris)
-    ball(label+'_Pupil',(x,-.499,.24),(.020,.006,.020),pupil)
+    ball(label+'_Eyeball',(x,-.443,.24),(.075,.064,.068),white)
+    ball(label+'_Iris',(x,-.505,.24),(.035,.006,.035),iris)
+    ball(label+'_Pupil',(x,-.511,.24),(.016,.004,.016),pupil)
 
 out=Path('avatar-work/brooke/brooke-head-prototype.glb').resolve()
 out.parent.mkdir(parents=True,exist_ok=True)
