@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - .github/workflows/brooke-photo-3ddfa.yml
+      - avatar-work/brooke/scripts/build_complete_head.py
   workflow_dispatch:
     inputs:
       photo_url:
@@ -71,6 +72,21 @@ jobs:
           assert v>100 and f>100, (v,f)
           print('Photo reconstruction OBJ:',v,'vertices',f,'faces')
           PY
+      - name: Install Blender
+        run: sudo apt-get install -y blender
+      - name: Build complete cranium and neck GLB
+        run: |
+          OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
+          test -n "$OBJ"
+          mkdir -p avatar-work/brooke/build
+          blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-complete-head-neck.glb
+          test -s avatar-work/brooke/build/brooke-complete-head-neck.glb
+      - name: Upload complete head and neck GLB
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-complete-head-neck-glb
+          path: avatar-work/brooke/build/brooke-complete-head-neck.glb
+          if-no-files-found: error
       - name: Upload photo-reconstructed OBJ
         uses: actions/upload-artifact@v4
         with:
