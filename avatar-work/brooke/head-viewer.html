@@ -1,9 +1,19 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Brooke head inspection</title>
-<style>body{margin:0;background:#15191e;color:#f5f5f5;font:16px system-ui}header{padding:12px 20px}main{height:76vh}model-viewer{width:100%;height:100%;background:#252a32}small{color:#cbd5df}</style>
+<title>Brooke | 3D Head Viewer</title>
+<style>body{margin:0;background:#121820;color:#fff;font:16px system-ui}header{padding:12px 16px}h1{font-size:1.3rem;margin:0 0 6px}small{color:#b8c9d7}main{height:78vh;min-height:400px}model-viewer{width:100%;height:100%;background:#28313c}#status{padding:8px 16px;color:#d6e3ed}a{color:#aee4ff}</style>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script></head>
-<body><header><h2>Brooke — 3D head inspection</h2><small>Prototype only. Load a GLB exported by the GitHub Actions workflow; no photo likeness verified yet.</small>
-<p><label>Open local GLB: <input id="file" type="file" accept=".glb,model/gltf-binary"></label></p></header>
-<main><model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" ar-status="not-presenting" alt="Rotatable Brooke prototype head"></model-viewer></main>
-<script>let oldURL;document.getElementById('file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;if(oldURL)URL.revokeObjectURL(oldURL);oldURL=URL.createObjectURL(f);document.getElementById('viewer').src=oldURL;});</script></body></html>
+<body><header><h1>Brooke — 3D Head</h1><small>Prototype, not yet photo-matched. Drag to rotate; pinch to zoom.</small></header>
+<main><model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1.2" alt="Rotatable Brooke prototype head"></model-viewer></main>
+<div id="status">Loading Brooke's model…</div>
+<script>
+const viewer=document.getElementById('viewer'),status=document.getElementById('status');
+const sources=[
+'https://cdn.jsdelivr.net/gh/copperisbetter-lang/Wvlrp@main/public-models/brooke-head.glb',
+'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-models/brooke-head.glb'
+];let idx=0;
+function load(){viewer.src=sources[idx];}
+viewer.addEventListener('load',()=>{status.textContent='Model loaded. Drag to rotate; pinch to zoom.'});
+viewer.addEventListener('error',()=>{if(++idx<sources.length)load();else status.textContent='Model could not load. Please report this message.'});
+load();
+</script></body></html>
