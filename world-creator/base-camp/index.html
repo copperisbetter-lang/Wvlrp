@@ -59,8 +59,30 @@ for(let i=0;i<=shoreSegments;i++){const a=Math.PI*.16+(Math.PI*.68)*i/shoreSegme
 sand.setAttribute('position',new THREE.Float32BufferAttribute(sandVertices,3));sand.setIndex(sandIndices);sand.computeVertexNormals();const beachMesh=new THREE.Mesh(sand,sandMaterial);scene.add(beachMesh);
 // Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
 // Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
-const trailMaterial=new THREE.MeshStandardMaterial({color:0x716247,roughness:1,transparent:true,opacity:.91,side:THREE.DoubleSide,depthWrite:false});
-const edgeMaterial=new THREE.MeshStandardMaterial({color:0x635b3f,roughness:1,transparent:true,opacity:.25,side:THREE.DoubleSide,depthWrite:false});
+const trailMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.98,side:THREE.DoubleSide,depthWrite:false});
+const edgeMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false});
+// The trail surface is an actual photograph cut from the lower, ground-facing
+// portion of WVLRP's approved Woodland Trail 360 panorama, NOT drawn geometry art.
+// Crop a clean ground patch at runtime and tile it lengthwise along the flat path.
+// Keep the path's only geometry a thin terrain-conforming surface.
+const trailPhoto=new THREE.ImageLoader();
+trailPhoto.load('../../assets/woodland-trail-hd.webp',photo=>{
+ const tile=document.createElement('canvas');tile.width=512;tile.height=512;
+ const ctx=tile.getContext('2d');if(!ctx)return;
+ // Equirectangular panorama: lower rows represent the trail/leaf-litter ground.
+ // Use the forward-facing center section and avoid horizon/sky.
+ const sw=Math.min(photo.width*.19,photo.height*.50);
+ const sh=Math.min(photo.height*.25,photo.width*.14);
+ const sx=(photo.width-sw)*.5,sy=Math.min(photo.height-sh,photo.height*.70);
+ ctx.drawImage(photo,sx,sy,sw,sh,0,0,512,512);
+ const texture=new THREE.CanvasTexture(tile);texture.colorSpace=THREE.SRGBColorSpace;
+ texture.wrapS=THREE.ClampToEdgeWrapping;texture.wrapT=THREE.RepeatWrapping;
+ texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ trailMaterial.color.set(0xffffff);trailMaterial.map=texture;trailMaterial.needsUpdate=true;
+ edgeMaterial.map=texture;edgeMaterial.needsUpdate=true;
+ document.getElementById('assetStatus').textContent='Woodland Trail 360 photographic path surface loaded';
+},undefined,()=>{document.getElementById('assetStatus').textContent='Woodland Trail path photo unavailable — check source asset';});
+
 function addTrail(points,width=1.65){
  const spline=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],0,p[1])),false,'centripetal');
  const steps=Math.max(48,Math.ceil(spline.getLength()/1.25));
