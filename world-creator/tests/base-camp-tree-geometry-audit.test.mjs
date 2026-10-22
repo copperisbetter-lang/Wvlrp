@@ -50,6 +50,13 @@ function auditGlb(filename) {
       nodes,positionBounds:positionBounds.slice(0,8)},
     triangles,drawParts,vertices,materials:doc.materials?.length??0,
     alphaModes,images:doc.images?.length??0,
+    imageKinds:(doc.images??[]).slice(0,12).map(im=>({mime:im.mimeType,name:im.name,uri:im.uri?.slice(0,50)})),
+    materialsInfo:(doc.materials??[]).slice(0,6).map(mat=>({
+      name:mat.name,alphaMode:mat.alphaMode,doubleSided:mat.doubleSided,
+      baseColorTexture:mat.pbrMetallicRoughness?.baseColorTexture?.index,
+      baseColorFactor:mat.pbrMetallicRoughness?.baseColorFactor,
+      extensions:mat.extensions?Object.keys(mat.extensions):[]
+    })),
     topMeshes:meshes.sort((a,b)=>b.triangles-a.triangles).slice(0,6)};
 }
 test('audit actual mobile forest tree polygon costs, not estimated GLB file size',()=>{
