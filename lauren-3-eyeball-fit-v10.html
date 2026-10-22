@@ -15,6 +15,8 @@ h1{font-size:20px;margin:0 0 5px}
 header p{margin:0;color:#c6dbe7;font-size:13px}
 #stage{height:63dvh;min-height:360px;background:radial-gradient(circle at 50% 40%,#718798,#1c3041 75%);touch-action:none;position:relative;overflow:hidden}
 #stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#loadBanner{position:absolute;z-index:4;top:12px;left:12px;right:12px;background:rgba(9,29,40,.86);color:#fff;padding:10px 12px;border:1px solid #52738a;border-radius:8px;font-size:13px;line-height:1.3}
+#loadBanner[hidden]{display:none}
 .controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:9px 12px}
 button,select{border:1px solid #779aaf;border-radius:9px;color:white;background:#2b536d;font:600 14px system-ui;padding:11px 7px;min-height:43px}
 button:active,button:focus-visible{background:#467997}
@@ -32,7 +34,7 @@ output{width:32px;text-align:right;font-variant-numeric:tabular-nums}
 </head>
 <body><main>
 <header><h1>Lauren 3 — Eyeball Fit from Laura Photo (v10)</h1><p>Original facial flesh preserved • Feathered hazel irises • Sealed eye corners</p></header>
-<div id="stage" aria-label="Interactive 3D face viewer"></div>
+<div id="stage" aria-label="Interactive 3D face viewer"><div id="loadBanner" role="status">Loading Laura’s preserved 3D head and eye controls…</div></div>
 <div class="controls">
  <button id="front">Front</button><button id="leftside">Left side</button><button id="rightside">Right side</button>
  <button id="resetCamera">Reset camera</button><button id="spin">Rotate</button><button id="blink">Blink</button>
@@ -59,8 +61,8 @@ output{width:32px;text-align:right;font-variant-numeric:tabular-nums}
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {installLauren3Eyes} from './world-creator/lauren3-eye-rig-v10.js?v=eye-rig-v10-original-skin-eyeball';
-const stage=document.querySelector('#stage'),status=document.querySelector('#status');
+import {installLauren3Eyes} from './world-creator/lauren3-eye-rig-v10.js?v=eye-rig-v10-rgb-repair-20261022';
+const stage=document.querySelector('#stage'),status=document.querySelector('#status'),loadBanner=document.querySelector('#loadBanner');
 const scene=new THREE.Scene();scene.background=new THREE.Color('#344d60');
 // Soft, balanced studio lights for movable eyes. The saved photographic
 // face colors are displayed separately without directional-light tint.
@@ -152,9 +154,10 @@ async function load(){
  const bounds=new THREE.Box3().setFromObject(face),bcenter=bounds.getCenter(new THREE.Vector3());
  center.set(bcenter.x,bcenter.y,bcenter.z);
  lookAtFront();
+ loadBanner.hidden=true;
  status.textContent='Lauren 3 v10 loaded — feathered hazel iris, sealed corners, light-matched sclera, original eyelid flesh and every original face triangle preserved, no v9 dark cavity wedges. Laura 2.5 protected. Drag to inspect.';
 }
-load().catch(err=>{console.error(err);status.textContent='Unable to load eye rig: '+err.message;});
+load().catch(err=>{console.error(err);loadBanner.hidden=false;loadBanner.textContent='3D head loading error: '+err.message;status.textContent='Unable to load eye rig: '+err.message;});
 function cancelSpin(){turning=false;document.querySelector('#spin').textContent='Rotate';}
 document.querySelector('#front').onclick=()=>{cancelSpin();lookAtFront();};
 document.querySelector('#leftside').onclick=()=>{cancelSpin();setSide(-1);};
