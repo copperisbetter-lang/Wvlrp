@@ -103,6 +103,14 @@ export async function installBaseCampRealForest(THREE,scene,options){
   const drawRadius=lowPower?205:390;
   let densityBudget=Math.min(maxVisible,Math.max(36,options.visibleTreeBudget??(lowPower?96:260)));
   const positions=createPositions({...options,legacyForest});
+  // Partition the fixed world map once. Updating the view must not rescan all
+  // thousands of trees every time an Android user turns their camera.
+  const CELL=48,positionCells=new Map();
+  for(const t of positions){
+    const key=Math.floor(t.x/CELL)+":"+Math.floor(t.z/CELL);
+    if(!positionCells.has(key))positionCells.set(key,[]);
+    positionCells.get(key).push(t);
+  }
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
   options.report?.(legacyForest?"Experimental forest test — loading older models…":"Loading detailed oaks, real PBR understory trees and young firs…");
@@ -110,7 +118,14 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // Fir asset is over 30 MB, broadleaf is 10 MB. Avoid a 40 MB startup
   // download + simultaneous GLB decode on phones. ?forest=full opts in.
   const ids=legacyForest?(lowPower&&!fullForest?[0]:[0,1]):[0,1,2];
-  const results=await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,sources[i])));
+  // Serial decoding on phones avoids a single simultaneous multi-GLB stall.
+  // Desktop can load all models concurrently.
+  const results=lowPower?[]:await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,sources[i])));
+  if(lowPower)for(const i of ids){
+    await new Promise(resolve=>setTimeout(resolve,25));
+    try{results.push({status:"fulfilled",value:await loadParts(THREE,loader,sources[i])});}
+    catch(reason){results.push({status:"rejected",reason});}
+  }
   const group=new THREE.Group();
   group.name="Base Camp streamed photo-textured forest";
   const records=[];
@@ -134,7 +149,9 @@ export async function installBaseCampRealForest(THREE,scene,options){
       mesh.receiveShadow=false;
       // Matrices are repopulated after player movement: stale frustum bounds
       // must never hide a nearby stand when the player crosses chunk limits.
-      mesh.frustumCulled=false;
+      // Recompute bounds only when instance positions change below. Otherwise
+      // off-screen tree batches still submit all of their triangles to the GPU.
+      mesh.frustumCulled=true;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       group.add(mesh);
       return mesh;
@@ -144,6 +161,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     status.sources.push({name:source.id,available:pool.length,parts:loaded.parts.length});
   }
   scene.add(group);
+  const bySource=new Map(records.map((rec)=>[sources.indexOf(rec.source),rec]));
   const dummy=new THREE.Object3D();
   let lastX=NaN,lastZ=NaN,lastYaw=NaN,lastBuild=-Infinity;
   const update=(x,z,yaw=0,force=false)=>{
@@ -160,11 +178,16 @@ export async function installBaseCampRealForest(THREE,scene,options){
     // positions leaves an obvious vacant horizon, even with thousands planted.
     const selectedLimit=densityBudget;
     const rings=[[],[],[]];
-    for(const rec of records){
-      for(const t of rec.pool){
+    const minIx=Math.floor((x-drawRadius)/CELL),maxIx=Math.floor((x+drawRadius)/CELL);
+    const minIz=Math.floor((z-drawRadius)/CELL),maxIz=Math.floor((z+drawRadius)/CELL);
+    for(let ix=minIx;ix<=maxIx;ix++)for(let iz=minIz;iz<=maxIz;iz++){
+      const cell=positionCells.get(ix+":"+iz);
+      if(!cell)continue;
+      for(const t of cell){
+        const rec=bySource.get(t.source);
+        if(!rec)continue;
         const dx=t.x-x,dz=t.z-z,d2=dx*dx+dz*dz;
         if(d2>drawRadius*drawRadius)continue;
-        // For mobile, discard trees behind/off-camera with a generous view cone.
         if(lowPower&&d2>17*17&&dx*viewX+dz*viewZ<cosHalfCone*Math.sqrt(d2))continue;
         rings[d2<85*85?0:d2<152*152?1:2].push({rec,t,d2});
       }
@@ -211,6 +234,9 @@ export async function installBaseCampRealForest(THREE,scene,options){
       for(const mesh of rec.batches){
         mesh.count=trees.length;
         mesh.instanceMatrix.needsUpdate=true;
+        // Critical: the instance cloud moves as the player moves. Fresh bounds
+        // permit Three.js to reject off-camera batches safely.
+        mesh.computeBoundingSphere();
       }
     }
     status.visible=visible;
