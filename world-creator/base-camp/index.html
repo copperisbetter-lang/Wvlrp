@@ -57,8 +57,25 @@ const sandMaterial=new THREE.MeshStandardMaterial({color:0xb7a17a,roughness:1,si
 const sand=new THREE.BufferGeometry(),sandVertices=[],sandIndices=[];const shoreSegments=90;
 for(let i=0;i<=shoreSegments;i++){const a=Math.PI*.16+(Math.PI*.68)*i/shoreSegments,cs=Math.cos(a),sn=Math.sin(a);for(const radius of [.88,1.18]){const x=LAKE.x+LAKE.rx*radius*cs,z=LAKE.z+LAKE.rz*radius*sn;sandVertices.push(x,terrainY(x,z)+.16,z)}if(i<shoreSegments){const k=2*i;sandIndices.push(k,k+1,k+2,k+1,k+3,k+2)}}
 sand.setAttribute('position',new THREE.Float32BufferAttribute(sandVertices,3));sand.setIndex(sandIndices);sand.computeVertexNormals();const beachMesh=new THREE.Mesh(sand,sandMaterial);scene.add(beachMesh);
-const trailMaterial=new THREE.MeshStandardMaterial({color:0x786b50,roughness:1,side:THREE.DoubleSide});
-function addTrail(points,width=2.4){const v=[],ids=[];for(let i=0;i<points.length;i++){const p=points[i],prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],l=Math.hypot(dx,dz)||1,nx=-dz/l,nz=dx/l;for(const sign of [-1,1]){const x=p[0]+nx*width*sign/2,z=p[1]+nz*width*sign/2;v.push(x,terrainY(x,z)+.2,z)}if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k)}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(ids);g.computeVertexNormals();scene.add(new THREE.Mesh(g,trailMaterial))}
+// Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
+// Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
+const trailMaterial=new THREE.MeshStandardMaterial({color:0x716247,roughness:1,transparent:true,opacity:.91,side:THREE.DoubleSide,depthWrite:false});
+const edgeMaterial=new THREE.MeshStandardMaterial({color:0x635b3f,roughness:1,transparent:true,opacity:.25,side:THREE.DoubleSide,depthWrite:false});
+function addTrail(points,width=1.65){
+ const spline=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],0,p[1])),false,'centripetal');
+ const steps=Math.max(48,Math.ceil(spline.getLength()/1.25));
+ function strip(extra,material,raise){const v=[],uv=[],ids=[];
+  for(let i=0;i<=steps;i++){const t=i/steps,p=spline.getPoint(t),dir=spline.getTangent(t),l=Math.hypot(dir.x,dir.z)||1,nx=-dir.z/l,nz=dir.x/l;
+   const drift=.16*Math.sin(t*39+points.length)+.09*Math.sin(t*83);
+   const taper=1+.09*Math.sin(t*27)+.055*Math.sin(t*61+2);
+   for(const side of [-1,1]){const w=(width*taper+extra)*.5, x=p.x+nx*(side*w+drift),z=p.z+nz*(side*w+drift);
+    v.push(x,terrainY(x,z)+raise,z);uv.push(side===-1?0:1,t*steps/8);}
+   if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k);}
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ids);g.computeVertexNormals();const mesh=new THREE.Mesh(g,material);mesh.renderOrder=extra?1:2;scene.add(mesh);
+ }
+ strip(.75,edgeMaterial,.14);strip(0,trailMaterial,.18);
+}
 [beachPath,lakeTrail,...trailBranches].forEach(p=>addTrail(p));
 
 // Interior future campsites: natural empty clearings, outside Base Camp's 200-foot exclusion.
