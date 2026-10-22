@@ -54,13 +54,13 @@ test('forest loader JavaScript syntax parses',()=>{
 });
 
 test('real forest-floor mesh details are streamed without hiding campsites or paths',()=>{
-  assert.match(understory,/village-floor-fern_02\\.glb/);
-  assert.match(understory,/village-floor-rock_moss_set_01\\.glb/);
-  assert.match(understory,/village-floor-dead_tree_trunk\\.glb/);
-  assert.match(understory,/perimeterClearings\\.some/);
-  assert.match(understory,/interiorClearings\\.some/);
-  assert.match(understory,/new THREE\\.InstancedMesh/);
-  assert.doesNotMatch(understory,/THREE\\.ConeGeometry/);
+  assert.match(understory,/village-floor-fern_02\.glb/);
+  assert.match(understory,/village-floor-rock_moss_set_01\.glb/);
+  assert.match(understory,/village-floor-dead_tree_trunk\.glb/);
+  assert.match(understory,/perimeterClearings\.some/);
+  assert.match(understory,/interiorClearings\.some/);
+  assert.match(understory,/new THREE\.InstancedMesh/);
+  assert.doesNotMatch(understory,/THREE\.ConeGeometry/);
 });
 test('understory JavaScript syntax parses',()=>{
   const run=spawnSync(process.execPath,['--check',path.join(dirname,'../base-camp/real-understory.js')],{encoding:'utf8'});
