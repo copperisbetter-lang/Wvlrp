@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101d2a">
 <link rel="icon" href="data:,">
-<title>Lauren 3 — Natural Resting Eyes + 3D Lid Puffs | WVLRP</title>
+<title>Lauren 3 v7 — Smaller Recessed Eyes | WVLRP</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101d2a;color:#edf6fc;font:16px system-ui,Arial,sans-serif}
@@ -31,7 +31,7 @@ output{width:32px;text-align:right;font-variant-numeric:tabular-nums}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 </head>
 <body><main>
-<header><h1>Lauren 3 — Natural Eye Contours (v6)</h1><p>Relaxed movable eyes • Real upper/lower eye cushions • Drag to rotate, pinch to zoom</p></header>
+<header><h1>Lauren 3 — Eye Fit Test (v7)</h1><p>Smaller, deeper eyes • Closed socket corners • Upper/lower eye cushions</p></header>
 <div id="stage" aria-label="Interactive 3D face viewer"></div>
 <div class="controls">
  <button id="front">Front</button><button id="leftside">Left side</button><button id="rightside">Right side</button>
@@ -53,13 +53,13 @@ output{width:32px;text-align:right;font-variant-numeric:tabular-nums}
  <label><span>Up trim</span><input id="trimY" type="range" min="-10" max="10" step="1" value="0"><output id="trimYOut">0°</output></label>
 </fieldset>
 <div id="status" role="status" aria-live="polite">Loading original, intact Lauren 3 mesh and movable eye rig…</div>
-<p class="note">Lauren 3 working preview: the source GLB and protected Laura 2.5 are unchanged. Gentle eye puffs are continuous 3D deformations applied to a fresh in-memory copy; the left/right movable eyes have separate controls. The v6 preview retains the approved skin color and adds a relaxed resting-eye opening with slightly fuller 3D eyelids. Final body skin-color matching remains deferred.</p>
+<p class="note">Lauren 3 working preview: the source GLB and protected Laura 2.5 are unchanged. Gentle eye puffs are continuous 3D deformations applied to a fresh in-memory copy; the left/right movable eyes have separate controls. The v7 preview uses smaller, deeper eyeballs, matching iris proportions and sealed socket corners, with the approved skin color preserved. Final body skin-color matching remains deferred.</p>
 </main>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {installLauren3Eyes} from './world-creator/lauren3-eye-rig.js?v=eye-rig-v6-natural-lids';
+import {installLauren3Eyes} from './world-creator/lauren3-eye-rig.js?v=eye-rig-v7-small-deep-corner-seal';
 const stage=document.querySelector('#stage'),status=document.querySelector('#status');
 const scene=new THREE.Scene();scene.background=new THREE.Color('#344d60');
 // Soft, balanced studio lights for movable eyes. The saved photographic
@@ -89,7 +89,7 @@ renderer.setAnimationLoop(time=>{if(turning&&rig){const t=time*.00015;camera.pos
 const expected='27931d29e5366c452af77e7d182dd4eea3f444eebcc8e660134f7aa961c6298e';
 async function load(){
  const root='./world-creator/assets/lauren-3-face/';
- const paths=Array.from({length:10},(_,i)=>root+'face.part'+String(i).padStart(2,'0')+'.b64?intact-eye-rig-v6-natural-lids');
+ const paths=Array.from({length:10},(_,i)=>root+'face.part'+String(i).padStart(2,'0')+'.b64?intact-eye-rig-v7-small-deep-corner-seal');
  const chunks=await Promise.all(paths.map(async url=>{const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('Missing model part ('+r.status+')');return (await r.text()).trim();}));
  const data=atob(chunks.join('')),bytes=new Uint8Array(data.length);
  for(let i=0;i<data.length;i++)bytes[i]=data.charCodeAt(i);
@@ -124,7 +124,7 @@ async function load(){
  const bounds=new THREE.Box3().setFromObject(face),bcenter=bounds.getCenter(new THREE.Vector3());
  center.set(bcenter.x,bcenter.y,bcenter.z);
  lookAtFront();
- status.textContent='Lauren 3 eye repair v6 loaded — relaxed resting gaze, narrower almond-shaped sockets and enlarged 3D upper/lower lid cushions. Original skin colors and protected Laura 2.5 preserved. '+rig.removed.join('/')+' original eye triangles replaced. Drag to inspect.';
+ status.textContent='Lauren 3 v7 loaded — smaller and more recessed eyeballs, adjusted irises and solid socket-corner backing. Skin colors unchanged; Laura 2.5 protected. '+rig.removed.join('/')+' original eye triangles replaced. Drag to inspect.';
 }
 load().catch(err=>{console.error(err);status.textContent='Unable to load eye rig: '+err.message;});
 function cancelSpin(){turning=false;document.querySelector('#spin').textContent='Rotate';}
