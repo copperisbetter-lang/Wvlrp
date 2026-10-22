@@ -16,11 +16,13 @@ Purpose: prevent recurring failures across **every** WVLRP character (Brooke, La
 | [39835080912](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39835080912) | Verify GLB/PNG | Same failure step; logs not separately inspected | Inspect exact logs if it persists |
 | [39835147983](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39835147983) | Verify GLB/PNG | Log confirms `ModuleNotFoundError: No module named 'numpy'`, missing GLB, and failed preview/verification. Blender reported success at workflow step level despite Python traceback. | Install NumPy and use `--python-exit-code 1` |
 
-Additional runs [39834709031](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39834709031), [39839482940](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39839482940), and [39839833570](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39839833570) were still in progress when checked; their results must be recorded when complete.
+| [39839833570](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39839833570) | Validate exported head | **NumPy preflight passed (1.26.4)** and GLB build proceeded, but validator raised `AssertionError: Head has nonmanifold edges`. This is a separate geometry problem, not the former NumPy failure. | Inspect head mesh construction and boundary/loose edges; fix geometry without weakening the manifold check. |
+
+Additional runs [39834709031](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39834709031), [39839482940](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/39839482940), were still in progress when checked; their results must be recorded when complete.
 
 ## Corrective change
 
-[Commit 3f071aa](https://github.com/copperisbetter-lang/Wvlrp/commit/3f071aa00981f9704b901a8f0a96aafb4cf91e4d) adds `python3-numpy`, an explicit Blender NumPy import check, and `--python-exit-code 1` on Blender script invocations. **Not yet proven successful by a completed run at the time of this entry.** Check compatibility of Ubuntu's NumPy package with Blender's embedded Python; if the import still fails, install NumPy into the actual Blender Python environment rather than assuming the system package is visible.
+[Commit 3f071aa](https://github.com/copperisbetter-lang/Wvlrp/commit/3f071aa00981f9704b901a8f0a96aafb4cf91e4d) adds `python3-numpy`, an explicit Blender NumPy import check, and `--python-exit-code 1` on Blender script invocations. **Partially verified:** run 39839833570 confirms NumPy loads and the build reaches topology validation, but the overall run failed on nonmanifold head edges. Check compatibility of Ubuntu's NumPy package with Blender's embedded Python; if the import still fails, install NumPy into the actual Blender Python environment rather than assuming the system package is visible.
 
 ## Mandatory preflight for every character render
 
