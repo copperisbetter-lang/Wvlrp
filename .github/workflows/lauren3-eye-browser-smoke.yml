@@ -45,7 +45,11 @@ jobs:
             page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
             await page.goto('https://wvlrp.com/lauren-3-face-viewer.html?eye-smoke=3',{waitUntil:'domcontentloaded',timeout:40000});
             await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Lauren 3 loaded'),{timeout:65000});
+            const neutral=await page.locator('#stage canvas').screenshot();
             await page.locator('[data-look="-18,0"]').click();
+            await page.waitForTimeout(180);
+            const lookingLeft=await page.locator('#stage canvas').screenshot();
+            if(Buffer.compare(neutral,lookingLeft)===0)throw Error('Eye gaze made no rendered pixel change');
             await page.locator('#blink').click();
             await page.locator('#chooseEye').selectOption('left');
             await page.locator('#trimX').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -55,6 +59,6 @@ jobs:
             if(!summary.canvas||summary.yaw!=='0'||summary.pitch!=='0')throw Error('Viewer controls or canvas failed');
             if(errors.length)throw Error('Browser errors: '+errors.join(' | '));
             await browser.close();
-            console.log('PASS Lauren 3 independent 3D eyes, puffs, phone controls & blink browser smoke');
+            console.log('PASS Lauren 3: real WebGL, visible gaze-motion pixel difference, blink, per-eye controls and original backup safety');
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
