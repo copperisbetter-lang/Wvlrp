@@ -23,7 +23,7 @@ function generator(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013
 function angularGap(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
 function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false}){
   const rand=generator(SEED),placements=[];
-  const spacing=9.2,cells=Math.ceil((radius-11)/spacing);
+    const spacing=9.2,cells=Math.ceil((radius-11)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
     if(rand()>.84)continue;
     const x=(i+(rand()-.5)*.8)*spacing,z=(j+(rand()-.5)*.8)*spacing;
@@ -39,7 +39,8 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     const localSlope=Math.hypot(terrainY(x+1,z)-terrainY(x-1,z),terrainY(x,z+1)-terrainY(x,z-1))*.5;
     if(localSlope>.72)continue;
     const speciesRoll=rand(),source=legacyForest?(speciesRoll<.27?1:0):
-      (speciesRoll<.66?0:speciesRoll<.88?1:2);
+      (!options.fullForest?(speciesRoll<.79?1:2):
+      (speciesRoll<.66?0:speciesRoll<.88?1:2));
     // Do not multiply a small tree's leaf/branch geometry 5x; source models
     // are naturally 4-9m high. Use 3 age bands rather than identical giants.
     const height=legacyForest?(source===1?19+rand()*10:16+rand()*8):
@@ -88,7 +89,7 @@ async function loadParts(THREE,loader,source){
   return {parts,height:sz.y};
 }
 export async function installBaseCampRealForest(THREE,scene,options){
-  // Keep all 2,050 candidate positions as WORLD DATA, not 2,050 live GPU trees.
+  // Keep candidate forest positions as WORLD DATA, not an always-rendered GPU forest.
   // An Android GPU cannot draw an entire 0.25-mile forest at full PBR resolution.
   const lowPower=!!options.lowPower,fullForest=!!options.fullForest;
   const legacyForest=!!options.legacyForest;
@@ -99,8 +100,8 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // Keep CPU/GPU draw budgets bounded, but show the whole visible landscape:
   // the previous 40-tree nearest-only cap made 80% of each vista look empty.
   // Keep the dense world map, but draw only camera-facing trees on phones.
-  const maxVisible=lowPower?128:320;
-  const drawRadius=lowPower?205:390;
+  const maxVisible=lowPower?(fullForest?128:64):320;
+  const drawRadius=lowPower?155:390;
   let densityBudget=Math.min(maxVisible,Math.max(36,options.visibleTreeBudget??(lowPower?96:260)));
   const positions=createPositions({...options,legacyForest});
   // Partition the fixed world map once. Updating the view must not rescan all
@@ -115,9 +116,14 @@ export async function installBaseCampRealForest(THREE,scene,options){
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
   options.report?.(legacyForest?"Experimental forest test — loading older models…":"Loading detailed oaks, real PBR understory trees and young firs…");
   const loader=new GLTFLoader();
-  // Fir asset is over 30 MB, broadleaf is 10 MB. Avoid a 40 MB startup
+  // A large full-size fir and oak have excessive polygon cost. Avoid a heavy startup
   // download + simultaneous GLB decode on phones. ?forest=full opts in.
-  const ids=legacyForest?(lowPower&&!fullForest?[0]:[0,1]):[0,1,2];
+  // The synthetic 'detailed oak' is 625 mesh parts, 213k triangles and NO image textures.
+   // On mobile it caused hundreds of draw calls with no photorealism benefit.
+   // Default to the real photographed PBR broadleaf and fir; heavy oak is opt-in
+   // only with ?forest=full for explicit debugging, never default phone scenery.
+   const ids=legacyForest?(lowPower&&!fullForest?[0]:[0,1]):
+     (fullForest?[0,1,2]:[1,2]);
   // Serial decoding on phones avoids a single simultaneous multi-GLB stall.
   // Desktop can load all models concurrently.
   const results=lowPower?[]:await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,sources[i])));
@@ -171,7 +177,10 @@ export async function installBaseCampRealForest(THREE,scene,options){
        (Math.hypot(x-lastX,z-lastZ)<6 && yawDelta<.23)))return;
     lastX=x;lastZ=z;lastYaw=yaw;lastBuild=now;
     const viewX=-Math.sin(yaw),viewZ=-Math.cos(yaw);
-    const cosHalfCone=lowPower?.26:-.2;
+    // 72-degree VERTICAL camera FOV is only ~35-degree HORIZONTAL on a portrait phone.
+   // Previous .26 cutoff rendered a 150-degree fan, wasting most GPU work offscreen.
+   const halfHorizontalFov=Math.atan(Math.tan(72*Math.PI/360)*(options.cameraAspect||.48));
+   const cosHalfCone=lowPower?Math.cos(halfHorizontalFov+.16):-.2;
     // The visible set moves with the player; ring-balanced draw selection
     // avoids an empty horizon while retaining natural open spaces.
     // Ring-balanced draw selection is essential: using the nearest N
