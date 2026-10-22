@@ -7,7 +7,6 @@ import {GLTFLoader} from "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js
 
 const SOURCES=[
   {id:"fern-fronds",url:"../assets/village-floor-fern_02.glb",maxHeight:.55},
-  {id:"mossy-stones",url:"../assets/village-floor-rock_moss_set_01.glb",maxHeight:.58},
   {id:"fallen-deadwood",url:"../assets/village-floor-dead_tree_trunk.glb",maxHeight:.82}
 ];
 function random(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296};}
@@ -18,15 +17,15 @@ function positionsFor(options){
     if(rand()>.53)continue;
     const x=(i+(rand()-.5)*.9)*spacing,z=(j+(rand()-.5)*.9)*spacing;
     const r=Math.hypot(x,z);
-    if(r<38||r>radius-10||lakeRadius(x,z)<1.38||beachZone(x,z))continue;
+    if(r<35||r>radius-10||lakeRadius(x,z)<1.38||beachZone(x,z))continue;
     if(paths.some(p=>pathDistance(x,z,p)<4))continue;
     if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<16))continue;
     if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<16))continue;
     const slope=Math.hypot(terrainY(x+1,z)-terrainY(x-1,z),terrainY(x,z+1)-terrainY(x,z-1))*.5;
     if(slope>.58)continue;
-    const kind=rand()<.69?0:(rand()<.7?1:2);
+    const kind=rand()<.91?0:1;
     spots.push({x,z,y:terrainY(x,z)-.08,kind,angle:rand()*Math.PI*2,
-      size:kind===0?.28+rand()*.24:kind===1?.22+rand()*.28:.48+rand()*.28});
+      size:kind===0?.22+rand()*.18:.48+rand()*.28});
   }
   return spots;
 }
@@ -63,7 +62,7 @@ async function sourceMeshes(THREE,loader,src){
 export async function installBaseCampUnderstory(THREE,scene,options){
   const lowPower=!!options.lowPower;
   const placements=positionsFor(options);
-  const maxPerSource=lowPower?[170,52,15]:[300,90,25],radius=lowPower?112:160;
+  const maxPerSource=lowPower?[190,18]:[340,28],radius=lowPower?130:180;
   const status={state:"loading",sources:[],visible:0};
   options.report?.("Loading real ferns, moss-covered rocks and fallen wood…");
   const loader=new GLTFLoader(),group=new THREE.Group();
@@ -105,7 +104,7 @@ export async function installBaseCampUnderstory(THREE,scene,options){
         dummy.rotation.set(0,p.angle,0);
         // Bound *both* height and width; a fern lying sideways in its GLB
         // must never be enlarged into a green rectangular barricade.
-        const maxWidth=p.kind===0?1.05:p.kind===1?1.2:4.1;
+        const maxWidth=p.kind===0?.85:4.1;
         dummy.scale.setScalar(Math.min(1.35,p.size/rec.height,maxWidth/rec.footprint));
         dummy.updateMatrix();
         for(const mesh of rec.batches)mesh.setMatrixAt(k,dummy.matrix);
@@ -116,7 +115,7 @@ export async function installBaseCampUnderstory(THREE,scene,options){
       total+=visible.length;
     }
     status.visible=total;
-    options.report?.(total+" nearby real fern, moss-rock and deadwood details");
+    options.report?.(total+" nearby natural fern and deadwood details");
   };
   status.state=records.length?"ready":"unavailable";
   status.update(options.startX??0,options.startZ??15,true);
