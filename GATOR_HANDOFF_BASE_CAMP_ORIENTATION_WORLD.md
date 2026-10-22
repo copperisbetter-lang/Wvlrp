@@ -45,3 +45,16 @@ Use this file as the single master brief. Create a separate implementation check
 
 ## Mandatory visual quality — photorealism (2026-10-21)
 EVERY visible element of the Orientation World must target photorealism: terrain, Appalachian trees, underbrush, rocks, soil, leaf litter, paths, campsite clearings, distant ridges, sky, lighting, shadows, and Base Camp. No cartoon, low-poly, stylized, placeholder, or generic-looking assets in the player-facing build. Use high-quality physically based materials, convincing varied native vegetation, realistic scale, natural terrain transitions, detailed distant panoramas, and a separate physically plausible moving sun casting dynamic shadows. Optimize with LOD/instancing/culling rather than sacrificing close-up visual fidelity. Campsites remain EMPTY NATURAL CLEARINGS ONLY. Do not claim photorealism achieved until screenshots and the playable viewer demonstrate it.
+
+
+## Implemented source milestone — 2026-10-21, evening
+- 41 perimeter locations are generated from `world-creator/base-camp/orientation-config.js` at 60.96 m target spacing, 202.29 ft actual arc spacing on the 0.25-mile-radius world. Do not restore the earlier 166/50-ft design.
+- The viewer still keeps 24 scattered interior clearings, all without campsite furnishings. Brown circular clearing-pad geometry was removed in favor of vegetation setbacks.
+- Circular terrain mesh now uses radial topology (82 rings × 320 angular slices), replacing a square-grid clipped boundary that produced the visible stair-step edge.
+- `world-creator/base-camp/real-forest.js` loads licensed local photo-textured Poly Haven GLBs using Three.js GLTFLoader, instances real mesh geometry in chunks, and explicitly reports missing assets; geometric faceted-tree fallback was deleted. It uses provisional broadleaf / fir visual stand-ins, NOT botanically validated native WV tree species. Source modules are separate from the original Wild.
+- Placement cap is 2,050 across four quadrants (not first-grid-row truncation). Synthetic source tests yielded quadrants 528/504/500/518; preserve uniform distribution and clearing/view exclusions.
+- The phone HUD defaults to a compact state with a Show details button for time-of-day/status/Return to center.
+- Source validation conducted without live browser: main viewer, forest module and configuration JavaScript all passed parsing; 41 clearings and ~202-ft spacing verified mathematically. **NOT YET VERIFIED VISUALLY OR IN A DEPLOYED ANDROID SESSION**. Do not claim photo-realism/asset success until seen. Users should inspect status in Show details and screenshots.
+- The approved New River Gorge/Grandview picture is still a PARTIAL wide vista, not a seamless licensed 360° equirectangular panorama. Source identification and photographer permission/seamless wrap remain unresolved. Do not label it a full 360 panorama.
+- User explicitly prohibited using TinyFish. Do not use it for page checks or other workflow; continue through GitHub and other non-TinyFish methods.
+- Next priorities: verify the live tree GLBs load with correct texture/pivots and acceptable phone FPS, match WV native forest species/ground realism, ensure campsite paths are navigable, finish full licensed WV 360° panorama, and construct the three approved photoreal Base Camp buildings using their real reference assets.
