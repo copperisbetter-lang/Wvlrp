@@ -10,7 +10,7 @@ const safeMode=params.has("safe");
 const fullForest=params.get("forest")==="full";
 const legacyForest=params.get("forest")==="legacy";
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);
-const renderer=new THREE.WebGLRenderer({antialias:!mobileProfile,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,mobileProfile?.85:1.6));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=!mobileProfile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();document.getElementById('forestStatus').textContent='Graphics memory exhausted. Reopen this address with ?safe=1 to disable HD trees.';});
+const renderer=new THREE.WebGLRenderer({antialias:!mobileProfile,powerPreference:'high-performance'});let renderScale=Math.min(devicePixelRatio,mobileProfile?.85:1.6);renderer.setPixelRatio(renderScale);renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=!mobileProfile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();document.getElementById('forestStatus').textContent='Graphics memory exhausted. Reopen this address with ?safe=1 to disable HD trees.';});
 const hemi=new THREE.HemisphereLight(0xe7f5ff,0x43503d,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff1d8,2.4);sun.castShadow=true;sun.shadow.mapSize.set(mobileProfile?512:1024,mobileProfile?512:1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
 // Five-acre recessed lake, positioned north of Base Camp; nearest bank ~92 feet from center.
 // Lake footprint: 5.00 acres nominal; irregular outline is numerically integrated for audit.
@@ -129,18 +129,30 @@ const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudT
 const clock=document.getElementById('clock'),treeDensity=document.getElementById('treeDensity');treeDensity.oninput=()=>activeForest?.setDensity?.(+treeDensity.value,pos.x,pos.z,yaw);const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
 let slowFrames=0,fastFrames=0,lastAdaptive=performance.now();
 let frameSum=0,frameCount=0,lastFpsAt=performance.now(),fps=0;
-function tick(now){requestAnimationFrame(tick);const elapsed=now-previous;let dt=Math.min(.05,elapsed/1000);previous=now;
+function tick(now){requestAnimationFrame(tick);const elapsed=now-previous;let dt=Math.min(.08,elapsed/1000);previous=now;
 frameSum+=elapsed;frameCount++;
 if(now-lastFpsAt>1200){fps=Math.round(frameCount*1000/Math.max(1,frameSum));frameSum=frameCount=0;lastFpsAt=now;}
 if(mobileProfile&&activeForest){
  if(dt>.043)slowFrames++;else if(dt<.023)fastFrames++;
  if(now-lastAdaptive>3200){
   const current=+treeDensity.value;
-  const next=slowFrames>17?Math.max(40,current-16):
-    (fastFrames>125&&current<96?Math.min(96,current+4):current);
+  let next=current;
+  // Drop GPU pixel fill before stripping away the visible trees. A slow phone
+  // should still have a woodland, not a barren plain.
+  if(slowFrames>17){
+    if(renderScale>.58){
+      renderScale=Math.max(.58,Math.round((renderScale-.07)*100)/100);
+      renderer.setPixelRatio(renderScale);
+    }else next=Math.max(48,current-8);
+  }else if(fastFrames>125){
+    if(renderScale<.85){
+      renderScale=Math.min(.85,Math.round((renderScale+.04)*100)/100);
+      renderer.setPixelRatio(renderScale);
+    }else if(current<96)next=Math.min(96,current+4);
+  }
   if(next!==current){treeDensity.value=String(next);activeForest.setDensity(next,pos.x,pos.z,yaw);}
   slowFrames=0;fastFrames=0;lastAdaptive=now;
  }
 }
-const f=moveForward.set(-Math.sin(yaw),0,-Math.cos(yaw)),r=moveRight.set(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;activeForest?.update?.(pos.x,pos.z,yaw);activeUnderstory?.update?.(pos.x,pos.z);camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00 · ${fps} FPS`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const f=moveForward.set(-Math.sin(yaw),0,-Math.cos(yaw)),r=moveRight.set(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}pos.y=Math.max(terrainY(pos.x,pos.z),lakeRadius(pos.x,pos.z)<.98?LAKE.waterLevel: -Infinity)+2;activeForest?.update?.(pos.x,pos.z,yaw);activeUnderstory?.update?.(pos.x,pos.z);camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00 · ${fps} FPS · ${Math.round(renderScale*100)}% resolution`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
