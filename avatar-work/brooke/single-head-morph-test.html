@@ -2,7 +2,7 @@
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Brooke — Single Mesh Morph Test</title>
 <style>body{margin:0;background:#151b20;color:#f2f4f6;font:15px system-ui}header,aside{padding:14px}main{display:grid;grid-template-columns:310px 1fr}#stage{height:78vh;min-height:420px;touch-action:none}input[type=range]{width:100%}label{display:block;margin:12px 0}img{width:90px;height:90px;object-fit:contain}button{padding:9px;margin:4px}@media(max-width:700px){main{display:block}#stage{height:55vh}}</style>
-<header><h2>Brooke — single-head morph prototype</h2><small>One continuous procedural head surface. Reference photos are previews only; automated photo fitting is not implemented. No likeness claim.</small></header>
+<header><h2>Brooke — single-head morph prototype</h2><small>One continuous procedural head surface. Reference photos are previews only; full photo-based likeness fitting is not implemented. No likeness claim.</small></header>
 <main><aside><label>Front photo <input type="file" accept="image/*" data-photo="0"><img id="p0"></label><label>Left photo <input type="file" accept="image/*" data-photo="1"><img id="p1"></label><label>Right photo <input type="file" accept="image/*" data-photo="2"><img id="p2"></label>
 <button id="analyze" type="button">Estimate face proportions from front photo</button><p id="analysis" aria-live="polite">Photo analysis has not run.</p><label>Morph strength <output id="value">0%</output><input id="strength" type="range" min="0" max="100" value="0"></label>
 <label>Jaw width <input id="jaw" type="range" min="-100" max="100" value="0"></label>
@@ -44,7 +44,7 @@ $('analyze').onclick=async()=>{
  }catch(e){$('analysis').textContent='Photo analysis could not finish: '+e.message}
 };
 function apply(){
-const strength=+$('strength').value/100,jaw=+$('jaw').value/100,cheek=+$('cheek').value/100,chin=+$('chin').value/100;
+const strength=+$('strength').value/100,jaw=+$('jaw').value/100,cheek=+$('cheek').value/100,chin=+$('chin').value/100,depth=+$('depth').value/100,eyes=+$('eyes').value/100,nose=+$('nose').value/100,mouth=+$('mouth').value/100;
 const a=geometry.attributes.position;
 for(let i=0;i<a.count;i++){
 const x=base[i*3],y=base[i*3+1],z=base[i*3+2];
@@ -63,7 +63,7 @@ $('status').textContent='Head surface count: '+scene.children.filter(x=>x===head
 for(const id of ['strength','jaw','cheek','chin','depth','eyes','nose','mouth'])$(id).addEventListener('input',apply);
 $('export').onclick=async()=>{const button=$('export');button.disabled=true;try{const exporter=new GLTFExporter();const glb=await exporter.parseAsync(head,{binary:true,onlyVisible:true});const url=URL.createObjectURL(new Blob([glb],{type:'model/gltf-binary'}));const a=document.createElement('a');a.href=url;a.download='brooke-neutral-morph-prototype.glb';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);$('status').textContent='Exported one-head GLB prototype; NOT photo-matched.';}catch(error){$('status').textContent='GLB export failed: '+error.message;}finally{button.disabled=false}};
 $('front').onclick=()=>camera.position.set(0,0,5.5);$('side').onclick=()=>camera.position.set(5.5,0,0);
-$('reset').onclick=()=>{for(const id of ['strength','jaw','cheek','chin'])$(id).value=0;apply()};
+$('reset').onclick=()=>{for(const id of ['strength','jaw','cheek','chin','depth','eyes','nose','mouth'])$(id).value=0;apply()};
 // Side photographs are loaded as references; no automatic depth measurement is claimed.
 document.querySelectorAll('[data-photo]').forEach(input=>input.onchange=()=>{const file=input.files[0];if(!file)return;const img=$('p'+input.dataset.photo);if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);img.dataset.url=URL.createObjectURL(file);img.src=img.dataset.url;});
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);renderer.setPixelRatio(Math.min(devicePixelRatio,2))}
