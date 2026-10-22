@@ -12,8 +12,11 @@ head=heads[0]
 bm=bmesh.new()
 bm.from_mesh(head.data)
 assert len(bm.verts)>1000, 'Head unexpectedly sparse'
+# glTF may split vertices at UV seams on import. Weld coincident positions for topology inspection.
+bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.000001)
+bm.normal_update()
 bad_edges=[e for e in bm.edges if not e.is_manifold]
-assert not bad_edges, f'Head has {len(bad_edges)} nonmanifold edges (vertices={len(bm.verts)}, faces={len(bm.faces)})'
+assert not bad_edges, f'Head has {len(bad_edges)} nonmanifold edges after imported seam welding (vertices={len(bm.verts)}, faces={len(bm.faces)})'
 remaining=set(bm.verts)
 parts=0
 while remaining:
