@@ -2,7 +2,7 @@
 // Units are meters. This module is isolated from the original Wild.
 export const BASE_CAMP_WORLD_ID = "base-camp-orientation-v1";
 export const BASE_CAMP_RADIUS_M = 402.336; // quarter mile
-export const CLEARING_SPACING_M = 15.24; // 50 feet
+export const CLEARING_SPACING_M = 60.96; // 200 feet: approved 2026-10-21; ~41 perimeter clearings
 export const CENTER_EXCLUSION_M = 60.96; // 200 feet
 export const PERIMETER_COUNT = Math.round(2 * Math.PI * BASE_CAMP_RADIUS_M / CLEARING_SPACING_M);
 export const WORLD_CENTER = Object.freeze({x:0,z:0});
