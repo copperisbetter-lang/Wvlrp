@@ -72,5 +72,5 @@ for side,label in [(-1,'Left'),(1,'Right')]:
 out=Path('avatar-work/brooke/brooke-head-prototype.glb').resolve()
 out.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.object.select_all(action='SELECT')
-bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_morph=True)
+bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_morph=True, export_cameras=False, export_lights=False)
 print('BROOKE_PROTOTYPE_EXPORTED',out)
