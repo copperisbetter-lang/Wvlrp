@@ -66,59 +66,96 @@ async function loadParts(THREE,loader,source){
   return {parts,height:sz.y};
 }
 export async function installBaseCampRealForest(THREE,scene,options){
-  const status={state:"loading",planted:0,sources:[],failures:[],requested:0};
+  // Keep all 2,050 candidate positions as WORLD DATA, not 2,050 live GPU trees.
+  // An Android GPU cannot draw an entire 0.25-mile forest at full PBR resolution.
+  const lowPower=!!options.lowPower,fullForest=!!options.fullForest;
+  const maxVisible=lowPower?88:320;
+  const drawRadius=lowPower?112:205;
   const positions=createPositions(options);
-  status.requested=positions.length;
-  options.report?.("Loading photo-textured trees…");
+  const status={state:"loading",requested:positions.length,visible:0,planted:0,
+    sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
+  options.report?.("Loading nearby PBR trees — distant trees stream as you walk…");
   const loader=new GLTFLoader();
-  const settled=await Promise.allSettled(SOURCES.map(s=>loadParts(THREE,loader,s)));
-  const chunkSize=118,dummy=new THREE.Object3D(),group=new THREE.Group();
-  group.name="Base Camp licensed photo-textured forest (no geometry proxies)";
-  for(let sourceIndex=0;sourceIndex<SOURCES.length;sourceIndex++){
-    if(settled[sourceIndex].status!=="fulfilled"){
-      const message=SOURCES[sourceIndex].id+": "+String(settled[sourceIndex].reason?.message||settled[sourceIndex].reason);
-      status.failures.push(message);console.warn("BASE_CAMP_TREE_ASSET_ERROR",message);
+  // Fir asset is over 30 MB, broadleaf is 10 MB. Avoid a 40 MB startup
+  // download + simultaneous GLB decode on phones. ?forest=full opts in.
+  const ids=lowPower&&!fullForest?[0]:[0,1];
+  const results=await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,SOURCES[i])));
+  const group=new THREE.Group();
+  group.name="Base Camp streamed photo-textured forest";
+  const records=[];
+  for(let n=0;n<ids.length;n++){
+    const i=ids[n],source=SOURCES[i],result=results[n];
+    if(result.status!=="fulfilled"){
+      const message=source.id+": "+String(result.reason?.message||result.reason);
+      status.failures.push(message);
+      console.warn("BASE_CAMP_TREE_ASSET_ERROR",message);
       continue;
     }
-    const source=SOURCES[sourceIndex],loaded=settled[sourceIndex].value;
-    const selected=positions.filter(p=>p.source===sourceIndex);
-    const chunks=new Map();
-    for(const tree of selected){
-      const k=Math.floor((tree.x+options.radius)/chunkSize)+":"+Math.floor((tree.z+options.radius)/chunkSize);
-      if(!chunks.has(k))chunks.set(k,[]);
-      chunks.get(k).push(tree);
-    }
-    for(const [key,trees] of chunks){
-      const chunk=new THREE.Group();chunk.name=source.id+"-"+key;
-      // Instancing preserves the real imported geometry and textures, while
-      // each 118 m forest chunk has its own view-frustum bounds.
-      for(const part of loaded.parts){
-        const batch=new THREE.InstancedMesh(part.geometry,part.material,trees.length);
-        batch.name=source.id+" / "+part.name;
-        batch.castShadow=true;batch.receiveShadow=false;
-        for(let i=0;i<trees.length;i++){
-          const t=trees[i];
-          dummy.position.set(t.x,t.y,t.z);
-          dummy.rotation.set(0,t.angle,0);
-          dummy.scale.setScalar(t.height/loaded.height);
-          dummy.updateMatrix();
-          batch.setMatrixAt(i,dummy.matrix);
-        }
-        batch.instanceMatrix.needsUpdate=true;
-        batch.computeBoundingSphere();
-        chunk.add(batch);
-      }
-      group.add(chunk);
-    }
-    status.planted+=selected.length;
-    status.sources.push({name:source.id,trees:selected.length,parts:loaded.parts.length});
+    const loaded=result.value;
+    const pool=positions.filter(p=>p.source===i);
+    // Each genuine source mesh part is drawn as an instance batch with a
+    // bounded capacity; batching prevents a huge number of draw calls.
+    const batches=loaded.parts.map(part=>{
+      const mesh=new THREE.InstancedMesh(part.geometry,part.material,maxVisible);
+      mesh.name=source.id+" / "+part.name;
+      mesh.count=0;
+      mesh.castShadow=!lowPower;
+      mesh.receiveShadow=false;
+      // Matrices are repopulated after player movement: stale frustum bounds
+      // must never hide a nearby stand when the player crosses chunk limits.
+      mesh.frustumCulled=false;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      group.add(mesh);
+      return mesh;
+    });
+    records.push({source,pool,batches,height:loaded.height});
+    status.planted+=pool.length;
+    status.sources.push({name:source.id,available:pool.length,parts:loaded.parts.length});
   }
   scene.add(group);
-  status.state=status.planted?"ready": "error";
+  const dummy=new THREE.Object3D();
+  let lastX=NaN,lastZ=NaN;
+  const update=(x,z,force=false)=>{
+    if(!force && Math.hypot(x-lastX,z-lastZ)<14)return;
+    lastX=x;lastZ=z;
+    let visible=0;
+    // The visible set moves with the player. This keeps high-resolution
+    // source meshes at eye level without uploading distant campsite trees.
+    const perSourceCap=Math.max(1,Math.floor(maxVisible/Math.max(1,records.length)));
+    for(const rec of records){
+      const near=[];
+      for(const t of rec.pool){
+        const d2=(t.x-x)**2+(t.z-z)**2;
+        if(d2<=drawRadius*drawRadius)near.push({t,d2});
+      }
+      near.sort((a,b)=>a.d2-b.d2);
+      const count=Math.min(perSourceCap,near.length);
+      for(let k=0;k<count;k++){
+        const t=near[k].t;
+        dummy.position.set(t.x,t.y,t.z);
+        dummy.rotation.set(0,t.angle,0);
+        dummy.scale.setScalar(t.height/rec.height);
+        dummy.updateMatrix();
+        for(const mesh of rec.batches)mesh.setMatrixAt(k,dummy.matrix);
+      }
+      for(const mesh of rec.batches){
+        mesh.count=count;
+        mesh.instanceMatrix.needsUpdate=true;
+      }
+      visible+=count;
+    }
+    status.visible=visible;
+    options.report?.(visible+" nearby photo-textured trees active · "+status.planted+
+      " mapped across the world"+(lowPower&&!fullForest?" · phone-safe mode":"")+
+      (status.failures.length?" · "+status.failures.length+" asset error(s)":""));
+  };
   status.group=group;
-  options.report?.(status.planted
-    ?status.planted+" real PBR trees loaded ("+status.sources.map(s=>s.name).join(" + ")+")"+(status.failures.length?" · some assets failed":"")
-    :"Forest photo assets unavailable — no generic substitute");
-  console.info("BASE_CAMP_REAL_FOREST",JSON.stringify({planted:status.planted,requested:status.requested,sources:status.sources,failures:status.failures}));
+  status.update=update;
+  status.state=records.length?"ready":"error";
+  if(records.length)update(options.startX??0,options.startZ??15,true);
+  else options.report?.("Forest source files unavailable — no fake trees substituted");
+  console.info("BASE_CAMP_REAL_FOREST",JSON.stringify({state:status.state,mapped:status.planted,
+    requested:status.requested,active:status.visible,profile:status.profile,sources:status.sources,
+    failures:status.failures}));
   return status;
 }
