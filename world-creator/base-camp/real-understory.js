@@ -13,12 +13,12 @@ const SOURCES=[
 function random(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296};}
 function positionsFor(options){
   const {radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings}=options;
-  const rand=random(319107),spots=[],spacing=7.2,cells=Math.ceil((radius-10)/spacing);
+  const rand=random(319107),spots=[],spacing=4.8,cells=Math.ceil((radius-10)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
-    if(rand()>.38)continue;
+    if(rand()>.53)continue;
     const x=(i+(rand()-.5)*.9)*spacing,z=(j+(rand()-.5)*.9)*spacing;
     const r=Math.hypot(x,z);
-    if(r<48||r>radius-10||lakeRadius(x,z)<1.38||beachZone(x,z))continue;
+    if(r<38||r>radius-10||lakeRadius(x,z)<1.38||beachZone(x,z))continue;
     if(paths.some(p=>pathDistance(x,z,p)<4))continue;
     if(perimeterClearings.some(p=>Math.hypot(x-p.x*.985,z-p.z*.985)<16))continue;
     if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<16))continue;
@@ -39,17 +39,31 @@ async function sourceMeshes(THREE,loader,src){
     geo.applyMatrix4(mesh.matrixWorld);geo.computeBoundingBox();
     if(!geo.boundingBox||geo.boundingBox.isEmpty())return;
     box.union(geo.boundingBox);
-    parts.push({geometry:geo,material:mesh.material,name:mesh.name});
+    const name=(mesh.name+" "+(mesh.material.name||"")).toLowerCase();
+    let material=mesh.material;
+    if(src.id==="fern-fronds"){
+      // Reject untextured opaque foliage panels; these are the infamous
+      // rectangular green fences, not valid photographic undergrowth.
+      if(!material.map) return;
+      material=material.clone();
+      material.alphaTest=Math.max(.5,material.alphaTest||0);
+      material.transparent=false;
+      material.depthWrite=true;
+      material.side=THREE.DoubleSide;
+      material.needsUpdate=true;
+    }
+    parts.push({geometry:geo,material,name});
   });
   if(!parts.length||box.isEmpty())throw Error("Ground asset missing meshes: "+src.id);
   const c=new THREE.Vector3();box.getCenter(c);
   for(const part of parts)part.geometry.translate(-c.x,-box.min.y,-c.z);
-  return {parts,height:Math.max(.04,box.max.y-box.min.y)};
+  return {parts,height:Math.max(.04,box.max.y-box.min.y),
+    footprint:Math.max(.04,box.max.x-box.min.x,box.max.z-box.min.z)};
 }
 export async function installBaseCampUnderstory(THREE,scene,options){
   const lowPower=!!options.lowPower;
   const placements=positionsFor(options);
-  const maxPerSource=lowPower?[82,26,10]:[190,65,22],radius=lowPower?75:110;
+  const maxPerSource=lowPower?[170,52,15]:[300,90,25],radius=lowPower?112:160;
   const status={state:"loading",sources:[],visible:0};
   options.report?.("Loading real ferns, moss-covered rocks and fallen wood…");
   const loader=new GLTFLoader(),group=new THREE.Group();
@@ -69,7 +83,8 @@ export async function installBaseCampUnderstory(THREE,scene,options){
         return mesh;
       });
       records.push({src,batches,height:loaded.height,kind:i,
-        pool:placements.filter(p=>p.kind===i),budget:maxPerSource[i]});
+        pool:placements.filter(p=>p.kind===i),budget:maxPerSource[i],
+        footprint:loaded.footprint});
       status.sources.push(src.id);
     }catch(e){console.warn("Base Camp ground-detail asset unavailable:",src.id,e);}
   }
@@ -88,7 +103,10 @@ export async function installBaseCampUnderstory(THREE,scene,options){
         const p=v.p;
         dummy.position.set(p.x,p.y,p.z);
         dummy.rotation.set(0,p.angle,0);
-        dummy.scale.setScalar(Math.min(2.2,p.size/rec.height));
+        // Bound *both* height and width; a fern lying sideways in its GLB
+        // must never be enlarged into a green rectangular barricade.
+        const maxWidth=p.kind===0?1.05:p.kind===1?1.2:4.1;
+        dummy.scale.setScalar(Math.min(1.35,p.size/rec.height,maxWidth/rec.footprint));
         dummy.updateMatrix();
         for(const mesh of rec.batches)mesh.setMatrixAt(k,dummy.matrix);
       });
