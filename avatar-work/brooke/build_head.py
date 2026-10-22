@@ -33,6 +33,21 @@ for v in head.data.vertices:
     # Z up, Y negative toward face/front.
     v.co = (x*.70, y*.57, z*.94)
     x,y,z = v.co
+    # Rear skull and nape from the supplied right-profile reference.
+    # Back is +Y; preserve one watertight head-skin surface and a closed lower neck.
+    x,y,z = v.co
+    if y > 0:
+        rear_rounding = math.exp(-((z-.10)/.57)**2)
+        v.co.y += .075 * rear_rounding
+        # Gentle occipital prominence; avoid an unnaturally flat rear silhouette.
+        v.co.y += .045 * math.exp(-((z+.30)/.24)**2)
+    x,y,z = v.co
+    if z < -.59:
+        t = min(1.0, (-z-.59)/.35)
+        # Taper lower shell into a nape/neck continuation without detached cylinders.
+        v.co.x *= (1.0 - .34*t)
+        v.co.y = v.co.y*(1.0-.30*t) + .095*t
+        v.co.z -= .24*t
     # Narrow the upper cranium and sculpt a tapered lower face on the shared skin shell.
     if z > .30:
         v.co.x *= 1 - .075 * min(1, (z-.30)/.60)
