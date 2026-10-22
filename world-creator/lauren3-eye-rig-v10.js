@@ -104,7 +104,7 @@ export function installLauren3Eyes(root){
    let z=0,t=0;const skinColor=new THREE.Color(0,0,0);
    for(let i=0;i<3;i++)if(best[i]){
     const w=1/(Math.sqrt(ds[i])+1);z+=best[i].z*w;t+=w;
-    if(best[i].c)skinColor.addScaledColor(best[i].c,w);
+    if(best[i].c){skinColor.r+=best[i].c.r*w;skinColor.g+=best[i].c.g*w;skinColor.b+=best[i].c.b*w;}
    }
    if(t===0)throw Error('No surface sample');
    if(colors)skinColor.multiplyScalar(1/t);
