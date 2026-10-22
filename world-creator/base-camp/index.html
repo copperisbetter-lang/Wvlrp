@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;right:0;top:0;width:55vw;height:100vh;touch-action:none}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Vegetation cleared for a clean Base Camp rebuild. Approved buildings remain pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="vegetationStatus">All trees, shrubs, ferns and deadwood removed from the active scene.</small><small id="perfStatus">Measuring GPU load…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19;z-index:2}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;touch-action:none;user-select:none;-webkit-user-select:none;z-index:1}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Vegetation cleared for a clean Base Camp rebuild. Approved buildings remain pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="vegetationStatus">All trees, shrubs, ferns and deadwood removed from the active scene.</small><small id="perfStatus">Measuring GPU load…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
 import * as THREE from 'three';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.fog=new THREE.FogExp2(0xa1b8b6,.0014);
 // No panorama: only procedurally lit sky color and fog. Sun moves independently.
@@ -78,8 +78,33 @@ for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
 // The full Wild game is a separate route and remains untouched.
 
 const pos=new THREE.Vector3(0,terrainY(0,0)+2,15);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
-pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);drag=e.pointerId;updatePad(e)});pad.addEventListener('pointermove',e=>{if(drag===e.pointerId)updatePad(e)});function updatePad(e){const r=pad.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),s=Math.min(43,len)/len;moveX=dx*s/43;moveY=dy*s/43;nub.style.transform=`translate(${dx*s}px,${dy*s}px)`}function stop(){drag=null;moveX=moveY=0;nub.style.transform=''}pad.addEventListener('pointerup',stop);pad.addEventListener('pointercancel',stop);
-const look=document.getElementById('look');let last=null;look.addEventListener('pointerdown',e=>{look.setPointerCapture(e.pointerId);last=[e.clientX,e.clientY]});look.addEventListener('pointermove',e=>{if(!last)return;yaw-=(e.clientX-last[0])*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-(e.clientY-last[1])*.004));last=[e.clientX,e.clientY]});look.addEventListener('pointerup',()=>last=null);
+// Treat walking and looking as separate pointer streams so two-finger play works.
+// The look surface spans the entire screen; HUD and joystick sit above it.
+pad.addEventListener('pointerdown',e=>{
+ if(drag!==null)return;
+ drag=e.pointerId;pad.setPointerCapture(e.pointerId);updatePad(e);e.preventDefault();
+});
+pad.addEventListener('pointermove',e=>{if(drag===e.pointerId){updatePad(e);e.preventDefault();}});
+function updatePad(e){const r=pad.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),s=Math.min(43,len)/len;moveX=dx*s/43;moveY=dy*s/43;nub.style.transform=`translate(${dx*s}px,${dy*s}px)`}
+function stopPad(e){if(drag!==e.pointerId)return;drag=null;moveX=moveY=0;nub.style.transform='';}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(type,stopPad);
+const look=document.getElementById('look');
+let lookPointer=null,lookX=0,lookY=0;
+look.addEventListener('pointerdown',e=>{
+ if(lookPointer!==null)return;
+ lookPointer=e.pointerId;lookX=e.clientX;lookY=e.clientY;
+ look.setPointerCapture(e.pointerId);e.preventDefault();
+});
+look.addEventListener('pointermove',e=>{
+ if(e.pointerId!==lookPointer)return;
+ const dx=e.clientX-lookX,dy=e.clientY-lookY;
+ // Positive rightward finger motion turns the view right; negative turns left.
+ yaw-=dx*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-dy*.004));
+ lookX=e.clientX;lookY=e.clientY;e.preventDefault();
+});
+function stopLook(e){if(e.pointerId===lookPointer)lookPointer=null;}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(type,stopLook);
+addEventListener('blur',()=>{lookPointer=null;drag=null;moveX=moveY=0;nub.style.transform='';});
 document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,15);yaw=0;pitch=0};
 const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudToggle');hudToggle.onclick=()=>{const compact=hud.classList.toggle('compact');hudToggle.textContent=compact?'Show details':'Hide details';hudToggle.setAttribute('aria-expanded',String(!compact));};
 const clock=document.getElementById('clock');const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
