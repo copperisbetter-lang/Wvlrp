@@ -15,8 +15,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Blender
         run: |
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
-          timeout 420s sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y blender python3-numpy libegl1 libgl1 libgles2 libopengl0 libx11-6 libxext6 libxrender1 libxi6 libxkbcommon0 libsm6 libice6
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 update
+          timeout 900s sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 install -y blender python3-numpy libegl1 libgl1 libgles2 libopengl0 libx11-6 libxext6 libxrender1 libxi6 libxkbcommon0 libsm6 libice6
           blender --version
           blender -b --python-exit-code 1 --python-expr "import numpy; print('NumPy available:', numpy.__version__)"
       - name: Build Brooke head GLB
