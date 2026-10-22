@@ -23,9 +23,9 @@ function generator(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013
 function angularGap(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
 function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false}){
   const rand=generator(SEED),placements=[];
-  const spacing=11.4,cells=Math.ceil((radius-11)/spacing);
+  const spacing=10.7,cells=Math.ceil((radius-11)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
-    if(rand()>.65)continue;
+    if(rand()>.76)continue;
     const x=(i+(rand()-.5)*.8)*spacing,z=(j+(rand()-.5)*.8)*spacing;
     const r=Math.hypot(x,z);
     if(r<49||r>radius-11||lakeRadius(x,z)<1.34||beachZone(x,z))continue;
@@ -39,11 +39,11 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     const localSlope=Math.hypot(terrainY(x+1,z)-terrainY(x-1,z),terrainY(x,z+1)-terrainY(x,z-1))*.5;
     if(localSlope>.72)continue;
     const speciesRoll=rand(),source=legacyForest?(speciesRoll<.27?1:0):
-      (speciesRoll<.49?0:speciesRoll<.82?1:2);
+      (speciesRoll<.66?0:speciesRoll<.88?1:2);
     // Do not multiply a small tree's leaf/branch geometry 5x; source models
     // are naturally 4-9m high. Use 3 age bands rather than identical giants.
     const height=legacyForest?(source===1?19+rand()*10:16+rand()*8):
-      source===0?11+rand()*5:source===1?5.5+rand()*3:5+rand()*3.5;
+      source===0?13+rand()*5:source===1?6+rand()*4:5+rand()*3.5;
     placements.push({x,z,y:terrainY(x,z)-.07,
       source,height,
       angle:rand()*Math.PI*2,priority:rand()});
@@ -51,7 +51,7 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
   // Do not truncate by grid traversal order: that leaves the opposite
   // side of the circular world bare. Spread the mobile mesh budget evenly.
   placements.sort((a,b)=>a.priority-b.priority);
-  return placements.slice(0,2050);
+  return placements.slice(0,3600);
 }
 async function loadParts(THREE,loader,source){
   const gltf=await loader.loadAsync(source.url);
@@ -65,7 +65,19 @@ async function loadParts(THREE,loader,source){
     geometry.computeBoundingBox();
     if(!geometry.boundingBox||geometry.boundingBox.isEmpty())return;
     box.union(geometry.boundingBox);
-    parts.push({geometry,material:mesh.material,name:(mesh.name+" "+(mesh.material.name||"")).toLowerCase()});
+    const name=(mesh.name+" "+(mesh.material.name||"")).toLowerCase();
+    let material=mesh.material;
+    // Leaf cutout textures must discard their transparent pixels. Otherwise
+    // phone GPUs render their quad cards as rectangular green walls.
+    if(material.map && (/leaf|foliage|fern|branch|card/.test(name) || material.alphaTest>0 || material.transparent)){
+      material=material.clone();
+      material.alphaTest=Math.max(.42,material.alphaTest||0);
+      material.transparent=false;
+      material.depthWrite=true;
+      material.side=THREE.DoubleSide;
+      material.needsUpdate=true;
+    }
+    parts.push({geometry,material,name});
   });
   if(!parts.length||box.isEmpty())throw Error("Model has no drawable PBR geometry: "+source.id);
   const sz=new THREE.Vector3();box.getSize(sz);
@@ -84,9 +96,11 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // A small source tree stretched into a 38m giant made its crown into a
   // continuous leaf-card wall. Display properly scaled PBR trees, spaced as
   // individual woodland crowns. Keep the full forest placement data untouched.
-  const maxVisible=lowPower?64:160;
-  const drawRadius=lowPower?140:205;
-  let densityBudget=Math.min(maxVisible,Math.max(8,options.visibleTreeBudget??(lowPower?28:100)));
+  // Keep CPU/GPU draw budgets bounded, but show the whole visible landscape:
+  // the previous 40-tree nearest-only cap made 80% of each vista look empty.
+  const maxVisible=lowPower?136:240;
+  const drawRadius=lowPower?280:355;
+  let densityBudget=Math.min(maxVisible,Math.max(24,options.visibleTreeBudget??(lowPower?104:180)));
   const positions=createPositions({...options,legacyForest});
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
@@ -140,25 +154,43 @@ export async function installBaseCampRealForest(THREE,scene,options){
     // No artificial 'green fence': distribute separate crowns with open gaps.
     // Pick nearby trees by distance, but keep at least 23m of separation
     // between selected mobile trunks; never take the 28 nearest blindly.
-    const occupied=[];
-    const minSpacing=legacyForest?(lowPower?23:19):(lowPower?17:15);
+    // Ring-balanced draw selection is essential: using the nearest N
+    // positions leaves an obvious vacant horizon, even with thousands planted.
     const selectedLimit=densityBudget;
-    const pool=[];
+    const rings=[[],[],[]];
     for(const rec of records){
       for(const t of rec.pool){
         const d2=(t.x-x)**2+(t.z-z)**2;
-        if(d2<=drawRadius*drawRadius)pool.push({rec,t,d2});
+        if(d2>drawRadius*drawRadius)continue;
+        rings[d2<135*135?0:d2<218*218?1:2].push({rec,t,d2});
       }
     }
-    pool.sort((a,b)=>a.d2-b.d2);
-    const selectedByRecord=new Map(records.map(rec=>[rec,[]]));
-    for(const item of pool){
-      if(visible>=selectedLimit)break;
-      if(occupied.some(t=>(t.x-item.t.x)**2+(t.z-item.t.z)**2<minSpacing*minSpacing))continue;
-      occupied.push(item.t);
-      selectedByRecord.get(item.rec).push(item.t);
-      visible++;
+    rings[0].sort((a,b)=>a.d2-b.d2);
+    rings[1].sort((a,b)=>a.d2-b.d2);
+    // Far trees are dispersed around the full view, not clustered at one
+    // edge of the middle ring. All use the same real PBR GLB geometry.
+    rings[2].sort((a,b)=>a.t.priority-b.t.priority);
+    const quotas=[Math.round(selectedLimit*.44),Math.round(selectedLimit*.32),0];
+    quotas[2]=selectedLimit-quotas[0]-quotas[1];
+    const occupied=[],selectedByRecord=new Map(records.map(rec=>[rec,[]]));
+    let visible=0;
+    function take(items,target,spacing){
+      let n=0;
+      const gap2=spacing*spacing;
+      for(const item of items){
+        if(n>=target||visible>=selectedLimit)break;
+        if(occupied.some(t=>(t.x-item.t.x)**2+(t.z-item.t.z)**2<gap2))continue;
+        occupied.push(item.t);
+        selectedByRecord.get(item.rec).push(item.t);
+        visible++;n++;
+      }
     }
+    take(rings[0],quotas[0],lowPower?12.5:11.2);
+    take(rings[1],quotas[1],lowPower?17.5:16);
+    take(rings[2],quotas[2],lowPower?26:23);
+    // Fill any spare slots after ensuring distant treeline coverage.
+    if(visible<selectedLimit)take(rings[0].concat(rings[1]),selectedLimit-visible,lowPower?11.5:10.5);
+    if(visible<selectedLimit)take(rings[2],selectedLimit-visible,lowPower?20:18);
     for(const rec of records){
       const trees=selectedByRecord.get(rec);
       for(let k=0;k<trees.length;k++){
@@ -178,7 +210,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
       }
     }
     status.visible=visible;
-    options.report?.(visible+" spaced photo-textured trees active · "+status.planted+
+    options.report?.(visible+" near/middle/distant PBR trees active · "+status.planted+
       " mapped across the world"+(lowPower&&!legacyForest?" · mixed realistic-size trees":"")+
       (status.failures.length?" · "+status.failures.length+" asset error(s)":""));
   };
