@@ -1,0 +1,60 @@
+name: Lauren 3 Android eye-viewer browser smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lauren3-eye-browser-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  test-live-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify protected original and working GLB are identical
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib,base64,hashlib
+          root=pathlib.Path('world-creator/assets')
+          def model(folder):
+              return base64.b64decode(''.join((root/folder/f'face.part{i:02d}.b64').read_text().strip() for i in range(10)))
+          original=model('laura-2-5-face'); working=model('lauren-3-face')
+          assert original==working,'Unexpected source GLB mutation!'
+          digest=hashlib.sha256(working).hexdigest()
+          assert digest=='27931d29e5366c452af77e7d182dd4eea3f444eebcc8e660134f7aa961c6298e'
+          print('PASS baseline GLB exact match, SHA-256',digest)
+          PY
+      - name: Install Playwright test harness
+        run: npm install --prefix /tmp/lauren3-smoke --no-audit --no-fund playwright@1.58.2
+      - name: Load deployed Lauren 3 with real WebGL and exercise eyes
+        shell: bash
+        run: |
+          node <<'JS'
+          const {chromium}=require('/tmp/lauren3-smoke/node_modules/playwright');
+          (async()=>{
+            const fs=require('fs');
+            let executable=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'].find(p=>fs.existsSync(p));
+            if(!executable)throw Error('Chrome unavailable on runner');
+            const browser=await chromium.launch({headless:true,executablePath:executable,args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:400,height:850},deviceScaleFactor:1.5});
+            let errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            await page.goto('https://wvlrp.com/lauren-3-face-viewer.html?eye-smoke=3',{waitUntil:'domcontentloaded',timeout:40000});
+            await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Lauren 3 loaded'),{timeout:65000});
+            await page.locator('[data-look="-18,0"]').click();
+            await page.locator('#blink').click();
+            await page.locator('#chooseEye').selectOption('left');
+            await page.locator('#trimX').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
+            await page.locator('#resetEyes').click();
+            const summary=await page.evaluate(()=>({title:document.title,status:document.querySelector('#status').textContent,buttons:document.querySelectorAll('button').length,canvas:document.querySelector('canvas')?.width,yaw:document.querySelector('#yaw').value,pitch:document.querySelector('#pitch').value}));
+            console.log(JSON.stringify(summary));
+            if(!summary.canvas||summary.yaw!=='0'||summary.pitch!=='0')throw Error('Viewer controls or canvas failed');
+            if(errors.length)throw Error('Browser errors: '+errors.join(' | '));
+            await browser.close();
+            console.log('PASS Lauren 3 independent 3D eyes, puffs, phone controls & blink browser smoke');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
