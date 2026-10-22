@@ -59,4 +59,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public-models/brooke-head.glb public-models/brooke-preview.png
           git commit -m "Publish verified Brooke viewer model [skip ci]" || exit 0
-          git push
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Brooke model publication rebase conflict"
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Brooke model publication could not push after retries"
+          exit 1
