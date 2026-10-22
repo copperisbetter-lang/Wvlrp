@@ -23,12 +23,12 @@ function generator(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013
 function angularGap(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
 function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false}){
   const rand=generator(SEED),placements=[];
-  const spacing=10.7,cells=Math.ceil((radius-11)/spacing);
+  const spacing=9.2,cells=Math.ceil((radius-11)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
-    if(rand()>.76)continue;
+    if(rand()>.84)continue;
     const x=(i+(rand()-.5)*.8)*spacing,z=(j+(rand()-.5)*.8)*spacing;
     const r=Math.hypot(x,z);
-    if(r<49||r>radius-11||lakeRadius(x,z)<1.34||beachZone(x,z))continue;
+    if(r<35||r>radius-11||lakeRadius(x,z)<1.34||beachZone(x,z))continue;
     if(paths.some(path=>pathDistance(x,z,path)<7.5))continue;
     if(perimeterClearings.some(p=>{
       const sx=p.x*.985,sz=p.z*.985;
@@ -51,7 +51,7 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
   // Do not truncate by grid traversal order: that leaves the opposite
   // side of the circular world bare. Spread the mobile mesh budget evenly.
   placements.sort((a,b)=>a.priority-b.priority);
-  return placements.slice(0,3600);
+  return placements.slice(0,5700);
 }
 async function loadParts(THREE,loader,source){
   const gltf=await loader.loadAsync(source.url);
@@ -98,9 +98,9 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // individual woodland crowns. Keep the full forest placement data untouched.
   // Keep CPU/GPU draw budgets bounded, but show the whole visible landscape:
   // the previous 40-tree nearest-only cap made 80% of each vista look empty.
-  const maxVisible=lowPower?136:240;
-  const drawRadius=lowPower?280:355;
-  let densityBudget=Math.min(maxVisible,Math.max(24,options.visibleTreeBudget??(lowPower?104:180)));
+  const maxVisible=lowPower?208:320;
+  const drawRadius=lowPower?315:390;
+  let densityBudget=Math.min(maxVisible,Math.max(48,options.visibleTreeBudget??(lowPower?176:260)));
   const positions=createPositions({...options,legacyForest});
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
@@ -158,7 +158,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
       for(const t of rec.pool){
         const d2=(t.x-x)**2+(t.z-z)**2;
         if(d2>drawRadius*drawRadius)continue;
-        rings[d2<135*135?0:d2<218*218?1:2].push({rec,t,d2});
+        rings[d2<108*108?0:d2<215*215?1:2].push({rec,t,d2});
       }
     }
     rings[0].sort((a,b)=>a.d2-b.d2);
@@ -166,7 +166,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     // Far trees are dispersed around the full view, not clustered at one
     // edge of the middle ring. All use the same real PBR GLB geometry.
     rings[2].sort((a,b)=>a.t.priority-b.t.priority);
-    const quotas=[Math.round(selectedLimit*.44),Math.round(selectedLimit*.32),0];
+    const quotas=[Math.round(selectedLimit*.61),Math.round(selectedLimit*.26),0];
     quotas[2]=selectedLimit-quotas[0]-quotas[1];
     const occupied=[],selectedByRecord=new Map(records.map(rec=>[rec,[]]));
     let visible=0;
@@ -181,12 +181,12 @@ export async function installBaseCampRealForest(THREE,scene,options){
         visible++;n++;
       }
     }
-    take(rings[0],quotas[0],lowPower?12.5:11.2);
-    take(rings[1],quotas[1],lowPower?17.5:16);
-    take(rings[2],quotas[2],lowPower?26:23);
+    take(rings[0],quotas[0],lowPower?9.8:9.1);
+    take(rings[1],quotas[1],lowPower?14.0:13);
+    take(rings[2],quotas[2],lowPower?21:19);
     // Fill any spare slots after ensuring distant treeline coverage.
-    if(visible<selectedLimit)take(rings[0].concat(rings[1]),selectedLimit-visible,lowPower?11.5:10.5);
-    if(visible<selectedLimit)take(rings[2],selectedLimit-visible,lowPower?20:18);
+    if(visible<selectedLimit)take(rings[0].concat(rings[1]),selectedLimit-visible,lowPower?9.5:8.6);
+    if(visible<selectedLimit)take(rings[2],selectedLimit-visible,lowPower?18:16);
     for(const rec of records){
       const trees=selectedByRecord.get(rec);
       for(let k=0;k<trees.length;k++){
