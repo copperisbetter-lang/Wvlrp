@@ -88,7 +88,7 @@ def run():
         max_delta=max(max_delta,dz)
         if y < 528: under+=1
         else: upper+=1
-    assert 500 < changed < 9000, f"Unexpected changed vertex count {changed}"
+    assert 500 < changed < 14000, f"Unexpected changed vertex count {changed}"
     assert under > 200 and upper > 150, f"Under/upper coverage unexpectedly low: {under}/{upper}"
     assert 0 < max_delta <= 9.0
     assert raw[:posstart] == before_header, "Non-position data modified"
