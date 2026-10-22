@@ -44,23 +44,9 @@ export function installLauren3Eyes(root){
  if(originalPos.count!==38365||!original.index||original.index.count!==228219)throw Error('Safety: unexpected original face topology');
  const geo=original.clone(),pos=geo.attributes.position,idx=geo.index,colors=geo.attributes.color;
  const unchangedColors=colors?.array?.slice();
- // Displacements are fully continuous Gaussians: no hard Y bands or seams.
- let sculpted=0,maxDelta=0;
- for(let i=0;i<pos.count;i++){
-  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
-  let dz=0;
-  for(const s of eyespecs){
-    // Real orbital volume immediately outside the eyelids, smoothly feathered
-    // into the preserved face; no sharp band boundaries or independent head.
-    dz+=gauss(x,y,s.x,512,39,11,4.6); // lower-lid pad
-    dz+=gauss(x,y,s.x,492,53,25,.85); // feather into cheek
-    dz+=gauss(x,y,s.x,566,40,10.5,4.0); // subtle upper eyelid cushion
-    dz+=gauss(x,y,s.x,590,56,22,.85); // fade toward the brow
-  }
-  if(dz>.0005){pos.setZ(i,z+dz);sculpted++;maxDelta=Math.max(maxDelta,dz);}
- }
- if(maxDelta>6.2||sculpted<1500)throw Error('Safety: orbital sculpt outside intended range');
- pos.needsUpdate=true;
+ // Eye-only revision: preserve the approved original eye-area flesh as-is.
+ // No vertex moved, no eye puff altered. Eyes can still rotate individually.
+ const sculpted=0,maxDelta=0;
  // IMPORTANT: Do not remove whole facial triangles based on their centers.
  // In v8 that enlarged the socket by multiple pixels and exposed pink backing.
  // The v9 viewer clips precise pixels in the face shader instead, retaining
@@ -70,7 +56,8 @@ export function installLauren3Eyes(root){
   for(let k=0;k<colors.array.length;k++)if(colors.array[k]!==unchangedColors[k])
    throw Error('Skin color modified unexpectedly');
  }
- geo.computeVertexNormals();geo.computeBoundingSphere();face.geometry=geo;
+ // The duplicate face retains original positions, normals, color and index data.
+ geo.computeBoundingSphere();face.geometry=geo;
  const eyeObjects=[];
  const scleraMat=new THREE.MeshPhysicalMaterial({color:0xddd5ce,roughness:.67,clearcoat:.22});
  const irisOuter=new THREE.MeshStandardMaterial({color:0x30241e,roughness:.78,side:THREE.DoubleSide});
