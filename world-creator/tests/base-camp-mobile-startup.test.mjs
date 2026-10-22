@@ -23,7 +23,10 @@ test('phone startup has safe bypass and deferred photo-real forest streaming',()
   assert.match(page,/if\(safeMode\)/);
   assert.match(page,/setTimeout\(\(\)=>\{/);
   assert.match(page,/activeForest\?\.update\?\.\(pos\.x,pos\.z\)/);
-  assert.match(forest,/const maxVisible=lowPower\?88:320/);
+  assert.match(forest,/const maxVisible=lowPower\?64:160/);
+  assert.match(forest,/const minSpacing=lowPower\?23:19/);
+  assert.match(page,/id="treeDensity"/);
+  assert.doesNotMatch(page,/Grandview|grandviewUrl|panoramaStatus/);
   assert.match(forest,/lowPower&&!fullForest\?\[0\]:\[0,1\]/);
   assert.doesNotMatch(forest,/THREE\.ConeGeometry\(/);
 });
