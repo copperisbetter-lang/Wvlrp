@@ -1,21 +1,25 @@
 /**
- * The Wild / Base Camp only — photographic PBR forest, 2026-10-21.
- * Stand-alone from the original Wild forest and its world-streamer.
- * Licensed CC0 source meshes already installed in ../assets:
- * Poly Haven tree_small_02 (hardwood visual stand-in) and fir_tree_01
- * (conifer visual stand-in). Exact West Virginia species not yet verified.
- * Never silently replace missing photo-textured models with geometric proxies.
+ * The Wild / Base Camp only — mobile-safe photo-textured PBR forest.
+ * A phone screenshot exposed vertical foliage strips in the original large
+ * village broadleaf GLB. Default to vetted, simple two-primitive PBR oak GLBs
+ * (bark and alpha-masked leaf mesh). The larger assets are diagnostic-only.
+ * Distinct from the original Wild world; preserve all lake/campsite placement.
  */
 import {GLTFLoader} from "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js";
 
-const SOURCES = [
-  {id:"photo-hardwood",url:"../assets/village-photoreal-broadleaf.glb"},
-  {id:"photo-evergreen",url:"../assets/village-pbr-fir_tree_01.glb"}
+const STABLE_SOURCES = [
+  {id:"oak-canopy",url:"../assets/oak_tree.glb"},
+  {id:"young-oak",url:"../assets/oak_tree_small.glb"}
+];
+// Opt in explicitly with ?forest=legacy to isolate the old green-strip model.
+const LEGACY_SOURCES = [
+  {id:"legacy-broadleaf",url:"../assets/village-photoreal-broadleaf.glb"},
+  {id:"legacy-fir",url:"../assets/village-pbr-fir_tree_01.glb"}
 ];
 const SEED = 20261021;
 function generator(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296};}
 function angularGap(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
-function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings}){
+function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,paths,perimeterClearings,interiorClearings,legacyForest=false}){
   const rand=generator(SEED),placements=[];
   const spacing=11.4,cells=Math.ceil((radius-11)/spacing);
   for(let i=-cells;i<=cells;i++)for(let j=-cells;j<=cells;j++){
@@ -32,10 +36,11 @@ function createPositions({radius,terrainY,lakeRadius,beachZone,pathDistance,path
     if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<15))continue;
     const localSlope=Math.hypot(terrainY(x+1,z)-terrainY(x-1,z),terrainY(x,z+1)-terrainY(x,z-1))*.5;
     if(localSlope>.72)continue;
-    const isEvergreen=rand()<.27;
+    const isYoung=rand()<.27;
     placements.push({x,z,y:terrainY(x,z)-.07,
-      source:isEvergreen?1:0,
-      height:isEvergreen?19+rand()*10:16+rand()*8,
+      source:isYoung?1:0,
+      height:legacyForest?(isYoung?19+rand()*10:16+rand()*8)
+        :(isYoung?9+rand()*5:18+rand()*7),
       angle:rand()*Math.PI*2,priority:rand()});
   }
   // Do not truncate by grid traversal order: that leaves the opposite
@@ -69,26 +74,28 @@ export async function installBaseCampRealForest(THREE,scene,options){
   // Keep all 2,050 candidate positions as WORLD DATA, not 2,050 live GPU trees.
   // An Android GPU cannot draw an entire 0.25-mile forest at full PBR resolution.
   const lowPower=!!options.lowPower,fullForest=!!options.fullForest;
+  const legacyForest=!!options.legacyForest;
+  const sources=legacyForest?LEGACY_SOURCES:STABLE_SOURCES;
   // A small source tree stretched into a 38m giant made its crown into a
   // continuous leaf-card wall. Display properly scaled PBR trees, spaced as
   // individual woodland crowns. Keep the full forest placement data untouched.
   const maxVisible=lowPower?64:160;
   const drawRadius=lowPower?132:205;
   let densityBudget=Math.min(maxVisible,Math.max(8,options.visibleTreeBudget??(lowPower?28:100)));
-  const positions=createPositions(options);
+  const positions=createPositions({...options,legacyForest});
   const status={state:"loading",requested:positions.length,visible:0,planted:0,
     sources:[],failures:[],profile:lowPower?"mobile":"desktop"};
-  options.report?.("Loading nearby PBR trees — distant trees stream as you walk…");
+  options.report?.(legacyForest?"Experimental forest test — loading older models…":"Loading stable oak trees — mobile-safe PBR leaves…");
   const loader=new GLTFLoader();
   // Fir asset is over 30 MB, broadleaf is 10 MB. Avoid a 40 MB startup
   // download + simultaneous GLB decode on phones. ?forest=full opts in.
-  const ids=lowPower&&!fullForest?[0]:[0,1];
-  const results=await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,SOURCES[i])));
+  const ids=legacyForest&&lowPower&&!fullForest?[0]:[0,1];
+  const results=await Promise.allSettled(ids.map(i=>loadParts(THREE,loader,sources[i])));
   const group=new THREE.Group();
   group.name="Base Camp streamed photo-textured forest";
   const records=[];
   for(let n=0;n<ids.length;n++){
-    const i=ids[n],source=SOURCES[i],result=results[n];
+    const i=ids[n],source=sources[i],result=results[n];
     if(result.status!=="fulfilled"){
       const message=source.id+": "+String(result.reason?.message||result.reason);
       status.failures.push(message);
@@ -129,7 +136,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     // Pick nearby trees by distance, but keep at least 23m of separation
     // between selected mobile trunks; never take the 28 nearest blindly.
     const occupied=[];
-    const minSpacing=lowPower?23:19;
+    const minSpacing=legacyForest?(lowPower?23:19):(lowPower?29:25);
     const selectedLimit=densityBudget;
     const pool=[];
     for(const rec of records){
@@ -164,7 +171,7 @@ export async function installBaseCampRealForest(THREE,scene,options){
     }
     status.visible=visible;
     options.report?.(visible+" spaced photo-textured trees active · "+status.planted+
-      " mapped across the world"+(lowPower&&!fullForest?" · phone-safe mode":"")+
+      " mapped across the world"+(lowPower&&!legacyForest?" · corrected oak geometry":"")+
       (status.failures.length?" · "+status.failures.length+" asset error(s)":""));
   };
   status.group=group;
