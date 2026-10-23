@@ -74,7 +74,7 @@ installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoade
 // Old tree/understory source files remain outside this scene for future rebuilding.
 // The full Wild game is a separate route and remains untouched.
 
-const spawnVillage=new URLSearchParams(location.search).get('spawn')==='village';const spawnX=spawnVillage?0:0,spawnZ=spawnVillage?58:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
+const spawnVillage=new URLSearchParams(location.search).get('spawn')==='village';const spawnX=0,spawnZ=spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
 // Treat walking and looking as separate pointer streams so two-finger play works.
 // The look surface spans the entire screen; HUD and joystick sit above it.
 pad.addEventListener('pointerdown',e=>{
@@ -102,7 +102,7 @@ look.addEventListener('pointermove',e=>{
 function stopLook(e){if(e.pointerId===lookPointer)lookPointer=null;}
 for(const type of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(type,stopLook);
 addEventListener('blur',()=>{lookPointer=null;drag=null;moveX=moveY=0;nub.style.transform='';});
-document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,15);yaw=0;pitch=0};
+document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,0);yaw=0;pitch=0};
 const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudToggle');hudToggle.onclick=()=>{const compact=hud.classList.toggle('compact');hudToggle.textContent=compact?'Show details':'Hide details';hudToggle.setAttribute('aria-expanded',String(!compact));};
 const clock=document.getElementById('clock');const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
 let lastAdaptive=performance.now();
