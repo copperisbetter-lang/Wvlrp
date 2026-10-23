@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender
-        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender
+        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
       - name: Inspect MPFB mesh and produce isolated Brooke fit
         run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
       - name: Render five-angle head inspection sheets
