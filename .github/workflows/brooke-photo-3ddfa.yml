@@ -88,7 +88,19 @@ jobs:
           mkdir -p "$CACHE"
           sudo mkdir -p /var/cache/apt/archives
           sudo cp -n "$CACHE"/*.deb /var/cache/apt/archives/ 2>/dev/null || true
-          sudo apt-get install -y blender python3-numpy xvfb
+          echo "APT cache packages: $(find "$CACHE" -maxdepth 1 -name '*.deb' | wc -l)"
+          echo "Checking apt/dpkg state before installation"
+          ps -eo pid,etime,cmd | grep -E '[a]pt|[d]pkg' || true
+          df -h / /var/cache/apt/archives
+          # Fail fast rather than consuming the entire 30-minute job budget.
+          # If this times out, capture apt logs for diagnosis.
+          timeout --signal=TERM --kill-after=20s 240s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -o DPkg::Lock::Timeout=30 blender python3-numpy xvfb || {
+            rc=$?
+            echo "::error::Blender apt installation failed or exceeded 240 seconds (exit $rc)"
+            tail -100 /var/log/apt/term.log || true
+            tail -80 /var/log/dpkg.log || true
+            exit "$rc"
+          }
           cp -n /var/cache/apt/archives/*.deb "$CACHE"/ 2>/dev/null || true
           blender -b --python-exit-code 1 --python-expr "import numpy; print('Blender NumPy:', numpy.__version__)"
           echo "Cached package count: $(find "$CACHE" -maxdepth 1 -name '*.deb' | wc -l)"
