@@ -54,20 +54,31 @@ export function installStaceyLake(THREE,scene){
  // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
  // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
  const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:115,specular:0x93c3c8});
- // Avoid repeating procedural color-map dots; surface relief comes from bump map and gentle geometry.
- const waterNormalURL='https://assets.babylonjs.com/textures/waterbump.png';
- const bumpLoader=new THREE.TextureLoader();
- bumpLoader.setCrossOrigin('anonymous');
- bumpLoader.load(waterNormalURL,texture=>{
-  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-  texture.repeat.set(1,1);
-  texture.anisotropy=4;
-  naturalWater.bumpMap=texture;
-  naturalWater.bumpScale=.22;
-  naturalWater.needsUpdate=true;
-  water.userData.bumpReady=true;window.__staceyWaterTextureStatus='loaded: UV '+waterGeometry.attributes.uv.count;window.__staceyWaveDiagnostics.texture='loaded';
- },undefined,err=>{water.userData.bumpReady=false;window.__staceyWaterTextureStatus='FAILED: '+String(err?.message||err);window.__staceyWaveDiagnostics.texture='failed';});
- window.__staceyWaterTextureStatus='loading';
+ // Two self-contained, independently moving ripple normal maps. No network requests.
+ // Normal-map relief affects specular lighting rather than painting dots on the water.
+ function makeRippleNormal(seed){
+  const n=256,canvas=document.createElement('canvas');canvas.width=canvas.height=n;
+  const ctx=canvas.getContext('2d'),img=ctx.createImageData(n,n),height=new Float32Array(n*n);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+   const a=x*Math.PI*2/n,b=y*Math.PI*2/n;
+   height[y*n+x]=Math.sin(9*a+4*b+seed)*.55+Math.sin(5*a-11*b+seed*1.7)*.30+Math.sin(17*a+13*b+seed*.6)*.15;
+  }
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+   const dx=height[y*n+(x+1)%n]-height[y*n+(x+n-1)%n];
+   const dy=height[((y+1)%n)*n+x]-height[((y+n-1)%n)*n+x];
+   const len=Math.hypot(dx*.65,dy*.65,1),k=(y*n+x)*4;
+   img.data[k]=Math.round(128-127*dx*.65/len);img.data[k+1]=Math.round(128-127*dy*.65/len);
+   img.data[k+2]=Math.round(128+127/len);img.data[k+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2.5,2.5);return tex;
+ }
+ const normalA=makeRippleNormal(.8),normalB=makeRippleNormal(2.6);
+ naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.95,.95);
+ naturalWater.shininess=105;naturalWater.specular.set(0xaacbd1);
+ naturalWater.needsUpdate=true;
+ window.__staceyWaterTextureStatus='local dual-normal ripples ready';
+ window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'local normals ready'};
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
  // Water2 r160: reflector + refractor with two independently scrolling normal maps.
@@ -93,14 +104,14 @@ export function installStaceyLake(THREE,scene){
  // No trees or island structures until owner approves the next stage.
  scene.add(island);
  const basePositions=waterGeometry.attributes.position.array.slice();
- const bumpTexture=()=>naturalWater.bumpMap;
+ 
  let lastWaveUpdate=-1;
- window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'loading'};
  return {update(seconds){material.uniforms.uTime.value=seconds;
   if(plainWater||useWater2||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
   
-  if(bumpTexture()){bumpTexture().offset.x=(seconds*.004)%1;bumpTexture().offset.y=(seconds*.0025)%1;}
+  normalA.offset.set((seconds*.009)%1,(seconds*.004)%1);
+  normalB.offset.set((seconds*-.006)%1,(seconds*.008)%1);
   const p=waterGeometry.attributes.position;
   for(let i=0;i<p.count;i++){
    const j=i*3,x=basePositions[j],z=basePositions[j+2];
