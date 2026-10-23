@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19;z-index:2}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;touch-action:none;user-select:none;-webkit-user-select:none;z-index:1}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Vegetation cleared for a clean Base Camp rebuild. Approved buildings remain pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="vegetationStatus">All trees, shrubs, ferns and deadwood removed from the active scene.</small><small id="perfStatus">Measuring GPU load…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
-import * as THREE from 'three';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
+import * as THREE from 'three';import {installVillageCampsiteTrail} from './village-campsite-trail.js';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.fog=new THREE.FogExp2(0xa1b8b6,.0014);
 // No panorama: only procedurally lit sky color and fog. Sun moves independently.
 const mobileProfile=matchMedia("(pointer:coarse)").matches||innerWidth<820;
@@ -67,6 +67,8 @@ for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
   // No floating brown discs: vegetation setbacks reveal a genuine natural clearing.
 }
 
+// Approved first trail: village treeline to closest unfurnished interior clearing.
+installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader});
 // Bare Base Camp baseline, approved 2026-10-22.
 // Vegetation is intentionally NOT imported, downloaded, created or streamed.
 // Old tree/understory source files remain outside this scene for future rebuilding.
