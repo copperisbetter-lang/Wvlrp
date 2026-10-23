@@ -11,6 +11,7 @@ sha=hashlib.sha256(raw).hexdigest()
 im=Image.open(src).convert("RGBA")
 w,h=im.size
 if w < 500 or h < 250: raise RuntimeError("Unexpectedly small panorama")
+if abs(w/h-2)>0.02: raise RuntimeError(f"Expected 2:1 panorama, got {w}x{h}")
 # Preserve 360 equirectangular frame: divide circumferentially into eight labeled sectors.
 tiles=[]
 for i in range(8):
@@ -79,6 +80,8 @@ manifest={
  "mask_note":"V3: preserve all pixels below 40% image height; only narrow upper wrap-edge candidate windows. Tree silhouettes and maple not yet verified; do not integrate.",
  "requirements":["preserve orange maple","preserve lake and mountain vista","preserve rock outcrop and both beaches","remove near-foreground/right-side tree imagery only after visual boundary approval","retain 2:1 seamless 360 dimensions"],
  "source_untouched":hashlib.sha256(src.read_bytes()).hexdigest()==sha,
+ "cutout_pixel_count":sum(1 for v in opacity.getdata() if v<250),
+ "integration_allowed":False,
 }
 (out/"manifest.json").write_text(json.dumps(manifest,indent=2))
 print(json.dumps(manifest,indent=2))
