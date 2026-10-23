@@ -16,3 +16,12 @@
 - **Files to modify:** To be listed precisely before editing.
 - **User approval:** User requested fixes; preserve original baseline.
 - **Outcome:** Not started on verified Pass 4 source.
+
+## 2026-10-23 — Photo comparison / Pass 5 request
+**Evidence:** User supplied Pass 4 profile, lip/nose close-up, three-quarter, earlier Pass 3 front view, and front/profile reference photographs.
+
+**Complaints confirmed from screenshots:** Excessively convex brow/forehead in profile; upper lip protrudes as a thin separate ridge while adjacent mouth tissue looks recessed; lower-lip vermilion texture is mostly pale/skin colored with vertical stripes; dark upper-lip band; nostril interior appears polygonal; eyes look more open than the reference. Note that earlier "sunken lips" and the profile's protruding upper rim require distinct, locally bounded corrections, not a blanket forward push.
+
+**Proposed correction order:** (1) Preserve exact Pass 4 GLB as baseline; (2) soften upper forehead/brow with reference-aligned profile morph; (3) reshape mouth rim and support tissue locally, avoiding detachment; (4) repair upper-lip shadow and lower-lip color in UV texture using anatomy masks; (5) round nostril rims without sealing airways; (6) tune eyelids only after new render. Verify front, profile, three-quarter, close-up, and original rig. Never edit Sophie 1 or Brooke 1.0.
+
+**Status:** Logged before implementation; pending build and visual approval.
