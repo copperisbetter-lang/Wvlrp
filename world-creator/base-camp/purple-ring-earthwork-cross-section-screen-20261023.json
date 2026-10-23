@@ -1,0 +1,28 @@
+{
+  "work_order": "CO-BC-RING-TRANSITION-20261023",
+  "stage": "concept cross-section and earthwork quantity screening; no excavation",
+  "ring_radius_m": 268.224,
+  "angle_range_deg": [
+    284,
+    340
+  ],
+  "length_m": 262.15794824067916,
+  "station_spacing_m": 1.17035,
+  "flat_tread_width_m": 2.6,
+  "designed_centerline_max_grade_pct": 7.5,
+  "designed_tread_cross_slope_pct": 0,
+  "estimated_max_cut_tread_m": 3.859,
+  "estimated_tread_only_excavation_m3": 963,
+  "estimated_shoulders_and_cliff_excavation_m3": "NOT ESTIMATED; potentially substantially higher",
+  "existing_brown_path_screen": "15 visible brown SVG path elements scanned for control points within 20m of ring at angles 284-340; none found; path segment intersection not certified",
+  "campsite64": "relocated; ring centerline clearance ~91.8m",
+  "critical_holds": [
+    "0% designed cross slope applies to mathematical tread only, not actual game terrain or collision.",
+    "Cross-section would require cutting up to ~3.86m and building actual 3D cliff shoulders; no design yet.",
+    "Grade at boundaries 284 and 340 degrees not certified for seamless continuation.",
+    "Only path control points checked; curves may intersect route.",
+    "Terrain mesh resolution ~5m at ring, inadequate to resolve 2.6m tread without localized geometry.",
+    "Protected tree and mobile traversal checks outstanding."
+  ],
+  "decision": "HOLD excavation until approach transitions, path segment intersection, and 3D collision-compatible mesh plan validated."
+}
