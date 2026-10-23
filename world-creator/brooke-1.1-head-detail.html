@@ -63,6 +63,7 @@ try{
  const surfaceOriginal=new Map();
  $('surface').onchange=()=>{
   for(const mesh of meshes){
+   if(!mesh.morphTargetDictionary || !Object.keys(mesh.morphTargetDictionary).length)continue;
    if(!surfaceOriginal.has(mesh))surfaceOriginal.set(mesh,mesh.material);
    mesh.material=surfaceOriginal.get(mesh);
    if($('surface').value!=='skin'){

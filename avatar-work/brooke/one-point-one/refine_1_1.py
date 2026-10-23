@@ -37,6 +37,11 @@ delta[:,1]-=.12*(y-1.477)*close*smooth(1.45,1.46,y)
 # Small, smooth cheek fullness correction; no skull or neck scaling.
 cheek=np.exp(-.5*((np.abs(x)-.043)/.014)**2)*np.exp(-.5*((y-1.516)/.014)**2)*smooth(.108,.133,z)
 delta[:,0]+=.0008*np.tanh(x/.010)*cheek*smooth(1.45,1.48,y)
+# Photo depth transfer must not buckle the delicate nostril wings.
+# Recover most of the native alar depth while keeping the fitted bridge/tip.
+basis=acc(attrs['POSITION'])
+alar_shape=np.exp(-.5*((np.abs(x)-.011)/.008)**2)*np.exp(-.5*((y-1.504)/.009)**2)*smooth(.126,.143,z)
+delta[:,2]+=.70*(basis[:,2]-pos[:,2])*alar_shape*smooth(1.45,1.48,y)
 newpos=pos+delta
 assert np.max(np.linalg.norm(delta,axis=1))<.006
 assert np.max(np.abs(delta[pos[:,1]<1.45]))==0
@@ -44,6 +49,12 @@ ai=len(g['accessors']);g['accessors'].append({'bufferView':append(delta.astype('
 target={'POSITION':ai};tri=acc(pr['indices']).ravel().reshape(-1,3)
 norm=np.zeros_like(pos);face=np.cross(newpos[tri[:,1]]-newpos[tri[:,0]],newpos[tri[:,2]]-newpos[tri[:,0]])
 for k in range(3):np.add.at(norm,tri[:,k],face)
+# GLB duplicates vertices at UV seams. Share normals across coincident skin
+# vertices so those seams cannot become a sharp bright strip.
+_,groups=np.unique(np.round(newpos,6),axis=0,return_inverse=True)
+weldnorm=np.zeros((groups.max()+1,3),dtype=norm.dtype)
+np.add.at(weldnorm,groups,norm)
+norm=weldnorm[groups]
 norm/=np.maximum(np.linalg.norm(norm,axis=1,keepdims=True),1e-10)
 old=acc(attrs['NORMAL'])
 for w,t in zip(skin['weights'],pr['targets']):
@@ -117,6 +128,17 @@ skin_rgb=np.median(small[nose_ref,:3],axis=0)
 for c in range(3):
  grain=tex[:,:,c]-gaussian_filter(tex[:,:,c],5)
  tex[:,:,c]=tex[:,:,c]*(1-nose)+np.clip(skin_rgb[c]+grain*.20,0,1)*nose
+# Replace the baked photo-outline below the chin with a continuous neck-to-
+# cheek color gradient, rather than leaving a bright painted jaw contour.
+band=smooth(1.416,1.436,y)*(1-smooth(1.463,1.484,y))*smooth(.045,.095,z)*mask
+transition=smooth(1.430,1.484,y)
+cheek_tone=np.median(small[clean,:3],axis=0)
+for c in range(3):
+ desired=tone[c]*(1-transition)+cheek_tone[c]*transition
+ desired=np.asarray(Image.fromarray(desired.astype('float32'),'F').resize(im.size,Image.Resampling.BILINEAR))
+ blend=np.asarray(Image.fromarray(band.astype('float32'),'F').resize(im.size,Image.Resampling.BILINEAR))
+ grain=tex[:,:,c]-gaussian_filter(tex[:,:,c],6)
+ tex[:,:,c]=tex[:,:,c]*(1-blend)+np.clip(desired+grain*.1,0,1)*blend
 buf=io.BytesIO();Image.fromarray(np.round(tex*255).astype('uint8')).save(buf,format='PNG')
 g['images'][ii]={'bufferView':append(buf.getvalue()),'mimeType':'image/png','name':'Brooke 1.1 pass 4 cheek jaw nose skin'}
 # The viewer's former back light produced a white rim on glossy skin.
@@ -139,5 +161,5 @@ before_faces=np.cross(pos[tri[:,1]]-pos[tri[:,0]],pos[tri[:,2]]-pos[tri[:,0]])
 valid=np.linalg.norm(before_faces,axis=1)>1e-10
 inverted=int(np.count_nonzero(np.sum(before_faces[valid]*face[valid],axis=1)<=0))
 assert inverted==0, 'Correction inverted a surface triangle'
-report={'version':'Brooke 1.1 pass 4','source_sha256':hashlib.sha256(raw).hexdigest(),'candidate_sha256':hashlib.sha256(out).hexdigest(),'source_unchanged':True,'original_accessors_unchanged':True,'topology_and_rig_unchanged':True,'eyeballs_and_hair_unchanged':True,'neck_geometry_unchanged':True,'new_morph':'Brooke 1.1 reference eyelids mouth and cheek fit','max_displacement_m':float(np.linalg.norm(delta,axis=1).max()),'max_lip_retraction_m':float(-delta[:,2].min()),'inverted_triangles':inverted,'changed_skin_vertices':int(np.count_nonzero(np.linalg.norm(delta,axis=1))),'jaw_texture_blend':'Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color','nose_texture_repair':'Exposed alar skin shadow reduction; underside nostril cavities retained','neck_reference_rgb':tone.tolist(),'eyelid_correction':'Intermediate compression between Pass 2 and Pass 3','mouth_closure':'Bounded 12 percent local gap relaxation','cheek_fullness_m':.0008,'lateral_texture_recovery':'Native UV matched to clean cheek color; feathered lateral mask','skin_material':'roughness .88, specular .18','nose_front_cleanup':'Feathered clean skin on outward alar and tip surfaces','visual_approval_pending':True}
+report={'version':'Brooke 1.1 pass 4','source_sha256':hashlib.sha256(raw).hexdigest(),'candidate_sha256':hashlib.sha256(out).hexdigest(),'source_unchanged':True,'original_accessors_unchanged':True,'topology_and_rig_unchanged':True,'eyeballs_and_hair_unchanged':True,'neck_geometry_unchanged':True,'new_morph':'Brooke 1.1 reference eyelids mouth and cheek fit','max_displacement_m':float(np.linalg.norm(delta,axis=1).max()),'max_lip_retraction_m':float(-delta[:,2].min()),'inverted_triangles':inverted,'changed_skin_vertices':int(np.count_nonzero(np.linalg.norm(delta,axis=1))),'jaw_texture_blend':'Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color','nose_texture_repair':'Exposed alar skin shadow reduction; underside nostril cavities retained','neck_reference_rgb':tone.tolist(),'eyelid_correction':'Intermediate compression between Pass 2 and Pass 3','mouth_closure':'Bounded 12 percent local gap relaxation','cheek_fullness_m':.0008,'lateral_texture_recovery':'Native UV matched to clean cheek color; feathered lateral mask','skin_material':'roughness .88, specular .18','nose_front_cleanup':'Feathered clean skin on outward alar and tip surfaces','normal_seams':'Normals averaged across coincident UV seam vertices','alar_depth':'70 percent local recovery toward native wing depth','jaw_outline':'Continuous neck to cheek color gradient','visual_approval_pending':True}
 dest.with_suffix('.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

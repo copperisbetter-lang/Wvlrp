@@ -18,7 +18,7 @@ const fs=require('node:fs');
    await page.selectOption('#surface',mode);await page.waitForTimeout(700);
    await stage.screenshot({path:path.join(out,'webgl-front-'+mode+'.png')});
   }
-  await page.selectOption('#surface','skin');await page.selectOption('#view',{label:'Side'});await page.waitForTimeout(700);
+  await page.selectOption('#surface','skin');await page.locator('#zoom').evaluate(el=>{el.value='75';el.dispatchEvent(new Event('input',{bubbles:true}));});await page.selectOption('#view',{label:'Side'});await page.waitForTimeout(700);
   await stage.screenshot({path:path.join(out,'webgl-profile.png')});
   await page.click('#resetAll');
   if(await page.locator('#surface').inputValue()!=='skin')throw Error('Reset did not restore skin material');
