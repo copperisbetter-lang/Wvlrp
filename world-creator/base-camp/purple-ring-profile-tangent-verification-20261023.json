@@ -1,0 +1,13 @@
+{
+  "work_order": "CO-BC-RING-TRANSITION-20261023",
+  "stage": "independent numerical verification of committed 300-344 degree profile",
+  "input": "purple-ring-endpoint-matched-profile-20261023.json",
+  "sample_count": 353,
+  "maximum_station_grade_pct": 7.8011,
+  "maximum_adjacent_grade_change_percentage_points": 10.5575,
+  "abrupt_transition_at_angle_deg": 336.25,
+  "prior_grade_pct": 7.8,
+  "next_grade_pct": -2.76,
+  "assessment": "FAIL smooth tangent/rideability despite zero elevation mismatch at endpoints",
+  "action": "Do not excavate from current envelope; design differentiable approach transition, validate full tread and collision geometry; do not edit lake or production."
+}
