@@ -1,0 +1,32 @@
+{
+  "work_order": "CO-BC-RING-TRANSITION-20261023",
+  "finding": "Prior 284–340 degree cut-only profile cannot be connected cleanly at the northern endpoint as designed.",
+  "natural_longitudinal_grade_pct_by_angle": {
+    "280": -10.46,
+    "284": -9.87,
+    "288": -7.94,
+    "296": -0.76,
+    "304": 7.88,
+    "312": 13.19,
+    "324": 8.04,
+    "332": -0.68,
+    "340": -4.71,
+    "344": -3.28,
+    "348": 0.08
+  },
+  "noncompliant_existing_grade_runs_deg": [
+    [
+      280,
+      287.75
+    ],
+    [
+      304.25,
+      324
+    ]
+  ],
+  "candidate_start_deg": 288,
+  "candidate_end_deg": "Requires extension beyond 332 until modified profile meets natural grade and elevation smoothly",
+  "reason": "Simple cut-only lower-envelope at 288–332 has ~2.37m cut remaining at exit 332; abruptly stopping there would make an impassable lip. Extending to 340 alone is not sufficient without endpoint-grade analysis.",
+  "design_rule": "Do not commit 3D excavation until target profile matches existing elevation and tangent grade at BOTH ends, <=8% continuous grade and <=3% full tread cross slope, with campsite/path clearances.",
+  "status": "Endpoint defect identified; revised transition solver pending. No new terrain cut."
+}
