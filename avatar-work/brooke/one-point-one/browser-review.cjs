@@ -9,10 +9,11 @@ const fs=require('node:fs');
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/world-creator/brooke-1.1-head-detail.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('3 meshes'),{timeout:120000});
+  await page.evaluate(()=>document.querySelectorAll('details').forEach(d=>d.open=true));
   const stage=page.locator('#stage');
   const out='world-creator/brooke-1.1-review';
   await page.selectOption('#view',{label:'Front'});
-  await page.locator('#zoom').fill('125');await page.locator('#zoom').dispatchEvent('input');
+  await page.locator('#zoom').evaluate(el=>{el.value='125';el.dispatchEvent(new Event('input',{bubbles:true}));});
   for(const mode of ['skin','texture','clay']){
    await page.selectOption('#surface',mode);await page.waitForTimeout(700);
    await stage.screenshot({path:path.join(out,'webgl-front-'+mode+'.png')});
