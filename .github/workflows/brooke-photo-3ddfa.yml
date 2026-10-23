@@ -74,10 +74,24 @@ jobs:
           assert v>100 and f>100, (v,f)
           print('Photo reconstruction OBJ:',v,'vertices',f,'faces')
           PY
-      - name: Install Blender and Blender Python NumPy
+      # GitHub-hosted runners are ephemeral. Persist the downloaded .deb files
+      # so subsequent runs avoid fetching Blender and its large dependencies.
+      - name: Restore Blender package cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/brooke-blender-debs
+          key: brooke-blender-ubuntu2204-apt-v1
+      - name: Install Blender from reusable package cache
         run: |
+          set -euo pipefail
+          CACHE=/home/runner/.cache/brooke-blender-debs
+          mkdir -p "$CACHE"
+          sudo mkdir -p /var/cache/apt/archives
+          sudo cp -n "$CACHE"/*.deb /var/cache/apt/archives/ 2>/dev/null || true
           sudo apt-get install -y blender python3-numpy xvfb
+          cp -n /var/cache/apt/archives/*.deb "$CACHE"/ 2>/dev/null || true
           blender -b --python-exit-code 1 --python-expr "import numpy; print('Blender NumPy:', numpy.__version__)"
+          echo "Cached package count: $(find "$CACHE" -maxdepth 1 -name '*.deb' | wc -l)"
       - name: Build closed cranium candidate GLB (neck not yet fitted)
         run: |
           OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
