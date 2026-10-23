@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19;z-index:2}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;touch-action:none;user-select:none;-webkit-user-select:none;z-index:1}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Vegetation cleared for a clean Base Camp rebuild. Approved buildings remain pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="vegetationStatus">All trees, shrubs, ferns and deadwood removed from the active scene.</small><small id="perfStatus">Measuring GPU load…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
-import * as THREE from 'three';import {installStaceyWater} from './stacey-water.js';import {installVillageCampsiteTrail} from './village-campsite-trail.js';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
+import * as THREE from 'three';import {installVillageCampsiteTrail} from './village-campsite-trail.js';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c8);scene.fog=new THREE.FogExp2(0xa1b8b6,.0014);
 // No panorama: only procedurally lit sky color and fog. Sun moves independently.
 const mobileProfile=matchMedia("(pointer:coarse)").matches||innerWidth<820;
@@ -67,18 +67,11 @@ staceyBackdropTexture.colorSpace=THREE.SRGBColorSpace;
 staceyBackdropTexture.mapping=THREE.EquirectangularReflectionMapping;
 // Paint the real panoramic photograph into the scene background directly.
 // A sky dome can be occluded or render incorrectly; scene.background is explicit.
+// Preserve original panorama only as a temporary distant reference; no old lake mesh is recreated.
 scene.background=staceyBackdropTexture;
 scene.backgroundIntensity=1;
 // Gator 3 isolated water test: shallow, slow wind ripples with restrained sunlight.
 // Shoreline stays inside the approved five-acre footprint; no trail or terrain edits.
-const lakeShape=new THREE.Shape();
-for(let i=0;i<=192;i++){const a=i*Math.PI*2/192,r=shorelineWave(a)*.975;const x=LAKE.x+Math.cos(a)*LAKE.rx*r,z=LAKE.z+Math.sin(a)*LAKE.rz*r;if(i===0)lakeShape.moveTo(x,-z);else lakeShape.lineTo(x,-z);}
-const lakeGeometry=new THREE.ShapeGeometry(lakeShape,64);
-lakeGeometry.rotateX(-Math.PI/2);
-const lakeWater=new THREE.Mesh(lakeGeometry,new THREE.MeshBasicMaterial({color:0x356d74,transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:false}));
-lakeWater.position.y=LAKE.waterLevel+.04;
-lakeWater.renderOrder=1;scene.add(lakeWater);
-const staceyWater=installStaceyWater(THREE,lakeWater);
 // Gator 3 stripped all legacy foreground lake meshes, swash strips and shoreline decoration.
 // Original Stacey Lake panorama is the sole lake visual during photographic alignment.
 // Lake coordinates and footprint stay defined for the future swim-water construction.
@@ -138,7 +131,6 @@ let lastAdaptive=performance.now();
 let frameSum=0,frameCount=0,lastFpsAt=performance.now(),fps=0;
 function tick(now){
  requestAnimationFrame(tick);
- staceyWater.update(now*.001,sun.position.clone().sub(sun.target.position),camera.position);
  const elapsed=now-previous,dt=Math.min(.08,elapsed/1000);previous=now;
  frameSum+=elapsed;frameCount++;
  if(now-lastFpsAt>1200){fps=Math.round(frameCount*1000/Math.max(1,frameSum));frameSum=frameCount=0;lastFpsAt=now;}
