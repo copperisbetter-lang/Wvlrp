@@ -25,7 +25,9 @@ jobs:
       - name: Install Blender and headless display
         run: |
           sudo apt-get update -qq
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y blender xvfb
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy xvfb
+      - name: Verify Blender import dependencies
+        run: blender -b --python-exit-code 1 --python-expr "import bpy, numpy; print('Blender', bpy.app.version_string, 'NumPy', numpy.__version__)"
       - name: Fit head to clone and render head inspection
         run: |
           set -euo pipefail
