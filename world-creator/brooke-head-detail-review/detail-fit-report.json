@@ -1,0 +1,20 @@
+{
+  "source_sha256": "5e2eeca7894ed7ce4effe74454e9bb5a8a67b43b577ed5a7c0a11362c1b84abf",
+  "front_reference_sha256": "6b88523edcf6fbe8a0c59f52ba9c8567bff7ecf76b88b4b24af9582643c52da5",
+  "reference_dimensions": [
+    1536,
+    1536
+  ],
+  "reference_registration": "manual eye-centre projection, uncalibrated",
+  "maximum_added_displacement_m": 0.0023544528521597385,
+  "neck_unchanged": true,
+  "eye_geometry_unchanged": true,
+  "skin_uvs_unchanged": true,
+  "reference_texture_pixels": 598988,
+  "likeness_approved": false,
+  "limitations": [
+    "Hair retains native style",
+    "Photo projection needs front and profile review",
+    "Not a full landmark or calibrated profile fit"
+  ]
+}
