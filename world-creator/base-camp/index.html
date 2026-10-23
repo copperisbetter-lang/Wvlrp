@@ -84,7 +84,9 @@ for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
 }
 
 // Approved first trail: village treeline to closest unfurnished interior clearing.
-const campsiteTrail=installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader,LAKE});
+// Owner-directed removal: do not instantiate the photographed trail section, fence posts, rails or rocks.
+// Keep the trail module untouched so Gator 2's independent planning work is unaffected.
+const campsiteTrail=null;
 // Bare Base Camp baseline, approved 2026-10-22.
 // Vegetation is intentionally NOT imported, downloaded, created or streamed.
 // Old tree/understory source files remain outside this scene for future rebuilding.
