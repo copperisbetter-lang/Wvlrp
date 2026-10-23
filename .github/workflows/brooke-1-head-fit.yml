@@ -24,8 +24,11 @@ jobs:
           path: avatar-work/brooke/build/photo-source
       - name: Install Blender and headless display
         run: |
-          sudo apt-get update -qq
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy xvfb
+          set -euo pipefail
+          # Avoid the Ubuntu runner mirror stalls seen in earlier character builds.
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt /etc/apt/sources.list 2>/dev/null || true
+          timeout --kill-after=20s 120s sudo apt-get update -qq -o Acquire::Retries=2 -o Acquire::http::Timeout=20
+          timeout --kill-after=20s 240s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Acquire::Retries=2 -o Acquire::http::Timeout=20 blender python3-numpy xvfb
       - name: Verify Blender import dependencies
         run: blender -b --python-exit-code 1 --python-expr "import bpy, numpy; print('Blender', bpy.app.version_string, 'NumPy', numpy.__version__)"
       - name: Fit head to clone and render head inspection
