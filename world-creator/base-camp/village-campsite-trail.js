@@ -1,9 +1,9 @@
-// First approved Base Camp trail: central village treeline to nearest empty interior clearing.
+// First approved Base Camp trail: lake shore to nearest empty inland campsite clearing.
 // Fences and mossy rocks are actual 3D geometry; the path is a terrain-following walkable surface.
 // Ground uses photographic forest-floor material until approved trail image is uploaded to repository.
-export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader}){
- const start={x:0,z:64};
- const nearest=interiorClearings.filter(p=>Math.hypot(p.x-start.x,p.z-start.z)>12)
+export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader,LAKE}){
+ const start={x:0,z:LAKE.z+LAKE.rz+8};
+ const nearest=interiorClearings.filter(p=>p.z>start.z+12&&Math.hypot(p.x-start.x,p.z-start.z)>12)
    .sort((a,b)=>Math.hypot(a.x-start.x,a.z-start.z)-Math.hypot(b.x-start.x,b.z-start.z))[0];
  if(!nearest)return null;
  const end={x:nearest.x,z:nearest.z};
@@ -20,13 +20,13 @@ export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorCleari
  for(let i=0;i<points.length;i++){
   const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];
   const len=Math.hypot(b.x-a.x,b.z-a.z)||1,nx=-(b.z-a.z)/len,nz=(b.x-a.x)/len;
-  for(const side of [-1,1]){const x=p.x+nx*side*width/2,z=p.z+nz*side*width/2;vertices.push(x,terrainY(x,z)+.09,z);uv.push(side<0?0:1,i*distance/segments/4)}
+  for(const side of [-1,1]){const x=p.x+nx*side*width/2,z=p.z+nz*side*width/2;vertices.push(x,terrainY(x,z)+.09,z);uv.push(side<0?0:1,i*distance/segments/23.1648)}
   if(i<segments){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
  }
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({color:0xc5ac83,roughness:1,side:THREE.DoubleSide});
  const trail=new THREE.Mesh(geometry,material);trail.receiveShadow=true;trail.name='village-to-nearest-campsite-trail';scene.add(trail);
- textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,Math.max(1,distance/4));material.map=t;material.needsUpdate=true});
+ textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,Math.max(1,distance/23.1648));material.map=t;material.needsUpdate=true});
  const wood=new THREE.MeshStandardMaterial({color:0x74563a,roughness:1});
  const moss=new THREE.MeshStandardMaterial({color:0x576747,roughness:1});
  const stone=new THREE.MeshStandardMaterial({color:0x77786b,roughness:1});
