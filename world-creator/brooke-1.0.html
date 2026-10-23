@@ -1,8 +1,13 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke 1.0 — Sophie 1 Clone</title>
-<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:72dvh;min-height:340px}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:65dvh;min-height:330px}details{margin:8px 12px;background:#193027;border-radius:8px;padding:10px}summary{font-weight:700;cursor:pointer;padding:7px}select,input{font:inherit;padding:8px;max-width:100%;margin:5px;color:#162b23}label{display:block;margin:8px 0}button{margin:5px} .note{font-size:12px;color:#c8d9d0}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
 </head><body><header><h1>Brooke 1.0 — Head Construction</h1><p id="status" role="status">Loading the fitted model…</p></header><main id="stage"></main>
-<nav aria-label="Inspection views"><button data-view="Front" disabled>Front</button><button data-view="Rear" disabled>Rear</button><button data-view="Side" disabled>Side</button><button data-view="Underneath" disabled>Underneath</button><button data-view="Full body" disabled>Full body</button><button id="isolate" disabled>Attachment only</button><button id="cutaway" disabled>Body cutaway</button></nav><div id="error"></div>
+<details open><summary>Camera &amp; Views</summary><label>View <select id="view"><option>Front</option><option>Rear</option><option>Side</option><option>Underneath</option><option>Full body</option></select></label><button id="resetCamera">Reset camera</button><label>Zoom <input id="zoom" type="range" min="25" max="250" value="100"> <output id="zoomValue">100%</output></label></details>
+<details><summary>Movement &amp; Poses</summary><label>Animation / pose <select id="motion"><option value="">Idle / Reset</option></select></label><button id="stopMotion">Stop / Reset pose</button><label>Playback speed <input id="speed" type="range" min="10" max="200" value="100"><output id="speedValue">100%</output></label><p id="rigStatus" class="note">Checking actual rig and animation clips…</p></details>
+<details><summary>Face &amp; Body Morphs</summary><label>Morph target <select id="morph"><option value="">Select morph</option></select></label><label>Amount <input id="morphAmount" type="range" min="0" max="100" value="0"><output id="morphValue">0%</output></label><button id="resetMorphs">Reset all morphs</button><p id="morphStatus" class="note">Checking embedded targets…</p></details>
+<details><summary>Visibility &amp; Inspection</summary><label>Focus part <select id="part"><option value="all">Full body</option></select></label><label><input id="isolate" type="checkbox"> Isolate selected part</label><label><input id="cutaway" type="checkbox"> Transparent other meshes</label><label><input id="wireframe" type="checkbox"> Wireframe</label><label><input id="bones" type="checkbox"> Show skeleton helper</label></details>
+<details><summary>Lighting &amp; Display</summary><label>Exposure <input id="exposure" type="range" min="20" max="200" value="100"></label><label>Background <select id="background"><option value="forest">Forest</option><option value="dark">Dark</option><option value="light">Light</option></select></label><button id="resetAll">Reset all controls</button></details>
+<p class="note" style="padding:0 12px">Controls reflect the actual cloned GLB. Unavailable animations and morphs cannot be fabricated by the viewer. Sophie 1 remains unchanged.</p><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -21,23 +26,22 @@ try{
  const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
  function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(stage);resize();
- renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera);});
- let model,attachment,meshes=[],only=false,cutaway=false,partBounds;
+ const clock=new THREE.Clock();let mixer=null;renderer.setAnimationLoop(()=>{const dt=clock.getDelta();if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera);});
+ let model,attachment,meshes=[],partBounds,helper=null,faceTargets=new Map(),clips=[];const $=id=>document.getElementById(id);
  function style(){
-  for(const mesh of meshes){
-   mesh.visible=!only||mesh===attachment;
-   for(const material of (Array.isArray(mesh.material)?mesh.material:[mesh.material])){
-    if(!material)continue;
-    const original=material.userData.nativeInspectionStyle??={transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite};
-    const faded=cutaway&&mesh!==attachment;
-    material.transparent=faded||original.transparent;
-    material.opacity=faded?original.opacity*.18:original.opacity;
-    material.depthWrite=faded?false:original.depthWrite;
-    material.needsUpdate=true;
-   }
+ const chosen=$('part').value;
+ for(const mesh of meshes){
+  const selected=chosen==='all'||mesh.uuid===chosen;
+  mesh.visible=!$('isolate').checked||selected;
+  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const m of mats){if(!m)continue;
+   const original=m.userData.brookeStyle??={transparent:m.transparent,opacity:m.opacity,depthWrite:m.depthWrite,wireframe:m.wireframe};
+   const faded=$('cutaway').checked&&!selected;
+   m.transparent=faded||original.transparent;m.opacity=faded?Math.min(.18,original.opacity):original.opacity;
+   m.depthWrite=faded?false:original.depthWrite;m.wireframe=$('wireframe').checked;m.needsUpdate=true;
   }
-  document.getElementById('isolate').textContent=only?'Show body':'Attachment only';
-  document.getElementById('cutaway').textContent=cutaway?'Solid body':'Body cutaway';
+ }
+ if(helper)helper.visible=$('bones').checked;
  }
  function view(name){
   let box=partBounds;
@@ -50,21 +54,39 @@ try{
   if(name==='Underneath')offset.set(.03,-.36,.06);
   camera.position.copy(center).add(offset);orbit.update();
  }
- document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
- document.getElementById('isolate').onclick=()=>{only=!only;style();};
- document.getElementById('cutaway').onclick=()=>{cutaway=!cutaway;style();};
+ $('view').onchange=()=>view($('view').value);
+ $('resetCamera').onclick=()=>{ $('view').value='Full body';view('Full body');$('zoom').value=100;$('zoomValue').textContent='100%';};
+ $('zoom').oninput=()=>{const v=Number($('zoom').value);$('zoomValue').textContent=v+'%';const d=camera.position.clone().sub(orbit.target);d.setLength(Math.max(.03,d.length()*100/v));camera.position.copy(orbit.target).add(d);};
+ for(const id of ['isolate','cutaway','wireframe','bones'])$(id).onchange=style;
+ $('part').onchange=()=>{const m=meshes.find(x=>x.uuid===$('part').value);if(m){partBounds=new THREE.Box3().setFromObject(m,true);view('Front');}else view('Full body');style();};
+ $('exposure').oninput=()=>renderer.toneMappingExposure=Number($('exposure').value)/100;
+ $('background').onchange=()=>scene.background=new THREE.Color(({forest:0x22372f,dark:0x111111,light:0xcbd6d0})[$('background').value]);
  const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
  model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
  model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
- if(!attachment)throw Error('The downloaded model has no Vulva2 attachment.');
- // Inspect the baked V21 GLB exactly as exported; do not replace its material or strip vertex colors.
- partBounds=new THREE.Box3().setFromObject(attachment,true);
- const bakedMaterial=(Array.isArray(attachment.material)?attachment.material:[attachment.material]).map(m=>m?.name||'unnamed').join(', ');
- const hasVertexColors=attachment.geometry.hasAttribute('color');
- status.textContent='V21 baked GLB · '+attachment.geometry.attributes.position.count+' attachment vertices · material: '+bakedMaterial+' · vertex colors: '+(hasVertexColors?'yes':'no');
- document.querySelectorAll('button').forEach(b=>b.disabled=false);view('Front');
- // Display the exported model directly: no eye replacements, body reshaping,
- // automatic posing, added garments, or per-frame geometry fitting.
+ if(!meshes.length)throw Error('Clone contains no visible meshes.');
+ partBounds=new THREE.Box3().setFromObject(model,true);
+ for(const mesh of meshes){const option=document.createElement('option');option.value=mesh.uuid;option.textContent=mesh.name||'Unnamed mesh';$('part').append(option);
+  for(const [name,index] of Object.entries(mesh.morphTargetDictionary||{})){if(!faceTargets.has(name))faceTargets.set(name,[]);faceTargets.get(name).push({mesh,index});}
+ }
+ for(const name of faceTargets.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name;$('morph').append(opt);}
+ $('morphStatus').textContent=faceTargets.size+' real morph targets in cloned model.';
+ $('morph').onchange=()=>{const targets=faceTargets.get($('morph').value)||[];const value=targets.length?Math.round(targets[0].mesh.morphTargetInfluences[targets[0].index]*100):0;$('morphAmount').value=value;$('morphValue').textContent=value+'%';};
+ $('morphAmount').oninput=()=>{const value=Number($('morphAmount').value)/100;for(const {mesh,index} of faceTargets.get($('morph').value)||[])mesh.morphTargetInfluences[index]=value;$('morphValue').textContent=Math.round(value*100)+'%';};
+ $('resetMorphs').onclick=()=>{for(const targets of faceTargets.values())for(const {mesh,index} of targets)mesh.morphTargetInfluences[index]=0;$('morph').dispatchEvent(new Event('change'));};
+ clips=gltf.animations||[];mixer=clips.length?new THREE.AnimationMixer(model):null;
+ const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
+ $('rigStatus').textContent=bones.length+' bones · '+clips.length+' embedded animations. Only genuine available animations can play.';
+ const requested=['Walk','Run','Sit','Stand','Crouch','Kneel','Crawl','Bend','Hands and Knees','Elbows and Knees','Lie Down','Wave','Turn Left','Turn Right','Pick Up','Idle'];
+ for(const name of requested){const clip=clips.find(x=>x.name.toLowerCase().replace(/[^a-z]/g,'').includes(name.toLowerCase().replace(/[^a-z]/g,'')));const opt=document.createElement('option');opt.value=clip?String(clips.indexOf(clip)):'';opt.textContent=name+(clip?'':' (not in model)');opt.disabled=!clip;$('motion').append(opt);}
+ for(let i=0;i<clips.length;i++)if(!requested.some(n=>clips[i].name.toLowerCase().replace(/[^a-z]/g,'').includes(n.toLowerCase().replace(/[^a-z]/g,'')))){const opt=document.createElement('option');opt.value=String(i);opt.textContent=clips[i].name;$('motion').append(opt);}
+ $('motion').onchange=()=>{mixer?.stopAllAction();if($('motion').value!==''&&mixer){const action=mixer.clipAction(clips[Number($('motion').value)]);action.reset().play();action.timeScale=Number($('speed').value)/100;}};
+ $('speed').oninput=()=>{const speed=Number($('speed').value)/100;$('speedValue').textContent=Math.round(speed*100)+'%';if(mixer)mixer.timeScale=speed;};
+ $('stopMotion').onclick=()=>{mixer?.stopAllAction();model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});$('motion').value='';};
+ if(bones.length){helper=new THREE.SkeletonHelper(model);scene.add(helper);helper.visible=false;}
+ $('resetAll').onclick=()=>{ $('stopMotion').click();$('resetMorphs').click();for(const id of ['isolate','cutaway','wireframe','bones'])$(id).checked=false;$('part').value='all';$('exposure').value=100;renderer.toneMappingExposure=1;$('background').value='forest';$('background').dispatchEvent(new Event('change'));style();$('resetCamera').click();};
+ status.textContent='Brooke 1.0 · independent Sophie 1 clone · '+meshes.length+' meshes · '+bones.length+' bones · '+clips.length+' animation clips';
+ $('view').value='Full body';view('Full body');style();
 
 }catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
 </script></body></html>
