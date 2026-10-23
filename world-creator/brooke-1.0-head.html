@@ -23,6 +23,7 @@ try{
  const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
  const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.outputColorSpace=THREE.SRGBColorSpace;
  const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
  function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(stage);resize();
@@ -55,8 +56,8 @@ try{
   camera.position.copy(center).add(offset);orbit.update();
  }
  $('view').onchange=()=>view($('view').value);
- $('resetCamera').onclick=()=>{ $('view').value='Head and neck';view('Head and neck');$('zoom').value=100;$('zoomValue').textContent='100%';};
- $('zoom').oninput=()=>{const v=Number($('zoom').value);$('zoomValue').textContent=v+'%';const d=camera.position.clone().sub(orbit.target);d.setLength(Math.max(.03,d.length()*100/v));camera.position.copy(orbit.target).add(d);};
+ $('resetCamera').onclick=()=>{ $('view').value='Head and neck';view('Head and neck');camera.zoom=1;camera.updateProjectionMatrix();$('zoom').value=100;$('zoomValue').textContent='100%';};
+ $('zoom').oninput=()=>{const v=Number($('zoom').value);$('zoomValue').textContent=v+'%';camera.zoom=v/100;camera.updateProjectionMatrix();};
  for(const id of ['isolate','cutaway','wireframe','bones'])$(id).onchange=style;
  $('part').onchange=()=>{const m=meshes.find(x=>x.uuid===$('part').value);if(m){partBounds=new THREE.Box3().setFromObject(m,true);view('Front');}else view('Head and neck');style();};
  $('exposure').oninput=()=>renderer.toneMappingExposure=Number($('exposure').value)/100;
