@@ -25,7 +25,7 @@ jobs:
         run: |
           mkdir -p world-creator/brooke-1.1-review
           python avatar-work/brooke/one-point-one/refine_1_1.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.glb
-          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass2-report.json
+          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass3-report.json
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/brooke-1.1-review/before.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/front.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/quarter.png 30
@@ -43,5 +43,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/
           git diff --cached --quiet && exit 0
-          git commit -m "Save Brooke 1.1 pass 2 eyelids lip contour and skin review [skip ci]"
+          git commit -m "Save Brooke 1.1 pass 3 reference fit review [skip ci]"
           git push origin HEAD:brooke-1.1
