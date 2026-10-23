@@ -1,0 +1,27 @@
+{
+  "version": "Brooke 1.1 pass 3",
+  "source_sha256": "139322b008d4e5e3125f1e378e83f64e1d4dd8aa1961780ca0d2a657950ff5a4",
+  "candidate_sha256": "71e55e254a646960af46b588948cf53299db4cd20de94d38f29b30ff356a73ab",
+  "source_unchanged": true,
+  "original_accessors_unchanged": true,
+  "topology_and_rig_unchanged": true,
+  "eyeballs_and_hair_unchanged": true,
+  "neck_geometry_unchanged": true,
+  "new_morph": "Brooke 1.1 reference eyelids mouth and cheek fit",
+  "max_displacement_m": 0.003199550788849592,
+  "max_lip_retraction_m": 0.0031995309982448816,
+  "inverted_triangles": 0,
+  "changed_skin_vertices": 2469,
+  "jaw_texture_blend": "Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color",
+  "nose_texture_repair": "Exposed alar skin shadow reduction; underside nostril cavities retained",
+  "neck_reference_rgb": [
+    0.8392156862745098,
+    0.6274509803921569,
+    0.4745098039215686
+  ],
+  "eyelid_correction": "Reduced compression to restore rounded reference opening",
+  "mouth_closure": "Bounded 12 percent local gap relaxation",
+  "cheek_fullness_m": 0.0008,
+  "lateral_texture_recovery": "Native UV matched to clean cheek color; feathered lateral mask",
+  "visual_approval_pending": true
+}
