@@ -5,13 +5,27 @@ export function shoreRadius(a){return STACEY.radius*(1+.038*Math.sin(5*a)+.022*M
 export function islandRadius(a){return STACEY.islandRadius*(1+.10*Math.sin(5*a+.6)+.06*Math.cos(8*a));}
 export function lakeRatio(x,z){const dx=x-STACEY.x,dz=z-STACEY.z,a=Math.atan2(dz,dx);return Math.hypot(dx,dz)/shoreRadius(a);}
 export function lakeTerrain(x,z,original){
- const dx=x-STACEY.x,dz=z-STACEY.z,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=islandRadius(a),lr=shoreRadius(a);
- if(r<ir+4){const t=Math.max(0,Math.min(1,(r-ir+4)/8));const sand=STACEY.waterY+1.8+1.7*Math.max(0,1-r/ir);return sand*(1-t)+(STACEY.waterY-1.3)*t;}
- if(r>lr+12)return original;
- const q=Math.max(0,Math.min(1,(r-(lr-12))/24));const smooth=q*q*(3-2*q);
- // Deepen submerged lakebed by 1.524m (five feet), leaving shore and island elevations intact.
- const bed=STACEY.waterY-4.024-8*Math.max(0,1-r/lr);
- return bed*(1-smooth)+original*smooth;
+ const dx=x-STACEY.x,dz=z-STACEY.z,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx);
+ const ir=islandRadius(a),outer=shoreRadius(a);
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+ // Raised sand island with 6m gently sloped underwater beach.
+ if(r<=ir){const crest=STACEY.waterY+2.1+1.0*(1-smooth(r/ir));return crest;}
+ const islandSlopeEnd=ir+12;
+ const shoreBlendStart=outer-18;
+ if(r<islandSlopeEnd){
+  const t=smooth((r-ir)/(islandSlopeEnd-ir));
+  return (STACEY.waterY+2.1)*(1-t)+(STACEY.waterY-2.0)*t;
+ }
+ if(r>=outer+12)return original;
+ // Broad, truly submerged fish habitat: 20–30 feet at the central trough.
+ const across=Math.max(0,Math.min(1,(r-islandSlopeEnd)/Math.max(1,shoreBlendStart-islandSlopeEnd)));
+ const deep=STACEY.waterY-(6.1+3.0*Math.sin(Math.PI*across)**2);
+ const habitat=deep+0.45*Math.sin(x*.09)*Math.cos(z*.11);
+ if(r<shoreBlendStart)return habitat;
+ // Gradual outer beach shallows and terrain transition; no abrupt vertical wall.
+ const shallow=STACEY.waterY-1.0;
+ if(r<outer){return habitat*(1-smooth((r-shoreBlendStart)/(outer-shoreBlendStart)))+shallow*smooth((r-shoreBlendStart)/(outer-shoreBlendStart));}
+ return shallow*(1-smooth((r-outer)/12))+original*smooth((r-outer)/12);
 }
 export function installStaceyLake(THREE,scene){
  const waterGeometry=new THREE.BufferGeometry(),verts=[],indices=[],depths=[];
