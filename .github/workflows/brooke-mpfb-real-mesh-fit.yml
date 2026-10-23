@@ -15,10 +15,11 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
+          blender -b --python-exit-code 1 --python-expr "import numpy; print('NumPy available:', numpy.__version__)"
       - name: Generate Brooke MPFB morph GLB
         run: |
-          blender -b --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
+          blender -b --python-exit-code 1 --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
           test -s avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
       - uses: actions/upload-artifact@v4
         with:
