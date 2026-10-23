@@ -64,17 +64,23 @@ assert len(outer)>=16, 'Photo patch boundary too short'
 for loop in loops[1:]:
     try: bm.faces.new(loop)
     except ValueError: pass
-# Generate rear skull in successive rings, maintaining one-to-one boundary topology.
-# Each ring follows the silhouette of the photo-derived patch. This is a
-# conservative closed-shell candidate, NOT an anatomical/likeness approval.
+# Smoothly transition the photo patch into the rear skull. The former
+# straight extrusions caused the prominent striped vertical wall below jaw.
+# Preserve every photo-derived face vertex and bridge boundary with eased rings.
 zspan=max(width*0.65, front-rear)
 rings=[outer]
-for fraction, shrink in [(0.25,1.08),(0.55,1.03),(0.85,0.72),(1.0,0.16)]:
+# Cubic ease-in/out softens both the photo-boundary join and rear silhouette.
+for fraction, shrink in [(0.10,1.015),(0.25,1.045),(0.45,1.025),
+                         (0.65,0.90),(0.82,0.68),(0.94,0.36),(1.0,0.09)]:
+    eased=fraction*fraction*(3-2*fraction)
     ring=[]
     for v in outer:
+        # Boundary is not an anatomical cross-section: preserve the face and
+        # gradually pull the shell toward its center, rather than creating
+        # an abrupt flat-sided prism at the jawline.
         x=cx+(v.co.x-cx)*shrink
         y=cy+(v.co.y-cy)*shrink
-        z=rear-zspan*fraction
+        z=rear-zspan*eased
         ring.append(bm.verts.new((x,y,z)))
     rings.append(ring)
 for a,b in zip(rings,rings[1:]):
@@ -82,6 +88,7 @@ for a,b in zip(rings,rings[1:]):
         j=(i+1)%len(a)
         bm.faces.new((a[i],a[j],b[j],b[i]))
 bm.faces.new(tuple(reversed(rings[-1])))
+# This remains a shell candidate, not a calibrated neck or anatomical ears.
 # Close shell and enforce consistent normals; strict manifold validation.
 bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
 nonmanifold=[e for e in bm.edges if not e.is_manifold]
