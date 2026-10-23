@@ -20,12 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Blender
-        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy
+        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y blender python3-numpy xvfb
       - name: Inspect MPFB mesh and produce isolated Brooke fit
         run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
       - name: Render five-angle head inspection sheets
-        run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/render_mpfb_fit_review.py -- avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb avatar-work/brooke/build/review
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/render_mpfb_fit_review.py -- avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb avatar-work/brooke/build/review
       - name: Upload candidate for inspection (not production)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: brooke-mpfb-proportional-fit-candidate
@@ -33,4 +34,4 @@ jobs:
             avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
             avatar-work/brooke/build/review/*.png
             avatar-work/brooke/build/review/inspection.json
-          if-no-files-found: error
+          if-no-files-found: warn
