@@ -1,6 +1,10 @@
 name: Brooke isolated MPFB fitting diagnostic
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/brooke-mpfb-fit.yml'
+      - 'avatar-work/brooke/**'
   push:
     paths:
       - '.github/workflows/brooke-mpfb-fit.yml'
