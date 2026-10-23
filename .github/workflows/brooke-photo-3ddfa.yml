@@ -4,6 +4,7 @@ on:
     paths:
       - .github/workflows/brooke-photo-3ddfa.yml
       - avatar-work/brooke/scripts/build_complete_head.py
+      - avatar-work/brooke/scripts/render_mpfb_fit_review.py
   workflow_dispatch:
     inputs:
       photo_url:
@@ -75,7 +76,7 @@ jobs:
           PY
       - name: Install Blender and Blender Python NumPy
         run: |
-          sudo apt-get install -y blender python3-numpy
+          sudo apt-get install -y blender python3-numpy xvfb
           blender -b --python-exit-code 1 --python-expr "import numpy; print('Blender NumPy:', numpy.__version__)"
       - name: Build closed cranium candidate GLB (neck not yet fitted)
         run: |
@@ -84,6 +85,17 @@ jobs:
           mkdir -p avatar-work/brooke/build
           blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-photo-head-candidate.glb
           test -s avatar-work/brooke/build/brooke-photo-head-candidate.glb
+      - name: Render photo-derived shell for comparison
+        run: |
+          mkdir -p avatar-work/brooke/build/photo-review
+          xvfb-run -a -s '-screen 0 1280x1024x24' blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/render_mpfb_fit_review.py -- avatar-work/brooke/build/brooke-photo-head-candidate.glb avatar-work/brooke/build/photo-review
+      - name: Upload photo-derived inspection renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-photo-head-seven-view-review
+          path: avatar-work/brooke/build/photo-review/
+          if-no-files-found: warn
       - name: Upload cranium candidate GLB
         uses: actions/upload-artifact@v4
         with:
