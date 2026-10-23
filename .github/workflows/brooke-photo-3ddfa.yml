@@ -11,7 +11,8 @@ on:
         required: false
         type: string
 permissions:
-  contents: read
+  contents: write
+  actions: write
 jobs:
   reconstruct:
     runs-on: ubuntu-22.04
@@ -95,3 +96,25 @@ jobs:
           name: brooke-photo-reconstruction-obj
           path: /tmp/3DDFA_V2/examples/results/*_obj.obj
           if-no-files-found: error
+      - name: Publish photo-reconstructed Brooke GLB to repository
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          mkdir -p public-models
+          cp avatar-work/brooke/build/brooke-complete-head-neck.glb public-models/brooke-photo-head-neck.glb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-models/brooke-photo-head-neck.glb
+          git commit -m "Publish photo-reconstructed Brooke head and neck [skip ci]" || exit 0
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort || true; exit 1; }
+            if git push origin HEAD:main; then
+              gh workflow run pages.yml --ref main
+              exit 0
+            fi
+            sleep 3
+          done
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
