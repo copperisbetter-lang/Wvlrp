@@ -17,11 +17,7 @@ function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz
 function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
 function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
 function terrainY(x,z){const r=lakeRadius(x,z),base=baseTerrainY(x,z);if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
-function pathDistance(x,z,points){let best=Infinity;for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz)));best=Math.min(best,Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz))}return best}
-const beachPath=[[0,0],[8,-18],[10,-35],[7,-49],[0,-57]];
-const lakeTrail=[[35,-48],[69,-28],[107,-38],[140,-70],[175,-85],[220,-112],[275,-145],[340,-165]];
-const trailBranches=[[[140,-70],[163,-30],[198,0],[239,28]],[[220,-112],[252,-82],[298,-58],[347,-43]]];
-
+// Existing trails removed. New trails will be laid out only after approval.
 // Circular terrain edge: radial topology avoids the stair-step square-grid border.
 const verts=[0,terrainY(0,0),0],uvs=[.5,.5],idx=[];
 const RADIAL_STEPS=82,ANGLE_STEPS=320;
@@ -59,46 +55,13 @@ for(let i=0;i<=shoreSegments;i++){const a=Math.PI*.16+(Math.PI*.68)*i/shoreSegme
 sand.setAttribute('position',new THREE.Float32BufferAttribute(sandVertices,3));sand.setIndex(sandIndices);sand.computeVertexNormals();const beachMesh=new THREE.Mesh(sand,sandMaterial);scene.add(beachMesh);
 // Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
 // Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
-// PHOTO-GROUND TRAILS: use the same leaf-litter photographic ground material
-// as the forest floor, not an opaque brown strip. Only a subtle darker footprint
-// distinguishes the path until an approved dedicated trail photograph is cropped.
-const trailMaterial=new THREE.MeshStandardMaterial({color:0xb2a48d,roughness:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
-const trailPhoto=new THREE.TextureLoader();
-trailPhoto.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{
- tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
- trailMaterial.map=tex;trailMaterial.needsUpdate=true;
- document.getElementById('assetStatus').textContent='Photographic leaf-litter trail surface loaded';
-},undefined,()=>{document.getElementById('assetStatus').textContent='Trail photograph unavailable';});
-function addTrail(points,width=1.6){
- const spline=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],0,p[1])),false,'centripetal');
- const steps=Math.max(64,Math.ceil(spline.getLength()/.65));
- const v=[],uv=[],ids=[];
- for(let i=0;i<=steps;i++){
-  const t=i/steps,p=spline.getPoint(t),d=spline.getTangent(t),l=Math.hypot(d.x,d.z)||1,nx=-d.z/l,nz=d.x/l;
-  const drift=.12*Math.sin(t*37)+.07*Math.sin(t*83);
-  for(const side of [-1,1]){
-   const w=width*(1+.09*Math.sin(t*27))*.5;
-   const x=p.x+nx*(side*w+drift),z=p.z+nz*(side*w+drift);
-   v.push(x,terrainY(x,z)+.055,z);
-   // Photograph remains world-scale, avoiding the stretched ribbon effect.
-   uv.push(x/8,z/8);
-  }
-  if(i){const k=i*2;ids.push(k-2,k-1,k,k-1,k+1,k);}
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
- g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
- g.setIndex(ids);g.computeVertexNormals();
- scene.add(new THREE.Mesh(g,trailMaterial));
-}
-[beachPath,lakeTrail,...trailBranches].forEach(p=>addTrail(p));
+// No trail meshes, path textures, or trail geometry in this scene.
 
 // Interior future campsites: natural empty clearings, outside Base Camp's 200-foot exclusion.
 const interiorClearings=[];let siteSeed=32178;function siteRandom(){siteSeed=(Math.imul(siteSeed,1664525)+1013904223)>>>0;return siteSeed/4294967296}
 for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
  const radius=75+siteRandom()*260,a=siteRandom()*Math.PI*2,x=Math.cos(a)*radius,z=Math.sin(a)*radius;
  if(lakeRadius(x,z)<1.45||beachZone(x,z))continue;
- if(pathDistance(x,z,beachPath)<11||pathDistance(x,z,lakeTrail)<11||trailBranches.some(p=>pathDistance(x,z,p)<11))continue;
  if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<32))continue;
  interiorClearings.push({id:'interior-'+String(interiorClearings.length+1).padStart(2,'0'),x,z,type:'natural-unfurnished-clearing'});
   // No floating brown discs: vegetation setbacks reveal a genuine natural clearing.
