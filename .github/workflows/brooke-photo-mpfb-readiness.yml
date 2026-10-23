@@ -1,0 +1,31 @@
+name: Brooke photo-to-MPFB readiness audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - gator-brooke-photo-mpfb-fit-20261023
+    paths:
+      - avatar-work/brooke/scripts/audit_mpfb_head.py
+      - avatar-work/brooke/scripts/validate_photo_fit_inputs.py
+      - avatar-work/brooke/reference-landmarks.template.json
+      - .github/workflows/brooke-photo-mpfb-readiness.yml
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect actual approved MPFB GLB and morph targets
+        run: python3 avatar-work/brooke/scripts/audit_mpfb_head.py | tee mpfb-head-audit.txt
+      - name: Validate photographic reference inputs (must fail if absent)
+        run: python3 avatar-work/brooke/scripts/validate_photo_fit_inputs.py | tee photo-fit-readiness.txt
+      - name: Upload diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-photo-mpfb-readiness
+          path: |
+            mpfb-head-audit.txt
+            photo-fit-readiness.txt
+          if-no-files-found: ignore
