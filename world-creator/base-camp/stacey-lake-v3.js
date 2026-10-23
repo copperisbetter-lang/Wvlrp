@@ -44,7 +44,7 @@ export function installStaceyLake(THREE,scene){
  // Reliable HD-style color gradient using standard Three.js material, not the broken custom GLSL.
  // Depth colors are assigned per vertex; keep opaque water so the surface stays visible.
  const colors=[];
- const shallowColor=new THREE.Color(0x397f80),midColor=new THREE.Color(0x155569),deepColor=new THREE.Color(0x102f47);
+ const shallowColor=new THREE.Color(0x536c64),midColor=new THREE.Color(0x344e4c),deepColor=new THREE.Color(0x1d3439);
  for(let i=0;i<depths.length;i++){
   const t=depths[i],edge=Math.min(t,1-t)*2;
   const c=shallowColor.clone().lerp(midColor,THREE.MathUtils.smoothstep(edge,.04,.30)).lerp(deepColor,THREE.MathUtils.smoothstep(edge,.28,.76));
@@ -53,7 +53,7 @@ export function installStaceyLake(THREE,scene){
  waterGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
  // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
- const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:28,specular:0x263f45});
+ const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:9,specular:0x10191b});
  // Two self-contained, independently moving ripple normal maps. No network requests.
  // Normal-map relief affects specular lighting rather than painting dots on the water.
  function makeRippleNormal(seed){
@@ -74,8 +74,8 @@ export function installStaceyLake(THREE,scene){
   const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(11,11);return tex;
  }
  const normalA=makeRippleNormal(.8),normalB=makeRippleNormal(2.6);
- naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.10,.10);
- naturalWater.shininess=28;naturalWater.specular.set(0x263f45);
+ naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.035,.035);
+ naturalWater.shininess=9;naturalWater.specular.set(0x10191b);
  naturalWater.needsUpdate=true;
  window.__staceyWaterTextureStatus='local dual-normal ripples ready';
  window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'local normals ready'};
@@ -91,13 +91,13 @@ export function installStaceyLake(THREE,scene){
     // A continuous, soft sun path with low-contrast traveling wavelets.
     float axis=vLake.x-0.15*vLake.y;
     float width=22.0+0.11*abs(vLake.y);
-    float ribbon=exp(-1.25*pow(axis/width,2.0));
+    float ribbon=exp(-2.8*pow(axis/width,2.0));
     float wave1=sin(vLake.y*.47+axis*.21-uTime*.0075);
     float wave2=sin(vLake.y*.83-axis*.32+uTime*.0092);
     float wave3=sin(vLake.y*1.37+axis*.18-uTime*.0112);
     float shimmer=.55+.22*wave1+.15*wave2+.08*wave3;
-    float alpha=ribbon*(.065+.018*shimmer);
-    gl_FragColor=vec4(vec3(.97,.89,.72),alpha);
+    float alpha=ribbon*(.018+.008*shimmer);
+    gl_FragColor=vec4(vec3(.82,.80,.72),alpha);
    }`});
  const sunGlitter=new THREE.Mesh(waterGeometry,sunGlitterMaterial);
  sunGlitter.name='StaceyLakeSunlightPath';sunGlitter.frustumCulled=false;sunGlitter.renderOrder=3;
