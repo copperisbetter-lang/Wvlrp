@@ -10,13 +10,13 @@ export function installStaceyWater(THREE,water){
    float wave(vec2 p,float t){return sin(p.x*1.63+t*.91+sin(p.y*.84+t*.23))*.48+sin(p.y*2.13-t*1.19)*.32+sin((p.x+p.y)*3.4+t*1.67)*.2;}
    void main(){
     vec2 p=vWorld.xz;float t=uTime;
-    float a=wave(p*.25,t),b=wave(p*.25+vec2(.11,.07),t);
+    float a=wave(p*.58,t),b=wave(p*.58+vec2(.11,.07),t);
     float c=wave(p*.25+vec2(.07,.12),t);
-    vec3 n=normalize(vec3((a-b)*3.1,1.0,(a-c)*3.1));
+    vec3 n=normalize(vec3((a-b)*.37,1.0,(a-c)*.37));
     vec3 V=normalize(uCam-vWorld);vec3 L=normalize(uSun);
     float fres=pow(1.-max(dot(n,V),0.),3.);
     float daylight=clamp(L.y*.9+.2,.06,1.);
-    vec3 shallow=vec3(.065,.34,.325),deep=vec3(.015,.115,.19);
+    vec3 shallow=vec3(.09,.38,.33),deep=vec3(.025,.16,.235);
     float tonal=.5+.5*sin(p.x*.047+p.y*.036);
     vec3 base=mix(shallow,deep,clamp(.28+tonal*.48+fres*.32,0.,1.));
     float sky=clamp(dot(reflect(-V,n),vec3(0.,1.,0.))*.65+.42,0.,1.);
@@ -25,9 +25,9 @@ export function installStaceyWater(THREE,water){
     float glint=pow(max(dot(reflect(-L,n),V),0.),185.);
     float fine=sin(p.x*5.7+t*2.3)*sin(p.y*4.3-t*1.8);
     glint*=.5+.5*fine*fine;
-    base+=vec3(1.,.92,.72)*glint*1.7*daylight;
+    base+=vec3(1.,.92,.72)*glint*.82*daylight;
     base+=vec3(.018,.052,.057)*(a*.5+.5);
-    gl_FragColor=vec4(base,.94);
+    gl_FragColor=vec4(base,.78);
    }`
  });
  water.material.dispose();water.material=material;
