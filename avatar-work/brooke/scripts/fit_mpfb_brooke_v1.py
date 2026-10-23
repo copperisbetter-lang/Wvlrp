@@ -17,11 +17,13 @@ bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(src))
 meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 assert meshes, 'No meshes in source'
+print('MPFB_MESH_INVENTORY',[(o.name,len(o.data.vertices),tuple(round(float(d),4) for d in o.dimensions)) for o in meshes])
 # Head selection deliberately rejects ambiguous sources; never warp eyes or teeth.
 candidates=[o for o in meshes if ('head' in o.name.lower() or 'face' in o.name.lower()) and len(o.data.vertices)>500]
 if len(candidates)!=1:
     raise RuntimeError('Unique skin head mesh required; found '+str([(o.name,len(o.data.vertices)) for o in meshes]))
 head=candidates[0]
+print('SELECTED_HEAD',head.name,'world_matrix',str(head.matrix_world))
 # Work in local coordinates. A head that faces +/-Y has transverse X; Z is up.
 verts=head.data.vertices
 xs=[v.co.x for v in verts]; ys=[v.co.y for v in verts]; zs=[v.co.z for v in verts]
