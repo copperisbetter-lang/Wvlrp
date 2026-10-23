@@ -25,11 +25,11 @@ jobs:
         run: |
           mkdir -p world-creator/brooke-1.1-review
           python avatar-work/brooke/one-point-one/refine_1_1.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.glb
-          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass1-report.json
+          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass2-report.json
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/brooke-1.1-review/before.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/front.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/quarter.png 30
-          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/profile.png 75
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/profile.png 90
           git diff --exit-code -- world-creator/assets/brooke-1.0-detail-head-candidate.glb
       - uses: actions/upload-artifact@v4
         with:
@@ -42,5 +42,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/
-          git commit -m "Save Brooke 1.1 relaxed eyelids and feathered jaw review [skip ci]"
+          git diff --cached --quiet && exit 0
+          git commit -m "Save Brooke 1.1 pass 2 eyelids lip contour and skin review [skip ci]"
           git push origin HEAD:brooke-1.1
