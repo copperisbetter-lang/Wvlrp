@@ -25,11 +25,15 @@ const parent=new Int32Array(pos.count);for(let i=0;i<parent.length;i++)parent[i]
 function find(i){while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i]}return i}
 function union(a,b){a=find(a);b=find(b);if(a!==b)parent[b]=a}
 const ids=idx?idx.array:null;
+// GLB exports often split UV seams into duplicate vertex indices. Weld by position for connectivity only.
+const weld=new Map(), first=new Int32Array(pos.count);const box=geometry.boundingBox||(geometry.computeBoundingBox(),geometry.boundingBox);const eps=Math.max(box.getSize(new THREE.Vector3()).length()*1e-6,1e-8);
+for(let i=0;i<pos.count;i++){const key=[pos.getX(i),pos.getY(i),pos.getZ(i)].map(v=>Math.round(v/eps)).join(',');if(weld.has(key))first[i]=weld.get(key);else{weld.set(key,i);first[i]=i}}
+for(let i=0;i<first.length;i++)if(first[i]!==i)union(i,first[i]);
 for(let t=0;t<triangles;t++){const a=ids?ids[t*3]:t*3,b=ids?ids[t*3+1]:t*3+1,c=ids?ids[t*3+2]:t*3+2;union(a,b);union(a,c)}
 const groups=new Map();
 for(let t=0;t<triangles;t++){const a=ids?ids[t*3]:t*3;const key=find(a);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t)}
 report.push(source.name+': '+groups.size+' index-connected surface(s)');
-if(groups.size<2){source.userData.splitDone=true;continue}
+if(groups.size<2){report.push('All triangles are connected; source geometry must be edited, not hidden.');continue}
 const sorted=[...groups.values()].sort((a,b)=>b.length-a.length);
 for(let n=0;n<sorted.length;n++){
 const tris=sorted[n],geo=new THREE.BufferGeometry(),indices=new Uint32Array(tris.length*3);
@@ -46,7 +50,7 @@ status.textContent=report.join('; ')+(added?' — '+added+' surfaces isolated. T
 showParts();
 };
 document.querySelector('#all').onclick=()=>{meshes.forEach(m=>m.visible=!m.userData.splitDone);showParts()};
-document.querySelector('#face').onclick=()=>{if(meshes.length<2){status.textContent='Only one mesh found. Cannot isolate the blob automatically; geometry repair required.';return}const sorted=meshes.filter(m=>!m.userData.splitDone).sort((a,b)=>b.userData.extent-a.userData.extent);meshes.forEach(m=>m.visible=!m.userData.splitDone);sorted[0].visible=false;status.textContent='Largest part hidden for inspection. Toggle individual parts below if needed.';showParts()};
+document.querySelector('#face').onclick=()=>{if(meshes.filter(m=>!m.userData.splitDone).length<2){status.textContent='One combined mesh. Tap Separate Connected Surfaces first.';return}const sorted=meshes.filter(m=>!m.userData.splitDone).sort((a,b)=>b.geometry.index.count-a.geometry.index.count);meshes.forEach(m=>m.visible=!m.userData.splitDone);sorted[0].visible=false;status.textContent='Largest triangle-count surface hidden for inspection. Toggle individual parts below if needed.';showParts()};
 document.querySelector('#neutral').onclick=()=>{neutral=!neutral;meshes.forEach(m=>m.material=neutral?new THREE.MeshStandardMaterial({color:0xd7ae97,roughness:.85,side:THREE.DoubleSide}):original.get(m));};
 document.querySelector('#reset').onclick=()=>root&&fit();
 const urls=['https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-models/brooke-photo-head-neck.glb'];
