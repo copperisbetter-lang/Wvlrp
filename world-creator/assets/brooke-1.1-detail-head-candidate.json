@@ -1,15 +1,15 @@
 {
-  "version": "Brooke 1.1 pass 3",
+  "version": "Brooke 1.1 pass 4",
   "source_sha256": "139322b008d4e5e3125f1e378e83f64e1d4dd8aa1961780ca0d2a657950ff5a4",
-  "candidate_sha256": "71e55e254a646960af46b588948cf53299db4cd20de94d38f29b30ff356a73ab",
+  "candidate_sha256": "f94402ad1bd3aa5acfdc53279e402c2210086f6bc3ade90d40cd3f7c95b87d86",
   "source_unchanged": true,
   "original_accessors_unchanged": true,
   "topology_and_rig_unchanged": true,
   "eyeballs_and_hair_unchanged": true,
   "neck_geometry_unchanged": true,
   "new_morph": "Brooke 1.1 reference eyelids mouth and cheek fit",
-  "max_displacement_m": 0.003199550788849592,
-  "max_lip_retraction_m": 0.0031995309982448816,
+  "max_displacement_m": 0.004093673545867205,
+  "max_lip_retraction_m": 0.004087593872100115,
   "inverted_triangles": 0,
   "changed_skin_vertices": 2469,
   "jaw_texture_blend": "Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color",
@@ -19,9 +19,11 @@
     0.6274509803921569,
     0.4745098039215686
   ],
-  "eyelid_correction": "Reduced compression to restore rounded reference opening",
+  "eyelid_correction": "Intermediate compression between Pass 2 and Pass 3",
   "mouth_closure": "Bounded 12 percent local gap relaxation",
   "cheek_fullness_m": 0.0008,
   "lateral_texture_recovery": "Native UV matched to clean cheek color; feathered lateral mask",
+  "skin_material": "roughness .88, specular .18",
+  "nose_front_cleanup": "Feathered clean skin on outward alar and tip surfaces",
   "visual_approval_pending": true
 }
