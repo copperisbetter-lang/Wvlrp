@@ -93,7 +93,7 @@ const campsiteRoutes=installCampsiteRouteMarkers(THREE,scene,{terrainY,perimeter
 // Old tree/understory source files remain outside this scene for future rebuilding.
 // The full Wild game is a separate route and remains untouched.
 
-const spawnTarget=new URLSearchParams(location.search).get('spawn');const spawnVillage=spawnTarget==='village';const spawnTrail=spawnTarget==='trail';const spawnX=0,spawnZ=spawnTrail?(campsiteRoutes?.lakeExits[0]?.z??15):spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
+const spawnTarget=new URLSearchParams(location.search).get('spawn');const spawnVillage=spawnTarget==='village';const spawnTrail=spawnTarget==='trail';const spawnCamp29=spawnTarget==='campsite29';const camp29=perimeterClearings[28];const spawnX=spawnCamp29&&camp29?camp29.x:0,spawnZ=spawnCamp29&&camp29?camp29.z:spawnTrail?(campsiteRoutes?.lakeExits[0]?.z??15):spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
 // Treat walking and looking as separate pointer streams so two-finger play works.
 // The look surface spans the entire screen; HUD and joystick sit above it.
 pad.addEventListener('pointerdown',e=>{
