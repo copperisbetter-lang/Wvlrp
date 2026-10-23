@@ -35,20 +35,24 @@ for j in range(8):
     sheet.paste(t,(ox,oy+28))
     sd.text((ox+8,oy+7),f"Sector {j+1}: U {x0/w:.3f} to {x1/w:.3f}",fill="white")
 sheet.save(out/"contact-sheet.jpg",quality=90)
-# Proposed foreground removal zones for VISUAL REVIEW ONLY.
-# Soft alpha mask with center lake/mountains protected. Protect a wide right
-# shoreline band; silhouette tracing/compositing is a later refinement.
+# V3 CONSERVATIVE preview. Never erase shore, water, or lower panorama by a blind polygon.
+# Restrict candidates to upper wrap-edge vegetation only until individual trees
+# and orange-maple protection are visually traced against a full-resolution view.
 scale=4
 mw,mh=w//scale,h//scale
 opacity=Image.new("L",(mw,mh),255)
 od=ImageDraw.Draw(opacity)
 def coords(points): return [(round(x*mw),round(y*mh)) for x,y in points]
-# viewer-facing forest and near-floor at wrap seam: both edges are masked
-od.polygon(coords([(0,0.08),(.11,.12),(.20,.22),(.25,.35),(.25,.63),(.29,.81),(.27,1),(0,1)]),fill=0)
-od.polygon(coords([(1,0.08),(.96,.10),(.94,.19),(.94,.46),(.90,.60),(.91,.83),(.89,1),(1,1)]),fill=0)
-# nearby leaf-strewn/flowered floor; leave water and beaches mostly intact
-od.polygon(coords([(.25,1),(.25,.92),(.32,.86),(.43,.79),(.57,.79),(.73,.86),(.89,.94),(.89,1)]),fill=0)
-opacity=opacity.filter(ImageFilter.GaussianBlur(2)).resize((w,h),Image.Resampling.BICUBIC)
+# Narrow upper seam-side candidate windows, away from the lower shoreline.
+# This is a provisional mask, not an approved object-level segmentation.
+od.polygon(coords([(0,0.06),(.035,.08),(.065,.15),(.065,.28),(.035,.35),(0,.35)]),fill=0)
+od.polygon(coords([(1,0.06),(.975,.08),(.955,.15),(.955,.28),(.98,.35),(1,.35)]),fill=0)
+opacity=opacity.filter(ImageFilter.GaussianBlur(1.5)).resize((w,h),Image.Resampling.BICUBIC)
+# Hard safety rule: no automatic removal in lower 60% (lake, beaches, overlook).
+from PIL import ImageChops
+protected=Image.new("L",(w,h),255)
+ImageDraw.Draw(protected).rectangle((0,int(h*.40),w,h),fill=255)
+opacity.paste(255,(0,int(h*.40),w,h))
 masked=im.copy()
 masked.putalpha(opacity)
 masked.save(out/"proposed-foreground-mask.png",optimize=True)
@@ -69,10 +73,10 @@ seam.thumbnail((600,1000))
 seam.save(out/"seam-check.jpg",quality=88)
 manifest={
  "source":str(src),"source_sha256":sha,"size_px":[w,h],
- "review_status":"CONTACT SHEET ONLY; actual maple/tree crop boundary not yet approved",
+ "review_status":"V3 CONSERVATIVE CANDIDATE ONLY; tree silhouettes/maple unverified",
  "contact_sheet":"contact-sheet.jpg",
  "proposed_mask":"proposed-foreground-mask.png", "preview":"mask-before-after-preview.jpg", "seam_check":"seam-check.jpg",
- "mask_note":"Review-only soft polygon preview; orange-maple and beach silhouette protection needs visual proof before final alpha; no 3D integration.",
+ "mask_note":"V3: preserve all pixels below 40% image height; only narrow upper wrap-edge candidate windows. Tree silhouettes and maple not yet verified; do not integrate.",
  "requirements":["preserve orange maple","preserve lake and mountain vista","preserve rock outcrop and both beaches","remove near-foreground/right-side tree imagery only after visual boundary approval","retain 2:1 seamless 360 dimensions"],
  "source_untouched":hashlib.sha256(src.read_bytes()).hexdigest()==sha,
 }
