@@ -1,0 +1,126 @@
+{
+  "title": "Purple ring prototype verification: 304°–312°",
+  "date": "2026-10-23",
+  "scope": "Non-production isolated prototype",
+  "radius_m": 268.224,
+  "arc_length_m": 37.45113546295421,
+  "limits": {
+    "longitudinal_pct": 8,
+    "cross_pct": 3
+  },
+  "results": {
+    "max_original_long_pct": 13.18880771367592,
+    "max_prototype_long_pct": 13.185523385752518,
+    "max_prototype_cross_pct": 8.07777658795672,
+    "max_cut_m": 0,
+    "max_fill_m": 0.2545443868171171,
+    "passes": false
+  },
+  "stations": [
+    {
+      "station_m": 0,
+      "angle_deg": 304,
+      "existing_elevation_m": -9.338,
+      "prototype_elevation_m": -9.338,
+      "existing_long_grade_pct": 7.88,
+      "prototype_long_grade_pct": 7.88,
+      "prototype_cross_grade_pct": -8.08
+    },
+    {
+      "station_m": 3.75,
+      "angle_deg": 304.8,
+      "existing_elevation_m": -9.029,
+      "prototype_elevation_m": -8.937,
+      "existing_long_grade_pct": 8.64,
+      "prototype_long_grade_pct": 12.86,
+      "prototype_cross_grade_pct": -0.83
+    },
+    {
+      "station_m": 7.49,
+      "angle_deg": 305.6,
+      "existing_elevation_m": -8.692,
+      "prototype_elevation_m": -8.514,
+      "existing_long_grade_pct": 9.36,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 11.24,
+      "angle_deg": 306.4,
+      "existing_elevation_m": -8.328,
+      "prototype_elevation_m": -8.102,
+      "existing_long_grade_pct": 10.04,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 14.98,
+      "angle_deg": 307.2,
+      "existing_elevation_m": -7.94,
+      "prototype_elevation_m": -7.69,
+      "existing_long_grade_pct": 10.67,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 18.73,
+      "angle_deg": 308,
+      "existing_elevation_m": -7.53,
+      "prototype_elevation_m": -7.277,
+      "existing_long_grade_pct": 11.24,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 22.47,
+      "angle_deg": 308.8,
+      "existing_elevation_m": -7.099,
+      "prototype_elevation_m": -6.865,
+      "existing_long_grade_pct": 11.76,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 26.22,
+      "angle_deg": 309.6,
+      "existing_elevation_m": -6.65,
+      "prototype_elevation_m": -6.453,
+      "existing_long_grade_pct": 12.22,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 29.96,
+      "angle_deg": 310.4,
+      "existing_elevation_m": -6.185,
+      "prototype_elevation_m": -6.041,
+      "existing_long_grade_pct": 12.61,
+      "prototype_long_grade_pct": 11.01,
+      "prototype_cross_grade_pct": 0
+    },
+    {
+      "station_m": 33.71,
+      "angle_deg": 311.2,
+      "existing_elevation_m": -5.706,
+      "prototype_elevation_m": -5.637,
+      "existing_long_grade_pct": 12.94,
+      "prototype_long_grade_pct": 9.63,
+      "prototype_cross_grade_pct": -0.58
+    },
+    {
+      "station_m": 37.45,
+      "angle_deg": 312,
+      "existing_elevation_m": -5.217,
+      "prototype_elevation_m": -5.217,
+      "existing_long_grade_pct": 13.19,
+      "prototype_long_grade_pct": 13.19,
+      "prototype_cross_grade_pct": -5.17
+    }
+  ],
+  "notes": [
+    "Numerical sampling of exact prototypeGradeY height formula; browser rendering and collision not independently tested.",
+    "Prototype currently fails grade limits; do not certify or expand excavation.",
+    "Radial edge taper can produce cross-slope above 3%; requires revised grading design and cut-wall geometry.",
+    "Rollback: revert isolated prototype commit 55ff49d."
+  ]
+}
