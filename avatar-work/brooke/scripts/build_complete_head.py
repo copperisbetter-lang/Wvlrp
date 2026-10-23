@@ -2,7 +2,7 @@
 Intermediate geometry; visual likeness must still be reviewed.
 Usage: blender -b -t 2 --python build_complete_head.py -- input.obj output.glb
 """
-import bpy, sys, math
+import bpy, sys, math, bmesh
 from mathutils import Vector
 args=sys.argv[sys.argv.index('--')+1:]
 source,destination=args[:2]
@@ -29,6 +29,35 @@ front=hi[2]; rear=lo[2]
 # Preserve the original photo-derived geometry as a face-only inspection model.
 # A complete head/neck requires a separately fitted, validated anatomical shell.
 face.name='Brooke photo-derived face — preserved, no blob'
+# Repair only tiny accidental holes; do not bridge eye sockets, mouth, or
+# the open outer perimeter of the photo-derived face.
+bm=bmesh.new();bm.from_mesh(face.data)
+boundary=[e for e in bm.edges if e.is_boundary]
+seen=set();repaired=0;skipped=0
+for edge in boundary:
+    if edge in seen: continue
+    stack=[edge];loop_edges=[];seen.add(edge)
+    while stack:
+        e=stack.pop();loop_edges.append(e)
+        for v in e.verts:
+            for neighbor in v.link_edges:
+                if neighbor.is_boundary and neighbor not in seen:
+                    seen.add(neighbor);stack.append(neighbor)
+    vertices=set(v for e in loop_edges for v in e.verts)
+    xs=[v.co.x for v in vertices];ys=[v.co.y for v in vertices]
+    span=max(max(xs)-min(xs),max(ys)-min(ys))
+    # Conservative threshold: maximum 1.5% of the face width.
+    if len(vertices)>=3 and len(vertices)<=16 and span<0.015*w:
+        try:
+            bmesh.ops.holes_fill(bm,edges=loop_edges,sides=16)
+            repaired+=1
+        except (ValueError,RuntimeError):
+            skipped+=1
+    else: skipped+=1
+bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+bm.to_mesh(face.data);bm.free();face.data.update()
+print('BROOKE_BOUNDARY_DIAGNOSTIC', 'boundary_edges',len(boundary),
+      'tiny_holes_repaired',repaired,'large_or_sensitive_loops_preserved',skipped)
 for polygon in face.data.polygons: polygon.use_smooth=True
 head=face
 # Explicitly select the photo face: no sphere primitive exists to make it active.
