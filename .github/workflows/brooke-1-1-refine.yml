@@ -9,7 +9,7 @@ permissions:
   contents: write
 concurrency:
   group: brooke-1-1-refine
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   refine:
     runs-on: ubuntu-22.04
@@ -34,7 +34,7 @@ jobs:
       - name: Install browser for mobile WebGL inspection
         run: |
           npm install --prefix /tmp/brooke-browser playwright@1.51.1
-          /tmp/brooke-browser/node_modules/.bin/playwright install --with-deps chromium
+          /tmp/brooke-browser/node_modules/.bin/playwright install chromium
       - name: Inspect mobile WebGL materials and controls
         env:
           BROOKE_PLAYWRIGHT: /tmp/brooke-browser/node_modules/playwright
