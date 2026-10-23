@@ -81,6 +81,28 @@ export function installStaceyLake(THREE,scene){
  window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'local normals ready'};
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
+ // A mobile-friendly sunlight glitter path: one extra draw call, no textures or render targets.
+ // Transparent overlay is broken into moving short streaks, not a solid stripe or tiled dots.
+ const sunGlitterMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2,side:THREE.DoubleSide,
+  uniforms:{uTime:{value:0},uCenter:{value:new THREE.Vector2(STACEY.x,STACEY.z)}},
+  vertexShader:`varying vec2 vLake;uniform vec2 uCenter;void main(){vLake=position.xz-uCenter;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`precision mediump float;varying vec2 vLake;uniform float uTime;
+  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  void main(){
+   // Perspective-facing ribbon across the water, broadening toward the viewer.
+   float axis=vLake.x-0.17*vLake.y-7.0*sin(vLake.y*.014);
+   float width=10.0+0.14*abs(vLake.y);
+   float ribbon=exp(-pow(axis/width,2.0)*1.65);
+   vec2 cell=floor(vec2(axis*.38+sin(vLake.y*.09+uTime*.28)*1.3,vLake.y*.48-uTime*.68));
+   float rnd=hash(cell),phase=sin(vLake.y*1.7+axis*.21-uTime*2.4+6.283*rnd);
+   float glint=smoothstep(.25,.92,phase)*step(.43,rnd);
+   float fine=.38+.62*smoothstep(.25,.9,sin(vLake.y*.35-axis*.31+uTime*.83));
+   float alpha=ribbon*(.055+.57*glint*fine);
+   gl_FragColor=vec4(vec3(1.0,.91,.69),alpha);
+  }`});
+ const sunGlitter=new THREE.Mesh(waterGeometry,sunGlitterMaterial);
+ sunGlitter.name='StaceyLakeSunlightPath';sunGlitter.frustumCulled=false;sunGlitter.renderOrder=3;
+ scene.add(sunGlitter);
  // Water2 r160: reflector + refractor with two independently scrolling normal maps.
  // Stable legacy renderer is the default; ?waterRenderer=water2 enables experimental Water2.
  const useWater2=new URLSearchParams(location.search).get('waterRenderer')==='water2'&&!plainWater;
@@ -94,7 +116,7 @@ export function installStaceyLake(THREE,scene){
   water2.name='StaceyLakeWater2';water2.frustumCulled=false;water2.renderOrder=2;
   // Water2 is front-face rendered; lake triangles must point UP toward the camera.
   water2.material.side=THREE.DoubleSide;
-  scene.remove(water);scene.add(water2);
+  scene.remove(water);scene.add(water2);sunGlitter.visible=false;
  }
  function mobileWaterResolution(){return /Android|iPhone|Mobile/i.test(navigator.userAgent)?256:512;}
  window.__staceyWaterRenderer=useWater2?'Water2 r160':'legacy';
@@ -110,6 +132,7 @@ export function installStaceyLake(THREE,scene){
   if(plainWater||useWater2||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
   
+  sunGlitterMaterial.uniforms.uTime.value=seconds;
   normalA.offset.set((seconds*.009)%1,(seconds*.004)%1);
   normalB.offset.set((seconds*-.006)%1,(seconds*.008)%1);
   const p=waterGeometry.attributes.position;
