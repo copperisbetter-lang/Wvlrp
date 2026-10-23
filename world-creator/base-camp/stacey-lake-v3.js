@@ -83,23 +83,22 @@ export function installStaceyLake(THREE,scene){
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
  // A mobile-friendly sunlight glitter path: one extra draw call, no textures or render targets.
  // Transparent overlay is broken into moving short streaks, not a solid stripe or tiled dots.
- const sunGlitterMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2,side:THREE.DoubleSide,
+ const sunGlitterMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
   uniforms:{uTime:{value:0},uCenter:{value:new THREE.Vector2(STACEY.x,STACEY.z)}},
   vertexShader:`varying vec2 vLake;uniform vec2 uCenter;void main(){vLake=position.xz-uCenter;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
   fragmentShader:`precision mediump float;varying vec2 vLake;uniform float uTime;
-  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-  void main(){
-   // Perspective-facing ribbon across the water, broadening toward the viewer.
-   float axis=vLake.x-0.17*vLake.y-7.0*sin(vLake.y*.014);
-   float width=10.0+0.14*abs(vLake.y);
-   float ribbon=exp(-pow(axis/width,2.0)*1.65);
-   vec2 cell=floor(vec2(axis*.38+sin(vLake.y*.09+uTime*.28)*1.3,vLake.y*.48-uTime*.68));
-   float rnd=hash(cell),phase=sin(vLake.y*1.7+axis*.21-uTime*2.4+6.283*rnd);
-   float glint=smoothstep(.25,.92,phase)*step(.43,rnd);
-   float fine=.38+.62*smoothstep(.25,.9,sin(vLake.y*.35-axis*.31+uTime*.83));
-   float alpha=ribbon*(.055+.57*glint*fine);
-   gl_FragColor=vec4(vec3(1.0,.91,.69),alpha);
-  }`});
+   void main(){
+    // A continuous, soft sun path with low-contrast traveling wavelets.
+    float axis=vLake.x-0.15*vLake.y;
+    float width=22.0+0.11*abs(vLake.y);
+    float ribbon=exp(-1.25*pow(axis/width,2.0));
+    float wave1=sin(vLake.y*.47+axis*.21-uTime*.75);
+    float wave2=sin(vLake.y*.83-axis*.32+uTime*.92);
+    float wave3=sin(vLake.y*1.37+axis*.18-uTime*1.12);
+    float shimmer=.55+.22*wave1+.15*wave2+.08*wave3;
+    float alpha=ribbon*(.10+.18*shimmer);
+    gl_FragColor=vec4(vec3(.97,.89,.72),alpha);
+   }`});
  const sunGlitter=new THREE.Mesh(waterGeometry,sunGlitterMaterial);
  sunGlitter.name='StaceyLakeSunlightPath';sunGlitter.frustumCulled=false;sunGlitter.renderOrder=3;
  scene.add(sunGlitter);
