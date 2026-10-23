@@ -1,0 +1,74 @@
+name: Publish isolated Brooke head review
+on:
+  push:
+    branches: [gator-brooke-photo-mpfb-fit-20261023]
+    paths: ['.github/workflows/brooke-native-head-review-publish.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish-review:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for baked head inspection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 90); do
+            state=$(gh api repos/copperisbetter-lang/Wvlrp/actions/runs/40024734823 --jq '.status')
+            if [ "$state" = completed ]; then
+              result=$(gh api repos/copperisbetter-lang/Wvlrp/actions/runs/40024734823 --jq '.conclusion')
+              test "$result" = success
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40024734823
+          name: brooke-1-native-head-inspection
+          path: /tmp/brooke-native-review
+      - name: Validate and save isolated review assets
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, struct
+          root=pathlib.Path('/tmp/brooke-native-review')
+          report=json.loads((root/'native-head-review/native-fit-report.json').read_text())
+          assert report['source_clone_unchanged'] and report['neck_geometry_unchanged']
+          assert report['eye_geometry_unchanged'] and not report['separate_photo_shell_used']
+          assert report['photo_color_baked_to_native_uv']
+          data=(root/'brooke-1-native-photo-head.glb').read_bytes()
+          size=struct.unpack_from('<I',data,12)[0]
+          gltf=json.loads(data[20:20+size])
+          assert len(gltf['meshes'])==3, 'Expected native skin, hair and eyes only'
+          for mesh in gltf['meshes']:
+              for primitive in mesh['primitives']:
+                  position=gltf['accessors'][primitive['attributes']['POSITION']]
+                  assert position['min'][1]>=1.349, 'Unexpected geometry below neck crop'
+          skin_index=next(n['mesh'] for n in gltf['nodes'] if 'native photo' in n.get('name','').lower())
+          skin=gltf['meshes'][skin_index]
+          assert all('COLOR_0' not in p['attributes'] for p in skin['primitives']), 'Temporary bake layer leaked into GLTF'
+          for name in ['front','left','right','back','three-quarter','baseline-front']:
+              assert (root/'native-head-review'/(name+'.png')).stat().st_size>1000
+          print('Validated head-only candidate, baked color, six renders and source preservation')
+          PY
+          mkdir -p world-creator/assets world-creator/brooke-head-review
+          cp /tmp/brooke-native-review/brooke-1-native-photo-head.glb world-creator/assets/brooke-1.0-native-head-candidate.glb
+          cp /tmp/brooke-native-review/native-head-review/* world-creator/brooke-head-review/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/brooke-1.0-native-head-candidate.glb world-creator/brooke-head-review/
+          git commit -m "Save isolated baked Brooke head review candidate and six views [skip ci]"
+          for attempt in 1 2 3; do
+            git fetch origin gator-brooke-photo-mpfb-fit-20261023
+            git rebase origin/gator-brooke-photo-mpfb-fit-20261023 || { git rebase --abort; exit 1; }
+            if git push origin HEAD:gator-brooke-photo-mpfb-fit-20261023; then exit 0; fi
+          done
+          exit 1
