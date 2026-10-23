@@ -1,0 +1,36 @@
+{
+  "work_order": "CO-BC-RING-TRANSITION-20261023",
+  "status": "Protected-feature screening: STOP expanded excavation until reroute",
+  "source": "campsite-route-markers-map.svg v7-campsite-numbers; map-label coordinates approximate, not surveyed campsite footprints",
+  "ring_radius_m": 268.224,
+  "proposed_extended_arc_deg": [
+    284,
+    340
+  ],
+  "clearance": [
+    {
+      "camp": 64,
+      "angle_deg": 323.2,
+      "radial_centerline_separation_m": 2.4,
+      "decision": "CONFLICT — no excavation"
+    },
+    {
+      "camp": 65,
+      "angle_deg": 307.6,
+      "radial_centerline_separation_m": 14.1,
+      "decision": "CAUTION — footprint and shoulder clearance must be checked"
+    },
+    {
+      "camp": 44,
+      "angle_deg": 303.6,
+      "radial_centerline_separation_m": 65.3,
+      "decision": "likely clear at map-label level"
+    }
+  ],
+  "limitations": [
+    "Campsite coordinates inferred from map label centers; actual campsite pads and safety buffers require checking.",
+    "Brown paths, restricted polygon, tree and other feature clearance not fully verified.",
+    "No revised earthwork is authorized through any conflicting protected campsite."
+  ],
+  "recommended_next": "Redesign local alignment to bypass campsite 64 and validate 8%/3% grades with all transitions before excavating."
+}
