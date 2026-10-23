@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/brooke-mpfb-fit.yml'
       - 'avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py'
+      - 'avatar-work/brooke/scripts/render_mpfb_fit_review.py'
       - 'avatar-work/brooke/brooke-photo-landmarks-front-profile-20261023.json'
 permissions:
   contents: read
@@ -18,9 +19,13 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y blender
       - name: Inspect MPFB mesh and produce isolated Brooke fit
         run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
+      - name: Render five-angle head inspection sheets
+        run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/render_mpfb_fit_review.py -- avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb avatar-work/brooke/build/review
       - name: Upload candidate for inspection (not production)
         uses: actions/upload-artifact@v4
         with:
           name: brooke-mpfb-proportional-fit-candidate
-          path: avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
+          path: |
+            avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
+            avatar-work/brooke/build/review/*.png
           if-no-files-found: error
