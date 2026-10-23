@@ -50,7 +50,8 @@ cy = (max(ys) + min(ys)) / 2
 rear = min(zs)
 expected = [Vector(((v.x-cx)/width, (v.y-cy)/width, (v.z-rear)/width))
             for v in photo_vertices]
-actual = [v.co.copy() for v in bm.verts]
+# Compare world-space GLB vertices: importer can retain object transforms.
+actual = [obj.matrix_world @ v.co for v in bm.verts]
 # Compare rounded coordinates, tolerating normal GLB float quantization.
 keys = {tuple(round(float(c), 4) for c in v) for v in actual}
 missing = sum(tuple(round(float(c), 4) for c in v) not in keys for v in expected)
