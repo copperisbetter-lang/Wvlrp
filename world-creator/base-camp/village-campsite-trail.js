@@ -1,6 +1,6 @@
 // First approved Base Camp trail: lake shore to nearest empty inland campsite clearing.
 // Fences and mossy rocks are actual 3D geometry; the path is a terrain-following walkable surface.
-// Uses WVLRP's own woodland-trail-hd.webp reference image rather than an external generic dirt texture. Perspective source needs replacement with approved ground-specific photograph.
+// Uses the exact user-approved trail PNG uploaded to Base Camp; no substitute textures.
 export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader,LAKE}){
  const start={x:0,z:LAKE.z+LAKE.rz+8};
  const nearest=interiorClearings.filter(p=>p.z>start.z+12&&Math.hypot(p.x-start.x,p.z-start.z)>12)
@@ -26,7 +26,7 @@ export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorCleari
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});
  const trail=new THREE.Mesh(geometry,material);trail.receiveShadow=true;trail.name='village-to-nearest-campsite-trail';scene.add(trail);
- textureLoader.load('../../assets/woodland-trail-hd.webp',t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,1);material.map=t;material.needsUpdate=true},undefined,err=>console.error('WVLRP woodland photo missing',err));
+ textureLoader.load('./a_realistic_high_detail_outdoor_forest_trail_scen.png',t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,1);material.map=t;material.needsUpdate=true},undefined,err=>console.error('WVLRP woodland photo missing',err));
  const wood=new THREE.MeshStandardMaterial({color:0x74563a,roughness:1});
  const moss=new THREE.MeshStandardMaterial({color:0x576747,roughness:1});
  const stone=new THREE.MeshStandardMaterial({color:0x77786b,roughness:1});
