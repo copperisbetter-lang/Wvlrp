@@ -95,9 +95,11 @@ for i,v in enumerate(skin.data.vertices):
     neighbors=kd.find_n(Vector((p.x,p.z,0)),4)
     ws=np.array([1/max(d,.0005)**2 for _,_,d in neighbors])
     color=np.average(rgb[[idx for _,idx,_ in neighbors]],axis=0,weights=ws)
+    # Reduce baked photographic shadow contrast before blending with native skin.
+    color=np.clip(np.power(np.clip(color,.035,1),.75)*np.array([1.0,1.08,1.16]),0,1)
     # OBJ RGB samples are sRGB; Blender color attributes store linear values.
     mapped_rgb[i]=np.where(color<=.04045,color/12.92,((color+.055)/1.055)**2.4)
-    mask[i]=weight*.9
+    mask[i]=weight*.50
 for polygon in skin.data.polygons:
     for loop_index in polygon.loop_indices:
         i=skin.data.loops[loop_index].vertex_index
@@ -121,6 +123,34 @@ assert changed>100,'Too few facial vertices mapped'
 assert all((original[i]-morph.data[i].co).length<1e-7 for i,v in enumerate(skin.data.vertices) if (skin.matrix_world@v.co).z<chin-.006),'Neck continuity changed'
 assert hashlib.sha256(Path(base).read_bytes()).hexdigest()==source_hash
 skin.name='Brooke 1.0 native photo head and neck'
+# Bake the mixed photo/native color to the existing head UV map. This avoids
+# relying on Blender-only node mixing in the GLTF viewer.
+scene=bpy.context.scene
+scene.render.engine='CYCLES';scene.cycles.samples=1
+baked=bpy.data.images.new('Brooke native photo face color',width=4096,height=4096,alpha=True)
+restore=[]
+for slot in skin.material_slots:
+    if not slot.material:continue
+    mat=slot.material;nodes=mat.node_tree.nodes;links=mat.node_tree.links
+    shader=next(n for n in nodes if n.type=='BSDF_PRINCIPLED')
+    output_node=next(n for n in nodes if n.type=='OUTPUT_MATERIAL')
+    color_socket=shader.inputs['Base Color'].links[0].from_socket
+    emission=nodes.new('ShaderNodeEmission')
+    links.new(color_socket,emission.inputs['Color'])
+    links.new(emission.outputs[0],output_node.inputs['Surface'])
+    target=nodes.new('ShaderNodeTexImage');target.image=baked
+    nodes.active=target
+    restore.append((mat,shader,output_node,emission,target))
+bpy.ops.object.select_all(action='DESELECT')
+skin.select_set(True);bpy.context.view_layer.objects.active=skin
+bpy.ops.object.bake(type='EMIT',margin=8)
+for mat,shader,output_node,emission,target in restore:
+    links=mat.node_tree.links
+    links.new(shader.outputs[0],output_node.inputs['Surface'])
+    links.new(target.outputs['Color'],shader.inputs['Base Color'])
+    mat.node_tree.nodes.remove(emission)
+baked.filepath_raw=str(out.parent/'brooke-native-face-color.png')
+baked.file_format='PNG';baked.save();baked.pack()
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_animations=False)
 # Head-focused neutral inspection, no disconnected shell.
 scene=bpy.context.scene; scene.render.engine='BLENDER_EEVEE'
@@ -134,7 +164,7 @@ for name,offset in [('key',(-1,-2,2)),('fill',(2,-1,1)),('rim',(0,2,2))]:
     data=bpy.data.lights.new(name,'AREA'); light=bpy.data.objects.new(name,data)
     scene.collection.objects.link(light);light.location=center+Vector(offset)*radius
     light.rotation_euler=(center-light.location).to_track_quat('-Z','Y').to_euler()
-    data.energy=60;data.size=radius*2
+    data.energy=35;data.size=radius*2
 review=out.parent/'native-head-review';review.mkdir(exist_ok=True)
 for label,offset in [('front',(0,-1,0)),('left',(-1,0,0)),('right',(1,0,0)),('back',(0,1,0)),('three-quarter',(.7,-1,.15))]:
     cam.location=center+Vector(offset)*radius
@@ -146,10 +176,10 @@ cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler()
 scene.render.filepath=str(review/'baseline-front.png');bpy.ops.render.render(write_still=True)
 report={'source_clone_sha256':source_hash,'source_clone_unchanged':True,
 'method':'native facial depth morph plus source OBJ vertex-color transfer',
-'photo_source_landmarks':68,'native_eye_spacing_m':native_ipd,'mapped_facial_vertices':changed,
+'available_photo_landmarks':68,'alignment_landmarks_used':[8,36,37,38,39,40,41,42,43,44,45,46,47],'native_eye_spacing_m':native_ipd,'mapped_facial_vertices':changed,
 'maximum_depth_change_m':max_delta,'neck_geometry_unchanged':True,
-'eye_geometry_unchanged':True,'separate_photo_shell_used':False,
+'eye_geometry_unchanged':True,'photo_color_baked_to_native_uv':True,'separate_photo_shell_used':False,
 'output_scope':'head and neck only','likeness_approved':False,
-'limitations':['First depth-only registration; lateral landmark fitting still needed','Photo color is a blended vertex attribute; UV texture baking still needed','Hair retains native style']}
+'limitations':['First depth-only registration; lateral landmark fitting still needed','Hair retains native style']}
 (review/'native-fit-report.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report))
