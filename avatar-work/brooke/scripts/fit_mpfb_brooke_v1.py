@@ -23,6 +23,8 @@ candidates=[o for o in meshes if ('head' in o.name.lower() or 'face' in o.name.l
 if len(candidates)!=1:
     raise RuntimeError('Unique skin head mesh required; found '+str([(o.name,len(o.data.vertices)) for o in meshes]))
 head=candidates[0]
+# Explicitly record axis orientation and reject non-head-sized selections.
+assert len(head.data.vertices)>500, 'Selected head has insufficient vertices'
 print('SELECTED_HEAD',head.name,'world_matrix',str(head.matrix_world))
 # Work in local coordinates. A head that faces +/-Y has transverse X; Z is up.
 verts=head.data.vertices
@@ -39,6 +41,7 @@ target_nose_to_eye=photo['nose_to_interpupillary_ratio']
 # These are conservative bounded deltas pending actual mesh vertex landmark correspondence.
 mouth_factor=max(.96,min(1.04,1+.08*(target_mouth_to_eye-.75)))
 nose_factor=max(.96,min(1.04,1+.08*(target_nose_to_eye-.45)))
+assert head.type == 'MESH', 'Expected mesh head'
 head.shape_key_add(name='Basis',from_mix=False)
 key=head.shape_key_add(name='Brooke_photo_proportions_v1',from_mix=False)
 for i,v in enumerate(verts):
@@ -54,7 +57,11 @@ for i,v in enumerate(verts):
     key.data[i].co=(mid+(x-mid)*scale,y,z)
 key.value=1.0
 out.parent.mkdir(parents=True,exist_ok=True)
-bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_morph=True)
+bpy.ops.object.select_all(action='DESELECT')
+for obj in meshes:
+    obj.select_set(True)
+bpy.context.view_layer.objects.active=head
+bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_morph=True, use_selection=True)
 assert out.stat().st_size>10000
 print('BROOKE_MPFB_FIRST_PROPORTIONAL_MORPH_EXPORTED',out)
 print('MOUTH_FACTOR',mouth_factor,'NOSE_FACTOR',nose_factor)
