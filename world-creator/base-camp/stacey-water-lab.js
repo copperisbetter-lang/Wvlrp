@@ -28,8 +28,8 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
       void main(){
         // No moving UVs or stripes: almost-stationary, two-direction micro normals.
         float t=uTime*.12;
-        float a=sin(vWorld.x*.34+vWorld.z*.17+t)*.065 + sin(vWorld.x*1.6-vWorld.z*.9-t*.63)*.024;
-        float b=sin(vWorld.x*-.22+vWorld.z*.36-t*.79)*.052 + sin(vWorld.x*.88+vWorld.z*1.34+t*.6)*.022;
+        float a=sin(vWorld.x*.72+vWorld.z*.12+t)*.020 + sin(vWorld.x*1.8-vWorld.z*.31-t*.63)*.008;
+        float b=sin(vWorld.x*-.11+vWorld.z*.83-t*.79)*.017 + sin(vWorld.x*.22+vWorld.z*1.91+t*.6)*.008;
         vec3 n=normalize(vec3(a,1.,b));
         vec3 eye=normalize(vView);
         float fres=.13+.75*pow(1.-clamp(abs(dot(n,eye)),0.,1.),2.0);
@@ -39,7 +39,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 color=mix(near,deep,smoothstep(.0,.9,shore));
         // Small view-dependent light reflection, no painted sun ribbon.
         vec3 sun=normalize(uSun);
-        float sunAngle=max(dot(reflect(-sun,n),eye),0.); float spec=pow(sunAngle,18.)*.35 + pow(sunAngle,120.)*.65;
+        float sunAngle=max(dot(reflect(-sun,n),eye),0.); float spec=pow(sunAngle,26.)*.25 + pow(sunAngle,180.)*.45;
         vec3 reflected=reflect(-eye,n);
         float longitude=atan(reflected.z,reflected.x)/6.2831853+.5;
         float latitude=acos(clamp(reflected.y,-1.,1.))/3.14159265;
@@ -48,7 +48,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float sky=smoothstep(-.06,.25,reflected.y);
         vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));
         environment=mix(environment*.80,skyColor,sky*.20);
-        color=mix(color,environment,fres*.92)+vec3(1.0,.93,.78)*spec;\n        float fine=sin(vWorld.x*1.9+vWorld.z*.8+t*1.1)*sin(vWorld.z*1.4-vWorld.x*.5-t*.8);\n        color+=vec3(.025,.034,.034)*fine*(.3+.7*fres);
+        color=mix(color,environment,fres*.92)+vec3(1.0,.93,.78)*spec;\n        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);\n        color+=vec3(.007,.011,.012)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
