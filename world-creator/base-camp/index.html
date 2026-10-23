@@ -43,11 +43,14 @@ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
 // Cut the discarded pond basin out of visible ground geometry without changing
 // collision/topography calculations or Gator 2's separate trails.
 // The Stacey Lake photo shows through until an approved near-shore 3D water rebuild.
+// Diagnostic only: ?lakeCut=off restores terrain over the legacy basin to isolate the false-lake artifact.
+// Default remains unchanged until the photographic shoreline is verified.
+const lakeCutEnabled=new URLSearchParams(location.search).get('lakeCut')!=='off';
 const cleanLakeIndices=[];
 for(let i=0;i<idx.length;i+=3){
  const ia=idx[i]*3,ib=idx[i+1]*3,ic=idx[i+2]*3;
  const x=(verts[ia]+verts[ib]+verts[ic])/3,z=(verts[ia+2]+verts[ib+2]+verts[ic+2])/3;
- if(lakeRadius(x,z)<1.23)continue;
+ if(lakeCutEnabled&&lakeRadius(x,z)<1.23)continue;
  cleanLakeIndices.push(idx[i],idx[i+1],idx[i+2]);
 }
 geo.setIndex(cleanLakeIndices);geo.computeVertexNormals();
