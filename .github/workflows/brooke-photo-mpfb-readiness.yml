@@ -17,9 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Inspect actual approved MPFB GLB and morph targets
-        run: python3 avatar-work/brooke/scripts/audit_mpfb_head.py | tee mpfb-head-audit.txt
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 avatar-work/brooke/scripts/audit_mpfb_head.py | tee mpfb-head-audit.txt
       - name: Validate photographic reference inputs (must fail if absent)
-        run: python3 avatar-work/brooke/scripts/validate_photo_fit_inputs.py | tee photo-fit-readiness.txt
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 avatar-work/brooke/scripts/validate_photo_fit_inputs.py | tee photo-fit-readiness.txt
       - name: Upload diagnostic reports
         if: always()
         uses: actions/upload-artifact@v4
