@@ -27,19 +27,19 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float b=sin(vWorld.x*-.19+vWorld.z*.28-t*.79)*.014 + sin(vWorld.x*.43+vWorld.z*.64+t*.6)*.006;
         vec3 n=normalize(vec3(a,1.,b));
         vec3 eye=normalize(vView);
-        float fres=pow(1.-abs(dot(n,eye)),4.);
+        float fres=.13+.75*pow(1.-clamp(abs(dot(n,eye)),0.,1.),2.0);
         float shore=clamp(min(vEdge,1.-vEdge)*11.,0.,1.);
         vec3 deep=vec3(.11,.24,.25);
         vec3 near=vec3(.25,.39,.34);
         vec3 color=mix(near,deep,smoothstep(.0,.9,shore));
         // Small view-dependent light reflection, no painted sun ribbon.
         vec3 sun=normalize(uSun);
-        float spec=pow(max(dot(reflect(-sun,n),eye),0.),240.)*.34;
+        float sunAngle=max(dot(reflect(-sun,n),eye),0.); float spec=pow(sunAngle,90.)*.62 + pow(sunAngle,450.)*.52;
         vec3 reflected=reflect(-eye,n);
         float longitude=atan(reflected.z,reflected.x)/6.2831853+.5;
         float latitude=acos(clamp(reflected.y,-1.,1.))/3.14159265;
-        vec3 environment=texture2D(uShudu,vec2(longitude,latitude)).rgb;
-        color=mix(color,environment,fres*.53)+vec3(1.0,.93,.78)*spec;
+        vec3 environment=texture2D(uShudu,vec2(longitude,latitude)).rgb;\n        // Sky/shore reflection remains visible even with the coarse Shudu fallback.\n        float sky=smoothstep(-.06,.25,reflected.y);\n        vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));\n        environment=mix(environment*.70+vec3(.06,.09,.09),skyColor,sky*.82);
+        color=mix(color,environment,fres*.88)+vec3(1.0,.93,.78)*spec;
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
