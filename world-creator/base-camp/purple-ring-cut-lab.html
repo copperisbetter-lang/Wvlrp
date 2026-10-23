@@ -10,6 +10,29 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x354536,2));const sun=new THREE.Di
 const group=new THREE.Group();scene.add(group);const midpoint=322*Math.PI/180;const cx=R*Math.cos(midpoint),cz=R*Math.sin(midpoint);
 function build(naturalOnly){const verts=[],colors=[],indices=[],width=offs.length;let maxLong=0,maxCross=0;for(let i=0;i<stations.length;i++){const s=stations[i],a=s.angle_deg*Math.PI/180;let ys=[];for(let j=0;j<width;j++){const off=offs[j],x=(R+off)*Math.cos(a),z=(R+off)*Math.sin(a),natural=base(x,z),t=Math.max(0,Math.min(1,(Math.abs(off)-1.3)/7.7)),fade=t*t*(3-2*t),y=naturalOnly?natural:s.target_height_m*(1-fade)+natural*fade;ys.push(y);verts.push(x-cx,y,z-cz);const color=new THREE.Color(Math.abs(off)<=1.3?0x67533a:Math.abs(off)<4?0x746c56:0x4b6045);colors.push(color.r,color.g,color.b);if(i&&j){const k=i*width+j;indices.push(k,k-1,k-width,k-1,k-width-1,k-width)}}if(!naturalOnly){const left=ys[offs.indexOf(-1.3)],right=ys[offs.indexOf(1.3)];maxCross=Math.max(maxCross,Math.abs(right-left)/2.6*100);if(i){const prior=stations[i-1];maxLong=Math.max(maxLong,Math.abs((s.target_height_m-prior.target_height_m)/(R*(s.angle_deg-prior.angle_deg)*Math.PI/180)*100))}}}
 const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setIndex(indices);geo.computeVertexNormals();const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:1}));group.add(mesh);document.getElementById('info').textContent=naturalOnly?'Natural ground comparison':('Mesh: '+(verts.length/3)+' vertices / '+(indices.length/3)+' triangles | centerline '+maxLong.toFixed(2)+'% | cross '+maxCross.toFixed(2)+'% (vertex check)');}
+
+// Visual context only: untouched original hillside beyond the graded +/-9m corridor.
+// Separate geometry avoids pretending that the isolated prototype is production excavation.
+const context=new THREE.Group();scene.add(context);
+function surroundingHill(){
+ const geometry=new THREE.BufferGeometry(),v=[],colors=[],indices=[];
+ const radials=[-45,-38,-31,-24,-17,-10,10,17,24,31,38,45],columns=radials.length;
+ for(let i=0;i<stations.length;i++){
+  const a=stations[i].angle_deg*Math.PI/180;
+  for(let j=0;j<columns;j++){
+   const off=radials[j],x=(R+off)*Math.cos(a),z=(R+off)*Math.sin(a);
+   v.push(x-cx,base(x,z)-.035,z-cz);
+   const c=new THREE.Color(off<0?0x485e40:0x536848);
+   colors.push(c.r,c.g,c.b);
+   if(i&&j){const k=i*columns+j;indices.push(k,k-1,k-columns,k-1,k-columns-1,k-columns)}
+  }
+ }
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ context.add(new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:1})));
+}
+surroundingHill();
 let natural=false;build(false);document.getElementById('toggle').onclick=()=>{natural=!natural;while(group.children.length){let c=group.children[0];group.remove(c);c.geometry.dispose();c.material.dispose()}build(natural);document.getElementById('toggle').textContent=natural?'Show graded prototype':'Show natural ground'};
 const target=new THREE.Vector3(0,-3,0);let theta=.4,phi=1.18,dist=100;const updateCamera=()=>{camera.position.set(target.x+dist*Math.sin(phi)*Math.sin(theta),target.y+dist*Math.cos(phi),target.z+dist*Math.sin(phi)*Math.cos(theta));camera.lookAt(target)};updateCamera();let pointer=null;renderer.domElement.style.touchAction='none';renderer.domElement.addEventListener('pointerdown',e=>{pointer={x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId)});renderer.domElement.addEventListener('pointermove',e=>{if(!pointer)return;theta-=(e.clientX-pointer.x)*.008;phi=Math.max(.15,Math.min(Math.PI-.15,phi+(e.clientY-pointer.y)*.008));pointer={x:e.clientX,y:e.clientY};updateCamera()});renderer.domElement.addEventListener('pointerup',()=>pointer=null);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();dist=Math.max(15,Math.min(350,dist*Math.exp(e.deltaY*.001)));updateCamera()},{passive:false});
 addEventListener('resize',()=>{camera.aspect=root.clientWidth/root.clientHeight;camera.updateProjectionMatrix();renderer.setSize(root.clientWidth,root.clientHeight)});
