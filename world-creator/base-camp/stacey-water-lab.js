@@ -8,7 +8,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
   source.visible=false;
   if(glitter)glitter.visible=false;
   const material=new THREE.ShaderMaterial({
-    side:THREE.DoubleSide,transparent:false,depthWrite:true,
+    side:THREE.DoubleSide,transparent:true,depthWrite:false,
     uniforms:{uTime:{value:0},uSun:{value:new THREE.Vector3(.3,.7,.3)}},
     vertexShader:`varying vec3 vWorld;varying vec3 vView;varying float vEdge;attribute float aLakeT;
       void main(){vWorld=position;vEdge=aLakeT;vec4 view=modelViewMatrix*vec4(position,1.0);vView=-view.xyz;gl_Position=projectionMatrix*view;}`,
@@ -23,14 +23,14 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 eye=normalize(vView);
         float fres=pow(1.-abs(dot(n,eye)),4.);
         float shore=clamp(min(vEdge,1.-vEdge)*11.,0.,1.);
-        vec3 deep=vec3(.075,.17,.17);
-        vec3 near=vec3(.16,.28,.25);
+        vec3 deep=vec3(.11,.24,.25);
+        vec3 near=vec3(.25,.39,.34);
         vec3 color=mix(near,deep,smoothstep(.0,.9,shore));
         // Small view-dependent light reflection, no painted sun ribbon.
         vec3 sun=normalize(uSun);
         float spec=pow(max(dot(reflect(-sun,n),eye),0.),110.)*.11;
         color=mix(color,vec3(.24,.34,.33),fres*.23)+vec3(.85,.82,.68)*spec;
-        gl_FragColor=vec4(color,1.);
+        gl_FragColor=vec4(color,mix(.82,.96,shore));
       }`
   });
   const water=new THREE.Mesh(source.geometry,material);
