@@ -15,7 +15,18 @@ meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 assert meshes, 'MPFB source has no meshes'
 # Preserve original anatomical surfaces, materials and eyes. Never add the
 # 3DDFA face as a second intersecting skin or build a rear extrusion.
+# Ensure a visible natural skin material when imported MPFB skin is untextured.
+# Preserve existing image-textured materials; never overwrite real source texture.
+skin=bpy.data.materials.new('Brooke neutral skin preview — not photographic')
+skin.diffuse_color=(0.69,0.47,0.38,1)
+skin.use_nodes=True
+bs=skin.node_tree.nodes.get('Principled BSDF')
+bs.inputs['Base Color'].default_value=(0.69,0.47,0.38,1)
+bs.inputs['Roughness'].default_value=0.82
 for o in meshes:
+    if o.type=='MESH' and len(o.data.vertices)>1000:
+        if not o.data.materials:
+            o.data.materials.append(skin)
     o.name='Brooke anatomical base / '+o.name
     for p in o.data.polygons: p.use_smooth=True
 out.parent.mkdir(parents=True,exist_ok=True)
