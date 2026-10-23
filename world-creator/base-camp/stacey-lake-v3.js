@@ -104,7 +104,7 @@ export function installStaceyLake(THREE,scene){
  scene.add(sunGlitter);
  // Water2 r160: reflector + refractor with two independently scrolling normal maps.
  // Stable legacy renderer is the default; ?waterRenderer=water2 enables experimental Water2.
- const useWater2=new URLSearchParams(location.search).get('waterRenderer')!=='legacy'&&!plainWater;
+ const useWater2=new URLSearchParams(location.search).get('waterRenderer')==='water2'&&!plainWater;
  let water2=null;
  if(useWater2){
   const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');
