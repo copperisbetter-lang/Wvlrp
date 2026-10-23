@@ -30,7 +30,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float t=uTime*.22;
         float a=sin(vWorld.x*.65+vWorld.z*.12+t)*.029 + sin(vWorld.x*1.55-vWorld.z*.24-t*.67)*.009;
         float b=sin(vWorld.x*-.13+vWorld.z*.71-t*.81)*.026 + sin(vWorld.x*.21+vWorld.z*1.65+t*.57)*.008;
-        float r1=sin(vWorld.x*3.1+vWorld.z*.8+t);float r2=sin(vWorld.z*3.8-vWorld.x*1.2-t*.8);float r3=sin(vWorld.x*6.2-vWorld.z*2.7+t*1.4);vec3 n=normalize(vec3(a+.027*r1+.012*r3,1.,b+.025*r2+.011*r3));
+        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec3 n=normalize(vec3(a+.014*r1+.007*r3,1.,b+.014*r2+.006*r3));
         vec3 eye=normalize(vView);
         float fres=.04+.96*pow(1.-clamp(abs(dot(n,eye)),0.,1.),5.0);
         float shore=clamp(min(vEdge,1.-vEdge)*11.,0.,1.);
@@ -39,7 +39,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 color=mix(near,deep,smoothstep(.0,.9,shore));
         // Small view-dependent light reflection, no painted sun ribbon.
         vec3 sun=normalize(uSun);
-        float sunAngle=max(dot(reflect(-sun,n),eye),0.); float spec=pow(sunAngle,13.)*.38 + pow(sunAngle,90.)*.95 + pow(sunAngle,240.)*.8;
+        float sunAngle=max(dot(reflect(-sun,n),eye),0.); float spec=pow(sunAngle,5.)*.36 + pow(sunAngle,28.)*1.1 + pow(sunAngle,110.)*1.7;
         vec3 reflected=reflect(-eye,n);
         float longitude=atan(reflected.z,reflected.x)/6.2831853+.5;
         float latitude=acos(clamp(reflected.y,-1.,1.))/3.14159265;
@@ -49,7 +49,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));
         environment=mix(environment*.75,skyColor,sky*.38);
         color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.94,.78)*spec;
-        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);
+        float fine=(r1+r2+r3)/3.;
         color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
