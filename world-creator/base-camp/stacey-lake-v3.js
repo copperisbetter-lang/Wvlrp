@@ -52,7 +52,7 @@ export function installStaceyLake(THREE,scene){
  waterGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
  // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
- const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:70,specular:0x31565c});
+ const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:115,specular:0x93c3c8});
  const waterNormalURL='https://assets.babylonjs.com/textures/waterbump.png';
  const bumpLoader=new THREE.TextureLoader();
  bumpLoader.setCrossOrigin('anonymous');
@@ -61,10 +61,10 @@ export function installStaceyLake(THREE,scene){
   texture.repeat.set(1,1);
   texture.anisotropy=4;
   naturalWater.bumpMap=texture;
-  naturalWater.bumpScale=.095;
+  naturalWater.bumpScale=.22;
   naturalWater.needsUpdate=true;
-  water.userData.bumpReady=true;window.__staceyWaterTextureStatus='loaded: UV '+waterGeometry.attributes.uv.count;
- },undefined,err=>{water.userData.bumpReady=false;window.__staceyWaterTextureStatus='FAILED: '+String(err?.message||err);});
+  water.userData.bumpReady=true;window.__staceyWaterTextureStatus='loaded: UV '+waterGeometry.attributes.uv.count;window.__staceyWaveDiagnostics.texture='loaded';
+ },undefined,err=>{water.userData.bumpReady=false;window.__staceyWaterTextureStatus='FAILED: '+String(err?.message||err);window.__staceyWaveDiagnostics.texture='failed';});
  window.__staceyWaterTextureStatus='loading';
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
@@ -76,6 +76,7 @@ export function installStaceyLake(THREE,scene){
  const basePositions=waterGeometry.attributes.position.array.slice();
  const bumpTexture=()=>naturalWater.bumpMap;
  let lastWaveUpdate=-1;
+ window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'loading'};
  return {update(seconds){material.uniforms.uTime.value=seconds;
   if(plainWater||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
@@ -83,10 +84,13 @@ export function installStaceyLake(THREE,scene){
   const p=waterGeometry.attributes.position;
   for(let i=0;i<p.count;i++){
    const j=i*3,x=basePositions[j],z=basePositions[j+2];
-   const w=.085*Math.sin(x*.22+z*.11+seconds*1.1)+.065*Math.sin(x*-.13+z*.26-seconds*.8)+.035*Math.sin(x*.43-z*.18+seconds*1.5);
+   const t=depths[i],shoreFade=Math.min(1,Math.max(0,Math.min(t,1-t)*12));
+   const w=shoreFade*(.30*Math.sin(x*.19+z*.11+seconds*1.4)+.20*Math.sin(x*-.12+z*.24-seconds*.98)+.10*Math.sin(x*.37-z*.16+seconds*1.85));
    p.array[j+1]=STACEY.waterY+w;
   }
   p.needsUpdate=true;
   waterGeometry.computeVertexNormals();
+  window.__staceyWaveDiagnostics.frames++;
+  window.__staceyWaveDiagnostics.amplitude=.60;
  },water,island};
 }
