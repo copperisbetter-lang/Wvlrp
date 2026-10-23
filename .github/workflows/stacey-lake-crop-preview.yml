@@ -1,5 +1,10 @@
 name: Stacey Lake crop preview (nonproduction)
 on:
+  push:
+    branches: [gator3-stacey-lake-crop-preview-20261023]
+    paths:
+      - .github/workflows/stacey-lake-crop-preview.yml
+      - tools/stacey_lake_crop_preview.py
   workflow_dispatch:
 permissions:
   contents: read
