@@ -1,0 +1,148 @@
+{
+  "schema_version": 3,
+  "subject": "Brooke",
+  "source": "User-uploaded reference photos Oct 23 2026",
+  "measurement_method": "manual image-plane landmark estimates; not 3D calibrated",
+  "front_image": "3948.jpg",
+  "front_dimensions": [
+    1536,
+    1536
+  ],
+  "front_landmarks_normalized": {
+    "left_eye_outer": [
+      0.311,
+      0.307
+    ],
+    "left_eye_inner": [
+      0.424,
+      0.307
+    ],
+    "right_eye_inner": [
+      0.555,
+      0.308
+    ],
+    "right_eye_outer": [
+      0.654,
+      0.306
+    ],
+    "left_pupil": [
+      0.382,
+      0.311
+    ],
+    "right_pupil": [
+      0.608,
+      0.312
+    ],
+    "nose_tip": [
+      0.5,
+      0.451
+    ],
+    "nose_left_alar": [
+      0.448,
+      0.466
+    ],
+    "nose_right_alar": [
+      0.548,
+      0.466
+    ],
+    "mouth_left": [
+      0.407,
+      0.555
+    ],
+    "mouth_right": [
+      0.583,
+      0.553
+    ],
+    "upper_lip": [
+      0.498,
+      0.546
+    ],
+    "lower_lip": [
+      0.499,
+      0.592
+    ],
+    "chin": [
+      0.498,
+      0.69
+    ],
+    "left_jaw": [
+      0.342,
+      0.572
+    ],
+    "right_jaw": [
+      0.658,
+      0.57
+    ]
+  },
+  "profile_image": "3949.webp",
+  "profile_dimensions": [
+    1216,
+    1536
+  ],
+  "profile_expression": "smiling",
+  "profile_landmarks_normalized": {
+    "forehead": [
+      0.897,
+      0.287
+    ],
+    "brow": [
+      0.883,
+      0.393
+    ],
+    "nose_bridge": [
+      0.864,
+      0.44
+    ],
+    "nose_tip": [
+      0.903,
+      0.56
+    ],
+    "nose_base": [
+      0.88,
+      0.575
+    ],
+    "upper_lip": [
+      0.839,
+      0.6
+    ],
+    "mouth_corner": [
+      0.805,
+      0.615
+    ],
+    "lower_lip": [
+      0.825,
+      0.665
+    ],
+    "chin_tip": [
+      0.777,
+      0.746
+    ],
+    "jaw_angle": [
+      0.662,
+      0.721
+    ],
+    "ear_center": [
+      0.58,
+      0.506
+    ]
+  },
+  "image_plane_ratios": {
+    "interpupillary_distance_px": 347.1,
+    "outer_eye_span_px": 526.9,
+    "mouth_width_px": 270.4,
+    "nose_alar_width_px": 153.6,
+    "mouth_to_interpupillary_ratio": 0.7788,
+    "nose_to_interpupillary_ratio": 0.4425,
+    "nose_to_mouth_ratio": 0.5681
+  },
+  "other_references": [
+    "3954.jpg",
+    "3952.jpg",
+    "3950.gif"
+  ],
+  "warnings": [
+    "Measurements are manual approximations, not 3D scans.",
+    "No verified MPFB vertex correspondence; mesh morph not completed.",
+    "Image binaries remain user-provided conversation attachments; do not publish without redistribution rights."
+  ]
+}
