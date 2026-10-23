@@ -1,4 +1,4 @@
-"""Brooke 1.1 pass 3: reversible eyelid/lip corrections and skin cleanup.
+"""Brooke 1.1 pass 4: reversible eyelid/lip corrections and skin cleanup.
 Usage: python refine_1_1.py source.glb output.glb
 """
 import io,json,struct,sys,hashlib
@@ -21,13 +21,16 @@ for cx in [-.03275,.03275]:
  dx=(pos[:,0]-cx);dy=pos[:,1]-1.550
  support=(1-smooth(.012,.022,np.abs(dx)))*(1-smooth(.008,.018,np.abs(dy)))*smooth(.113,.129,pos[:,2])
  # Continuous across the eye line, including the tiny inner-corner triangles.
- shift=-.12*dy-.00015*np.tanh(dy/.003)
+ shift=-.22*dy-.00030*np.tanh(dy/.003)
  delta[:,1]+=support*shift
 # Retract the rolled lip rim visible in profile. Move surrounding mouth tissue
 # smoothly with it; do not flatten the entire face or change the mouth width.
 x,y,z=pos.T
 lip=np.exp(-.5*((y-1.477)/.0055)**2)*np.exp(-.5*(x/.022)**4)*smooth(.125,.145,z)*smooth(1.455,1.463,y)
 delta[:,2]-=.0032*lip
+# Extend the retraction to the upper lip/philtrum transition visible in profile.
+upper=np.exp(-.5*((y-1.485)/.006)**2)*np.exp(-.5*(x/.022)**4)*smooth(.133,.147,z)
+delta[:,2]-=.0018*upper*smooth(1.45,1.46,y)
 # Close the small neutral-mouth gap without reducing the mouth width.
 close=np.exp(-.5*((y-1.477)/.006)**2)*np.exp(-.5*(x/.023)**4)*smooth(.128,.145,z)
 delta[:,1]-=.12*(y-1.477)*close*smooth(1.45,1.46,y)
@@ -35,7 +38,7 @@ delta[:,1]-=.12*(y-1.477)*close*smooth(1.45,1.46,y)
 cheek=np.exp(-.5*((np.abs(x)-.043)/.014)**2)*np.exp(-.5*((y-1.516)/.014)**2)*smooth(.108,.133,z)
 delta[:,0]+=.0008*np.tanh(x/.010)*cheek*smooth(1.45,1.48,y)
 newpos=pos+delta
-assert np.max(np.linalg.norm(delta,axis=1))<.0045
+assert np.max(np.linalg.norm(delta,axis=1))<.006
 assert np.max(np.abs(delta[pos[:,1]<1.45]))==0
 ai=len(g['accessors']);g['accessors'].append({'bufferView':append(delta.astype('<f4').tobytes()),'componentType':5126,'count':len(delta),'type':'VEC3','min':delta.min(0).tolist(),'max':delta.max(0).tolist()})
 target={'POSITION':ai};tri=acc(pr['indices']).ravel().reshape(-1,3)
@@ -105,8 +108,23 @@ lateral*=smooth(1.435,1.475,y)*(1-smooth(1.56,1.60,y))*mask
 lateral=np.asarray(Image.fromarray(lateral.astype('float32'),'F').resize(im.size,Image.Resampling.BILINEAR))
 matched=np.clip(np.array(native_im)[:,:,:3]/255*cheek_gain,0,1)
 tex[:,:,:3]=tex[:,:,:3]*(1-lateral[:,:,None])+matched*lateral[:,:,None]
+# Remove projected nostril detail from outward-facing nose skin. Leave the
+# actual lower nostril cavities shaded by geometry rather than a second nose.
+nose=np.exp(-.5*(x/.020)**4)*smooth(1.498,1.507,y)*(1-smooth(1.521,1.533,y))*smooth(.130,.151,z)*mask
+nose=np.asarray(Image.fromarray((nose*.92).astype('float32'),'F').resize(im.size,Image.Resampling.BILINEAR))
+# Local cheek color supplies clean skin; retain subtle original skin grain.
+skin_rgb=np.median(small[nose_ref,:3],axis=0)
+for c in range(3):
+ grain=tex[:,:,c]-gaussian_filter(tex[:,:,c],5)
+ tex[:,:,c]=tex[:,:,c]*(1-nose)+np.clip(skin_rgb[c]+grain*.20,0,1)*nose
 buf=io.BytesIO();Image.fromarray(np.round(tex*255).astype('uint8')).save(buf,format='PNG')
-g['images'][ii]={'bufferView':append(buf.getvalue()),'mimeType':'image/png','name':'Brooke 1.1 pass 3 cheek jaw nose skin'}
+g['images'][ii]={'bufferView':append(buf.getvalue()),'mimeType':'image/png','name':'Brooke 1.1 pass 4 cheek jaw nose skin'}
+# The viewer's former back light produced a white rim on glossy skin.
+mat=g['materials'][pr['material']]
+mat['pbrMetallicRoughness']['roughnessFactor']=.88
+mat.setdefault('extensions',{})['KHR_materials_specular']={'specularFactor':.18}
+g.setdefault('extensionsUsed',[])
+if 'KHR_materials_specular' not in g['extensionsUsed']:g['extensionsUsed'].append('KHR_materials_specular')
 for node in g['nodes']:
  if node.get('mesh')==0:node['name']='Brooke 1.1 native photo head and neck'
 g['buffers'][0]['byteLength']=len(binary);js=json.dumps(g,separators=(',',':')).encode();js+=b' '*(-len(js)%4);binary.extend(b'\0'*(-len(binary)%4))
@@ -121,5 +139,5 @@ before_faces=np.cross(pos[tri[:,1]]-pos[tri[:,0]],pos[tri[:,2]]-pos[tri[:,0]])
 valid=np.linalg.norm(before_faces,axis=1)>1e-10
 inverted=int(np.count_nonzero(np.sum(before_faces[valid]*face[valid],axis=1)<=0))
 assert inverted==0, 'Correction inverted a surface triangle'
-report={'version':'Brooke 1.1 pass 3','source_sha256':hashlib.sha256(raw).hexdigest(),'candidate_sha256':hashlib.sha256(out).hexdigest(),'source_unchanged':True,'original_accessors_unchanged':True,'topology_and_rig_unchanged':True,'eyeballs_and_hair_unchanged':True,'neck_geometry_unchanged':True,'new_morph':'Brooke 1.1 reference eyelids mouth and cheek fit','max_displacement_m':float(np.linalg.norm(delta,axis=1).max()),'max_lip_retraction_m':float(-delta[:,2].min()),'inverted_triangles':inverted,'changed_skin_vertices':int(np.count_nonzero(np.linalg.norm(delta,axis=1))),'jaw_texture_blend':'Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color','nose_texture_repair':'Exposed alar skin shadow reduction; underside nostril cavities retained','neck_reference_rgb':tone.tolist(),'eyelid_correction':'Reduced compression to restore rounded reference opening','mouth_closure':'Bounded 12 percent local gap relaxation','cheek_fullness_m':.0008,'lateral_texture_recovery':'Native UV matched to clean cheek color; feathered lateral mask','visual_approval_pending':True}
+report={'version':'Brooke 1.1 pass 4','source_sha256':hashlib.sha256(raw).hexdigest(),'candidate_sha256':hashlib.sha256(out).hexdigest(),'source_unchanged':True,'original_accessors_unchanged':True,'topology_and_rig_unchanged':True,'eyeballs_and_hair_unchanged':True,'neck_geometry_unchanged':True,'new_morph':'Brooke 1.1 reference eyelids mouth and cheek fit','max_displacement_m':float(np.linalg.norm(delta,axis=1).max()),'max_lip_retraction_m':float(-delta[:,2].min()),'inverted_triangles':inverted,'changed_skin_vertices':int(np.count_nonzero(np.linalg.norm(delta,axis=1))),'jaw_texture_blend':'Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color','nose_texture_repair':'Exposed alar skin shadow reduction; underside nostril cavities retained','neck_reference_rgb':tone.tolist(),'eyelid_correction':'Intermediate compression between Pass 2 and Pass 3','mouth_closure':'Bounded 12 percent local gap relaxation','cheek_fullness_m':.0008,'lateral_texture_recovery':'Native UV matched to clean cheek color; feathered lateral mask','skin_material':'roughness .88, specular .18','nose_front_cleanup':'Feathered clean skin on outward alar and tip surfaces','visual_approval_pending':True}
 dest.with_suffix('.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

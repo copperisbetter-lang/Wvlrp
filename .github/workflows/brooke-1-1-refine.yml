@@ -13,7 +13,7 @@ concurrency:
 jobs:
   refine:
     runs-on: ubuntu-22.04
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,12 +25,24 @@ jobs:
         run: |
           mkdir -p world-creator/brooke-1.1-review
           python avatar-work/brooke/one-point-one/refine_1_1.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.glb
-          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass3-report.json
+          cp world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/pass4-report.json
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/brooke-1.1-review/before.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/front.png
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/quarter.png 30
           python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/brooke-1.1-review/profile.png 90
           git diff --exit-code -- world-creator/assets/brooke-1.0-detail-head-candidate.glb
+      - name: Install browser for mobile WebGL inspection
+        run: |
+          npm install --prefix /tmp/brooke-browser playwright@1.51.1
+          /tmp/brooke-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Inspect mobile WebGL materials and controls
+        env:
+          BROOKE_PLAYWRIGHT: /tmp/brooke-browser/node_modules/playwright
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 >/tmp/brooke-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          node avatar-work/brooke/one-point-one/browser-review.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: brooke-1.1-eyelid-skin-review
@@ -43,5 +55,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.json world-creator/brooke-1.1-review/
           git diff --cached --quiet && exit 0
-          git commit -m "Save Brooke 1.1 pass 3 reference fit review [skip ci]"
+          git commit -m "Save Brooke 1.1 pass 4 skin and contour review [skip ci]"
           git push origin HEAD:brooke-1.1
