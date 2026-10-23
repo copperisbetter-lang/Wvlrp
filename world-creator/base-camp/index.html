@@ -17,6 +17,18 @@ function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz
 function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
 function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
 function terrainY(x,z){if(true)return baseTerrainY(x,z);const r=lakeRadius(x,z),base=baseTerrainY(x,z);if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
+// Gator 3: 8%-of-world Stacey Lake shoreline planning overlay ONLY.
+// No excavation, collision change, water or panorama. Visualize and survey before approval.
+const proposedLake={x:140,z:-260,areaM2:Math.PI*BASE_CAMP_RADIUS_M**2*.08};
+const proposedLakeRadius=Math.sqrt(proposedLake.areaM2/Math.PI);
+// The low point is near the perimeter; constrain any final footprint inside the world.
+// The ring is a candidate survey marker, not a finalized shore.
+const proposedLakeMarkers=[];
+for(let i=0;i<160;i++){
+ const a=i*Math.PI*2/160,x=proposedLake.x+Math.cos(a)*proposedLakeRadius,z=proposedLake.z+Math.sin(a)*proposedLakeRadius;
+ if(Math.hypot(x,z)>BASE_CAMP_RADIUS_M-12)continue;
+ proposedLakeMarkers.push({x,z});
+}
 // Existing trails removed. New trails will be laid out only after approval.
 // Circular terrain edge: radial topology avoids the stair-step square-grid border.
 const verts=[0,terrainY(0,0),0],uvs=[.5,.5],idx=[];
