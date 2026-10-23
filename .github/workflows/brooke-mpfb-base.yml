@@ -1,0 +1,26 @@
+name: Brooke MPFB anatomical base
+on:
+  push:
+    paths:
+      - avatar-work/brooke/scripts/build_mpfb_base.py
+      - .github/workflows/brooke-mpfb-base.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender python3-numpy
+      - name: Build anatomical base without altering source
+        run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke/scripts/build_mpfb_base.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brooke-mpfb-anatomical-base-not-photo-fitted
+          path: avatar-work/brooke/build/brooke-mpfb-anatomical-base.glb
+          if-no-files-found: error
