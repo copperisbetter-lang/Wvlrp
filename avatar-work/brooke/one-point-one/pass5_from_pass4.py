@@ -25,7 +25,7 @@ def smooth(a,b,t):
 def gauss(v,c,s):
     return np.exp(-.5*((v-c)/s)**2)
 # Restrict all edits to the face's forward surface, never the skull back or neck.
-front=smooth(.112,.148,z)
+front=smooth(.112,.148,z)*smooth(1.448,1.455,y)
 # Profile correction: shallow reduction in eyebrow ridge and transition toward forehead.
 brow=gauss(x,0,.039)*gauss(y,1.571,.015)*front
 # Upper lip rim is too projected, while tissue around lower lip is recessed.
@@ -33,6 +33,8 @@ upper_rim=gauss(x,0,.024)*gauss(y,1.479,.0032)*front
 lower_support=gauss(x,0,.022)*gauss(y,1.466,.0045)*front
 delta=np.zeros_like(pos)
 delta[:,2]+=-.0018*brow-.0010*upper_rim+.0014*lower_support
+# Exact hard floor for neck/jaw safety; smooth support above the boundary.
+delta[y<=1.448,:]=0
 assert np.max(np.linalg.norm(delta,axis=1))<.003
 assert not np.any(np.linalg.norm(delta[y<1.448],axis=1)>1e-10)
 binary=bytearray(original)
