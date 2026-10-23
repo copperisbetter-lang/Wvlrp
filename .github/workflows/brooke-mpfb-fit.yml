@@ -28,4 +28,5 @@ jobs:
           path: |
             avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
             avatar-work/brooke/build/review/*.png
+            avatar-work/brooke/build/review/inspection.json
           if-no-files-found: error
