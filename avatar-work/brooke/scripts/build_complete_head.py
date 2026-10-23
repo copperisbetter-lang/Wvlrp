@@ -24,34 +24,17 @@ w=hi[0]-lo[0]; h=hi[1]-lo[1]
 assert w>0 and h>0
 cx=(lo[0]+hi[0])/2; cy=(lo[1]+hi[1])/2
 front=hi[2]; rear=lo[2]
-# Make a rear cranium with its front hemisphere intersecting the photo face.
-bpy.ops.mesh.primitive_uv_sphere_add(segments=64,ring_count=40,location=(cx,cy-0.13*h,rear-0.18*w))
-skull=bpy.context.object;skull.name='Complete rear cranium'
-skull.scale=(0.57*w,0.70*h,0.54*w)
-bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
-# Neck extends from jaw toward shoulders in positive image-space Y.
-bpy.ops.mesh.primitive_cylinder_add(vertices=64,radius=1,depth=1,location=(cx,cy+0.72*h,rear-0.13*w))
-neck=bpy.context.object;neck.name='Neck to shoulder attachment'
-neck.scale=(0.23*w,0.23*w,0.48*h)
-neck.rotation_euler[0]=math.pi/2
-bpy.ops.object.transform_apply(location=False,rotation=True,scale=True)
-# Merge intersections into one contiguous surface; smooth shading.
-bpy.ops.object.select_all(action='SELECT')
-bpy.context.view_layer.objects.active=face
-bpy.ops.object.join()
-head=bpy.context.object;head.name='Brooke head and neck — photo fit WIP'
-head.data.remesh_voxel_size=max(w,h)/180
-bpy.context.view_layer.objects.active=head
-bpy.ops.object.voxel_remesh()
-bpy.ops.object.mode_set(mode='EDIT')
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.normals_make_consistent(inside=False) if hasattr(bpy.ops.mesh,'normals_make_consistent') else None
-bpy.ops.object.mode_set(mode='OBJECT')
-for poly in head.data.polygons: poly.use_smooth=True
+# SAFETY REPAIR: do not create a guessed sphere/cylinder or voxel-remesh over
+# photo-derived facial features. The former oversized sphere obscured the face.
+# Preserve the original photo-derived geometry as a face-only inspection model.
+# A complete head/neck requires a separately fitted, validated anatomical shell.
+face.name='Brooke photo-derived face — preserved, no blob'
+for polygon in face.data.polygons: polygon.use_smooth=True
+head=face
 # Normalize dimensions for the WebGL viewer.
 head.location=(-cx,-cy,-rear)
 head.scale=(1/w,1/w,1/w)
 bpy.ops.object.transform_apply(location=True,rotation=False,scale=True)
-assert len(head.data.vertices)>1000, 'Unusable mesh after union'
+assert len(head.data.vertices)>1000, 'Unusable photo face'
 bpy.ops.export_scene.gltf(filepath=destination,export_format='GLB',use_selection=False)
-print('COMPLETE_HEAD_GLB',destination,'vertices',len(head.data.vertices))
+print('FACE_ONLY_INSPECTION_GLB',destination,'vertices',len(head.data.vertices))
