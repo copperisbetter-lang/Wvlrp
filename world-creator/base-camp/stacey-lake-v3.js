@@ -50,7 +50,21 @@ export function installStaceyLake(THREE,scene){
   colors.push(c.r,c.g,c.b);
  }
  waterGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
- const naturalWater=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true});
+ // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
+ // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
+ const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:70,specular:0x31565c});
+ const waterNormalURL='https://assets.babylonjs.com/textures/waterbump.png';
+ const bumpLoader=new THREE.TextureLoader();
+ bumpLoader.setCrossOrigin('anonymous');
+ bumpLoader.load(waterNormalURL,texture=>{
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+  texture.repeat.set(17,17);
+  texture.anisotropy=4;
+  naturalWater.bumpMap=texture;
+  naturalWater.bumpScale=.095;
+  naturalWater.needsUpdate=true;
+  water.userData.bumpReady=true;
+ },undefined,()=>{water.userData.bumpReady=false;});
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
  const sand=new THREE.MeshStandardMaterial({color:0xd9c298,roughness:1});
@@ -59,10 +73,12 @@ export function installStaceyLake(THREE,scene){
  // No trees or island structures until owner approves the next stage.
  scene.add(island);
  const basePositions=waterGeometry.attributes.position.array.slice();
+ const bumpTexture=()=>naturalWater.bumpMap;
  let lastWaveUpdate=-1;
  return {update(seconds){material.uniforms.uTime.value=seconds;
   if(plainWater||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
+  if(bumpTexture()){bumpTexture().offset.x=(seconds*.004)%1;bumpTexture().offset.y=(seconds*.0025)%1;}
   const p=waterGeometry.attributes.position;
   for(let i=0;i<p.count;i++){
    const j=i*3,x=basePositions[j],z=basePositions[j+2];
