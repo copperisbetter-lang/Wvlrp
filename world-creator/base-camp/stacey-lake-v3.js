@@ -71,7 +71,7 @@ export function installStaceyLake(THREE,scene){
    img.data[k+2]=Math.round(128+127/len);img.data[k+3]=255;
   }
   ctx.putImageData(img,0,0);
-  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(1.3,1.3);return tex;
+  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(11,11);return tex;
  }
  const normalA=makeRippleNormal(.8),normalB=makeRippleNormal(2.6);
  naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.10,.10);
@@ -92,11 +92,11 @@ export function installStaceyLake(THREE,scene){
     float axis=vLake.x-0.15*vLake.y;
     float width=22.0+0.11*abs(vLake.y);
     float ribbon=exp(-1.25*pow(axis/width,2.0));
-    float wave1=sin(vLake.y*.47+axis*.21-uTime*.75);
-    float wave2=sin(vLake.y*.83-axis*.32+uTime*.92);
-    float wave3=sin(vLake.y*1.37+axis*.18-uTime*1.12);
+    float wave1=sin(vLake.y*.47+axis*.21-uTime*.075);
+    float wave2=sin(vLake.y*.83-axis*.32+uTime*.092);
+    float wave3=sin(vLake.y*1.37+axis*.18-uTime*.112);
     float shimmer=.55+.22*wave1+.15*wave2+.08*wave3;
-    float alpha=ribbon*(.10+.18*shimmer);
+    float alpha=ribbon*(.07+.06*shimmer);
     gl_FragColor=vec4(vec3(.97,.89,.72),alpha);
    }`});
  const sunGlitter=new THREE.Mesh(waterGeometry,sunGlitterMaterial);
@@ -132,8 +132,8 @@ export function installStaceyLake(THREE,scene){
   lastWaveUpdate=seconds;
   
   sunGlitterMaterial.uniforms.uTime.value=seconds;
-  normalA.offset.set((seconds*.009)%1,(seconds*.004)%1);
-  normalB.offset.set((seconds*-.006)%1,(seconds*.008)%1);
+  normalA.offset.set((seconds*.0011)%1,(seconds*.0006)%1);
+  normalB.offset.set((seconds*-.0008)%1,(seconds*.0010)%1);
   const p=waterGeometry.attributes.position;
   for(let i=0;i<p.count;i++){
    const j=i*3,x=basePositions[j],z=basePositions[j+2];
