@@ -77,18 +77,18 @@ jobs:
         run: |
           sudo apt-get install -y blender python3-numpy
           blender -b --python-exit-code 1 --python-expr "import numpy; print('Blender NumPy:', numpy.__version__)"
-      - name: Build complete cranium and neck GLB
+      - name: Build closed cranium candidate GLB (neck not yet fitted)
         run: |
           OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
           test -n "$OBJ"
           mkdir -p avatar-work/brooke/build
-          blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-complete-head-neck.glb
-          test -s avatar-work/brooke/build/brooke-complete-head-neck.glb
-      - name: Upload complete head and neck GLB
+          blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-photo-head-candidate.glb
+          test -s avatar-work/brooke/build/brooke-photo-head-candidate.glb
+      - name: Upload cranium candidate GLB
         uses: actions/upload-artifact@v4
         with:
-          name: brooke-complete-head-neck-glb
-          path: avatar-work/brooke/build/brooke-complete-head-neck.glb
+          name: brooke-photo-head-candidate-glb
+          path: avatar-work/brooke/build/brooke-photo-head-candidate.glb
           if-no-files-found: error
       - name: Upload photo-reconstructed OBJ
         uses: actions/upload-artifact@v4
@@ -97,11 +97,11 @@ jobs:
           path: /tmp/3DDFA_V2/examples/results/*_obj.obj
           if-no-files-found: error
       - name: Publish photo-reconstructed Brooke GLB to repository
-        if: github.ref == 'refs/heads/main'
+        if: ${{ false }} # Disabled until neck, ears, round-trip topology and likeness are approved
         run: |
           set -euo pipefail
           mkdir -p public-models
-          cp avatar-work/brooke/build/brooke-complete-head-neck.glb public-models/brooke-photo-head-neck.glb
+          cp avatar-work/brooke/build/brooke-photo-head-candidate.glb public-models/brooke-photo-head-neck.glb
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public-models/brooke-photo-head-neck.glb
