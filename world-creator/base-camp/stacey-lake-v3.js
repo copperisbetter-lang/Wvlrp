@@ -70,8 +70,8 @@ export function installStaceyLake(THREE,scene){
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
  // Water2 r160: reflector + refractor with two independently scrolling normal maps.
- // ?waterRenderer=legacy restores the proven lightweight surface immediately.
- const useWater2=new URLSearchParams(location.search).get('waterRenderer')!=='legacy'&&!plainWater;
+ // Stable legacy renderer is the default; ?waterRenderer=water2 enables experimental Water2.
+ const useWater2=new URLSearchParams(location.search).get('waterRenderer')==='water2'&&!plainWater;
  let water2=null;
  if(useWater2){
   const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');
