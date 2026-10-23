@@ -1,3 +1,4 @@
+import {RGBELoader} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/RGBELoader.js';
 // Independent calm-water laboratory. Reuses Stacey Lake geometry without touching terrain.
 export function installCalmWaterLab(THREE,scene,legacyWater){
   const old=scene.getObjectByName('StaceyLakeWater');
@@ -13,6 +14,10 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
   for(let i=0;i<32;i++){envBytes[i*4]=parseInt(shuduHex.slice(i*6,i*6+2),16);envBytes[i*4+1]=parseInt(shuduHex.slice(i*6+2,i*6+4),16);envBytes[i*4+2]=parseInt(shuduHex.slice(i*6+4,i*6+6),16);envBytes[i*4+3]=255;}
   const env=new THREE.DataTexture(envBytes,8,4,THREE.RGBAFormat);
   env.magFilter=THREE.LinearFilter;env.minFilter=THREE.LinearFilter;env.wrapS=THREE.RepeatWrapping;env.needsUpdate=true;
+  // Load the actual 1024x512 HDR radiance panorama (not a 8x4 color proxy).
+  // The 4K original remains a source asset; 1K float HDR is the mobile-safe first tier.
+  const hdrURL='https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/shudu_lake_1k.hdr';
+  window.__staceyHDR={state:'loading',url:hdrURL};
   const material=new THREE.ShaderMaterial({
     side:THREE.DoubleSide,transparent:true,depthWrite:false,
     uniforms:{uTime:{value:0},uSun:{value:new THREE.Vector3(.3,.7,.3)},uShudu:{value:env}},
@@ -43,11 +48,20 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
+  new RGBELoader().setDataType(THREE.HalfFloatType).load(hdrURL,texture=>{
+    texture.wrapS=THREE.RepeatWrapping;
+    texture.wrapT=THREE.ClampToEdgeWrapping;
+    texture.magFilter=THREE.LinearFilter;
+    texture.minFilter=THREE.LinearFilter;
+    texture.needsUpdate=true;
+    material.uniforms.uShudu.value=texture;
+    window.__staceyHDR={state:'ready',width:texture.image.width,height:texture.image.height,url:hdrURL};
+  },undefined,error=>{window.__staceyHDR={state:'fallback',reason:String(error),url:hdrURL};console.warn('Shudu HDR download failed; retaining local fallback',error);});
   const water=new THREE.Mesh(source.geometry,material);
   water.name='StaceyCalmWaterLab';
   water.frustumCulled=false;
   water.renderOrder=4;
   scene.add(water);
-  window.__staceyWaterRenderer='Shudu calm-water lab v2: slow ripples, Fresnel reflection, softer shore';
+  window.__staceyWaterRenderer='Shudu real HDR 1K mobile lab (check window.__staceyHDR)';
   return {update(seconds,sun){material.uniforms.uTime.value=seconds;if(sun)material.uniforms.uSun.value.copy(sun);}};
 }
