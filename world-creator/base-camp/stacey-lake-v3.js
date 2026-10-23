@@ -40,11 +40,35 @@ export function installStaceyLake(THREE,scene){
  const diagnosticWater=new THREE.MeshBasicMaterial({color:0x087fba,side:THREE.DoubleSide,transparent:false,depthWrite:true});
  const useShader=new URLSearchParams(location.search).get('waterShader')==='on';
  const activeWaterMaterial=useShader?material:diagnosticWater;
- const water=new THREE.Mesh(waterGeometry,activeWaterMaterial);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
+ // Reliable HD-style color gradient using standard Three.js material, not the broken custom GLSL.
+ // Depth colors are assigned per vertex; keep opaque water so the surface stays visible.
+ const colors=[];
+ const shallowColor=new THREE.Color(0x39b7ba),midColor=new THREE.Color(0x08788f),deepColor=new THREE.Color(0x092c51);
+ for(let i=0;i<depths.length;i++){
+  const t=depths[i],edge=Math.min(t,1-t)*2;
+  const c=shallowColor.clone().lerp(midColor,THREE.MathUtils.smoothstep(edge,.04,.30)).lerp(deepColor,THREE.MathUtils.smoothstep(edge,.28,.76));
+  colors.push(c.r,c.g,c.b);
+ }
+ waterGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+ const naturalWater=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true});
+ const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
+ const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
  const sand=new THREE.MeshStandardMaterial({color:0xd9c298,roughness:1});
  const island=new THREE.Group();island.name='StaceySandIsland';
  // Visible raised sand island; its terrain is part of the continuous world mesh.
  // No trees or island structures until owner approves the next stage.
  scene.add(island);
- return {update(seconds){material.uniforms.uTime.value=seconds},water,island};
+ const basePositions=waterGeometry.attributes.position.array.slice();
+ let lastWaveUpdate=-1;
+ return {update(seconds){material.uniforms.uTime.value=seconds;
+  if(plainWater||seconds-lastWaveUpdate<.085)return;
+  lastWaveUpdate=seconds;
+  const p=waterGeometry.attributes.position;
+  for(let i=0;i<p.count;i++){
+   const j=i*3,x=basePositions[j],z=basePositions[j+2];
+   const w=.085*Math.sin(x*.22+z*.11+seconds*1.1)+.065*Math.sin(x*-.13+z*.26-seconds*.8)+.035*Math.sin(x*.43-z*.18+seconds*1.5);
+   p.array[j+1]=STACEY.waterY+w;
+  }
+  p.needsUpdate=true;
+ },water,island};
 }
