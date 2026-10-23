@@ -31,10 +31,14 @@ front=hi[2]; rear=lo[2]
 face.name='Brooke photo-derived face — preserved, no blob'
 for polygon in face.data.polygons: polygon.use_smooth=True
 head=face
+# Explicitly select the photo face: no sphere primitive exists to make it active.
+bpy.ops.object.select_all(action='DESELECT')
+head.select_set(True)
+bpy.context.view_layer.objects.active=head
 # Normalize dimensions for the WebGL viewer.
 head.location=(-cx,-cy,-rear)
 head.scale=(1/w,1/w,1/w)
 bpy.ops.object.transform_apply(location=True,rotation=False,scale=True)
 assert len(head.data.vertices)>1000, 'Unusable photo face'
-bpy.ops.export_scene.gltf(filepath=destination,export_format='GLB',use_selection=False)
+bpy.ops.export_scene.gltf(filepath=destination,export_format='GLB',use_selection=True)
 print('FACE_ONLY_INSPECTION_GLB',destination,'vertices',len(head.data.vertices))
