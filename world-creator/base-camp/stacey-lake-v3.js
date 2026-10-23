@@ -1,3 +1,4 @@
+import {Water as Water2} from './vendor/Water2.js';
 // Stacey Lake 3D prototype: water and raised sand island, no panoramas.
 // Lake occupies 8% of Base Camp by nominal planform; visual reference is owner-approved artwork.
 export const STACEY={x:140,z:-240,radius:113.797805566,waterY:-5.5,islandRadius:22};
@@ -68,6 +69,21 @@ export function installStaceyLake(THREE,scene){
  window.__staceyWaterTextureStatus='loading';
  const plainWater=new URLSearchParams(location.search).get('waterPlain')==='on';
  const water=new THREE.Mesh(waterGeometry,plainWater?diagnosticWater:naturalWater);water.name='StaceyLakeWater';water.frustumCulled=false;water.renderOrder=2;scene.add(water);
+ // Water2 r160: reflector + refractor with two independently scrolling normal maps.
+ // ?waterRenderer=legacy restores the proven lightweight surface immediately.
+ const useWater2=new URLSearchParams(location.search).get('waterRenderer')!=='legacy'&&!plainWater;
+ let water2=null;
+ if(useWater2){
+  const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');
+  const normal0=loader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg');
+  const normal1=loader.load('https://threejs.org/examples/textures/water/Water_2_M_Normal.jpg');
+  normal0.wrapS=normal0.wrapT=normal1.wrapS=normal1.wrapT=THREE.RepeatWrapping;
+  water2=new Water2(waterGeometry,{color:0x4c9ca9,textureWidth:mobileWaterResolution(),textureHeight:mobileWaterResolution(),flowDirection:new THREE.Vector2(1,.25),flowSpeed:.012,reflectivity:.11,scale:3.0,normalMap0:normal0,normalMap1:normal1});
+  water2.name='StaceyLakeWater2';water2.frustumCulled=false;water2.renderOrder=2;
+  scene.remove(water);scene.add(water2);
+ }
+ function mobileWaterResolution(){return /Android|iPhone|Mobile/i.test(navigator.userAgent)?256:512;}
+ window.__staceyWaterRenderer=useWater2?'Water2 r160':'legacy';
  const sand=new THREE.MeshStandardMaterial({color:0xd9c298,roughness:1});
  const island=new THREE.Group();island.name='StaceySandIsland';
  // Visible raised sand island; its terrain is part of the continuous world mesh.
@@ -78,7 +94,7 @@ export function installStaceyLake(THREE,scene){
  let lastWaveUpdate=-1;
  window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'loading'};
  return {update(seconds){material.uniforms.uTime.value=seconds;
-  if(plainWater||seconds-lastWaveUpdate<.085)return;
+  if(plainWater||useWater2||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
   if(bumpTexture()){bumpTexture().offset.x=(seconds*.004)%1;bumpTexture().offset.y=(seconds*.0025)%1;}
   const p=waterGeometry.attributes.position;
@@ -92,5 +108,5 @@ export function installStaceyLake(THREE,scene){
   waterGeometry.computeVertexNormals();
   window.__staceyWaveDiagnostics.frames++;
   window.__staceyWaveDiagnostics.amplitude=.067;
- },water,island};
+ },water:water2||water,island};
 }
