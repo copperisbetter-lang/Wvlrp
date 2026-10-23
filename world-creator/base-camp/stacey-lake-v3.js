@@ -54,6 +54,21 @@ export function installStaceyLake(THREE,scene){
  // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
  // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
  const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:115,specular:0x93c3c8});
+ // Lightweight moving ripple highlights, generated locally so no remote texture can fail.
+ const rippleCanvas=document.createElement('canvas');rippleCanvas.width=rippleCanvas.height=256;
+ const rippleCtx=rippleCanvas.getContext('2d');
+ const rippleImage=rippleCtx.createImageData(256,256);
+ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+  const a=x/256*Math.PI*2,b=y/256*Math.PI*2;
+  const rip=Math.pow(Math.max(0,Math.sin(a*8+b*3)+.55*Math.sin(b*11-a*5)),5);
+  const k=(y*256+x)*4,v=Math.min(255,170+Math.round(rip*32));
+  rippleImage.data[k]=v;rippleImage.data[k+1]=v;rippleImage.data[k+2]=v;rippleImage.data[k+3]=255;
+ }
+ rippleCtx.putImageData(rippleImage,0,0);
+ const rippleTexture=new THREE.CanvasTexture(rippleCanvas);
+ rippleTexture.wrapS=rippleTexture.wrapT=THREE.RepeatWrapping;
+ rippleTexture.repeat.set(5,5);
+ naturalWater.map=rippleTexture;naturalWater.needsUpdate=true;
  const waterNormalURL='https://assets.babylonjs.com/textures/waterbump.png';
  const bumpLoader=new THREE.TextureLoader();
  bumpLoader.setCrossOrigin('anonymous');
@@ -98,6 +113,7 @@ export function installStaceyLake(THREE,scene){
  return {update(seconds){material.uniforms.uTime.value=seconds;
   if(plainWater||useWater2||seconds-lastWaveUpdate<.085)return;
   lastWaveUpdate=seconds;
+  rippleTexture.offset.x=(seconds*.006)%1;rippleTexture.offset.y=(seconds*-.004)%1;
   if(bumpTexture()){bumpTexture().offset.x=(seconds*.004)%1;bumpTexture().offset.y=(seconds*.0025)%1;}
   const p=waterGeometry.attributes.position;
   for(let i=0;i<p.count;i++){
