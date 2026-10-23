@@ -1,0 +1,27 @@
+name: Brooke MPFB Real Mesh Fit
+on:
+  push:
+    branches: [gator-brooke-photo-mpfb-fit-20261023]
+    paths:
+      - 'avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py'
+      - 'avatar-work/brooke/brooke-photo-landmarks-front-profile-20261023.json'
+      - '.github/workflows/brooke-mpfb-real-mesh-fit.yml'
+  workflow_dispatch:
+jobs:
+  real-mesh-fit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Generate Brooke MPFB morph GLB
+        run: |
+          blender -b --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
+          test -s avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brooke-mpfb-first-proportional-fit
+          path: avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
+          if-no-files-found: error
