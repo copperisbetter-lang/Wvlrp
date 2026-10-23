@@ -1,0 +1,41 @@
+name: Brooke 1.1 isolated Pass 5 corrective
+on:
+  push:
+    branches: [brooke-1-1-pass5-repair]
+    paths:
+      - 'avatar-work/brooke/scripts/brooke_1_1_pass5.py'
+      - '.github/workflows/brooke-1-1-pass5.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  corrective:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: sudo apt-get update -qq && sudo apt-get install -y blender
+      - name: Verify isolated source
+        run: |
+          test -s public-models/brooke-photo-head-neck.glb
+          mkdir -p avatar-work/brooke/build
+      - name: Apply corrective to isolated Brooke 1.1 copy
+        run: |
+          blender -b -t 2 --python-exit-code 1 --python-expr "import bpy; bpy.ops.import_scene.gltf(filepath='public-models/brooke-photo-head-neck.glb')" --python avatar-work/brooke/scripts/brooke_1_1_pass5.py --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb',export_format='GLB')"
+      - name: Verify candidate created
+        run: |
+          test -s avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb
+          python3 - <<'PY'
+          import json,struct
+          p='avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb'
+          with open(p,'rb') as f: h=f.read(12)
+          magic,version,size=struct.unpack('<4sII',h)
+          assert magic==b'glTF' and version==2 and size>1000
+          print('Candidate GLB size:',size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brooke-1-1-pass5-candidate
+          path: avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb
+          if-no-files-found: error
