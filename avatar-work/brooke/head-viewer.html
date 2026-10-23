@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke — Mesh Isolation Viewer</title><style>body{margin:0;background:#101820;color:#eee;font:15px system-ui}header,aside{padding:12px}h2{margin:0 0 5px}#stage{height:65vh;touch-action:none;background:#293440}button{margin:4px;padding:9px;border:1px solid #789;background:#253e50;color:white;border-radius:5px}button:focus{outline:2px solid #fff}#parts{max-height:18vh;overflow:auto}label{display:block;margin:5px 0}small{color:#ccd}</style></head><body><header><h2>Brooke — Mesh Isolation</h2><small>Non-destructive inspection: hide the blob without modifying the original GLB. Drag to rotate; pinch to zoom.</small></header><div id="stage"></div><aside><button id="all">All Parts</button><button id="face">Face Only (largest part hidden)</button><button id="neutral">Neutral Material</button><button id="reset">Reset Camera</button><div id="status">Loading…</div><div id="parts"></div></aside><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke — Mesh Isolation Viewer</title><style>body{margin:0;background:#101820;color:#eee;font:15px system-ui}header,aside{padding:12px}h2{margin:0 0 5px}#stage{height:65vh;touch-action:none;background:#293440}button{margin:4px;padding:9px;border:1px solid #789;background:#253e50;color:white;border-radius:5px}button:focus{outline:2px solid #fff}#parts{max-height:18vh;overflow:auto}label{display:block;margin:5px 0}small{color:#ccd}</style></head><body><header><h2>Brooke — Mesh Isolation</h2><small>Non-destructive inspection: hide the blob without modifying the original GLB. Drag to rotate; pinch to zoom.</small></header><div id="stage"></div><aside><button id="all">All Parts</button><button id="face">Face Only (largest part hidden)</button><button id="components">Separate Connected Surfaces</button><button id="neutral">Neutral Material</button><button id="reset">Reset Camera</button><div id="status">Loading…</div><div id="parts"></div></aside><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -12,8 +12,41 @@ let meshes=[],original=new Map(),neutral=false,root;
 function fit(){const box=new THREE.Box3().setFromObject(root);const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()).length();controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(0,size*.15,size*1.15));camera.near=Math.max(size/10000,.0001);camera.far=size*100;camera.updateProjectionMatrix();controls.update()}
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(stage);resize();
 function showParts(){parts.replaceChildren();meshes.forEach((m,i)=>{const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=m.visible;check.onchange=()=>m.visible=check.checked;label.append(check,document.createTextNode(' '+i+': '+m.name+' ('+m.userData.extent.toFixed(3)+')'));parts.append(label)})}
-document.querySelector('#all').onclick=()=>{meshes.forEach(m=>m.visible=true);showParts()};
-document.querySelector('#face').onclick=()=>{if(meshes.length<2){status.textContent='Only one mesh found. Cannot isolate the blob automatically; geometry repair required.';return}const sorted=[...meshes].sort((a,b)=>b.userData.extent-a.userData.extent);meshes.forEach(m=>m.visible=true);sorted[0].visible=false;status.textContent='Largest part hidden for inspection. Toggle individual parts below if needed.';showParts()};
+document.querySelector('#components').onclick=()=>{
+if(!root)return;
+let added=0, report=[];
+for(const source of [...meshes]){
+if(source.userData.splitDone)continue;
+const geometry=source.geometry, pos=geometry.getAttribute('position'), idx=geometry.getIndex();
+if(!pos){continue}
+const count=idx?idx.count:pos.count,triangles=Math.floor(count/3);
+if(triangles>450000){report.push('Mesh too large for browser splitting');continue}
+const parent=new Int32Array(pos.count);for(let i=0;i<parent.length;i++)parent[i]=i;
+function find(i){while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i]}return i}
+function union(a,b){a=find(a);b=find(b);if(a!==b)parent[b]=a}
+const ids=idx?idx.array:null;
+for(let t=0;t<triangles;t++){const a=ids?ids[t*3]:t*3,b=ids?ids[t*3+1]:t*3+1,c=ids?ids[t*3+2]:t*3+2;union(a,b);union(a,c)}
+const groups=new Map();
+for(let t=0;t<triangles;t++){const a=ids?ids[t*3]:t*3;const key=find(a);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t)}
+report.push(source.name+': '+groups.size+' index-connected surface(s)');
+if(groups.size<2){source.userData.splitDone=true;continue}
+const sorted=[...groups.values()].sort((a,b)=>b.length-a.length);
+for(let n=0;n<sorted.length;n++){
+const tris=sorted[n],geo=new THREE.BufferGeometry(),indices=new Uint32Array(tris.length*3);
+for(let k=0;k<tris.length;k++)for(let j=0;j<3;j++)indices[k*3+j]=ids?ids[tris[k]*3+j]:tris[k]*3+j;
+for(const [name,attr] of Object.entries(geometry.attributes))geo.setAttribute(name,attr);
+geo.setIndex(new THREE.BufferAttribute(indices,1));geo.computeBoundingSphere();
+const mesh=new THREE.Mesh(geo,source.material);mesh.name=source.name+' / surface '+(n+1)+' ('+tris.length+' triangles)';
+mesh.position.copy(source.position);mesh.quaternion.copy(source.quaternion);mesh.scale.copy(source.scale);mesh.userData.extent=new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3()).length();
+source.parent.add(mesh);meshes.push(mesh);original.set(mesh,original.get(source));added++;
+}
+source.visible=false;source.userData.splitDone=true;
+}
+status.textContent=report.join('; ')+(added?' — '+added+' surfaces isolated. Toggle them below.':' — No separate indexed surfaces found. May need welded-vertex or source reconstruction repair.');
+showParts();
+};
+document.querySelector('#all').onclick=()=>{meshes.forEach(m=>m.visible=!m.userData.splitDone);showParts()};
+document.querySelector('#face').onclick=()=>{if(meshes.length<2){status.textContent='Only one mesh found. Cannot isolate the blob automatically; geometry repair required.';return}const sorted=meshes.filter(m=>!m.userData.splitDone).sort((a,b)=>b.userData.extent-a.userData.extent);meshes.forEach(m=>m.visible=!m.userData.splitDone);sorted[0].visible=false;status.textContent='Largest part hidden for inspection. Toggle individual parts below if needed.';showParts()};
 document.querySelector('#neutral').onclick=()=>{neutral=!neutral;meshes.forEach(m=>m.material=neutral?new THREE.MeshStandardMaterial({color:0xd7ae97,roughness:.85,side:THREE.DoubleSide}):original.get(m));};
 document.querySelector('#reset').onclick=()=>root&&fit();
 const urls=['https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-models/brooke-photo-head-neck.glb'];
