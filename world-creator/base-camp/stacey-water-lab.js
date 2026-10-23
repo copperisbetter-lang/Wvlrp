@@ -48,7 +48,9 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float sky=smoothstep(-.06,.25,reflected.y);
         vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));
         environment=mix(environment*.75,skyColor,sky*.38);
-        color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.93,.78)*spec;\n        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);\n        color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
+        color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.93,.78)*spec;
+        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);
+        color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
