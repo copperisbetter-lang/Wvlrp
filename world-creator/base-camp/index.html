@@ -17,19 +17,21 @@ function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz
 function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
 function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
 // Isolated Phase-B prototype: 8-degree arc on remote SE ring, reversible.
+// Prototype excavation V2: deeper centerline cut, level tread and tapered rock shoulders.
+// Keep all work in the approved 304°–312° segment; no lake-area edits.
 const CUT_START=304*Math.PI/180,CUT_END=312*Math.PI/180,CUT_RADIUS=BASE_CAMP_RADIUS_M*2/3;
 const smooth01=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 function prototypeGradeY(x,z,original){
  const radius=Math.hypot(x,z),angle=(Math.atan2(z,x)+2*Math.PI)%(2*Math.PI);
  if(angle<CUT_START||angle>CUT_END||Math.abs(radius-CUT_RADIUS)>9)return original;
- const t=(angle-CUT_START)/(CUT_END-CUT_START),a=CUT_START,b=CUT_END;
- const h0=baseTerrainY(CUT_RADIUS*Math.cos(a),CUT_RADIUS*Math.sin(a));
- const h1=baseTerrainY(CUT_RADIUS*Math.cos(b),CUT_RADIUS*Math.sin(b));
- // Grade-control profile; endpoint slopes and bench blending are assessed separately.
- const target=h0+(h1-h0)*t;
- const longitudinalFade=smooth01(Math.min(t,1-t)*8);
- const radialFade=1-smooth01((Math.abs(radius-CUT_RADIUS)-2.3)/6.7);
- return original+(target-original)*longitudinalFade*radialFade;
+ const t=(angle-CUT_START)/(CUT_END-CUT_START);
+ const h0=baseTerrainY(CUT_RADIUS*Math.cos(CUT_START),CUT_RADIUS*Math.sin(CUT_START));
+ const h1=baseTerrainY(CUT_RADIUS*Math.cos(CUT_END),CUT_RADIUS*Math.sin(CUT_END));
+ // Excavation-only profile, no raised fill; constant-depth tread intentionally cut below both ends.
+ const cutFloor=Math.min(h0,h1)-0.85;
+ const longitudinalFade=smooth01(Math.min(t,1-t)*9);
+ const shoulderFade=1-smooth01((Math.abs(radius-CUT_RADIUS)-2.2)/6.8);
+ return original+Math.min(0,cutFloor-original)*longitudinalFade*shoulderFade;
 }
 function terrainY(x,z){const r=lakeRadius(x,z),base=prototypeGradeY(x,z,baseTerrainY(x,z));if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
 // Existing trails removed. New trails will be laid out only after approval.
