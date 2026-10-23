@@ -1,15 +1,15 @@
 {
   "version": "Brooke 1.1 pass 4",
   "source_sha256": "139322b008d4e5e3125f1e378e83f64e1d4dd8aa1961780ca0d2a657950ff5a4",
-  "candidate_sha256": "f94402ad1bd3aa5acfdc53279e402c2210086f6bc3ade90d40cd3f7c95b87d86",
+  "candidate_sha256": "e67d760ad04f6deab67f9ae4ed1caee68d14375b56b48836ad92dfbb54f5ddb4",
   "source_unchanged": true,
   "original_accessors_unchanged": true,
   "topology_and_rig_unchanged": true,
   "eyeballs_and_hair_unchanged": true,
   "neck_geometry_unchanged": true,
   "new_morph": "Brooke 1.1 reference eyelids mouth and cheek fit",
-  "max_displacement_m": 0.004093673545867205,
-  "max_lip_retraction_m": 0.004087593872100115,
+  "max_displacement_m": 0.004092908464372158,
+  "max_lip_retraction_m": 0.004086827859282494,
   "inverted_triangles": 0,
   "changed_skin_vertices": 2469,
   "jaw_texture_blend": "Wider anatomy-masked low-frequency cheek/jaw transition toward native neck color",
@@ -25,5 +25,8 @@
   "lateral_texture_recovery": "Native UV matched to clean cheek color; feathered lateral mask",
   "skin_material": "roughness .88, specular .18",
   "nose_front_cleanup": "Feathered clean skin on outward alar and tip surfaces",
+  "normal_seams": "Normals averaged across coincident UV seam vertices",
+  "alar_depth": "70 percent local recovery toward native wing depth",
+  "jaw_outline": "Continuous neck to cheek color gradient",
   "visual_approval_pending": true
 }
