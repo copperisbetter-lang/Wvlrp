@@ -7,23 +7,23 @@
     "z": -154.07246344378484
   },
   "new_world_m": {
-    "x": 252.8277093746286,
-    "z": -219.77977471182
+    "x": 317.8611334292137,
+    "z": -169.0097626029207
   },
   "original_map_px": {
     "x": 704.7323191996161,
     "y": 355.92753655621516
   },
   "new_map_px": {
-    "x": 752.8277093746286,
-    "y": 290.22022528818
+    "x": 817.8611334292136,
+    "y": 340.99023739707934
   },
   "ring_radius_m": 268.224,
   "original_ring_centerline_clearance_m": 11.994324676297651,
-  "new_ring_centerline_clearance_m": 66.77600000000001,
-  "new_location_natural_terrain_gradient_pct": 12.945289306627478,
-  "warning": "Natural grade is approximate; level campsite pad, vegetation, brown-path intersections, and walk-through not yet certified",
-  "game_commit": "6285dc6cac2f07df72dc00a4c155738a3646e2ae",
-  "map_commit": "44890b91fa4220578d768bfdb87ee2a8bce4bcb3",
+  "new_ring_centerline_clearance_m": 91.77600000000001,
+  "new_location_natural_terrain_gradient_pct": 0.1064,
+  "warning": "Terrain gradient sampled at campsite center ~0.11%; clearing radius and brown-path clearance require visual validation.",
+  "game_commit": "1d5da2a07fe9e850f8f796505720805bb95797dc",
+  "map_commit": "4f611a2e1b28441549f203793188304b81da5b76",
   "rollback": "Restore campsite interiorClearings[22] procedural coordinates by removing override in index.html; restore old SVG circle and number positions; preserve other campsite IDs."
 }
