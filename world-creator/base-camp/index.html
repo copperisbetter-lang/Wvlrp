@@ -16,7 +16,22 @@ const actualLakeAcres=lakeAreaM2()/ACRE_M2;
 function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz,dx);const waviness=shorelineWave(angle);return Math.hypot(dx/LAKE.rx,dz/LAKE.rz)/waviness}
 function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
 function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
-function terrainY(x,z){const r=lakeRadius(x,z),base=baseTerrainY(x,z);if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
+// Isolated Phase-B prototype: 8-degree arc on remote SE ring, reversible.
+const CUT_START=304*Math.PI/180,CUT_END=312*Math.PI/180,CUT_RADIUS=BASE_CAMP_RADIUS_M*2/3;
+const smooth01=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+function prototypeGradeY(x,z,original){
+ const radius=Math.hypot(x,z),angle=(Math.atan2(z,x)+2*Math.PI)%(2*Math.PI);
+ if(angle<CUT_START||angle>CUT_END||Math.abs(radius-CUT_RADIUS)>9)return original;
+ const t=(angle-CUT_START)/(CUT_END-CUT_START),a=CUT_START,b=CUT_END;
+ const h0=baseTerrainY(CUT_RADIUS*Math.cos(a),CUT_RADIUS*Math.sin(a));
+ const h1=baseTerrainY(CUT_RADIUS*Math.cos(b),CUT_RADIUS*Math.sin(b));
+ // Grade-control profile; endpoint slopes and bench blending are assessed separately.
+ const target=h0+(h1-h0)*t;
+ const longitudinalFade=smooth01(Math.min(t,1-t)*8);
+ const radialFade=1-smooth01((Math.abs(radius-CUT_RADIUS)-2.3)/6.7);
+ return original+(target-original)*longitudinalFade*radialFade;
+}
+function terrainY(x,z){const r=lakeRadius(x,z),base=prototypeGradeY(x,z,baseTerrainY(x,z));if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
 // Existing trails removed. New trails will be laid out only after approval.
 // Circular terrain edge: radial topology avoids the stair-step square-grid border.
 const verts=[0,terrainY(0,0),0],uvs=[.5,.5],idx=[];
