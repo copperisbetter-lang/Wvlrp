@@ -87,13 +87,33 @@ for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
 }
 
 // Approved first trail: village treeline to closest unfurnished interior clearing.
+
+// TEMPORARY VISUAL GUIDE ONLY: black collector ring follows existing terrain.
+// This does not alter terrain, collision, lake, or approved trail engineering.
+const tempRingRadius=BASE_CAMP_RADIUS_M*(2/3),tempRingSegments=720,tempRingHalfWidth=1.3;
+const tempRingVertices=[],tempRingIndices=[];
+for(let i=0;i<=tempRingSegments;i++){
+ const a=i*2*Math.PI/tempRingSegments,co=Math.cos(a),si=Math.sin(a);
+ for(const side of [-1,1]){
+  const rr=tempRingRadius+side*tempRingHalfWidth,x=rr*co,z=rr*si;
+  tempRingVertices.push(x,terrainY(x,z)+.14,z);
+ }
+ if(i<tempRingSegments){const n=i*2;tempRingIndices.push(n,n+1,n+2,n+1,n+3,n+2);}
+}
+const tempRingGeo=new THREE.BufferGeometry();
+tempRingGeo.setAttribute('position',new THREE.Float32BufferAttribute(tempRingVertices,3));
+tempRingGeo.setIndex(tempRingIndices);tempRingGeo.computeVertexNormals();
+const tempRingMesh=new THREE.Mesh(tempRingGeo,new THREE.MeshBasicMaterial({color:0x111111,side:THREE.DoubleSide,depthWrite:false}));
+tempRingMesh.name='TEMP BLACK PURPLE RING ALIGNMENT — UNGRADED';
+tempRingMesh.renderOrder=4;scene.add(tempRingMesh);
+
 const campsiteRoutes=installCampsiteRouteMarkers(THREE,scene,{terrainY,perimeterClearings,interiorClearings,LAKE});
 // Bare Base Camp baseline, approved 2026-10-22.
 // Vegetation is intentionally NOT imported, downloaded, created or streamed.
 // Old tree/understory source files remain outside this scene for future rebuilding.
 // The full Wild game is a separate route and remains untouched.
 
-const spawnTarget=new URLSearchParams(location.search).get('spawn');const spawnVillage=spawnTarget==='village';const spawnTrail=spawnTarget==='trail';const spawnCamp29=spawnTarget==='campsite29'||location.hash==='#campsite29';const camp29=perimeterClearings[28];const spawnX=spawnCamp29&&camp29?camp29.x:0,spawnZ=spawnCamp29&&camp29?camp29.z:spawnTrail?(campsiteRoutes?.lakeExits[0]?.z??15):spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);if(spawnCamp29){scene.background=new THREE.Color(0x9ebed1);scene.fog=new THREE.Fog(0x9ebed1,180,750);}if(spawnCamp29){const spawnNote=document.createElement('div');spawnNote.textContent='CAMPSITE 29 PREVIEW SPAWN';spawnNote.style.cssText='position:fixed;top:70px;left:12px;z-index:9999;padding:8px 12px;background:#143b2b;color:white;border:2px solid #9dd7b3;border-radius:8px;font:700 14px sans-serif';document.body.appendChild(spawnNote)}let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
+const spawnTarget=new URLSearchParams(location.search).get('spawn');const spawnVillage=spawnTarget==='village';const spawnTrail=spawnTarget==='trail';const spawnRing=spawnTarget==='ring';const spawnCamp29=spawnTarget==='campsite29'||location.hash==='#campsite29';const camp29=perimeterClearings[28];const spawnX=spawnRing?tempRingRadius:spawnCamp29&&camp29?camp29.x:0,spawnZ=spawnRing?0:spawnCamp29&&camp29?camp29.z:spawnTrail?(campsiteRoutes?.lakeExits[0]?.z??15):spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);if(spawnCamp29){scene.background=new THREE.Color(0x9ebed1);scene.fog=new THREE.Fog(0x9ebed1,180,750);}if(spawnCamp29){const spawnNote=document.createElement('div');spawnNote.textContent='CAMPSITE 29 PREVIEW SPAWN';spawnNote.style.cssText='position:fixed;top:70px;left:12px;z-index:9999;padding:8px 12px;background:#143b2b;color:white;border:2px solid #9dd7b3;border-radius:8px;font:700 14px sans-serif';document.body.appendChild(spawnNote)}let yaw=0,pitch=0;const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
 // Treat walking and looking as separate pointer streams so two-finger play works.
 // The look surface spans the entire screen; HUD and joystick sit above it.
 pad.addEventListener('pointerdown',e=>{
