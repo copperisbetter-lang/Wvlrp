@@ -33,14 +33,14 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
       uniform float uTime;uniform vec3 uSun;uniform sampler2D uShudu;uniform sampler2D uRippleNormal;varying vec3 vWorld;varying vec3 vView;varying float vEdge;
       void main(){
         // No moving UVs or stripes: almost-stationary, two-direction micro normals.
-        float t=uTime*.22;
+        float t=uTime*.65;
         float a=sin(vWorld.x*.65+vWorld.z*.12+t)*.029 + sin(vWorld.x*1.55-vWorld.z*.24-t*.67)*.009;
         float b=sin(vWorld.x*-.13+vWorld.z*.71-t*.81)*.026 + sin(vWorld.x*.21+vWorld.z*1.65+t*.57)*.008;
-        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.105+vec2(t*.015,t*.009);
-        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.145)+vec2(-t*.011,t*.013);
+        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.105+vec2(t*.048,t*.026);
+        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.145)+vec2(-t*.035,t*.041);
         vec3 tex1=texture2D(uRippleNormal,uv1).xyz*2.-1.;
         vec3 tex2=texture2D(uRippleNormal,uv2).xyz*2.-1.;
-        vec3 n=normalize(vec3(a+.035*tex1.x+.024*tex2.x,1.,b+.035*tex1.y+.024*tex2.y));
+        vec3 n=normalize(vec3(a+.055*tex1.x+.038*tex2.x,1.,b+.055*tex1.y+.038*tex2.y));
         vec3 eye=normalize(vView);
         float fres=.04+.96*pow(1.-clamp(abs(dot(n,eye)),0.,1.),5.0);
         float shore=clamp(min(vEdge,1.-vEdge)*11.,0.,1.);
