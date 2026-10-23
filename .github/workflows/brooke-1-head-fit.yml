@@ -1,0 +1,43 @@
+name: Brooke 1.0 head fitting inspection
+on:
+  push:
+    branches: [gator-brooke-photo-mpfb-fit-20261023]
+    paths:
+      - '.github/workflows/brooke-1-head-fit.yml'
+      - 'avatar-work/brooke/scripts/fit_face_to_brooke_1.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  head-fit:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve existing photo reconstruction
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40016701518
+          name: brooke-photo-head-candidate-glb
+          path: avatar-work/brooke/build/photo-source
+      - name: Install Blender and headless display
+        run: |
+          sudo apt-get update -qq
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y blender xvfb
+      - name: Fit head to clone and render head inspection
+        run: |
+          set -euo pipefail
+          FACE=$(find avatar-work/brooke/build/photo-source -name '*.glb' -print -quit)
+          test -n "$FACE"
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/fit_face_to_brooke_1.py -- world-creator/assets/brooke-1.0-base.glb "$FACE" avatar-work/brooke/build/brooke-1-head-fit-candidate.glb
+      - name: Preserve candidate and review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-1-head-fit-inspection
+          path: |
+            avatar-work/brooke/build/brooke-1-head-fit-candidate.glb
+            avatar-work/brooke/build/head-review/
+          if-no-files-found: error
