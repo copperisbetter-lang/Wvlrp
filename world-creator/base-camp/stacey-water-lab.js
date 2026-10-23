@@ -27,9 +27,9 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
       uniform float uTime;uniform vec3 uSun;uniform sampler2D uShudu;varying vec3 vWorld;varying vec3 vView;varying float vEdge;
       void main(){
         // No moving UVs or stripes: almost-stationary, two-direction micro normals.
-        float t=uTime*.12;
-        float a=sin(vWorld.x*.41+vWorld.z*.09+t)*.012 + sin(vWorld.x*1.27-vWorld.z*.17-t*.63)*.004;
-        float b=sin(vWorld.x*-.08+vWorld.z*.49-t*.79)*.011 + sin(vWorld.x*.14+vWorld.z*1.31+t*.6)*.004;
+        float t=uTime*.34;
+        float a=sin(vWorld.x*.65+vWorld.z*.12+t)*.029 + sin(vWorld.x*1.55-vWorld.z*.24-t*.67)*.009;
+        float b=sin(vWorld.x*-.13+vWorld.z*.71-t*.81)*.026 + sin(vWorld.x*.21+vWorld.z*1.65+t*.57)*.008;
         vec3 n=normalize(vec3(a,1.,b));
         vec3 eye=normalize(vView);
         float fres=.04+.96*pow(1.-clamp(abs(dot(n,eye)),0.,1.),5.0);
@@ -48,7 +48,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float sky=smoothstep(-.06,.25,reflected.y);
         vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));
         environment=mix(environment*.75,skyColor,sky*.38);
-        color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.93,.78)*spec;\n        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);\n        color+=vec3(.002,.003,.004)*fine*(.3+.7*fres);
+        color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.93,.78)*spec;\n        float fine=sin(vWorld.x*2.3+vWorld.z*.41+t*1.1)*sin(vWorld.x*.32+vWorld.z*1.7-t*.8);\n        color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
@@ -67,5 +67,5 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
   water.renderOrder=4;
   scene.add(water);
   window.__staceyWaterRenderer='Shudu real HDR 1K mobile lab (check window.__staceyHDR)';
-  return {update(seconds,sun){material.uniforms.uTime.value=seconds;if(sun)material.uniforms.uSun.value.copy(sun);}};
+  return {update(seconds,sun){material.uniforms.uTime.value=seconds;if(sun)material.uniforms.uSun.value.copy(sun);window.__staceyWaterTime=seconds;}};
 }
