@@ -53,7 +53,7 @@ export function installStaceyLake(THREE,scene){
  waterGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  // Reuse the water bump asset already referenced by The Wild's living-waters renderer.
  // Three.js uses a standard lit material, not Babylon's incompatible WaterMaterial.
- const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:115,specular:0x93c3c8});
+ const naturalWater=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:false,depthWrite:true,shininess:28,specular:0x263f45});
  // Two self-contained, independently moving ripple normal maps. No network requests.
  // Normal-map relief affects specular lighting rather than painting dots on the water.
  function makeRippleNormal(seed){
@@ -71,11 +71,11 @@ export function installStaceyLake(THREE,scene){
    img.data[k+2]=Math.round(128+127/len);img.data[k+3]=255;
   }
   ctx.putImageData(img,0,0);
-  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2.5,2.5);return tex;
+  const tex=new THREE.CanvasTexture(canvas);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(1.3,1.3);return tex;
  }
  const normalA=makeRippleNormal(.8),normalB=makeRippleNormal(2.6);
- naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.95,.95);
- naturalWater.shininess=105;naturalWater.specular.set(0xaacbd1);
+ naturalWater.normalMap=normalA;naturalWater.normalScale=new THREE.Vector2(.10,.10);
+ naturalWater.shininess=28;naturalWater.specular.set(0x263f45);
  naturalWater.needsUpdate=true;
  window.__staceyWaterTextureStatus='local dual-normal ripples ready';
  window.__staceyWaveDiagnostics={frames:0,amplitude:0,texture:'local normals ready'};
