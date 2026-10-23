@@ -104,21 +104,21 @@ export function installStaceyLake(THREE,scene){
  scene.add(sunGlitter);
  // Water2 r160: reflector + refractor with two independently scrolling normal maps.
  // Stable legacy renderer is the default; ?waterRenderer=water2 enables experimental Water2.
- const useWater2=new URLSearchParams(location.search).get('waterRenderer')==='water2'&&!plainWater;
+ const useWater2=new URLSearchParams(location.search).get('waterRenderer')!=='legacy'&&!plainWater;
  let water2=null;
  if(useWater2){
   const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');
   const normal0=loader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg');
   const normal1=loader.load('https://threejs.org/examples/textures/water/Water_2_M_Normal.jpg');
   normal0.wrapS=normal0.wrapT=normal1.wrapS=normal1.wrapT=THREE.RepeatWrapping;
-  water2=new Water2(waterGeometry,{color:0x4c9ca9,textureWidth:mobileWaterResolution(),textureHeight:mobileWaterResolution(),flowDirection:new THREE.Vector2(1,.25),flowSpeed:.012,reflectivity:.11,scale:3.0,normalMap0:normal0,normalMap1:normal1});
+  water2=new Water2(waterGeometry,{color:0x9eaca3,textureWidth:mobileWaterResolution(),textureHeight:mobileWaterResolution(),flowDirection:new THREE.Vector2(1,.25),flowSpeed:.0008,reflectivity:.16,scale:6.0,normalMap0:normal0,normalMap1:normal1});
   water2.name='StaceyLakeWater2';water2.frustumCulled=false;water2.renderOrder=2;
   // Water2 is front-face rendered; lake triangles must point UP toward the camera.
   water2.material.side=THREE.DoubleSide;
   scene.remove(water);scene.add(water2);sunGlitter.visible=false;
  }
  function mobileWaterResolution(){return /Android|iPhone|Mobile/i.test(navigator.userAgent)?256:512;}
- window.__staceyWaterRenderer=useWater2?'Water2 r160':'legacy';
+ window.__staceyWaterRenderer=useWater2?'Water2 r160 calm lake':'legacy';
  const sand=new THREE.MeshStandardMaterial({color:0xd9c298,roughness:1});
  const island=new THREE.Group();island.name='StaceySandIsland';
  // Visible raised sand island; its terrain is part of the continuous world mesh.
