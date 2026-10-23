@@ -75,10 +75,21 @@ const staceyBackdropTexture=new THREE.TextureLoader().load('../../assets/stacey-
  undefined,()=>{document.getElementById('assetStatus').textContent='ERROR: Stacey Lake panorama could not load';});
 staceyBackdropTexture.colorSpace=THREE.SRGBColorSpace;
 staceyBackdropTexture.mapping=THREE.EquirectangularReflectionMapping;
-// Paint the real panoramic photograph into the scene background directly.
-// A sky dome can be occluded or render incorrectly; scene.background is explicit.
-scene.background=staceyBackdropTexture;
-scene.backgroundIntensity=1;
+// Stacey Lake is LOCAL scenery, never the world sky/background.
+// Keep Base Camp's independent procedural sky visible beyond the lake.
+// Place a panorama cylinder around the designated basin, not around the player/world.
+const staceyLocalGroup=new THREE.Group();staceyLocalGroup.name='StaceyLakeLocalScenery';
+const lakePhotoRadius=Math.max(LAKE.rx,LAKE.rz)*1.22;
+const lakePhotoHeight=105;
+const lakePhotoGeometry=new THREE.CylinderGeometry(lakePhotoRadius,lakePhotoRadius,lakePhotoHeight,192,1,true);
+const lakePhotoMaterial=new THREE.MeshBasicMaterial({map:staceyBackdropTexture,side:THREE.BackSide,depthWrite:false,fog:false});
+const lakePhotoCylinder=new THREE.Mesh(lakePhotoGeometry,lakePhotoMaterial);
+lakePhotoCylinder.position.set(LAKE.x,LAKE.waterLevel+lakePhotoHeight*.36,LAKE.z);
+lakePhotoCylinder.rotation.y=Math.PI;
+staceyLocalGroup.add(lakePhotoCylinder);
+scene.add(staceyLocalGroup);
+// Local panorama placement is a first-pass scene isolation; final masked edges
+// and beach transitions must be inspected before merging to production.
 // Gator 3 stripped all legacy foreground lake meshes, swash strips and shoreline decoration.
 // Original Stacey Lake panorama is the sole lake visual during photographic alignment.
 // Lake coordinates and footprint stay defined for the future swim-water construction.
