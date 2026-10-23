@@ -22,15 +22,15 @@ export function installCampsiteRouteMarkers(THREE,scene,{terrainY,perimeterClear
  for(const side of [-1,1]){
   const sideName=side<0?'west':'east';
   const junction=node('lake-junction-'+sideName,side*35,12);
-  const approach=node('lake-approach-'+sideName,side*58,-5);
-  const exit=node('lake-exit-'+sideName,side*58,-28,'lake-exit');
+  const approach=node('lake-approach-'+sideName,side<0?-38:58,-5);
+  const exit=node('lake-exit-'+sideName,side<0?-30:58,side<0?-25:-28,'lake-exit');
   link(spawn,junction);link(junction,approach);link(approach,exit);lakeExits.push(exit);
  }
  const lakeClearance=lakeExits.map(p=>Math.hypot(p.x-LAKE.x,p.z-LAKE.z));
  // North shore endpoints must stay on dry ground. Landmark coordinates are not
  // recorded in the source; center clearance is provisional, not landmark proof.
  const lakeR=(x,z)=>{const dx=x-LAKE.x,dz=z-LAKE.z,a=Math.atan2(dz,dx),w=1+.025*Math.sin(5*a)+.018*Math.cos(9*a);return Math.hypot(dx/LAKE.rx,dz/LAKE.rz)/w};
- if(lakeExits.some(p=>lakeR(p.x,p.z)<1.03))throw Error('Lake approach intersects water');
+ if(lakeExits.some(p=>lakeR(p.x,p.z)<1.03||terrainY(p.x,p.z)<=LAKE.waterLevel+0.5))throw Error('Lake approach is submerged or too close to water');
  if(clearings.length!==65||lakeExits.length!==2||lakeClearance.some(d=>d<10))throw Error('Campsite route network invariants failed');
  // Low-profile wooden wayfinding stakes, placed every ~14 m on connected edges.
  const postGeo=new THREE.CylinderGeometry(.055,.07,.64,6);
