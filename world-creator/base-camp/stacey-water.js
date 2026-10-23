@@ -25,14 +25,14 @@ export function installStaceyWater(THREE,water){
     float glint=pow(max(dot(reflect(-L,n),V),0.),185.);
     float fine=sin(p.x*5.7+t*2.3)*sin(p.y*4.3-t*1.8);
     glint*=.5+.5*fine*fine;
-    base+=vec3(1.,.92,.72)*glint*.82*daylight;
+    base+=vec3(1.,.92,.72)*glint*1.25*daylight;
     base+=vec3(.018,.052,.057)*(a*.5+.5);
-    gl_FragColor=vec4(base,.78);
+    gl_FragColor=vec4(base,.88);
    }`
  });
  water.material.dispose();water.material=material;
  return {update(seconds,sunDirection,cameraPosition){
-   uniforms.uTime.value=seconds;
+   uniforms.uTime.value=seconds*.14;
    uniforms.uSun.value.copy(sunDirection).normalize();
    uniforms.uCam.value.copy(cameraPosition);
  }};
