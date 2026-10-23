@@ -13,6 +13,7 @@ bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(source))
 meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 assert meshes, 'No mesh found in exported GLB'
+assert all(len(o.data.vertices)>0 for o in meshes), 'Export contains an empty mesh'
 # Compute world-space bounds, including imported GLB node transforms.
 points=[o.matrix_world @ Vector(corner) for o in meshes for corner in o.bound_box]
 lo=Vector([min(p[i] for p in points) for i in range(3)])
