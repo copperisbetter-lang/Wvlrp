@@ -25,6 +25,8 @@ jobs:
         run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/fit_mpfb_brooke_v1.py
       - name: Render five-angle head inspection sheets
         run: xvfb-run -a -s '-screen 0 1280x1024x24' blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/render_mpfb_fit_review.py -- avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb avatar-work/brooke/build/review
+      - name: Audit actual full-body extent
+        run: blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke/scripts/audit_body_extent.py
       - name: Upload candidate for inspection (not production)
         if: always()
         uses: actions/upload-artifact@v4
@@ -34,4 +36,5 @@ jobs:
             avatar-work/brooke/build/brooke-mpfb-first-proportional-fit.glb
             avatar-work/brooke/build/review/*.png
             avatar-work/brooke/build/review/inspection.json
+            avatar-work/brooke/build/review/body-audit.json
           if-no-files-found: warn
