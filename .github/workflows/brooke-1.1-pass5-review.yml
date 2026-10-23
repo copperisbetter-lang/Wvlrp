@@ -1,0 +1,45 @@
+name: Brooke 1.1 Pass 5 isolated review
+on:
+  push:
+    branches: [brooke-1.1-pass5-from-pass4]
+    paths:
+      - 'avatar-work/brooke/one-point-one/pass5_from_pass4.py'
+      - '.github/workflows/brooke-1.1-pass5-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: brooke-1.1-pass5-review
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy scipy Pillow
+      - name: Validate and export isolated candidate
+        run: |
+          python avatar-work/brooke/one-point-one/pass5_from_pass4.py world-creator/assets/brooke-1.1-detail-head-candidate.glb world-creator/assets/brooke-1.1-pass5-candidate.glb
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-pass5-candidate.glb world-creator/brooke-1.1-review/pass5-front.png
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-pass5-candidate.glb world-creator/brooke-1.1-review/pass5-profile.png 90
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-1.1-pass5-candidate.glb world-creator/brooke-1.1-review/pass5-quarter.png 30
+          git diff --exit-code -- world-creator/assets/brooke-1.0-detail-head-candidate.glb world-creator/assets/brooke-1.1-detail-head-candidate.glb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brooke-1.1-pass5-review
+          path: |
+            world-creator/assets/brooke-1.1-pass5-candidate.glb
+            world-creator/assets/brooke-1.1-pass5-candidate.json
+            world-creator/brooke-1.1-review/pass5-*.png
+      - name: Publish only to isolated candidate branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/brooke-1.1-pass5-candidate.glb world-creator/assets/brooke-1.1-pass5-candidate.json world-creator/brooke-1.1-review/pass5-*.png
+          git diff --cached --quiet && exit 0
+          git commit -m "Save isolated Brooke 1.1 Pass 5 review candidate [skip ci]"
+          git push origin HEAD:brooke-1.1-pass5-from-pass4
