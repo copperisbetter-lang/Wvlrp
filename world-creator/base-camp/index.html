@@ -115,7 +115,7 @@ const gpsCoords=document.getElementById('gpsCoords'),gpsDistance=document.getEle
 function teleportTo(x,z,faceLake=false){pos.set(x,terrainY(x,z)+2,z);if(faceLake){yaw=Math.atan2(x-STACEY.x,z-STACEY.z);pitch=-.06;}moveX=moveY=0;}
 document.getElementById('gpsLake').onclick=()=>{const z=STACEY.z+STACEY.radius+9;teleportTo(STACEY.x,z,true);};
 document.getElementById('gpsBase').onclick=()=>teleportTo(0,15);
-if(new URLSearchParams(location.search).get('spawn')==='lake'){teleportTo(STACEY.x,STACEY.z+STACEY.radius+9,true);}
+if(new URLSearchParams(location.search).get('spawn')==='lake'){pos.set(STACEY.x,terrainY(STACEY.x,STACEY.z+STACEY.radius+9)+2,STACEY.z+STACEY.radius+9);yaw=Math.atan2(pos.x-STACEY.x,pos.z-STACEY.z);pitch=-.06;}
 const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
 // Treat walking and looking as separate pointer streams so two-finger play works.
 // The look surface spans the entire screen; HUD and joystick sit above it.
