@@ -37,7 +37,7 @@ assert np.max(np.linalg.norm(delta,axis=1))<.003
 assert not np.any(np.linalg.norm(delta[y<1.448],axis=1)>1e-10)
 binary=bytearray(original)
 def append(data):
-    binary.extend(b"\\0"*(-len(binary)%4))
+    binary.extend(bytes([0])*(-len(binary)%4))
     idx=len(g["bufferViews"])
     g["bufferViews"].append({"buffer":0,"byteOffset":len(binary),"byteLength":len(data)})
     binary.extend(data)
@@ -102,12 +102,12 @@ Image.fromarray(np.uint8(np.clip(pixels*255,0,255))).save(outim,format="PNG")
 g["images"][img_index]={"bufferView":append(outim.getvalue()),"mimeType":"image/png","name":"Brooke 1.1 Pass 5 mouth color candidate"}
 g["buffers"][0]["byteLength"]=len(binary)
 js=json.dumps(g,separators=(",",":")).encode();js+=b" "*(-len(js)%4)
-binary.extend(b"\\0"*(-len(binary)%4))
-out=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),b"BIN\\0")+binary
+binary.extend(bytes([0])*(-len(binary)%4))
+out=struct.pack("<4sII",b"glTF",2,28+len(js)+len(binary))+struct.pack("<I4s",len(js),b"JSON")+js+struct.pack("<I4s",len(binary),bytes([66,73,78,0]))+binary
 dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(out)
 assert src.read_bytes()==raw
 gg,_,_=load(dest)
 assert len(gg["meshes"])==len(g["meshes"]) and gg["skins"]==g["skins"]
 report={"source_sha256":hashlib.sha256(raw).hexdigest(),"candidate_sha256":hashlib.sha256(out).hexdigest(),"max_displacement_m":float(np.linalg.norm(delta,axis=1).max()),"modified_skin_vertices":int(np.count_nonzero(np.linalg.norm(delta,axis=1))),"original_preserved":True,"visual_approval_pending":True,"remaining":"nostril shape and eyelid fit require reviewed next pass"}
-dest.with_suffix(".json").write_text(json.dumps(report,indent=2)+"\\n")
+dest.with_suffix(".json").write_text(json.dumps(report,indent=2)+"\n")
 print(json.dumps(report,indent=2))
