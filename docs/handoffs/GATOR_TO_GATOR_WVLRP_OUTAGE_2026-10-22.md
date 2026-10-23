@@ -32,3 +32,11 @@ No verification yet that these changes restore production. Avoid declaring victo
 - Brooke must use supplied reference photos and Laura's validated photo-driven method, not a generic prototype or Carolyn's model.
 - Protect existing WVLRP website, live camera pages, The Wild, assets, and progress.
 - Owner expects Gator 2 to take over outage recovery with this file; no direct inter-chat messaging has been performed.
+
+## Update — 2026-10-22 late evening: Base Camp / lake access incident
+- Owner reports the lake direct link did not load: `https://wvlrp.com/world-creator/walk.html?mode=beta&spawn=lake`. A subsequent direct `/world-creator/walk.html` link has not yet been confirmed working.
+- Current `adventure-portal.html` on GitHub main contains a non-clickable Game Beta Test tile explicitly labeled **Temporarily closed for private development**; the Original 360° World remains linked to `adventures.html`. Thus public game entry is intentionally disabled in portal source, but this alone does NOT prove the 3D Base Camp game code/files are down or deleted.
+- No definitive live HTTP/render verification yet of the Base Camp entry or original 360° World. Treat as **P0 access investigation**, not confirmed total Base Camp loss.
+- Gator 2 (site/deployment): verify current GitHub Pages publish, actual HTTP responses for `/`, `/adventure-portal.html`, `/world-creator/walk.html` and `/adventures.html`; distinguish site outage vs intentional closed beta tile vs game loading/runtime issue. Restore access safely after verifying intended public/private policy.
+- Gator 3 (world/terrain): preserve all lake overlook, orange maple, second beach, original panorama, trail and 8-foot drop assets. Do not remove or overwrite them to address an access problem. Once the game is accessible, facilitate owner capturing clearer lake reference screenshots. Do not claim a repair until tested.
+- Coordination: this is a shared GitHub handoff only; it does not deliver messages into other active ChatGPT sessions automatically. Other Gators must read this file.
