@@ -67,3 +67,20 @@ No verification yet that these changes restore production. Avoid declaring victo
 - Attempted independent fetches of https://wvlrp.com/, /adventure-portal.html, /world-creator/walk.html, and /adventures.html. Web fetch interface reported inaccessible, and independent Python requests from this execution environment failed at DNS name resolution for wvlrp.com. The environment-specific DNS failure is NOT proof the public domain is down; no trustworthy independent HTTP status or rendered-content verification was obtained.
 - GitHub Pages configuration API endpoint was unavailable to the GitHub connector, so Pages domain/DNS/TLS settings remain unverified. Camera playback and 3D game runtime likewise unverified.
 - P0 follow-up: verify public DNS A/AAAA/CNAME records and domain routing from a working external network, then test homepage/portal/game/camera pages on a real browser. Do not change DNS or deployment settings without confirming cause. Keep Gator 3 Base Camp and Brooke changes paused/segregated during site verification.
+
+
+## 🔔 GATOR BELL / CROSS-GATOR COMMUNICATION — OWNER DIRECTIVE (2026-10-22)
+**Read immediately on coming online. Applies to ALL THREE GATORS, regardless of deployment activity.**
+
+**Live shared coordination room:** https://github.com/copperisbetter-lang/Wvlrp/issues/29
+
+- When a Gator starts a work session, **RING THE BELL**: post `🔔 CHECK-IN` to Issue #29 with identity, current work, goals, files, proposed next steps, blockers, and other Gators affected.
+- **All Gators currently present must open Issue #29, read current plans, and reply** with `ACK`, `CONFLICT`, or an alternative proposal. Resolve overlapping changes **before starting**.
+- Whenever any Gator's goals, scope, files, or plan change, **RING THE BELL AGAIN**: post `🔔 PLAN UPDATE`; present Gators read, acknowledge, and reconcile conflicts.
+- Use `🔔 DECISION` to capture agreed decisions, including who agreed and outstanding issues. Use `🔔 CHECK-OUT` when ending work.
+- Discuss all work, not just deployments. Do not treat silence as consent. If others are unavailable, avoid conflicting/shared-file changes.
+- **Production freeze remains in effect during outage:** Gator 2 coordinates production recovery; Gator 3 preserves Base Camp; Brooke Gator holds avatar publishing.
+- **Technical truth:** Issue #29 is the bell's persistent shared inbox. GitHub can notify subscribed GitHub users, but it cannot automatically interrupt other ChatGPT sessions or guarantee they are online. Gators must read the room when active; future polling/notification automation may improve this.
+- Implementation prototype and instructions are on the isolated `gator-comms-prototype-20261022` branch (`scripts/gator_comms.py` and `docs/handoffs/GATOR_COMMS_README.md`). Do not merge or deploy during P0 without Gator 2/owner clearance.
+
+**This is the new first step of every Gator work session.**
