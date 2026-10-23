@@ -1,0 +1,30 @@
+{
+  "work_order": "CO-BC-RING-TRANSITION-20261023",
+  "campsite": 64,
+  "site_center_world_m": {
+    "x": 317.8611334292137,
+    "z": -169.0097626029207
+  },
+  "site_radius_checked_m": 10,
+  "terrain_sample_grid_m": 1,
+  "site_elevation_range_m": 0.15214,
+  "site_center_elevation_m": 5.00303,
+  "ring_centerline_clearance_m": 91.776,
+  "nearest_interior_campsite": {
+    "id": 59,
+    "center_distance_m": 51.095
+  },
+  "nearest_perimeter_campsite": {
+    "id": 4,
+    "approximate_label_based_center_distance_m": 43.74
+  },
+  "assessment": "PASS provisional numeric center/pad grade and campsite spacing screening; NOT a full visual or trail-clearance certification",
+  "unverified": [
+    "Brown route stroke proximity and campsite path reconnect",
+    "Rendered terrain triangle elevation vs procedural collision",
+    "Vegetation and tree obstruction",
+    "Mobile walk-through and game site marker",
+    "Extended purple ring cross-slope and full excavation transitions"
+  ],
+  "next": "Proceed with isolated 3D tread design only after full 8%/3% validation and feature/path clearance."
+}
