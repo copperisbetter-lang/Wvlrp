@@ -19,12 +19,13 @@ meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 assert meshes, 'No meshes in source'
 print('MPFB_MESH_INVENTORY',[(o.name,len(o.data.vertices),tuple(round(float(d),4) for d in o.dimensions)) for o in meshes])
 # Head selection deliberately rejects ambiguous sources; never warp eyes or teeth.
-candidates=[o for o in meshes if ('head' in o.name.lower() or 'face' in o.name.lower()) and len(o.data.vertices)>500]
+candidates=[o for o in meshes if o.name.lower().endswith('body mesh_wvrlp_ref') and len(o.data.vertices)>1000]
 if len(candidates)!=1:
-    raise RuntimeError('Unique skin head mesh required; found '+str([(o.name,len(o.data.vertices)) for o in meshes]))
+    raise RuntimeError('Unique MPFB skin body mesh required; found '+str([(o.name,len(o.data.vertices)) for o in meshes]))
 head=candidates[0]
-# Explicitly record axis orientation and reject non-head-sized selections.
-assert len(head.data.vertices)>500, 'Selected head has insufficient vertices'
+# MPFB stores the head in its combined skin body mesh; retain the complete body.
+# Explicitly record axis orientation and reject non-skin selections.
+assert len(head.data.vertices)>1000, 'Selected skin body has insufficient vertices'
 print('SELECTED_HEAD',head.name,'world_matrix',str(head.matrix_world))
 # Work in local coordinates. A head that faces +/-Y has transverse X; Z is up.
 verts=head.data.vertices
@@ -51,8 +52,10 @@ for i,v in enumerate(verts):
     # Apply bounded broad bands only, then require visual review.
     def bump(center,width):
         return math.exp(-.5*((zn-center)/width)**2)
-    mouth=bump(.38,.065)
-    nose=bump(.52,.07)
+    # Apply only within the upper head region of the combined body mesh.
+    head_mask=max(0.0,min(1.0,(zn-.77)/.08))
+    mouth=head_mask*bump(.88,.018)
+    nose=head_mask*bump(.92,.018)
     scale=1+(mouth_factor-1)*mouth+(nose_factor-1)*nose
     key.data[i].co=(mid+(x-mid)*scale,y,z)
 key.value=1.0
