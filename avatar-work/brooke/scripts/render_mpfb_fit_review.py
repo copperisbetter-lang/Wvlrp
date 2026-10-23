@@ -45,8 +45,8 @@ def render(label,offset):
     camera.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
     scene.render.filepath=str(dest/(label+'.png'))
     bpy.ops.render.render(write_still=True)
-for name,offset in [('front',(0,-2,0)),('back',(0,2,0)),('left',(-2,0,0)),('right',(2,0,0)),('top',(0,0,2))]:
+for name,offset in [('front',(0,-2,0)),('back',(0,2,0)),('left',(-2,0,0)),('right',(2,0,0)),('top',(0,0,2)),('front_three_quarter',(-1.4,-1.4,.25)),('right_three_quarter',(1.4,-1.4,.25))]:
     render(name,offset)
-(dest/'inspection.json').write_text(json.dumps({'source':str(source),'mesh_count':len(meshes),'meshes':[{'name':o.name,'vertices':len(o.data.vertices),'faces':len(o.data.polygons)} for o in meshes],'world_bounds_min':list(lo),'world_bounds_max':list(hi),'camera_assumption':'front -Y, verify visually','likeness_approved':False},indent=2))
+(dest/'inspection.json').write_text(json.dumps({'source':str(source),'mesh_count':len(meshes),'meshes':[{'name':o.name,'vertices':len(o.data.vertices),'faces':len(o.data.polygons)} for o in meshes],'world_bounds_min':list(lo),'world_bounds_max':list(hi),'camera_assumption':'front -Y, verify visually','head_review_required':['photo likeness','hair fit','eye geometry','back of skull','neck junction','ears'],'likeness_approved':False},indent=2))
 print('BROOKE_REVIEW_RENDERS',str(dest),'meshes',len(meshes),'bounds',list(lo),list(hi))
 print('VIEW LABELS ASSUME FRONT FACES -Y; verify orientation before likeness signoff')
