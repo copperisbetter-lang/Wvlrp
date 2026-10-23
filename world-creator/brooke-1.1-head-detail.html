@@ -1,19 +1,19 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke 1.1 — Head Review</title>
 <style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:65dvh;min-height:330px}details{margin:8px 12px;background:#193027;border-radius:8px;padding:10px}summary{font-weight:700;cursor:pointer;padding:7px}select,input{font:inherit;padding:8px;max-width:100%;margin:5px;color:#162b23}label{display:block;margin:8px 0}button{margin:5px} .note{font-size:12px;color:#c8d9d0}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
-</head><body><header><h1>Brooke 1.1 — Face Detail Pass</h1><p id="status" role="status">Loading the native head review candidate…</p></header><main id="stage"></main>
+</head><body><header><h1>Brooke 1.1 — Eyelid &amp; Skin Pass</h1><p id="status" role="status">Loading the native head review candidate…</p></header><main id="stage"></main>
 <details open><summary>Camera &amp; Views</summary><label>View <select id="view"><option>Front</option><option>Rear</option><option>Side</option><option>Top</option><option>Head and neck</option></select></label><button id="resetCamera">Reset camera</button><label>Zoom <input id="zoom" type="range" min="25" max="250" value="100"> <output id="zoomValue">100%</output></label></details>
 <details><summary>Movement &amp; Poses</summary><label>Animation / pose <select id="motion"><option value="">Idle / Reset</option></select></label><button id="stopMotion">Stop / Reset pose</button><label>Playback speed <input id="speed" type="range" min="10" max="200" value="100"><output id="speedValue">100%</output></label><p id="rigStatus" class="note">Checking actual rig and animation clips…</p></details>
 <details><summary>Face &amp; Body Morphs</summary><label>Morph target <select id="morph"><option value="">Select morph</option></select></label><label>Amount <input id="morphAmount" type="range" min="0" max="100" value="0"><output id="morphValue">0%</output></label><button id="resetMorphs">Reset all morphs</button><p id="morphStatus" class="note">Checking embedded targets…</p></details>
 <details><summary>Visibility &amp; Inspection</summary><label>Focus part <select id="part"><option value="all">Head and neck</option></select></label><label><input id="isolate" type="checkbox"> Isolate selected part</label><label><input id="cutaway" type="checkbox"> Transparent other meshes</label><label><input id="wireframe" type="checkbox"> Wireframe</label><label><input id="bones" type="checkbox"> Show skeleton helper</label></details>
 <details><summary>Lighting &amp; Display</summary><label>Exposure <input id="exposure" type="range" min="20" max="200" value="100"></label><label>Background <select id="background"><option value="forest">Forest</option><option value="dark">Dark</option><option value="light">Light</option></select></label><button id="resetAll">Reset all controls</button></details>
-<p class="note" style="padding:0 12px">Head and neck inspection candidate. Full-resolution front detail, bounded mouth/nose refinement and blonde color. Likeness and hairstyle still require review. Sophie 1 is unchanged. Controls show the actual available rig and morphs.</p><div id="error"></div>
+<p class="note" style="padding:0 12px">Head and neck inspection candidate. Relaxed eyelid morph and feathered cheek/jaw color transition. Likeness and hairstyle still require review. Sophie 1 is unchanged. Controls show the actual available rig and morphs.</p><div id="error"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const sav4AssetUrl='./assets/brooke-1.1-detail-head-candidate.glb?v=checkpoint-clone-1';
+const sav4AssetUrl='./assets/brooke-1.1-detail-head-candidate.glb?v=relaxed-lids-skin-pass1';
 const status=document.getElementById('status'),stage=document.getElementById('stage');
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
@@ -87,7 +87,7 @@ try{
  $('stopMotion').onclick=()=>{mixer?.stopAllAction();model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});$('motion').value='';};
  if(bones.length){helper=new THREE.SkeletonHelper(model);scene.add(helper);helper.visible=false;}
  $('resetAll').onclick=()=>{ $('stopMotion').click();$('resetMorphs').click();for(const id of ['isolate','cutaway','wireframe','bones'])$(id).checked=false;$('part').value='all';$('exposure').value=100;renderer.toneMappingExposure=1;$('background').value='forest';$('background').dispatchEvent(new Event('change'));style();$('resetCamera').click();};
- status.textContent='Brooke 1.1 · front-photo detail candidate · '+meshes.length+' meshes · '+bones.length+' bones · '+clips.length+' animation clips';
+ status.textContent='Brooke 1.1 · eyelid and skin candidate · '+meshes.length+' meshes · '+bones.length+' bones · '+clips.length+' animation clips';
  $('view').value='Head and neck';view('Head and neck');style();
 
 }catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
