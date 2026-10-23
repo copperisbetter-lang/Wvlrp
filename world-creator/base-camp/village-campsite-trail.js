@@ -1,6 +1,6 @@
 // First approved Base Camp trail: lake shore to nearest empty inland campsite clearing.
 // Fences and mossy rocks are actual 3D geometry; the path is a terrain-following walkable surface.
-// Uses the exact user-approved trail PNG. Tile at near-native detail instead of stretching over 76 feet; a future purpose-made long photograph is still needed to remove visible repeats.
+// Uses the exact user-approved trail PNG. Build a continuous ground-only composite at a length-scaled resolution, without repeating the full perspective image.
 export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorClearings,textureLoader,LAKE}){
  // Keep the walking trail inland of the sandy/rocky beach transition (beach ends around normalized lake radius 1.23).
  const start={x:0,z:LAKE.z+LAKE.rz*1.34};
@@ -21,40 +21,52 @@ export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorCleari
  for(let i=0;i<points.length;i++){
   const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];
   const len=Math.hypot(b.x-a.x,b.z-a.z)||1,nx=-(b.z-a.z)/len,nz=(b.x-a.x)/len;
-  for(const side of [-1,1]){const x=p.x+nx*side*width/2,z=p.z+nz*side*width/2;vertices.push(x,terrainY(x,z)+.025,z);uv.push(side<0?0:1,i*distance/segments/5.5)}
+  for(const side of [-1,1]){const x=p.x+nx*side*width/2,z=p.z+nz*side*width/2;vertices.push(x,terrainY(x,z)+.025,z);uv.push(side<0?0:1,i/segments)}
   if(i<segments){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
  }
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});
  const trail=new THREE.Mesh(geometry,material);trail.receiveShadow=true;trail.name='village-to-nearest-campsite-trail';scene.add(trail);
- // Extract only the center ground from the approved photograph. Its perspective fences
- // and distant horizon must never be painted onto a walkable floor.
- // Crossfade adjacent samples to remove the abrupt rectangular repetition seams.
+ // Compose ONE long trail texture from ground-only portions of the approved photo.
+ // UVs span 0..1 along the entire route; there are no hard repeat boundaries.
  textureLoader.load('./a_realistic_high_detail_outdoor_forest_trail_scen.png',source=>{
   const image=source.image,canvas=document.createElement('canvas');
-  canvas.width=512;canvas.height=2048;
-  const ctx=canvas.getContext('2d');
+  canvas.width=512;
+  canvas.height=Math.min(8192,Math.max(2048,Math.ceil(distance*95/512)*512));
+  const ctx=canvas.getContext('2d',{alpha:false});
   const sw=image.width,sh=image.height;
-  // The bottom-center of the source is the nearest ground. Exclude side fences.
-  const cropX=sw*.36,cropW=sw*.28,cropY=sh*.70,cropH=sh*.24;
-  const tiles=8,step=canvas.height/tiles;
-  for(let i=0;i<tiles;i++){
-   const y=i*step;
-   ctx.drawImage(image,cropX,cropY,cropW,cropH,0,y,canvas.width,step+1);
-   if(i>0){
-    const fade=28;
-    ctx.save();ctx.beginPath();ctx.rect(0,y,canvas.width,fade);ctx.clip();
-    ctx.globalAlpha=.5;
-    ctx.drawImage(image,cropX,cropY+cropH*.18,cropW,cropH*.55,0,y,canvas.width,fade);
-    ctx.restore();
-   }
+  // Use only the central foreground path, excluding the horizon and photographed fences.
+  const patch=384,overlap=112,stride=patch-overlap;
+  const crops=[
+   [.435,.73,.13,.22],[.45,.75,.12,.20],[.42,.72,.15,.22],
+   [.455,.74,.12,.20],[.43,.76,.14,.18],[.445,.72,.13,.22]
+  ];
+  // Overlapping feathered patches form a continuous image rather than visible horizontal strips.
+  const layer=document.createElement('canvas');layer.width=512;layer.height=patch;
+  const lc=layer.getContext('2d');
+  for(let i=0,y=-overlap;y<canvas.height;y+=stride,i++){
+   const [cx,cy,cw,ch]=crops[(i*5+Math.floor(i/3))%crops.length];
+   lc.clearRect(0,0,512,patch);
+   lc.drawImage(image,sw*cx,sh*cy,sw*cw,sh*ch,0,0,512,patch);
+   const mask=lc.createLinearGradient(0,0,0,patch);
+   mask.addColorStop(0,'rgba(0,0,0,0)');
+   mask.addColorStop(.28,'rgba(0,0,0,1)');
+   mask.addColorStop(.72,'rgba(0,0,0,1)');
+   mask.addColorStop(1,'rgba(0,0,0,0)');
+   lc.globalCompositeOperation='destination-in';
+   lc.fillStyle=mask;lc.fillRect(0,0,512,patch);
+   lc.globalCompositeOperation='source-over';
+   // A fully opaque base prevents gaps at either end of the composed photograph.
+   if(i===0)ctx.drawImage(image,sw*.435,sh*.73,sw*.13,sh*.22,0,0,512,canvas.height);
+   ctx.drawImage(layer,0,y);
   }
-  const t=new THREE.CanvasTexture(canvas);
-  t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
-  t.anisotropy=8;
-  material.map=t;material.needsUpdate=true;
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;
+  texture.anisotropy=8;
+  texture.minFilter=THREE.LinearMipmapLinearFilter;
+  material.map=texture;material.needsUpdate=true;
  },undefined,err=>console.error('WVLRP approved trail photo missing',err));
- function rendererCapabilitiesAnisotropy(){return 16;}
 
  const wood=new THREE.MeshStandardMaterial({color:0x74563a,roughness:1});
  const moss=new THREE.MeshStandardMaterial({color:0x576747,roughness:1});
