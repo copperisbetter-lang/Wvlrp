@@ -151,6 +151,8 @@ for mat,shader,output_node,emission,target in restore:
     mat.node_tree.nodes.remove(emission)
 baked.filepath_raw=str(out.parent/'brooke-native-face-color.png')
 baked.file_format='PNG';baked.save();baked.pack()
+# GLTF multiplies COLOR_0 unconditionally; remove the temporary bake layer.
+skin.data.vertex_colors.remove(vertex_colors)
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_animations=False)
 # Head-focused neutral inspection, no disconnected shell.
 scene=bpy.context.scene; scene.render.engine='BLENDER_EEVEE'
