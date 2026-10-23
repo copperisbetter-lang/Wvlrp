@@ -138,12 +138,12 @@ export function installStaceyLake(THREE,scene){
   for(let i=0;i<p.count;i++){
    const j=i*3,x=basePositions[j],z=basePositions[j+2];
    const t=depths[i],shoreFade=Math.min(1,Math.max(0,Math.min(t,1-t)*12));
-   const w=shoreFade*(.032*Math.sin(x*.52+z*.19+seconds*.9)+.022*Math.sin(x*-.37+z*.61-seconds*.7)+.013*Math.sin(x*.91-z*.54+seconds*1.25));
+   const w=shoreFade*(.018*Math.sin(x*.52+z*.19+seconds*.20)+.012*Math.sin(x*-.37+z*.61-seconds*.16)+.007*Math.sin(x*.91-z*.54+seconds*.25));
    p.array[j+1]=STACEY.waterY+w;
   }
   p.needsUpdate=true;
   waterGeometry.computeVertexNormals();
   window.__staceyWaveDiagnostics.frames++;
-  window.__staceyWaveDiagnostics.amplitude=.067;
+  window.__staceyWaveDiagnostics.amplitude=.037;
  },water:water2||water,island};
 }
