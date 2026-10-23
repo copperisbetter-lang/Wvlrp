@@ -44,6 +44,25 @@ export function installVillageCampsiteTrail(THREE,scene,{terrainY,interiorCleari
    const cap=new THREE.Mesh(rockGeometry,moss);cap.scale.set(.28,.045,.22);cap.position.set(rock.position.x,y+.19,rock.position.z);scene.add(cap);
   }
  }
+ // Native-looking low understory breaks up the hard photo-to-terrain edge without blocking the walking surface.
+ // Instancing keeps draw calls low on phones.
+ const leafMat=new THREE.MeshStandardMaterial({color:0x476b35,roughness:1,side:THREE.DoubleSide});
+ const leafGeo=new THREE.ConeGeometry(.22,.75,5);
+ const foliageCount=Math.max(32,Math.ceil(distance*3));
+ const foliage=new THREE.InstancedMesh(leafGeo,leafMat,foliageCount);
+ const dummy=new THREE.Object3D();
+ for(let i=0;i<foliageCount;i++){
+  const t=(i+.5)/foliageCount,idx=Math.min(points.length-1,Math.floor(t*segments));
+  const p=points[idx],a=points[Math.max(0,idx-1)],b=points[Math.min(segments,idx+1)];
+  const len=Math.hypot(b.x-a.x,b.z-a.z)||1,nx=-(b.z-a.z)/len,nz=(b.x-a.x)/len;
+  const side=i%2===0?-1:1,offset=width/2+2.55+(Math.sin(i*7.13)*.5+.5)*1.5;
+  const x=p.x+nx*side*offset,z=p.z+nz*side*offset;
+  dummy.position.set(x,terrainY(x,z)+.29,z);
+  dummy.rotation.set(0,i*2.39996,Math.sin(i*3.7)*.12);
+  const scale=.6+(Math.sin(i*5.13)*.5+.5)*.65;
+  dummy.scale.set(scale,scale,scale);dummy.updateMatrix();foliage.setMatrixAt(i,dummy.matrix);
+ }
+ foliage.instanceMatrix.needsUpdate=true;foliage.name='trail-edge-native-understory';scene.add(foliage);
  // Continuous rails: separate 3D objects, not painted onto the ground photograph.
  for(const side of [-1,1])for(let i=0;i<segments;i+=Math.max(1,Math.round(segments/Math.max(4,distance/3)))){
   const j=Math.min(segments,i+Math.max(1,Math.round(segments/Math.max(4,distance/3))));
