@@ -50,16 +50,15 @@ const groundMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,
 // Remove the generic water oval and artificial sand strip. Keep the five-acre
 // recessed basin, collision boundary and campsite/trail placement unchanged.
 // The panorama is a distant visual layer, NOT walkable or swimmable water yet.
-const staceyBackdropTexture=new THREE.TextureLoader().load('../../assets/stacey-lake-4k.webp',
- ()=>{document.getElementById('assetStatus').textContent='Original Stacey Lake panorama loaded · interactive water pending';},
- undefined,()=>{document.getElementById('assetStatus').textContent='Stacey Lake image failed to load';});
+const staceyBackdropTexture=new THREE.TextureLoader().load('../../assets/stacey-lake-4k.webp?v=20261007-4k',
+ ()=>{document.getElementById('assetStatus').textContent='Original Stacey Lake 4K panorama loaded';},
+ undefined,()=>{document.getElementById('assetStatus').textContent='ERROR: Stacey Lake panorama could not load';});
 staceyBackdropTexture.colorSpace=THREE.SRGBColorSpace;
-const staceyBackdrop=new THREE.Mesh(new THREE.SphereGeometry(730,96,48),
- new THREE.MeshBasicMaterial({map:staceyBackdropTexture,side:THREE.BackSide,depthWrite:false,fog:false}));
-staceyBackdrop.position.set(LAKE.x,LAKE.waterLevel,LAKE.z);
-staceyBackdrop.rotation.y=Math.PI;
-staceyBackdrop.renderOrder=-1;
-scene.add(staceyBackdrop);
+staceyBackdropTexture.mapping=THREE.EquirectangularReflectionMapping;
+// Paint the real panoramic photograph into the scene background directly.
+// A sky dome can be occluded or render incorrectly; scene.background is explicit.
+scene.background=staceyBackdropTexture;
+scene.backgroundIntensity=1;
 // Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
 // Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
 // No trail meshes, path textures, or trail geometry in this scene.
