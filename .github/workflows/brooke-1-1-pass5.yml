@@ -1,11 +1,12 @@
 name: Brooke 1.1 isolated Pass 5 corrective
+# Safety gate: no automatic runs against an unverified prototype.
 on:
-  push:
-    branches: [brooke-1-1-pass5-repair]
-    paths:
-      - 'avatar-work/brooke/scripts/brooke_1_1_pass5.py'
-      - '.github/workflows/brooke-1-1-pass5.yml'
   workflow_dispatch:
+    inputs:
+      verified_source_path:
+        description: 'Repository path to verified Brooke 1.1 GLB (not prototype)'
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -14,25 +15,36 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Verify selected Brooke 1.1 source exists
+        env:
+          SOURCE: ${{ inputs.verified_source_path }}
+        run: |
+          set -euo pipefail
+          case "$SOURCE" in
+            *..*|/*|*://*) echo 'Invalid source path'; exit 1;;
+          esac
+          test -s "$SOURCE" || { echo "Source file absent: $SOURCE"; exit 1; }
+          case "$SOURCE" in
+            *brooke*1.1*.glb|*brooke*1_1*.glb) ;;
+            *) echo 'Source must be explicitly labeled Brooke 1.1; refusing prototype'; exit 1;;
+          esac
+          mkdir -p avatar-work/brooke/build
+          cp "$SOURCE" avatar-work/brooke/build/verified-brooke-1.1-input.glb
       - name: Install Blender
         run: sudo apt-get update -qq && sudo apt-get install -y blender
-      - name: Verify isolated source
+      - name: Apply isolated reversible corrective
         run: |
-          test -s public-models/brooke-photo-head-neck.glb
-          mkdir -p avatar-work/brooke/build
-      - name: Apply corrective to isolated Brooke 1.1 copy
-        run: |
-          blender -b -t 2 --python-exit-code 1 --python-expr "import bpy; bpy.ops.import_scene.gltf(filepath='public-models/brooke-photo-head-neck.glb')" --python avatar-work/brooke/scripts/brooke_1_1_pass5.py --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb',export_format='GLB')"
-      - name: Verify candidate created
+          blender -b -t 2 --python-exit-code 1 --python-expr "import bpy; bpy.ops.import_scene.gltf(filepath='avatar-work/brooke/build/verified-brooke-1.1-input.glb')" --python avatar-work/brooke/scripts/brooke_1_1_pass5.py --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb',export_format='GLB')"
+      - name: Verify output exists
         run: |
           test -s avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb
           python3 - <<'PY'
-          import json,struct
+          import struct
           p='avatar-work/brooke/build/brooke-1.1-pass5-candidate.glb'
-          with open(p,'rb') as f: h=f.read(12)
-          magic,version,size=struct.unpack('<4sII',h)
+          with open(p,'rb') as f: header=f.read(12)
+          magic,version,size=struct.unpack('<4sII',header)
           assert magic==b'glTF' and version==2 and size>1000
-          print('Candidate GLB size:',size)
+          print('Brooke 1.1 candidate bytes:',size)
           PY
       - uses: actions/upload-artifact@v4
         with:
