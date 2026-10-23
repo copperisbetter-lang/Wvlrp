@@ -16,14 +16,21 @@ export function installCampsiteRouteMarkers(THREE,scene,{terrainY,perimeterClear
  // The village exits northward, well away from lake to the south.
  const v1=node('village-north',0,90),v2=node('village-north-junction',0,230);
  link(village,v1);link(v1,v2);link(v2,nearest(v2,ring));
- // Only TWO terminal access paths reach the lake. Their endpoints are inland of the
- // north-facing shoreline; no trail extends across water or through either beach.
+ // Two north-shore approaches originate at the actual default spawn (0,15).
+ // Keep the central 8-foot overlook free: branches diverge west/east before shore.
+ const spawn=node('player-spawn',0,15,'spawn');link(village,spawn);
  for(const side of [-1,1]){
-  const approach=node('lake-approach-'+(side<0?'west':'east'),side*155,-230);
-  const exit=node('lake-exit-'+(side<0?'west':'east'),side*58,-192,'lake-exit');
-  link(nearest(approach,ring),approach);link(approach,exit);lakeExits.push(exit);
+  const sideName=side<0?'west':'east';
+  const junction=node('lake-junction-'+sideName,side*35,12);
+  const approach=node('lake-approach-'+sideName,side*58,-5);
+  const exit=node('lake-exit-'+sideName,side*58,-28,'lake-exit');
+  link(spawn,junction);link(junction,approach);link(approach,exit);lakeExits.push(exit);
  }
  const lakeClearance=lakeExits.map(p=>Math.hypot(p.x-LAKE.x,p.z-LAKE.z));
+ // North shore endpoints must stay on dry ground. Landmark coordinates are not
+ // recorded in the source; center clearance is provisional, not landmark proof.
+ const lakeR=(x,z)=>{const dx=x-LAKE.x,dz=z-LAKE.z,a=Math.atan2(dz,dx),w=1+.025*Math.sin(5*a)+.018*Math.cos(9*a);return Math.hypot(dx/LAKE.rx,dz/LAKE.rz)/w};
+ if(lakeExits.some(p=>lakeR(p.x,p.z)<1.03))throw Error('Lake approach intersects water');
  if(clearings.length!==65||lakeExits.length!==2||lakeClearance.some(d=>d<10))throw Error('Campsite route network invariants failed');
  // Low-profile wooden wayfinding stakes, placed every ~14 m on connected edges.
  const postGeo=new THREE.CylinderGeometry(.055,.07,.64,6);
