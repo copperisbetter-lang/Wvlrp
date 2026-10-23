@@ -1,0 +1,25 @@
+name: Stacey Lake crop preview (nonproduction)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  produce-review-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout selected isolated branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install image processor
+        run: python -m pip install Pillow==11.3.0
+      - name: Generate unmodified-source review contact sheet and sample alpha mask
+        run: python tools/stacey_lake_crop_preview.py
+      - name: Upload review-only artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stacey-lake-review-only
+          path: stacey-lake-preview/
+          if-no-files-found: error
+          retention-days: 14
