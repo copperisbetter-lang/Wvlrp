@@ -1,0 +1,48 @@
+{
+  "schema_version": 2,
+  "subject": "Brooke",
+  "status": "user-uploaded-photographs-measured-front-manual-estimate-awaiting-fit",
+  "image_storage": "Conversation attachments are NOT present in the GitHub checkout; do not claim otherwise.",
+  "front": {
+    "filename": "3948.jpg",
+    "dimensions_px": [1536, 1536],
+    "landmarks_normalized": {
+      "left_eye_outer": [0.310, 0.303],
+      "left_eye_inner": [0.428, 0.306],
+      "right_eye_inner": [0.556, 0.307],
+      "right_eye_outer": [0.658, 0.302],
+      "nose_tip": [0.498, 0.458],
+      "mouth_left": [0.399, 0.546],
+      "mouth_right": [0.586, 0.548],
+      "chin": [0.501, 0.682],
+      "left_jaw": [0.326, 0.543],
+      "right_jaw": [0.679, 0.543]
+    },
+    "measurement_ratios": {
+      "eye_outer_span_over_image_width": 0.348,
+      "interocular_inner_gap_over_image_width": 0.128,
+      "mouth_width_over_eye_outer_span": 0.5374,
+      "chin_to_nose_over_eye_outer_span": 0.6437,
+      "mouth_to_chin_over_eye_outer_span": 0.3879
+    },
+    "measurement_quality": "manual draft; approximate 2D image landmarks, NOT 3D calibrated distances"
+  },
+  "right_profile": {
+    "filename": "3949.webp",
+    "dimensions_px": [1216, 1536],
+    "expression": "smiling",
+    "use": "qualitative nose projection, chin profile, ear placement and neck only; requires independent landmarks"
+  },
+  "three_quarter": {
+    "filename": "3954.jpg",
+    "dimensions_px": [1023, 1536],
+    "use": "qualitative cross-check; perspective and lighting differ"
+  },
+  "body_references": [
+    {"filename": "3950.gif", "dimensions_px": [720, 389], "frames": 90},
+    {"filename": "3952.jpg", "dimensions_px": [1536, 1536]}
+  ],
+  "source": "User-provided in conversation 2026-10-23",
+  "publication_status": "Do not publish reference image binaries to public repository without explicit redistribution authorization",
+  "fitting_gate": "Requires approved image bytes in secure build, 3D MPFB mesh landmarks, and measured target correspondence; never treat 2D ratios alone as a finished Brooke likeness"
+}
