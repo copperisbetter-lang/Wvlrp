@@ -22,9 +22,9 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
       uniform float uTime;uniform vec3 uSun;uniform sampler2D uShudu;varying vec3 vWorld;varying vec3 vView;varying float vEdge;
       void main(){
         // No moving UVs or stripes: almost-stationary, two-direction micro normals.
-        float t=uTime*.012;
-        float a=sin(vWorld.x*.74+vWorld.z*.43+t)*.012;
-        float b=sin(vWorld.x*-.51+vWorld.z*.82-t*.79)*.009;
+        float t=uTime*.008;
+        float a=sin(vWorld.x*.24+vWorld.z*.16+t)*.018 + sin(vWorld.x*.71-vWorld.z*.39-t*.7)*.006;
+        float b=sin(vWorld.x*-.19+vWorld.z*.28-t*.79)*.014 + sin(vWorld.x*.43+vWorld.z*.64+t*.6)*.006;
         vec3 n=normalize(vec3(a,1.,b));
         vec3 eye=normalize(vView);
         float fres=pow(1.-abs(dot(n,eye)),4.);
@@ -34,13 +34,13 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 color=mix(near,deep,smoothstep(.0,.9,shore));
         // Small view-dependent light reflection, no painted sun ribbon.
         vec3 sun=normalize(uSun);
-        float spec=pow(max(dot(reflect(-sun,n),eye),0.),110.)*.11;
+        float spec=pow(max(dot(reflect(-sun,n),eye),0.),240.)*.34;
         vec3 reflected=reflect(-eye,n);
         float longitude=atan(reflected.z,reflected.x)/6.2831853+.5;
         float latitude=acos(clamp(reflected.y,-1.,1.))/3.14159265;
         vec3 environment=texture2D(uShudu,vec2(longitude,latitude)).rgb;
-        color=mix(color,environment,fres*.34)+vec3(.85,.82,.68)*spec;
-        gl_FragColor=vec4(color,mix(.82,.96,shore));
+        color=mix(color,environment,fres*.53)+vec3(1.0,.93,.78)*spec;
+        gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
       }`
   });
   const water=new THREE.Mesh(source.geometry,material);
@@ -48,6 +48,6 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
   water.frustumCulled=false;
   water.renderOrder=4;
   scene.add(water);
-  window.__staceyWaterRenderer='Independent Calm Water Lab';
+  window.__staceyWaterRenderer='Shudu calm-water lab v2: slow ripples, Fresnel reflection, softer shore';
   return {update(seconds,sun){material.uniforms.uTime.value=seconds;if(sun)material.uniforms.uSun.value.copy(sun);}};
 }
