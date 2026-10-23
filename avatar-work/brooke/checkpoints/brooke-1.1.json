@@ -1,0 +1,16 @@
+{
+  "version": "Brooke 1.1",
+  "cloned_from": "Brooke 1.0 front-photo detail candidate",
+  "source_commit": "38cb6de2070963a6be64fa24d0d030ef22a1a21a",
+  "source_path": "world-creator/assets/brooke-1.0-detail-head-candidate.glb",
+  "source_blob_sha": "4ebb0fc0e7847415b43bc625286bddebe907dde2",
+  "model_path": "world-creator/assets/brooke-1.1-detail-head-candidate.glb",
+  "viewer_path": "world-creator/brooke-1.1-head-detail.html",
+  "clone_status": "exact model copy; no geometry, texture, rig or control changes",
+  "baseline_rule": "Preserve Brooke 1.0 and Sophie 1. Apply subsequent refinements only to Brooke 1.1.",
+  "next_refinements": [
+    "Reduce eyelid opening while preserving likeness",
+    "Blend face-side and jaw discoloration into neck",
+    "Refine hairstyle"
+  ]
+}
