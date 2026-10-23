@@ -1,0 +1,20 @@
+{
+  "version": "Brooke 1.1 pass 1",
+  "source_sha256": "139322b008d4e5e3125f1e378e83f64e1d4dd8aa1961780ca0d2a657950ff5a4",
+  "candidate_sha256": "da6752154fd2ec719f74caef9d1601a24ad0eb1bd7caa5d0c21b8ee5ef052d64",
+  "source_unchanged": true,
+  "original_accessors_unchanged": true,
+  "topology_and_rig_unchanged": true,
+  "eyeballs_and_hair_unchanged": true,
+  "neck_geometry_unchanged": true,
+  "new_morph": "Brooke 1.1 relaxed eyelids",
+  "max_eyelid_displacement_m": 0.0025588120333850384,
+  "changed_skin_vertices": 956,
+  "jaw_texture_blend": "Anatomy-masked low-frequency correction toward native neck color; central features protected",
+  "neck_reference_rgb": [
+    0.8392156862745098,
+    0.6274509803921569,
+    0.4745098039215686
+  ],
+  "visual_approval_pending": true
+}
