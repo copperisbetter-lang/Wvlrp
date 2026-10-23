@@ -1,0 +1,34 @@
+{
+  "source_clone_sha256": "621c27b7e63ef7799a3be44c31a076f21ce3b22634d3bded41159bb1a2584026",
+  "source_clone_unchanged": true,
+  "method": "native facial depth morph plus source OBJ vertex-color transfer",
+  "available_photo_landmarks": 68,
+  "alignment_landmarks_used": [
+    8,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47
+  ],
+  "native_eye_spacing_m": 0.06549394875764847,
+  "mapped_facial_vertices": 2100,
+  "maximum_depth_change_m": 0.005200000000000001,
+  "neck_geometry_unchanged": true,
+  "eye_geometry_unchanged": true,
+  "photo_color_baked_to_native_uv": true,
+  "separate_photo_shell_used": false,
+  "output_scope": "head and neck only",
+  "likeness_approved": false,
+  "limitations": [
+    "First depth-only registration; lateral landmark fitting still needed",
+    "Hair retains native style"
+  ]
+}
