@@ -235,3 +235,9 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Module commit fe1f484cc91a652f5a2934992282c0cb8fb2eb9e; viewer commit 219f67b12a3ab732c1093e5cce447b8cc79bbd46.
 - Test URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/219f67b12a3ab732c1093e5cce447b8cc79bbd46/world-creator/base-camp/water-hd-rocks-test.html?spawn=lake
 - Summersville water and shoreline movement preserved. Fern/shrub/cattail photoreal assets not yet installed. Original protected baseline unchanged.
+
+## 25-FOOT SHORE GRADING — 2026-10-23
+- Owner requests 3–4% outward bank grade across 25 ft from lake; implemented 3.5% across 7.62 m (rise 0.2667 m / 10.5 in) in isolated terrain module.
+- Module `world-creator/base-camp/stacey-lake-graded-bank-test.js` commits 475f70d1 and 8a948818. At outer shoreline elevation waterY+0.035; grade increases with distance outward for 7.62 m; then 12 m smooth tie-in to existing terrain. Underwater shallow endpoint raised to meet shoreline continuously.
+- Viewer `world-creator/base-camp/water-graded-bank-test.html` commit fddcd9388bf4acf944ddb53f3cc7a3cbcbfb17c7. Exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/fddcd9388bf4acf944ddb53f3cc7a3cbcbfb17c7/world-creator/base-camp/water-graded-bank-test.html?spawn=lake
+- Isolated preview NOT phone-verified. Main baseline and trails untouched. Inspect grade visually and verify bank access before merging.
