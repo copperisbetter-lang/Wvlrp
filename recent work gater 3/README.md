@@ -285,3 +285,11 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Commit `cccae6f5ff30f7c4095f0dea80927c0c1eebb795`: added touch-friendly Dive to lakebed / Return to surface toggle; lakebed walking follows existing terrain collision, automatically exits dive on shore; depth HUD identifies lakebed walking.
 - Exact test URL (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/cccae6f5ff30f7c4095f0dea80927c0c1eebb795/world-creator/base-camp/water-lab.html?spawn=lake
 - Water shader, island, lake geometry and approved visuals untouched. Fish installation/visibility still UNVERIFIED. No production merge. Await owner's phone test and coordinate through issue #29.
+
+
+## OWNER APPROVAL — 2026-10-24 ~09:43 EDT — 300 BASS TARGET
+- Owner approved expanding largemouth bass target from 120 to **300 total**.
+- Proposed size distribution: 100 small, 120 medium, 60 large, 20 trophy (up to ~8 lb). Proposed only, not yet deployed.
+- Original asset: `model_67a_-_largemouth_bass.glb` reportedly uploaded to GitHub; precise asset path and load status NOT YET VERIFIED.
+- Before implementing, locate the GLB in repo/branch, inspect active independent water-lab viewer and fish loader, then build isolated fish population with LOD/distance culling, safe lakebed depth and swimming motion. Preserve approved water visuals and FPS. No claim that 300 fish are live yet.
+- Latest documented underwater test viewer (phone unverified): https://raw.githack.com/copperisbetter-lang/Wvlrp/cccae6f5ff30f7c4095f0dea80927c0c1eebb795/world-creator/base-camp/water-lab.html?spawn=lake
