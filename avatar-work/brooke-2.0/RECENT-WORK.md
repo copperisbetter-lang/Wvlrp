@@ -187,3 +187,12 @@ Historical note: Earlier builds were not consistently documented; history may be
 - New neutral front/profile photographs are available and exact identities recorded, but manual reconstruction using them has NOT run; no full-body photo-head morph exists from this work. Current user-facing viewer remains the prior baseline. No new viewer or likeness approval claimed.
 - Remaining model task: perform a real anatomical head reconstruction/morph from the selected supplied front/profile references, inspect it, then integrate a verified character candidate. Do not revive the discarded overlay/baseline-sculpt publication chain.
 - Current build foundation is verified. Do not promise every future experiment will be green; prevent known repeated failures and block publication on any failed check.
+
+## Actual supplied-photo reconstruction — 2026-10-23 23:30 EDT
+- Doug instructed completing Brooke face. Bell https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379291762 .
+- Manual dispatch fallback checked cloud GitHub browser: signed out, no build launched there. No credentials requested or changed.
+- Local route now works: official Blender 4.2.0 Linux tar from download.blender.org; actual Blender preflight imported NumPy 1.24.3. Local separate ML runtime uses NumPy 1.26.4, PyTorch 2.5.1+cpu, OpenCV 4.11.0, ONNX Runtime 1.31.0.
+- 3DDFA_V2 source commit 1b6c67601abffc1e9f248b291708aef0e43b55ae. Patched deprecated NumPy aliases as already learned. Initial upstream build.sh did not stop on missing clang/clang++; corrected builds explicitly use CC=gcc CXX=g++. A mistaken FaceBoxes/setup.py path failed once; actual script is FaceBoxes/utils/build.py. Compiled modules and imports verified.
+- ACTUAL inputs: upload/09-3948.jpg neutral front, upload/10-3949.webp profile, and recovered Pass 4 render as geometric registration reference. Each detected one face, each reconstructed 38,365 points. Saved local NPZ, landmark images and exact hashes in reconstruction.json.
+- Landmark images on all three were visually inspected. Front/profile detections track features; profile expression is smiling, so neutral front expression must be retained when using profile shape.
+- Next: register multi-view reconstructed geometry to preserved native head topology, retain eye/neck surfaces, rebuild photo texture registration; inspect renders. No model export or likeness approval claimed yet.
