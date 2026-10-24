@@ -276,3 +276,12 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Next task: inspect actual independent water lab entrypoint (`world-creator/base-camp/water-lab.html`), movement/collision/buoyancy controls and fish spawning; correct underwater descent and bottom walking, then verify on phone. Do not mistake old `stacey-lake.html` for this lab.
 - Owner requested an exact test viewer link when ready, but no new verified fix/build exists yet. No code change or deployment was made during this handoff.
 - Owner directive: save this handoff in Gater 3 Recent Work and PAUSE until tomorrow. Resume only when owner returns.
+
+
+## UNDERWATER WALK FIX — 2026-10-24 ~09:33 EDT
+- Owner: still walking on water; requests lakebed access to inspect fish.
+- Root cause in isolated water-lab.html: explicit surface-floating `pos.y=insideLake?Math.max(lakeGroundY+2,STACEY.waterY+1.35):lakeGroundY+2`.
+- Branch: `gator3-stacey-calm-water-20261023`; changed ONLY `world-creator/base-camp/water-lab.html`.
+- Commit `cccae6f5ff30f7c4095f0dea80927c0c1eebb795`: added touch-friendly Dive to lakebed / Return to surface toggle; lakebed walking follows existing terrain collision, automatically exits dive on shore; depth HUD identifies lakebed walking.
+- Exact test URL (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/cccae6f5ff30f7c4095f0dea80927c0c1eebb795/world-creator/base-camp/water-lab.html?spawn=lake
+- Water shader, island, lake geometry and approved visuals untouched. Fish installation/visibility still UNVERIFIED. No production merge. Await owner's phone test and coordinate through issue #29.
