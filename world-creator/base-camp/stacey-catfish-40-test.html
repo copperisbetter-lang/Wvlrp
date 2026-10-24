@@ -57,17 +57,17 @@ async function installFlatheads(){
   original.position.sub(center);
   original.scale.setScalar(fishLength/Math.max(dims.x,dims.y,dims.z,.001));
   for(let i=0;i<40;i++){
-   const a=rand()*Math.PI*2, r=inner(a)+16+rand()*Math.max(1,outer(a)-inner(a)-33);
+   const a=i<12?Math.PI/2+(i-5.5)*.025:rand()*Math.PI*2, r=i<12?outer(a)-27-rand()*13:inner(a)+16+rand()*Math.max(1,outer(a)-inner(a)-33);
    const x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;
    const body=original.clone(true);
    const weight=i<10?60:20; body.scale.multiplyScalar(Math.cbrt(weight/40));
    body.traverse(n=>{if(n.isMesh){n.frustumCulled=false;}});
-   const depth=ground(x,z)+.09+rand()*.13;
+   const depth=ground(x,z)+.25+rand()*.18;
    const fish=new T.Group();fish.add(body);fish.position.set(x,Math.min(CY-.7,depth),z);
    fish.rotation.y=a+Math.PI/2;scene.add(fish);
    flatheadFish.push({node:fish,angle:fish.rotation.y,speed:.13+rand()*.16,phase:rand()*6.283,radius:inner(a)+16+rand()*12});
   }
-  diag.assets.flatheads='40 ready (10 x 60 lb, 30 x 20 lb)';diag.flatheads=40;
+  diag.assets.flatheads='40 ready (10 x 60 lb, 30 x 20 lb)';diag.flatheads=40;window.staceyCatfish={count:flatheadFish.length,fish:flatheadFish};
  }catch(e){diag.assets.flatheads='FAILED';diag.errors.push('Flathead GLB: '+String(e));}
 }
 installFlatheads();
@@ -79,7 +79,7 @@ function animateFlatheads(t,dt){
   f.node.position.z+=Math.cos(f.angle)*f.speed*dt;
   const x=f.node.position.x,z=f.node.position.z,a=Math.atan2(z-CZ,x-CX),r=Math.hypot(x-CX,z-CZ);
   if(r>outer(a)-9||r<inner(a)+7)f.angle+=dt*.9;
-  f.node.position.y=Math.min(CY-.65,ground(x,z)+.09+Math.sin(t*.8+f.phase)*.025);
+  f.node.position.y=Math.min(CY-.65,ground(x,z)+.30+Math.sin(t*.8+f.phase)*.025);
  }
 }
 
@@ -87,6 +87,6 @@ let aerial=false,yaw=0,pitch=-.04;const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Mat
 let dive=false;document.querySelector("#dive").onclick=()=>{if(aerial)beach();if(!dive&&ground(pos.x,pos.z)>=CY-.55){pos.set(CX+outer(Math.PI/2)*.72,CY+.65,CZ+outer(Math.PI/2)*.72);}dive=!dive;document.querySelector("#dive").textContent=dive?"Surface":"Dive";};function beach(){aerial=false;dive=false;document.querySelector("#dive").textContent="Dive";pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!swim)dive=false;if(!aerial)pos.y=swim?(dive?Math.min(CY-.35,bed+1.65):CY+.65):bed+1.7;document.querySelector("#dive").style.display="inline-block";document.querySelector("#dive").textContent=dive?"Surface":"Dive";camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);if(bassSystem?.update)bassSystem.update(dt,pos);animateFlatheads((now-start)/1000,dt);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(dive?'Lakebed':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!swim)dive=false;if(!aerial)pos.y=swim?(dive?Math.min(CY-.35,bed+1.65):CY+.65):bed+1.7;document.querySelector("#dive").style.display="inline-block";document.querySelector("#dive").textContent=dive?"Surface":"Dive";camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);if(bassSystem?.update)bassSystem.update(dt,pos);animateFlatheads((now-start)/1000,dt);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(dive?'Lakebed':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+flatheadFish.length+' catfish'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
