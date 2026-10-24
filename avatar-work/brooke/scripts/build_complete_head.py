@@ -104,10 +104,9 @@ mesh.update()
 # Photograph-derived vertex color: OBJ x/y are projected pixel coordinates
 # in 3DDFA's image-space export. Preserve original colors for the face patch.
 if photo_path and Path(photo_path).exists():
-    import cv2
-    photo = cv2.imread(photo_path)
-    assert photo is not None, 'Cannot read source photograph'
-    h,w=photo.shape[:2]
+    photo = bpy.data.images.load(str(Path(photo_path).resolve()), check_existing=False)
+    w,h=photo.size
+    pixels=list(photo.pixels[:])
     col=mesh.vertex_colors.new(name='Brooke_photo_colors')
     for poly in mesh.polygons:
         for li in poly.loop_indices:
@@ -116,12 +115,10 @@ if photo_path and Path(photo_path).exists():
                 px,py,_=verts[vi]
                 ix=max(0,min(w-1,int(round(px))))
                 iy=max(0,min(h-1,int(round(py))))
-                b,g,r=map(int,photo[iy,ix])
+                idx=(iy*w+ix)*4
+                r,g,b=pixels[idx:idx+3]
                 # sRGB -> linear as expected for glTF vertex colors.
-                def lin(v):
-                    v=v/255.0
-                    return v/12.92 if v<=0.04045 else ((v+0.055)/1.055)**2.4
-                rgba=(lin(r),lin(g),lin(b),1.0)
+                rgba=(r,g,b,1.0)
             else:
                 rgba=(0.65,0.51,0.43,1.0)
             col.data[li].color=rgba
