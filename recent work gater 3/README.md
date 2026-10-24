@@ -37,3 +37,18 @@ Before each future lake modification: append timestamp, exact URL, current compl
 - Isolated branch: gator3-stacey-calm-water-20261023
 - Actual renderer: world-creator/base-camp/stacey-water-lab.js; viewer: world-creator/base-camp/water-lab.html; lake geometry: world-creator/base-camp/stacey-lake-v3.js.
 - Earlier main-branch stacey-water.js edit d7bb663 is NOT the active independent lab renderer. Do not mistake it for the current island build.
+
+## OWNER DIRECTIVE — 2026-10-23 (time not independently verified)
+Owner explicitly requires: **BEFORE any additional tweak, consult this log. AFTER EVERY SINGLE TWEAK, immediately update this log with the exact working/test URL, source paths, commit SHA, complaint, correction, status, and date/time.** No batching changes and no relying on chat memory. This logging is higher priority than additional water improvements.
+
+### Current pinned island-lake links
+- **Primary / most recent recorded island-water build** (commit af6b9bc13fcc629ed9ae77b39dafd14356646840; phone display still needs confirmation): https://raw.githack.com/copperisbetter-lang/Wvlrp/af6b9bc13fcc629ed9ae77b39dafd14356646840/world-creator/base-camp/water-lab.html?spawn=lake
+- **Prior known water-lab build** (commit ca17fb95f5994bea6d2f4e301133befa41860cef): https://raw.githack.com/copperisbetter-lang/Wvlrp/ca17fb95f5994bea6d2f4e301133befa41860cef/world-creator/base-camp/water-lab.html?spawn=lake
+- **Active isolated branch**: gator3-stacey-calm-water-20261023
+- **Correct viewer**: world-creator/base-camp/water-lab.html
+- **Correct shader**: world-creator/base-camp/stacey-water-lab.js
+- **Island/lake geometry**: world-creator/base-camp/stacey-lake-v3.js
+- **Coordination**: https://github.com/copperisbetter-lang/Wvlrp/issues/29
+
+### Status
+This entry is a documentation-only update. No water code changed in this step. Latest shore-breaks code remains unverified on owner's phone. Do not treat main-branch stacey-water.js as the independent island lab.
