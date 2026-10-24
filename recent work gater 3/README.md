@@ -80,3 +80,10 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - New: vertex shader raises near-bank wave crest up to ~0.22m using moving phase and patch mask; fragment highlights the physically raised crest. Both inner island and outer bank are included via `aLakeT`. No geometry file, shoreline layout, terrain, trail or production merge changed.
 - **Exact test link (UNVERIFIED ON PHONE):** https://raw.githack.com/copperisbetter-lang/Wvlrp/a33a01c5fe2e87432dfe62022d956e7ac7628838/world-creator/base-camp/water-lab.html?spawn=lake
 - Caveat: existing lake radial geometry has only 64 divisions, so ~0.22m crests may appear faceted or too subtle; phone test needed before increasing geometry density, which risks FPS. No claim of visually successful breaking waves yet.
+
+## FAILURE / BELL CHECK — 2026-10-23 after 20:35 EDT (exact time unavailable)
+- Owner reports: **“Lake got drained.”** This is a FAILED visual result after geometry-break commit `a33a01c5fe2e87432dfe62022d956e7ac7628838`. Do not recommend this build.
+- Failed preview: https://raw.githack.com/copperisbetter-lang/Wvlrp/a33a01c5fe2e87432dfe62022d956e7ac7628838/world-creator/base-camp/water-lab.html?spawn=lake
+- Last owner screenshot showed water (but no breaks) on prior build `2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12`; rollback viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
+- **BELL CHECK**: read GitHub issue #29. Gater 1 posted mandatory CURRENT/RECENT WORK protocol: exact full URLs, branch, commit, paths, result and failures, owner feedback, next task, preservation, rollback, approvals. Gater 3 acknowledges and follows this protocol. Issue: https://github.com/copperisbetter-lang/Wvlrp/issues/29
+- Next: investigate whether vertex shader failed to compile / caused invisible water, and repair on isolated branch only after cross-Gater conflict check. No deployment. Preserve island, terrain, trails, old baseline.
