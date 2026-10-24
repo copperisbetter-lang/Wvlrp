@@ -177,3 +177,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Added declared `uniform float uTime` in vertex shader, low-amplitude moving displacement and shore-localized crest. This specifically avoids previous missing uniform risk. Geometry unchanged; original shader/baseline unchanged.
 - Exact isolated preview (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/52527f93ebcf636cde4a1c14409d56fc62a6f569/world-creator/base-camp/water-geometry-test.html?spawn=lake
 - Prior owner-verified safe baseline remains f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6. No production deployment. If blank/drained, revert to baseline; inspect browser shader logs before any follow-up.
+
+## OWNER REJECTED GEOMETRY TEST — 2026-10-23 ~21:xx EDT
+- Owner response to geometry viewer `52527f93ebcf636cde4a1c14409d56fc62a6f569`: **'Nope'**. Treat as FAILED visual acceptance; do not promote.
+- Viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/52527f93ebcf636cde4a1c14409d56fc62a6f569/world-creator/base-camp/water-geometry-test.html?spawn=lake
+- Failure mode not yet specified by owner: do not assume drained lake versus visually unrealistic waves.
+- Preserve phone-verified rollback `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`.
+- Next: inspect actual runtime diagnostics and compare screenshot before further shader modifications; no production deployment.
