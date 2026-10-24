@@ -3,9 +3,12 @@ This is a geometry-completion candidate, not a verified likeness or anatomical f
 Usage: blender -b --python build_complete_head.py -- face.obj output.glb
 """
 import bpy, sys, math, bmesh
+from pathlib import Path
 from mathutils import Vector
 
-source, destination = sys.argv[sys.argv.index('--')+1:][:2]
+args = sys.argv[sys.argv.index('--')+1:]
+source, destination = args[:2]
+photo_path = args[2] if len(args)>2 else None
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 verts, faces = [], []
@@ -98,6 +101,39 @@ assert not nonmanifold, 'Head still has %d nonmanifold edges'%len(nonmanifold)
 bm.to_mesh(mesh)
 bm.free()
 mesh.update()
+# Photograph-derived vertex color: OBJ x/y are projected pixel coordinates
+# in 3DDFA's image-space export. Preserve original colors for the face patch.
+if photo_path and Path(photo_path).exists():
+    import cv2
+    photo = cv2.imread(photo_path)
+    assert photo is not None, 'Cannot read source photograph'
+    h,w=photo.shape[:2]
+    col=mesh.vertex_colors.new(name='Brooke_photo_colors')
+    for poly in mesh.polygons:
+        for li in poly.loop_indices:
+            vi=mesh.loops[li].vertex_index
+            if vi<len(verts):
+                px,py,_=verts[vi]
+                ix=max(0,min(w-1,int(round(px))))
+                iy=max(0,min(h-1,int(round(py))))
+                b,g,r=map(int,photo[iy,ix])
+                # sRGB -> linear as expected for glTF vertex colors.
+                def lin(v):
+                    v=v/255.0
+                    return v/12.92 if v<=0.04045 else ((v+0.055)/1.055)**2.4
+                rgba=(lin(r),lin(g),lin(b),1.0)
+            else:
+                rgba=(0.65,0.51,0.43,1.0)
+            col.data[li].color=rgba
+    mat=bpy.data.materials.new('Brooke photographed skin')
+    mat.use_nodes=True
+    nodes=mat.node_tree.nodes
+    bsdf=nodes.get('Principled BSDF')
+    vc=nodes.new('ShaderNodeVertexColor')
+    vc.layer_name=col.name
+    mat.node_tree.links.new(vc.outputs['Color'],bsdf.inputs['Base Color'])
+    head.data.materials.append(mat)
+    print('PHOTO_VERTEX_COLORS',len(verts),'source pixels',w,h)
 for polygon in mesh.polygons: polygon.use_smooth=True
 head.location=(-cx,-cy,-rear)
 head.scale=(1/width,1/width,1/width)
