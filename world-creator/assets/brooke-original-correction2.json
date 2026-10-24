@@ -1,0 +1,12 @@
+{
+  "source_sha256": "5043060d0cdc08ea10a1cbfe9c51a1021bfadf7d8fd5038ed8d737198d64a910",
+  "candidate_sha256": "6a3988eb9dbff273695d444a1db57f8ebe38a730daa37918a4a39b2e1a11ca6f",
+  "max_displacement_mm": 1.4158623218536377,
+  "neck_and_rear_unchanged": true,
+  "eye_mesh_and_hair_unchanged": true,
+  "nose_geometry_unchanged": true,
+  "lip_projection_restored": true,
+  "source_preserved": true,
+  "likeness_approved": false,
+  "note": "Bounded brow smoothing and lip restoration, neutral-photo lip palette; profile reference is smiling, not a neutral calibrated scan."
+}
