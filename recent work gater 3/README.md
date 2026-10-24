@@ -253,3 +253,9 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - New module `world-creator/base-camp/stacey-shore-30-80lb-stones-test.js` commit 964ebb456dcb7a2bd76008a415386ec08b73a4ac. Uses real GLB and Meshopt decoder, random rock size calculated from 30–80lb limestone density (~2500 kg/m³), filters placement by Euclidean 69ft=21.0312m radius from X140 Z-117.2. Original HD rock test not edited.
 - New isolated viewer `world-creator/base-camp/water-stones-exclusion-test.html` commit ac75141631f0fb612dac9c9f50427ecbe449c621. Exact URL https://raw.githack.com/copperisbetter-lang/Wvlrp/ac75141631f0fb612dac9c9f50427ecbe449c621/world-creator/base-camp/water-stones-exclusion-test.html?spawn=lake
 - Not phone-verified; no production merge, preserve Summersville water and 45ft grade. Check rocks are visible at real scale and 69ft clearance before approval.
+
+## NATURAL STONE CLUSTERS — 2026-10-23
+- Owner feedback: previous '234 rocks' visually tiny quarter-size gravel, and stones should NOT run along entire shoreline; they are only one element concealing harsh edge.
+- New isolated module `world-creator/base-camp/stacey-shore-natural-stones-test.js` commit 959846ab7945174026de40c7fa50f0810a999920. Uses actual HD moss rock GLB with Meshopt; fewer placement attempts, gaps via arc selection, larger 0.38–0.68m long axis, positions using actual transformed bounding box, spreads stones 0.45–3.65m inland. Preserve 69ft exclusion around X140 Z-117.2.
+- Viewer `world-creator/base-camp/water-natural-stones-test.html` commit 2a90da69c71c9ad30d70b9ed09641d70e8e85ce4; exact URL https://raw.githack.com/copperisbetter-lang/Wvlrp/2a90da69c71c9ad30d70b9ed09641d70e8e85ce4/world-creator/base-camp/water-natural-stones-test.html?spawn=lake
+- Awaiting phone visual check; next stages realistic ferns/shrubs/reeds and waterline blending, not primitive cone cattails. Summersville color and 45ft grading preserved.
