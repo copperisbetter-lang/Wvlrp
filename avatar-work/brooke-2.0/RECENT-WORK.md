@@ -81,3 +81,10 @@ Historical note: Earlier builds were not consistently documented; history may be
 ## Review gate — 2026-10-23
 - User requested Brooke's face ready to review. NOT READY. Inspected local artifacts: `brooke_photo_face_reference.glb` is 11,211-vertex curved photographic surface, NOT anatomical head; `brooke-photo-head-candidate.glb` is older 3DDFA candidate and NOT proven to use five new references. Neither may be presented as completed face on full body.
 - Existing full-body baseline remains preserved. Block release of any viewer update until actual photo-derived head is fitted, visually inspected, and correctly identified as candidate.
+
+## Build attempt — 2026-10-23 late, exact clock time UNKNOWN
+- Started actual repo modifications after user explicitly demanded execution, not explanations.
+- Commit cff04f0943d17bdfa95b8676ffc2b25e4039dfd7 added verify_face_fit.py structural full-body + candidate-mesh check.
+- Commit 3188fedac2207ed4fc0942ac47308851d8d2451e updated .github/workflows/brooke-2-0.yml to run verifier after fitting. Push should trigger GitHub Actions, run status UNKNOWN, output not inspected. **Do not report success.**
+- Limitation: fitting source remains older public photo candidate; five latest user photos still not incorporated. This is structural safety work, NOT Brooke likeness completion.
+- Next: obtain verified workflow logs and integrate user photos into real reconstruction. No preview approved.
