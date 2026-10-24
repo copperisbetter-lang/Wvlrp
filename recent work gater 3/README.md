@@ -162,3 +162,11 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Exact test URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/8c1c6d8473afcf6134f50a4aefbe7bf9cb4ca30c/world-creator/base-camp/water-ripple-scale-test.html?spawn=lake
 - Protected phone-confirmed baseline remains `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6` and MUST NOT be changed.
 - Next: owner phone test for appearance and FPS; adjust based on screenshot. No production deployment.
+
+## PHONE FEEDBACK + SECOND RIPPLE TEST — 2026-10-23 ~21:24 EDT
+- Owner screenshot of first test: 83 FPS at 85% resolution; fake-looking shore breaks and insufficient ripples. Screenshot showed straight/unnatural nearshore dark band. First test rejected visually.
+- Modified ONLY isolated test shader `world-creator/base-camp/stacey-water-ripple-scale-test.js` on `gator3-stacey-calm-water-20261023`.
+- Commit `ff92b4538865bcd7534f8b4c29745e81b8163350`.
+- Change: more tightly tiled dual normal maps and stronger perturbed normals to reveal finer surface ripples; heavily reduced artificial foam brightness/opacity. No geometry displacement; physical breakers remain unresolved.
+- Full next test URL (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/ff92b4538865bcd7534f8b4c29745e81b8163350/world-creator/base-camp/water-ripple-scale-test.html?spawn=lake
+- Preserve protected baseline `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`; no production merge.
