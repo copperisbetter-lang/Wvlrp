@@ -131,3 +131,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - **Full test link (not phone verified):** https://raw.githack.com/copperisbetter-lang/Wvlrp/5236fe647fd1eaff7ca4a065dabc97965f1a91dc/world-creator/base-camp/water-babylon-bump-test.html?spawn=lake
 - Baseline still: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
 - Risk: Babylon bump image may have different channel convention or CORS availability; user mobile test needed. No production merge.
+
+## OWNER REJECTS SECOND HISTORICAL TEST — 2026-10-23 (exact time unavailable)
+- Owner response: **“Not it”** to Babylon `waterbump.png` test (`5236fe6`). This is NOT the remembered perfect ripple and sunlight effect. Do not promote or overwrite baseline.
+- Rejected candidates: legacy Stacey Three.js shader `ab43dcc`, Babylon waterbump texture `5236fe6`.
+- Still to inspect: historical commits and assets (including `cheapwater-main.zip` and other previously uploaded ripple files) rather than guessing by shader name.
+- Protected baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
+- No lake source changed in this step.
