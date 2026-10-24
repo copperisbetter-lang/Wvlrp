@@ -47,7 +47,7 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
 forest();stones();understory();
 let bassSystem=null;installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;});
 /* G3: forty 20/60-lb WV flathead catfish. Source lake remains unchanged. */
-const flatheadFish=[];const FLATHEAD_URL=ASSET+'flathead-catfish.glb';
+const flatheadFish=[];const FLATHEAD_URL='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/flathead-catfish.glb';
 async function installFlatheads(){
  try{
   const original=(await gltf.loadAsync(FLATHEAD_URL)).scene;
