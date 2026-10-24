@@ -32,7 +32,7 @@ const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile
 // Water.js planar reflection contains actual island, rocks and trees. Depth is
 // sampled from the same terrain function, so color/opacity follow submerged bed.
 water.material.vertexShader='attribute float bedDepth;varying float vBed;\n'+water.material.vertexShader.replace('void main() {','void main() {\nvBed=bedDepth;');
-water.material.fragmentShader='varying float vBed;\n'+water.material.fragmentShader;
+water.material.fragmentShader='varying float vBed;\n'+water.material.fragmentShader.replace('float rf0 = 0.3;','float rf0 = 0.02;').replace('vec3( 1.5, 1.0, 1.5 )','vec3( .45, 1.0, .45 )');
 water.material.fragmentShader=water.material.fragmentShader.replace('vec3 outgoingLight = albedo;',`vec3 absorption=mix(vec3(.08,.52,.44),vec3(.005,.10,.23),1.-exp(-vBed*.36));vec3 outgoingLight=mix(absorption,reflectionSample,clamp(reflectance,.05,.82))+sunColor*specularLight*.65;float wetEdge=1.-smoothstep(.0,.22,vBed);float wash=(.5+.5*sin(vBed*23.-time*1.2+worldPosition.x*.3))*wetEdge;outgoingLight+=vec3(.10,.13,.12)*pow(wash,8.);`);
 water.material.fragmentShader=water.material.fragmentShader.replace('gl_FragColor = vec4( outgoingLight, alpha );','gl_FragColor = vec4( outgoingLight, smoothstep(0.0,0.50,vBed)*.96 );');scene.add(water);
 const gltf=new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);const ASSET='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/';
