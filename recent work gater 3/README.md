@@ -214,3 +214,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Changes: reduced artificial cyan/gray, darker olive green lake body, greener shallow water, lower HDR sky washout. Wave motion unchanged.
 - Exact preview (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/bd4e7676c03100005055815260125204234e79d0/world-creator/base-camp/water-natural-color-test.html?spawn=lake
 - Safe baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 untouched. No production deployment.
+
+## COLOR FEEDBACK / BRIGHTER TEST — 2026-10-23 21:40 EDT
+- Owner screenshot of natural-color test `bd4e7676`: 'Far too dark.' 89 FPS at 85%, nearly black green water; reject color grade.
+- New isolated shader `world-creator/base-camp/stacey-water-balanced-color-test.js`, commit `f67a0686255cc3a544097960f6fad46dee5b8d34`: raised deep/shallow green midtones and restored sky/environment reflection.
+- New viewer `world-creator/base-camp/water-balanced-color-test.html`, commit `babcb0fad582c8b0303fa868fb928835a601184c`.
+- Exact URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/babcb0fad582c8b0303fa868fb928835a601184c/world-creator/base-camp/water-balanced-color-test.html?spawn=lake
+- Motion/shore wash preserved; no terrain or production edits. Safe baseline f88fc7b remains protected.
