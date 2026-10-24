@@ -70,3 +70,10 @@ Updated 2026-10-23
 - Mandatory next checks: inspect latest GitHub Actions job result and artifact; visually inspect a rendered FULL-BODY candidate; ensure actual five user-supplied photos are used; fit to existing rigged head instead of overlay; protect Sophie 1; log each outcome immediately.
 - Current approved browser viewer remains FULL-BODY BASELINE only: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html?fullbody=83787d3e8810
 - Status: **BROOKE LIKENESS NOT COMPLETE; FITTING NOT VERIFIED; DO NOT CLAIM DONE.**
+
+## NON-NEGOTIABLE RECORDKEEPING RULE — user directive 2026-10-23
+Document **EVERYTHING**, not just noteworthy changes: every build started, failed build, green/successful build, skipped build, retry, model revision, asset change, viewer change, link, workflow, screenshot complaint, attempted fix, and test. No exceptions for green runs. Record each attempt separately; never overwrite or erase failures.
+For each event record: local timestamp (or clearly marked unknown), Gater/operator, branch, commit SHA, GitHub Actions run/job URL or ID, source photo(s) and model versions, exact command/change, outcome (queued/running/failed/green/visually approved/rejected), actual visual QA, user's complaint, next corrective action, working viewer URL and model path. Mark any unknowns as UNKNOWN, never invent evidence.
+**Green CI is NOT visual approval.** Do not mark a model completed until visually inspected and user-approved. Keep Sophie 1 untouched. Do not reuse a failed approach without noting what was changed to address its root cause.
+At every change: update this record immediately in the same work sequence. At every run: log start and finish, even if the result is green. Cross-Gater handovers must link this record in issue #29.
+Historical note: Earlier builds were not consistently documented; history may be incomplete. Do not fabricate missing run numbers or statuses. Backfill verified GitHub records when available.
