@@ -152,3 +152,13 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 **Preserve / boundaries:** Repository `copperisbetter-lang/Wvlrp`. Isolated Gater 3 branch `gator3-stacey-calm-water-20261023`; independent lab entry `world-creator/base-camp/water-lab.html`, shader `world-creator/base-camp/stacey-water-lab.js`, geometry `world-creator/base-camp/stacey-lake-v3.js`. Do not touch production lake, island, panorama, Gater 2 trails, Gater 1 avatar work, shoreline, campsites, swimming or spawn. GitHub issue #29 bell/handover before overlapping deploys.
 
 **Next step:** Search earlier commits and available historic ripple/reflection assets (including prior `cheapwater-main.zip` and Shudu HDRI references), identify the specific visually approved effect instead of guessing. Any new candidate goes into its **own isolated test viewer**, with exact URL/commit, mobile screenshot review, then log the owner's response. **No currently accepted older candidate; no new water changes at this checkpoint.**
+
+## GATER 3 NEW ISOLATED RIPPLE TEST — 2026-10-23 ~21:15 EDT
+- Owner: 'Start fixed'. Objective: improve water ripple scale, slow motion, strengthen sun reflection; retain protected working lake.
+- Branch: `gator3-stacey-calm-water-20261023`.
+- New test shader: `world-creator/base-camp/stacey-water-ripple-scale-test.js` commit `717e390a94901f5be1dc3bf9cee36fad94bb2510`.
+- New separate test viewer: `world-creator/base-camp/water-ripple-scale-test.html` commit `8c1c6d8473afcf6134f50a4aefbe7bf9cb4ca30c`.
+- Changes: slower time scale, larger CheapWater normal-map sampling footprint, stronger view-dependent sun glint. No vertex displacement or terrain/shoreline edits; **physical shoreline breakers still unresolved**.
+- Exact test URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/8c1c6d8473afcf6134f50a4aefbe7bf9cb4ca30c/world-creator/base-camp/water-ripple-scale-test.html?spawn=lake
+- Protected phone-confirmed baseline remains `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6` and MUST NOT be changed.
+- Next: owner phone test for appearance and FPS; adjust based on screenshot. No production deployment.
