@@ -20,3 +20,12 @@ Assessment: existing viewer omits all vegetation/background; water uses unrelate
 - Latest runtime reports all texture/model asset groups ready, no reported JS/shader errors, 233 trees / 277 textured stones. Rock geometry reduced from 12,620 to 1,214 triangles per stone. Software screenshot capture previously timed out; final paused-render screenshot check running. No phone FPS or visual acceptance established. Not an exact reproduction claim.
 - No production/main merge or Actions deployment requested. All older builds, approved terrain and avatar/trail sources unchanged. This standalone scene reconstructs the approved shore grade and protected beach.
 - Next: inspect final beach/aerial captures, then Doug phone review. No claim that green code equals accepted appearance.
+
+## Visual verification and final corrections — 2026-10-23 23:03 EDT approximate
+- First captured scene FAILED: terrain/water triangle winding downward; large missing white regions. Fixed winding in commit 63fbb4184f1518f8130197b09a477a0bca82f142. Follow-up capture confirmed continuous terrain and water visible.
+- Follow-up visual review: sparse woods and silver water. Fixed foliage material alpha/depth behavior, added 650 low-cost tree impostors rendered from the actual maple model, retained 233 full 3D trees, greener forest-floor tint and two-sided shore. Commit 520bc42b47b142015bbb6a98fa53893ff51fe319.
+- Captured beach and aerial views now show full wooded ring, island, rock clusters, beach, and real scene reflection. No reported JS/shader errors; eight asset groups ready. Not a pixel-exact reference match and not Doug approval. Software FPS cannot establish phone performance.
+- Water aerial capture still too silver: physically lower Fresnel reflectance (.30 to .02) and gentler normal relief (.45 vs 1.5). Final code commit 3bacd850fcbf9008b97aa3c19e38c9a550edfbaa; final capture retest running.
+- FINAL ONE VIEWER: https://raw.githack.com/copperisbetter-lang/Wvlrp/3bacd850fcbf9008b97aa3c19e38c9a550edfbaa/world-creator/base-camp/stacey-complete.html
+- Branch gator3-stacey-complete-reference. ONE code file: world-creator/base-camp/stacey-complete.html. Previous viewer/code remain available. Main, production, trail and avatar assets untouched.
+- User directive fulfilled as one integrated scene for review, not multiple experimental viewers. Phone appearance/performance pending; no claim of final visual approval. Run URL: none, branch-only commit.
