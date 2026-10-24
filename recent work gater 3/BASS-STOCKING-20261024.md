@@ -26,3 +26,10 @@ Mandatory: protect approved water/island/beach; no production merge without Gate
 - Original GLB inspected: 18,644,040 bytes, 2 meshes, 4 embedded images, 1 skin, 1 animation named `Swim Cycle` with 74 channels.
 - Commit `06b0f400` changes fish cloning to SkeletonUtils.clone for skinned rigs, plays actual embedded clip using AnimationMixer with staggered phases/speeds.
 - Still blocked: model binary is not hosted in GitHub, and GitHub connector text-only file action cannot transfer this 18MB GLB. Asset path needed: `world-creator/base-camp/assets/fish/largemouth-bass.glb`. This build remains unverified and cannot display bass until asset is uploaded. Avoid declaring installation complete.
+
+## 2026-10-24 — uploaded GLB wired
+- Owner uploaded `world-creator/base-camp/assets/fish/model_67a_-_largemouth_bass.glb` (18,644,040 bytes), confirmed in branch tree.
+- Updated `stacey-bass.js` loader path to actual uploaded filename, commit `28fa826eaa4b6e628e1e213cd66bffab00614818`.
+- Existing reference viewer already imports and runs `installBass` with 120 fish and swim animation.
+- Isolated test link: https://raw.githack.com/copperisbetter-lang/Wvlrp/gator3-bass-stocking-20261024/world-creator/base-camp/stacey-complete.html
+- Runtime/mobile FPS and visibility NOT verified. Production/main untouched; pending Issue #29 review.
