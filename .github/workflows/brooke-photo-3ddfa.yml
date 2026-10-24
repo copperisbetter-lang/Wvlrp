@@ -5,6 +5,7 @@ on:
       - .github/workflows/brooke-photo-3ddfa.yml
       - avatar-work/brooke/scripts/build_complete_head.py
       - avatar-work/brooke/scripts/validate_photo_head_candidate.py
+      - avatar-work/brooke/RENDER_RESTART_TRIGGER.md
   workflow_dispatch:
     inputs:
       photo_url:
