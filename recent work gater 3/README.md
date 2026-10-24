@@ -114,3 +114,9 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 
 ## LEGACY RIPPLES TEST — 2026-10-23 (exact time unavailable)
 Owner asked to try older water effects first. Created separate isolated viewer `world-creator/base-camp/water-old-ripples-test.html` on `gator3-stacey-calm-water-20261023`; commit `ab43dccbe6101924486dc769563c9c7485c03403`. Viewer loads older `stacey-water.js` Three.js shader with ripple/sun reflection instead of current lab shader, keeps island geometry. Test URL (not phone verified): https://raw.githack.com/copperisbetter-lang/Wvlrp/ab43dccbe6101924486dc769563c9c7485c03403/world-creator/base-camp/water-old-ripples-test.html?spawn=lake . Restored working viewer remains unchanged: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake . Issue #29 notified. If old test fails, do not overwrite baseline.
+
+## OWNER REJECTED LEGACY STACEY TEST — 2026-10-23 (exact time unavailable)
+- Owner replied **“Nope”** to `water-old-ripples-test.html` commit `ab43dcc`: not the remembered good ripples/reflection. Do not substitute it for current baseline.
+- Next historical candidate investigated: `world-creator/wild-living-waters.js` uses Babylon.js WaterMaterial, external `waterbump.png`, waveHeight .12, bumpHeight .25, waveSpeed .55, reflection render list. This is a **different engine** from the current Three.js independent water lab; direct import would fail. Need a safe isolated adaptation/test, not a production overwrite.
+- Protected owner-confirmed baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
+- This update records investigation only; no new lake renderer deployed.
