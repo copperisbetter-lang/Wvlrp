@@ -45,6 +45,58 @@ function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixW
 async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?28+rand()*95:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 
+/* G3 PHOTO-REFERENCE SHORELINE v2: curved tapered foliage and textured cattail heads.
+   Keep south spawn beach clear. Owner-approved catfish animation remains unchanged. */
+function naturalShorePlants(){
+ let seed=920241;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+ const leafGeo=new T.BufferGeometry(),v=[],idx=[];
+ // Bent, tapering leaf with several segments and a slight curl at the tip.
+ for(let k=0;k<=7;k++){const u=k/7,w=Math.pow(1-u,.8)*.5;
+  v.push(-w,u,u*u*.34,w,u,u*u*.34);
+  if(k<7){const j=k*2;idx.push(j,j+1,j+2,j+1,j+3,j+2)}
+ }
+ leafGeo.setAttribute('position',new T.Float32BufferAttribute(v,3));leafGeo.setIndex(idx);leafGeo.computeVertexNormals();
+ const leafMats=[0x425e25,0x638536,0x8c9d4b,0x9c9255,0x536f32].map(c=>new T.MeshStandardMaterial({color:c,side:T.DoubleSide,roughness:1}));
+ const leaves=leafMats.map(m=>new T.InstancedMesh(leafGeo,m,2100));
+ const stemGeo=new T.CylinderGeometry(.009,.018,1,6);
+ const stem=new T.InstancedMesh(stemGeo,new T.MeshStandardMaterial({color:0x68783b,roughness:1}),480);
+ // Noise-rich fuzzy-looking seed heads: avoid plain rectangular or smooth brown blocks.
+ const canvas=document.createElement('canvas');canvas.width=64;canvas.height=128;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#735032';ctx.fillRect(0,0,64,128);
+ for(let q=0;q<2200;q++){const g=Math.floor(45+random()*75);ctx.fillStyle='rgba('+g+','+Math.floor(g*.66)+','+Math.floor(g*.37)+','+(.18+random()*.5)+')';ctx.fillRect(random()*64,random()*128,1+random()*3,1+random()*5)}
+ const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;
+ const heads=new T.InstancedMesh(new T.CylinderGeometry(.065,.078,.35,12,4),new T.MeshStandardMaterial({map:tex,roughness:1}),480);
+ const d=new T.Object3D(),counts=[0,0,0,0,0];let cattails=0,clumps=0;
+ for(let n=0;n<980;n++){
+  const a=random()*Math.PI*2;
+  // South-facing beach around spawn, plus generous margins, must remain open.
+  const beachAngle=Math.abs(Math.atan2(Math.sin(a-Math.PI/2),Math.cos(a-Math.PI/2)));
+  if(beachAngle<.53)continue;
+  const radius=outer(a)-1.0+random()*5.6,x=CX+Math.cos(a)*radius,z=CZ+Math.sin(a)*radius;
+  const y=ground(x,z);if(y<CY-1.0||y>CY+1.0)continue;
+  clumps++;
+  const density=4+Math.floor(random()*5);
+  for(let j=0;j<density;j++){
+   const type=Math.floor(random()*leaves.length),k=counts[type];if(k>=2100)continue;
+   const h=.35+random()*1.25,angle=random()*6.283;
+   d.position.set(x+(random()-.5)*.7,y-.04,z+(random()-.5)*.7);
+   d.rotation.set((random()-.5)*.22,angle,(random()-.5)*.35);
+   d.scale.set(.045+random()*.085,h,.7+random()*.45);
+   d.updateMatrix();leaves[type].setMatrixAt(k,d.matrix);counts[type]++;
+  }
+  if(random()<.43&&cattails<480){
+   const h=.9+random()*1.05;
+   d.position.set(x,y+h/2,z);d.rotation.set(0,0,(random()-.5)*.07);d.scale.set(1,h,1);d.updateMatrix();stem.setMatrixAt(cattails,d.matrix);
+   d.position.set(x,y+h+.08,z);d.scale.set(.75+random()*.5,.8+random()*.7,.75+random()*.5);d.updateMatrix();heads.setMatrixAt(cattails,d.matrix);cattails++;
+  }
+ }
+ leaves.forEach((m,k)=>{m.count=counts[k];m.instanceMatrix.needsUpdate=true;m.frustumCulled=false;scene.add(m)});
+ stem.count=heads.count=cattails;
+ [stem,heads].forEach(m=>{m.instanceMatrix.needsUpdate=true;m.frustumCulled=false;scene.add(m)});
+ diag.assets.shorePlants='v2: '+clumps+' natural clumps, '+cattails+' textured cattails; spawn beach clear';
+}
+naturalShorePlants();
+
 /* G3: 70 WV flathead catfish: 30 original 40-lb, 30 additional 20-lb, 10 additional 60-lb. */
 const flatheadFish=[];const FLATHEAD_URL=ASSET+'flathead-catfish.glb';
 async function installFlatheads(){
