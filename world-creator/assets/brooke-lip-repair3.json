@@ -1,0 +1,12 @@
+{
+  "source_sha256": "6a3988eb9dbff273695d444a1db57f8ebe38a730daa37918a4a39b2e1a11ca6f",
+  "candidate_sha256": "5d604f52d9b84b6f85f354605803dfb6e0d83e3399e2c40fc39d9c7680ebeffc",
+  "max_displacement_mm": 6.836530685424805,
+  "neck_and_rear_unchanged": true,
+  "eye_mesh_and_hair_unchanged": true,
+  "mouth_deformation_rollback": true,
+  "continuous_lip_profile": true,
+  "source_preserved": true,
+  "likeness_approved": false,
+  "note": "Local rollback of accumulated mouth morph distortions; candidate for close profile review."
+}
