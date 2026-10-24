@@ -77,9 +77,9 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
    // Tangent-aligned pitch: mouth rises first, levels at apex, tips down on entry.
    // Different splashdown styles add roll or a slight belly-flop.
    const verticalVelocity=leap>=0?Math.PI*d.jumpHeight*Math.cos(Math.PI*leap)/d.jumpDuration:0;
-   f.rotation.x=leap>=0?-Math.atan2(verticalVelocity,d.jumpTravel/d.jumpDuration):0;
+   // The GLB swims along its local horizontal axis; pitch the visible model about its lateral axis, not the world-up root.\n   f.rotation.x=0;\n   f.children[0].rotation.x=leap>=0?-Math.atan2(verticalVelocity,d.jumpTravel/d.jumpDuration):0;
    f.rotation.z=leap>=0?d.jumpRoll*Math.sin(Math.PI*leap)*(d.jumpStyle===0?.25:1):0;
-   if(leap>=0&&d.jumpStyle===2)f.rotation.x+=.22*Math.sin(Math.PI*leap);
+   if(leap>=0&&d.jumpStyle===2)f.children[0].rotation.x+=.22*Math.sin(Math.PI*leap);
    if(leap>=0&&d.jumpStyle===3)f.rotation.z+=.55*Math.pow(leap,3);
    // Gentle body yaw; GLB embedded animation can be wired after its clip is verified.
    if(!clips.length)f.children[0].rotation.y=Math.sin(tick*(1.4+d.speed)+d.phase)*.045;
