@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "scope": "Build runtime and geometry regression only; NOT Brooke likeness approval",
+  "source_translation_and_scale": "PASS",
+  "connected_manifold_glb_roundtrip": "PASS",
+  "altered_vertex_rejected": "PASS",
+  "python_error_propagates_to_process": "PASS",
+  "negative_test_exit_code": 1
+}

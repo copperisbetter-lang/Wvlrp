@@ -174,3 +174,16 @@ Historical note: Earlier builds were not consistently documented; history may be
 
 ## Verification #23 started — 2026-10-23 23:18 EDT
 - Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057675862 ; source 4b1fcc506c6e427f07cfec961a4b4de2cd2f318f. Observed IN_PROGRESS; actual renderer enum corrected to supported None. No identical retry, no model/likeness changes or publication.
+
+## Verification #23 PASS, evidence downloaded and inspected — 2026-10-23 23:19 EDT
+- Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057675862 ; job 120764155666 ; source 4b1fcc506c6e427f07cfec961a4b4de2cd2f318f . All job steps SUCCESS; actual decoded log inspected.
+- Verified runtime: Blender 3.0.1 / NumPy 1.21.5 imported inside Blender.
+- Valid synthetic curved-patch source geometry survives normalized GLB export/import and manifold validation. One deliberately altered source vertex is rejected with exit code 1. That assertion is the expected NEGATIVE test; no production validation error was ignored.
+- Preserved-body roundtrip passed: 4 meshes, 1 armature, 52 bones, source hash unchanged 621c27b7e63ef7799a3be44c31a076f21ce3b22634d3bded41159bb1a2584026. Existing baseline has 0 animation actions and 0 shape keys; no motion is claimed.
+- Artifact 12545554376: brooke-build-evidence-40057675862, 265673 bytes. Downloaded ZIP and verified SHA256 7f6045818ed7195b7e627d97edae24fd24eb71958815a6067a05e25f62e06b1d. Read regression-report.json, body-smoke-report.json and run.json; inspected exact downloaded baseline-head-smoke.png.
+- Corrected PNG: texture-only baseline portrait with full head framing; previous blown-out lighting removed. Usable as build inspection evidence only. It still depicts the unchanged baseline, NOT Brooklyn likeness or a new face.
+- Machine evidence retained under build-history/40057675862/. Earlier #21 technical pass/image rejection and #22 renderer failure remain recorded; no failures erased.
+- Scoped AGENTS.md now persists mandatory audit, input identity, shared Blender runtime, strict exception handling, checkpoint preservation, visual gates and per-event logging for future work.
+- New neutral front/profile photographs are available and exact identities recorded, but manual reconstruction using them has NOT run; no full-body photo-head morph exists from this work. Current user-facing viewer remains the prior baseline. No new viewer or likeness approval claimed.
+- Remaining model task: perform a real anatomical head reconstruction/morph from the selected supplied front/profile references, inspect it, then integrate a verified character candidate. Do not revive the discarded overlay/baseline-sculpt publication chain.
+- Current build foundation is verified. Do not promise every future experiment will be green; prevent known repeated failures and block publication on any failed check.
