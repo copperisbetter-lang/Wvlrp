@@ -45,9 +45,9 @@ function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixW
 async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?28+rand()*95:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 
-/* G3 imported CC0 textured vegetation trial; do not alter approved fish. */
+/* G3 sourced CC0 cattail clump GLB from 3dassets.dev; do not alter approved fish. */
 async function installNaturalShoreline(){
- const url='https://grab3d.com/dl/cattail/cattail.glb';
+ const url='https://cdn.3dassets.dev/assets/22417/v1/model.glb';
  try{
   const model=(await gltf.loadAsync(url)).scene;
   model.updateMatrixWorld(true);
@@ -67,7 +67,7 @@ async function installNaturalShoreline(){
    plant.rotation.y=random()*6.283;
    scene.add(plant);groups.push(plant);
   }
-  diag.assets.shorePlants='Imported textured cattail GLB: '+groups.length+' clumps; beach clear';
+  diag.assets.shorePlants='Imported CC0 cattail clumps: '+groups.length+' clumps; beach clear';
  }catch(e){
   diag.assets.shorePlants='Model could not load; shoreline left unchanged';
   diag.errors.push('Cattail GLB: '+String(e));
