@@ -29,6 +29,9 @@ jobs:
           name: brooke-2-0-full-body-photo-face-fit-candidate
           path: avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
           if-no-files-found: error
+      - name: Verify fitted GLB preserves full body and distinct candidate face
+        run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/verify_face_fit.py -- avatar-work/brooke-2.0/brooke-2.0.glb avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
       - name: Create independent face pass
         run: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/build_face_pass1.py
       - name: Publish full-body face-pass model to isolated branch
