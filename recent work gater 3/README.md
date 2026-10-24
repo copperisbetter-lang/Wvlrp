@@ -206,3 +206,11 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Exact test URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/4843d802cc6c4dbaa296ffe6eea714ff1faf709d/world-creator/base-camp/water-shore-wash-test.html?spawn=lake
 - Limit: shoreline wash is a separate overlay and may be obscured by terrain on dry side. This is an experimental visual effect, not full physical fluid simulation. Check rendering and FPS before further work.
 - Preserve known phone-confirmed baseline `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`; no production merge, no trail edits.
+
+## COLOR CORRECTION TEST — 2026-10-23 after 21:30 EDT
+- Owner accepts movement as usable for now; requests water color correction as priority.
+- New isolated shader `world-creator/base-camp/stacey-water-natural-color-test.js` commit `5cefba8fbf726b99214224a283e87905146663e2`.
+- New viewer `world-creator/base-camp/water-natural-color-test.html` commit `bd4e7676c03100005055815260125204234e79d0`, preserves separate shore wash overlay.
+- Changes: reduced artificial cyan/gray, darker olive green lake body, greener shallow water, lower HDR sky washout. Wave motion unchanged.
+- Exact preview (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/bd4e7676c03100005055815260125204234e79d0/world-creator/base-camp/water-natural-color-test.html?spawn=lake
+- Safe baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 untouched. No production deployment.
