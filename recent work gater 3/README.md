@@ -241,3 +241,9 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Module `world-creator/base-camp/stacey-lake-graded-bank-test.js` commits 475f70d1 and 8a948818. At outer shoreline elevation waterY+0.035; grade increases with distance outward for 7.62 m; then 12 m smooth tie-in to existing terrain. Underwater shallow endpoint raised to meet shoreline continuously.
 - Viewer `world-creator/base-camp/water-graded-bank-test.html` commit fddcd9388bf4acf944ddb53f3cc7a3cbcbfb17c7. Exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/fddcd9388bf4acf944ddb53f3cc7a3cbcbfb17c7/world-creator/base-camp/water-graded-bank-test.html?spawn=lake
 - Isolated preview NOT phone-verified. Main baseline and trails untouched. Inspect grade visually and verify bank access before merging.
+
+## BANK EXTENDED TO 45 FT + MESHOPT FIX — 2026-10-23 22:00 EDT
+- Owner liked initial 25ft grading, requests another 20ft at same grade. Isolated new `stacey-lake-graded-bank-45ft.js` commit f4f22113809c2bc06766ca607ad45815ef7d7829: 3.5% over 13.716m = 45ft, 0.480m (18.9in) rise, plus existing 12m transition.
+- Owner screenshot reveals GLTFLoader MeshoptDecoder required for HD rock GLB. New `stacey-shore-hd-rocks-meshopt-test.js` commit 9c6916e32d86b533c514696a90d8865ba0acf943 loads decoder before GLB.
+- Preview `water-graded-bank-45ft-test.html` commit dce8603f1800b66d06943d7b3cf5605a14a1c49f; exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/dce8603f1800b66d06943d7b3cf5605a14a1c49f/world-creator/base-camp/water-graded-bank-45ft-test.html?spawn=lake
+- New preview unverified on phone. Original 25ft build and protected baseline preserved; no trail changes.
