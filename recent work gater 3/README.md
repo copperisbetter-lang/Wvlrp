@@ -102,3 +102,12 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - Branch: `gator3-stacey-calm-water-20261023`; rollback commit `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`.
 - Preserve: exact rollback source shader, lake island and geometry, terrain, Gater 2 trails, 88 FPS baseline. Do not replace or rewrite this verified snapshot.
 - Remaining complaint: no real shore breaks. Failed geometric displacement build `a33a01c5` drained lake; root cause not confirmed. Next effort must be separately isolated and shader-compile-tested before presenting to owner. No new water code changes in this log update.
+
+## HISTORICAL RIPPLE/REFLECTION ASSET SEARCH — 2026-10-23 (exact time unavailable)
+- Owner request: locate older file whose ripples and sun reflection looked perfect. **Search/review only; no lake shader modified.**
+- Candidate A: `world-creator/wild-living-waters.js` (main): Babylon.js water shader with procedural ripples/glint, plus Babylon WaterMaterial reflection handling; older separate Wild lakes, **not directly compatible** with current Three.js Stacey water lab.
+- Candidate B: `world-creator/base-camp/stacey-water.js` (main): Three.js ripple shader with directional sun glint; **not loaded by current independent water-lab viewer**.
+- Candidate C: `world-creator/base-camp/stacey-water-lab.js` on `gator3-stacey-calm-water-20261023`: current active shader, references CheapWater normal map and Shudu HDR environment.
+- Historical inputs: `cheapwater-main.zip` supplied by owner; `shudu_lake_4k.exr` supplied by owner (HDRI reflection reference). Not yet confirmed these are the exact older visually approved ripple assets.
+- **Current owner-verified baseline** remains https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake . No deployment or source edits in this search step.
+- Next: identify original accepted ripple file/build from history, inspect its source/normal texture, adapt in isolated experiment only after confirming compatibility. Do not claim an exact match without evidence.
