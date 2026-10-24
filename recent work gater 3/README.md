@@ -29,3 +29,11 @@ The screenshot dated Oct 23, 2026 ~20:06 EDT shows title **STACEY LAKE · INDEPE
 
 ## OPERATING RULE
 Before each future lake modification: append timestamp, exact URL, current complaint, planned correction. After: record actual changed paths, commit SHA, build status, verified test URL, observed result, remaining defects. If no live verification, explicitly mark UNVERIFIED. Coordinate conflicting work through issue #29 before deployment.
+
+## LINK RECOVERED — 2026-10-23 ~20:xx EDT
+**Correct island lake:** isolated independent water lab, NOT main Base Camp.
+- Last verified published viewer in issue #29: https://raw.githack.com/copperisbetter-lang/Wvlrp/ca17fb95f5994bea6d2f4e301133befa41860cef/world-creator/base-camp/water-lab.html?spawn=lake
+- Latest known shoreline-breaks commit in issue #29: af6b9bc13fcc629ed9ae77b39dafd14356646840; viewer candidate (not phone verified): https://raw.githack.com/copperisbetter-lang/Wvlrp/af6b9bc13fcc629ed9ae77b39dafd14356646840/world-creator/base-camp/water-lab.html?spawn=lake
+- Isolated branch: gator3-stacey-calm-water-20261023
+- Actual renderer: world-creator/base-camp/stacey-water-lab.js; viewer: world-creator/base-camp/water-lab.html; lake geometry: world-creator/base-camp/stacey-lake-v3.js.
+- Earlier main-branch stacey-water.js edit d7bb663 is NOT the active independent lab renderer. Do not mistake it for the current island build.
