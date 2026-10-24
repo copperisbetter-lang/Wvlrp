@@ -1,0 +1,11 @@
+{
+  "source_sha256": "139322b008d4e5e3125f1e378e83f64e1d4dd8aa1961780ca0d2a657950ff5a4",
+  "candidate_sha256": "5043060d0cdc08ea10a1cbfe9c51a1021bfadf7d8fd5038ed8d737198d64a910",
+  "max_displacement_mm": 0.899966299533844,
+  "neck_and_rear_unchanged": true,
+  "eye_mesh_and_hair_unchanged": true,
+  "lip_and_nose_geometry_unchanged": true,
+  "source_preserved": true,
+  "likeness_approved": false,
+  "note": "Small screenshot-guided correction; no new reference-photo fitting claimed."
+}
