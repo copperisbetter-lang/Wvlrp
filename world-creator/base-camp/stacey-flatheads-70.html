@@ -65,21 +65,38 @@ async function installFlatheads(){
    const depth=ground(x,z)+.09+rand()*.13;
    const fish=new T.Group();fish.add(body);fish.position.set(x,Math.min(CY-.7,depth),z);
    fish.rotation.y=a+Math.PI/2;scene.add(fish);
-   flatheadFish.push({node:fish,angle:fish.rotation.y,speed:.13+rand()*.16,phase:rand()*6.283,radius:inner(a)+16+rand()*12});
+   flatheadFish.push({node:fish,body,angle:fish.rotation.y,speed:.13+rand()*.16,phase:rand()*6.283,turn:0,cruise:0.7+rand()*.6,burst:rand()*8,offset:.12+rand()*.10});
   }
   diag.assets.flatheads='70 ready (30×40lb, 30×20lb, 10×60lb)';diag.flatheads=70;
  }catch(e){diag.assets.flatheads='FAILED';diag.errors.push('Flathead GLB: '+String(e));}
 }
 installFlatheads();
 function animateFlatheads(t,dt){
+ // Smooth, independent bottom cruising; steer before moving to avoid sideways sliding.
+ dt=Math.min(dt,.05);
  for(const f of flatheadFish){
-  f.angle+=Math.sin(t*.15+f.phase)*dt*.11;
-  f.node.rotation.y=f.angle+Math.sin(t*2.1+f.phase)*.035;
-  f.node.position.x+=Math.sin(f.angle)*f.speed*dt;
-  f.node.position.z+=Math.cos(f.angle)*f.speed*dt;
-  const x=f.node.position.x,z=f.node.position.z,a=Math.atan2(z-CZ,x-CX),r=Math.hypot(x-CX,z-CZ);
-  if(r>outer(a)-9||r<inner(a)+7)f.angle+=dt*.9;
-  f.node.position.y=Math.min(CY-.65,ground(x,z)+.09+Math.sin(t*.8+f.phase)*.025);
+  const p=f.node.position;
+  const radial=Math.atan2(p.z-CZ,p.x-CX),dist=Math.hypot(p.x-CX,p.z-CZ);
+  const safeInner=inner(radial)+11,safeOuter=outer(radial)-13;
+  let desired=f.angle+Math.sin(t*.22+f.phase)*.018;
+  if(dist>safeOuter||dist<safeInner){
+   const inward=dist>safeOuter?radial+Math.PI:radial;
+   desired=Math.atan2(Math.sin(inward),Math.cos(inward));
+  }
+  const delta=Math.atan2(Math.sin(desired-f.angle),Math.cos(desired-f.angle));
+  f.turn+=(Math.max(-.8,Math.min(.8,delta*1.4))-f.turn)*Math.min(1,dt*1.7);
+  f.angle+=f.turn*dt;
+  const burst=Math.pow(Math.max(0,Math.sin(t*.33+f.burst)),12)*.4;
+  const speed=f.speed*f.cruise*(1+burst);
+  p.x+=Math.sin(f.angle)*speed*dt;
+  p.z+=Math.cos(f.angle)*speed*dt;
+  f.node.rotation.y=f.angle;
+  // Gentle tail-driven undulation, without rotating the entire fish side-on.
+  f.body.rotation.y=Math.sin(t*(1.7+f.cruise*.8)+f.phase)*(.025+speed*.035);
+  f.body.rotation.z=Math.sin(t*.65+f.phase)*.008;
+  const bottom=ground(p.x,p.z);
+  const targetY=Math.min(CY-.65,bottom+f.offset+Math.sin(t*.65+f.phase)*.018);
+  p.y+=(targetY-p.y)*Math.min(1,dt*2.5);
  }
 }
 
