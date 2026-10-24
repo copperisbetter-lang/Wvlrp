@@ -1,0 +1,43 @@
+// Gater 3 — 300 largemouth bass, isolated Stacey Lake test.
+// Asset: owner-supplied model_67a_-_largemouth_bass.glb (18 MB, Swim Cycle animation).
+import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+export async function installBass300(THREE,scene,{STACEY,terrainY,onStatus=()=>{}}){
+ const COUNT=300,fish=[],loader=new GLTFLoader();
+ const url='./assets/model_67a_-_largemouth_bass.glb';
+ let gltf;try{gltf=await loader.loadAsync(url)}catch(e){onStatus('Bass model unavailable: '+url);console.error('Bass load failed',e);return {count:0,update(){}}}
+ const source=gltf.scene;source.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(source),size=box.getSize(new THREE.Vector3());
+ const longest=Math.max(size.x,size.y,size.z,.001);
+ // Clone skinned bones separately so each fish can animate independently.
+ const {clone}=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/utils/SkeletonUtils.js');
+ let seed=67120;const rand=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+ const sizes=[...Array(100).fill(.20),...Array(120).fill(.42),...Array(60).fill(.68),...Array(20).fill(.90)];
+ const clip=gltf.animations.find(a=>/swim/i.test(a.name))||gltf.animations[0];
+ const mixers=[];
+ for(let i=0;i<COUNT;i++){
+  let x,z,bed,depth,tries=0;
+  do{const angle=rand()*Math.PI*2,r=Math.sqrt(rand())*.90*STACEY.radius;x=STACEY.x+Math.cos(angle)*r;z=STACEY.z+Math.sin(angle)*r;bed=terrainY(x,z);depth=STACEY.waterY-bed;}while(depth<1.3&&++tries<80);
+  if(depth<1.3)continue;
+  const fishRoot=clone(source);const targetLength=sizes[i]*(.85+rand()*.3);
+  fishRoot.scale.setScalar(targetLength/longest);
+  const y=bed+.35+rand()*Math.max(.1,depth-.85);
+  const heading=rand()*Math.PI*2,speed=.13+rand()*.28;
+  fishRoot.position.set(x,y,z);fishRoot.rotation.y=heading;scene.add(fishRoot);
+  let mixer=null;if(clip){mixer=new THREE.AnimationMixer(fishRoot);const action=mixer.clipAction(clip);action.timeScale=.65+rand()*.65;action.play();mixer.update(rand()*clip.duration);}
+  fish.push({root:fishRoot,x,z,y,heading,speed,mixer,phase:rand()*Math.PI*2,bed,depth});
+ }
+ onStatus('Bass loaded: '+fish.length+'/300');let last=0;
+ return {count:fish.length,update(t,camera){const dt=Math.min(.05,Math.max(0,t-last));last=t;
+  for(let i=0;i<fish.length;i++){const f=fish[i];const dist=camera.position.distanceTo(f.root.position);
+   f.root.visible=dist<70;if(!f.root.visible)continue;
+   f.heading+=Math.sin(t*.21+f.phase)*dt*.13;
+   const nx=f.x+Math.sin(f.heading)*f.speed*dt,nz=f.z+Math.cos(f.heading)*f.speed*dt;
+   const newBed=terrainY(nx,nz),newDepth=STACEY.waterY-newBed;
+   if(Math.hypot(nx-STACEY.x,nz-STACEY.z)>STACEY.radius*.91||newDepth<1.2){f.heading+=Math.PI*.65;}
+   else {f.x=nx;f.z=nz;f.bed=newBed;f.depth=newDepth;}
+   f.y=Math.min(STACEY.waterY-.3,Math.max(f.bed+.3,f.y+Math.sin(t*.42+f.phase)*dt*.025));
+   f.root.position.set(f.x,f.y,f.z);f.root.rotation.y=f.heading;
+   if(f.mixer&&dist<28)f.mixer.update(dt);
+  }
+ }};
+}
