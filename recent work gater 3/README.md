@@ -138,3 +138,17 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Still to inspect: historical commits and assets (including `cheapwater-main.zip` and other previously uploaded ripple files) rather than guessing by shader name.
 - Protected baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
 - No lake source changed in this step.
+
+## CHECKPOINT / HANDOFF — 2026-10-23 (time not independently verified)
+**Owner instruction:** “Update toy recent folder at this point.”
+
+**Current status:** Stacey Lake with island is visible again on owner's phone after failed vertex displacement. The protected **owner-verified water-restored baseline** is commit `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`, viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake . Water visible; owner still dissatisfied with ripple size, natural shore breaks and sunlight. **Do not overwrite this working baseline.**
+
+**Older effect search / tests:**
+1. Legacy Three.js `world-creator/base-camp/stacey-water.js` via isolated `world-creator/base-camp/water-old-ripples-test.html`, commit `ab43dccbe6101924486dc769563c9c7485c03403`, URL https://raw.githack.com/copperisbetter-lang/Wvlrp/ab43dccbe6101924486dc769563c9c7485c03403/world-creator/base-camp/water-old-ripples-test.html?spawn=lake — owner said **“Nope”**; REJECTED.
+2. Historic Babylon `waterbump.png` normal texture, adapted in separate Three.js shader `world-creator/base-camp/stacey-water-babylon-bump-test.js` and `water-babylon-bump-test.html`, commit `5236fe647fd1eaff7ca4a065dabc97965f1a91dc`, URL https://raw.githack.com/copperisbetter-lang/Wvlrp/5236fe647fd1eaff7ca4a065dabc97965f1a91dc/world-creator/base-camp/water-babylon-bump-test.html?spawn=lake — owner said **“Not it”**; REJECTED.
+3. Older `world-creator/wild-living-waters.js` Babylon renderer inspected. It uses WaterMaterial, procedural waves and actual reflected scene meshes; **not compatible for direct import** into current Three.js lab. Texture-only test above rejected; full renderer not transplanted.
+
+**Preserve / boundaries:** Repository `copperisbetter-lang/Wvlrp`. Isolated Gater 3 branch `gator3-stacey-calm-water-20261023`; independent lab entry `world-creator/base-camp/water-lab.html`, shader `world-creator/base-camp/stacey-water-lab.js`, geometry `world-creator/base-camp/stacey-lake-v3.js`. Do not touch production lake, island, panorama, Gater 2 trails, Gater 1 avatar work, shoreline, campsites, swimming or spawn. GitHub issue #29 bell/handover before overlapping deploys.
+
+**Next step:** Search earlier commits and available historic ripple/reflection assets (including prior `cheapwater-main.zip` and Shudu HDRI references), identify the specific visually approved effect instead of guessing. Any new candidate goes into its **own isolated test viewer**, with exact URL/commit, mobile screenshot review, then log the owner's response. **No currently accepted older candidate; no new water changes at this checkpoint.**
