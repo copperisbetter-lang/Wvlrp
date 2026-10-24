@@ -171,3 +171,6 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Newly introduced mistake: selected an unsupported contrast look for the actual CI Blender color configuration. Corrected to the exact supported enum 'None'. No validator weakened and no model changed.
 - Report/upload steps were skipped; no green or visual success claimed. This is a renderer-configuration failure distinct from prior NumPy/geometry errors.
 - Resubmission changes this root cause; not an identical retry. Photo/model work remains unbuilt; no viewer publication.
+
+## Verification #23 started — 2026-10-23 23:18 EDT
+- Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057675862 ; source 4b1fcc506c6e427f07cfec961a4b4de2cd2f318f. Observed IN_PROGRESS; actual renderer enum corrected to supported None. No identical retry, no model/likeness changes or publication.
