@@ -60,3 +60,13 @@ Updated 2026-10-23
 - Preserve existing full-body Brooke 2.0 clone and protected Sophie 1. Do not switch viewer to standalone gray photo head.
 - GitHub photo workflow now fails closed unless supplied explicit photo_url (commit 99d010bb5e13cdfc8bccc5105cd5e94747dc8197); **the next actual task is to get user-provided reference photos into the build runner, then construct/fuse facial geometry and inspect a rendered full-body result**.
 - User has explicitly demanded actual build rather than repeated plans; do not claim completed work without a validated viewer.
+
+## Face-fitting attempts and corrections — 2026-10-23 (late)
+- New five user-supplied photo files received in chat (4105.jpg, 4106.jpg, 4107.jpg, 4108.jpg, 4109.jpg). These were **not** imported into GitHub Actions. Do not claim any GitHub-generated model used them.
+- A local photographic curved face-surface candidate was reported as `brooke_photo_face_reference.glb`; it is **not** a verified anatomical head or full-body character. Do not equate this with a successful Brooke likeness.
+- Added guarded full-body candidate fitter `avatar-work/brooke-2.0/fit_photo_face_to_body.py` at commit `f40e9fc7ec87d52e0221410c25a695da422f95e9`. It overlays a face surface; it does not morph the original head topology or transfer skinning weights. **Unverified.**
+- Updated `.github/workflows/brooke-2-0.yml` at commit `22482e1f877a12a08e8650e127e71c3ac1e99414` to invoke fitter against existing `public-models/brooke-2.0-photo-head-candidate.glb` (older public photo), not the user's five new photos. A commit can trigger workflow but does NOT establish that it succeeded. **Run result not verified.**
+- Critical recurring errors: wrong reference photo; separate gray head substituted for complete body; treating GitHub green checks as visual success; missing photo input transfer; not verifying runner outputs; failure to update this file immediately.
+- Mandatory next checks: inspect latest GitHub Actions job result and artifact; visually inspect a rendered FULL-BODY candidate; ensure actual five user-supplied photos are used; fit to existing rigged head instead of overlay; protect Sophie 1; log each outcome immediately.
+- Current approved browser viewer remains FULL-BODY BASELINE only: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html?fullbody=83787d3e8810
+- Status: **BROOKE LIKENESS NOT COMPLETE; FITTING NOT VERIFIED; DO NOT CLAIM DONE.**
