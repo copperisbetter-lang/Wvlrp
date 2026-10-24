@@ -52,3 +52,6 @@ Owner explicitly requires: **BEFORE any additional tweak, consult this log. AFTE
 
 ### Status
 This entry is a documentation-only update. No water code changed in this step. Latest shore-breaks code remains unverified on owner's phone. Do not treat main-branch stacey-water.js as the independent island lab.
+
+## PRE-TWEAK RECORD — 2026-10-23, exact local time unavailable
+Owner authorized further Stacey Lake improvements. Active issue: no visible shoreline breaks, tiny ripples, weak sun reflection. Target isolated `gator3-stacey-calm-water-20261023`, `world-creator/base-camp/stacey-water-lab.js`. Planned: make intermittent shore crests more visible by varying foam patches across world space and tapering at both island and outer bank; do not touch geometry. Baseline viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/af6b9bc13fcc629ed9ae77b39dafd14356646840/world-creator/base-camp/water-lab.html?spawn=lake . Status: pending isolated shader change and phone test.
