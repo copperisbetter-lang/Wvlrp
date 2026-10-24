@@ -1,0 +1,26 @@
+name: Brooke v8 geometry diagnostics
+on:
+  push:
+    branches: [brooke-reference-refine8]
+    paths:
+      - '.github/workflows/brooke-v8-diagnostics.yml'
+      - 'world-creator/tools/brooke_v8_diagnostics.py'
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy pygltflib
+      - name: Inspect preserved Brooke geometry without modifying it
+        run: python world-creator/tools/brooke_v8_diagnostics.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brooke-v8-geometry-diagnostics
+          path: brooke-v8-diagnostics.json
