@@ -2,8 +2,8 @@
 // Isolated experiment; does not alter water, terrain or player collision.
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics}) {
- const COUNT=300, fish=[],mixers=[], rng=(()=>{let s=728301;return ()=>((s=Math.imul(s,1664525)+1013904223>>>0)/4294967296)})();
- const groups=[[100,.025,.5],[120,.5,2],[60,2,5],[20,5,8]];
+ const COUNT=250, fish=[],mixers=[], rng=(()=>{let s=728301;return ()=>((s=Math.imul(s,1664525)+1013904223>>>0)/4294967296)})();
+ const groups=[[175,2,5],[75,5,8]];
  const weights=groups.flatMap(([n,a,b])=>Array.from({length:n},()=>a+(b-a)*rng()));
  const loader=new GLTFLoader();
  // Lightweight surface rings, independent of approved water shader.
@@ -36,7 +36,7 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
   fishRoot.userData={weight,heading,speed,phase:rng()*6.28,turn:(rng()-.5)*.12,jumpStart:-1,nextJump:20+rng()*160,jumpDuration:1.1,jumpHeight:.8,jumpTravel:0,jumpYaw:0,jumpRoll:0,jumpStyle:0};
   scene.add(fishRoot);fish.push(fishRoot);
  }
- diagnostics.assets.bass='300 loaded; '+clips.length+' animation clips';
+ diagnostics.assets.bass='250 large/trophy loaded; '+clips.length+' animation clips';
  diagnostics.bass=fish.length;
  let tick=0, nextWave=5;
  function update(dt,playerPosition){
