@@ -47,3 +47,9 @@ Updated 2026-10-23
 - Run #19 `https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40050561423` generated a technically valid but visually unacceptable candidate.
 - Viewer `https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html` currently shows rejected candidate; do not present as finished.
 - Required: rebuild from better user-provided multi-view photos with photographic texture and open eyes, compare against approved Laura 2 photo-derived result; preserve Sophie 1 untouched.
+
+## Full-body face-morph build — 2026-10-23
+- User requires facial morph on existing Brooke 2.0 full-body Sophie clone, NOT separate gray head.
+- Updated `.github/workflows/brooke-2-0.yml` at commit `6cf405c2df53d44b2866bfa955fdc658edebd835` to publish `avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb` after sculpt.
+- Shape-key script `build_face_pass1.py` is a guarded **basic jaw/temple proportional pass**, not verified Brooklyn likeness; may fail if separate head mesh is not found. Must inspect run and model before approval.
+- Sophie 1 original and Brooke 2.0 baseline unchanged. Current full-body baseline viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html
