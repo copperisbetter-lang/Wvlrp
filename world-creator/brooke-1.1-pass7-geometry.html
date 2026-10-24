@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke 1.1 — Head Review</title>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:65dvh;min-height:330px}details{margin:8px 12px;background:#193027;border-radius:8px;padding:10px}summary{font-weight:700;cursor:pointer;padding:7px}select,input{font:inherit;padding:8px;max-width:100%;margin:5px;color:#162b23}label{display:block;margin:8px 0}button{margin:5px} .note{font-size:12px;color:#c8d9d0}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+</head><body><header><h1>Brooke 1.1 — Geometry Pass 7</h1><p id="status" role="status">Loading the native head review candidate…</p></header><main id="stage"></main>
+<details open><summary>Camera &amp; Views</summary><label>View <select id="view"><option>Front</option><option>Rear</option><option>Side</option><option>Top</option><option>Head and neck</option></select></label><button id="resetCamera">Reset camera</button><label>Zoom <input id="zoom" type="range" min="25" max="250" value="100"> <output id="zoomValue">100%</output></label></details>
+<details><summary>Movement &amp; Poses</summary><label>Animation / pose <select id="motion"><option value="">Idle / Reset</option></select></label><button id="stopMotion">Stop / Reset pose</button><label>Playback speed <input id="speed" type="range" min="10" max="200" value="100"><output id="speedValue">100%</output></label><p id="rigStatus" class="note">Checking actual rig and animation clips…</p></details>
+<details><summary>Face &amp; Body Morphs</summary><label>Morph target <select id="morph"><option value="">Select morph</option></select></label><label>Amount <input id="morphAmount" type="range" min="0" max="100" value="0"><output id="morphValue">0%</output></label><button id="resetMorphs">Reset all morphs</button><p id="morphStatus" class="note">Checking embedded targets…</p></details>
+<details><summary>Visibility &amp; Inspection</summary><label>Focus part <select id="part"><option value="all">Head and neck</option></select></label><label><input id="isolate" type="checkbox"> Isolate selected part</label><label><input id="cutaway" type="checkbox"> Transparent other meshes</label><label><input id="wireframe" type="checkbox"> Wireframe</label><label><input id="bones" type="checkbox"> Show skeleton helper</label></details>
+<details open><summary>Actual Face Geometry — Pass 7</summary>
+<p class="note">Live vertex deformation of a separate in-memory model copy. Source GLB and Sophie 1 remain untouched. Start with small adjustments; reset by reloading.</p>
+<label>Lip projection <input id="lipProject" type="range" min="0" max="100" value="35"><output id="lipProjectValue">35%</output></label>
+<label>Jaw narrowing <input id="jawNarrow" type="range" min="0" max="100" value="25"><output id="jawNarrowValue">25%</output></label>
+<label>Brow softening <input id="browSoften" type="range" min="0" max="100" value="20"><output id="browSoftenValue">20%</output></label>
+<button id="resetFace">Reset face geometry</button><p id="geometryStatus" class="note">Preparing geometry…</p></details>
+<details><summary>Lighting &amp; Display</summary><label>Surface <select id="surface"><option value="skin">Textured skin</option><option value="texture">Texture only</option><option value="clay">Neutral clay</option></select></label><label>Exposure <input id="exposure" type="range" min="20" max="200" value="100"></label><label>Background <select id="background"><option value="forest">Forest</option><option value="dark">Dark</option><option value="light">Light</option></select></label><button id="resetAll">Reset all controls</button></details>
+<p class="note" style="padding:0 12px">Head and neck inspection candidate. Balanced eyelid opening, smoother upper lip contour, matte skin and softer lighting. Surface views separate texture from shape for inspection. Likeness and hairstyle still require review. Sophie 1 is unchanged. Controls show the actual available rig and morphs.</p><div id="error"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const sav4AssetUrl='./assets/brooke-1.1-detail-head-candidate.glb?v=pass7';
+const status=document.getElementById('status'),stage=document.getElementById('stage');
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x9da8a2,1.6));
+ const key=new THREE.DirectionalLight(0xffffff,1.7);key.position.set(2,3,4);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,.65);fill.position.set(-3,1,4);scene.add(fill);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
+ const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
+ function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resize();
+ const clock=new THREE.Clock();let mixer=null;renderer.setAnimationLoop(()=>{const dt=clock.getDelta();if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera);});
+ let initialMorphs=new Map();let model,attachment,meshes=[],partBounds,helper=null,faceTargets=new Map(),clips=[];const $=id=>document.getElementById(id);
+ function style(){
+ const chosen=$('part').value;
+ for(const mesh of meshes){
+  const selected=chosen==='all'||mesh.uuid===chosen;
+  mesh.visible=!$('isolate').checked||selected;
+  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const m of mats){if(!m)continue;
+   const original=m.userData.brookeStyle??={transparent:m.transparent,opacity:m.opacity,depthWrite:m.depthWrite,wireframe:m.wireframe};
+   const faded=$('cutaway').checked&&!selected;
+   m.transparent=faded||original.transparent;m.opacity=faded?Math.min(.18,original.opacity):original.opacity;
+   m.depthWrite=faded?false:original.depthWrite;m.wireframe=$('wireframe').checked;m.needsUpdate=true;
+  }
+ }
+ if(helper)helper.visible=$('bones').checked;
+ }
+ function view(name){
+  let box=partBounds;
+  if(name==='Head and neck')box=new THREE.Box3().setFromObject(model,true);
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  orbit.target.copy(center);
+  let offset=name==='Head and neck'?new THREE.Vector3(0,.05,Math.max(.50,size.y*1.8)):new THREE.Vector3(0,-.07,.40);
+  if(name==='Rear')offset.set(0,-.06,-.40);
+  if(name==='Side')offset.set(.40,-.02,0);
+  if(name==='Top')offset.set(.03,.40,.06);
+  camera.position.copy(center).add(offset);orbit.update();
+ }
+ $('view').onchange=()=>view($('view').value);
+ $('resetCamera').onclick=()=>{ $('view').value='Head and neck';view('Head and neck');camera.zoom=1;camera.updateProjectionMatrix();$('zoom').value=100;$('zoomValue').textContent='100%';};
+ $('zoom').oninput=()=>{const v=Number($('zoom').value);$('zoomValue').textContent=v+'%';camera.zoom=v/100;camera.updateProjectionMatrix();};
+ for(const id of ['isolate','cutaway','wireframe','bones'])$(id).onchange=style;
+ $('part').onchange=()=>{const m=meshes.find(x=>x.uuid===$('part').value);if(m){partBounds=new THREE.Box3().setFromObject(m,true);view('Front');}else view('Head and neck');style();};
+ const surfaceOriginal=new Map();
+ $('surface').onchange=()=>{
+  for(const mesh of meshes){
+   if(!mesh.morphTargetDictionary || !Object.keys(mesh.morphTargetDictionary).length)continue;
+   if(!surfaceOriginal.has(mesh))surfaceOriginal.set(mesh,mesh.material);
+   mesh.material=surfaceOriginal.get(mesh);
+   if($('surface').value!=='skin'){
+    const convert=m=>$('surface').value==='texture'?new THREE.MeshBasicMaterial({map:m.map,color:m.color,side:m.side,transparent:m.transparent,opacity:m.opacity}):new THREE.MeshStandardMaterial({color:0xb3aaa0,roughness:1,metalness:0,side:m.side});
+    mesh.material=Array.isArray(mesh.material)?mesh.material.map(convert):convert(mesh.material);
+   }
+  }
+  style();
+ };
+ $('exposure').oninput=()=>renderer.toneMappingExposure=Number($('exposure').value)/100;
+ $('background').onchange=()=>scene.background=new THREE.Color(({forest:0x22372f,dark:0x111111,light:0xcbd6d0})[$('background').value]);
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ // Pass 7: true, reversible vertex edits on cloned geometry, not material/lighting tricks.
+ // Operate on the highest head-region vertices in world space; do not touch clothing or rig bones.
+ const editable=[];
+ const wholeBox=new THREE.Box3().setFromObject(model,true);
+ const height=wholeBox.max.y-wholeBox.min.y;
+ const headBottom=wholeBox.max.y-height*.175;
+ model.traverse(mesh=>{
+   if(!mesh.isMesh||!mesh.geometry?.attributes?.position)return;
+   if(/hair|lash|eye|teeth|tongue|cloth|dress|brow/i.test(mesh.name))return;
+   const geo=mesh.geometry.clone();mesh.geometry=geo;
+   const pos=geo.attributes.position,original=new Float32Array(pos.array);
+   const localToWorld=mesh.matrixWorld.clone(),worldToLocal=localToWorld.clone().invert();
+   let hits=0;
+   for(let i=0;i<pos.count;i++){const p=new THREE.Vector3().fromBufferAttribute(pos,i).applyMatrix4(localToWorld);if(p.y>headBottom)hits++;}
+   if(hits>30)editable.push({mesh,pos,original,localToWorld,worldToLocal});
+ });
+ function editFace(){
+   const lip=Number($('lipProject').value)/100,jaw=Number($('jawNarrow').value)/100,brow=Number($('browSoften').value)/100;
+   const headH=height*.175,headW=wholeBox.max.x-wholeBox.min.x;
+   const cx=(wholeBox.min.x+wholeBox.max.x)/2;
+   const cy=wholeBox.max.y;
+   let touched=0;
+   for(const e of editable){
+     for(let i=0;i<e.pos.count;i++){
+       const p=new THREE.Vector3(e.original[i*3],e.original[i*3+1],e.original[i*3+2]).applyMatrix4(e.localToWorld);
+       if(p.y>headBottom){
+         const x=(p.x-cx)/Math.max(headW*.5,.001),y=(cy-p.y)/Math.max(headH,.001);
+         const gaussian=(a,center,spread)=>Math.exp(-Math.pow((a-center)/spread,2));
+         // Only the forward-facing part of head; positive Z is verified in the viewer before acceptance.
+         const front=THREE.MathUtils.smoothstep(p.z,(wholeBox.min.z+wholeBox.max.z)/2,wholeBox.max.z);
+         const mouth=gaussian(x,0,.30)*gaussian(y,.72,.105)*front;
+         const jawZone=gaussian(y,.83,.22)*Math.min(1,Math.abs(x)*2);
+         const browZone=gaussian(y,.36,.12)*gaussian(Math.abs(x),.34,.28)*front;
+         p.z+=mouth*lip*headH*.055-browZone*brow*headH*.018;
+         p.x-=Math.sign(x)*jawZone*jaw*headW*.025;
+         p.applyMatrix4(e.worldToLocal);e.pos.setXYZ(i,p.x,p.y,p.z);
+         if(mouth>.03||jawZone>.03||browZone>.03)touched++;
+       }
+     }
+     e.pos.needsUpdate=true;e.mesh.geometry.computeVertexNormals();e.mesh.geometry.computeBoundingSphere();
+   }
+   for(const id of ['lipProject','jawNarrow','browSoften'])$(id+'Value').textContent=$(id).value+'%';
+   $('geometryStatus').textContent='Edited '+touched+' head-region vertices across '+editable.length+' meshes. In-memory only; not yet baked into GLB.';
+ }
+ for(const id of ['lipProject','jawNarrow','browSoften'])$(id).oninput=editFace;
+ $('resetFace').onclick=()=>{for(const id of ['lipProject','jawNarrow','browSoften'])$(id).value=0;editFace();};
+ editFace();
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
+ if(!meshes.length)throw Error('Clone contains no visible meshes.');
+ partBounds=new THREE.Box3().setFromObject(model,true);
+ for(const mesh of meshes){const option=document.createElement('option');option.value=mesh.uuid;option.textContent=mesh.name||'Unnamed mesh';$('part').append(option);
+  for(const [name,index] of Object.entries(mesh.morphTargetDictionary||{})){if(!faceTargets.has(name))faceTargets.set(name,[]);faceTargets.get(name).push({mesh,index});}
+ }
+ for(const [name,targets] of faceTargets)initialMorphs.set(name,targets.map(({mesh,index})=>mesh.morphTargetInfluences[index]));
+ for(const name of faceTargets.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name;$('morph').append(opt);}
+ $('morphStatus').textContent=faceTargets.size+' real morph targets in cloned model.';
+ $('morph').onchange=()=>{const targets=faceTargets.get($('morph').value)||[];const value=targets.length?Math.round(targets[0].mesh.morphTargetInfluences[targets[0].index]*100):0;$('morphAmount').value=value;$('morphValue').textContent=value+'%';};
+ $('morphAmount').oninput=()=>{const value=Number($('morphAmount').value)/100;for(const {mesh,index} of faceTargets.get($('morph').value)||[])mesh.morphTargetInfluences[index]=value;$('morphValue').textContent=Math.round(value*100)+'%';};
+ $('resetMorphs').onclick=()=>{for(const [name,targets] of faceTargets)targets.forEach(({mesh,index},i)=>mesh.morphTargetInfluences[index]=initialMorphs.get(name)[i]);$('morph').dispatchEvent(new Event('change'));};
+ clips=gltf.animations||[];mixer=clips.length?new THREE.AnimationMixer(model):null;
+ const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
+ $('rigStatus').textContent=bones.length+' bones · '+clips.length+' embedded animations. Only genuine available animations can play.';
+ const requested=['Walk','Run','Sit','Stand','Crouch','Kneel','Crawl','Bend','Hands and Knees','Elbows and Knees','Lie Down','Wave','Turn Left','Turn Right','Pick Up','Idle'];
+ for(const name of requested){const clip=clips.find(x=>x.name.toLowerCase().replace(/[^a-z]/g,'').includes(name.toLowerCase().replace(/[^a-z]/g,'')));const opt=document.createElement('option');opt.value=clip?String(clips.indexOf(clip)):'';opt.textContent=name+(clip?'':' (not in model)');opt.disabled=!clip;$('motion').append(opt);}
+ for(let i=0;i<clips.length;i++)if(!requested.some(n=>clips[i].name.toLowerCase().replace(/[^a-z]/g,'').includes(n.toLowerCase().replace(/[^a-z]/g,'')))){const opt=document.createElement('option');opt.value=String(i);opt.textContent=clips[i].name;$('motion').append(opt);}
+ $('motion').onchange=()=>{mixer?.stopAllAction();if($('motion').value!==''&&mixer){const action=mixer.clipAction(clips[Number($('motion').value)]);action.reset().play();action.timeScale=Number($('speed').value)/100;}};
+ $('speed').oninput=()=>{const speed=Number($('speed').value)/100;$('speedValue').textContent=Math.round(speed*100)+'%';if(mixer)mixer.timeScale=speed;};
+ $('stopMotion').onclick=()=>{mixer?.stopAllAction();model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});$('motion').value='';};
+ if(bones.length){helper=new THREE.SkeletonHelper(model);scene.add(helper);helper.visible=false;}
+ $('resetAll').onclick=()=>{ $('surface').value='skin';$('surface').dispatchEvent(new Event('change')); $('stopMotion').click();$('resetMorphs').click();for(const id of ['isolate','cutaway','wireframe','bones'])$(id).checked=false;$('part').value='all';$('exposure').value=100;renderer.toneMappingExposure=1;$('background').value='forest';$('background').dispatchEvent(new Event('change'));style();$('resetCamera').click();};
+ status.textContent='Brooke 1.1 · Pass 7 geometry edit candidate · '+meshes.length+' meshes · '+bones.length+' bones · '+clips.length+' animation clips';
+ $('view').value='Head and neck';view('Head and neck');style();
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+</script></body></html>
