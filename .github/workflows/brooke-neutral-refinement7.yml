@@ -1,0 +1,35 @@
+name: Brooke forehead and lip refinement 7
+on:
+  push:
+    branches: [brooke-original-refine-20261024]
+    paths:
+      - 'avatar-work/brooke/one-point-one/relax_profile7.py'
+      - '.github/workflows/brooke-neutral-refinement7.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy pillow
+      - name: Build refinement and five inspection views
+        run: |
+          python avatar-work/brooke/one-point-one/relax_profile7.py world-creator/assets/brooke-profile-cavity6.glb world-creator/assets/brooke-neutral-refinement7.glb
+          mkdir -p world-creator/brooke-neutral-refinement7-review
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-neutral-refinement7.glb world-creator/brooke-neutral-refinement7-review/front.png
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-neutral-refinement7.glb world-creator/brooke-neutral-refinement7-review/profile.png 90
+          python avatar-work/brooke/one-point-one/render.py world-creator/assets/brooke-neutral-refinement7.glb world-creator/brooke-neutral-refinement7-review/quarter.png 35
+          python avatar-work/brooke/one-point-one/render_face_close.py world-creator/assets/brooke-neutral-refinement7.glb world-creator/brooke-neutral-refinement7-review/close-front.png 0
+          python avatar-work/brooke/one-point-one/render_face_close.py world-creator/assets/brooke-neutral-refinement7.glb world-creator/brooke-neutral-refinement7-review/close-side.png 90
+      - name: Save isolated review outputs
+        run: |
+          git config user.name "Brooke build"
+          git config user.email "brooke-build@users.noreply.github.com"
+          git add world-creator/assets/brooke-neutral-refinement7.glb world-creator/assets/brooke-neutral-refinement7.json world-creator/brooke-neutral-refinement7-review
+          git commit -m "Build Brooke forehead and neutral lip refinement 7"
+          git push origin HEAD:brooke-original-refine-20261024
