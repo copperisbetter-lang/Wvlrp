@@ -33,3 +33,10 @@ Updated 2026-10-23
 - User confirmed GREEN eyes for Brooke 2.0. All new Brooke eye materials must be green; do not use blue iris placeholder from older Brooke prototype.
 - User provided screenshots of Laura 2 face viewer from front and both profiles; use Laura's photo-derived single facial shell as quality reference, not her identity geometry.
 - Existing Brooke 3DDFA workflow is at .github/workflows/brooke-photo-3ddfa.yml on main. Reuse the one-face detection patch and validation gates. No unverified likeness claims.
+
+## Latest build update — 2026-10-23
+- Committed workflow change `21edc03bea5e54d4fe6f14fa92a53a8e32a9fb36` to `.github/workflows/brooke-photo-3ddfa.yml` on branch `brooke-2-0-fresh-start`.
+- Workflow now has branch-scoped push trigger for Brooke 2.0 updates; retains existing public photo URL as fallback. Uploaded reference photos have NOT been wired into the runner.
+- Build status: workflow success not yet verified; no finished photo-derived Brooke head or validated facial morph. Do not claim otherwise.
+- Workflow URL: https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/brooke-photo-3ddfa.yml
+- Approved Sophie 1 remains untouched; working viewer URL unchanged.
