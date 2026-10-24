@@ -33,3 +33,12 @@ Mandatory: protect approved water/island/beach; no production merge without Gate
 - Existing reference viewer already imports and runs `installBass` with 120 fish and swim animation.
 - Isolated test link: https://raw.githack.com/copperisbetter-lang/Wvlrp/gator3-bass-stocking-20261024/world-creator/base-camp/stacey-complete.html
 - Runtime/mobile FPS and visibility NOT verified. Production/main untouched; pending Issue #29 review.
+
+
+## 2026-10-24 UNDERWATER WALK — CORRECT STACEY COMPLETE VIEWER
+- Owner screenshot confirms `stacey-complete.html` lake scene with 883 trees, 277 rocks and ~23 FPS; foliage has white gaps. Earlier underwater change to `water-lab.html` was WRONG VIEWER; do not use it for this lake.
+- Actual root cause in `stacey-complete.html`: `if(!aerial)pos.y=swim?CY+.65:bed+1.7` forces camera to float above surface.
+- Updated ONLY `world-creator/base-camp/stacey-complete.html` on `gator3-bass-stocking-20261024`, commit `0d83e119e36e7b3ef920d8a55859998e75a2ff75`.
+- Added Dive / Surface button while swimming, lakebed walk camera height follows ground and remains below water where deep enough; shore resets dive. Status shows Lakebed. Water shader, terrain, island, bass module untouched.
+- Exact preview (UNVERIFIED ON OWNER PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/0d83e119e36e7b3ef920d8a55859998e75a2ff75/world-creator/base-camp/stacey-complete.html
+- Follow-up: phone-test dive, fish visibility and FPS. No production merge.
