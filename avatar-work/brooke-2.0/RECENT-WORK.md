@@ -28,3 +28,8 @@ Updated 2026-10-23
 - Brooke reference photos are in chat but have not been staged as local/private build inputs.
 - Approved Laura reconstruction provenance is not conclusively established from current GitHub records.
 - No verified photo-derived Brooke 2.0 face yet.
+
+## 2026-10-23 latest instruction
+- User confirmed GREEN eyes for Brooke 2.0. All new Brooke eye materials must be green; do not use blue iris placeholder from older Brooke prototype.
+- User provided screenshots of Laura 2 face viewer from front and both profiles; use Laura's photo-derived single facial shell as quality reference, not her identity geometry.
+- Existing Brooke 3DDFA workflow is at .github/workflows/brooke-photo-3ddfa.yml on main. Reuse the one-face detection patch and validation gates. No unverified likeness claims.
