@@ -90,6 +90,21 @@ jobs:
         run: |
           OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
           blender -b -t 2 --python avatar-work/brooke/scripts/validate_photo_head_candidate.py -- "$OBJ" avatar-work/brooke/build/brooke-photo-head-candidate.glb
+      - name: Record candidate-only build status
+        if: always()
+        run: |
+          {
+            echo '## Brooke photo reconstruction — candidate only'
+            echo ''
+            echo 'This workflow produces a photo-derived cranium candidate, **NOT Brooke 1.1**.'
+            echo '- Neck fit: NOT IMPLEMENTED'
+            echo '- Anatomical ears / body rig integration: NOT VERIFIED'
+            echo '- Pass 6 facial corrections: NOT APPLIED'
+            echo '- Likeness / phone viewer approval: NOT VERIFIED'
+            echo ''
+            echo 'A green run here must NEVER be reported as a finished Brooke avatar.'
+            echo 'Next stage: anatomical head/neck fitting and validation on a clone; preserve approved originals.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload cranium candidate GLB
         uses: actions/upload-artifact@v4
         with:
