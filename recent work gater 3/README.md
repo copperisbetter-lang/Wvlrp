@@ -302,3 +302,12 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - **BLOCKER**: 18 MB GLB is present in chat sandbox but NOT yet uploaded to GitHub `world-creator/base-camp/assets/model_67a_-_largemouth_bass.glb`. GitHub connector cannot transfer this local binary directly; module will show model unavailable until asset is uploaded. No live 300-bass claim. Source integration committed but NOT phone-verified.
 - Isolated preview at code commit: https://raw.githack.com/copperisbetter-lang/Wvlrp/004cafcb35edc8baa2b02732c1258c9b79c11d8c/world-creator/base-camp/water-lab.html?spawn=lake (will show model unavailable until binary present in this commit; use updated branch preview after upload).
 - Preserve approved lake, island, water shader, and main production. Next: upload GLB to correct branch/path, inspect GLB orientation/scale and mobile FPS, then mark VERIFIED only after owner phone test. Bell #29 coordination required before production merge.
+
+
+## OCCASIONAL BASS JUMPS — 2026-10-24
+- Owner requested bass periodically leap out of Stacey Lake.
+- Isolated branch `gator3-stacey-calm-water-20261023`; modified ONLY `world-creator/base-camp/stacey-bass-300.js`.
+- Commit `f83ae55c02d86231ad4e7f2e4a8ba93c4ef5f8bf`: randomized rare leap scheduling, 1–1.5 second parabolic surface arcs, small pitch motion, maximum two simultaneous jumpers, distance-based activity near observer. Existing underwater swimming preserved. No changes to lake shader, terrain, island, trails or main branch.
+- Preview (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/f83ae55c02d86231ad4e7f2e4a8ba93c4ef5f8bf/world-creator/base-camp/water-lab.html?spawn=lake
+- Bass GLB was subsequently uploaded by owner to isolated branch and its SHA was verified: `9399935f6f4a96b300968a0e40003462fbd4dd44` at `world-creator/base-camp/assets/model_67a_-_largemouth_bass.glb`.
+- Status: source committed, runtime visual/animation/FPS still needs owner phone verification. Splash particle effects NOT implemented; leap animation only.
