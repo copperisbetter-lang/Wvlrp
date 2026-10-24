@@ -64,14 +64,23 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         // not a permanent white ring. Motion follows local wave directions.
         // Breakers are translucent, patchy crests; never draw a continuous white curb.
         float bankDistance=min(vEdge,1.-vEdge);
-        float nearBank=1.-smoothstep(.003,.025,bankDistance);
-        float irregular=tex1.x*.75+tex2.y*.60+
-          sin(vWorld.x*.19-vWorld.z*.13+uTime*.18)*.28;
-        float wavePhase=bankDistance*160.-uTime*1.15+irregular*2.8;
-        float crest=smoothstep(.77,.985,sin(wavePhase));
-        float patches=smoothstep(.05,.53,irregular);
-        float foam=nearBank*crest*patches*.24;
-        color=mix(color,vec3(.58,.72,.70),foam);
+        // aLakeT spans island to outer bank; both shores receive the same treatment.
+        // Two small advancing wavelets, staggered in world space to avoid a foam curb.
+        float nearBank=1.-smoothstep(.002,.055,bankDistance);
+        float slowPatch=sin(vWorld.x*.14+vWorld.z*.11+uTime*.10)
+                       *sin(vWorld.x*.095-vWorld.z*.17-uTime*.065);
+        float localNoise=tex1.x*.42+tex2.y*.30;
+        float brokenPatches=smoothstep(-.12,.28,slowPatch+localNoise);
+        float crestA=sin(bankDistance*115.-uTime*.52+
+                        sin(vWorld.x*.18-vWorld.z*.10)*1.15);
+        float crestB=sin(bankDistance*177.-uTime*.69+
+                        sin(vWorld.z*.23+vWorld.x*.07)*1.30);
+        float crests=max(smoothstep(.66,.94,crestA),
+                         smoothstep(.79,.97,crestB)*.65);
+        float foam=nearBank*crests*brokenPatches*.48;
+        // Light glancing off small translucent crests, not bright painted white strips.
+        color=mix(color,vec3(.70,.77,.70),foam);
+        color+=vec3(.028,.031,.025)*foam;
         float fine=(tex1.x+tex2.y)*.5;
         color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
