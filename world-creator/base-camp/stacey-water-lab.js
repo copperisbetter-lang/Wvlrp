@@ -27,24 +27,10 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
   const material=new THREE.ShaderMaterial({
     side:THREE.DoubleSide,transparent:true,depthWrite:false,
     uniforms:{uTime:{value:0},uSun:{value:new THREE.Vector3(.3,.7,.3)},uShudu:{value:env},uRippleNormal:{value:rippleNormal}},
-    vertexShader:`varying vec3 vWorld;varying vec3 vView;varying float vEdge;varying float vBreaker;attribute float aLakeT;uniform float uTime;
-      void main(){
-        vEdge=aLakeT;
-        float d=min(aLakeT,1.0-aLakeT);
-        float band=1.0-smoothstep(0.012,0.085,d);
-        float patch=0.65+0.35*sin(position.x*.13+position.z*.17);
-        float phase=d*91.0-uTime*.55+sin(position.x*.16-position.z*.11)*.8;
-        float peak=pow(max(0.0,sin(phase)),6.0);
-        vBreaker=band*peak*patch;
-        vec3 p=position;
-        p.y+=vBreaker*.22;
-        vWorld=(modelMatrix*vec4(p,1.0)).xyz;
-        vec4 view=modelViewMatrix*vec4(p,1.0);
-        vView=cameraPosition-vWorld;
-        gl_Position=projectionMatrix*view;
-      }`,
+    vertexShader:`varying vec3 vWorld;varying vec3 vView;varying float vEdge;attribute float aLakeT;
+      void main(){vWorld=(modelMatrix*vec4(position,1.0)).xyz;vEdge=aLakeT;vec4 view=modelViewMatrix*vec4(position,1.0);vView=cameraPosition-vWorld;gl_Position=projectionMatrix*view;}`,
     fragmentShader:`precision highp float;
-      uniform float uTime;uniform vec3 uSun;uniform sampler2D uShudu;uniform sampler2D uRippleNormal;varying vec3 vWorld;varying vec3 vView;varying float vEdge;varying float vBreaker;
+      uniform float uTime;uniform vec3 uSun;uniform sampler2D uShudu;uniform sampler2D uRippleNormal;varying vec3 vWorld;varying vec3 vView;varying float vEdge;
       void main(){
         // No moving UVs or stripes: almost-stationary, two-direction micro normals.
         float t=uTime*.65;
@@ -91,7 +77,7 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
                         sin(vWorld.z*.23+vWorld.x*.07)*1.30);
         float crests=max(smoothstep(.66,.94,crestA),
                          smoothstep(.79,.97,crestB)*.65);
-        float foam=nearBank*crests*brokenPatches*.34 + vBreaker*.48;
+        float foam=nearBank*crests*brokenPatches*.48;
         // Light glancing off small translucent crests, not bright painted white strips.
         color=mix(color,vec3(.70,.77,.70),foam);
         color+=vec3(.028,.031,.025)*foam;
