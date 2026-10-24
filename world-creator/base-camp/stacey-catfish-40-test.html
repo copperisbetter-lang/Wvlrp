@@ -59,7 +59,8 @@ async function installFlatheads(){
   for(let i=0;i<40;i++){
    const a=rand()*Math.PI*2, r=inner(a)+16+rand()*Math.max(1,outer(a)-inner(a)-33);
    const x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;
-   const body=original.clone(true);\n   const weight=i<10?60:20; body.scale.multiplyScalar(Math.cbrt(weight/40));
+   const body=original.clone(true);
+   const weight=i<10?60:20; body.scale.multiplyScalar(Math.cbrt(weight/40));
    body.traverse(n=>{if(n.isMesh){n.frustumCulled=false;}});
    const depth=ground(x,z)+.09+rand()*.13;
    const fish=new T.Group();fish.add(body);fish.position.set(x,Math.min(CY-.7,depth),z);
