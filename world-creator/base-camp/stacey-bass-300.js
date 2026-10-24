@@ -24,19 +24,29 @@ export async function installBass300(THREE,scene,{STACEY,terrainY,onStatus=()=>{
   const heading=rand()*Math.PI*2,speed=.13+rand()*.28;
   fishRoot.position.set(x,y,z);fishRoot.rotation.y=heading;scene.add(fishRoot);
   let mixer=null;if(clip){mixer=new THREE.AnimationMixer(fishRoot);const action=mixer.clipAction(clip);action.timeScale=.65+rand()*.65;action.play();mixer.update(rand()*clip.duration);}
-  fish.push({root:fishRoot,x,z,y,heading,speed,mixer,phase:rand()*Math.PI*2,bed,depth});
+  fish.push({root:fishRoot,x,z,y,heading,speed,mixer,phase:rand()*Math.PI*2,bed,depth,jumpStart:-1,nextJump:12+rand()*110,jumpDuration:1.05+rand()*.4,jumpHeight:.45+rand()*.9});
  }
  onStatus('Bass loaded: '+fish.length+'/300');let last=0;
  return {count:fish.length,update(t,camera){const dt=Math.min(.05,Math.max(0,t-last));last=t;
   for(let i=0;i<fish.length;i++){const f=fish[i];const dist=camera.position.distanceTo(f.root.position);
    f.root.visible=dist<70;if(!f.root.visible)continue;
+   // Rare, staggered leaps: at most two bass airborne at once, preferentially near the observer.
+   const jumping=f.jumpStart>=0&&t-f.jumpStart<f.jumpDuration;
+   if(!jumping&&f.jumpStart>=0){f.jumpStart=-1;f.nextJump=t+55+rand()*160;}
+   const airborne=fish.reduce((n,g)=>n+(g.jumpStart>=0&&t-g.jumpStart<g.jumpDuration?1:0),0);
+   if(f.jumpStart<0&&t>=f.nextJump&&dist<48&&airborne<2&&f.depth>1.3){f.jumpStart=t;f.jumpDuration=1.0+rand()*.5;f.jumpHeight=.4+rand()*1.1;f.nextJump=t+90+rand()*160;}
+   const leap=f.jumpStart>=0?Math.min(1,(t-f.jumpStart)/f.jumpDuration):-1;
+   const leapLift=leap>=0?Math.max(0,Math.sin(leap*Math.PI))*f.jumpHeight:0;
    f.heading+=Math.sin(t*.21+f.phase)*dt*.13;
    const nx=f.x+Math.sin(f.heading)*f.speed*dt,nz=f.z+Math.cos(f.heading)*f.speed*dt;
    const newBed=terrainY(nx,nz),newDepth=STACEY.waterY-newBed;
    if(Math.hypot(nx-STACEY.x,nz-STACEY.z)>STACEY.radius*.91||newDepth<1.2){f.heading+=Math.PI*.65;}
    else {f.x=nx;f.z=nz;f.bed=newBed;f.depth=newDepth;}
    f.y=Math.min(STACEY.waterY-.3,Math.max(f.bed+.3,f.y+Math.sin(t*.42+f.phase)*dt*.025));
-   f.root.position.set(f.x,f.y,f.z);f.root.rotation.y=f.heading;
+   // A leap rises from just below the water surface and arcs back into the lake.
+   const leapY=leap>=0?STACEY.waterY-.12+Math.sin(leap*Math.PI)*f.jumpHeight:f.y;
+   f.root.position.set(f.x,leapY,f.z);f.root.rotation.y=f.heading;
+   f.root.rotation.z=leap>=0?Math.sin((leap-.5)*Math.PI)*.25:0;
    if(f.mixer&&dist<28)f.mixer.update(dt);
   }
  }};
