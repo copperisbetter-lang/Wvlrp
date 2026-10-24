@@ -322,3 +322,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Existing jump arcs, orientation, splash rings, and 40-fish/5-second temporary test cadence unchanged. Jump orientation still requires owner visual confirmation; not claim verified correct.
 - Exact candidate viewer (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/a46c8682a095a8140c72c7df0eae881ff7531636/world-creator/base-camp/stacey-complete.html
 - Canonical approved viewer stays separately pinned in `current approved viewer/README.md`; lake visuals untouched.
+
+
+## 2026-10-24 — ELEVATOR FISH REPORTED AGAIN
+- Owner observed 250-fish test still jumping vertically with wrong orientation ('Elevator fish again'). Previous correction was NOT visually successful.
+- Isolated branch `gator3-approved-lake-jump-test-20261024`; modified `world-creator/base-camp/stacey-bass.js` only.
+- Commit `e6d32c3467603abc05f5382ed96966ea2c8e7d6a`: move pitch animation from fishRoot to child model, retain existing splash and ring logic. THIS IS AN EXPERIMENT, NOT PHONE VERIFIED. Must inspect actual GLB forward axis if issue persists.
+- Exact new test URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/e6d32c3467603abc05f5382ed96966ea2c8e7d6a/world-creator/base-camp/stacey-complete.html
