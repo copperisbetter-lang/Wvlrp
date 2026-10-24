@@ -72,3 +72,11 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - Root-cause correction: stop boosting flat-water foam; implement geometry-driven, nearshore wave crest with small moving height displacement in vertex shader and physically localized crest highlight in fragment shader. Preserve lake island, terrain and outer shoreline.
 - Existing tested URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
 - Status: documented before geometry implementation. No new visual build yet.
+
+## GEOMETRY SHORE BREAK TWEAK — 2026-10-23 (after 20:35 EDT; exact time unavailable)
+- Report: owner screenshot showed flat, unbroken shore after 2e1c0d8.
+- Changed only isolated branch `gator3-stacey-calm-water-20261023`, file `world-creator/base-camp/stacey-water-lab.js`.
+- Commit `a33a01c5fe2e87432dfe62022d956e7ac7628838`.
+- New: vertex shader raises near-bank wave crest up to ~0.22m using moving phase and patch mask; fragment highlights the physically raised crest. Both inner island and outer bank are included via `aLakeT`. No geometry file, shoreline layout, terrain, trail or production merge changed.
+- **Exact test link (UNVERIFIED ON PHONE):** https://raw.githack.com/copperisbetter-lang/Wvlrp/a33a01c5fe2e87432dfe62022d956e7ac7628838/world-creator/base-camp/water-lab.html?spawn=lake
+- Caveat: existing lake radial geometry has only 64 divisions, so ~0.22m crests may appear faceted or too subtle; phone test needed before increasing geometry density, which risks FPS. No claim of visually successful breaking waves yet.
