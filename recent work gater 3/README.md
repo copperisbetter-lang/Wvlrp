@@ -123,3 +123,11 @@ Owner asked to try older water effects first. Created separate isolated viewer `
 
 ## NEXT OLD-WATER TEST — 2026-10-23 (exact time unavailable)
 Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated test of Babylon WaterMaterial's historical `waterbump.png` ripple texture **adapted to Three.js**, with Shudu HDR reflection kept, on same lake island mesh. Source: `world-creator/wild-living-waters.js` uses `https://assets.babylonjs.com/textures/waterbump.png`. Do not import Babylon renderer directly; compare only texture normal sampling in a separate HTML/shader copy. Existing baseline remains f88fc7b and is not to be overwritten.
+
+## SECOND HISTORICAL WATER TEST BUILT — 2026-10-23 (exact time unavailable)
+- Owner rejected previous older Stacey shader; moved to historical Babylon water bump texture as next candidate.
+- Isolated branch `gator3-stacey-calm-water-20261023`. New files: `world-creator/base-camp/stacey-water-babylon-bump-test.js` (commit `75ea7c4`), `world-creator/base-camp/water-babylon-bump-test.html` (commit `5236fe6`).
+- Change: use Babylon `waterbump.png` normal texture in a copy of existing Three.js Shudu HDR water shader; retain same island/lake mesh, scenery, and original baseline unchanged.
+- **Full test link (not phone verified):** https://raw.githack.com/copperisbetter-lang/Wvlrp/5236fe647fd1eaff7ca4a065dabc97965f1a91dc/world-creator/base-camp/water-babylon-bump-test.html?spawn=lake
+- Baseline still: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
+- Risk: Babylon bump image may have different channel convention or CORS availability; user mobile test needed. No production merge.
