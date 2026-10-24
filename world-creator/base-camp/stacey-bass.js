@@ -26,7 +26,7 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
   model.scale.setScalar(size);
   fishRoot.add(model);
   // GLB faces toward local -Z; swim/jump motion uses local +Z.
-  model.rotation.y=Math.PI;
+  model.rotation.y=0; // Reverse prior model yaw: owner observed bass swimming tail-first.
   if(clips.length){const mixer=new T.AnimationMixer(model);const action=mixer.clipAction(clips[0]);action.setEffectiveTimeScale(.65+rng()*.65);action.play();mixer.setTime(rng()*Math.max(.1,clips[0].duration));mixers.push(mixer);}
   const a=rng()*Math.PI*2, radius=inner(a)+7+rng()*(outer(a)-inner(a)-14);
   const depth=.7+rng()*Math.min(5.5,1.5+weight);
