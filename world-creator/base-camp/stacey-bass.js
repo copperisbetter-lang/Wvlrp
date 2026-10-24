@@ -8,7 +8,7 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
  const loader=new GLTFLoader();
  // Lightweight surface rings, independent of approved water shader.
  const rings=[];const ringGeo=new T.RingGeometry(.89,1,28);let ringCursor=0;
- for(let k=0;k<12;k++){const mesh=new T.Mesh(ringGeo,new T.MeshBasicMaterial({color:0xb8d7d1,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));mesh.rotation.x=-Math.PI/2;mesh.visible=false;mesh.renderOrder=6;scene.add(mesh);rings.push({mesh,start:-100,duration:2,power:1});}
+ for(let k=0;k<80;k++){const mesh=new T.Mesh(ringGeo,new T.MeshBasicMaterial({color:0xb8d7d1,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));mesh.rotation.x=-Math.PI/2;mesh.visible=false;mesh.renderOrder=6;scene.add(mesh);rings.push({mesh,start:-100,duration:2,power:1});}
  function ripple(x,z,power){const q=rings[ringCursor++%rings.length];q.mesh.position.set(x,CY+.045,z);q.start=tick;q.power=power;q.duration=1.3+power*.55;q.mesh.visible=true;}
 
  let source,clips=[];
@@ -36,17 +36,28 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
  }
  diagnostics.assets.bass='300 loaded; '+clips.length+' animation clips';
  diagnostics.bass=fish.length;
- let tick=0;
+ let tick=0, nextWave=5;
  function update(dt,playerPosition){
   tick+=dt;
   for(const mixer of mixers)mixer.update(dt);
-  for(const q of rings){const age=tick-q.start;if(age>=0&&age<q.duration){const p=age/q.duration;q.mesh.visible=true;q.mesh.scale.setScalar(.2+p*(1.5+q.power));q.mesh.material.opacity=(1-p)*.20*q.power;}else q.mesh.visible=false;}
+  for(const q of rings){const age=tick-q.start;if(age>=0&&age<q.duration){const p=age/q.duration;q.mesh.visible=true;q.mesh.scale.setScalar(.2+p*(1.5+q.power));q.mesh.material.opacity=(1-p)*.42*q.power;}else q.mesh.visible=false;}
+  // Owner's temporary visibility test: 40 jumps together every five seconds.
+  // Select fish in a visible band near the player's lake-facing position.
+  if(tick>=nextWave){
+   nextWave+=5;
+   const px=playerPosition?.x??CX, pz=playerPosition?.z??(CZ+outer(Math.PI/2));
+   const available=fish.filter(f=>f.userData.jumpStart<0).sort((a,b)=>a.position.distanceToSquared(new T.Vector3(px,CY,pz))-b.position.distanceToSquared(new T.Vector3(px,CY,pz)));
+   for(const f of available.slice(0,40)){
+    const d=f.userData;d.jumpStart=tick;d.jumpDuration=1.45;d.jumpHeight=1.3+rng()*.9;
+    ripple(f.position.x,f.position.z,1.1);
+   }
+  }
   let airborne=fish.reduce((n,f)=>n+(f.userData.jumpStart>=0?1:0),0);
   for(let i=0;i<fish.length;i++){
    const f=fish[i],d=f.userData;
    const nearPlayer=!playerPosition||f.position.distanceToSquared(playerPosition)<55*55;
    if(d.jumpStart>=0&&tick-d.jumpStart>=d.jumpDuration){ripple(f.position.x,f.position.z,1.2);d.jumpStart=-1;airborne--;d.nextJump=tick+80+rng()*180;}
-   if(d.jumpStart<0&&tick>d.nextJump&&nearPlayer&&airborne<2){d.jumpStart=tick;d.jumpDuration=1.0+rng()*.45;d.jumpHeight=.5+rng()*1.0;ripple(f.position.x,f.position.z,.7);airborne++;}
+   if(false && d.jumpStart<0&&tick>d.nextJump&&nearPlayer&&airborne<2){d.jumpStart=tick;d.jumpDuration=1.0+rng()*.45;d.jumpHeight=.5+rng()*1.0;ripple(f.position.x,f.position.z,.7);airborne++;}
 
    // Reorient in small increments; keep every fish within lake annulus.
    const x=f.position.x-CX,z=f.position.z-CZ,r=Math.hypot(x,z),a=Math.atan2(z,x);
