@@ -7,8 +7,11 @@ bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=Fals
 bpy.ops.import_scene.gltf(filepath=body)
 original=set(bpy.context.scene.objects)
 heads=[o for o in original if o.type=='MESH' and ('head' in o.name.lower() or 'face' in o.name.lower()) and not any(t in o.name.lower() for t in ('hair','eye','lash','teeth','tongue'))]
-assert len(heads)==1,'Cannot identify single head mesh: '+str([o.name for o in heads])
+assert heads,'Cannot identify head mesh: '+str([o.name for o in original if o.type=='MESH'])
+# Choose largest head-like mesh; GLB imports may have multiple face-related accessories.
+heads.sort(key=lambda o: len(o.data.vertices),reverse=True)
 head=heads[0]
+print('SELECTED_BODY_HEAD',head.name,len(head.data.vertices))
 def bbox(o):
  p=[o.matrix_world@Vector(v) for v in o.bound_box]
  return Vector([min(q[i] for q in p) for i in range(3)]),Vector([max(q[i] for q in p) for i in range(3)])
