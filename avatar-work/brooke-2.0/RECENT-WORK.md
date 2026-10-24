@@ -164,3 +164,10 @@ Historical note: Earlier builds were not consistently documented; history may be
 ## Verification #22 started — 2026-10-23 23:16 EDT
 - Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057535883 ; source bff5dbce4387f58748900c1e351b608b243b8481. Observed IN_PROGRESS. Render-evidence correction only; previous #21 remains technically passed but image rejected. No likeness or model edit.
 - Bell update: https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379190860 .
+
+## Verification #22 FAILED; renderer enum correction — 2026-10-23 23:17 EDT
+- Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057535883 , job 120763723720, source bff5dbce4387f58748900c1e351b608b243b8481: FAILED at preserved-body/head inspection step. Source/runtime/positive and negative geometry tests PASSED.
+- Exact actual log: TypeError: bpy_struct: item.attr = val: enum "Medium High Contrast" not found in ('None'), line 62 of check_preserved_body.py.
+- Newly introduced mistake: selected an unsupported contrast look for the actual CI Blender color configuration. Corrected to the exact supported enum 'None'. No validator weakened and no model changed.
+- Report/upload steps were skipped; no green or visual success claimed. This is a renderer-configuration failure distinct from prior NumPy/geometry errors.
+- Resubmission changes this root cause; not an identical retry. Photo/model work remains unbuilt; no viewer publication.

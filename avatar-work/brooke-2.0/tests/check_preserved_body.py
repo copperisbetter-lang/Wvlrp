@@ -59,7 +59,7 @@ scene.render.resolution_y = 512
 scene.render.resolution_percentage = 100
 scene.world.color = (0.04, 0.04, 0.04)
 scene.view_settings.view_transform = 'Standard'
-scene.view_settings.look = 'Medium High Contrast'
+scene.view_settings.look = 'None'
 # Inspect the actual stored texture without introducing lighting overexposure.
 # Render-only copies: the preserved GLB was already exported and is not changed.
 for obj in scene.objects:
