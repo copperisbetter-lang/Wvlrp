@@ -18,6 +18,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y blender
+      - name: Fit photo-derived face candidate onto existing full body
+        run: |
+          test -s public-models/brooke-2.0-photo-head-candidate.glb
+          blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/fit_photo_face_to_body.py -- avatar-work/brooke-2.0/brooke-2.0.glb public-models/brooke-2.0-photo-head-candidate.glb avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
+          test -s avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
+      - name: Upload full-body fit candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-2-0-full-body-photo-face-fit-candidate
+          path: avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
+          if-no-files-found: error
       - name: Create independent face pass
         run: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/build_face_pass1.py
       - name: Publish full-body face-pass model to isolated branch
