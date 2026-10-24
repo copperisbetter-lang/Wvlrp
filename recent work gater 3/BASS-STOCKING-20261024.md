@@ -21,3 +21,8 @@ Mandatory: protect approved water/island/beach; no production merge without Gate
 - **BLOCKER**: uploaded GLB remains a conversation attachment; GitHub fish asset path `world-creator/base-camp/assets/fish/largemouth-bass.glb` is not populated. The module fails safely and displays `MISSING GLB` until uploaded. No claim that 120 fish render yet.
 - Mesh bounds inspected locally: 0.0664 × 0.1438 × 0.3560 model units, 2 geometries. Need verify model forward axis and embedded animation before visual acceptance.
 - No production merge; no approved water, terrain or beach changes. Mobile FPS not verified.
+
+## Animation inspection and code update
+- Original GLB inspected: 18,644,040 bytes, 2 meshes, 4 embedded images, 1 skin, 1 animation named `Swim Cycle` with 74 channels.
+- Commit `06b0f400` changes fish cloning to SkeletonUtils.clone for skinned rigs, plays actual embedded clip using AnimationMixer with staggered phases/speeds.
+- Still blocked: model binary is not hosted in GitHub, and GitHub connector text-only file action cannot transfer this 18MB GLB. Asset path needed: `world-creator/base-camp/assets/fish/largemouth-bass.glb`. This build remains unverified and cannot display bass until asset is uploaded. Avoid declaring installation complete.
