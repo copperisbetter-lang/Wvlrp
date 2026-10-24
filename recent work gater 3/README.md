@@ -259,3 +259,11 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - New isolated module `world-creator/base-camp/stacey-shore-natural-stones-test.js` commit 959846ab7945174026de40c7fa50f0810a999920. Uses actual HD moss rock GLB with Meshopt; fewer placement attempts, gaps via arc selection, larger 0.38–0.68m long axis, positions using actual transformed bounding box, spreads stones 0.45–3.65m inland. Preserve 69ft exclusion around X140 Z-117.2.
 - Viewer `world-creator/base-camp/water-natural-stones-test.html` commit 2a90da69c71c9ad30d70b9ed09641d70e8e85ce4; exact URL https://raw.githack.com/copperisbetter-lang/Wvlrp/2a90da69c71c9ad30d70b9ed09641d70e8e85ce4/world-creator/base-camp/water-natural-stones-test.html?spawn=lake
 - Awaiting phone visual check; next stages realistic ferns/shrubs/reeds and waterline blending, not primitive cone cattails. Summersville color and 45ft grading preserved.
+
+## INDIVIDUAL HD STONE SIZE CORRECTION — 2026-10-23 ~22:17 EDT
+- Owner screenshot: tiny pebble-sized blobs, NOT 30–80 lb limestone. Owner instructed correction.
+- Root cause: GLB contains a rock SET; earlier code scaled the entire set to a target dimension, shrinking individual stones.
+- New isolated module `world-creator/base-camp/stacey-shore-sized-limestone-test.js` commit `7f1cf164f4b86e81ca7f24be8f124cc003375922`: select largest real textured mesh and clone it as individual stones, visible long-axis target 0.48–0.75 m, 85 candidate placements, irregular shoreline patches, keep 69ft exclusion from X140 Z-117.2 and access corridors.
+- New viewer `world-creator/base-camp/water-sized-limestone-test.html` commit `a563fa19a673bb520557dc4915e74d9b366b4686`.
+- Exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/a563fa19a673bb520557dc4915e74d9b366b4686/world-creator/base-camp/water-sized-limestone-test.html?spawn=lake
+- NOT PHONE VERIFIED. Visual size is a proxy, not physically measured stone mass. Preserve 45ft grade, island, water, baseline, trails and production. Await owner's visual assessment.
