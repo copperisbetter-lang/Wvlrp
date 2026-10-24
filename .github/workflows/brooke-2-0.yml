@@ -1,0 +1,28 @@
+name: Brooke 2.0 Isolated Face Pass
+on:
+  push:
+    branches: [brooke-2-0-fresh-start]
+    paths:
+      - 'avatar-work/brooke-2.0/**'
+      - '.github/workflows/brooke-2-0.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sculpt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Create independent face pass
+        run: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/build_face_pass1.py
+      - name: Upload isolated full-body result
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-2-0-face-pass1
+          path: avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
+          if-no-files-found: error
