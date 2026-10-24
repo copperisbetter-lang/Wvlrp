@@ -37,8 +37,9 @@ def render(path,out,angle=0):
     px=xx.ravel()[valid];py=yy.ravel()[valid];w=weights[:,valid].T;tuv=w@uv[tri];tx=np.clip((tuv[:,0]*(tw-1)).astype(int),0,tw-1);ty=np.clip((tuv[:,1]*(th-1)).astype(int),0,th-1)
     color=tex[ty,tx]*factor;visible=color[:,3]>.45
     normal=w@n[tri];normal/=np.maximum(np.linalg.norm(normal,axis=1,keepdims=True),1e-8)
-    shade=.48+.52*np.maximum(normal@light,0)
+    shade=np.ones(len(normal)) if 'KHR_materials_unlit' in mat.get('extensions',{}) else .48+.52*np.maximum(normal@light,0)
     rgb=color[:,:3]*shade[:,None]
     result[py[visible],px[visible]]=rgb[visible];depth[py[visible],px[visible]]=z[valid][visible]
  Image.fromarray(np.clip(result*255,0,255).astype('uint8')).save(out)
 if __name__=='__main__':render(sys.argv[1],sys.argv[2],float(sys.argv[3]) if len(sys.argv)>3 else 0)
+
