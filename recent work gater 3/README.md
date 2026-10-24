@@ -329,3 +329,11 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Isolated branch `gator3-approved-lake-jump-test-20261024`; modified `world-creator/base-camp/stacey-bass.js` only.
 - Commit `e6d32c3467603abc05f5382ed96966ea2c8e7d6a`: move pitch animation from fishRoot to child model, retain existing splash and ring logic. THIS IS AN EXPERIMENT, NOT PHONE VERIFIED. Must inspect actual GLB forward axis if issue persists.
 - Exact new test URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/e6d32c3467603abc05f5382ed96966ea2c8e7d6a/world-creator/base-camp/stacey-complete.html
+
+
+## 2026-10-24 — 40 CATFISH TEST BUILD
+- Owner confirmed bass fixed; do not modify bass behavior.
+- Created isolated Stacey Lake test viewer `world-creator/base-camp/stacey-catfish-40-test.html` on branch `gator3-approved-lake-jump-test-20261024`, commit `a62c14b54f1e734c808996d54e146eab77b9415c`.
+- Target: 40 WV flathead catfish, 10 at 60 lb and 30 at 20 lb, swimming slowly inches above lakebed. Reuses existing `flathead-catfish.glb` loading approach from `stacey-flatheads-30.html`, retaining existing bass and Dive control.
+- Exact inspection URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/a62c14b54f1e734c808996d54e146eab77b9415c/world-creator/base-camp/stacey-catfish-40-test.html
+- Status: CODE COMMITTED; phone visual confirmation and GLB runtime loading NOT VERIFIED. Check whether catfish are visible near lakebed and whether sizes and forward swimming are correct. Do not claim live verified fish until owner tests.
