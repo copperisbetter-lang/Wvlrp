@@ -57,19 +57,53 @@ scene.render.engine = 'BLENDER_EEVEE'
 scene.render.resolution_x = 512
 scene.render.resolution_y = 512
 scene.render.resolution_percentage = 100
-scene.world.color = (0.3, 0.3, 0.3)
+scene.world.color = (0.04, 0.04, 0.04)
+scene.view_settings.view_transform = 'Standard'
+scene.view_settings.look = 'Medium High Contrast'
+# Inspect the actual stored texture without introducing lighting overexposure.
+# Render-only copies: the preserved GLB was already exported and is not changed.
+for obj in scene.objects:
+    if obj.type != 'MESH':
+        continue
+    for slot in obj.material_slots:
+        if not slot.material or not slot.material.use_nodes:
+            continue
+        mat = slot.material.copy()
+        slot.material = mat
+        nodes = mat.node_tree.nodes
+        bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        output = next((n for n in nodes if n.type == 'OUTPUT_MATERIAL'), None)
+        if bsdf is None or output is None:
+            continue
+        emission = nodes.new('ShaderNodeEmission')
+        color = bsdf.inputs['Base Color']
+        if color.is_linked:
+            mat.node_tree.links.new(color.links[0].from_socket, emission.inputs['Color'])
+        else:
+            emission.inputs['Color'].default_value = color.default_value
+        transparent = nodes.new('ShaderNodeBsdfTransparent')
+        mix = nodes.new('ShaderNodeMixShader')
+        alpha = bsdf.inputs['Alpha']
+        if alpha.is_linked:
+            mat.node_tree.links.new(alpha.links[0].from_socket, mix.inputs[0])
+        else:
+            mix.inputs[0].default_value = alpha.default_value
+        mat.node_tree.links.new(transparent.outputs[0], mix.inputs[1])
+        mat.node_tree.links.new(emission.outputs[0], mix.inputs[2])
+        mat.node_tree.links.new(mix.outputs[0], output.inputs['Surface'])
 head_bones = [(r, b) for r in scene.objects if r.type == 'ARMATURE'
               for b in r.data.bones if b.name.lower().split(':')[-1] == 'head']
 assert len(head_bones) == 1, 'Head bone must be explicit'
 rig, bone = head_bones[0]
 target = rig.matrix_world @ ((bone.head_local + bone.tail_local) * 0.5)
+target.z += 0.025
 camera_data = bpy.data.cameras.new('Head inspection camera')
 camera = bpy.data.objects.new('Head inspection camera', camera_data)
 scene.collection.objects.link(camera)
 camera.location = target + Vector((0, -1.2, 0.015))
 camera.rotation_euler = (target - camera.location).to_track_quat('-Z', 'Y').to_euler()
 camera_data.type = 'ORTHO'
-camera_data.ortho_scale = 0.35
+camera_data.ortho_scale = 0.44
 scene.camera = camera
 for name, offset, energy, radius in [
     ('Key', (-0.7, -0.7, 0.7), 65, 0.8),
@@ -88,6 +122,7 @@ report = {
     'status': 'PASS', 'scope': 'Preserved baseline smoke test only, no Brooke likeness edit',
     'source_sha256': original_hash, 'before': before, 'after': after,
     'source_unchanged': True, 'render': 'baseline-head-smoke.png',
+    'render_mode': 'Texture-only inspection using render-only material copies; no model edit',
     'animation_note': 'Reports existing actions; no animation clips invented',
 }
 (destination / 'body-smoke-report.json').write_text(json.dumps(report, indent=2) + '\n')

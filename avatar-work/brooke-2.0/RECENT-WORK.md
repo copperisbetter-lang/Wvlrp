@@ -155,3 +155,8 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Actual baseline head PNG visually inspected: OVEREXPOSED; rejected as useful visual inspection evidence despite technical CI success. New Brooke likeness still NOT built or approved.
 - Corrective next change: render texture-only with copied inspection materials after model export (no model modification), increase head framing, rerun verification. Record separately, do not overwrite #21 history.
 - Historical Pass 4 software render was also inspected locally: visible nostril, brow/eye/lip and hairstyle defects remain. Do not present it as recovered approved final likeness.
+
+## Render evidence correction submitted — 2026-10-23 23:15 EDT
+- Follow-up to technical-success/visual-rejection run 40057191027. Inspection uses render-only emission material copies with original texture and alpha, after preserved-body export; no model materials are exported with these copies. Increased head framing to avoid clipped hair. The image is explicitly texture-only, not a photorealistic lighting or likeness pass.
+- Added scoped AGENTS.md with the audit's build/input/publication/recordkeeping requirements for future sessions.
+- No face edit, original photo publication, or viewer replacement. Verification rerun expected on this code commit; status UNKNOWN until actual run observed.
