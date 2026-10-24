@@ -45,37 +45,6 @@ function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixW
 async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?28+rand()*95:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 
-/* G3 sourced CC0 cattail clump GLB from 3dassets.dev; do not alter approved fish. */
-async function installNaturalShoreline(){
- const url='https://cdn.3dassets.dev/assets/22417/v1/model.glb';
- try{
-  const model=(await gltf.loadAsync(url)).scene;
-  model.updateMatrixWorld(true);
-  const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3());
-  if(!Number.isFinite(size.y)||size.y<.001)throw Error('invalid model');
-  let seed=42571;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
-  const groups=[];
-  // Temporary inspection placement: a tight cluster directly ahead of beach spawn.
-  // Spawn faces toward -Z, so set the plants 5–11 meters ahead.
-  const spawnZ=CZ+outer(Math.PI/2)+8;
-  for(let n=0;n<14;n++){
-   const x=CX+(n%7-3)*.95+(random()-.5)*.25;
-   const z=spawnZ-5-Math.floor(n/7)*3+(random()-.5)*.3;
-   const y=ground(x,z);
-   const plant=model.clone(true),scale=(.75+random()*.65)*1.52/size.y;
-   plant.scale.setScalar(scale);
-   plant.position.set(x,y-bounds.min.y*scale-.08,z);
-   plant.rotation.y=random()*6.283;
-   scene.add(plant);groups.push(plant);
-  }
-  diag.assets.shorePlants='Cattail inspection: '+groups.length+' clumps in front of beach spawn';
- }catch(e){
-  diag.assets.shorePlants='Model could not load; shoreline left unchanged';
-  diag.errors.push('Cattail GLB: '+String(e));
- }
-}
-installNaturalShoreline();
-
 /* G3: 70 WV flathead catfish: 30 original 40-lb, 30 additional 20-lb, 10 additional 60-lb. */
 const flatheadFish=[];const FLATHEAD_URL=ASSET+'flathead-catfish.glb';
 async function installFlatheads(){
