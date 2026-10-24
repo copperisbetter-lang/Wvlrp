@@ -1,8 +1,10 @@
-name: Brooke photo-based 3DDFA reconstruction
+name: Brooke 2.0 photo-based 3DDFA reconstruction
 on:
   push:
+    branches: [brooke-2-0-fresh-start]
     paths:
       - .github/workflows/brooke-photo-3ddfa.yml
+      - 'avatar-work/brooke-2.0/**'
       - avatar-work/brooke/scripts/build_complete_head.py
       - avatar-work/brooke/scripts/validate_photo_head_candidate.py
   workflow_dispatch:
