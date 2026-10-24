@@ -23,6 +23,15 @@ export function installStaceyWater(THREE,water){
     vec3 reflection=mix(vec3(.10,.22,.19),vec3(.41,.65,.77),sky);
     base=mix(base,reflection,clamp(.22+fres*.50,0.,.75));
     float glint=pow(max(dot(reflect(-L,n),V),0.),185.);
+    // Small wind-driven wavelets, with irregular shoreward foam where UV reaches the bank.
+    // The lake mesh must supply UVs with the shoreline at its outer boundary.
+    float edge=max(abs(vUv.x*2.-1.),abs(vUv.y*2.-1.));
+    float shore=1.-smoothstep(.89,1.0,edge);
+    float band=1.-shore;
+    float crest=sin(edge*165.-t*.82+sin(p.x*.17+p.y*.13)*2.1);
+    float foam=smoothstep(.70,.94,crest)*smoothstep(.90,.985,edge)*(1.-smoothstep(.995,1.,edge));
+    foam*=.48+.52*sin(p.x*.36+p.y*.29+t*.17)*sin(p.y*.31-p.x*.19);
+    base=mix(base,vec3(.72,.82,.76),clamp(foam*.38,0.,.32));
     float fine=sin(p.x*5.7+t*2.3)*sin(p.y*4.3-t*1.8);
     glint*=.5+.5*fine*fine;
     base+=vec3(1.,.92,.72)*glint*.82*daylight;
