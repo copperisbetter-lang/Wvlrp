@@ -60,7 +60,7 @@ async function installFlatheads(){
    const x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;
    const body=original.clone(true);
    body.traverse(n=>{if(n.isMesh){n.frustumCulled=false;}});
-   const depth=ground(x,z)+.55+rand()*.6;
+   const depth=ground(x,z)+.09+rand()*.13;
    const fish=new T.Group();fish.add(body);fish.position.set(x,Math.min(CY-.7,depth),z);
    fish.rotation.y=a+Math.PI/2;scene.add(fish);
    flatheadFish.push({node:fish,angle:fish.rotation.y,speed:.13+rand()*.16,phase:rand()*6.283,radius:inner(a)+16+rand()*12});
@@ -77,7 +77,7 @@ function animateFlatheads(t,dt){
   f.node.position.z+=Math.cos(f.angle)*f.speed*dt;
   const x=f.node.position.x,z=f.node.position.z,a=Math.atan2(z-CZ,x-CX),r=Math.hypot(x-CX,z-CZ);
   if(r>outer(a)-9||r<inner(a)+7)f.angle+=dt*.9;
-  f.node.position.y=Math.min(CY-.65,ground(x,z)+.65+Math.sin(t*.8+f.phase)*.10);
+  f.node.position.y=Math.min(CY-.65,ground(x,z)+.09+Math.sin(t*.8+f.phase)*.025);
  }
 }
 
