@@ -25,13 +25,15 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
   model.position.sub(bbox.getCenter(new T.Vector3()));
   model.scale.setScalar(size);
   fishRoot.add(model);
+  // GLB faces toward local -Z; swim/jump motion uses local +Z.
+  model.rotation.y=Math.PI;
   if(clips.length){const mixer=new T.AnimationMixer(model);const action=mixer.clipAction(clips[0]);action.setEffectiveTimeScale(.65+rng()*.65);action.play();mixer.setTime(rng()*Math.max(.1,clips[0].duration));mixers.push(mixer);}
   const a=rng()*Math.PI*2, radius=inner(a)+7+rng()*(outer(a)-inner(a)-14);
   const depth=.7+rng()*Math.min(5.5,1.5+weight);
   fishRoot.position.set(CX+Math.cos(a)*radius,CY-depth,CZ+Math.sin(a)*radius);
   const heading=rng()*Math.PI*2, speed=.13+.45/(1+weight*.35)+rng()*.14;
   fishRoot.rotation.y=heading;
-  fishRoot.userData={weight,heading,speed,phase:rng()*6.28,turn:(rng()-.5)*.12,jumpStart:-1,nextJump:20+rng()*160,jumpDuration:1.1,jumpHeight:.8};
+  fishRoot.userData={weight,heading,speed,phase:rng()*6.28,turn:(rng()-.5)*.12,jumpStart:-1,nextJump:20+rng()*160,jumpDuration:1.1,jumpHeight:.8,jumpTravel:0,jumpYaw:0,jumpRoll:0,jumpStyle:0};
   scene.add(fishRoot);fish.push(fishRoot);
  }
  diagnostics.assets.bass='300 loaded; '+clips.length+' animation clips';
@@ -48,7 +50,7 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
    const px=playerPosition?.x??CX, pz=playerPosition?.z??(CZ+outer(Math.PI/2));
    const available=fish.filter(f=>f.userData.jumpStart<0).sort((a,b)=>a.position.distanceToSquared(new T.Vector3(px,CY,pz))-b.position.distanceToSquared(new T.Vector3(px,CY,pz)));
    for(const f of available.slice(0,40)){
-    const d=f.userData;d.jumpStart=tick;d.jumpDuration=1.45;d.jumpHeight=1.3+rng()*.9;
+    const d=f.userData;d.jumpStart=tick;d.jumpDuration=1.45;d.jumpHeight=1.3+rng()*.9;d.jumpTravel=1.8+rng()*2.8;d.jumpYaw=(rng()-.5)*1.1;d.jumpRoll=(rng()-.5)*.65;d.jumpStyle=Math.floor(rng()*4);
     ripple(f.position.x,f.position.z,1.1);
    }
   }
@@ -65,12 +67,20 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
    if(r<low||r>high){const target=Math.atan2(-z,-x);d.heading+=Math.atan2(Math.sin(target-d.heading),Math.cos(target-d.heading))*.045;}
    else d.heading+=Math.sin(tick*.27+d.phase)*dt*.025+d.turn*dt;
    if(playerPosition&&f.position.distanceToSquared(playerPosition)<9)d.heading+=dt*.8;
-   f.rotation.y=d.heading;
-   f.position.x+=Math.sin(d.heading)*d.speed*dt;
-   f.position.z+=Math.cos(d.heading)*d.speed*dt;
    const leap=d.jumpStart>=0?Math.min(1,(tick-d.jumpStart)/d.jumpDuration):-1;
+   const airborneNow=leap>=0;
+   const forwardSpeed=airborneNow?d.jumpTravel/d.jumpDuration:d.speed;
+   f.rotation.y=d.heading+(airborneNow?d.jumpYaw*leap:0);
+   f.position.x+=Math.sin(f.rotation.y)*forwardSpeed*dt;
+   f.position.z+=Math.cos(f.rotation.y)*forwardSpeed*dt;
    f.position.y=leap>=0?CY-.10+Math.sin(Math.PI*leap)*d.jumpHeight:CY-(.65+Math.min(5.5,d.weight*.35+1.2))+.13*Math.sin(tick*.7+d.phase);
-   f.rotation.z=leap>=0?Math.sin((leap-.5)*Math.PI)*.22:0;
+   // Tangent-aligned pitch: mouth rises first, levels at apex, tips down on entry.
+   // Different splashdown styles add roll or a slight belly-flop.
+   const verticalVelocity=leap>=0?Math.PI*d.jumpHeight*Math.cos(Math.PI*leap)/d.jumpDuration:0;
+   f.rotation.x=leap>=0?-Math.atan2(verticalVelocity,d.jumpTravel/d.jumpDuration):0;
+   f.rotation.z=leap>=0?d.jumpRoll*Math.sin(Math.PI*leap)*(d.jumpStyle===0?.25:1):0;
+   if(leap>=0&&d.jumpStyle===2)f.rotation.x+=.22*Math.sin(Math.PI*leap);
+   if(leap>=0&&d.jumpStyle===3)f.rotation.z+=.55*Math.pow(leap,3);
    // Gentle body yaw; GLB embedded animation can be wired after its clip is verified.
    if(!clips.length)f.children[0].rotation.y=Math.sin(tick*(1.4+d.speed)+d.phase)*.045;
   }
