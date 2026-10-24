@@ -267,3 +267,12 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - New viewer `world-creator/base-camp/water-sized-limestone-test.html` commit `a563fa19a673bb520557dc4915e74d9b366b4686`.
 - Exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/a563fa19a673bb520557dc4915e74d9b366b4686/world-creator/base-camp/water-sized-limestone-test.html?spawn=lake
 - NOT PHONE VERIFIED. Visual size is a proxy, not physically measured stone mass. Preserve 45ft grade, island, water, baseline, trails and production. Await owner's visual assessment.
+
+
+## OWNER HANDOFF — 2026-10-24 ~00:39 EDT — PAUSED UNTIL TOMORROW
+- Owner phone test: STILL WALKING ON WATER. Character cannot descend below surface or walk on lake bottom. Consequently fish presence/appearance CANNOT be verified; do not claim fish are visible or successfully installed.
+- Previously uploaded largemouth bass GLB; desired population: 120 bass from tiny up to ~8 lb. Installation and rendering remain UNVERIFIED.
+- Preserve the owner-approved Stacey Lake water appearance, island, lighting, ripples, and performance. Do not change approved visuals while fixing underwater locomotion.
+- Next task: inspect actual independent water lab entrypoint (`world-creator/base-camp/water-lab.html`), movement/collision/buoyancy controls and fish spawning; correct underwater descent and bottom walking, then verify on phone. Do not mistake old `stacey-lake.html` for this lab.
+- Owner requested an exact test viewer link when ready, but no new verified fix/build exists yet. No code change or deployment was made during this handoff.
+- Owner directive: save this handoff in Gater 3 Recent Work and PAUSE until tomorrow. Resume only when owner returns.
