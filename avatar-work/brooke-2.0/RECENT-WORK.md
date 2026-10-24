@@ -77,3 +77,7 @@ For each event record: local timestamp (or clearly marked unknown), Gater/operat
 **Green CI is NOT visual approval.** Do not mark a model completed until visually inspected and user-approved. Keep Sophie 1 untouched. Do not reuse a failed approach without noting what was changed to address its root cause.
 At every change: update this record immediately in the same work sequence. At every run: log start and finish, even if the result is green. Cross-Gater handovers must link this record in issue #29.
 Historical note: Earlier builds were not consistently documented; history may be incomplete. Do not fabricate missing run numbers or statuses. Backfill verified GitHub records when available.
+
+## Review gate — 2026-10-23
+- User requested Brooke's face ready to review. NOT READY. Inspected local artifacts: `brooke_photo_face_reference.glb` is 11,211-vertex curved photographic surface, NOT anatomical head; `brooke-photo-head-candidate.glb` is older 3DDFA candidate and NOT proven to use five new references. Neither may be presented as completed face on full body.
+- Existing full-body baseline remains preserved. Block release of any viewer update until actual photo-derived head is fitted, visually inspected, and correctly identified as candidate.
