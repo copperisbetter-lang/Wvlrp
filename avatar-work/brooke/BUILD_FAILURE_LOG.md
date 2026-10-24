@@ -43,3 +43,7 @@
 - Baseline for future changes: commit 79642740af6d1bea4fc3ef95988d8de8111a6be8, run 39846490326.
 - Important: this is a valid **placeholder** head prototype, not yet a reference-photo-matched likeness. Keep this known-good baseline and change likeness parameters incrementally.
 - Separate `Publish WVLRP` workflow remains failing on the same commit; Brooke's standalone workflow is green, not the entire site deployment.
+
+## 2026-10-23 — Full 24-hour retrospective
+
+[Read the complete audit](https://github.com/copperisbetter-lang/Wvlrp/blob/brooke-2-0-fresh-start/avatar-work/brooke-2.0/BROOKE_24H_FAILURE_AUDIT_2026-10-23.md) before any further Brooke model work. Contains every recovered run, all 65 failed-job logs, 8 green runs with failed geometry assertions, and required corrective gates. 29 missing Blender NumPy failures were verified across multiple workflows; 10 runs lacked required photo input. Current fixes remain PENDING. No new build or model change was performed to write this audit. Existing historical entries above are retained.

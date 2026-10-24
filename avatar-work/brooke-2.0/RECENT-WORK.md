@@ -110,3 +110,19 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Prior runs #18 and #19 remain screenshot-confirmed failures; their individual logs have NOT been inspected in this chat. Do not assume their cause from #20.
 - Viewer status: existing baseline only, NOT output from failed run #20. Pinned baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html?fullbody=83787d3e8810
 - This update changes documentation only; commit uses [skip actions] to avoid triggering another model build for a log update. No retry started, no dependency fix or model edit claimed. Sophie 1 untouched.
+
+## 24-hour audit completed — 2026-10-23, after 22:50 EDT
+- Doug directed a full retrospective BEFORE further Brooke model work. Model work remains paused in this chat.
+- Full report: [BROOKE_24H_FAILURE_AUDIT_2026-10-23.md](https://github.com/copperisbetter-lang/Wvlrp/blob/brooke-2-0-fresh-start/avatar-work/brooke-2.0/BROOKE_24H_FAILURE_AUDIT_2026-10-23.md)
+- Audited window: October 22 22:50 to October 23 22:50 EDT. Enumerated all 390 retained repository runs in window; selected 163 Brooke-named/on-Brooke-branch runs: 65 failed, 82 green, 16 cancelled. Fourteen failed World Creator checks are adjacent terrain/trail checks; direct Brooke workflow failures = 51.
+- Read all 65 failed-job logs, all 82 green-run logs, all selected job summaries, current workflow/scripts, older recovery notes, and Bell history.
+- VERIFIED repeated failures: 29 missing Blender NumPy, 10 missing authorized photo URL, 5 publication merge conflicts, 2 wrong mesh selection, 2 renderer aborts, 1 installation timeout, 1 protected-region assertion, 1 missing photo/landmark readiness; plus 14 adjacent terrain/trail failures.
+- CRITICAL: 8 green reconstruction runs contain AssertionError: Photo-derived vertices missing/altered: 38365. Geometry validator Blender invocation lacks --python-exit-code 1. Green CI did not establish successful validation.
+- CRITICAL: current workflow fits/verifies face-fit-candidate, then build_face_pass1.py reloads baseline brooke-2.0.glb rather than fitted candidate. This disconnect can discard fitted work. Current fitter is an overlay, not a rigged anatomical head morph.
+- Known NumPy preflight exists in prototype workflow but is missing from new 2.0 face-pass workflow; repeated workflow replacement failed to carry known fixes forward.
+- Recovered 1.1 Pass 2/3/4 immutable checkpoints and Pass 7 CURRENT_STATUS on its separate branch. Do not confuse unvalidated viewer-only edits or baseline with a baked, approved model.
+- Report includes complete chronological 163-run register, every failed-job entry with logs/steps, cancelled runs, visual/delivery failures, Bell evidence, and concrete acceptance gates before any further build.
+- Audit is documentation, not a dependency/model fix. All root-cause fixes remain PENDING. No new build, retry, model edit, viewer change, merge or deployment performed.
+- Bell audit check-in: https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379013506 . Posting does not establish other Gaters read it.
+- Read this audit and exact checkpoint/source inputs BEFORE next action; do not repeat a failed signature without recording a root-cause correction. Keep latest green-eye instruction and protect Sophie 1 / retained Brooke checkpoints.
+- Audit documentation commit uses [skip actions] so recording failures does not trigger the same broken model workflows.
