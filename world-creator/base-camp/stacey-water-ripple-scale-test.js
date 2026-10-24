@@ -36,8 +36,8 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float t=uTime*.43;
         float a=sin(vWorld.x*.65+vWorld.z*.12+t)*.029 + sin(vWorld.x*1.55-vWorld.z*.24-t*.67)*.009;
         float b=sin(vWorld.x*-.13+vWorld.z*.71-t*.81)*.026 + sin(vWorld.x*.21+vWorld.z*1.65+t*.57)*.008;
-        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.043+vec2(t*.038,t*.021);
-        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.067)+vec2(-t*.028,t*.032);
+        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.12+vec2(t*.038,t*.021);
+        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.16)+vec2(-t*.028,t*.032);
         vec3 tex1=texture2D(uRippleNormal,uv1).xyz*2.-1.;
         vec3 tex2=texture2D(uRippleNormal,uv2).xyz*2.-1.;
         vec3 n=normalize(vec3(a+.092*tex1.x+.058*tex2.x,1.,b+.092*tex1.y+.058*tex2.y));
@@ -77,10 +77,10 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
                         sin(vWorld.z*.23+vWorld.x*.07)*1.30);
         float crests=max(smoothstep(.66,.94,crestA),
                          smoothstep(.79,.97,crestB)*.65);
-        float foam=nearBank*crests*brokenPatches*.48;
+        float foam=nearBank*crests*brokenPatches*.12;
         // Light glancing off small translucent crests, not bright painted white strips.
-        color=mix(color,vec3(.70,.77,.70),foam);
-        color+=vec3(.028,.031,.025)*foam;
+        color=mix(color,vec3(.48,.59,.55),foam);
+        color+=vec3(.008,.011,.010)*foam;
         float fine=(tex1.x+tex2.y)*.5;
         color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
