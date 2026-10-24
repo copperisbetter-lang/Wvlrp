@@ -33,7 +33,7 @@ export function lakeTerrain(x,z,original){
  const habitat=deep+0.45*Math.sin(x*.09)*Math.cos(z*.11);
  if(r<shoreBlendStart)return habitat;
  // Gradual outer beach shallows and terrain transition; no abrupt vertical wall.
- const shallow=STACEY.waterY-0.7;
+ const shallow=STACEY.waterY+.035;
  if(r<outer){return habitat*(1-smooth((r-shoreBlendStart)/(outer-shoreBlendStart)))+shallow*smooth((r-shoreBlendStart)/(outer-shoreBlendStart));}
  return shallow*(1-smooth((r-outer)/12))+original*smooth((r-outer)/12);
 }
