@@ -1,0 +1,171 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>The Wild | Base Camp Orientation</title><style>body{margin:0;background:#141d20;color:white;font:14px system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none}#hud{position:fixed;top:12px;left:12px;background:#071217c9;padding:12px;border-radius:12px;max-width:280px;z-index:3}#hud.compact{padding:8px 10px;max-width:245px}#hud.compact small,#hud.compact label,#hud.compact #reset{display:none}#hud.compact #info{font-size:12px;margin:5px 0}#hudToggle{margin-top:4px;cursor:pointer}#pad{position:fixed;bottom:30px;left:30px;width:120px;height:120px;border:2px solid #ffffff88;border-radius:50%;touch-action:none;background:#ffffff19;z-index:2}#nub{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffff9c}#look{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;touch-action:none;user-select:none;-webkit-user-select:none;z-index:1}#clock{width:100%}button{background:#d9e9db;border:0;border-radius:8px;padding:7px}small{display:block;color:#f9d38b}</style></head><body><div id="look"></div><div id="hud" class="compact"><b>THE WILD · BASE CAMP</b><small>Vegetation cleared for a clean Base Camp rebuild. Approved buildings remain pending.</small><p id="info">Loading world…</p><small id="assetStatus">Loading photographic ground material…</small><small id="vegetationStatus">All trees, shrubs, ferns and deadwood removed from the active scene.</small><small id="perfStatus">Measuring GPU load…</small><label>Time of day <input id="clock" type="range" min="6" max="20" step=".1" value="12"></label><button id="reset">Return to center</button><button id="hudToggle" aria-expanded="false">Show details</button></div><div id="gpsPanel" style="position:fixed;right:8px;bottom:18px;z-index:6;background:#071217e6;color:white;border-radius:10px;padding:9px;font:12px system-ui;min-width:145px"><strong>GPS · Base Camp</strong><div id="gpsCoords">X 0 · Z 0</div><div id="gpsDistance">Lake: -- m</div><button id="gpsLake" style="margin-top:6px;width:100%;font-weight:bold">Spawn at lake</button><button id="gpsBase" style="margin-top:5px;width:100%">Base Camp</button></div><div id="pad"><div id="nub"></div></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script><script type="module">
+import * as THREE from 'three';import {installCalmWaterLab} from './stacey-water-ripple-scale-test.js';import {STACEY,lakeTerrain,installStaceyLake} from './stacey-lake-v3.js';import {installVillageCampsiteTrail} from './village-campsite-trail.js';import {BASE_CAMP_RADIUS_M,perimeterClearings,sunDirection} from './orientation-config.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xb5cbd2);scene.fog=new THREE.FogExp2(0xb1c5c4,.00115);
+// No panorama: only procedurally lit sky color and fog. Sun moves independently.
+const mobileProfile=matchMedia("(pointer:coarse)").matches||innerWidth<820;
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,1700);
+const renderer=new THREE.WebGLRenderer({antialias:!mobileProfile,powerPreference:'high-performance'});let renderScale=Math.min(devicePixelRatio,mobileProfile?.85:1.6);renderer.setPixelRatio(renderScale);renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=!mobileProfile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();document.getElementById('vegetationStatus').textContent='Graphics context lost; vegetation remains disabled.';});
+const hemi=new THREE.HemisphereLight(0xeaf5ff,0x556347,2.1);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffefd0,3.0);sun.castShadow=true;sun.shadow.mapSize.set(mobileProfile?512:1024,mobileProfile?512:1024);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun,sun.target);
+// Five-acre recessed lake, positioned north of Base Camp; nearest bank ~92 feet from center.
+// Lake footprint: 5.00 acres nominal; irregular outline is numerically integrated for audit.
+const LAKE_ACRES=5,ACRE_M2=4046.8564224;
+const LAKE={x:0,z:-108,rx:82,rz:(LAKE_ACRES*ACRE_M2)/(Math.PI*82),waterLevel:-4.5};
+function shorelineWave(a){return 1+.025*Math.sin(5*a)+.018*Math.cos(9*a)}
+function lakeAreaM2(){let sum=0;const n=2048;for(let i=0;i<n;i++){const a=(i+.5)*2*Math.PI/n;sum+=shorelineWave(a)**2}return Math.PI*LAKE.rx*LAKE.rz*sum/n}
+const actualLakeAcres=lakeAreaM2()/ACRE_M2;
+function lakeRadius(x,z){const dx=x-LAKE.x,dz=z-LAKE.z;const angle=Math.atan2(dz,dx);const waviness=shorelineWave(angle);return Math.hypot(dx/LAKE.rx,dz/LAKE.rz)/waviness}
+function beachZone(x,z){const r=lakeRadius(x,z);return z>LAKE.z+20&&Math.abs(x)<39&&r>.79&&r<1.23}
+function baseTerrainY(x,z){return 7*Math.sin(x/92)*Math.cos(z/78)+3*Math.sin(z/34)+2*Math.cos(x/43)}
+function terrainY(x,z){return lakeTerrain(x,z,baseTerrainY(x,z));if(true)return baseTerrainY(x,z);const r=lakeRadius(x,z),base=baseTerrainY(x,z);if(r>1.24)return base;const smooth=t=>t*t*(3-2*t);const blend=smooth(Math.max(0,Math.min(1,(r-.68)/.56)));const bed=LAKE.waterLevel-3.8+2.5*Math.pow(Math.min(r,1),2);const shore=beachZone(x,z)?LAKE.waterLevel+Math.max(0,r-.93)*8:LAKE.waterLevel+Math.max(0,r-.94)*15;return r<.94?bed*(1-blend)+shore*blend:shore*(1-blend)+base*blend}
+// Gator 3: 8%-of-world Stacey Lake shoreline planning overlay ONLY.
+// No excavation, collision change, water or panorama. Visualize and survey before approval.
+const proposedLake={x:140,z:-240,areaM2:Math.PI*BASE_CAMP_RADIUS_M**2*.08};
+const proposedLakeRadius=Math.sqrt(proposedLake.areaM2/Math.PI);
+// The low point is near the perimeter; constrain any final footprint inside the world.
+// The ring is a candidate survey marker, not a finalized shore.
+// Best fully-contained circular candidate from 4m-grid terrain scan: center (140,-240),
+// mean sampled interior-ring elevation ~-4.87m, world-edge margin ~10.69m.
+// This is NOT a hydrological catchment assessment and may conflict with trails/campsites.
+const proposedLakeMarkers=[];
+for(let i=0;i<160;i++){
+ const a=i*Math.PI*2/160,x=proposedLake.x+Math.cos(a)*proposedLakeRadius,z=proposedLake.z+Math.sin(a)*proposedLakeRadius;
+ if(Math.hypot(x,z)>BASE_CAMP_RADIUS_M-12)continue;
+ proposedLakeMarkers.push({x,z});
+}
+// Owner-approved 3D lake prototype, without the old panorama or reflective basin.
+// Existing trails removed. New trails will be laid out only after approval.
+// Circular terrain edge: radial topology avoids the stair-step square-grid border.
+const verts=[0,terrainY(0,0),0],uvs=[.5,.5],idx=[];
+const RADIAL_STEPS=82,ANGLE_STEPS=320;
+for(let ring=1;ring<=RADIAL_STEPS;ring++){
+ const radius=BASE_CAMP_RADIUS_M*ring/RADIAL_STEPS;
+ for(let side=0;side<ANGLE_STEPS;side++){
+  const angle=2*Math.PI*side/ANGLE_STEPS;
+  const x=radius*Math.cos(angle),z=radius*Math.sin(angle);
+  verts.push(x,terrainY(x,z),z);
+  uvs.push((x/BASE_CAMP_RADIUS_M+1)*.5,(z/BASE_CAMP_RADIUS_M+1)*.5);
+ }
+}
+const ringVertex=(ring,side)=>1+(ring-1)*ANGLE_STEPS+(side%ANGLE_STEPS);
+for(let side=0;side<ANGLE_STEPS;side++)idx.push(0,ringVertex(1,side+1),ringVertex(1,side));
+for(let ring=1;ring<RADIAL_STEPS;ring++)for(let side=0;side<ANGLE_STEPS;side++){
+ const a=ringVertex(ring,side),b=ringVertex(ring,side+1);
+ const c=ringVertex(ring+1,side),d=ringVertex(ring+1,side+1);
+ idx.push(a,b,c,b,d,c);
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+// Cut the discarded pond basin out of visible ground geometry without changing
+// collision/topography calculations or Gator 2's separate trails.
+// The Stacey Lake photo shows through until an approved near-shore 3D water rebuild.
+// Diagnostic only: ?lakeCut=off restores terrain over the legacy basin to isolate the false-lake artifact.
+// Default remains unchanged until the photographic shoreline is verified.
+const lakeParams=new URLSearchParams(location.search);
+const lakeRepairEnabled=true; // owner-directed: permanently disable fake lake basin
+const lakeCutEnabled=lakeRepairEnabled?false:lakeParams.get('lakeCut')!=='off';
+// Diagnostic state is always visible, even when the compact HUD hides details.
+const lakeModeBadge=document.createElement('div');
+lakeModeBadge.id='lakeModeBadge';lakeModeBadge.style.cssText='position:fixed;top:8px;right:8px;z-index:5;background:#09252cdd;color:#fff;padding:7px 10px;border-radius:8px;font:12px system-ui;pointer-events:none';
+lakeModeBadge.textContent='STACEY LAKE · INDEPENDENT WATER LAB';
+document.body.append(lakeModeBadge);
+const cleanLakeIndices=[];
+for(let i=0;i<idx.length;i+=3){
+ const ia=idx[i]*3,ib=idx[i+1]*3,ic=idx[i+2]*3;
+ const x=(verts[ia]+verts[ib]+verts[ic])/3,z=(verts[ia+2]+verts[ib+2]+verts[ic+2])/3;
+ if(lakeCutEnabled&&lakeRadius(x,z)<1.23)continue;
+ cleanLakeIndices.push(idx[i],idx[i+1],idx[i+2]);
+}
+geo.setIndex(cleanLakeIndices);geo.computeVertexNormals();
+const groundMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide});const ground=new THREE.Mesh(geo,groundMaterial);const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_diff_1k.png',tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(95,95);groundMaterial.map=tex;groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor photo texture loaded';textureLoader.load('https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/forest_floor/forest_floor_nor_gl_1k.png',normal=>{normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(95,95);groundMaterial.normalMap=normal;groundMaterial.normalScale.set(.6,.6);groundMaterial.needsUpdate=true;document.getElementById('assetStatus').textContent='Forest-floor color + normal maps loaded';});},undefined,()=>{groundMaterial.color.set(0x536c43);document.getElementById('assetStatus').textContent='Texture unavailable — diagnostic fallback active';});ground.receiveShadow=true;scene.add(ground);
+const staceyLakeV3=installStaceyLake(THREE,scene);const calmWaterLab=installCalmWaterLab(THREE,scene,staceyLakeV3);
+const lakeDepthBadge=document.createElement('div');lakeDepthBadge.style.cssText='position:fixed;right:8px;top:52px;z-index:5;background:#09252cdd;color:#fff;padding:6px 9px;border-radius:7px;font:12px system-ui;pointer-events:none';document.body.append(lakeDepthBadge);
+// The terrain remains circular, without a painted border.
+// All 41 perimeter locations remain unfurnished, vegetation-free clearings.
+// Leaf litter here is a flat ground texture only; no separate shrubs or trees.
+
+// Gator 3: owner-directed hard removal of Stacey Lake panorama and fake reflective lake.
+// No Stacey panorama texture, cylinder, or water shader is loaded or rendered.
+// Lake terrain geometry is restored to an ordinary nonreflective ground surface.
+// Woodland Trail 360 reference: narrow, meandering leaf-and-soil footpaths.
+// Curved geometry follows the terrain; mottled, feathered margins avoid flat road ribbons.
+// No trail meshes, path textures, or trail geometry in this scene.
+
+// Interior future campsites: natural empty clearings, outside Base Camp's 200-foot exclusion.
+const interiorClearings=[];let siteSeed=32178;function siteRandom(){siteSeed=(Math.imul(siteSeed,1664525)+1013904223)>>>0;return siteSeed/4294967296}
+for(let trial=0;trial<5000&&interiorClearings.length<24;trial++){
+ const radius=75+siteRandom()*260,a=siteRandom()*Math.PI*2,x=Math.cos(a)*radius,z=Math.sin(a)*radius;
+ if(lakeRadius(x,z)<1.45||beachZone(x,z))continue;
+ if(interiorClearings.some(p=>Math.hypot(x-p.x,z-p.z)<32))continue;
+ interiorClearings.push({id:'interior-'+String(interiorClearings.length+1).padStart(2,'0'),x,z,type:'natural-unfurnished-clearing'});
+  // No floating brown discs: vegetation setbacks reveal a genuine natural clearing.
+}
+
+// Approved first trail: village treeline to closest unfurnished interior clearing.
+// Owner-directed removal: do not instantiate the photographed trail section, fence posts, rails or rocks.
+// Keep the trail module untouched so Gator 2's independent planning work is unaffected.
+const campsiteTrail=null;
+// Bare Base Camp baseline, approved 2026-10-22.
+// Vegetation is intentionally NOT imported, downloaded, created or streamed.
+// Old tree/understory source files remain outside this scene for future rebuilding.
+// The full Wild game is a separate route and remains untouched.
+
+const spawnTarget=new URLSearchParams(location.search).get('spawn');const spawnVillage=spawnTarget==='village';const spawnTrail=spawnTarget==='trail';const spawnX=0,spawnZ=spawnTrail?(campsiteTrail?.start.z??15):spawnVillage?0:15;const pos=new THREE.Vector3(spawnX,terrainY(spawnX,spawnZ)+2,spawnZ);let yaw=0,pitch=0;
+const gpsCoords=document.getElementById('gpsCoords'),gpsDistance=document.getElementById('gpsDistance');
+function teleportTo(x,z,faceLake=false){pos.set(x,Math.max(terrainY(x,z)+2,STACEY.waterY+1.35),z);if(faceLake){yaw=Math.atan2(x-STACEY.x,z-STACEY.z);pitch=-.06;}moveX=moveY=0;}
+document.getElementById('gpsLake').onclick=()=>{const z=STACEY.z+STACEY.radius+9;teleportTo(STACEY.x,z,true);};
+document.getElementById('gpsBase').onclick=()=>teleportTo(0,15);
+if(new URLSearchParams(location.search).get('spawn')==='lake'){pos.set(STACEY.x,terrainY(STACEY.x,STACEY.z+STACEY.radius+9)+2,STACEY.z+STACEY.radius+9);yaw=Math.atan2(pos.x-STACEY.x,pos.z-STACEY.z);pitch=-.06;}
+const pad=document.getElementById('pad'),nub=document.getElementById('nub');let moveX=0,moveY=0,drag=null;
+// Treat walking and looking as separate pointer streams so two-finger play works.
+// The look surface spans the entire screen; HUD and joystick sit above it.
+pad.addEventListener('pointerdown',e=>{
+ if(drag!==null)return;
+ drag=e.pointerId;pad.setPointerCapture(e.pointerId);updatePad(e);e.preventDefault();
+});
+pad.addEventListener('pointermove',e=>{if(drag===e.pointerId){updatePad(e);e.preventDefault();}});
+function updatePad(e){const r=pad.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,len=Math.max(1,Math.hypot(dx,dy)),s=Math.min(43,len)/len;moveX=dx*s/43;moveY=dy*s/43;nub.style.transform=`translate(${dx*s}px,${dy*s}px)`}
+function stopPad(e){if(drag!==e.pointerId)return;drag=null;moveX=moveY=0;nub.style.transform='';}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(type,stopPad);
+const look=document.getElementById('look');
+let lookPointer=null,lookX=0,lookY=0;
+look.addEventListener('pointerdown',e=>{
+ if(lookPointer!==null)return;
+ lookPointer=e.pointerId;lookX=e.clientX;lookY=e.clientY;
+ look.setPointerCapture(e.pointerId);e.preventDefault();
+});
+look.addEventListener('pointermove',e=>{
+ if(e.pointerId!==lookPointer)return;
+ const dx=e.clientX-lookX,dy=e.clientY-lookY;
+ // Positive rightward finger motion turns the view right; negative turns left.
+ yaw-=dx*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-dy*.004));
+ lookX=e.clientX;lookY=e.clientY;e.preventDefault();
+});
+function stopLook(e){if(e.pointerId===lookPointer)lookPointer=null;}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])look.addEventListener(type,stopLook);
+addEventListener('blur',()=>{lookPointer=null;drag=null;moveX=moveY=0;nub.style.transform='';});
+document.getElementById('reset').onclick=()=>{pos.set(0,terrainY(0,0)+2,0);yaw=0;pitch=0};
+const hud=document.getElementById('hud'),hudToggle=document.getElementById('hudToggle');hudToggle.onclick=()=>{const compact=hud.classList.toggle('compact');hudToggle.textContent=compact?'Show details':'Hide details';hudToggle.setAttribute('aria-expanded',String(!compact));};
+const clock=document.getElementById('clock');const moveForward=new THREE.Vector3(),moveRight=new THREE.Vector3();let previous=performance.now(),lastHudUpdate=0;
+let lastAdaptive=performance.now();
+let frameSum=0,frameCount=0,lastFpsAt=performance.now(),fps=0;
+function tick(now){
+ requestAnimationFrame(tick);
+ const elapsed=now-previous,dt=Math.min(.08,elapsed/1000);previous=now;
+ staceyLakeV3.update(now/1000);calmWaterLab.update(now/1000);
+ frameSum+=elapsed;frameCount++;
+ if(now-lastFpsAt>1200){fps=Math.round(frameCount*1000/Math.max(1,frameSum));frameSum=frameCount=0;lastFpsAt=now;}
+ // Adaptive pixel scaling remains for measuring the clean mobile baseline.
+ // With no forest, never adjust tree counts or initialize vegetation assets.
+ if(mobileProfile&&now-lastAdaptive>3000&&fps>0){
+  if(fps<30&&renderScale>.58)renderScale=Math.max(.58,Math.round((renderScale-.07)*100)/100);
+  else if(fps>48&&renderScale<.85)renderScale=Math.min(.85,Math.round((renderScale+.04)*100)/100);
+  renderer.setPixelRatio(renderScale);
+  lastAdaptive=now;
+ }
+ const f=moveForward.set(-Math.sin(yaw),0,-Math.cos(yaw)),r=moveRight.set(Math.cos(yaw),0,-Math.sin(yaw));pos.addScaledVector(f,-moveY*dt*8);pos.addScaledVector(r,moveX*dt*8);if(Math.hypot(pos.x,pos.z)>BASE_CAMP_RADIUS_M-5){const k=(BASE_CAMP_RADIUS_M-5)/Math.hypot(pos.x,pos.z);pos.x*=k;pos.z*=k}const lakeGroundY=terrainY(pos.x,pos.z),lakeWaterDepth=STACEY.waterY-lakeGroundY;const lakeCenterDistance=Math.hypot(pos.x-STACEY.x,pos.z-STACEY.z);const insideLake=lakeCenterDistance<STACEY.radius*1.02&&lakeWaterDepth>.35;
+// Float at the lake surface during inspection instead of walking beneath the water mesh.
+pos.y=insideLake?Math.max(lakeGroundY+2,STACEY.waterY+1.35):lakeGroundY+2;gpsCoords.textContent='X '+pos.x.toFixed(1)+' · Z '+pos.z.toFixed(1);
+gpsDistance.textContent='Lake center: '+Math.hypot(pos.x-STACEY.x,pos.z-STACEY.z).toFixed(0)+' m';
+const lakeDepthMeters=Math.max(0,STACEY.waterY-terrainY(pos.x,pos.z));lakeDepthBadge.textContent=(insideLake?'SURFACE SWIM · ':'SHORE · ')+'Depth: '+(lakeDepthMeters*3.28084).toFixed(1)+' ft';camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);const d=sunDirection(+clock.value);sun.position.set(pos.x+d.x*180,d.y*180,pos.z+d.z*180);sun.target.position.set(pos.x,0,pos.z);sun.target.updateMatrixWorld();sun.intensity=Math.max(.08,d.y*3);if(now-lastHudUpdate>500){document.getElementById('info').textContent=`${perimeterClearings.length} perimeter + ${interiorClearings.length} interior clearings · lake ${actualLakeAcres.toFixed(2)} acres · ${Math.round(Math.hypot(pos.x,pos.z))}m from center · ${clock.value}:00 · ${fps} FPS · ${Math.round(renderScale*100)}% resolution`;document.getElementById('perfStatus').textContent=`GPU ${renderer.info.render.calls} draws · ${Math.round(renderer.info.render.triangles/1000)}k triangles · vegetation 0 · bare-world baseline`;lastHudUpdate=now;}renderer.render(scene,camera)}requestAnimationFrame(tick);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
