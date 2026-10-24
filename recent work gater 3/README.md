@@ -55,3 +55,13 @@ This entry is a documentation-only update. No water code changed in this step. L
 
 ## PRE-TWEAK RECORD — 2026-10-23, exact local time unavailable
 Owner authorized further Stacey Lake improvements. Active issue: no visible shoreline breaks, tiny ripples, weak sun reflection. Target isolated `gator3-stacey-calm-water-20261023`, `world-creator/base-camp/stacey-water-lab.js`. Planned: make intermittent shore crests more visible by varying foam patches across world space and tapering at both island and outer bank; do not touch geometry. Baseline viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/af6b9bc13fcc629ed9ae77b39dafd14356646840/world-creator/base-camp/water-lab.html?spawn=lake . Status: pending isolated shader change and phone test.
+
+## TWEAK COMPLETED — 2026-10-23 (exact time unavailable)
+- Owner instruction: improve Stacey Lake, and **log every tweak immediately**.
+- Complaint: no visible shore breaks; previous foam weak/artificial.
+- Changed: isolated branch `gator3-stacey-calm-water-20261023`, `world-creator/base-camp/stacey-water-lab.js` ONLY.
+- Commit: `2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12`.
+- Change: broadened nearshore fade, added two slower staggered small wave crests, world-space patch modulation, brighter but translucent foam. Both island and outer bank addressed through aLakeT. Island/lake geometry, trails and production untouched.
+- **New exact preview link (NOT yet verified on phone):** https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
+- Status: committed; owner phone visual check and performance check PENDING. No production merge.
+- Issue #29 bell check-in comment ID 6377583309. Await Gater 1 review for any production integration.
