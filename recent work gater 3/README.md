@@ -170,3 +170,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Change: more tightly tiled dual normal maps and stronger perturbed normals to reveal finer surface ripples; heavily reduced artificial foam brightness/opacity. No geometry displacement; physical breakers remain unresolved.
 - Full next test URL (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/ff92b4538865bcd7534f8b4c29745e81b8163350/world-creator/base-camp/water-ripple-scale-test.html?spawn=lake
 - Preserve protected baseline `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`; no production merge.
+
+## GEOMETRY RIPPLE EXPERIMENT — 2026-10-23 after 21:24 EDT
+- Owner: 'Still no', then 'Do it'. Previous increased-normal test failed visual acceptance.
+- Isolated branch `gator3-stacey-calm-water-20261023`; added `world-creator/base-camp/stacey-water-geometry-test.js` (commit `57d70d5e11c4fc4a872fc38fa85d8d56a8848c80`) and `world-creator/base-camp/water-geometry-test.html` (commit `52527f93ebcf636cde4a1c14409d56fc62a6f569`).
+- Added declared `uniform float uTime` in vertex shader, low-amplitude moving displacement and shore-localized crest. This specifically avoids previous missing uniform risk. Geometry unchanged; original shader/baseline unchanged.
+- Exact isolated preview (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/52527f93ebcf636cde4a1c14409d56fc62a6f569/world-creator/base-camp/water-geometry-test.html?spawn=lake
+- Prior owner-verified safe baseline remains f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6. No production deployment. If blank/drained, revert to baseline; inspect browser shader logs before any follow-up.
