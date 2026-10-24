@@ -1,4 +1,4 @@
-// Stacey Lake bass school: requires uploaded GLB at ./assets/fish/largemouth-bass.glb
+// Stacey Lake bass school: requires uploaded GLB at ./assets/fish/model_67a_-_largemouth_bass.glb
 // Isolated experiment; does not alter water, terrain or player collision.
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics}) {
@@ -7,7 +7,7 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
  const weights=groups.flatMap(([n,a,b])=>Array.from({length:n},()=>a+(b-a)*rng()));
  const loader=new GLTFLoader();
  let source,clips=[];
- try {const gltf=await loader.loadAsync('./assets/fish/largemouth-bass.glb');source=gltf.scene;clips=gltf.animations||[];}
+ try {const gltf=await loader.loadAsync('./assets/fish/model_67a_-_largemouth_bass.glb');source=gltf.scene;clips=gltf.animations||[];}
  catch(e){diagnostics.assets.bass='MISSING GLB: '+String(e);return {count:0,reason:'asset missing'};}
  source.updateMatrixWorld(true);
  const bbox=new T.Box3().setFromObject(source), dims=bbox.getSize(new T.Vector3());
