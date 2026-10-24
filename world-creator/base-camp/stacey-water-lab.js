@@ -36,11 +36,11 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         float t=uTime*.65;
         float a=sin(vWorld.x*.65+vWorld.z*.12+t)*.029 + sin(vWorld.x*1.55-vWorld.z*.24-t*.67)*.009;
         float b=sin(vWorld.x*-.13+vWorld.z*.71-t*.81)*.026 + sin(vWorld.x*.21+vWorld.z*1.65+t*.57)*.008;
-        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.105+vec2(t*.048,t*.026);
-        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.145)+vec2(-t*.035,t*.041);
+        float r1=sin(dot(vWorld.xz,vec2(2.4,.7))+t*.9);float r2=sin(dot(vWorld.xz,vec2(-.9,3.1))-t*.7);float r3=sin(dot(vWorld.xz,vec2(4.8,-1.8))+t*1.1);vec2 uv1=vWorld.xz*.075+vec2(t*.048,t*.026);
+        vec2 uv2=mat2(-.5,-.866,.866,-.5)*(vWorld.xz*.095)+vec2(-t*.035,t*.041);
         vec3 tex1=texture2D(uRippleNormal,uv1).xyz*2.-1.;
         vec3 tex2=texture2D(uRippleNormal,uv2).xyz*2.-1.;
-        vec3 n=normalize(vec3(a+.055*tex1.x+.038*tex2.x,1.,b+.055*tex1.y+.038*tex2.y));
+        vec3 n=normalize(vec3(a+.092*tex1.x+.058*tex2.x,1.,b+.092*tex1.y+.058*tex2.y));
         vec3 eye=normalize(vView);
         float fres=.04+.96*pow(1.-clamp(abs(dot(n,eye)),0.,1.),5.0);
         float shore=clamp(min(vEdge,1.-vEdge)*11.,0.,1.);
@@ -59,6 +59,17 @@ export function installCalmWaterLab(THREE,scene,legacyWater){
         vec3 skyColor=mix(vec3(.30,.43,.46),vec3(.65,.73,.77),smoothstep(.05,.9,reflected.y));
         environment=mix(environment*.75,skyColor,sky*.38);
         color=mix(color,environment,clamp(.26+fres*.64,0.,.85))+vec3(1.0,.94,.78)*spec;
+        // Wind-driven half-foot-scale breakers near both outer bank and island shore.
+        // Edge attribute runs 0..1 across the lake; use narrow animated crests,
+        // not a permanent white ring. Motion follows local wave directions.
+        float bankDistance=min(vEdge,1.-vEdge);
+        float nearBank=1.-smoothstep(.002,.040,bankDistance);
+        float wavePhase=bankDistance*245.-uTime*1.65+
+          sin(vWorld.x*.095+vWorld.z*.075+uTime*.28)*.75;
+        float crest=smoothstep(.55,.91,sin(wavePhase));
+        float chop=smoothstep(.05,.52,tex1.x*.65+tex2.y*.45+.32);
+        float foam=nearBank*crest*chop*.78;
+        color=mix(color,vec3(.77,.85,.82),foam);
         float fine=(tex1.x+tex2.y)*.5;
         color+=vec3(.009,.014,.016)*fine*(.3+.7*fres);
         gl_FragColor=vec4(color,mix(.64,.95,smoothstep(.0,.42,shore)));
