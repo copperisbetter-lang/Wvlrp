@@ -2,8 +2,11 @@ name: Brooke Head Prototype
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
-      - 'avatar-work/brooke/**'
+      - 'avatar-work/brooke/build_head.py'
+      - 'avatar-work/brooke/validate_build.py'
+      - 'avatar-work/brooke/render_preview.py'
       - '.github/workflows/brooke-head.yml'
 permissions:
   contents: write

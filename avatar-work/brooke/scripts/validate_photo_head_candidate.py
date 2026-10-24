@@ -4,6 +4,7 @@ This does NOT certify likeness, ears, or neck.
 """
 import bpy, bmesh, sys
 from mathutils import Vector
+from mathutils.kdtree import KDTree
 source, candidate = sys.argv[sys.argv.index('--')+1:][:2]
 photo_vertices = []
 photo_faces = 0
@@ -52,9 +53,12 @@ expected = [Vector(((v.x-cx)/width, (v.y-cy)/width, (v.z-rear)/width))
             for v in photo_vertices]
 # Compare world-space GLB vertices: importer can retain object transforms.
 actual = [obj.matrix_world @ v.co for v in bm.verts]
-# Compare rounded coordinates, tolerating normal GLB float quantization.
-keys = {tuple(round(float(c), 4) for c in v) for v in actual}
-missing = sum(tuple(round(float(c), 4) for c in v) not in keys for v in expected)
+# A distance tolerance is stable at rounding boundaries and still detects shifts.
+tree = KDTree(len(actual))
+for index, vertex in enumerate(actual):
+    tree.insert(vertex, index)
+tree.balance()
+missing = sum(tree.find(vertex)[2] > 0.0001 for vertex in expected)
 assert missing == 0, f"Photo-derived vertices missing/altered: {missing}"
 bm.free()
 print("PASS: watertight connected candidate; original photo face vertices retained")

@@ -1,52 +1,51 @@
-name: Brooke 2.0 Isolated Face Pass
+name: Brooke build verification
 on:
   push:
     branches: [brooke-2-0-fresh-start]
     paths:
-      - 'avatar-work/brooke-2.0/**'
+      - '.github/actions/blender-runtime/**'
       - '.github/workflows/brooke-2-0.yml'
+      - 'avatar-work/brooke-2.0/tests/**'
+      - 'avatar-work/brooke/scripts/build_complete_head.py'
+      - 'avatar-work/brooke/scripts/validate_photo_head_candidate.py'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+concurrency:
+  group: brooke-build-verification-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  sculpt:
-    runs-on: ubuntu-latest
+  verify:
+    runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Install Blender
+        with:
+          sparse-checkout: |
+            .github/actions/blender-runtime
+            avatar-work/brooke-2.0
+            avatar-work/brooke/scripts
+      - uses: ./.github/actions/blender-runtime
+      - name: Test source geometry and rejection of corrupt geometry
+        run: python3 avatar-work/brooke-2.0/tests/check_blender_pipeline.py
+      - name: Verify preserved full body and render head inspection
         run: |
-          sudo apt-get update
-          sudo apt-get install -y blender
-      - name: Fit photo-derived face candidate onto existing full body
+          xvfb-run -a blender -b -t 2 --python-exit-code 1 --python avatar-work/brooke-2.0/tests/check_preserved_body.py -- avatar-work/brooke-2.0/brooke-2.0.glb avatar-work/brooke-2.0/build-check
+      - name: Record exact source and passing checks
         run: |
-          test -s public-models/brooke-2.0-photo-head-candidate.glb
-          blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/fit_photo_face_to_body.py -- avatar-work/brooke-2.0/brooke-2.0.glb public-models/brooke-2.0-photo-head-candidate.glb avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
-          test -s avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
-      - name: Upload full-body fit candidate
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('avatar-work/brooke-2.0/build-check')
+          for name in ['regression-report.json', 'body-smoke-report.json']:
+              assert json.loads((p/name).read_text())['status']=='PASS', name
+          (p/'run.json').write_text(json.dumps({'commit':os.environ['GITHUB_SHA'],'run':os.environ['GITHUB_RUN_ID'],'scope':'Build verification only; no new facial likeness'},indent=2)+'\n')
+          PY
+      - name: Upload verified build evidence
         uses: actions/upload-artifact@v4
         with:
-          name: brooke-2-0-full-body-photo-face-fit-candidate
-          path: avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
-          if-no-files-found: error
-      - name: Verify fitted GLB preserves full body and distinct candidate face
-        run: |
-          blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/verify_face_fit.py -- avatar-work/brooke-2.0/brooke-2.0.glb avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
-      - name: Create independent face pass
-        run: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/build_face_pass1.py
-      - name: Publish full-body face-pass model to isolated branch
-        run: |
-          set -e
-          test -s avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
-          git commit -m "Publish Brooke 2.0 full-body face pass [skip ci]" || exit 0
-          git pull --rebase origin brooke-2-0-fresh-start
-          git push origin HEAD:brooke-2-0-fresh-start
-      - name: Upload isolated full-body result
-        uses: actions/upload-artifact@v4
-        with:
-          name: brooke-2-0-face-pass1
-          path: avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
+          name: brooke-build-evidence-${{ github.run_id }}
+          path: |
+            avatar-work/brooke-2.0/build-check/*.json
+            avatar-work/brooke-2.0/build-check/*.png
           if-no-files-found: error

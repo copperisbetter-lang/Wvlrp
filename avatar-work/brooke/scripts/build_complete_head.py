@@ -132,7 +132,9 @@ if photo_path and Path(photo_path).exists():
     head.data.materials.append(mat)
     print('PHOTO_VERTEX_COLORS',len(verts),'source pixels',w,h)
 for polygon in mesh.polygons: polygon.use_smooth=True
-head.location=(-cx,-cy,-rear)
+# Blender applies scale before translation: translation must be normalized too.
+# The former unscaled translation displaced every source facial vertex.
+head.location=(-cx/width,-cy/width,-rear/width)
 head.scale=(1/width,1/width,1/width)
 bpy.ops.object.select_all(action='DESELECT')
 head.select_set(True)

@@ -1,0 +1,12 @@
+name: Verified Blender runtime
+description: Install the Blender Python and headless renderer dependencies together.
+runs:
+  using: composite
+  steps:
+    - name: Install Blender runtime
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 update -qq
+        timeout 900s sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 install -y blender python3-numpy libegl1 libgl1 libgles2 libopengl0 xvfb
+        blender -b -t 2 --python-exit-code 1 --python-expr "import bpy, numpy; print('VERIFIED_BLENDER', bpy.app.version_string, 'NUMPY', numpy.__version__, numpy.__file__)"

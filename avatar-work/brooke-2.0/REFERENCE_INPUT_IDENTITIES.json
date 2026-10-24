@@ -1,0 +1,118 @@
+{
+  "status": "TEN_IMAGES_VALIDATED_LOCALLY",
+  "runner_inputs": "NOT_YET_TRANSFERRED",
+  "primary_front": "09-3948.jpg",
+  "side_profile": "10-3949.webp",
+  "photos": [
+    {
+      "upload": "01-4109.jpg",
+      "sha256": "f2a15c8bc82c242dc43fe1a3a77f2cb679966bbc67e652fe652dc374675a6bea",
+      "bytes": 255452,
+      "dimensions": [
+        1134,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "02-4108.jpg",
+      "sha256": "8e836937b19466fe74d6180e0be31b9ab2a63a5bb422ecebab3b9dcb649a9b33",
+      "bytes": 356990,
+      "dimensions": [
+        970,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "03-4107.jpg",
+      "sha256": "15d373e3e398aa95bacd7d49137e836a07faf8873adffab16d9110e8f04100ce",
+      "bytes": 249938,
+      "dimensions": [
+        1228,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "04-4106.jpg",
+      "sha256": "1e9cbce2feb3d3b06946efd4127d3aad630a76b39fdcf4d51f2187015d6a5a07",
+      "bytes": 231210,
+      "dimensions": [
+        1371,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "05-4105.jpg",
+      "sha256": "aad076052b2b884a722a7c763fb3852c61d4093fee2abde5627f8db62f093e2d",
+      "bytes": 218976,
+      "dimensions": [
+        1152,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "06-3954.jpg",
+      "sha256": "70f00e3e4166bee9cd476ab9f1a2077af1d166b5817b5a104888111bb51e3bf3",
+      "bytes": 209448,
+      "dimensions": [
+        1023,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "07-3951.jpg",
+      "sha256": "c994cb0080f27fd68b5ade32b9e72aaba75955344f7fe9d9598682119be1fff1",
+      "bytes": 199211,
+      "dimensions": [
+        1275,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "08-3953.jpg",
+      "sha256": "75336e51c65eb80af7308945526aa822ac24188063a84e747237b53fe6498351",
+      "bytes": 274449,
+      "dimensions": [
+        1026,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "09-3948.jpg",
+      "sha256": "6b88523edcf6fbe8a0c59f52ba9c8567bff7ecf76b88b4b24af9582643c52da5",
+      "bytes": 280229,
+      "dimensions": [
+        1536,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    },
+    {
+      "upload": "10-3949.webp",
+      "sha256": "75489b4c2feb1e1747215e1f9fac64b538370a71531af4b588eef1b0419c40cc",
+      "bytes": 213245,
+      "dimensions": [
+        1216,
+        1536
+      ],
+      "status": "VALIDATED_IMAGE_BYTES",
+      "likeness_approved": false
+    }
+  ]
+}
