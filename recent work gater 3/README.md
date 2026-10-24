@@ -65,3 +65,10 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - **New exact preview link (NOT yet verified on phone):** https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
 - Status: committed; owner phone visual check and performance check PENDING. No production merge.
 - Issue #29 bell check-in comment ID 6377583309. Await Gater 1 review for any production integration.
+
+## OWNER PHONE TEST / NEW PLAN — 2026-10-23 20:34–20:35 EDT (screenshot clock)
+- Screenshot observation: NO realistic shoreline breakers after commit 2e1c0d8. Nearshore looks like a smooth transparent ramp; foam shading did not produce physical break. FPS 89 and 51 at 85% resolution; shore depth HUD 0.0 ft.
+- Owner complaint: “Still no real break”.
+- Root-cause correction: stop boosting flat-water foam; implement geometry-driven, nearshore wave crest with small moving height displacement in vertex shader and physically localized crest highlight in fragment shader. Preserve lake island, terrain and outer shoreline.
+- Existing tested URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
+- Status: documented before geometry implementation. No new visual build yet.
