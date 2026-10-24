@@ -87,3 +87,11 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - Last owner screenshot showed water (but no breaks) on prior build `2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12`; rollback viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
 - **BELL CHECK**: read GitHub issue #29. Gater 1 posted mandatory CURRENT/RECENT WORK protocol: exact full URLs, branch, commit, paths, result and failures, owner feedback, next task, preservation, rollback, approvals. Gater 3 acknowledges and follows this protocol. Issue: https://github.com/copperisbetter-lang/Wvlrp/issues/29
 - Next: investigate whether vertex shader failed to compile / caused invisible water, and repair on isolated branch only after cross-Gater conflict check. No deployment. Preserve island, terrain, trails, old baseline.
+
+## ROLLBACK EXECUTED — 2026-10-23 20:38 EDT (screenshot clock)
+- Owner supplied screenshot showing **entire lake absent**, exposed sand/terrain and island; 88 FPS at 85% resolution. Confirmed failed test of `a33a01c5`.
+- Restored exact water-lab shader file contents from **last phone-visible water commit** `2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12` on isolated branch `gator3-stacey-calm-water-20261023`.
+- Actual rollback commit: `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`; changed ONLY `world-creator/base-camp/stacey-water-lab.js`.
+- **New exact rollback preview URL (NOT YET PHONE VERIFIED):** https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
+- Previous phone-confirmed water-visible version: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
+- **No real breaks yet.** Root cause of invisible geometry-build shader is not confirmed; do not reintroduce it without checking browser WebGL compile logs. Production and island/terrain/trails unchanged.
