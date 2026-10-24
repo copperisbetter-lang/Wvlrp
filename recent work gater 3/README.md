@@ -191,3 +191,9 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Adjusted geometry amplitude/speed modestly, reduced blue/gray artificial lake colors, reduced environmental washout. Raised shoreline crest amplitude, but **not yet confirmed visually as physical breaks**. No geometry/terrain/island edits.
 - Test URL (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/27b45b1008baa3437c1a4f5e6c5c507599da26c8/world-creator/base-camp/water-color-motion-test.html?spawn=lake
 - Safe phone-verified baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 unchanged. No production deployment.
+
+## OWNER SCREENSHOT REVIEW — 2026-10-23 21:30 EDT
+- Tested isolated viewer commit `27b45b1008baa3437c1a4f5e6c5c507599da26c8` on Samsung phone, 85% resolution, 88 FPS, shore depth 0.0 ft, lake 5.00 acres.
+- Screenshot: water visible, dark green-gray, sharp hard-edged sand-to-water transition, no believable wave breaks or sun glitter. Ripple detail appears flat and weak. **Not accepted**.
+- Diagnosis: surface-only shader cannot simulate wash-up onto dry bank; wave geometry ends at fixed shoreline, so visual breakers remain artificial. Need dedicated shore strip geometry that extends onto sloped beach, with moving tapered foam and water height/opacity; avoid altering original terrain and island.
+- Protected owner-verified rollback: `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`. No production changes in this review.
