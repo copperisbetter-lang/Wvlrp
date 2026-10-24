@@ -197,3 +197,12 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Screenshot: water visible, dark green-gray, sharp hard-edged sand-to-water transition, no believable wave breaks or sun glitter. Ripple detail appears flat and weak. **Not accepted**.
 - Diagnosis: surface-only shader cannot simulate wash-up onto dry bank; wave geometry ends at fixed shoreline, so visual breakers remain artificial. Need dedicated shore strip geometry that extends onto sloped beach, with moving tapered foam and water height/opacity; avoid altering original terrain and island.
 - Protected owner-verified rollback: `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`. No production changes in this review.
+
+## SHORE WASH EXPERIMENT — 2026-10-23 ~21:30 EDT
+- Owner wants lake completion prioritized to unblock Gater 2; prior screenshot shows 88 FPS, flat shoreline and no realistic breaks.
+- Isolated branch `gator3-stacey-calm-water-20261023`.
+- Added procedural outer-bank and island-edge wash strips with time-animated, irregular translucent crests: `world-creator/base-camp/stacey-shore-wash-test.js` commit `656f5a59b3c9155a5429e90ab5c211da6c6933ac`.
+- Separate viewer `world-creator/base-camp/water-shore-wash-test.html` commit `4843d802cc6c4dbaa296ffe6eea714ff1faf709d`.
+- Exact test URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/4843d802cc6c4dbaa296ffe6eea714ff1faf709d/world-creator/base-camp/water-shore-wash-test.html?spawn=lake
+- Limit: shoreline wash is a separate overlay and may be obscured by terrain on dry side. This is an experimental visual effect, not full physical fluid simulation. Check rendering and FPS before further work.
+- Preserve known phone-confirmed baseline `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`; no production merge, no trail edits.
