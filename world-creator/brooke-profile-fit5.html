@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brooke — Profile Fit</title>
+<style>body{margin:0;background:#22372f;color:#edf3ef;font:15px system-ui}header{padding:12px;background:#193027}h1{font-size:19px;margin:0 0 6px}#stage{height:65dvh;min-height:330px}details{margin:8px 12px;background:#193027;border-radius:8px;padding:10px}summary{font-weight:700;cursor:pointer;padding:7px}select,input{font:inherit;padding:8px;max-width:100%;margin:5px;color:#162b23}label{display:block;margin:8px 0}button{margin:5px} .note{font-size:12px;color:#c8d9d0}canvas{display:block;touch-action:none}nav{padding:10px;display:flex;gap:8px;flex-wrap:wrap}button{background:#4a7664;color:white;border:0;border-radius:7px;padding:12px;font:inherit}button:disabled{opacity:.45}#status{margin:0;font-size:13px}#error{padding:12px;color:#ffddb1}</style>
+</head><body><header><h1>Brooke — Profile Fit</h1><p id="status" role="status">Loading the native head review candidate…</p></header><nav aria-label="Preserved model"><label>Saved version <select id="savedModel"><option value="corrected5">Brooke — profile fit 5</option><option value="corrected4">Brooke — mouth and brow repair 4</option><option value="corrected3">Brooke — lip profile repair 3</option><option value="corrected2">Brooke — forehead and lips, correction 2</option><option value="corrected">Brooke 1.0 — correction 1</option><option value="original">Brooke 1.0 — original face candidate</option><option value="pass5">Brooke 1.1 — Pass 5</option></select></label><span class="note">Fit 5: continuous forehead profile, softer lower nose contour and wider, less projected neutral lips.</span></nav><main id="stage"></main>
+<details open><summary>Camera &amp; Views</summary><label>View <select id="view"><option>Front</option><option>Profile fit side</option><option>Lips close side</option><option>Mouth close front</option><option>Forehead close side</option><option>Rear</option><option>Side</option><option>Top</option><option>Head and neck</option></select></label><button id="resetCamera">Reset camera</button><label>Zoom <input id="zoom" type="range" min="25" max="250" value="100"> <output id="zoomValue">100%</output></label></details>
+<details><summary>Movement &amp; Poses</summary><label>Animation / pose <select id="motion"><option value="">Idle / Reset</option></select></label><button id="stopMotion">Stop / Reset pose</button><label>Playback speed <input id="speed" type="range" min="10" max="200" value="100"><output id="speedValue">100%</output></label><p id="rigStatus" class="note">Checking actual rig and animation clips…</p></details>
+<details><summary>Face &amp; Body Morphs</summary><label>Morph target <select id="morph"><option value="">Select morph</option></select></label><label>Amount <input id="morphAmount" type="range" min="0" max="100" value="0"><output id="morphValue">0%</output></label><button id="resetMorphs">Reset all morphs</button><p id="morphStatus" class="note">Checking embedded targets…</p></details>
+<details><summary>Visibility &amp; Inspection</summary><label>Focus part <select id="part"><option value="all">Head and neck</option></select></label><label><input id="isolate" type="checkbox"> Isolate selected part</label><label><input id="cutaway" type="checkbox"> Transparent other meshes</label><label><input id="wireframe" type="checkbox"> Wireframe</label><label><input id="bones" type="checkbox"> Show skeleton helper</label></details>
+<details><summary>Lighting &amp; Display</summary><label>Surface <select id="surface"><option value="skin">Textured skin</option><option value="texture">Texture only</option><option value="clay">Neutral clay</option></select></label><label>Exposure <input id="exposure" type="range" min="20" max="200" value="100"></label><label>Background <select id="background"><option value="forest">Forest</option><option value="dark">Dark</option><option value="light">Light</option></select></label><button id="resetAll">Reset all controls</button></details>
+<p class="note" style="padding:0 12px">Fit 5 reshapes the forehead above the brow as a continuous curve, softens the lower nasal profile and makes the neutral lips slightly wider with less projection. Front reference governs mouth proportions; the smiling profile is not copied as a neutral pose. All earlier versions remain available. Likeness and remaining inner-mouth/nostril details still require review.</p><div id="error"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const requestedVersion=new URLSearchParams(location.search).get('model');
+const savedVersion=['original','pass5','corrected','corrected2','corrected3','corrected4'].includes(requestedVersion)?requestedVersion:'corrected5';
+const sav4AssetUrl=({corrected5:'./assets/brooke-profile-fit5.glb',corrected4:'./assets/brooke-mouth-brow-repair4.glb',corrected3:'./assets/brooke-lip-repair3.glb',corrected2:'./assets/brooke-original-correction2.glb',corrected:'./assets/brooke-original-correction1.glb',pass5:'./assets/brooke-recovery-pass5.glb',original:'./assets/brooke-recovery-original.glb'})[savedVersion];
+document.getElementById('savedModel').value=savedVersion;
+document.getElementById('savedModel').onchange=e=>{const url=new URL(location.href);url.searchParams.set('model',e.target.value);location.href=url.href;};
+const status=document.getElementById('status'),stage=document.getElementById('stage');
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x22372f);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x9da8a2,1.6));
+ const key=new THREE.DirectionalLight(0xffffff,1.7);key.position.set(2,3,4);scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,.65);fill.position.set(-3,1,4);scene.add(fill);
+ const camera=new THREE.PerspectiveCamera(40,1,.001,100);camera.position.set(0,.85,2.5);
+ const renderer=new THREE.WebGLRenderer({antialias:true});stage.append(renderer.domElement);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.025;orbit.maxDistance=8;orbit.target.set(0,.85,0);
+ function resize(){renderer.setSize(stage.clientWidth,stage.clientHeight,false);camera.aspect=stage.clientWidth/stage.clientHeight;camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resize();
+ const clock=new THREE.Clock();let mixer=null;renderer.setAnimationLoop(()=>{const dt=clock.getDelta();if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera);});
+ let initialMorphs=new Map();let model,attachment,meshes=[],partBounds,helper=null,faceTargets=new Map(),clips=[];const $=id=>document.getElementById(id);
+ function style(){
+ const chosen=$('part').value;
+ for(const mesh of meshes){
+  const selected=chosen==='all'||mesh.uuid===chosen;
+  mesh.visible=!$('isolate').checked||selected;
+  const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const m of mats){if(!m)continue;
+   const original=m.userData.brookeStyle??={transparent:m.transparent,opacity:m.opacity,depthWrite:m.depthWrite,wireframe:m.wireframe};
+   const faded=$('cutaway').checked&&!selected;
+   m.transparent=faded||original.transparent;m.opacity=faded?Math.min(.18,original.opacity):original.opacity;
+   m.depthWrite=faded?false:original.depthWrite;m.wireframe=$('wireframe').checked;m.needsUpdate=true;
+  }
+ }
+ if(helper)helper.visible=$('bones').checked;
+ }
+ function view(name){
+  if(name==='Profile fit side'){orbit.target.set(0,1.54,.12);camera.position.set(.35,1.54,.12);camera.zoom=1;camera.updateProjectionMatrix();orbit.update();return;}
+  if(name==='Mouth close front'){orbit.target.set(0,1.493,.14);camera.position.set(0,1.493,.275);camera.zoom=1;camera.updateProjectionMatrix();orbit.update();return;}
+  if(name==='Forehead close side'){orbit.target.set(0,1.588,.13);camera.position.set(.16,1.588,.13);camera.zoom=1;camera.updateProjectionMatrix();orbit.update();return;}
+  if(name==='Lips close side'){orbit.target.set(0,1.483,.14);camera.position.set(.105,1.483,.14);camera.zoom=1;camera.updateProjectionMatrix();orbit.update();return;}
+  let box=partBounds;
+  if(name==='Head and neck')box=new THREE.Box3().setFromObject(model,true);
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  orbit.target.copy(center);
+  let offset=name==='Head and neck'?new THREE.Vector3(0,.05,Math.max(.50,size.y*1.8)):new THREE.Vector3(0,-.07,.40);
+  if(name==='Rear')offset.set(0,-.06,-.40);
+  if(name==='Side')offset.set(.40,-.02,0);
+  if(name==='Top')offset.set(.03,.40,.06);
+  camera.position.copy(center).add(offset);orbit.update();
+ }
+ $('view').onchange=()=>view($('view').value);
+ $('resetCamera').onclick=()=>{ $('view').value='Head and neck';view('Head and neck');camera.zoom=1;camera.updateProjectionMatrix();$('zoom').value=100;$('zoomValue').textContent='100%';};
+ $('zoom').oninput=()=>{const v=Number($('zoom').value);$('zoomValue').textContent=v+'%';camera.zoom=v/100;camera.updateProjectionMatrix();};
+ for(const id of ['isolate','cutaway','wireframe','bones'])$(id).onchange=style;
+ $('part').onchange=()=>{const m=meshes.find(x=>x.uuid===$('part').value);if(m){partBounds=new THREE.Box3().setFromObject(m,true);view('Front');}else view('Head and neck');style();};
+ const surfaceOriginal=new Map();
+ $('surface').onchange=()=>{
+  for(const mesh of meshes){
+   if(!mesh.morphTargetDictionary || !Object.keys(mesh.morphTargetDictionary).length)continue;
+   if(!surfaceOriginal.has(mesh))surfaceOriginal.set(mesh,mesh.material);
+   mesh.material=surfaceOriginal.get(mesh);
+   if($('surface').value!=='skin'){
+    const convert=m=>$('surface').value==='texture'?new THREE.MeshBasicMaterial({map:m.map,color:m.color,side:m.side,transparent:m.transparent,opacity:m.opacity}):new THREE.MeshStandardMaterial({color:0xb3aaa0,roughness:1,metalness:0,side:m.side});
+    mesh.material=Array.isArray(mesh.material)?mesh.material.map(convert):convert(mesh.material);
+   }
+  }
+  style();
+ };
+ $('exposure').oninput=()=>renderer.toneMappingExposure=Number($('exposure').value)/100;
+ $('background').onchange=()=>scene.background=new THREE.Color(({forest:0x22372f,dark:0x111111,light:0xcbd6d0})[$('background').value]);
+ const gltf=await new GLTFLoader().loadAsync(sav4AssetUrl);
+ model=gltf.scene;scene.add(model);model.updateMatrixWorld(true);
+ model.traverse(o=>{if(o.isMesh){meshes.push(o);o.frustumCulled=false;if(o.skeleton)o.skeleton.update();const mats=Array.isArray(o.material)?o.material:[o.material];if(/vulva2.*mhx2/i.test(o.name)||mats.some(m=>/vulva2.*attachment/i.test(m?.name||'')))attachment=o;}});
+ if(!meshes.length)throw Error('Clone contains no visible meshes.');
+ partBounds=new THREE.Box3().setFromObject(model,true);
+ for(const mesh of meshes){const option=document.createElement('option');option.value=mesh.uuid;option.textContent=mesh.name||'Unnamed mesh';$('part').append(option);
+  for(const [name,index] of Object.entries(mesh.morphTargetDictionary||{})){if(!faceTargets.has(name))faceTargets.set(name,[]);faceTargets.get(name).push({mesh,index});}
+ }
+ for(const [name,targets] of faceTargets)initialMorphs.set(name,targets.map(({mesh,index})=>mesh.morphTargetInfluences[index]));
+ for(const name of faceTargets.keys()){const opt=document.createElement('option');opt.value=name;opt.textContent=name;$('morph').append(opt);}
+ $('morphStatus').textContent=faceTargets.size+' real morph targets in cloned model.';
+ $('morph').onchange=()=>{const targets=faceTargets.get($('morph').value)||[];const value=targets.length?Math.round(targets[0].mesh.morphTargetInfluences[targets[0].index]*100):0;$('morphAmount').value=value;$('morphValue').textContent=value+'%';};
+ $('morphAmount').oninput=()=>{const value=Number($('morphAmount').value)/100;for(const {mesh,index} of faceTargets.get($('morph').value)||[])mesh.morphTargetInfluences[index]=value;$('morphValue').textContent=Math.round(value*100)+'%';};
+ $('resetMorphs').onclick=()=>{for(const [name,targets] of faceTargets)targets.forEach(({mesh,index},i)=>mesh.morphTargetInfluences[index]=initialMorphs.get(name)[i]);$('morph').dispatchEvent(new Event('change'));};
+ clips=gltf.animations||[];mixer=clips.length?new THREE.AnimationMixer(model):null;
+ const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o);});
+ $('rigStatus').textContent=bones.length+' bones · '+clips.length+' embedded animations. Only genuine available animations can play.';
+ const requested=['Walk','Run','Sit','Stand','Crouch','Kneel','Crawl','Bend','Hands and Knees','Elbows and Knees','Lie Down','Wave','Turn Left','Turn Right','Pick Up','Idle'];
+ for(const name of requested){const clip=clips.find(x=>x.name.toLowerCase().replace(/[^a-z]/g,'').includes(name.toLowerCase().replace(/[^a-z]/g,'')));const opt=document.createElement('option');opt.value=clip?String(clips.indexOf(clip)):'';opt.textContent=name+(clip?'':' (not in model)');opt.disabled=!clip;$('motion').append(opt);}
+ for(let i=0;i<clips.length;i++)if(!requested.some(n=>clips[i].name.toLowerCase().replace(/[^a-z]/g,'').includes(n.toLowerCase().replace(/[^a-z]/g,'')))){const opt=document.createElement('option');opt.value=String(i);opt.textContent=clips[i].name;$('motion').append(opt);}
+ $('motion').onchange=()=>{mixer?.stopAllAction();if($('motion').value!==''&&mixer){const action=mixer.clipAction(clips[Number($('motion').value)]);action.reset().play();action.timeScale=Number($('speed').value)/100;}};
+ $('speed').oninput=()=>{const speed=Number($('speed').value)/100;$('speedValue').textContent=Math.round(speed*100)+'%';if(mixer)mixer.timeScale=speed;};
+ $('stopMotion').onclick=()=>{mixer?.stopAllAction();model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.pose();});$('motion').value='';};
+ if(bones.length){helper=new THREE.SkeletonHelper(model);scene.add(helper);helper.visible=false;}
+ $('resetAll').onclick=()=>{ $('surface').value='skin';$('surface').dispatchEvent(new Event('change')); $('stopMotion').click();$('resetMorphs').click();for(const id of ['isolate','cutaway','wireframe','bones'])$(id).checked=false;$('part').value='all';$('exposure').value=100;renderer.toneMappingExposure=1;$('background').value='forest';$('background').dispatchEvent(new Event('change'));style();$('resetCamera').click();};
+ status.textContent='Loaded '+({corrected5:'Brooke profile fit 5',corrected4:'Brooke mouth and brow repair 4',corrected3:'Brooke lip profile repair 3',corrected2:'Brooke forehead and lips correction 2',corrected:'Brooke 1.0 correction 1',pass5:'Brooke 1.1 Pass 5',original:'Brooke 1.0 original'})[savedVersion]+' · '+meshes.length+' meshes · '+bones.length+' bones · '+clips.length+' animation clips';
+ $('view').value='Profile fit side';view('Profile fit side');style();
+
+}catch(error){status.textContent='Preview could not start: '+error.message;document.getElementById('error').textContent=error.message;}
+</script></body></html>
+
+
+
