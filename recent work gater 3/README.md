@@ -221,3 +221,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - New viewer `world-creator/base-camp/water-balanced-color-test.html`, commit `babcb0fad582c8b0303fa868fb928835a601184c`.
 - Exact URL (UNVERIFIED ON PHONE): https://raw.githack.com/copperisbetter-lang/Wvlrp/babcb0fad582c8b0303fa868fb928835a601184c/world-creator/base-camp/water-balanced-color-test.html?spawn=lake
 - Motion/shore wash preserved; no terrain or production edits. Safe baseline f88fc7b remains protected.
+
+## SUMMERSVILLE REFERENCE COLOR TEST — 2026-10-23 ~21:43 EDT
+- Owner provided multiple side-by-side screenshots of Summersville Lake summer photographs and Stacey Lake; target is clear bright turquoise-blue with emerald shallows and silvery sun ripples, not dark muddy green.
+- New isolated shader `world-creator/base-camp/stacey-water-summersville-test.js` commit `1de793cfdfb10135c3eb83906d94d0eaaceaa329` and viewer `world-creator/base-camp/water-summersville-test.html` commit `fe14f1bb1ff166c89890d76910bffdfe05504a87`.
+- Adjusted deep and shallow color palette, bright sky reflection and silvery glint; preserved motion and separate shore wash. Color is approximate reference-based, not sampled pixel-exact.
+- Exact preview URL (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/fe14f1bb1ff166c89890d76910bffdfe05504a87/world-creator/base-camp/water-summersville-test.html?spawn=lake
+- Safe baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 untouched. No production deployment.
