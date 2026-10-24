@@ -85,7 +85,7 @@ jobs:
           OBJ=$(find /tmp/3DDFA_V2/examples/results -maxdepth 1 -name '*_obj.obj' -print -quit)
           test -n "$OBJ"
           mkdir -p avatar-work/brooke/build
-          blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-photo-head-candidate.glb
+          blender -b -t 2 --python avatar-work/brooke/scripts/build_complete_head.py -- "$OBJ" avatar-work/brooke/build/brooke-photo-head-candidate.glb /tmp/3DDFA_V2/examples/inputs/brooke-reference.jpg
           test -s avatar-work/brooke/build/brooke-photo-head-candidate.glb
       - name: Validate photo-derived face preservation and manifold topology
         run: |
