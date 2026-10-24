@@ -140,3 +140,10 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Added positive/negative Blender regression and preserved-body smoke tests. Remote execution status PENDING until actual run inspected. No new viewer/model delivered; current viewer remains baseline only.
 - Next: commit this repair and log together, inspect GitHub run result and logs, record outcome; correct any observed failure rather than retry unchanged. No production/lake/trail changes.
 - Restricted generic prototype push trigger to its own files on main, so Brooke photo/face work no longer rebuilds a generic prototype and presents an unrelated green check.
+
+## Verification run started — 2026-10-23 23:11 EDT
+- Source repair commit: 23ef04200fca3d75a23fac436c13bee857308c32.
+- Workflow: Brooke build verification. Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057191027 ; status observed IN_PROGRESS, not success.
+- Scope: build runtime, synthetic geometry regressions including intentional negative test, preserved baseline body import/export/rig checks and head-only render. NOT a new Brooke likeness or model publication.
+- Only one workflow started for this commit, avoiding earlier unrelated prototype/photo fan-out.
+- Bell progress: https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379140444 . Outcome pending actual job results.
