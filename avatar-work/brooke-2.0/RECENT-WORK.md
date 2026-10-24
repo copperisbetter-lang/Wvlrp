@@ -88,3 +88,8 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Commit 3188fedac2207ed4fc0942ac47308851d8d2451e updated .github/workflows/brooke-2-0.yml to run verifier after fitting. Push should trigger GitHub Actions, run status UNKNOWN, output not inspected. **Do not report success.**
 - Limitation: fitting source remains older public photo candidate; five latest user photos still not incorporated. This is structural safety work, NOT Brooke likeness completion.
 - Next: obtain verified workflow logs and integrate user photos into real reconstruction. No preview approved.
+
+## Verified screenshot results — 2026-10-23 22:39 user-local screenshot
+- GitHub Actions Brooke 2.0 Isolated Face Pass run #19 (commit 213e2fb): RED X / FAILED, duration 1m20s. Actual failure step/log UNKNOWN (not yet obtained). Never call green.
+- GitHub Actions Brooke 2.0 Isolated Face Pass run #18 (commit 4499a03): RED X / FAILED, duration 1m18s. Actual failure step/log UNKNOWN.
+- No new face viewer is available. Previous baseline viewer is NOT a valid link to either run. Do not send baseline as new result.
