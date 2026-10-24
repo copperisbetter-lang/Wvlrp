@@ -103,25 +103,14 @@ jobs:
           name: brooke-photo-reconstruction-obj
           path: /tmp/3DDFA_V2/examples/results/*_obj.obj
           if-no-files-found: error
-      - name: Publish photo-reconstructed Brooke GLB to repository
-        if: ${{ false }} # Disabled until neck, ears, round-trip topology and likeness are approved
+      - name: Publish isolated Brooke 2.0 candidate for mobile viewer
         run: |
           set -euo pipefail
           mkdir -p public-models
-          cp avatar-work/brooke/build/brooke-photo-head-candidate.glb public-models/brooke-photo-head-neck.glb
+          cp avatar-work/brooke/build/brooke-photo-head-candidate.glb public-models/brooke-2.0-photo-head-candidate.glb
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public-models/brooke-photo-head-neck.glb
-          git commit -m "Publish photo-reconstructed Brooke head and neck [skip ci]" || exit 0
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            git rebase origin/main || { git rebase --abort || true; exit 1; }
-            if git push origin HEAD:main; then
-              gh workflow run pages.yml --ref main
-              exit 0
-            fi
-            sleep 3
-          done
-          exit 1
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git add public-models/brooke-2.0-photo-head-candidate.glb
+          git commit -m "Publish Brooke 2.0 photo-derived head candidate [skip ci]" || exit 0
+          git pull --rebase origin brooke-2-0-fresh-start
+          git push origin HEAD:brooke-2-0-fresh-start
