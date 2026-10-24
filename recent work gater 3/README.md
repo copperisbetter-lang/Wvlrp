@@ -311,3 +311,14 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Preview (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/f83ae55c02d86231ad4e7f2e4a8ba93c4ef5f8bf/world-creator/base-camp/water-lab.html?spawn=lake
 - Bass GLB was subsequently uploaded by owner to isolated branch and its SHA was verified: `9399935f6f4a96b300968a0e40003462fbd4dd44` at `world-creator/base-camp/assets/model_67a_-_largemouth_bass.glb`.
 - Status: source committed, runtime visual/animation/FPS still needs owner phone verification. Splash particle effects NOT implemented; leap animation only.
+
+
+## 2026-10-24 — G3 LARGE/TROPHY ONLY BUILD
+- Owner directive: reduce 300 bass to 250, remove all small and medium bass, preserve jumping and splashes.
+- Isolated branch: `gator3-approved-lake-jump-test-20261024`.
+- Changed ONLY `world-creator/base-camp/stacey-bass.js`.
+- Commit: `a46c8682a095a8140c72c7df0eae881ff7531636`.
+- Population: 175 large (2–5 lb), 75 trophy (5–8 lb); zero below 2 lb. Total 250.
+- Existing jump arcs, orientation, splash rings, and 40-fish/5-second temporary test cadence unchanged. Jump orientation still requires owner visual confirmation; not claim verified correct.
+- Exact candidate viewer (NOT YET PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/a46c8682a095a8140c72c7df0eae881ff7531636/world-creator/base-camp/stacey-complete.html
+- Canonical approved viewer stays separately pinned in `current approved viewer/README.md`; lake visuals untouched.
