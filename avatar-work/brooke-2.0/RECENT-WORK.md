@@ -160,3 +160,7 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Follow-up to technical-success/visual-rejection run 40057191027. Inspection uses render-only emission material copies with original texture and alpha, after preserved-body export; no model materials are exported with these copies. Increased head framing to avoid clipped hair. The image is explicitly texture-only, not a photorealistic lighting or likeness pass.
 - Added scoped AGENTS.md with the audit's build/input/publication/recordkeeping requirements for future sessions.
 - No face edit, original photo publication, or viewer replacement. Verification rerun expected on this code commit; status UNKNOWN until actual run observed.
+
+## Verification #22 started — 2026-10-23 23:16 EDT
+- Run https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40057535883 ; source bff5dbce4387f58748900c1e351b608b243b8481. Observed IN_PROGRESS. Render-evidence correction only; previous #21 remains technically passed but image rejected. No likeness or model edit.
+- Bell update: https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379190860 .
