@@ -45,6 +45,50 @@ function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixW
 async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?28+rand()*95:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 
+/* G3 shoreline planting: photo-inspired cattails and native bank grasses.
+   Preserve the south beach/spawn corridor and approved fish behavior. */
+function plantShoreline(){
+ const green=new T.MeshStandardMaterial({color:0x587c35,side:T.DoubleSide,roughness:1});
+ const green2=new T.MeshStandardMaterial({color:0x82994b,side:T.DoubleSide,roughness:1});
+ const brown=new T.MeshStandardMaterial({color:0x684522,roughness:1});
+ const stemMat=new T.MeshStandardMaterial({color:0x62783c,roughness:1});
+ const blade=new T.PlaneGeometry(.065,1);
+ blade.translate(0,.5,0);
+ const bladeMesh=new T.InstancedMesh(blade,green,2600);
+ const bladeMesh2=new T.InstancedMesh(blade,green2,2600);
+ const stems=new T.InstancedMesh(new T.CylinderGeometry(.014,.022,1,5),stemMat,360);
+ const heads=new T.InstancedMesh(new T.CylinderGeometry(.065,.075,.32,7),brown,360);
+ const dummy=new T.Object3D();let n1=0,n2=0,nc=0;
+ // Deterministic seeded positions: consistent shoreline on reload.
+ let seed=24371;const rr=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+ for(let i=0;i<650;i++){
+  const a=rr()*Math.PI*2;
+  // Beach is at the south (+Z) edge: leave a broad clear shoreline and spawn approach.
+  const south=Math.abs(Math.atan2(Math.sin(a-Math.PI/2),Math.cos(a-Math.PI/2)));
+  if(south<.39)continue;
+  const r=outer(a)-1.6+rr()*6.0,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;
+  const y=ground(x,z),height=.4+rr()*.85;
+  for(let j=0;j<4;j++){
+   const h=height*(.65+rr()*.6),theta=rr()*6.283;
+   dummy.position.set(x+(rr()-.5)*.42,y-.06,z+(rr()-.5)*.42);
+   dummy.rotation.set((rr()-.5)*.38,theta,(rr()-.5)*.4);
+   dummy.scale.set(.8+rr()*.8,h,1);dummy.updateMatrix();
+   if(j%2===0&&n1<2600)bladeMesh.setMatrixAt(n1++,dummy.matrix);
+   else if(n2<2600)bladeMesh2.setMatrixAt(n2++,dummy.matrix);
+  }
+  if(rr()<.56&&nc<360){
+   const h=.9+rr()*.9;
+   dummy.rotation.set(0,0,0);dummy.scale.set(1,h,1);
+   dummy.position.set(x,y+h/2,z);dummy.updateMatrix();stems.setMatrixAt(nc,dummy.matrix);
+   dummy.scale.set(1,1,1);dummy.position.set(x,y+h+.08,z);dummy.updateMatrix();heads.setMatrixAt(nc,dummy.matrix);nc++;
+  }
+ }
+ bladeMesh.count=n1;bladeMesh2.count=n2;stems.count=heads.count=nc;
+ [bladeMesh,bladeMesh2,stems,heads].forEach(m=>{m.instanceMatrix.needsUpdate=true;m.frustumCulled=false;scene.add(m)});
+ diag.assets.shorePlants=n1+n2+' grass blades, '+nc+' cattails; south beach clear';
+}
+plantShoreline();
+
 /* G3: 70 WV flathead catfish: 30 original 40-lb, 30 additional 20-lb, 10 additional 60-lb. */
 const flatheadFish=[];const FLATHEAD_URL=ASSET+'flathead-catfish.glb';
 async function installFlatheads(){
