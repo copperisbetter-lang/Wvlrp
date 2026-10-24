@@ -38,18 +38,18 @@ export async function installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagn
  }
  diagnostics.assets.bass='250 large/trophy loaded; '+clips.length+' animation clips';
  diagnostics.bass=fish.length;
- let tick=0, nextWave=5;
+ let tick=0, nextWave=120;
  function update(dt,playerPosition){
   tick+=dt;
   for(const mixer of mixers)mixer.update(dt);
   for(const q of rings){const age=tick-q.start;if(age>=0&&age<q.duration){const p=age/q.duration;q.mesh.visible=true;q.mesh.scale.setScalar(.2+p*(1.5+q.power));q.mesh.material.opacity=(1-p)*.42*q.power;}else q.mesh.visible=false;}
-  // Owner's temporary visibility test: 40 jumps together every five seconds.
+  // Natural cadence: one randomly selected nearby bass every 120 seconds.
   // Select fish in a visible band near the player's lake-facing position.
   if(tick>=nextWave){
-   nextWave+=5;
+   nextWave+=120;
    const px=playerPosition?.x??CX, pz=playerPosition?.z??(CZ+outer(Math.PI/2));
-   const available=fish.filter(f=>f.userData.jumpStart<0).sort((a,b)=>a.position.distanceToSquared(new T.Vector3(px,CY,pz))-b.position.distanceToSquared(new T.Vector3(px,CY,pz)));
-   for(const f of available.slice(0,40)){
+   const available=fish.filter(f=>f.userData.jumpStart<0 && f.position.distanceToSquared(new T.Vector3(px,CY,pz))<85*85);
+   for(const f of available.length?[available[Math.floor(rng()*available.length)]]:[]){
     const d=f.userData;d.jumpStart=tick;d.jumpDuration=1.45;d.jumpHeight=1.3+rng()*.9;d.jumpTravel=1.8+rng()*2.8;d.jumpYaw=(rng()-.5)*1.1;d.jumpRoll=(rng()-.5)*.65;d.jumpStyle=Math.floor(rng()*4);
     ripple(f.position.x,f.position.z,1.1);
    }
