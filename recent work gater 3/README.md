@@ -120,3 +120,6 @@ Owner asked to try older water effects first. Created separate isolated viewer `
 - Next historical candidate investigated: `world-creator/wild-living-waters.js` uses Babylon.js WaterMaterial, external `waterbump.png`, waveHeight .12, bumpHeight .25, waveSpeed .55, reflection render list. This is a **different engine** from the current Three.js independent water lab; direct import would fail. Need a safe isolated adaptation/test, not a production overwrite.
 - Protected owner-confirmed baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
 - This update records investigation only; no new lake renderer deployed.
+
+## NEXT OLD-WATER TEST — 2026-10-23 (exact time unavailable)
+Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated test of Babylon WaterMaterial's historical `waterbump.png` ripple texture **adapted to Three.js**, with Shudu HDR reflection kept, on same lake island mesh. Source: `world-creator/wild-living-waters.js` uses `https://assets.babylonjs.com/textures/waterbump.png`. Do not import Babylon renderer directly; compare only texture normal sampling in a separate HTML/shader copy. Existing baseline remains f88fc7b and is not to be overwritten.
