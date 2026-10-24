@@ -147,3 +147,11 @@ Historical note: Earlier builds were not consistently documented; history may be
 - Scope: build runtime, synthetic geometry regressions including intentional negative test, preserved baseline body import/export/rig checks and head-only render. NOT a new Brooke likeness or model publication.
 - Only one workflow started for this commit, avoiding earlier unrelated prototype/photo fan-out.
 - Bell progress: https://github.com/copperisbetter-lang/Wvlrp/issues/29#issuecomment-6379140444 . Outcome pending actual job results.
+
+## Verification #21 outcome — 2026-10-23 23:12 EDT
+- Run 40057191027: GitHub SUCCESS; job 120762654833 all steps passed. Actual logs inspected, artifact 12545597158 downloaded and digest verified.
+- Blender 3.0.1 loaded NumPy 1.21.5 inside Blender. Positive fixture preserved source vertices and manifold connectivity. Deliberately altered fixture rejected with exactly one missing vertex and exit code 1; this is the expected negative test, not an ignored validation failure.
+- Body roundtrip: 4 meshes, 1 armature, 52 bones, 0 shape keys, 0 animation actions; source hash unchanged 621c27b7e63ef7799a3be44c31a076f21ce3b22634d3bded41159bb1a2584026. Do not claim animations were added.
+- Actual baseline head PNG visually inspected: OVEREXPOSED; rejected as useful visual inspection evidence despite technical CI success. New Brooke likeness still NOT built or approved.
+- Corrective next change: render texture-only with copied inspection materials after model export (no model modification), increase head framing, rerun verification. Record separately, do not overwrite #21 history.
+- Historical Pass 4 software render was also inspected locally: visible nostril, brow/eye/lip and hairstyle defects remain. Do not present it as recovered approved final likeness.
