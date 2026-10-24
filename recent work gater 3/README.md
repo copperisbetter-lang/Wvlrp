@@ -184,3 +184,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Failure mode not yet specified by owner: do not assume drained lake versus visually unrealistic waves.
 - Preserve phone-verified rollback `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`.
 - Next: inspect actual runtime diagnostics and compare screenshot before further shader modifications; no production deployment.
+
+## OWNER DIAGNOSIS + NEW COLOR/MOTION TEST — 2026-10-23 ~21:xx EDT
+- Owner confirmed prior geometry test water STILL VISIBLE but motion much less, color fake, no bank breaks. This is visual failure, NOT drained-lake failure.
+- Isolated branch `gator3-stacey-calm-water-20261023` new shader `world-creator/base-camp/stacey-water-color-motion-test.js`, commit `fbcd0589f4214addcadd334fa4fa4e33fc6452be` and viewer `world-creator/base-camp/water-color-motion-test.html`, commit `27b45b1008baa3437c1a4f5e6c5c507599da26c8`.
+- Adjusted geometry amplitude/speed modestly, reduced blue/gray artificial lake colors, reduced environmental washout. Raised shoreline crest amplitude, but **not yet confirmed visually as physical breaks**. No geometry/terrain/island edits.
+- Test URL (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/27b45b1008baa3437c1a4f5e6c5c507599da26c8/world-creator/base-camp/water-color-motion-test.html?spawn=lake
+- Safe phone-verified baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 unchanged. No production deployment.
