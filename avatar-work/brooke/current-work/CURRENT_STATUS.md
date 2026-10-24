@@ -1,3 +1,22 @@
+# Brooke 1.1 — CURRENT WORK
+Updated 2026-10-23
+
+## PRIMARY VIEWER — GEOMETRY PASS 7
+https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-1-1-pass7-geometry/world-creator/brooke-1.1-pass7-geometry.html
+Branch: brooke-1-1-pass7-geometry
+Commit: 4b36fbb0838debef3bd358f1168fa578e5afed5c
+Source GLB: world-creator/assets/brooke-1.1-detail-head-candidate.glb (unchanged)
+
+## Status
+New viewer makes reversible in-memory vertex deformations (lip projection, jaw narrowing, brow softening). NOT yet validated for head-coordinate correctness or baked to GLB. Original Pass 4/5 viewer preserved. Verify face and controls on phone before promoting.
+
+## Original
+https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-1.1/world-creator/brooke-1.1-head-detail.html
+
+## Outstanding
+Full lips forward, natural brow, softer jaw, narrower eye opening, eliminate upper-lip shadow, full lower-lip color. Use photo references; never touch Sophie 1. Issue #29 coordination.
+
+---
 # Brooke 1.1 — Current Work
 Updated 2026-10-23
 
