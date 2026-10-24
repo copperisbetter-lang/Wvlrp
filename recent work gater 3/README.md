@@ -293,3 +293,12 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Original asset: `model_67a_-_largemouth_bass.glb` reportedly uploaded to GitHub; precise asset path and load status NOT YET VERIFIED.
 - Before implementing, locate the GLB in repo/branch, inspect active independent water-lab viewer and fish loader, then build isolated fish population with LOD/distance culling, safe lakebed depth and swimming motion. Preserve approved water visuals and FPS. No claim that 300 fish are live yet.
 - Latest documented underwater test viewer (phone unverified): https://raw.githack.com/copperisbetter-lang/Wvlrp/cccae6f5ff30f7c4095f0dea80927c0c1eebb795/world-creator/base-camp/water-lab.html?spawn=lake
+
+
+## 300 BASS IMPLEMENTATION — 2026-10-24 ~09:xx EDT
+- Owner uploaded actual `model_67a_-_largemouth_bass.glb` in chat (18 MB; 2 meshes, 4 textures, 1 animation named `Swim Cycle`).
+- Isolated branch `gator3-stacey-calm-water-20261023` commit `c5b72f06e10b7b70a8d92ae3eec2c73ba0aa624e`: new `world-creator/base-camp/stacey-bass-300.js`, 300 animated bass, four size classes, deterministic spawning, lake depth constraints, movement and distance culling.
+- Isolated branch commit `004cafcb35edc8baa2b02732c1258c9b79c11d8c`: wired module into `world-creator/base-camp/water-lab.html` and added loading/error status.
+- **BLOCKER**: 18 MB GLB is present in chat sandbox but NOT yet uploaded to GitHub `world-creator/base-camp/assets/model_67a_-_largemouth_bass.glb`. GitHub connector cannot transfer this local binary directly; module will show model unavailable until asset is uploaded. No live 300-bass claim. Source integration committed but NOT phone-verified.
+- Isolated preview at code commit: https://raw.githack.com/copperisbetter-lang/Wvlrp/004cafcb35edc8baa2b02732c1258c9b79c11d8c/world-creator/base-camp/water-lab.html?spawn=lake (will show model unavailable until binary present in this commit; use updated branch preview after upload).
+- Preserve approved lake, island, water shader, and main production. Next: upload GLB to correct branch/path, inspect GLB orientation/scale and mobile FPS, then mark VERIFIED only after owner phone test. Bell #29 coordination required before production merge.
