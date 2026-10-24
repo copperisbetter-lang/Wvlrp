@@ -228,3 +228,10 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Adjusted deep and shallow color palette, bright sky reflection and silvery glint; preserved motion and separate shore wash. Color is approximate reference-based, not sampled pixel-exact.
 - Exact preview URL (NOT PHONE VERIFIED): https://raw.githack.com/copperisbetter-lang/Wvlrp/fe14f1bb1ff166c89890d76910bffdfe05504a87/world-creator/base-camp/water-summersville-test.html?spawn=lake
 - Safe baseline f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6 untouched. No production deployment.
+
+## HD SHORE ROCK REPLACEMENT 2026-10-23
+- Owner rejected procedural rocks and cattails as cartoonish; those are removed from the NEW HD test viewer.
+- Real CC0 Poly Haven rock moss set GLB via public GitHub raw URL; 38 cloned textured specimens in shoreline patches; two access corridors retained. GLB runtime load is not yet phone-verified; failures displayed in details panel, with no low-poly fallback.
+- Module commit fe1f484cc91a652f5a2934992282c0cb8fb2eb9e; viewer commit 219f67b12a3ab732c1093e5cce447b8cc79bbd46.
+- Test URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/219f67b12a3ab732c1093e5cce447b8cc79bbd46/world-creator/base-camp/water-hd-rocks-test.html?spawn=lake
+- Summersville water and shoreline movement preserved. Fern/shrub/cattail photoreal assets not yet installed. Original protected baseline unchanged.
