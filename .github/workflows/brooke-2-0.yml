@@ -7,7 +7,7 @@ on:
       - '.github/workflows/brooke-2-0.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   sculpt:
     runs-on: ubuntu-latest
@@ -20,6 +20,16 @@ jobs:
           sudo apt-get install -y blender
       - name: Create independent face pass
         run: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/build_face_pass1.py
+      - name: Publish full-body face-pass model to isolated branch
+        run: |
+          set -e
+          test -s avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb
+          git commit -m "Publish Brooke 2.0 full-body face pass [skip ci]" || exit 0
+          git pull --rebase origin brooke-2-0-fresh-start
+          git push origin HEAD:brooke-2-0-fresh-start
       - name: Upload isolated full-body result
         uses: actions/upload-artifact@v4
         with:
