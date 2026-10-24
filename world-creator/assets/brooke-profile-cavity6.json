@@ -1,0 +1,10 @@
+{
+  "source_sha256": "53648767fa59b3595ec77849dc7b037445523d080a81f59a1f4c5abb66a55acd",
+  "candidate_sha256": "68ec0c2ba513f6b2705d1331ace8abe1804c15f9aa1866be6c5c82a0beb8c506",
+  "removed_inner_cap_faces": 53,
+  "new_mouth_lining_faces": 64,
+  "new_nostril_lining_faces": 128,
+  "outer_face_geometry_unchanged": true,
+  "rig_preserved": true,
+  "likeness_approved": false
+}
