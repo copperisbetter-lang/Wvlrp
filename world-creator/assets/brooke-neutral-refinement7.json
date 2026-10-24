@@ -1,0 +1,29 @@
+{
+  "source_sha256": "68ec0c2ba513f6b2705d1331ace8abe1804c15f9aa1866be6c5c82a0beb8c506",
+  "candidate_sha256": "15806921cb06d7192c04f83fbf7dee848325da4ac8a34b65e6c7bf0a87b8d926",
+  "primitives": [
+    {
+      "primitive": 0,
+      "vertices": 4692,
+      "max_displacement_mm": 4.334997177124023,
+      "forehead_rollback_fraction": 0.75
+    },
+    {
+      "primitive": 1,
+      "vertices": 65,
+      "max_displacement_mm": 1.0223294496536255,
+      "forehead_rollback_fraction": 0.75
+    },
+    {
+      "primitive": 2,
+      "vertices": 130,
+      "max_displacement_mm": 1.694956881692633e-05,
+      "forehead_rollback_fraction": 0.75
+    }
+  ],
+  "topology_uv_rig_materials_preserved": true,
+  "cavity_repairs_retained": true,
+  "mouth_width_unchanged": true,
+  "no_added_lip_volume": true,
+  "likeness_approved": false
+}
