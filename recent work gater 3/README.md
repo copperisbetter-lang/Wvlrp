@@ -247,3 +247,9 @@ Owner said “Move on” after rejecting legacy Stacey shader. Next: isolated te
 - Owner screenshot reveals GLTFLoader MeshoptDecoder required for HD rock GLB. New `stacey-shore-hd-rocks-meshopt-test.js` commit 9c6916e32d86b533c514696a90d8865ba0acf943 loads decoder before GLB.
 - Preview `water-graded-bank-45ft-test.html` commit dce8603f1800b66d06943d7b3cf5605a14a1c49f; exact URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/dce8603f1800b66d06943d7b3cf5605a14a1c49f/world-creator/base-camp/water-graded-bank-45ft-test.html?spawn=lake
 - New preview unverified on phone. Original 25ft build and protected baseline preserved; no trail changes.
+
+## 30–80 LB SHORE STONES + 69FT EXCLUSION — 2026-10-23 22:01 EDT
+- Owner approved 45ft beach grade, screenshot GPS X140.0 Z-117.2, asks 30–80 pound large stones at lake edge but NONE within 69 feet of where standing.
+- New module `world-creator/base-camp/stacey-shore-30-80lb-stones-test.js` commit 964ebb456dcb7a2bd76008a415386ec08b73a4ac. Uses real GLB and Meshopt decoder, random rock size calculated from 30–80lb limestone density (~2500 kg/m³), filters placement by Euclidean 69ft=21.0312m radius from X140 Z-117.2. Original HD rock test not edited.
+- New isolated viewer `world-creator/base-camp/water-stones-exclusion-test.html` commit ac75141631f0fb612dac9c9f50427ecbe449c621. Exact URL https://raw.githack.com/copperisbetter-lang/Wvlrp/ac75141631f0fb612dac9c9f50427ecbe449c621/world-creator/base-camp/water-stones-exclusion-test.html?spawn=lake
+- Not phone-verified; no production merge, preserve Summersville water and 45ft grade. Check rocks are visible at real scale and 69ft clearance before approval.
