@@ -53,3 +53,10 @@ Updated 2026-10-23
 - Updated `.github/workflows/brooke-2-0.yml` at commit `6cf405c2df53d44b2866bfa955fdc658edebd835` to publish `avatar-work/brooke-2.0/brooke-2.0-face-pass1.glb` after sculpt.
 - Shape-key script `build_face_pass1.py` is a guarded **basic jaw/temple proportional pass**, not verified Brooklyn likeness; may fail if separate head mesh is not found. Must inspect run and model before approval.
 - Sophie 1 original and Brooke 2.0 baseline unchanged. Current full-body baseline viewer: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html
+
+## User supplied 5 new photos; urgent build handoff (2026-10-23)
+- Five real reference images attached in chat and accessible to local image-processing environment; **not** yet transferred into GitHub Actions. No build has used these five. Do not misrepresent status.
+- Use frontal pink-background portrait as main facial geometry/texture reference, dark-background pink-outfit photo as second frontal angle, yellow dress and gold outfit as 3/4/profile; composite as body/hair reference.
+- Preserve existing full-body Brooke 2.0 clone and protected Sophie 1. Do not switch viewer to standalone gray photo head.
+- GitHub photo workflow now fails closed unless supplied explicit photo_url (commit 99d010bb5e13cdfc8bccc5105cd5e94747dc8197); **the next actual task is to get user-provided reference photos into the build runner, then construct/fuse facial geometry and inspect a rendered full-body result**.
+- User has explicitly demanded actual build rather than repeated plans; do not claim completed work without a validated viewer.
