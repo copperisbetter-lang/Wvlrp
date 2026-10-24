@@ -55,19 +55,20 @@ async function installNaturalShoreline(){
   if(!Number.isFinite(size.y)||size.y<.001)throw Error('invalid model');
   let seed=42571;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const groups=[];
-  for(let n=0;n<115;n++){
-   const a=random()*Math.PI*2;
-   const delta=Math.abs(Math.atan2(Math.sin(a-Math.PI/2),Math.cos(a-Math.PI/2)));
-   if(delta<.58)continue; // wide spawn beach protection
-   const r=outer(a)+random()*4.2-1.2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r,y=ground(x,z);
-   if(y<CY-1||y>CY+1)continue;
+  // Temporary inspection placement: a tight cluster directly ahead of beach spawn.
+  // Spawn faces toward -Z, so set the plants 5–11 meters ahead.
+  const spawnZ=CZ+outer(Math.PI/2)+8;
+  for(let n=0;n<14;n++){
+   const x=CX+(n%7-3)*.95+(random()-.5)*.25;
+   const z=spawnZ-5-Math.floor(n/7)*3+(random()-.5)*.3;
+   const y=ground(x,z);
    const plant=model.clone(true),scale=(.75+random()*.65)*1.52/size.y;
    plant.scale.setScalar(scale);
    plant.position.set(x,y-bounds.min.y*scale-.08,z);
    plant.rotation.y=random()*6.283;
    scene.add(plant);groups.push(plant);
   }
-  diag.assets.shorePlants='Imported CC0 cattail clumps: '+groups.length+' clumps; beach clear';
+  diag.assets.shorePlants='Cattail inspection: '+groups.length+' clumps in front of beach spawn';
  }catch(e){
   diag.assets.shorePlants='Model could not load; shoreline left unchanged';
   diag.errors.push('Cattail GLB: '+String(e));
