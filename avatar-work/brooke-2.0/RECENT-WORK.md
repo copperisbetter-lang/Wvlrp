@@ -93,3 +93,20 @@ Historical note: Earlier builds were not consistently documented; history may be
 - GitHub Actions Brooke 2.0 Isolated Face Pass run #19 (commit 213e2fb): RED X / FAILED, duration 1m20s. Actual failure step/log UNKNOWN (not yet obtained). Never call green.
 - GitHub Actions Brooke 2.0 Isolated Face Pass run #18 (commit 4499a03): RED X / FAILED, duration 1m18s. Actual failure step/log UNKNOWN.
 - No new face viewer is available. Previous baseline viewer is NOT a valid link to either run. Do not send baseline as new result.
+
+## Verified log diagnosis and recordkeeping correction — 2026-10-23 22:50 EDT
+- Operator: Gater 1 / current chat. Branch: brooke-2-0-fresh-start.
+- User complaint: NumPy has been flagged repeatedly on prior builds; treating this recurring dependency failure as a new discovery and failing to keep this record current is unacceptable.
+- Recordkeeping admission: this chat had NOT updated Recent Work before the user asked. This entry records that lapse; do not claim continuous updates.
+- Verified latest Isolated Face Pass run #20: FAILED. Commit: 85320e2a8a20106d763887bf17169c68922b70ae.
+- Run: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40055096371
+- Job: https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40055096371/job/120756233996
+- Successful steps: checkout and Install Blender. Failed step: Fit photo-derived face candidate onto existing full body.
+- Actual error from job logs: ModuleNotFoundError: No module named 'numpy', raised by Blender 4.0.2 glTF importer at import numpy as np while importing the body. Exit code 1.
+- Command: blender -b --python-exit-code 1 --python avatar-work/brooke-2.0/fit_photo_face_to_body.py -- avatar-work/brooke-2.0/brooke-2.0.glb public-models/brooke-2.0-photo-head-candidate.glb avatar-work/brooke-2.0/brooke-2.0-face-fit-candidate.glb
+- Artifact upload, structural verification, face pass creation and publication were SKIPPED. No new model or reviewable viewer produced; no visual QA possible.
+- Inputs: existing Brooke 2.0 full-body baseline and older public photo head candidate. No evidence this run used the user's five new photos.
+- Required correction: repair the Blender Python dependency environment permanently and add a NumPy import preflight executed INSIDE Blender before model operations in every affected workflow. Not implemented in this chat as of this entry.
+- Prior runs #18 and #19 remain screenshot-confirmed failures; their individual logs have NOT been inspected in this chat. Do not assume their cause from #20.
+- Viewer status: existing baseline only, NOT output from failed run #20. Pinned baseline: https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html?fullbody=83787d3e8810
+- This update changes documentation only; commit uses [skip actions] to avoid triggering another model build for a log update. No retry started, no dependency fix or model edit claimed. Sophie 1 untouched.
