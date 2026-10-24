@@ -40,3 +40,10 @@ Updated 2026-10-23
 - Build status: workflow success not yet verified; no finished photo-derived Brooke head or validated facial morph. Do not claim otherwise.
 - Workflow URL: https://github.com/copperisbetter-lang/Wvlrp/actions/workflows/brooke-photo-3ddfa.yml
 - Approved Sophie 1 remains untouched; working viewer URL unchanged.
+
+## Visual rejection — 2026-10-23, Brooke 2.0 photo head candidate
+- User inspected published `public-models/brooke-2.0-photo-head-candidate.glb` in phone viewer and rejected it.
+- Screenshot: gray untextured head; eyes closed; nose distorted; underside of chin exhibits severe striped artifacts; no recognizable Brooklyn Decker likeness. Not approved. Do NOT treat GitHub Actions success as appearance/likeness validation.
+- Run #19 `https://github.com/copperisbetter-lang/Wvlrp/actions/runs/40050561423` generated a technically valid but visually unacceptable candidate.
+- Viewer `https://raw.githack.com/copperisbetter-lang/Wvlrp/brooke-2-0-fresh-start/avatar-work/brooke-2.0/viewer.html` currently shows rejected candidate; do not present as finished.
+- Required: rebuild from better user-provided multi-view photos with photographic texture and open eyes, compare against approved Laura 2 photo-derived result; preserve Sophie 1 untouched.
