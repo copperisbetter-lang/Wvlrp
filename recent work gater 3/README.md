@@ -95,3 +95,10 @@ Owner authorized further Stacey Lake improvements. Active issue: no visible shor
 - **New exact rollback preview URL (NOT YET PHONE VERIFIED):** https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
 - Previous phone-confirmed water-visible version: https://raw.githack.com/copperisbetter-lang/Wvlrp/2e1c0d8473bbb6fbeba46768bc1b89f9a899cd12/world-creator/base-camp/water-lab.html?spawn=lake
 - **No real breaks yet.** Root cause of invisible geometry-build shader is not confirmed; do not reintroduce it without checking browser WebGL compile logs. Production and island/terrain/trails unchanged.
+
+## OWNER PHONE CONFIRMATION — 2026-10-23 20:41 EDT (screenshot clock)
+- Owner screenshot of rollback viewer confirms **WATER RESTORED**: dark green-blue water visible again, translucent nearshore, 88 FPS at 85% resolution, lake 5.00 acres. No visible convincing shore breakers.
+- **LAST OWNER-VERIFIED WATER-VISIBLE BUILD / PROTECTED BASELINE:** https://raw.githack.com/copperisbetter-lang/Wvlrp/f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6/world-creator/base-camp/water-lab.html?spawn=lake
+- Branch: `gator3-stacey-calm-water-20261023`; rollback commit `f88fc7bb7ed3fad2ed648b2a55fefe8341a389d6`.
+- Preserve: exact rollback source shader, lake island and geometry, terrain, Gater 2 trails, 88 FPS baseline. Do not replace or rewrite this verified snapshot.
+- Remaining complaint: no real shore breaks. Failed geometric displacement build `a33a01c5` drained lake; root cause not confirmed. Next effort must be separately isolated and shader-compile-tested before presenting to owner. No new water code changes in this log update.
