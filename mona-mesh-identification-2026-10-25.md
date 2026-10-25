@@ -26,3 +26,12 @@ Next five user-confirmed items in bottom-to-top inspection order (mesh indices n
 12. Bracelets
 13. Unknown — no noticeable visual change when toggled; needs closer inspection
 14. Pupils
+
+
+## Additional mesh-number observations (user correction)
+These numbers refer to the user's current numbered mesh list; do not assume they are the same as the earlier sequential identification numbers.
+- 11, 10, 9, 8 — left-eye parts.
+- 7, 6, 5, 4 — right-eye parts, with 4 specifically appearing to be something inside the hollow head (exact purpose uncertain).
+- 3, 2, 1 — unknown.
+- 13 — unknown (reconfirmed).
+Do not assign finer labels until individually inspected.
