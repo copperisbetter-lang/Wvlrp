@@ -7,3 +7,9 @@ Build a dedicated Mona inspection viewer, using the original Blender rig as the 
 Specifically test flexibility, skin stretch, skin compression, joint deformation and whether tissues follow movement automatically without manual morph sliders. Examine elbows, knees, shoulders, spine, hips, hands, face and other anatomical regions supported by the original model. Add wireframe and deformation/weight inspection views, animation playback, side-by-side neutral vs posed inspection, and record failures (clipping, collapse, overstretch, detached skin, joint inversion). Expose discovered shape keys, rig controls and animation clips with meaningful labels. Distinguish verified controls from proposed ones; don't claim unimplemented controls work.
 
 Run tests on mobile (Samsung A17) and record performance. Compare with 56-bone baseline and evaluate whether a full 505-bone rig or a selectively reduced rig best suits WVLRP real-time avatars. Keep Gater 3 on Mona; Brooke work and protected originals remain separate. Provide a direct working phone viewer link when implemented, with no 404s, and update this recent folder with each verified milestone.
+
+## Additional required pose and animation tests — user update, 2026-10-25
+- **Squat with knees apart**: controlled hip abduction and knee flexion; test neutral-to-deep squat, balance, skin stretching/compression at hips, inner thighs and knees.
+- **Sitting with legs open**: adjustable seated hip abduction and knee position; verify pelvis and thigh deformation, clothing/mesh clipping, and stable seating.
+- **Swimming**: test available swimming clips if present; if absent, label as a requested animation to create, not an existing Mona capability. Include stroke motion and leg kicks, and assess shoulder, spine, hip and knee deformation.
+All three are mandatory viewer test cases, even if the source rig lacks ready-made clips. Report implemented versus missing distinctly.
