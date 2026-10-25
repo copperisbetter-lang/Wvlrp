@@ -8,3 +8,12 @@ User-confirmed visual toggle mapping, reading screenshot from bottom upward (1 =
 4. `Mesh0_21 [20]` — shorts
 
 These are clothing components, not anatomy. Next four meshes pending user inspection. Preserve Mona's original GLB.
+
+Next four, user-reported bottom-to-top sequence (continuing upward from [20]):
+
+5. `Mesh0_19 [19]` — front shoe
+6. `Mesh0_18 [18]` — back shoe
+7. `Mesh0_16 [17]` — clip
+8. `Mesh0_15 [16]` — eyebrows / eyelashes
+
+Note: indices are inferred from the screenshot's visible order, not independently verified against model geometry. Confirm if the list changes when toggling.
