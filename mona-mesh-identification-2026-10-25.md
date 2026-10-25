@@ -24,4 +24,5 @@ Next five user-confirmed items in bottom-to-top inspection order (mesh indices n
 10. Left hair attachment
 11. Hair
 12. Bracelets
-13. Pupils
+13. Unknown — no noticeable visual change when toggled; needs closer inspection
+14. Pupils
