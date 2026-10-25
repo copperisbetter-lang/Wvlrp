@@ -15,7 +15,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Blender
         run: |
-          sudo apt-get -o Acquire::Retries=2 update
-          sudo apt-get -o Acquire::Retries=2 install -y blender
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender
+          blender --version
+      - name: Verify model file
+        run: |
+          ls -lh avatar-work/brooke/second-chance/brooke-head-3-0.glb
+          file avatar-work/brooke/second-chance/brooke-head-3-0.glb
+          python3 - <<'PY'
+          import pathlib,struct
+          p=pathlib.Path('avatar-work/brooke/second-chance/brooke-head-3-0.glb')
+          data=p.read_bytes()
+          print('Model bytes:',len(data),'Header:',data[:16].hex())
+          assert data[:4]==b'glTF','Source is not a binary GLB'
+          assert struct.unpack_from('<I',data,8)[0]==len(data),'GLB length mismatch'
+          PY
       - name: Test bone deformation on Brooke Head 3.0
         run: blender -b --python-exit-code 1 --python tests/brooke_head_3_0_rig_test.py
