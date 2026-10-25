@@ -17,3 +17,11 @@ Next four, user-reported bottom-to-top sequence (continuing upward from [20]):
 8. `Mesh0_15 [16]` — eyebrows / eyelashes
 
 Note: indices are inferred from the screenshot's visible order, not independently verified against model geometry. Confirm if the list changes when toggling.
+
+Next five user-confirmed items in bottom-to-top inspection order (mesh indices not yet verified):
+
+9. Body
+10. Left hair attachment
+11. Hair
+12. Bracelets
+13. Pupils
