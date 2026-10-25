@@ -24,7 +24,7 @@ Next five user-confirmed items in bottom-to-top inspection order (mesh indices n
 10. Left hair attachment
 11. Hair
 12. Bracelets
-13. Unknown — no noticeable visual change when toggled; needs closer inspection
+13. Unknown — no noticeable visual change when toggled; needs closer inspection (earlier inspection sequence; mesh-list number is 12, not 13)
 14. Pupils
 
 
@@ -33,5 +33,5 @@ These numbers refer to the user's current numbered mesh list; do not assume they
 - 11, 10, 9, 8 — left-eye parts.
 - 7, 6, 5, 4 — right-eye parts, with 4 specifically appearing to be something inside the hollow head (exact purpose uncertain).
 - 3, 2, 1 — unknown.
-- 13 — unknown (reconfirmed).
+- 12 — unknown (corrected from 13).
 Do not assign finer labels until individually inspected.
