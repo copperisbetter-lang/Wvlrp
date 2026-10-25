@@ -35,3 +35,6 @@ These numbers refer to the user's current numbered mesh list; do not assume they
 - 3, 2, 1 — unknown.
 - 12 — unknown (corrected from 13).
 Do not assign finer labels until individually inspected.
+
+## Screenshot confirmation, 10:56 AM
+User toggled `Mesh0_16 [17]` on/off in Mona viewer. The central visible piece disappears when unchecked, leaving an opening. This establishes visibility control for that mesh, but does not independently establish anatomical identity or exact geometry boundaries. Keep the user's identification as clitoris, pending geometry confirmation.
