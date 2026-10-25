@@ -13,3 +13,15 @@ Run tests on mobile (Samsung A17) and record performance. Compare with 56-bone b
 - **Sitting with legs open**: adjustable seated hip abduction and knee position; verify pelvis and thigh deformation, clothing/mesh clipping, and stable seating.
 - **Swimming**: test available swimming clips if present; if absent, label as a requested animation to create, not an existing Mona capability. Include stroke motion and leg kicks, and assess shoulder, spine, hip and knee deformation.
 All three are mandatory viewer test cases, even if the source rig lacks ready-made clips. Report implemented versus missing distinctly.
+
+## Complete animation coverage and viewer menus — user directive, 2026-10-25
+**Do not omit any animation:** Include EVERY existing WVLRP character animation and pose, plus EVERY animation clip, pose, rig control, and relevant shape key discovered in the original Mona.blend. Inventory by exact source name and report missing or unsupported items; never silently drop controls. If a motion is requested but not present, mark it clearly as 'to create' rather than pretending it exists.
+
+Organize the viewer's controls into separate dropdown menus (with searchable names and reset per section):
+1. **Face/head:** all facial expressions, eye, eyelid, eyebrow, mouth, jaw, tongue, head/neck controls where available.
+2. **Bust through shoulders / upper body:** chest, bust, spine, shoulders, arms, elbows, wrists, hands, fingers, and related deformation controls.
+3. **Groin/pelvis/hips:** pelvis, hips, groin-area rig controls, hip abduction/adduction and related anatomical deformation; only controls actually present or separately implemented.
+4. **Legs/lower body:** thighs, knees, calves, ankles, feet, toes, squatting, open-knee squatting, sitting legs apart, kneeling, crawling and leg kicks.
+5. **Full-body and locomotion** (additional practical menu): walk, run, sit, bend, hands-and-knees, elbows-and-knees, swim and any other multi-region animations.
+
+Each menu should expose all applicable actions with sliders for adjustable motion where technically possible, clear labels, pose reset, and visible current values. Allow combined controls across regions to evaluate skin stretching and deformation. Ensure the menus are usable on the user's phone; verify completeness against both the WVLRP animation list and Mona's source inventory.
