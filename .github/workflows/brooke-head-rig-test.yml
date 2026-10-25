@@ -17,8 +17,9 @@ jobs:
         run: |
           sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
           blender --version
+          blender -b --python-exit-code 1 --python-expr "import numpy; print('NumPy ready:', numpy.__version__)"
       - name: Verify model file
         run: |
           ls -lh avatar-work/brooke/second-chance/brooke-head-3-0.glb
