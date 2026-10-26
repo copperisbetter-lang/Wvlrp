@@ -185,13 +185,15 @@ def area(name,xyz,power,size):
 area("Warm softbox",(xmid+.85,head_y+front_sign*1.0,zmin+H*1.65),440,1.8)
 area("Cool fill",(xmid-.8,head_y+front_sign*.85,zmin+H*1.30),250,1.3)
 area("Hair rim",(xmid-.3,head_y-front_sign*1.2,zmin+H*1.3),390,.9)
-scene.render.engine="BLENDER_EEVEE_NEXT"
-scene.render.resolution_x=900
-scene.render.resolution_y=1100
+scene.render.engine="CYCLES"
+scene.cycles.samples=8
+scene.cycles.use_denoising=True
+scene.render.resolution_x=640
+scene.render.resolution_y=800
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 scene.render.film_transparent=False
-scene.render.engine="BLENDER_EEVEE_NEXT"
+scene.render.engine="CYCLES"
 def render(name,offset,look_z,scale):
     data=bpy.data.cameras.new(name);obj=bpy.data.objects.new(name,data)
     bpy.context.collection.objects.link(obj)
@@ -207,6 +209,16 @@ def render(name,offset,look_z,scale):
 render("Sandy_Original_Face_Front",(0,2,0),.93,.56)
 render("Sandy_Hair_ThreeQuarter",(.85,2,0),.90,.79)
 render("Sandy_Hair_Back",(.10,-2,0),.87,.86)
+# Convert Blender procedural curves to real renderable/exportable hair meshes.
+# This preserves the sculpt/skin while preventing hair from disappearing in GLB.
+for ob in list(scene.objects):
+    if ob.type=="CURVE" and ob.name.startswith("Sandy"):
+        bpy.ops.object.select_all(action="DESELECT")
+        ob.hide_set(False)
+        ob.select_set(True)
+        bpy.context.view_layer.objects.active=ob
+        bpy.ops.object.convert(target="MESH")
+        bpy.context.view_layer.objects.active.select_set(False)
 # Exclude studio lights/cameras from game GLB. Retain source skeleton and original UVs.
 for o in list(scene.objects):
     if o.type in {"LIGHT","CAMERA"}:
@@ -215,7 +227,7 @@ for o in list(scene.objects):
 for o in scene.objects:
     if o.type=="MESH":o.hide_set(False)
 outglb=OUTPUT/"Sandy_Blonde_Sculpt_WIP.glb"
-bpy.ops.export_scene.gltf(filepath=str(outglb),export_format="GLB",export_animations=True)
+bpy.ops.export_scene.gltf(filepath=str(outglb),export_format="GLB",export_animations=True,export_visible=True)
 if not outglb.exists() or outglb.stat().st_size<100000:
     raise RuntimeError("Invalid character output GLB")
 # Editable master with shape keys (production export not yet approved).
