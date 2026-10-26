@@ -1,0 +1,79 @@
+name: Brooke 3.1 V4 Head-Neck Proportion Trial
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-v4-build.yml'
+      - 'avatar-work/brooke/second-chance/build_v4_proportions.py'
+      - 'avatar-work/brooke/second-chance/build_v3_neck_fit.py'
+      - 'avatar-work/brooke/second-chance/build_3948_swap.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  proportions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: g2/brooke-3-1-rig-20261026
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - name: Build isolated Brooke V4 experimental model
+        run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v4_proportions.py 2>&1 | tee brooke-v4-build.log
+          grep BROOKE_V3_REGISTERED_NECK brooke-v4-build.log
+          grep BROOKE_V3_SCAN_CROP brooke-v4-build.log
+      - name: Validate GLB and proportional adjustments
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          folder=pathlib.Path('avatar-work/brooke/second-chance')
+          p=folder/'brooke-3-1-v4-proportion-trial.glb'
+          data=p.read_bytes();assert data[:4]==b'glTF'
+          assert struct.unpack_from('<I',data,8)[0]==len(data)
+          n,kind=struct.unpack_from('<II',data,12);assert kind==0x4e4f534a
+          gltf=json.loads(data[20:20+n])
+          r=json.loads((folder/'brooke-3-1-v4-proportion-check.json').read_text())
+          names=[n.get('name','') for n in gltf.get('nodes',[])]
+          assert len(gltf.get('skins',[]))>=2
+          assert 'Brooke_V3_Neck_Underlay' in names
+          assert r['source_hashes_unchanged']
+          assert r['v3_scan_vertices_removed']>20000
+          assert r['v3_facial_rig_parent_bone']=='mixamorig:Head'
+          assert r['body_vertices_after_cut']==10141
+          assert r['protected_shoulder_arm_spine_vertices']==2438
+          assert abs(r['head_scale']-.35)<1e-7
+          assert abs(r['v4_new_underlay_max_radius_m']-.053)<1e-7
+          assert r['v3_underlay_not_welded']
+          assert len(r['facial_morphs'])==10
+          assert r['not_verified']
+          print('BROOKE_V4_STRUCTURAL_QA',json.dumps({'bytes':len(data),'body_joints':[len(s['joints']) for s in gltf['skins']],'head_scale':r['head_scale'],'underlay_radius':r['v4_new_underlay_max_radius_m'],'neck_seam_welded':False}))
+          PY
+      - name: Upload trial and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-3-1-v4-proportion-trial
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v4-proportion-trial.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v4-proportion-check.json
+            brooke-v4-build.log
+          if-no-files-found: warn
+      - name: Store trial only on isolated G2 branch
+        if: success() && github.ref == 'refs/heads/g2/brooke-3-1-rig-20261026'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v4-proportion-trial.glb avatar-work/brooke/second-chance/brooke-3-1-v4-proportion-check.json
+          git commit -m "Store experimental Brooke V4 proportions, unapproved" || exit 0
+          git -c pull.rebase=true pull origin g2/brooke-3-1-rig-20261026
+          git push origin HEAD:g2/brooke-3-1-rig-20261026
