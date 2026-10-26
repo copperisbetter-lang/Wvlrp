@@ -54,7 +54,7 @@ jobs:
           p=Path("avatar-work/sandy-blonde/build")
           r=json.loads((p/"build-report.json").read_text())
           assert r["body_vertices"] > 3000
-          assert r["hair_locks"] >= 250
+          assert r["native_hair_meshes"] >= 1
           assert r["face_original_morph"]
           assert not r["game_ready"] and not r["visual_approval"]
           for name in r["render_filenames"]:
@@ -69,7 +69,7 @@ jobs:
           names=[x.get("name","") for x in doc["meshes"]]
           assert any("Sandy" in n for n in names), names[:12]
           assert (p/"Sandy_Blonde_Working.blend").stat().st_size>100000
-          print("SANDY_ASSETS_VALIDATED",r["body_vertices"],len(glb),r["hair_locks"])
+          print("SANDY_ASSETS_VALIDATED",r["body_vertices"],len(glb),r["native_hair_meshes"])
           PY
       - name: Commit WIP render and editable model only to isolated branch
         run: |
