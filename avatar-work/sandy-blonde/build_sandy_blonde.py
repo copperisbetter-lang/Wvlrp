@@ -200,7 +200,7 @@ def render(name,offset,look_z,scale):
     obj.location=Vector((xmid+offset[0],head_y+offset[1]*front_sign,zmin+H*look_z+offset[2]))
     obj.rotation_euler=(target-obj.location).to_track_quat("-Z","Y").to_euler()
     scene.camera=obj
-    scene.render.filepath=str(OUTPUT/name+".png")
+    scene.render.filepath=str(OUTPUT/(name+".png"))
     bpy.ops.render.render(write_still=True)
     print("SANDY_RENDER",scene.render.filepath)
     bpy.data.objects.remove(obj,do_unlink=True)
