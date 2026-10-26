@@ -229,8 +229,11 @@ def recolor_images(ob,mode):
                     streak=.89+.085*np.sin(x*.113)+.05*np.cos(x*.65)+.045*np.sin(x*1.92)
                     variation=np.tile(streak,height)[:,None].astype(np.float32)
                     # Warm sandy GOLD, not brunette. Preserve native strand contrast.
-                    target=np.array([.87,.70,.47],dtype=np.float32)
-                    rgb[:,:]=rgb*.22+target[None,:]*.78
+                    target=np.array([.48,.315,.155],dtype=np.float32)
+                    # Preserve strand luminance instead of washing it out with a flat tint.
+                    luminance=rgb@np.array([.2126,.7152,.0722],dtype=np.float32)
+                    detail=np.clip((luminance+.035)/(np.median(luminance)+.035),.28,1.40)
+                    rgb[:,:]=target[None,:]*detail[:,None]
                     rgb[:,:]*=variation
                 np.clip(rgba,0,1,out=rgba)
                 image.pixels.foreach_set(rgba.ravel())
@@ -252,7 +255,12 @@ def recolor_images(ob,mode):
                 for link in list(mat.node_tree.links):
                     if link.to_socket==target:mat.node_tree.links.remove(link)
                 mat.node_tree.links.new(color_textures[0].outputs['Color'],target)
-                principled.inputs['Roughness'].default_value=.72
+                principled.inputs['Roughness'].default_value=.52
+                if 'Anisotropic IOR Level' in principled.inputs:
+                    principled.inputs['Anisotropic IOR Level'].default_value=.65
+                if 'Specular IOR Level' in principled.inputs:
+                    principled.inputs['Specular IOR Level'].default_value=.28
+                mat.use_backface_culling=False
     color_audit.append([mode,patched])
     return patched
 skin_atlases=recolor_images(body,'skin')
@@ -321,7 +329,7 @@ area("Cool fill",(xmid-.8,head_y+front_sign*.85,zmin+H*1.30),75,1.3)
 area("Hair rim",(xmid-.3,head_y-front_sign*1.2,zmin+H*1.3),120,.9)
 scene.render.engine="CYCLES"
 scene.view_settings.exposure=-.35
-scene.cycles.samples=12
+scene.cycles.samples=32
 scene.cycles.use_denoising=True
 scene.render.resolution_x=640
 scene.render.resolution_y=800
@@ -380,3 +388,4 @@ report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "game_ready":False,"visual_approval":False}
 (OUTPUT/"build-report.json").write_text(json.dumps(report,indent=2))
 print("SANDY_SCULPT_EXPORT_OK",outglb.stat().st_size)
+
