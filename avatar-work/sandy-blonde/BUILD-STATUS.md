@@ -1,56 +1,56 @@
 # Sandy Blonde isolated build status
 
-Source commit: e3db806a2d2f6059924c8ff95ac485a8b660d5d1
+Source commit: 787f8ee815b888fc6a05f61e5f4db48edb7ab6d1
 
 Independent visual acceptance on Android: NOT YET TESTED.
 No wardrobe, game integration, production deployment or approved source edits.
 BEGIN LOG
-Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.01 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
-Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.01 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Particle Systems
-Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.01 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
-Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.01 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Meshes
-Fra:1 Mem:115.74M (Peak 148.52M) | Time:00:00.01 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Mesh | Computing attributes
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.01 | Mem:36.01M, Peak:36.01M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.01 | Mem:36.97M, Peak:36.97M | Scene, ViewLayer | Updating Scene BVH | Building
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.01 | Mem:36.97M, Peak:36.97M | Scene, ViewLayer | Updating Scene BVH | Building BVH
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.01 | Mem:37.98M, Peak:37.98M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
-Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Mesh | Computing normals
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Objects Flags
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Primitive Offsets
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Images
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Camera Volume
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Lookup Tables
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Lights
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Lights | Computing tree
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Integrator
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Film
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.28M, Peak:40.36M | Scene, ViewLayer | Updating Lookup Tables
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Baking
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Device | Writing constant memory
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Loading denoising kernels (may take a few minutes the first time)
-Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.02 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Sample 0/12
-Fra:1 Mem:155.04M (Peak 155.04M) | Time:00:00.30 | Remaining:00:03.02 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Sample 1/12
-Fra:1 Mem:170.67M (Peak 194.11M) | Time:00:07.84 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Sample 12/12
-Fra:1 Mem:170.67M (Peak 194.11M) | Time:00:07.84 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Finished
+Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.02 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.02 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.02 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:115.24M (Peak 148.52M) | Time:00:00.02 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:115.74M (Peak 148.52M) | Time:00:00.02 | Mem:36.00M, Peak:36.00M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:36.01M, Peak:36.01M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:36.97M, Peak:36.97M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:36.97M, Peak:36.97M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.02 | Mem:37.98M, Peak:37.98M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.03 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:116.71M (Peak 148.52M) | Time:00:00.03 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:39.07M, Peak:40.08M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.28M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.28M, Peak:40.36M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Loading denoising kernels (may take a few minutes the first time)
+Fra:1 Mem:117.92M (Peak 148.52M) | Time:00:00.03 | Mem:40.36M, Peak:40.36M | Scene, ViewLayer | Sample 0/12
+Fra:1 Mem:155.04M (Peak 155.04M) | Time:00:00.37 | Remaining:00:03.73 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Sample 1/12
+Fra:1 Mem:170.67M (Peak 194.11M) | Time:00:09.44 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Sample 12/12
+Fra:1 Mem:170.67M (Peak 194.11M) | Time:00:09.44 | Mem:77.49M, Peak:77.49M | Scene, ViewLayer | Finished
 Saved: '/home/runner/work/Wvlrp/Wvlrp/avatar-work/sandy-blonde/build/Sandy_Hair_Back.png'
-Time: 00:07.92 (Saving: 00:00.07)
+Time: 00:09.53 (Saving: 00:00.08)
 
-05:09:04 | INFO: Starting glTF 2.0 export
-05:09:04 | INFO: Extracting primitive: high-poly.002
-05:09:04 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-05:09:04 | INFO: Primitives created: 1
-05:09:04 | INFO: Extracting primitive: long01.001
-05:09:04 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-05:09:04 | INFO: Primitives created: 1
-05:09:04 | INFO: Extracting primitive: base.001
-05:09:04 | INFO: Primitives created: 1
-05:09:04 | INFO: Extracting primitive: Sandy natural brow mesh
-05:09:04 | INFO: Primitives created: 1
-05:09:04 | INFO: Extracting primitive: Sandy natural brow mesh.001
-05:09:04 | INFO: Primitives created: 1
-05:09:04 | INFO: Finished glTF 2.0 export in 0.20854473114013672 s
+05:15:50 | INFO: Starting glTF 2.0 export
+05:15:50 | INFO: Extracting primitive: high-poly.002
+05:15:50 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:15:50 | INFO: Primitives created: 1
+05:15:50 | INFO: Extracting primitive: long01.001
+05:15:50 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+05:15:50 | INFO: Primitives created: 1
+05:15:50 | INFO: Extracting primitive: base.001
+05:15:50 | INFO: Primitives created: 1
+05:15:50 | INFO: Extracting primitive: Sandy natural brow mesh
+05:15:50 | INFO: Primitives created: 1
+05:15:50 | INFO: Extracting primitive: Sandy natural brow mesh.001
+05:15:50 | INFO: Primitives created: 1
+05:15:50 | INFO: Finished glTF 2.0 export in 0.2360520362854004 s
 Info: Total files 0 | Changed 0 | Failed 0
 SANDY_SOURCE_MESH_BOUNDARY 2278 PELVIC_EDGES 224 SHAPEKEYS [] BODY_MATERIALS ['SAV 4 adult petite character.body']
 SANDY_SOURCE SAV 4 adult petite character_sav4 14483 1.676 head 0.093 0.114 front -1
