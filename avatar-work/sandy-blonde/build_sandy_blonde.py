@@ -39,6 +39,52 @@ pelvic_edges=[edge for edge in all_boundary if all(.37<((v.co.z-bzmin)/bh)<.67 a
 print('SANDY_SOURCE_MESH_BOUNDARY',len(all_boundary),'PELVIC_EDGES',len(pelvic_edges),
       'SHAPEKEYS',[k.name for k in body.data.shape_keys.key_blocks] if body.data.shape_keys else [],
       'BODY_MATERIALS',[m.name if m else None for m in body.data.materials])
+# Preserve original source GLB and patch only the *independent* clean game-body copy.
+# Do not use generic fill-all-holes; MakeHuman may have intentional mouth/eye loops.
+from collections import defaultdict
+cx=(min(v.co.x for v in inspection.verts)+max(v.co.x for v in inspection.verts))*.5
+links=defaultdict(set)
+for edge in all_boundary:
+    for v in edge.verts:links[v].add(edge)
+visited=set();eligible=[]
+for seed in pelvic_edges:
+    if seed in visited:continue
+    stack=[seed];component=set()
+    while stack:
+        edge=stack.pop()
+        if edge in component:continue
+        component.add(edge)
+        for v in edge.verts:stack.extend(links[v]-component)
+    visited.update(component)
+    rim={v for e in component for v in e.verts}
+    perim=sum(e.calc_length() for e in component)
+    zlow=min((v.co.z-bzmin)/bh for v in rim)
+    zhigh=max((v.co.z-bzmin)/bh for v in rim)
+    wide=max(abs(v.co.x-cx)/bh for v in rim)
+    print('SANDY_PELVIC_BOUNDARY_COMPONENT',len(component),round(perim,4),round(zlow,3),round(zhigh,3),round(wide,3))
+    if (3<=len(component)<=350 and perim<.48*bh and
+        all(.36<((v.co.z-bzmin)/bh)<.67 and abs(v.co.x-cx)<.20*bh for v in rim)):
+        eligible.append(component)
+patched=0
+if eligible:
+    repair=bpy.data.materials.new('Sandy continuous skin - clean pelvis')
+    repair.use_nodes=True
+    shader=repair.node_tree.nodes.get('Principled BSDF')
+    shader.inputs['Base Color'].default_value=(.68,.44,.34,1)
+    shader.inputs['Roughness'].default_value=.87
+    material_index=len(body.data.materials)
+    body.data.materials.append(repair)
+    for component in eligible:
+        fill=bmesh.ops.holes_fill(inspection,edges=list(component),sides=0)
+        for face in fill.get('faces',[]):
+            face.material_index=material_index
+            face.smooth=True
+            patched+=1
+    if patched:
+        bmesh.ops.recalc_face_normals(inspection,faces=list(inspection.faces))
+        inspection.to_mesh(body.data)
+        body.data.update()
+print('SANDY_PELVIS_CLOSURE',patched,'eligible_components',len(eligible))
 inspection.free()
 
 verts=[body.matrix_world@v.co for v in body.data.vertices]
@@ -334,7 +380,7 @@ bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT/"Sandy_Blonde_Working.blend"))
 report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
-        "height_m":H,"face_original_morph":True,"chest_contour_shape_key":True,
+        "height_m":H,"pelvis_patch_faces":patched,"face_original_morph":True,"chest_contour_shape_key":True,
         "native_hair_meshes":len(hairmeshes),"hair_locks":0,"source_eye_meshes":len(eye_meshes),
         "skin_atlases":skin_atlases,"eye_atlases":eye_atlases,"hair_atlases":hair_atlases,
         "render_filenames":["Sandy_Original_Face_Front.png","Sandy_Hair_ThreeQuarter.png","Sandy_Hair_Back.png"],
