@@ -27,3 +27,12 @@ jobs:
         with:
           name: brooke-3-1-source-audit
           path: brooke-audit.txt
+
+      - name: Upload protected source references for offline visual and scale audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-3-1-approved-source-references
+          path: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance/brooke-3-1-body-candidate.glb
+          if-no-files-found: error
