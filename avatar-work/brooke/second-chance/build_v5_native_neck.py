@@ -43,8 +43,10 @@ before=\"head_remove_indices=[]\\nnative_neck_set={v.index for v in base.data.ve
 assert source.count(anchor)==1
 source=source.replace(anchor,before,1)
 check=\"assert not set(head_remove_indices).intersection(preserve_high_indices), 'Attempted shoulder deletion'\"
-repl=check+\"
-assert len(native_neck_set)>100, 'Native neck mesh missing from donor'\\nassert not set(head_remove_indices).intersection(native_neck_set), 'Original neck skin still being removed'\\nprint('BROOKE_V5_NECK_PRESERVED',json.dumps({'native_neck_vertices':len(native_neck_set),'local_cut':cut,'world_cut':cut*base.matrix_world.to_scale()[up]}))\"
+repl=(check+chr(10)+
+      "assert len(native_neck_set)>100, 'Native neck mesh missing from donor'"+chr(10)+
+      "assert not set(head_remove_indices).intersection(native_neck_set), 'Original neck skin still being removed'"+chr(10)+
+      "print('BROOKE_V5_NECK_PRESERVED',json.dumps({'native_neck_vertices':len(native_neck_set),'local_cut':cut,'world_cut':cut*base.matrix_world.to_scale()[up]}))")
 assert source.count(check)==1
 source=source.replace(check,repl,1)
 # Expected removed head count may shrink with the now-corrected cut.
