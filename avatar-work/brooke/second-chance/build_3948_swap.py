@@ -51,15 +51,46 @@ head_in_mesh=base.matrix_world.inverted()@head_world
 cut=head_world[up]/(base.matrix_world.to_scale()[up]*bodyrigs[0].matrix_world.to_scale()[up])-.025
 print('NECK_CUT_REVISED',json.dumps({'head_joint_world':head_world[up], 'body_parent_scale':base.matrix_world.to_scale()[up],'armature_parent_scale':bodyrigs[0].matrix_world.to_scale()[up], 'mesh_local_cut':cut}))
 assert bounds[up][0]+.6<cut<bounds[up][1]-.04, 'Cut outside upper body: '+str(cut)
-# BMesh bisect removes the old head's vertices, NOT merely clipping the viewer.
-bm=bmesh.new();bm.from_mesh(base.data)
-coord=[0.,0.,0.];coord[up]=cut
-normal=[0.,0.,0.];normal[up]=1.
-bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),
-    dist=.00001,plane_co=tuple(coord),plane_no=tuple(normal),clear_inner=False,clear_outer=True)
+# Surgical selection: old head SKIN vertices, not a horizontal slice through
+# the entire character. A full-plane bisect destroyed both shoulders, upper
+# torso and arm attachment in the rejected v1 screenshot. Keep EVERY shoulder,
+# arm, leg, torso and hand vertex, including those higher than the neck cut.
+head_group=base.vertex_groups.get('mixamorig:Head')
+assert head_group is not None, 'No skinning group for original head'
+preserve_names=['mixamorig:LeftShoulder','mixamorig:RightShoulder',
+ 'mixamorig:LeftArm','mixamorig:RightArm','mixamorig:Spine2',
+ 'mixamorig:LeftForeArm','mixamorig:RightForeArm']
+preserve_groups={g.index for n in preserve_names for g in [base.vertex_groups.get(n)] if g}
+assert len(preserve_groups)==len(preserve_names),'Missing shoulder/arm control weights'
+def vertex_weight(v,group):
+    return next((e.weight for e in v.groups if e.group==group.index),0.0)
+head_remove_indices=[]
+preserve_high_indices=[]
+for v in base.data.vertices:
+    attached_to_shoulder=any(vertex_weight(v,base.vertex_groups[n])>.10 for n in preserve_names)
+    if attached_to_shoulder:
+        preserve_high_indices.append(v.index)
+    if (v.co[up]>cut and vertex_weight(v,head_group)>.12 and not attached_to_shoulder):
+        head_remove_indices.append(v.index)
+assert len(head_remove_indices)>3000 and len(head_remove_indices)<4800, (
+    'Unsafe head region count: '+str(len(head_remove_indices)))
+assert not set(head_remove_indices).intersection(preserve_high_indices), 'Attempted shoulder deletion'
+old_height=max(v.co[up] for v in base.data.vertices)
+old_width=max(v.co[0] for v in base.data.vertices)-min(v.co[0] for v in base.data.vertices)
+bm=bmesh.new();bm.from_mesh(base.data);bm.verts.ensure_lookup_table()
+bmesh.ops.delete(bm,geom=[bm.verts[i] for i in head_remove_indices],context='VERTS')
 bm.to_mesh(base.data);bm.free();base.data.update()
 afterbounds=max(v.co[up] for v in base.data.vertices)
-assert afterbounds<cut+.0001 and len(base.data.vertices)<bodybefore, 'Physical head removal not confirmed'
+new_width=max(v.co[0] for v in base.data.vertices)-min(v.co[0] for v in base.data.vertices)
+assert len(base.data.vertices)==bodybefore-len(head_remove_indices)
+assert abs(new_width-old_width)<0.001, 'Hand/arm outer extent lost during cut'
+assert afterbounds<old_height-.03, 'Significant portion of original head still exists'
+print('BODY_HEAD_ONLY_REMOVAL',json.dumps({'original_vertices':bodybefore,
+ 'head_vertices_removed':len(head_remove_indices),
+ 'preserved_shoulder_arm_spine_vertices':len(preserve_high_indices),
+ 'remaining_body_vertices':len(base.data.vertices),
+ 'old_width':old_width,'new_width':new_width,
+ 'old_height':old_height,'remaining_height':afterbounds}))
 # Those meshes are the OLD eyes and long hair; retain body, accessories and existing 52-bone rig.
 bpy.data.objects.remove(eye,do_unlink=True)
 bpy.data.objects.remove(hair,do_unlink=True)
@@ -181,7 +212,7 @@ for i,v in enumerate(h.data.vertices):
     vgs['BrookeHead'].add([i],max(.07,1.-total*factor),'REPLACE')
 mod=h.modifiers.new('Brooke_3948_ActualFacialBones','ARMATURE');mod.object=rig
 # Register geometry at the old Brooke fitting position using source-space alignment.
-placement=Tb@Matrix.Translation(Vector((.0118137358,1.518908886,.0253151481)))@Matrix.Scale(.436,4)@Th.inverted()
+placement=Tb@Matrix.Translation(Vector((.0118137358,1.518908886,.0253151481)))@Matrix.Scale(.29,4)@Th.inverted()
 h.matrix_world=placement;rig.matrix_world=placement
 bpy.context.view_layer.update()
 # Verify bone motion produces DIFFERENT evaluated vertex coordinates, then reset.
@@ -201,7 +232,7 @@ for o in bpy.context.scene.objects:
 bpy.ops.export_scene.gltf(filepath=OUT,export_format='GLB',use_selection=True,export_morph=True,export_skins=True)
 report={'source_hashes_unchanged':hashfile(HEAD)==expected['head'] and hashfile(BODY)==expected['body'],
   'body_vertices_before':bodybefore,'body_vertices_after_cut':len(base.data.vertices),
-  'body_head_cut_y_glb':cut,'head_source':'3948','approved_crown_baked':True,
+  'body_head_cut_y_glb':cut,'selective_head_vertices_removed':len(head_remove_indices),'protected_shoulder_arm_spine_vertices':len(preserve_high_indices),'head_scale':0.29,'head_source':'3948','approved_crown_baked':True,
   'model_local_axis':str(Th),'landmark_residual':residual,
   'facial_bones':list(vgs),'facial_morphs':list(shapes),'facial_bone_test_delta':delta,
   'export_path':OUT,'export_bytes':os.path.getsize(OUT),
