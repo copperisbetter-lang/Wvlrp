@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WVLRP Brooke 3.1 — V5 Full Blonde 3D Hair Inspection</title>
+<style>body{margin:0;background:#13211e;color:#f2faf6;font:14px system-ui}header,section{padding:12px}header{background:#234435}small{color:#bdd0c7}#stage{height:58vh;min-height:310px;touch-action:none}button,select{background:#336c56;color:white;border:1px solid #7cb19a;border-radius:7px;padding:10px;margin:3px}button:active{background:#53a384}input[type=range]{width:98%;accent-color:#85d8aa}label{display:block;padding:5px}details{border:1px solid #476453;border-radius:8px;margin:9px 0;padding:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}#status{padding:10px;background:#264137;white-space:pre-wrap}select{width:100%}</style>
+</head><body><header><b>Brooke 3.1 V5 · Full 3D Blonde Hair Trial</b><div><small>Head +2% · neck -10 mm · real 3D blonde hair · face preserved</small></div></header><div id="stage"></div><div id="status">Preparing 3D viewer…</div>
+<section><div><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="head">Head close-up</button><button id="reset">Reset</button></div><div><button id="turnNeck">Turn head test</button><button id="neckReset">Reset head test</button></div><h3>Facial shape controls</h3><div id="morphs" class="grid"></div>
+<details><summary>Skeleton controls</summary><label>Choose bone<select id="bones"></select></label><div class="grid"><label>Pitch<input id="rx" type="range" min="-45" max="45" value="0"></label><label>Yaw<input id="ry" type="range" min="-45" max="45" value="0"></label><label>Roll<input id="rz" type="range" min="-45" max="45" value="0"></label></div><button id="boneReset">Reset selected bone</button></details>
+<p><small>This V5 trial preserves the body's native neck and removes the detached pink cylinder. The head is 2% bigger than V4 and lowered 10 mm. Original models are protected. The head/neck seam, texture match, and all pose animations are still unverified. Inspect carefully before acceptance. Inspect front, side, back, head close-up, jaw and neck motion before approval; facial slider counts are not proof of quality.</small></p>
+</section>
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.169.0';
+import {OrbitControls} from 'https://esm.sh/three@0.169.0/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'https://esm.sh/three@0.169.0/examples/jsm/loaders/GLTFLoader.js';
+const host=document.querySelector('#stage'),status=document.querySelector('#status');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x13211e);
+scene.add(new THREE.HemisphereLight(0xffffff,0x8c9b92,2.5));
+const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(2,4,5);scene.add(light);
+const camera=new THREE.PerspectiveCamera(39,1,.01,80),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));host.appendChild(renderer.domElement);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;
+function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+let root=null,modelBox=null,meshes=[],bones={};
+function look(v){if(!root)return;const center=modelBox.getCenter(new THREE.Vector3()),s=modelBox.getSize(new THREE.Vector3());
+const head=v==='head';const target=new THREE.Vector3(center.x,head?modelBox.max.y-s.y*.14:center.y,center.z);
+const dist=head?Math.max(s.y*.41,.4):s.y*1.7;
+const dir=v==='side'?new THREE.Vector3(1,0,0):v==='back'?new THREE.Vector3(0,0,-1):new THREE.Vector3(0,0,1);
+camera.position.copy(target).addScaledVector(dir,dist);orbit.target.copy(target);orbit.update();}
+document.querySelectorAll('button[data-view]').forEach(b=>b.onclick=()=>look(b.dataset.view));
+function updateMorphs(){for(const m of meshes){for(const [key,i] of Object.entries(m.morphTargetDictionary||{})){const el=document.getElementById('m-'+key);if(el)m.morphTargetInfluences[i]=Number(el.value)/100;}}}
+const boneSelect=document.getElementById('bones');
+function updateBone(){const bone=bones[boneSelect.value];if(!bone)return;
+const angles=['rx','ry','rz'].map(id=>THREE.MathUtils.degToRad(+document.getElementById(id).value));
+bone.quaternion.copy(bone.userData.originalQuat).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...angles,'XYZ')));}
+['rx','ry','rz'].forEach(id=>document.getElementById(id).oninput=updateBone);
+boneSelect.onchange=()=>['rx','ry','rz'].forEach(id=>document.getElementById(id).value=0);
+document.getElementById('boneReset').onclick=()=>{let b=bones[boneSelect.value];if(b)b.quaternion.copy(b.userData.originalQuat);['rx','ry','rz'].forEach(id=>document.getElementById(id).value=0)};
+document.getElementById('turnNeck').onclick=()=>{const b=bones['mixamorig:Head'];if(!b)return;b.quaternion.copy(b.userData.originalQuat).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),.32));};document.getElementById('neckReset').onclick=()=>{const b=bones['mixamorig:Head'];if(b)b.quaternion.copy(b.userData.originalQuat);};
+document.getElementById('reset').onclick=()=>{document.querySelectorAll('#morphs input').forEach(i=>i.value=0);updateMorphs();Object.values(bones).forEach(b=>b.quaternion.copy(b.userData.originalQuat));look('front')};
+function animate(){requestAnimationFrame(animate);orbit.update();renderer.render(scene,camera)}animate();
+const modelUrl='./avatar-work/brooke/second-chance/brooke-3-1-v5-full-blonde-hair-trial.glb';
+status.textContent='Loading Brooke 3.1 V5 full blonde hair trial……';
+new GLTFLoader().load(modelUrl,gltf=>{
+root=gltf.scene;scene.add(root);modelBox=new THREE.Box3().setFromObject(root);
+const morphNames=new Set();
+root.traverse(o=>{
+if(o.isBone){bones[o.name]=o;o.userData.originalQuat=o.quaternion.clone()}
+if(o.isMesh){o.frustumCulled=false;if(o.morphTargetDictionary){meshes.push(o);Object.keys(o.morphTargetDictionary).forEach(n=>morphNames.add(n))}}
+});
+for(const n of morphNames){const l=document.createElement('label');l.textContent=n.replaceAll('_',' ')+' ';const range=document.createElement('input');range.type='range';range.id='m-'+n;range.min=0;range.max=100;range.value=0;range.oninput=updateMorphs;l.append(range);document.getElementById('morphs').append(l)}
+for(const name of Object.keys(bones).sort()){const option=document.createElement('option');option.value=name;option.textContent=name;boneSelect.append(option)}
+status.textContent='V5 full blonde hairstyle GLB loaded ('+Object.keys(bones).length+' bones, '+morphNames.size+' facial sliders). Native neck preserved, seam still needs visual QA; drag or pinch to inspect.';
+look('front');
+},e=>{if(e.total)status.textContent='Loading '+Math.round(100*e.loaded/e.total)+'% …'},e=>{status.textContent='Model load failed: '+e.message+' — check GitHub branch file.';console.error(e)});
+</script></body></html>
