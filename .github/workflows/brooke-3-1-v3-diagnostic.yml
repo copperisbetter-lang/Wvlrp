@@ -1,0 +1,36 @@
+name: Brooke V3 Neck Geometry Diagnosis
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-v3-diagnostic.yml'
+      - 'avatar-work/brooke/second-chance/diagnose_v3_geometry.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender and NumPy
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - name: Diagnose source scan and surviving neck boundaries
+        run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/diagnose_v3_geometry.py 2>&1 | tee brooke-v3-diagnostic.log
+          grep V3_GEOMETRY_DIAGNOSTIC_COMPLETE brooke-v3-diagnostic.log
+      - name: Preserve diagnosis log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-v3-neck-diagnostic-log
+          path: brooke-v3-diagnostic.log
