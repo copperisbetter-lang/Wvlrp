@@ -10,7 +10,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: sandy-blonde-sophie-clone
+  group: sandy-blonde-fast-qa
   cancel-in-progress: true
 jobs:
   build:
