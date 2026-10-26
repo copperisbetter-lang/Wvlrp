@@ -90,6 +90,21 @@ for label,func in (("Sandy - reference body shape",sculpt_body),("Sandy - unique
     k.value=1.0
     k.slider_min=0.0
     k.slider_max=1.0
+# Continuous, adjustable chest-contour sculpt on the SOURCE body surface.
+# No floating spheres or disconnected body components. All changes are reversible.
+bust=body.shape_key_add(name="Sandy - chest contour",from_mix=False)
+for i,v in enumerate(body.data.vertices):
+    p=body.matrix_world@v.co
+    h=(p.z-zmin)/H
+    later=abs((p.x-xmid)/H)
+    height_weight=math.exp(-((h-.744)/.044)**2)
+    side_weight=math.exp(-((later-.070)/.053)**2)
+    front_weight=max(0,min(1,((p.y-head_y)*front_sign/H+.03)/.16))
+    forward=front_sign*.052*H*height_weight*side_weight*front_weight
+    q=Vector((p.x,p.y+forward,p.z))
+    bust.data[i].co=inverse@q
+bust.value=.76
+bust.slider_min=0.0;bust.slider_max=1.0
 body.select_set(False)
 # Preserve Sophie 1's modeled hair cards; reshape and recolor them on this clone.
 # They have authentic strand textures/cutouts, unlike the earlier tube-lock WIP.
@@ -167,8 +182,11 @@ def recolor_images(ob,mode):
                     width,height=image.size
                     x=np.arange(width,dtype=np.float32)
                     streak=.89+.085*np.sin(x*.113)+.05*np.cos(x*.65)+.045*np.sin(x*1.92)
-                    rgb[:,:]*=np.tile(streak,height)[:,None]
-                    rgb[:,:]*=np.array([.77,.61,.43],dtype=np.float32)
+                    variation=np.tile(streak,height)[:,None].astype(np.float32)
+                    # Warm sandy GOLD, not brunette. Preserve native strand contrast.
+                    target=np.array([.87,.70,.47],dtype=np.float32)
+                    rgb[:,:]=rgb*.22+target[None,:]*.78
+                    rgb[:,:]*=variation
                 np.clip(rgba,0,1,out=rgba)
                 image.pixels.foreach_set(rgba.ravel())
                 image.update()
@@ -196,34 +214,48 @@ skin_atlases=recolor_images(body,'skin')
 eye_atlases=sum(recolor_images(ob,'eye') for ob in eye_meshes)
 hair_atlases=sum(recolor_images(ob,'hair') for ob in hairmeshes)
 print('SANDY_COLOR_AUDIT',color_audit)
-# Natural eyebrows: soft directional strands above each eyeball on this clone.
-# Coordinate positions are measured from the imported real eye geometry.
-browmat=bpy.data.materials.new('Sandy warm brown eyebrow fibers')
-browmat.diffuse_color=(.34,.22,.14,1)
+# Natural eyebrows follow the evaluated skin surface, not floating hair spikes.
+from mathutils.bvhtree import BVHTree
+browmat=bpy.data.materials.new('Sandy soft warm-brown brows')
+browmat.diffuse_color=(.28,.16,.085,1)
 browmat.use_nodes=True
-browmat.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(.34,.22,.14,1)
-browmat.node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.92
+brownode=browmat.node_tree.nodes.get('Principled BSDF')
+brownode.inputs['Base Color'].default_value=(.28,.16,.085,1)
+brownode.inputs['Roughness'].default_value=.91
+deps=bpy.context.evaluated_depsgraph_get()
+skin_bvh=BVHTree.FromObject(body,deps)
+inv_body=body.matrix_world.inverted_safe()
 eye_coords=[o.matrix_world@v.co for o in eye_meshes for v in o.data.vertices]
 for sign in (-1,1):
     half=[v for v in eye_coords if (v.x-xmid)*sign>.009]
     if len(half)<30:continue
     cx=sum(v.x for v in half)/len(half)
     cz=sum(v.z for v in half)/len(half)
-    yf=min(v.y for v in half) if front_sign<0 else max(v.y for v in half)
-    for i in range(22):
-        t=i/21
-        # Eyebrow follows a gentle natural arch; short tapered fibers avoid a painted strip.
-        x=cx+sign*(t-.5)*.056
-        y=yf+front_sign*(.006+random.uniform(0,.002))
-        z=cz+.034+.0038*math.sin(math.pi*t)+random.uniform(-.002,.002)
-        curve=bpy.data.curves.new('Sandy eyebrow fiber','CURVE')
-        curve.dimensions='3D';curve.bevel_depth=.0009;curve.bevel_resolution=2
-        spline=curve.splines.new('BEZIER');spline.bezier_points.add(1)
-        for bp,co in zip(spline.bezier_points,[(x,y,z),(x+sign*.004,y+front_sign*.0006,z+.0012)]):
-            bp.co=co;bp.handle_left_type='AUTO';bp.handle_right_type='AUTO'
-        ob=bpy.data.objects.new('Sandy eyebrow '+str(sign)+' '+str(i),curve)
-        bpy.context.collection.objects.link(ob)
-        curve.materials.append(browmat)
+    vertices=[];quads=[];samples=18
+    for j in range(samples):
+        t=j/(samples-1)
+        x=cx+sign*(t-.5)*.052
+        z=cz+.032+.004*math.sin(math.pi*t)
+        thick=.0007+.0031*math.sin(math.pi*t)**.9
+        y0=head_y+front_sign*head_d*2.5
+        origin=inv_body@Vector((x,y0,z))
+        direction=(inv_body.to_3x3()@Vector((0,-front_sign,0))).normalized()
+        hit,normal,face,dist=skin_bvh.ray_cast(origin,direction,1)
+        if hit is None:
+            yy=head_y+front_sign*head_d*.92
+        else:
+            yy=(body.matrix_world@hit).y+front_sign*.0015
+        vertices.append((x,yy,z-thick*.5))
+        vertices.append((x,yy,z+thick*.5))
+        if j>0:
+            a=(j-1)*2
+            quads.append((a,a+1,a+3,a+2))
+    mesh=bpy.data.meshes.new('Sandy natural brow mesh')
+    mesh.from_pydata(vertices,[],quads);mesh.update()
+    obj=bpy.data.objects.new('Sandy eyebrow '+str(sign),mesh)
+    bpy.context.collection.objects.link(obj)
+    mesh.materials.append(browmat)
+    for poly in mesh.polygons:poly.use_smooth=True
 
 # Preserve the source eyes/skin textures and any facial attachment hierarchy.
 # Studio preview scene, renders focus on face/head/hair; body is exported for later fitting.
@@ -289,7 +321,7 @@ bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT/"Sandy_Blonde_Working.blend"))
 report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
-        "height_m":H,"face_original_morph":True,
+        "height_m":H,"face_original_morph":True,"chest_contour_shape_key":True,
         "native_hair_meshes":len(hairmeshes),"hair_locks":0,"source_eye_meshes":len(eye_meshes),
         "skin_atlases":skin_atlases,"eye_atlases":eye_atlases,"hair_atlases":hair_atlases,
         "render_filenames":["Sandy_Original_Face_Front.png","Sandy_Hair_ThreeQuarter.png","Sandy_Hair_Back.png"],
