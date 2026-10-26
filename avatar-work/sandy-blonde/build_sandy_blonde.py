@@ -91,101 +91,65 @@ for label,func in (("Sandy - reference body shape",sculpt_body),("Sandy - unique
     k.slider_min=0.0
     k.slider_max=1.0
 body.select_set(False)
-# Existing hair is replaced only on this independent working copy.
-for o in original_meshes:
-    if o!=body and any(t in o.name.lower() for t in ("hair","wig","scalp","long01")):
-        bpy.data.objects.remove(o,do_unlink=True)
-# Eye-color editing is limited to iris-specific materials; don't tint white of eyes.
-for m in bpy.data.materials:
-    if "iris" in m.name.lower():
-        m=m.copy()
-        m.diffuse_color=(.18,.36,.22,1)
-        if m.use_nodes:
-            n=m.node_tree.nodes.get("Principled BSDF")
-            if n and not n.inputs["Base Color"].is_linked:
-                n.inputs["Base Color"].default_value=(.18,.36,.22,1)
-blonde=[(.51,.33,.16,1),(.63,.43,.22,1),(.72,.52,.29,1),(.82,.63,.40,1),(.88,.71,.50,1)]
-hair_mats=[]
-for i,c in enumerate(blonde):
-    m=bpy.data.materials.new("Sandy blonde natural shade "+str(i))
-    m.use_nodes=True
-    n=m.node_tree.nodes.get("Principled BSDF")
-    n.inputs["Base Color"].default_value=c
-    n.inputs["Roughness"].default_value=.68
-    n.inputs["Metallic"].default_value=0
-    hair_mats.append(m)
-# Cap only over top of skull so the forehead, eyes and face stay clear.
-capverts=[];capfaces=[]
-cap_z=zmin+.968*H;cap_h=.040*H
-seg=64;rings=12
-for j in range(rings+1):
-    theta=(math.pi*.5)*j/rings
-    for i in range(seg):
-        phi=2*math.pi*i/seg
-        capverts.append((xmid+head_w*1.05*math.sin(theta)*math.cos(phi),
-                         head_y+head_d*1.06*math.sin(theta)*math.sin(phi),
-                         cap_z+cap_h*math.cos(theta)))
-for j in range(rings):
-    for i in range(seg):
-        a=j*seg+i;b=j*seg+(i+1)%seg
-        capfaces.append((a,b,b+seg,a+seg))
-capmesh=bpy.data.meshes.new("Sandy fine scalp mesh")
-capmesh.from_pydata(capverts,[],capfaces);capmesh.update()
-cap=bpy.data.objects.new("Sandy hair crown / face clear",capmesh)
-bpy.context.collection.objects.link(cap)
-cap.data.materials.append(hair_mats[2])
-for f in cap.data.polygons:f.use_smooth=True
-# Naturally varied locks hang behind the ears. Ends around the mid-back.
-# Strand emission limited to the posterior 230 degrees (avoids masking face).
-def lock(name,start,control,end,radius,mat):
-    cu=bpy.data.curves.new(name,"CURVE");cu.dimensions="3D"
-    cu.resolution_u=6;cu.bevel_depth=radius;cu.resolution_u=6;cu.bevel_resolution=1
-    cu.resolution_u=6
-    spline=cu.splines.new("BEZIER");spline.bezier_points.add(2)
-    for p,pos,rad in zip(spline.bezier_points,(start,control,end),(.8,1.0,.22)):
-        p.co=pos;p.handle_left_type="AUTO";p.handle_right_type="AUTO";p.radius=rad
-    ob=bpy.data.objects.new(name,cu);bpy.context.collection.objects.link(ob)
-    cu.materials.append(mat)
-    return ob
-for i in range(250):
-    angle=random.uniform(-2.03,2.03)
-    # At 0° back, near +/- 110° side-back to keep the cheeks and ears exposed.
-    zspread=random.uniform(.947,.989)
-    rx=head_w*(.94+random.uniform(-.08,.18))
-    ry=head_d*(.93+random.uniform(-.08,.17))
-    sx=xmid+rx*math.sin(angle)
-    sy=head_y-front_sign*ry*math.cos(angle)
-    sz=zmin+H*zspread
-    side=math.sin(angle)
-    drop=random.uniform(.24,.38)*H
-    dx=(sx-xmid)*.18+random.uniform(-.018,.018)
-    end=(sx+dx, sy-front_sign*.012, max(zmin+.605*H,sz-drop))
-    mid=(sx+.03*side,sy-front_sign*.03,sz-(sz-end[2])*.48)
-    lock("Sandy straight hair lock %03d"%i,(sx,sy,sz),mid,end,
-         random.uniform(.0012,.0034),hair_mats[i%len(hair_mats)])
-# Soft front-to-side layers begin outside the face and end behind ears.
-for side in (-1,1):
-    for i in range(14):
-        sx=xmid+side*head_w*(.77+i*.016)
-        sy=head_y-front_sign*head_d*(.13+i*.01)
-        sz=zmin+H*(.962+random.uniform(-.009,.012))
-        mid=(sx+side*.03,head_y-front_sign*head_d*.82,sz-.078*H)
-        end=(sx+side*.025,head_y-front_sign*head_d*.95,zmin+H*(.70+random.uniform(-.03,.025)))
-        lock("Sandy behind ear lock "+str(side)+"-"+str(i),(sx,sy,sz),mid,end,.0022,hair_mats[i%5])
+# Preserve Sophie 1's modeled hair cards; reshape and recolor them on this clone.
+# They have authentic strand textures/cutouts, unlike the earlier tube-lock WIP.
+hairmeshes=[o for o in original_meshes if o!=body and
+            any(t in o.name.lower() for t in ("hair","wig","scalp","long01"))]
+if not hairmeshes:
+    raise RuntimeError("Sophie 1 source hair geometry not found; refuse naive substitute")
+sandy_color=(.75,.54,.33,1)
+for ob in hairmeshes:
+    ob.name="Sandy Blonde - reshaped native hair / "+ob.name
+    inverse_h=ob.matrix_world.inverted_safe()
+    for v in ob.data.vertices:
+        p=ob.matrix_world@v.co
+        h=(p.z-zmin)/H
+        # Extend flowing lengths while anchoring the crown firmly to the head.
+        if h<.93:
+            p.z=zmin+H*(.93-(.93-h)*1.38)
+            # Move ends behind both ears/shoulders; don't veil the face.
+            if h<.91 and (p.y-head_y)*front_sign>0:
+                p.y-=front_sign*.054*math.exp(-((h-.83)/.11)**2)
+            v.co=inverse_h@p
+    for i,original in enumerate(ob.data.materials):
+        if not original:continue
+        m=original.copy()
+        m.name="Sandy blonde textured hair / "+m.name
+        ob.data.materials[i]=m
+        m.use_nodes=True
+        n=m.node_tree.nodes.get("Principled BSDF")
+        if not n:continue
+        n.inputs["Roughness"].default_value=.82
+        base=n.inputs["Base Color"]
+        previous=[l for l in m.node_tree.links if l.to_socket==base]
+        if previous:
+            link=previous[0]
+            m.node_tree.links.remove(link)
+            mix=m.node_tree.nodes.new("ShaderNodeMixRGB")
+            mix.blend_type="MIX"
+            mix.inputs[0].default_value=.48
+            mix.inputs[2].default_value=sandy_color
+            m.node_tree.links.new(link.from_socket,mix.inputs[1])
+            m.node_tree.links.new(mix.outputs["Color"],base)
+        else:
+            base.default_value=sandy_color
+    print("SANDY_NATIVE_HAIR",ob.name,len(ob.data.vertices))
+# Preserve the source eyes/skin textures and any facial attachment hierarchy.
 # Studio preview scene, renders focus on face/head/hair; body is exported for later fitting.
 world=bpy.data.worlds.new("Sandy neutral studio")
 scene.world=world;world.use_nodes=True
 world.node_tree.nodes["Background"].inputs["Color"].default_value=(.28,.31,.34,1)
-world.node_tree.nodes["Background"].inputs["Strength"].default_value=.65
+world.node_tree.nodes["Background"].inputs["Strength"].default_value=.46
 def area(name,xyz,power,size):
     d=bpy.data.lights.new(name,"AREA");d.energy=power;d.shape="DISK";d.size=size
     o=bpy.data.objects.new(name,d);bpy.context.collection.objects.link(o)
     o.location=xyz;o.rotation_euler=(Vector((xmid,head_y,zmin+H*.91))-o.location).to_track_quat("-Z","Y").to_euler()
-area("Warm softbox",(xmid+.85,head_y+front_sign*1.0,zmin+H*1.65),440,1.8)
-area("Cool fill",(xmid-.8,head_y+front_sign*.85,zmin+H*1.30),250,1.3)
-area("Hair rim",(xmid-.3,head_y-front_sign*1.2,zmin+H*1.3),390,.9)
+area("Warm softbox",(xmid+.85,head_y+front_sign*1.0,zmin+H*1.65),120,1.8)
+area("Cool fill",(xmid-.8,head_y+front_sign*.85,zmin+H*1.30),75,1.3)
+area("Hair rim",(xmid-.3,head_y-front_sign*1.2,zmin+H*1.3),120,.9)
 scene.render.engine="CYCLES"
-scene.cycles.samples=8
+scene.view_settings.exposure=-.35
+scene.cycles.samples=12
 scene.cycles.use_denoising=True
 scene.render.resolution_x=640
 scene.render.resolution_y=800
@@ -235,7 +199,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT/"Sandy_Blonde_Working.blend"))
 report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
         "height_m":H,"face_original_morph":True,
-        "hair_locks":278,"source_eye_meshes":len(eye_meshes),
+        "native_hair_meshes":len(hairmeshes),"hair_locks":0,"source_eye_meshes":len(eye_meshes),
         "render_filenames":["Sandy_Original_Face_Front.png","Sandy_Hair_ThreeQuarter.png","Sandy_Hair_Back.png"],
         "wardrobe_status":"not part of this pass",
         "game_ready":False,"visual_approval":False}
