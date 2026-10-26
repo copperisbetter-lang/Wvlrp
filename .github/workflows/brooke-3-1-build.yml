@@ -1,0 +1,55 @@
+name: Brooke 3.1 3948 Facial-Rig Candidate
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-build.yml'
+      - 'avatar-work/brooke/second-chance/build_3948_swap.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender and NumPy
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+          blender --version
+      - name: Build new Brooke 3.1 inspection candidate without modifying originals
+        run: blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_3948_swap.py
+      - name: Verify output glTF contains body and facial rigs and morphs
+        run: |
+          python3 - <<'PY'
+          import struct,json,pathlib
+          p=pathlib.Path('avatar-work/brooke/second-chance/brooke-3-1-3948-rig-experimental.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and struct.unpack_from('<I',b,8)[0]==len(b)
+          n,typ=struct.unpack_from('<II',b,12)
+          assert typ==0x4e4f534a
+          j=json.loads(b[20:20+n])
+          rigs=j.get('skins',[])
+          meshes=j.get('meshes',[])
+          mor=sum(len(q.get('targets',[])) for m in meshes for q in m.get('primitives',[]))
+          assert len(rigs)>=2, f'Expected separate body and facial skins, got {len(rigs)}'
+          assert any(len(s.get('joints',[]))>=12 for s in rigs)
+          assert mor>=10, f'Expected facial morph targets, got {mor}'
+          print('BROOKE_31_EXPORT_VALIDATED',json.dumps({'skins':[len(x.get('joints',[])) for x in rigs],'morph_targets':mor,'bytes':len(b)}))
+          PY
+      - name: Upload experimental model and audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-3-1-3948-facial-rig-experimental
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-3948-rig-experimental.glb
+            avatar-work/brooke/second-chance/brooke-3-1-experimental-check.json
+          if-no-files-found: error
