@@ -1,0 +1,39 @@
+{
+  "donor_mesh": "long01.002",
+  "donor_vertices": 3312,
+  "donor_materials": [
+    "SAV 4 adult petite character.long01.002"
+  ],
+  "donor_bounds": {
+    "x": [
+      -0.137,
+      0.137
+    ],
+    "y": [
+      -0.142,
+      0.12
+    ],
+    "z": [
+      0.938,
+      1.683
+    ]
+  },
+  "photo_head_bounds": {
+    "x": [
+      -0.16,
+      0.166
+    ],
+    "y": [
+      -0.152,
+      0.097
+    ],
+    "z": [
+      1.426,
+      1.734
+    ]
+  },
+  "armature_modifiers": 1,
+  "export_bytes": 31553796,
+  "trial_only": true,
+  "previous_owner_model_untouched": true
+}
