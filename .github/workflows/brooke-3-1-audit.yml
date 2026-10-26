@@ -1,0 +1,29 @@
+name: Brooke 3.1 Isolated Source Audit
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-audit.yml'
+      - 'avatar-work/brooke/second-chance/audit_source_glbs.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            ImageToStl.com_Mona (1).glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Read source models without modification
+        run: python3 avatar-work/brooke/second-chance/audit_source_glbs.py | tee brooke-audit.txt
+      - name: Upload audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-3-1-source-audit
+          path: brooke-audit.txt
