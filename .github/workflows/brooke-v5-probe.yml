@@ -1,0 +1,31 @@
+name: Brooke V5 Native Neck Geometry Probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [g2/brooke-v5-native-neck-20261026]
+    paths: ['.github/workflows/brooke-v5-probe.yml','avatar-work/brooke/second-chance/diagnose_v5_native_neck.py']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/diagnose_v5_native_neck.py 2>&1 | tee probe.log
+          grep V5_PROBE_COMPLETE probe.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brooke-v5-neck-probe
+          path: probe.log
