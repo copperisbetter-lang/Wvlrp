@@ -1,0 +1,80 @@
+name: Brooke V5 Head-Neck Repair and Visual QA
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-v5-build.yml'
+      - 'avatar-work/brooke/second-chance/build_v5_finish.py'
+      - 'avatar-work/brooke/second-chance/render_v5_qa.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  v5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - name: Build Brooke V5 safely
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v5_finish.py 2>&1 | tee brooke-v5-build.log
+          grep BROOKE_V3_REGISTERED_NECK brooke-v5-build.log
+          grep BROOKE_31_RIG_SWAP_REPORT brooke-v5-build.log
+      - name: Validate experimental GLB
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          p=pathlib.Path("avatar-work/brooke/second-chance/brooke-3-1-v5-neck-head-trial.glb")
+          d=p.read_bytes();assert d[:4]==b'glTF' and struct.unpack_from('<I',d,8)[0]==len(d)
+          n,typ=struct.unpack_from('<II',d,12);assert typ==0x4e4f534a
+          g=json.loads(d[20:20+n])
+          r=json.loads(p.with_name('brooke-3-1-v5-neck-head-check.json').read_text())
+          assert r['source_hashes_unchanged'] and r['body_vertices_after_cut']==10141
+          assert r['protected_shoulder_arm_spine_vertices']==2438
+          assert abs(r['head_scale']-.357)<1e-8
+          assert abs(r['v5_head_size_vs_v4']-1.02)<1e-9
+          assert abs(r['v3_crop_y']-(-.16))<1e-8
+          assert r['v3_underlay_not_welded']
+          assert len(g['skins'])>=2 and [len(s['joints']) for s in g['skins']][:2]==[52,12]
+          assert len(r['facial_morphs'])==10 and r['facial_bone_test_delta']>.00001
+          print("BROOKE_V5_STRUCTURAL_PASS",json.dumps({"bytes":len(d),"head_scale":r['head_scale'],"crop_y":r['v3_crop_y'],"skins":[len(s['joints']) for s in g['skins']],"neck_welded":False}))
+          PY
+      - name: Render photographic views for visual evaluation
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/render_v5_qa.py 2>&1 | tee brooke-v5-render.log
+          grep BROOKE_V5_QA_FINISHED brooke-v5-render.log
+      - name: Upload all evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-v5-model-and-qa
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v5-neck-head-trial.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v5-neck-head-check.json
+            avatar-work/brooke/second-chance/brooke-v5-qa-*.jpg
+            brooke-v5-build.log
+            brooke-v5-render.log
+          if-no-files-found: warn
+      - name: Store V5 model and QA on G2 branch only
+        if: success() && github.ref == 'refs/heads/g2/brooke-3-1-rig-20261026'
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v5-neck-head-trial.glb avatar-work/brooke/second-chance/brooke-3-1-v5-neck-head-check.json avatar-work/brooke/second-chance/brooke-v5-qa-*.jpg avatar-work/brooke/second-chance/brooke-v5-qa-*.b64.txt
+          git commit -m "Store Brooke V5 measured proportion model with render proof"
+          git fetch origin g2/brooke-3-1-rig-20261026
+          git rebase FETCH_HEAD
+          git push origin HEAD:g2/brooke-3-1-rig-20261026
