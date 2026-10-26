@@ -124,12 +124,13 @@ for ob in hairmeshes:
         previous=[l for l in m.node_tree.links if l.to_socket==base]
         if previous:
             link=previous[0]
+            source_socket=link.from_socket
             m.node_tree.links.remove(link)
             mix=m.node_tree.nodes.new("ShaderNodeMixRGB")
             mix.blend_type="MIX"
             mix.inputs[0].default_value=.48
             mix.inputs[2].default_value=sandy_color
-            m.node_tree.links.new(link.from_socket,mix.inputs[1])
+            m.node_tree.links.new(source_socket,mix.inputs[1])
             m.node_tree.links.new(mix.outputs["Color"],base)
         else:
             base.default_value=sandy_color
