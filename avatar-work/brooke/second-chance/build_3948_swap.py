@@ -212,7 +212,7 @@ for i,v in enumerate(h.data.vertices):
     vgs['BrookeHead'].add([i],max(.07,1.-total*factor),'REPLACE')
 mod=h.modifiers.new('Brooke_3948_ActualFacialBones','ARMATURE');mod.object=rig
 # Register geometry at the old Brooke fitting position using source-space alignment.
-placement=Tb@Matrix.Translation(Vector((.0118137358,1.518908886,.0253151481)))@Matrix.Scale(.29,4)@Th.inverted()
+placement=Tb@Matrix.Translation(Vector((.0118137358,1.708908886,.0253151481)))@Matrix.Scale(.29,4)@Th.inverted()
 h.matrix_world=placement;rig.matrix_world=placement
 bpy.context.view_layer.update()
 # Verify bone motion produces DIFFERENT evaluated vertex coordinates, then reset.
@@ -232,7 +232,7 @@ for o in bpy.context.scene.objects:
 bpy.ops.export_scene.gltf(filepath=OUT,export_format='GLB',use_selection=True,export_morph=True,export_skins=True)
 report={'source_hashes_unchanged':hashfile(HEAD)==expected['head'] and hashfile(BODY)==expected['body'],
   'body_vertices_before':bodybefore,'body_vertices_after_cut':len(base.data.vertices),
-  'body_head_cut_y_glb':cut,'selective_head_vertices_removed':len(head_remove_indices),'protected_shoulder_arm_spine_vertices':len(preserve_high_indices),'head_scale':0.29,'head_source':'3948','approved_crown_baked':True,
+  'body_head_cut_y_glb':cut,'selective_head_vertices_removed':len(head_remove_indices),'protected_shoulder_arm_spine_vertices':len(preserve_high_indices),'head_scale':0.29,'head_raise_m':0.190,'head_source':'3948','approved_crown_baked':True,
   'model_local_axis':str(Th),'landmark_residual':residual,
   'facial_bones':list(vgs),'facial_morphs':list(shapes),'facial_bone_test_delta':delta,
   'export_path':OUT,'export_bytes':os.path.getsize(OUT),
