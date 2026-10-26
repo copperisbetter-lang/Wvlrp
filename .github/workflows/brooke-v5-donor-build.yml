@@ -1,0 +1,77 @@
+name: Brooke V5 Original Donor Hair Overlay QA
+on:
+  push:
+    branches: [g2/brooke-v5-donor-hair-20261026]
+    paths:
+      - .github/workflows/brooke-v5-donor-build.yml
+      - avatar-work/brooke/second-chance/build_v5_donor_overlay.py
+      - avatar-work/brooke/second-chance/render_v5_donor_qa.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ownerfit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy xvfb libegl1 libgl1-mesa-dri libgl1
+      - name: Build natural-neck V5 owner fit
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v5_donor_overlay.py 2>&1 | tee brooke-v5-donor-build.log
+          grep BROOKE_V5_NECK_PRESERVED brooke-v5-donor-build.log
+      - name: Check GLB and geometry
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,struct
+          folder=pathlib.Path('avatar-work/brooke/second-chance')
+          p=folder/'brooke-3-1-v5-donor-overlay.glb'
+          b=p.read_bytes();assert b[:4]==b'glTF'
+          assert struct.unpack_from('<I',b,8)[0]==len(b)
+          n,t=struct.unpack_from('<II',b,12);assert t==0x4e4f534a
+          gltf=json.loads(b[20:20+n])
+          report=json.loads((folder/'brooke-3-1-v5-donor-overlay-check.json').read_text())
+          assert report['trial_only'] and report['previous_owner_model_untouched']
+          assert report['donor_vertices']>1000
+          assert report['armature_modifiers']>=1
+          assert len(gltf['skins'])>=2
+          assert any('Brooke_V5_Donor_Long01_Trial' in n.get('name','') for n in gltf['nodes'])
+          print('BROOKE_V5_DONOR_STRUCTURAL_QA_PASS',json.dumps({'bytes':len(b),'donor_vertices':report['donor_vertices'],'skins':[len(x['joints']) for x in gltf['skins']]}))
+          PY
+      - name: Render front side and profile inspection
+        run: |
+          set -o pipefail
+          xvfb-run -a -s "-screen 0 1280x800x24" env LIBGL_ALWAYS_SOFTWARE=1 MESA_LOADER_DRIVER_OVERRIDE=llvmpipe blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/render_v5_donor_qa.py 2>&1 | tee brooke-v5-donor-render.log
+          grep BROOKE_V5_DONOR_QA_FINISHED brooke-v5-donor-render.log
+      - name: Save V5 inspection artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-v5-donor-hair
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v5-donor-overlay.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v5-donor-overlay-check.json
+            avatar-work/brooke/second-chance/brooke-v5-donor-qa-*.jpg
+            brooke-v5-donor-build.log
+            brooke-v5-donor-render.log
+          if-no-files-found: warn
+      - name: Store QA on own G2 trial branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v5-donor-overlay.glb avatar-work/brooke/second-chance/brooke-3-1-v5-donor-overlay-check.json avatar-work/brooke/second-chance/brooke-v5-donor-qa-*.jpg avatar-work/brooke/second-chance/brooke-v5-donor-qa-*.b64.txt
+          git commit -m "Store Brooke V5 native-neck owner proportion trial and QA renders"
+          git fetch origin g2/brooke-v5-donor-hair-20261026
+          git rebase FETCH_HEAD
+          git push origin HEAD:g2/brooke-v5-donor-hair-20261026
