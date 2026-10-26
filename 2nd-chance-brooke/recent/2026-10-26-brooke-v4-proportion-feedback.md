@@ -30,3 +30,10 @@ V3 file: `avatar-work/brooke/second-chance/build_v3_neck_fit.py`.
 5. Rule 29 handoff / G1 clearance before production promotion. Do not claim V4 production-ready.
 
 This file is a handoff with work-in-progress status, not a verification report.
+
+## Verified after handoff creation
+- Run 40378335692, retry attempt 2, **SUCCESS** on 2026-10-26.
+- Blender built `brooke-3-1-v4-proportion-trial.glb`, 29,520,920 bytes; GLB structural QA passed (52 body joints, 12 facial joints, 10 facial morphs).
+- Preserved all 2,438 recorded protected shoulder/arm/spine vertices. Input SHA guards passed.
+- GitHub branch committed trial model and V4 JSON. Viewer `brooke-3-1-v4-inspector.html` exists on branch. Stable inspection commit with both files: `2fd9bfa0fc439079ca2efc039a6128ebb4652114`.
+- Actual phone rendering, color and watertightness still **NOT verified**. No production promotion.
