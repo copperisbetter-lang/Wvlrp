@@ -1,0 +1,35 @@
+{
+  "source_hashes_unchanged": true,
+  "photo_face_polygons_kept": 26036,
+  "original_scan_hair_polygons_hidden": 107092,
+  "original_face_shape_keys": [
+    "Basis",
+    "Smile",
+    "Smile_Left",
+    "Smile_Right",
+    "Jaw_Open",
+    "Lips_Round_O",
+    "Lips_Part",
+    "Brows_Up_Left",
+    "Brows_Up_Right",
+    "Blink_Left",
+    "Blink_Right"
+  ],
+  "native_body_neck_preserved": true,
+  "head_scale": 0.357,
+  "neck_shorter_m": 0.01,
+  "donor_hair_vertices": 3312,
+  "donor_hair_xy_scale": 1.12,
+  "blonde_texture_resolution": [
+    256,
+    512
+  ],
+  "export_bytes": 28640488,
+  "not_verified": [
+    "face edge without original photo hair",
+    "hairline fit",
+    "head/neck watertight topology",
+    "all body poses",
+    "phone visual acceptance"
+  ]
+}
