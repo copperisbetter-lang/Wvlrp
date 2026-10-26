@@ -28,6 +28,19 @@ candidates=[o for o in original_meshes if any(t in o.name.lower() for t in ("bas
 body=max(candidates or original_meshes,key=lambda x:len(x.data.vertices))
 if len(body.data.vertices)<3000:
     raise RuntimeError("Selected body is not a real detailed mesh: "+body.name)
+# Investigate the neutral pelvis opening left when removing the source fitting piece.
+import bmesh
+inspection=bmesh.new();inspection.from_mesh(body.data)
+bzmin=min(v.co.z for v in inspection.verts);bzmax=max(v.co.z for v in inspection.verts)
+bh=bzmax-bzmin
+all_boundary=[edge for edge in inspection.edges if edge.is_boundary]
+pelvic_edges=[edge for edge in all_boundary if all(.37<((v.co.z-bzmin)/bh)<.67 and
+                 abs(v.co.x)<.25*bh for v in edge.verts)]
+print('SANDY_SOURCE_MESH_BOUNDARY',len(all_boundary),'PELVIC_EDGES',len(pelvic_edges),
+      'SHAPEKEYS',[k.name for k in body.data.shape_keys.key_blocks] if body.data.shape_keys else [],
+      'BODY_MATERIALS',[m.name if m else None for m in body.data.materials])
+inspection.free()
+
 verts=[body.matrix_world@v.co for v in body.data.vertices]
 zmin=min(v.z for v in verts); zmax=max(v.z for v in verts); H=zmax-zmin
 if not 1.3<H<2.1:
