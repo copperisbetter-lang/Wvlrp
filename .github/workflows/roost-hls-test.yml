@@ -1,0 +1,30 @@
+name: G1 test Roost HLS capture on GitHub hosted runner
+
+on:
+  push:
+    branches:
+      - g1/roost-motion-recorder-20261026
+    paths:
+      - .github/workflows/roost-hls-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  hls-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm live Roost HLS can yield video on hosted runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          ffmpeg -version | head -1
+          url='https://158-101-120-6.sslip.io/roost/index.m3u8?cookieCheck=1'
+          ffmpeg -hide_banner -nostdin -loglevel warning \
+            -rw_timeout 15000000 -i "$url" -t 12 \
+            -map 0:v:0 -map 0:a:0? -c copy -y /tmp/roost-probe.mkv
+          bytes=$(stat -c%s /tmp/roost-probe.mkv)
+          echo "Roost probe: $bytes bytes of video received; testing only, NOT uploaded"
+          test "$bytes" -gt 30000
+          echo "PASS: GitHub-hosted FFmpeg can record current Roost live stream"
