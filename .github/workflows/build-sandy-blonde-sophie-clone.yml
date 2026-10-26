@@ -5,6 +5,9 @@ on:
       - g2/sandy-blonde-sophie1-clone-20261025
     paths:
       - avatar-work/sandy-blonde/build_sandy_blonde.py
+      - avatar-work/sandy-blonde/viewer/main.js
+      - avatar-work/sandy-blonde/viewer/smoke.mjs
+      - avatar-work/sandy-blonde/build_viewer.py
       - .github/workflows/build-sandy-blonde-sophie-clone.yml
   workflow_dispatch:
 permissions:
@@ -56,6 +59,9 @@ jobs:
           assert r["body_vertices"] > 3000
           assert r["native_hair_meshes"] >= 1
           assert r["face_original_morph"]
+          assert r["eye_atlases"] >= 1, "Green eye recolor did not find an iris texture"
+          assert r["skin_atlases"] >= 1, "Warm skin texture absent"
+          assert r["hair_atlases"] >= 1, "Natural hair texture absent"
           assert not r["game_ready"] and not r["visual_approval"]
           for name in r["render_filenames"]:
               img=(p/name).read_bytes()
@@ -71,6 +77,24 @@ jobs:
           assert (p/"Sandy_Blonde_Working.blend").stat().st_size>100000
           print("SANDY_ASSETS_VALIDATED",r["body_vertices"],len(glb),r["native_hair_meshes"])
           PY
+      - name: Bundle standalone Three.js model viewer and embed real GLB
+        run: |
+          set -euo pipefail
+          cd avatar-work/sandy-blonde/viewer
+          npm install --no-save --no-package-lock three@0.161.0 esbuild@0.25.11 playwright@1.56.1
+          mkdir -p build
+          npx esbuild main.js --bundle --minify --format=iife --platform=browser --target=es2020 --outfile=build/client.js
+          cd ../../..
+          python3 avatar-work/sandy-blonde/build_viewer.py
+          test $(stat -c %s avatar-work/sandy-blonde/build/Sandy_Blonde_Offline_Viewer.html) -gt 5000000
+      - name: Test offline Android-sized browser GLB import, camera and morph controls
+        run: |
+          set -euo pipefail
+          cd avatar-work/sandy-blonde/viewer
+          npx playwright install --with-deps chromium
+          node smoke.mjs ../build/Sandy_Blonde_Offline_Viewer.html
+          cd ../../..
+          test -s avatar-work/sandy-blonde/build/Sandy_Blonde_Android_Smoke.png
       - name: Commit WIP render and editable model only to isolated branch
         run: |
           set -euo pipefail
