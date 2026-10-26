@@ -3,6 +3,7 @@
   "source_body": "SAV 4 adult petite character_sav4",
   "body_vertices": 14483,
   "height_m": 1.6763998293317854,
+  "pelvis_patch_faces": 0,
   "face_original_morph": true,
   "chest_contour_shape_key": true,
   "native_hair_meshes": 1,
