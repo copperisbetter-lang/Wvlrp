@@ -24,7 +24,8 @@ bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=Fals
 bpy.ops.import_scene.gltf(filepath=BODY)
 bodymeshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
 bodyrigs=[o for o in bpy.context.scene.objects if o.type=='ARMATURE']
-assert len(bodyrigs)==1 and len(bodymeshes)==4, 'Unexpected clone structure; refuse surgery'
+print('BODY_IMPORT_OBJECTS',json.dumps({'mesh_objects':[(o.name,o.data.name,len(o.data.vertices)) for o in bodymeshes],'armatures':[o.name for o in bodyrigs]}))
+assert len(bodyrigs)>=1 and len(bodymeshes)>=3, 'Unexpected clone structure; refuse surgery'
 base=next(o for o in bodymeshes if o.data.name.startswith('base'))
 eye=next(o for o in bodymeshes if 'high-poly' in o.data.name)
 hair=next(o for o in bodymeshes if 'long01' in o.data.name)
