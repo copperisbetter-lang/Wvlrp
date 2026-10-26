@@ -1,8 +1,11 @@
 {
   "source_hashes_unchanged": true,
   "body_vertices_before": 14483,
-  "body_vertices_after_cut": 8796,
+  "body_vertices_after_cut": 10141,
   "body_head_cut_y_glb": 0.9420638507539931,
+  "selective_head_vertices_removed": 4342,
+  "protected_shoulder_arm_spine_vertices": 2438,
+  "head_scale": 0.29,
   "head_source": "3948",
   "approved_crown_baked": true,
   "model_local_axis": "<Matrix 4x4 (1.0000, 0.0000,  0.0000, 0.0000)\n            (0.0000, 0.0000, -1.0000, 0.0000)\n            (0.0000, 1.0000,  0.0000, 0.0000)\n            (0.0000, 0.0000,  0.0000, 1.0000)>",
@@ -33,9 +36,9 @@
     "Blink_Left",
     "Blink_Right"
   ],
-  "facial_bone_test_delta": 0.02707794839115394,
+  "facial_bone_test_delta": 0.02707796531951128,
   "export_path": "avatar-work/brooke/second-chance/brooke-3-1-3948-rig-experimental.glb",
-  "export_bytes": 36806252,
+  "export_bytes": 36845608,
   "not_verified": [
     "mouth cavity/topology",
     "face likeness",
