@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WVLRP Brooke 3.1 — Experimental Head Inspector</title>
 <style>body{margin:0;background:#13211e;color:#f2faf6;font:14px system-ui}header,section{padding:12px}header{background:#234435}small{color:#bdd0c7}#stage{height:58vh;min-height:310px;touch-action:none}button,select{background:#336c56;color:white;border:1px solid #7cb19a;border-radius:7px;padding:10px;margin:3px}button:active{background:#53a384}input[type=range]{width:98%;accent-color:#85d8aa}label{display:block;padding:5px}details{border:1px solid #476453;border-radius:8px;margin:9px 0;padding:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}#status{padding:10px;background:#264137;white-space:pre-wrap}select{width:100%}</style>
-</head><body><header><b>Brooke 3.1 · Corrected Fit V2</b><div><small>Smaller head · shoulders and torso restored · originals protected</small></div></header><div id="stage"></div><div id="status">Preparing 3D viewer…</div>
+</head><body><header><b>Brooke 3.1 · Neck Fit Not Yet Validated</b><div><small>Experimental model · neck gap and scan pedestal remain · originals protected</small></div></header><div id="stage"></div><div id="status">Preparing 3D viewer…</div>
 <section><div><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="head">Head close-up</button><button id="reset">Reset</button></div><h3>Facial shape controls</h3><div id="morphs" class="grid"></div>
 <details><summary>Skeleton controls</summary><label>Choose bone<select id="bones"></select></label><div class="grid"><label>Pitch<input id="rx" type="range" min="-45" max="45" value="0"></label><label>Yaw<input id="ry" type="range" min="-45" max="45" value="0"></label><label>Roll<input id="rz" type="range" min="-45" max="45" value="0"></label></div><button id="boneReset">Reset selected bone</button></details>
-<p><small>This is the revised fit (head size reduced from 0.436 to 0.290); the earlier upper-body cut was corrected. This is not a finished game character. Skin tone, mouth interior, neck seam, facial appearance and all body poses still require verification.</small></p>
+<p><small>This trial is NOT a completed fit. The photographed scan includes a flat bust/pedestal, and the replacement is visibly separated from the exposed body neck in the Android screenshot (2026-10-26). The V2 model is retained for diagnosis only. Bone and facial-slider counts do not certify attachment or pose quality.</small></p>
 </section>
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.169.0';
@@ -46,7 +46,7 @@ if(o.isMesh){o.frustumCulled=false;if(o.morphTargetDictionary){meshes.push(o);Ob
 });
 for(const n of morphNames){const l=document.createElement('label');l.textContent=n.replaceAll('_',' ')+' ';const range=document.createElement('input');range.type='range';range.id='m-'+n;range.min=0;range.max=100;range.value=0;range.oninput=updateMorphs;l.append(range);document.getElementById('morphs').append(l)}
 for(const name of Object.keys(bones).sort()){const option=document.createElement('option');option.value=name;option.textContent=name;boneSelect.append(option)}
-status.textContent='3D model loaded. '+Object.keys(bones).length+' bones and '+morphNames.size+' facial sliders. Drag to rotate; pinch to zoom.';
+status.textContent='Experimental GLB loaded ('+Object.keys(bones).length+' bones, '+morphNames.size+' facial sliders). Neck joint NOT validated; drag to rotate or pinch to inspect.';
 look('front');
 },e=>{if(e.total)status.textContent='Loading '+Math.round(100*e.loaded/e.total)+'% …'},e=>{status.textContent='Model load failed: '+e.message+' — check GitHub branch file.';console.error(e)});
 </script></body></html>
