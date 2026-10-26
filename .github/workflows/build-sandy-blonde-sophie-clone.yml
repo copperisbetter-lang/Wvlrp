@@ -4,6 +4,7 @@ on:
     branches:
       - g2/sandy-blonde-sophie1-clone-20261025
     paths:
+      - avatar-work/sandy-blonde/verify_pelvis.py
       - avatar-work/sandy-blonde/build_sandy_blonde.py
       - avatar-work/sandy-blonde/viewer/main.js
       - avatar-work/sandy-blonde/viewer/smoke.mjs
@@ -49,6 +50,11 @@ jobs:
             /tmp/blender-4.2.0-linux-x64/blender --background -t 2 --python \
             avatar-work/sandy-blonde/build_sandy_blonde.py 2>&1 | tee /tmp/sandy-blonde-build.log
           grep 'SANDY_SCULPT_EXPORT_OK' /tmp/sandy-blonde-build.log
+      - name: Verify exported pelvis topology and all morph-slider corners
+        run: |
+          set -euo pipefail
+          /tmp/blender-4.2.0-linux-x64/blender --background -t 2 --python-exit-code 1 --python avatar-work/sandy-blonde/verify_pelvis.py
+          test -s avatar-work/sandy-blonde/build/pelvis-verification.json
       - name: Validate actual GLB, face and hairstyle outputs
         run: |
           python3 - <<'PY'
@@ -100,7 +106,6 @@ jobs:
           fi
       - name: Test offline Android-sized browser GLB import, camera and morph controls
         timeout-minutes: 3
-        continue-on-error: true
         run: |
           set -euo pipefail
           cd avatar-work/sandy-blonde/viewer

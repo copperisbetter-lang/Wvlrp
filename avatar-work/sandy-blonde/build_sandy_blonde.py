@@ -3,6 +3,7 @@ Run: blender --background --python avatar-work/sandy-blonde/build_sandy_blonde.p
 Source Sophie 1 stays byte-for-byte unchanged. No wardrobe or gameplay deployment.
 """
 import bpy, math, json, random, traceback
+from types import SimpleNamespace
 from pathlib import Path
 from mathutils import Vector
 random.seed(7418)
@@ -20,72 +21,38 @@ scene=bpy.context.scene
 original_meshes=[o for o in scene.objects if o.type=="MESH"]
 if not original_meshes:
     raise RuntimeError("Sophie clone import returned no mesh")
-for ob in list(original_meshes):
-    if any(t in ob.name.lower() for t in ("vulva", "labia", "genital", "anus")):
-        bpy.data.objects.remove(ob,do_unlink=True)
-original_meshes=[o for o in scene.objects if o.type=="MESH"]
+# Retain the fitted source pelvis: deleting it exposes the body's intentional cutout.
+# Never fill UV-split boundary components or change the approved source asset.
 candidates=[o for o in original_meshes if any(t in o.name.lower() for t in ("basemesh", "base.", "body", "human"))]
 body=max(candidates or original_meshes,key=lambda x:len(x.data.vertices))
 if len(body.data.vertices)<3000:
     raise RuntimeError("Selected body is not a real detailed mesh: "+body.name)
-# Investigate the neutral pelvis opening left when removing the source fitting piece.
+pelvis_parts=[o for o in original_meshes if "Vulva2 MHX2 true auto-fit" in o.name]
+if len(pelvis_parts)!=1:
+    raise RuntimeError("Expected exactly one original fitted pelvis attachment")
+pelvis=pelvis_parts[0]
 import bmesh
-inspection=bmesh.new();inspection.from_mesh(body.data)
-bzmin=min(v.co.z for v in inspection.verts);bzmax=max(v.co.z for v in inspection.verts)
-bh=bzmax-bzmin
-all_boundary=[edge for edge in inspection.edges if edge.is_boundary]
-pelvic_edges=[edge for edge in all_boundary if all(.37<((v.co.z-bzmin)/bh)<.67 and
-                 abs(v.co.x)<.25*bh for v in edge.verts)]
-print('SANDY_SOURCE_MESH_BOUNDARY',len(all_boundary),'PELVIC_EDGES',len(pelvic_edges),
-      'SHAPEKEYS',[k.name for k in body.data.shape_keys.key_blocks] if body.data.shape_keys else [],
-      'BODY_MATERIALS',[m.name if m else None for m in body.data.materials])
-# Preserve original source GLB and patch only the *independent* clean game-body copy.
-# Do not use generic fill-all-holes; MakeHuman may have intentional mouth/eye loops.
-from collections import defaultdict
-cx=(min(v.co.x for v in inspection.verts)+max(v.co.x for v in inspection.verts))*.5
-links=defaultdict(set)
-for edge in all_boundary:
-    for v in edge.verts:links[v].add(edge)
-visited=set();eligible=[]
-for seed in pelvic_edges:
-    if seed in visited:continue
-    stack=[seed];component=set()
-    while stack:
-        edge=stack.pop()
-        if edge in component:continue
-        component.add(edge)
-        for v in edge.verts:stack.extend(links[v]-component)
-    visited.update(component)
-    rim={v for e in component for v in e.verts}
-    perim=sum(e.calc_length() for e in component)
-    zlow=min((v.co.z-bzmin)/bh for v in rim)
-    zhigh=max((v.co.z-bzmin)/bh for v in rim)
-    wide=max(abs(v.co.x-cx)/bh for v in rim)
-    print('SANDY_PELVIC_BOUNDARY_COMPONENT',len(component),round(perim,4),round(zlow,3),round(zhigh,3),round(wide,3))
-    if (3<=len(component)<=350 and perim<.48*bh and
-        all(.36<((v.co.z-bzmin)/bh)<.67 and abs(v.co.x-cx)<.20*bh for v in rim)):
-        eligible.append(component)
-patched=0
-if eligible:
-    repair=bpy.data.materials.new('Sandy continuous skin - clean pelvis')
-    repair.use_nodes=True
-    shader=repair.node_tree.nodes.get('Principled BSDF')
-    shader.inputs['Base Color'].default_value=(.68,.44,.34,1)
-    shader.inputs['Roughness'].default_value=.87
-    material_index=len(body.data.materials)
-    body.data.materials.append(repair)
-    for component in eligible:
-        fill=bmesh.ops.holes_fill(inspection,edges=list(component),sides=0)
-        for face in fill.get('faces',[]):
-            face.material_index=material_index
-            face.smooth=True
-            patched+=1
-    if patched:
-        bmesh.ops.recalc_face_normals(inspection,faces=list(inspection.faces))
-        inspection.to_mesh(body.data)
-        body.data.update()
-print('SANDY_PELVIS_CLOSURE',patched,'eligible_components',len(eligible))
-inspection.free()
+from mathutils.kdtree import KDTree
+def physical_rim(ob):
+    # Audit copy only. GLB duplicates UV seam vertices; do not weld the real mesh.
+    bm=bmesh.new();bm.from_mesh(ob.data)
+    bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=1e-6)
+    points=[ob.matrix_world@v.co for v in bm.verts if any(e.is_boundary for e in v.link_edges)]
+    edges=sum(e.is_boundary for e in bm.edges)
+    bm.free()
+    return points,edges
+body_rim,body_edges=physical_rim(body)
+pelvis_rim,pelvis_edges=physical_rim(pelvis)
+if body_edges!=28 or pelvis_edges!=28:
+    raise RuntimeError(f"Unexpected physical pelvis rims: {body_edges}, {pelvis_edges}")
+tree=KDTree(len(pelvis_rim))
+for i,p in enumerate(pelvis_rim):tree.insert(p,i)
+tree.balance()
+source_rim_gap=max(tree.find(p)[2] for p in body_rim)
+if source_rim_gap>1e-6:
+    raise RuntimeError(f"Source pelvis does not fit body: {source_rim_gap}")
+patched=0 # No invented faces: original 608-face fitted topology is retained.
+print("SANDY_PELVIS_RETAINED",len(pelvis.data.polygons),"SOURCE_RIM_GAP_M",source_rim_gap)
 
 verts=[body.matrix_world@v.co for v in body.data.vertices]
 zmin=min(v.z for v in verts); zmax=max(v.z for v in verts); H=zmax-zmin
@@ -164,6 +131,25 @@ for i,v in enumerate(body.data.vertices):
     bust.data[i].co=inverse@q
 bust.value=.76
 bust.slider_min=0.0;bust.slider_max=1.0
+# Mirror all body sculpt keys on the fitted part in the same world coordinates.
+# This keeps the seam closed at every viewer slider value, not just the default.
+pelvis_inverse=pelvis.matrix_world.inverted_safe()
+pelvis.shape_key_add(name="Basis",from_mix=False)
+for name,func in (("Sandy - reference body shape",sculpt_body),
+                  ("Sandy - unique facial sculpt",sculpt_face)):
+    key=pelvis.shape_key_add(name=name,from_mix=False)
+    for i,v in enumerate(pelvis.data.vertices):
+        proxy=SimpleNamespace(co=inverse@(pelvis.matrix_world@v.co))
+        key.data[i].co=pelvis_inverse@(body.matrix_world@func(proxy))
+    key.value=1.0
+# Chest sculpt is mathematically negligible at this rim, but mirror it exactly.
+key=pelvis.shape_key_add(name="Sandy - chest contour",from_mix=False)
+for i,v in enumerate(pelvis.data.vertices):
+    p=pelvis.matrix_world@v.co
+    h=(p.z-zmin)/H;later=abs((p.x-xmid)/H)
+    forward=front_sign*.052*H*math.exp(-((h-.744)/.044)**2)*math.exp(-((later-.070)/.053)**2)*max(0,min(1,((p.y-head_y)*front_sign/H+.03)/.16))
+    key.data[i].co=pelvis_inverse@Vector((p.x,p.y+forward,p.z))
+key.value=.76
 body.select_set(False)
 # Preserve Sophie 1's modeled hair cards; reshape and recolor them on this clone.
 # They have authentic strand textures/cutouts, unlike the earlier tube-lock WIP.
@@ -270,6 +256,10 @@ def recolor_images(ob,mode):
     color_audit.append([mode,patched])
     return patched
 skin_atlases=recolor_images(body,'skin')
+# Source attachment UVs reference the identical atlas. Share the recolored material
+# rather than leave the attachment with its original, visibly paler texture.
+for i in range(len(pelvis.data.materials)):
+    pelvis.data.materials[i]=body.data.materials[0]
 eye_atlases=sum(recolor_images(ob,'eye') for ob in eye_meshes)
 hair_atlases=sum(recolor_images(ob,'hair') for ob in hairmeshes)
 print('SANDY_COLOR_AUDIT',color_audit)
@@ -380,7 +370,9 @@ bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT/"Sandy_Blonde_Working.blend"))
 report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
-        "height_m":H,"pelvis_patch_faces":patched,"face_original_morph":True,"chest_contour_shape_key":True,
+        "height_m":H,"pelvis_patch_faces":patched,
+        "pelvis_repair":"retain original fitted topology; synchronized morphs and skin material",
+        "pelvis_retained_faces":len(pelvis.data.polygons),"source_rim_gap_m":source_rim_gap,"face_original_morph":True,"chest_contour_shape_key":True,
         "native_hair_meshes":len(hairmeshes),"hair_locks":0,"source_eye_meshes":len(eye_meshes),
         "skin_atlases":skin_atlases,"eye_atlases":eye_atlases,"hair_atlases":hair_atlases,
         "render_filenames":["Sandy_Original_Face_Front.png","Sandy_Hair_ThreeQuarter.png","Sandy_Hair_Back.png"],
