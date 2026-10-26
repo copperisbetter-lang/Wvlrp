@@ -16,7 +16,7 @@ revise("REPORT=BASE+'brooke-3-1-v3-neck-fit-check.json'",
 # .290 was visibly undersized on owner's phone; .436 was previously oversized.
 # .350 is deliberately intermediate, subject to actual front/profile QA.
 revise("head_scale=.29", "head_scale=.35")
-revise("'head_scale':0.29,'head_raise_m'", "'head_scale':0.35,'head_raise_m'")
+revise("'head_scale':0.29,'head_raise_m':place_y", "'head_scale':0.35,'head_raise_m':place_y")
 # Lower cropped scan bottom 30mm below actual head joint rather than 12mm:
 # less visible stalk and more overlap with collar/shoulder transition.
 revise("place_y=float(head_joint_world.z-crop_y*head_scale-.012)",
