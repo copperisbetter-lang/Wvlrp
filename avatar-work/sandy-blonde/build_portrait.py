@@ -53,9 +53,10 @@ for side in (-1,1):
  for n in range(150):
   t=random.random();x=side*(.010+.046*t)
   z=1.580+.005*math.sin(math.pi*t)+random.uniform(-.0011,.0011)
-  hit,normal,face,dist=bvh.ray_cast(Vector((x,-.35,z)),Vector((0,1,0)),1)
+  inv=head.matrix_world.inverted()
+  hit,normal,face,dist=bvh.ray_cast(inv@Vector((x,-.35,z)),(inv.to_3x3()@Vector((0,1,0))).normalized(),1)
   if hit is None:continue
-  y=hit.y-.00045;base=len(vts);w=.00011
+  y=(head.matrix_world@hit).y-.00045;base=len(vts);w=.00011
   vts.extend([(x-w,y,z),(x+w,y,z),(x+side*.0012,y-.00005,z+.0022)])
   fs.append((base,base+1,base+2))
 meb=bpy.data.meshes.new('Individual brow hairs');meb.from_pydata(vts,[],fs);meb.materials.append(browmat)
@@ -131,7 +132,7 @@ for name,loc,power,size in [('Key',(-.5,-.8,2.1),25,1.1),('Fill',(.5,-.6,1.7),12
  d=bpy.data.lights.new(name,'AREA');d.energy=power;d.shape='DISK';d.size=size
  o=bpy.data.objects.new(name,d);scene.collection.objects.link(o);o.location=loc
  o.rotation_euler=(Vector((0,-.02,1.55))-o.location).to_track_quat('-Z','Y').to_euler()
-scene.render.engine='CYCLES';scene.cycles.samples=32;scene.cycles.use_denoising=True
+scene.render.engine='CYCLES';scene.cycles.samples=16;scene.cycles.use_denoising=True
 scene.render.resolution_x=800;scene.render.resolution_y=900;scene.render.resolution_percentage=100
 scene.view_settings.exposure=-.6
 cam=bpy.data.cameras.new('Portrait camera');co=bpy.data.objects.new('Portrait camera',cam);scene.collection.objects.link(co);scene.camera=co
