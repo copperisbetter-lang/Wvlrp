@@ -97,7 +97,7 @@ hairmeshes=[o for o in original_meshes if o!=body and
             any(t in o.name.lower() for t in ("hair","wig","scalp","long01"))]
 if not hairmeshes:
     raise RuntimeError("Sophie 1 source hair geometry not found; refuse naive substitute")
-sandy_color=(.75,.54,.33,1)
+sandy_color=(.56,.38,.21,1)
 for ob in hairmeshes:
     ob.name="Sandy Blonde - reshaped native hair / "+ob.name
     inverse_h=ob.matrix_world.inverted_safe()
@@ -128,13 +128,103 @@ for ob in hairmeshes:
             m.node_tree.links.remove(link)
             mix=m.node_tree.nodes.new("ShaderNodeMixRGB")
             mix.blend_type="MIX"
-            mix.inputs[0].default_value=.48
+            mix.inputs[0].default_value=.70
             mix.inputs[2].default_value=sandy_color
             m.node_tree.links.new(source_socket,mix.inputs[1])
             m.node_tree.links.new(mix.outputs["Color"],base)
         else:
             base.default_value=sandy_color
     print("SANDY_NATIVE_HAIR",ob.name,len(ob.data.vertices))
+# Non-destructive color polish: duplicate the source UV image data before editing.
+# This preserves valid skin texture maps while making the iris visibly green.
+import numpy as np
+color_audit=[]
+def recolor_images(ob,mode):
+    patched=0
+    for mi,old in enumerate(ob.data.materials):
+        if old is None: continue
+        mat=old.copy(); ob.data.materials[mi]=mat
+        mat.name='Sandy '+mode+' / '+old.name
+        if not mat.use_nodes: continue
+        color_textures=[]
+        for node in mat.node_tree.nodes:
+            if node.type!='TEX_IMAGE' or not node.image:continue
+            try:
+                image=node.image.copy()
+                if image.size[0]<4 or image.size[1]<4:continue
+                rgba=np.asarray(image.pixels[:],dtype=np.float32).reshape(-1,4).copy()
+                rgb=rgba[:,:3]
+                if mode=='skin':
+                    rgb[:,:]*=np.array([.98,.84,.76],dtype=np.float32)
+                elif mode=='eye':
+                    red,green,blue=rgb[:,0].copy(),rgb[:,1].copy(),rgb[:,2].copy()
+                    mask=(blue>red*1.06)&(blue>green*1.035)&(blue>.14)&(red<.87)
+                    rgb[mask,0]=np.maximum(.10,red[mask]*.62)
+                    rgb[mask,1]=np.maximum(.30,green[mask]*1.14)
+                    rgb[mask,2]=np.maximum(.10,blue[mask]*.50)
+                    print('SANDY_GREEN_EYE_PIXELS',int(mask.sum()),'/',len(rgb))
+                elif mode=='hair':
+                    width,height=image.size
+                    x=np.arange(width,dtype=np.float32)
+                    streak=.89+.085*np.sin(x*.113)+.05*np.cos(x*.65)+.045*np.sin(x*1.92)
+                    rgb[:,:]*=np.tile(streak,height)[:,None]
+                    rgb[:,:]*=np.array([.77,.61,.43],dtype=np.float32)
+                np.clip(rgba,0,1,out=rgba)
+                image.pixels.foreach_set(rgba.ravel())
+                image.update()
+                image.name='Sandy '+mode+' UV texture '+str(patched)
+                image.pack()
+                node.image=image
+                color_textures.append(node)
+                patched+=1
+                print('SANDY_TEXTURE_EDIT',mode,old.name,list(image.size))
+            except Exception as exc:
+                print('SANDY_TEXTURE_WARNING',mode,old.name,type(exc).__name__,str(exc)[:150])
+        if mode=='hair' and color_textures:
+            # glTF can faithfully export a direct image-texture color link;
+            # unsupported Blender MixRGB shaders are purposely removed from its path.
+            principled=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
+            if principled:
+                target=principled.inputs['Base Color']
+                for link in list(mat.node_tree.links):
+                    if link.to_socket==target:mat.node_tree.links.remove(link)
+                mat.node_tree.links.new(color_textures[0].outputs['Color'],target)
+                principled.inputs['Roughness'].default_value=.72
+    color_audit.append([mode,patched])
+    return patched
+skin_atlases=recolor_images(body,'skin')
+eye_atlases=sum(recolor_images(ob,'eye') for ob in eye_meshes)
+hair_atlases=sum(recolor_images(ob,'hair') for ob in hairmeshes)
+print('SANDY_COLOR_AUDIT',color_audit)
+# Natural eyebrows: soft directional strands above each eyeball on this clone.
+# Coordinate positions are measured from the imported real eye geometry.
+browmat=bpy.data.materials.new('Sandy warm brown eyebrow fibers')
+browmat.diffuse_color=(.34,.22,.14,1)
+browmat.use_nodes=True
+browmat.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(.34,.22,.14,1)
+browmat.node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.92
+eye_coords=[o.matrix_world@v.co for o in eye_meshes for v in o.data.vertices]
+for sign in (-1,1):
+    half=[v for v in eye_coords if (v.x-xmid)*sign>.009]
+    if len(half)<30:continue
+    cx=sum(v.x for v in half)/len(half)
+    cz=sum(v.z for v in half)/len(half)
+    yf=min(v.y for v in half) if front_sign<0 else max(v.y for v in half)
+    for i in range(22):
+        t=i/21
+        # Eyebrow follows a gentle natural arch; short tapered fibers avoid a painted strip.
+        x=cx+sign*(t-.5)*.056
+        y=yf+front_sign*(.006+random.uniform(0,.002))
+        z=cz+.034+.0038*math.sin(math.pi*t)+random.uniform(-.002,.002)
+        curve=bpy.data.curves.new('Sandy eyebrow fiber','CURVE')
+        curve.dimensions='3D';curve.bevel_depth=.0009;curve.bevel_resolution=2
+        spline=curve.splines.new('BEZIER');spline.bezier_points.add(1)
+        for bp,co in zip(spline.bezier_points,[(x,y,z),(x+sign*.004,y+front_sign*.0006,z+.0012)]):
+            bp.co=co;bp.handle_left_type='AUTO';bp.handle_right_type='AUTO'
+        ob=bpy.data.objects.new('Sandy eyebrow '+str(sign)+' '+str(i),curve)
+        bpy.context.collection.objects.link(ob)
+        curve.materials.append(browmat)
+
 # Preserve the source eyes/skin textures and any facial attachment hierarchy.
 # Studio preview scene, renders focus on face/head/hair; body is exported for later fitting.
 world=bpy.data.worlds.new("Sandy neutral studio")
@@ -201,6 +291,7 @@ report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
         "height_m":H,"face_original_morph":True,
         "native_hair_meshes":len(hairmeshes),"hair_locks":0,"source_eye_meshes":len(eye_meshes),
+        "skin_atlases":skin_atlases,"eye_atlases":eye_atlases,"hair_atlases":hair_atlases,
         "render_filenames":["Sandy_Original_Face_Front.png","Sandy_Hair_ThreeQuarter.png","Sandy_Hair_Back.png"],
         "wardrobe_status":"not part of this pass",
         "game_ready":False,"visual_approval":False}
