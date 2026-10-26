@@ -48,7 +48,8 @@ print('BODY_COORDS',json.dumps({'local':bounds,'world':world_bounds,'base_matrix
 assert 'mixamorig:Head' in bones and 'mixamorig:Neck' in bones, 'Need actual head/neck bone locations'
 head_world=bodyrigs[0].matrix_world@bones['mixamorig:Head'].head_local
 head_in_mesh=base.matrix_world.inverted()@head_world
-cut=head_in_mesh[up]-.025
+cut=head_world[up]/(base.matrix_world.to_scale()[up]*bodyrigs[0].matrix_world.to_scale()[up])-.025
+print('NECK_CUT_REVISED',json.dumps({'head_joint_world':head_world[up], 'body_parent_scale':base.matrix_world.to_scale()[up],'armature_parent_scale':bodyrigs[0].matrix_world.to_scale()[up], 'mesh_local_cut':cut}))
 assert bounds[up][0]+.6<cut<bounds[up][1]-.04, 'Cut outside upper body: '+str(cut)
 # BMesh bisect removes the old head's vertices, NOT merely clipping the viewer.
 bm=bmesh.new();bm.from_mesh(base.data)
