@@ -4,6 +4,7 @@
   "body_vertices": 14483,
   "height_m": 1.6763998293317854,
   "face_original_morph": true,
+  "chest_contour_shape_key": true,
   "native_hair_meshes": 1,
   "hair_locks": 0,
   "source_eye_meshes": 1,
