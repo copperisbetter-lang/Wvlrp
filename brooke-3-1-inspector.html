@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WVLRP Brooke 3.1 — Experimental Head Inspector</title>
 <style>body{margin:0;background:#13211e;color:#f2faf6;font:14px system-ui}header,section{padding:12px}header{background:#234435}small{color:#bdd0c7}#stage{height:58vh;min-height:310px;touch-action:none}button,select{background:#336c56;color:white;border:1px solid #7cb19a;border-radius:7px;padding:10px;margin:3px}button:active{background:#53a384}input[type=range]{width:98%;accent-color:#85d8aa}label{display:block;padding:5px}details{border:1px solid #476453;border-radius:8px;margin:9px 0;padding:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}#status{padding:10px;background:#264137;white-space:pre-wrap}select{width:100%}</style>
-</head><body><header><b>Brooke 3.1 · 3948 Head</b><div><small>Experimental facial rig inspection — original models protected</small></div></header><div id="stage"></div><div id="status">Preparing 3D viewer…</div>
+</head><body><header><b>Brooke 3.1 · Corrected Fit V2</b><div><small>Smaller head · shoulders and torso restored · originals protected</small></div></header><div id="stage"></div><div id="status">Preparing 3D viewer…</div>
 <section><div><button data-view="front">Front</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="head">Head close-up</button><button id="reset">Reset</button></div><h3>Facial shape controls</h3><div id="morphs" class="grid"></div>
 <details><summary>Skeleton controls</summary><label>Choose bone<select id="bones"></select></label><div class="grid"><label>Pitch<input id="rx" type="range" min="-45" max="45" value="0"></label><label>Yaw<input id="ry" type="range" min="-45" max="45" value="0"></label><label>Roll<input id="rz" type="range" min="-45" max="45" value="0"></label></div><button id="boneReset">Reset selected bone</button></details>
-<p><small>This is an inspection candidate, not a finished game character. Skin tone, mouth interior, neck seam, facial appearance and all body poses still require verification.</small></p>
+<p><small>This is the revised fit (head size reduced from 0.436 to 0.290); the earlier upper-body cut was corrected. This is not a finished game character. Skin tone, mouth interior, neck seam, facial appearance and all body poses still require verification.</small></p>
 </section>
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.169.0';
