@@ -1,0 +1,107 @@
+{
+  "exported_glb_verified": true,
+  "retained_pelvis_faces": 608,
+  "shared_skin_material": true,
+  "morph_checks": [
+    {
+      "weights": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_rim_gap_m": 1.8024400105787208e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "max_rim_gap_m": 1.8024400105787208e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "max_rim_gap_m": 1.8024400105787208e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        0.0,
+        1.0,
+        1.0
+      ],
+      "max_rim_gap_m": 1.8024400105787208e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "max_rim_gap_m": 1.803594642524331e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        1.0,
+        0.0,
+        1.0
+      ],
+      "max_rim_gap_m": 1.803594642524331e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "max_rim_gap_m": 1.803594642524331e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_rim_gap_m": 1.803594642524331e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        1.0,
+        1.0,
+        0.76
+      ],
+      "max_rim_gap_m": 1.803594642524331e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    },
+    {
+      "weights": [
+        0.4,
+        0.7,
+        0.5
+      ],
+      "max_rim_gap_m": 1.8024400105787208e-07,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0
+    }
+  ]
+}
