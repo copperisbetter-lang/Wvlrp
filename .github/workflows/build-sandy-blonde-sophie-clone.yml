@@ -1,0 +1,109 @@
+name: Sandy Blonde isolated Sophie 1 sculpt and portrait QA
+on:
+  push:
+    branches:
+      - g2/sandy-blonde-sophie1-clone-20261025
+    paths:
+      - avatar-work/sandy-blonde/build_sandy_blonde.py
+      - .github/workflows/build-sandy-blonde-sophie-clone.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sandy-blonde-sophie-clone
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: g2/sandy-blonde-sophie1-clone-20261025
+      - name: Check Sophie 1 source is copied unchanged
+        run: |
+          set -euo pipefail
+          sha256sum world-creator/assets/sophie-1-native-fit.glb avatar-work/sandy-blonde/sophie-1-working-clone.glb
+          cmp world-creator/assets/sophie-1-native-fit.glb avatar-work/sandy-blonde/sophie-1-working-clone.glb
+          test -s avatar-work/sandy-blonde/build_sandy_blonde.py
+      - name: Install Blender 4.2 CPU renderer
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 unzip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 --connect-timeout 30 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp/
+          fi
+          /tmp/blender-4.2.0-linux-x64/blender --background --version | head -n 4
+      - name: Render new face and hair on real Sophie 1 clone
+        run: |
+          set -euo pipefail
+          export LIBGL_ALWAYS_SOFTWARE=1
+          xvfb-run -a -s '-screen 0 1280x1024x24' \
+            /tmp/blender-4.2.0-linux-x64/blender --background -t 2 --python \
+            avatar-work/sandy-blonde/build_sandy_blonde.py 2>&1 | tee /tmp/sandy-blonde-build.log
+          grep 'SANDY_SCULPT_EXPORT_OK' /tmp/sandy-blonde-build.log
+      - name: Validate actual GLB, face and hairstyle outputs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,struct
+          p=Path("avatar-work/sandy-blonde/build")
+          r=json.loads((p/"build-report.json").read_text())
+          assert r["body_vertices"] > 3000
+          assert r["hair_locks"] >= 250
+          assert r["face_original_morph"]
+          assert not r["game_ready"] and not r["visual_approval"]
+          for name in r["render_filenames"]:
+              img=(p/name).read_bytes()
+              assert len(img)>20000 and img.startswith(b'\x89PNG\r\n\x1a\n')
+          glb=(p/"Sandy_Blonde_Sculpt_WIP.glb").read_bytes()
+          assert glb[:4]==b'glTF'
+          assert len(glb)==struct.unpack_from("<I",glb,8)[0]
+          l,t=struct.unpack_from("<II",glb,12)
+          assert t==0x4e4f534a
+          doc=json.loads(glb[20:20+l])
+          names=[x.get("name","") for x in doc["meshes"]]
+          assert any("Sandy" in n for n in names), names[:12]
+          assert (p/"Sandy_Blonde_Working.blend").stat().st_size>100000
+          print("SANDY_ASSETS_VALIDATED",r["body_vertices"],len(glb),r["hair_locks"])
+          PY
+      - name: Commit WIP render and editable model only to isolated branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add avatar-work/sandy-blonde/build
+          if ! git diff --cached --quiet; then
+            git commit -m 'Build isolated Sandy Blonde original face, new hair and body WIP renders'
+            git pull --rebase origin g2/sandy-blonde-sophie1-clone-20261025
+            git push origin HEAD:g2/sandy-blonde-sophie1-clone-20261025
+          fi
+      - name: Record build result even on failure
+        if: always()
+        run: |
+          mkdir -p avatar-work/sandy-blonde
+          {
+            echo "# Sandy Blonde isolated build status"
+            echo ""
+            echo "Source commit: $GITHUB_SHA"
+            echo ""
+            echo "Independent visual acceptance on Android: NOT YET TESTED."
+            echo "No wardrobe, game integration, production deployment or approved source edits."
+            echo "BEGIN LOG"
+            if [ -f /tmp/sandy-blonde-build.log ]; then
+              tail -n 65 /tmp/sandy-blonde-build.log
+            else
+              echo "Build command never launched."
+            fi
+            echo "END LOG"
+          } > avatar-work/sandy-blonde/BUILD-STATUS.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add avatar-work/sandy-blonde/BUILD-STATUS.md
+          git commit -m "Record Sandy Blonde isolated Blender build result" || exit 0
+          git pull --rebase origin g2/sandy-blonde-sophie1-clone-20261025
+          git push origin HEAD:g2/sandy-blonde-sophie1-clone-20261025
