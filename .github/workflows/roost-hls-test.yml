@@ -19,6 +19,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get -qq update
+          sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
           url='https://158-101-120-6.sslip.io/roost/index.m3u8?cookieCheck=1'
           ffmpeg -hide_banner -nostdin -loglevel warning \
