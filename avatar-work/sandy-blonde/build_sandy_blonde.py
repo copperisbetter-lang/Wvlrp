@@ -93,9 +93,8 @@ for label,func in (("Sandy - reference body shape",sculpt_body),("Sandy - unique
 body.select_set(False)
 # Existing hair is replaced only on this independent working copy.
 for o in original_meshes:
-    if o!=body and any(t in o.name.lower() for t in ("hair","wig","scalp")):
-        o.hide_render=True
-        o.hide_set(True)
+    if o!=body and any(t in o.name.lower() for t in ("hair","wig","scalp","long01")):
+        bpy.data.objects.remove(o,do_unlink=True)
 # Eye-color editing is limited to iris-specific materials; don't tint white of eyes.
 for m in bpy.data.materials:
     if "iris" in m.name.lower():
@@ -227,10 +226,11 @@ for o in list(scene.objects):
 for o in scene.objects:
     if o.type=="MESH":o.hide_set(False)
 outglb=OUTPUT/"Sandy_Blonde_Sculpt_WIP.glb"
-bpy.ops.export_scene.gltf(filepath=str(outglb),export_format="GLB",export_animations=True,export_visible=True)
+bpy.ops.export_scene.gltf(filepath=str(outglb),export_format="GLB",export_animations=True)
 if not outglb.exists() or outglb.stat().st_size<100000:
     raise RuntimeError("Invalid character output GLB")
 # Editable master with shape keys (production export not yet approved).
+bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT/"Sandy_Blonde_Working.blend"))
 report={"source_blob_sha":"b4e70180ac44c4e3626fcc1fcf7390cf46342b45",
         "source_body":body.name,"body_vertices":len(body.data.vertices),
