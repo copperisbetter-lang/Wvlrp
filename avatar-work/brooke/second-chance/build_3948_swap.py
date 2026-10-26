@@ -33,13 +33,23 @@ assert len(base.data.vertices)>14000
 bodybefore=len(base.data.vertices)
 vcoords=[v.co for v in base.data.vertices]
 bounds=[(min(p[i] for p in vcoords),max(p[i] for p in vcoords)) for i in range(3)]
-if bounds[1][1]>1.60 and bounds[1][0]<.02:
+if bounds[1][1]>1.3 and bounds[1][0]<.02:
     up=1;Tb=Matrix.Identity(4)
-elif bounds[2][1]>1.60 and bounds[2][0]<.02:
+elif bounds[2][1]>1.3 and bounds[2][0]<.02:
     up=2;Tb=Matrix.Rotation(math.pi/2,4,'X')
 else:
     raise RuntimeError('Body axis not determined: '+str(bounds))
-cut=1.475
+world_verts=[base.matrix_world@p for p in vcoords]
+world_bounds=[(min(p[i] for p in world_verts),max(p[i] for p in world_verts)) for i in range(3)]
+bones=bodyrigs[0].data.bones
+print('BODY_COORDS',json.dumps({'local':bounds,'world':world_bounds,'base_matrix':[[float(c) for c in row] for row in base.matrix_world],
+  'head_joint': list(bones['mixamorig:Head'].head_local) if 'mixamorig:Head' in bones else None,
+  'neck_joint': list(bones['mixamorig:Neck'].head_local) if 'mixamorig:Neck' in bones else None}))
+assert 'mixamorig:Head' in bones and 'mixamorig:Neck' in bones, 'Need actual head/neck bone locations'
+head_world=bodyrigs[0].matrix_world@bones['mixamorig:Head'].head_local
+head_in_mesh=base.matrix_world.inverted()@head_world
+cut=head_in_mesh[up]-.025
+assert bounds[up][0]+.6<cut<bounds[up][1]-.04, 'Cut outside upper body: '+str(cut)
 # BMesh bisect removes the old head's vertices, NOT merely clipping the viewer.
 bm=bmesh.new();bm.from_mesh(base.data)
 coord=[0.,0.,0.];coord[up]=cut
@@ -170,7 +180,7 @@ for i,v in enumerate(h.data.vertices):
     vgs['BrookeHead'].add([i],max(.07,1.-total*factor),'REPLACE')
 mod=h.modifiers.new('Brooke_3948_ActualFacialBones','ARMATURE');mod.object=rig
 # Register geometry at the old Brooke fitting position using source-space alignment.
-placement=base.matrix_world@Tb@Matrix.Translation(Vector((.0118137358,1.518908886,.0253151481)))@Matrix.Scale(.436,4)@Th.inverted()
+placement=Tb@Matrix.Translation(Vector((.0118137358,1.518908886,.0253151481)))@Matrix.Scale(.436,4)@Th.inverted()
 h.matrix_world=placement;rig.matrix_world=placement
 bpy.context.view_layer.update()
 # Verify bone motion produces DIFFERENT evaluated vertex coordinates, then reset.
@@ -191,7 +201,7 @@ bpy.ops.export_scene.gltf(filepath=OUT,export_format='GLB',use_selection=True,ex
 report={'source_hashes_unchanged':hashfile(HEAD)==expected['head'] and hashfile(BODY)==expected['body'],
   'body_vertices_before':bodybefore,'body_vertices_after_cut':len(base.data.vertices),
   'body_head_cut_y_glb':cut,'head_source':'3948','approved_crown_baked':True,
-  'model_local_axis':name,'landmark_residual':residual,
+  'model_local_axis':str(Th),'landmark_residual':residual,
   'facial_bones':list(vgs),'facial_morphs':list(shapes),'facial_bone_test_delta':delta,
   'export_path':OUT,'export_bytes':os.path.getsize(OUT),
   'not_verified':['mouth cavity/topology','face likeness','skin color match','pose quality','neck seam','phone viewer']}
