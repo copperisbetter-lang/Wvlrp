@@ -4,7 +4,8 @@
   "body_vertices": 14483,
   "height_m": 1.6763998293317854,
   "face_original_morph": true,
-  "hair_locks": 278,
+  "native_hair_meshes": 1,
+  "hair_locks": 0,
   "source_eye_meshes": 1,
   "render_filenames": [
     "Sandy_Original_Face_Front.png",
