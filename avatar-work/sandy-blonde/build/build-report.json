@@ -7,6 +7,9 @@
   "native_hair_meshes": 1,
   "hair_locks": 0,
   "source_eye_meshes": 1,
+  "skin_atlases": 1,
+  "eye_atlases": 1,
+  "hair_atlases": 1,
   "render_filenames": [
     "Sandy_Original_Face_Front.png",
     "Sandy_Hair_ThreeQuarter.png",
