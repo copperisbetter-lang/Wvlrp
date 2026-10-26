@@ -1,0 +1,72 @@
+name: Brooke 3.1 V3 Head-Neck Repair Candidate
+on:
+  push:
+    branches: [g2/brooke-3-1-rig-20261026]
+    paths:
+      - '.github/workflows/brooke-3-1-v3-build.yml'
+      - 'avatar-work/brooke/second-chance/build_v3_neck_fit.py'
+      - 'avatar-work/brooke/second-chance/build_3948_swap.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender and NumPy
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+          blender --version
+      - name: Build Brooke V3 derived preview model
+        run: |
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v3_neck_fit.py 2>&1 | tee brooke-v3-build.log
+          grep BROOKE_V3_REGISTERED_NECK brooke-v3-build.log
+          grep BROOKE_V3_SCAN_CROP brooke-v3-build.log
+      - name: Verify output structure and metadata
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          folder=pathlib.Path('avatar-work/brooke/second-chance')
+          p=folder/'brooke-3-1-v3-neck-fit-experimental.glb'
+          data=p.read_bytes();assert data[:4]==b'glTF'
+          assert struct.unpack_from('<I',data,8)[0]==len(data)
+          n,kind=struct.unpack_from('<II',data,12);assert kind==0x4e4f534a
+          j=json.loads(data[20:20+n]);r=json.loads((folder/'brooke-3-1-v3-neck-fit-check.json').read_text())
+          names=[n.get('name','') for n in j.get('nodes',[])]
+          assert len(j.get('skins',[]))>=2
+          assert 'Brooke_V3_Neck_Underlay' in names
+          assert r['source_hashes_unchanged']
+          assert r['v3_scan_vertices_removed']>20000
+          assert r['v3_facial_rig_parent_bone']=='mixamorig:Head'
+          assert r['head_raise_m']<-.10, 'V3 head was not lowered to actual body joint'
+          assert r['v3_underlay_not_welded']
+          print('BROOKE_V3_GLTF_VALIDATED',json.dumps({'bytes':len(data),'skins':[len(s['joints']) for s in j['skins']],'head_shift_m':r['head_raise_m'],'removed_scan_vertices':r['v3_scan_vertices_removed']}))
+          PY
+      - name: Upload V3 experimental model and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-3-1-v3-head-neck-experimental
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v3-neck-fit-experimental.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v3-neck-fit-check.json
+            brooke-v3-build.log
+          if-no-files-found: warn
+      - name: Store verified V3 model only on isolated G2 branch
+        if: success() && github.ref == 'refs/heads/g2/brooke-3-1-rig-20261026'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v3-neck-fit-experimental.glb avatar-work/brooke/second-chance/brooke-3-1-v3-neck-fit-check.json
+          git commit -m "Store inspected V3 cropped-neck Brooke experimental model" || exit 0
+          git -c pull.rebase=true pull origin g2/brooke-3-1-rig-20261026
+          git push origin HEAD:g2/brooke-3-1-rig-20261026
