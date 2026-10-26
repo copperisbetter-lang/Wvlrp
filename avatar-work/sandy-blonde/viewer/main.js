@@ -29,7 +29,7 @@ function view(mode='full'){
  const isFace=mode==='face';const aim=center.clone().setY(box.min.y+height*(isFace?.89:.52));
  controls.target.copy(aim);
  const narrow=stage.clientWidth/stage.clientHeight<.78;
- const radius=isFace?Math.max(.46,height*(narrow?.59:.48)):Math.max(height*(narrow?1.43:1.25),1.5);
+ const radius=isFace?Math.max(.46,height*(narrow?.59:.48)):Math.max(height*(narrow?1.81:1.65),1.5);
  const offset=mode==='back'?new THREE.Vector3(0,0,-radius):mode==='side'?new THREE.Vector3(radius,0,0):
              mode==='three'?new THREE.Vector3(radius*.54,0,radius*.84):new THREE.Vector3(0,0,radius);
  camera.position.copy(aim).add(offset);camera.lookAt(aim);controls.update();
