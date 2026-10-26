@@ -1,0 +1,72 @@
+name: Brooke V5 Native Neck Preservation Trial
+on:
+  push:
+    branches: [g2/brooke-v5-native-neck-20261026]
+    paths:
+      - .github/workflows/brooke-v5-build.yml
+      - avatar-work/brooke/second-chance/build_v5_native_neck.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - name: Build V5 native neck and facial rig
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v5_native_neck.py 2>&1 | tee brooke-v5-build.log
+          grep BROOKE_V5_NECK_PRESERVED brooke-v5-build.log
+      - name: Validate preservation and GLB
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib
+          p=pathlib.Path('avatar-work/brooke/second-chance/brooke-3-1-v5-native-neck-trial.glb')
+          data=p.read_bytes();assert data[:4]==b'glTF'
+          assert struct.unpack_from('<I',data,8)[0]==len(data)
+          n,k=struct.unpack_from('<II',data,12);assert k==0x4e4f534a
+          glb=json.loads(data[20:20+n])
+          q=json.loads(p.with_name('brooke-3-1-v5-native-neck-check.json').read_text())
+          names=[node.get('name','') for node in glb['nodes']]
+          assert 'Brooke_V3_Neck_Underlay' not in names
+          assert q['v5_no_extra_neck_mesh'] and q['v5_native_neck_used']
+          assert 1.42 < q['v5_cut_world_z'] < 1.45
+          assert q['v5_native_neck_vertices']>=100
+          assert q['source_hashes_unchanged']
+          assert q['protected_shoulder_arm_spine_vertices']==2438
+          assert abs(q['head_scale']-.35)<1e-7
+          assert len(glb['skins'])>=2
+          assert len(q['facial_morphs'])==10
+          print('BROOKE_V5_QA',json.dumps({'bytes':len(data),'skin_joint_counts':[len(x['joints']) for x in glb['skins']],'native_neck_preserved':q['v5_native_neck_vertices'],'cut_z':q['v5_cut_world_z'],'pink_underlay_present':False,'visual_unverified':True}))
+          PY
+      - name: Save evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-v5-native-neck-experimental
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v5-native-neck-trial.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v5-native-neck-check.json
+            brooke-v5-build.log
+          if-no-files-found: warn
+      - name: Commit working-branch artifacts
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v5-native-neck-trial.glb avatar-work/brooke/second-chance/brooke-3-1-v5-native-neck-check.json
+          git commit -m "Store experimental V5 native-neck Brooke model" || exit 0
+          git -c pull.rebase=true pull origin g2/brooke-v5-native-neck-20261026
+          git push origin HEAD:g2/brooke-v5-native-neck-20261026
