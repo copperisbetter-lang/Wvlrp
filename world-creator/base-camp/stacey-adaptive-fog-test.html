@@ -14,7 +14,7 @@ const status=document.querySelector('#status');window.addEventListener('error',e
 const mobile=matchMedia('(pointer:coarse)').matches;const scene=new T.Scene();
 const lowGPU=mobile && (navigator.deviceMemory<=4 || navigator.hardwareConcurrency<=6);
 const gfx={low:lowGPU,range:30,underwater:false,lastTrees:0};
-scene.fog=new T.Fog(0xc0d7df,lowGPU?13:20,lowGPU?34:43);
+scene.fog=new T.Fog(0xc0d7df,lowGPU?20:25,lowGPU?45:52);
 diag.graphics=gfx;
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1:1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;document.body.prepend(renderer.domElement);
 renderer.debug.onShaderError=(gl,program,vs,fs)=>{diag.errors.push('Shader: '+gl.getProgramInfoLog(program)+' '+gl.getShaderInfoLog(vs)+' '+gl.getShaderInfoLog(fs));};const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.15,2400);const lightDir=new T.Vector3(-.48,.57,-.66).normalize();scene.add(new T.HemisphereLight(0xddefff,0x5b6741,1.5));const sun=new T.DirectionalLight(0xffedcb,2.8);sun.position.copy(lightDir).multiplyScalar(600);scene.add(sun);
@@ -130,7 +130,7 @@ function updateTreeVisibility(now){
 let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial)pos.y=swim?(depthMode==='dive'?Math.min(CY-1.1,bed+1.7):CY+.65):bed+1.7;camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
  gfx.underwater=!aerial && swim && pos.y<CY-.25;
  if(gfx.underwater){scene.fog.color.setHex(0x456e69);scene.fog.near=5;scene.fog.far=20;requestUnderwaterFish();}
- else {scene.fog.color.setHex(0xc0d7df);scene.fog.near=gfx.low?13:20;scene.fog.far=gfx.low?34:43;}
+ else {scene.fog.color.setHex(0xc0d7df);scene.fog.near=gfx.low?20:25;scene.fog.far=gfx.low?45:52;}
  updateTreeVisibility(now);animateFlatheads((now-start)/1000,dt);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;
  if(mobile && fps<27)gfx.low=true;
  else if(mobile && fps>48 && !lowGPU)gfx.low=false;
