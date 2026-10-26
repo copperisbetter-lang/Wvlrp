@@ -67,7 +67,7 @@ jobs:
           assert t==0x4e4f534a
           doc=json.loads(glb[20:20+l])
           names=[x.get("name","") for x in doc["meshes"]]
-          assert any("Sandy" in n for n in names), names[:12]
+          assert any("long01" in n.lower() for n in names) and any("base" in n.lower() for n in names), names[:12]
           assert (p/"Sandy_Blonde_Working.blend").stat().st_size>100000
           print("SANDY_ASSETS_VALIDATED",r["body_vertices"],len(glb),r["native_hair_meshes"])
           PY
@@ -104,6 +104,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add avatar-work/sandy-blonde/BUILD-STATUS.md
+          git add avatar-work/sandy-blonde/build || true
           git commit -m "Record Sandy Blonde isolated Blender build result" || exit 0
           git pull --rebase origin g2/sandy-blonde-sophie1-clone-20261025
           git push origin HEAD:g2/sandy-blonde-sophie1-clone-20261025
