@@ -21,8 +21,8 @@ edit_exact("place_y=float(head_joint_world.z-crop_y*head_scale-.012)",
 # V4 independently generated pink neck is explicitly NOT reused.
 start=v3.index("# Create a deliberately independent SKIN-COLORED NECK UNDERLAY.")
 end=v3.index('""")',start)
-v3=v3[:start]+("# V5: original torso skin/UV neck retained instead of separate neck underlay.\\n"
-                 "# Do not create detached pale geometry.\\n")+v3[end:]
+v3=v3[:start]+("# V5: retain original body neck UV and geometry."+chr(10)+
+                 "# No independent neck tube; no pale disconnected parts."+chr(10))+v3[end:]
 edit_exact("'v3_underlay_not_welded':True",
     "'v3_underlay_not_welded':False,'v5_native_neck_used':True,'v5_owner_feedback':'V4 detached pale neck patches','v5_head_scale':.35,'v5_body_cut_scale_error_corrected':True")
 # The V3 script is itself a text transform of the V2 builder. The cut fix is
