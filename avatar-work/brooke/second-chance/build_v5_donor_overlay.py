@@ -24,7 +24,7 @@ for o in imported:
     if o!=donor:bpy.data.objects.remove(o,do_unlink=True)
 bpy.context.view_layer.update()
 def bounds(o):
-    pts=[o.matrix_world@v for v in o.bound_box]
+    pts=[o.matrix_world@Vector(v) for v in o.bound_box]
     return {'x':[round(min(v.x for v in pts),3),round(max(v.x for v in pts),3)],
             'y':[round(min(v.y for v in pts),3),round(max(v.y for v in pts),3)],
             'z':[round(min(v.z for v in pts),3),round(max(v.z for v in pts),3)]}
