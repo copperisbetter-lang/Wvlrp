@@ -1,0 +1,81 @@
+name: Brooke V5 Owner Fit Native Neck and Render QA
+on:
+  push:
+    branches: [g2/brooke-v5-owner-fit-20261026]
+    paths:
+      - .github/workflows/brooke-v5-owner-build.yml
+      - avatar-work/brooke/second-chance/build_v5_owner_fit.py
+      - avatar-work/brooke/second-chance/render_v5_owner_qa.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ownerfit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            3948-3d.glb
+            avatar-work/brooke/second-chance
+          sparse-checkout-cone-mode: false
+      - name: Install Blender
+        run: |
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=45 install -y blender python3-numpy
+      - name: Build natural-neck V5 owner fit
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/build_v5_owner_fit.py 2>&1 | tee brooke-v5-owner-build.log
+          grep BROOKE_V5_NECK_PRESERVED brooke-v5-owner-build.log
+      - name: Check GLB and geometry
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,struct
+          folder=pathlib.Path('avatar-work/brooke/second-chance')
+          p=folder/'brooke-3-1-v5-owner-fit.glb'
+          b=p.read_bytes();assert b[:4]==b'glTF'
+          assert struct.unpack_from('<I',b,8)[0]==len(b)
+          n,t=struct.unpack_from('<II',b,12);assert t==0x4e4f534a
+          gltf=json.loads(b[20:20+n])
+          report=json.loads((folder/'brooke-3-1-v5-owner-fit-check.json').read_text())
+          assert report['source_hashes_unchanged'] and report['v5_native_neck_used']
+          assert report['v5_no_extra_neck_mesh'] and report['v5_native_neck_vertices']>=200
+          assert 1.42<report['v5_cut_world_z']<1.45
+          assert report['protected_shoulder_arm_spine_vertices']==2438
+          assert abs(report['head_scale']-.357)<1e-8 and report['v5_owner_head_increase_pct']==2
+          assert report['v5_owner_shorter_neck_m']==.010
+          assert len(gltf['skins'])>=2 and [len(k['joints']) for k in gltf['skins']][:2]==[52,12]
+          assert len(report['facial_morphs'])==10 and report['facial_bone_test_delta']>0
+          assert not any('Brooke_V3_Neck_Underlay' in node.get('name','') for node in gltf['nodes'])
+          print('BROOKE_V5_OWNER_STRUCTURAL_QA_PASS',json.dumps({'bytes':len(b),'head_scale':report['head_scale'],'cut_z':report['v5_cut_world_z'],'preserved_neck_vertices':report['v5_native_neck_vertices'],'skeletons':[len(x['joints']) for x in gltf['skins']]}))
+          PY
+      - name: Render front side and profile inspection
+        run: |
+          set -o pipefail
+          blender -b --python-exit-code 1 --python avatar-work/brooke/second-chance/render_v5_owner_qa.py 2>&1 | tee brooke-v5-owner-render.log
+          grep BROOKE_V5_OWNER_QA_FINISHED brooke-v5-owner-render.log
+      - name: Save V5 inspection artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brooke-v5-owner-native-neck
+          path: |
+            avatar-work/brooke/second-chance/brooke-3-1-v5-owner-fit.glb
+            avatar-work/brooke/second-chance/brooke-3-1-v5-owner-fit-check.json
+            avatar-work/brooke/second-chance/brooke-v5-owner-qa-*.jpg
+            brooke-v5-owner-build.log
+            brooke-v5-owner-render.log
+          if-no-files-found: warn
+      - name: Store QA on own G2 trial branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/brooke/second-chance/brooke-3-1-v5-owner-fit.glb avatar-work/brooke/second-chance/brooke-3-1-v5-owner-fit-check.json avatar-work/brooke/second-chance/brooke-v5-owner-qa-*.jpg avatar-work/brooke/second-chance/brooke-v5-owner-qa-*.b64.txt
+          git commit -m "Store Brooke V5 native-neck owner proportion trial and QA renders"
+          git fetch origin g2/brooke-v5-owner-fit-20261026
+          git rebase FETCH_HEAD
+          git push origin HEAD:g2/brooke-v5-owner-fit-20261026
