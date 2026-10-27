@@ -11,12 +11,16 @@ temp_out_path=asset_dir/'amanda-1-0-base.replacement.glb'
 report_path=asset_dir/'amanda-1-0-flat-install-report.json'
 OLD_TOKEN='Vulva2 MHX2 true auto-fit'
 BODY_TOKEN='SAV 4 adult petite character_sav4'
-FRONT_SURFACE_OFFSET=0.018  # target offset in meters
-previous_surface_offset=0.0
+FRONT_SURFACE_OFFSET=0.018  # target outward offset in meters
+VERTICAL_SURFACE_OFFSET=0.020  # raise Flat V1 into the attachment opening
+previous_report={}
 if report_path.exists():
-    try: previous_surface_offset=float(json.loads(report_path.read_text()).get('surface_offset_gltf_z_m',0.0))
-    except Exception: previous_surface_offset=0.0
+    try: previous_report=json.loads(report_path.read_text())
+    except Exception: previous_report={}
+previous_surface_offset=float(previous_report.get('surface_offset_gltf_z_m',0.0))
 offset_delta_gltf=FRONT_SURFACE_OFFSET-previous_surface_offset
+previous_vertical_offset=float(previous_report.get('surface_offset_vertical_gltf_y_m',0.0))
+vertical_delta_gltf=VERTICAL_SURFACE_OFFSET-previous_vertical_offset
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(base_path))
@@ -28,10 +32,13 @@ existing_flat=next((o for o in scene.objects if o.type=='MESH' and (
     'Flat V1 replacement attachment' in o.name
 )),None)
 if existing_flat:
+    old_supports=[o for o in scene.objects if o.type=='MESH' and ('backfill' in o.name.lower() or 'aperture' in o.name.lower())]
+    for support in old_supports: bpy.data.objects.remove(support,do_unlink=True)
     inv=existing_flat.matrix_world.inverted()
     for v in existing_flat.data.vertices:
         p=existing_flat.matrix_world @ v.co
         p.y-=offset_delta_gltf
+        p.z+=vertical_delta_gltf
         v.co=inv @ p
     existing_flat.data.update()
     mat=bpy.data.materials.new('Flat V1 | matte skin fit')
@@ -93,6 +100,9 @@ if existing_flat:
         'surface_offset_gltf_z_m':FRONT_SURFACE_OFFSET,
         'surface_offset_delta_blender_y_m':-offset_delta_gltf,
         'surface_offset_delta_gltf_z_m':offset_delta_gltf,
+        'surface_offset_vertical_gltf_y_m':VERTICAL_SURFACE_OFFSET,
+        'surface_offset_delta_vertical_gltf_y_m':vertical_delta_gltf,
+        'old_support_geometry_removed':True,
         'replacement_vertex_count':len(new.data.vertices),
         'replacement_face_count':len(new.data.polygons),
         'replacement_vertex_group_count':len(new.vertex_groups),
@@ -138,7 +148,7 @@ fit_points=[]
 for p in flat_world:
     fit_points.append(Vector(tuple(old_center[i]+(p[i]-flat_center[i])*scale[i] for i in range(3))))
 # Blender's front-facing direction is negative Y. Bring Flat V1 out to Amanda's skin surface.
-fit_points=[Vector((p.x,p.y-offset_delta_gltf,p.z)) for p in fit_points]
+fit_points=[Vector((p.x,p.y-offset_delta_gltf,p.z+vertical_delta_gltf)) for p in fit_points]
 flat.name='Amanda 1.0 | Flat V1 replacement attachment'
 flat.data.name='Flat V1 fitted anatomical mesh'
 flat.parent=None
