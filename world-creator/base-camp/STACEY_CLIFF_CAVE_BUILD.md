@@ -23,3 +23,11 @@ Reference: latest beach screenshot (looking left, lake on right) and generated t
 3. Build pond + outlet channel, then waterfall placement 15.24 m apart; verify visible stream actually reaches lake.
 4. Add cave passage and large vaulted room with natural formations and safe movement/return.
 5. Mobile browser smoke test and screenshots from beach, waterfall entrance, and chamber. Confirm scene startup, non-blue-screen, FPS, navigation and cave reachability before merging.
+
+## Quest gate — Dark and Damp (user direction, 2026-10-26)
+- Quest name: **Dark and Damp** (interpreted from voice transcription “fark amd damp”; verify exact label before shipping UI).
+- BEFORE this quest is started by the individual player: a **large natural boulder** fully blocks the concealed entrance behind one waterfall. Cave entrance is not visible or traversable; cave interior must not activate/render/load as player-visible content. Waterfalls, pond and stream remain visible and work normally.
+- WHEN this player's quest transitions to STARTED: remove or move the blocking stone according to quest reveal event and enable that player's cave passage / cavern geometry, visibility, collision and navigation. Never reveal due to proximity alone.
+- Persist the quest state per player; gate must survive reload and multiplayer joins. Players without quest activation must not see the opened cave because another player started the quest. Avoid collision mismatches across player instances (instance/phase the cave or use a per-player portal transition).
+- Until unlocked, no camera clipping, aerial view, swimming, or terrain seam may reveal the interior. If practical, don't download heavy cavern assets until the gate opens (mobile FPS).
+- Acceptance tests: prequest blocked/no glimpse; quest-start transition; entry/exit and reload; two players with different quest states; mobile performance.
