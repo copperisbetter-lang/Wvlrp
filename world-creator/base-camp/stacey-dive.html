@@ -48,7 +48,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 (function createWaterfallCliff(){
  const westShore=CX-outer(Math.PI),wallX=westShore-51,group=new T.Group();
  group.name='Stacey Lake west-bank twin waterfalls';scene.add(group);
- const rock=new T.MeshStandardMaterial({color:0x92968b,roughness:1,side:T.DoubleSide,vertexColors:true});
+ const rock=new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide,vertexColors:true,flatShading:true});
  const shadow=new T.MeshStandardMaterial({color:0x454b45,roughness:1,flatShading:true,side:T.DoubleSide});
  const faceV=[],faceI=[],faceUV=[],faceColors=[],cols=120,rows=52;
  // Irregular 3D face with meaningful relief; no floating flat rectangular wall.
@@ -56,11 +56,11 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const u=i/cols,z=CZ+(u-.5)*105;
   const ridge=ground(wallX-5,z);
   const h=CY+.4+v*Math.max(19,ridge-CY-1);
-  const x=wallX+18-5*v+1.0*Math.sin(u*10+v*2.4)+.48*Math.sin(u*47+v*13)+.28*Math.sin(u*99-v*33);
+  const x=wallX+22-5*v+1.0*Math.sin(u*10+v*2.4)+.48*Math.sin(u*47+v*13)+.28*Math.sin(u*99-v*33);
   faceV.push(x,h,z);faceUV.push(u*8,v*6);
   const layer=Math.sin(h*2.8+.6*Math.sin(z*.09)),joint=Math.abs(Math.sin(z*.29+h*.16));
   const grain=Math.sin(z*1.71+h*1.27)*.045+Math.sin(z*3.49-h*2.61)*.025;
-  const tone=Math.max(.42,Math.min(1.13,.76+.17*layer-.11*Math.pow(joint,24)+grain));
+  const tone=Math.max(.42,Math.min(1.13,.82+.17*layer-.11*Math.pow(joint,24)+grain));
   faceColors.push(tone*.91,tone*.94,tone*.85);
  }}
  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
@@ -82,7 +82,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  const sealStone=new T.Mesh(new T.DodecahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x747b72,roughness:1,flatShading:true}));
  sealStone.name='Quest seal boulder — Dark and Damp';sealStone.scale.set(3.4,4.55,4.2);
- sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);portal.add(sealStone);
+ sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);sealStone.visible=false;portal.add(sealStone);
  // Quest manager may change this flag later; default always stays locked.
  window.staceyCave={locked:true,entrance:portal,seal:sealStone,quest:'Dark and Damp',secondTunnel:'one-way underwater exit beneath island'};
  // Underground structures remain hidden until quest access; the outer portal is always visible.
@@ -116,7 +116,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const exitRing=new T.Mesh(new T.TorusGeometry(2.6,.7,7,12),floorRock);exitRing.position.copy(exitPos);exitRing.rotation.y=Math.PI/2;subterranean.add(exitRing);
  subterranean.visible=false;
  window.staceyUnderground={group:subterranean,entrance:caveMouth,ballroom:hall,pool:darkWater,exit:exitPos,questLocked:true,tunnel2OneWay:true,
-   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=!complete;window.staceyCave.locked=!complete;}};
+   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=false;window.staceyCave.locked=!complete;}};
  diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
 
  diag.assets['cave entrance']='visible, boulder sealed — quest locked';
@@ -130,15 +130,15 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const center=fallCenters[fall],width=fall===0?10:7.8;
   // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
   for(let strip=0;strip<9;strip++){
-   const w=width/9*(.75+rand()*.6),z=center+(strip-4)*width/9;
+   const w=width/9*(.85+rand()*.3),z=center+(strip-4)*width/9;
    const meshGeo=new T.PlaneGeometry(w,31,2,44),a=meshGeo.attributes.position;
    for(let k=0;k<a.count;k++){const t=(a.getY(k)+15.5)/31;
     a.setX(k,wallX+22-5*t+.55*Math.sin(12*t+strip*.9+fall));
     a.setY(k,CY+1.5+31*t);
-    a.setZ(k,z+Math.sin(t*14+strip)*.35+(rand()-.5)*.15);
+    a.setZ(k,z+a.getX(k)+Math.sin(t*14+strip)*.35+(rand()-.5)*.15);
    }
    meshGeo.computeVertexNormals();
-   const mesh=new T.Mesh(meshGeo,falling.clone());group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
+   const mesh=new T.Mesh(meshGeo,falling.clone());mesh.material.opacity=.92;mesh.renderOrder=3;group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
   }
   // Water reaches lake via the west shoreline rather than terminating in the cliff.
   const sv=[],si=[];
@@ -151,7 +151,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   for(let n=0;n<10;n++){const mist=new T.Mesh(new T.PlaneGeometry(1+rand()*2,.15+rand()*.35),splashMat);
    mist.rotation.x=-Math.PI/2;mist.position.set(wallX+19+rand()*5,CY+1.7,center+(rand()-.5)*width*1.5);group.add(mist);}
  }
- window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.65+.14*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
+ window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.85+.08*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
  diag.assets['waterfall cliff']='west bank twin falls';
  diag.waterfall='west shore, two cascades spaced 50 feet apart';
 })();
