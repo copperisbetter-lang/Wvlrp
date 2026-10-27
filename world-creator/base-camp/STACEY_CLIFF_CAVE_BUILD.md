@@ -113,3 +113,11 @@ Canonical user-provided story:
 - The Resort's promotional purpose may inform optional preference research but must not manipulate the player or gate ordinary subscriptions behind sexualized engagement. Never assume willingness to subscribe based on interest in revealing content.
 - These rules only apply to the adult-gated Resort encounter. Do not change main-game Brooke's knee-length-skirt wardrobe or her ordinary quests.
 - This is design documentation, not a completed feature or implemented content.
+
+## Resort experience paths: social-first and optional adult areas (2026-10-26)
+- The adult-verified Resort is a worthwhile destination for every eligible player, regardless of interest in revealing/adult content.
+- Social-first experience: dancing, cocktails (optional nonalcoholic alternatives), conversations, music, games, and mini-quests. This path offers a complete, rewarding experience with no nudity expectation or subscription penalty.
+- If a verified adult explicitly expresses interest in additional adults-only experiences, the Resort can offer access to other optional doors/areas. Do not unlock those areas based only on guesses, behavioral profiling, or ambiguous dialogue.
+- Explicit choice, clear previews/labels of content, and easily reversible preferences control access. Default to the social-first path; declining adult-only content never blocks normal quests or social opportunities.
+- Brooke can introduce both tracks naturally without treating the social-first player as less valuable. Adult-area permissions must be enforced server-side with age verification.
+- Details of adult-only rooms, activities, and their quests remain unspecified pending user direction. This is design documentation, not implemented logic.
