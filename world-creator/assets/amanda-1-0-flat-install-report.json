@@ -1,44 +1,13 @@
 {
   "character": "Amanda 1.0",
-  "source_base": "Laura 2 exact clone, branch-only",
-  "old_visible_attachment_removed": true,
-  "skin_backfill_added_for_baked_body_opening": true,
   "replacement": "Flat V1",
-  "target_attachment_bounds_min": [
-    -0.04272415116429329,
-    -0.12184007465839386,
-    0.7619352340698242
-  ],
-  "target_attachment_bounds_max": [
-    0.042724475264549255,
-    0.055481333285570145,
-    0.83991539478302
-  ],
-  "target_attachment_bounds_size": [
-    0.08544862270355225,
-    0.1773214042186737,
-    0.0779801607131958
-  ],
-  "source_flat_bounds_min": [
-    -0.038407567888498306,
-    -0.06930644810199738,
-    0.9090195894241333
-  ],
-  "source_flat_bounds_max": [
-    0.038407571613788605,
-    0.0753982737660408,
-    1.042630910873413
-  ],
-  "fit_scale_xyz": [
-    1.1123929023742676,
-    1.2254016399383545,
-    0.5836343765258789
-  ],
-  "replacement_vertex_count": 986,
+  "updated_existing_attachment_in_place": true,
+  "surface_offset_blender_y_m": -0.018,
+  "surface_offset_gltf_z_m": 0.018,
+  "replacement_vertex_count": 4702,
   "replacement_face_count": 1568,
-  "replacement_vertex_group_count": 52,
-  "replacement_has_armature_binding": true,
-  "body_mesh_vertices": 14483,
-  "export_bytes": 9572044,
-  "status": "replacement exported and reimport checked"
+  "replacement_vertex_group_count": 0,
+  "replacement_has_armature_binding": false,
+  "export_bytes": 9599768,
+  "status": "surface fit corrected; reimport verified"
 }
