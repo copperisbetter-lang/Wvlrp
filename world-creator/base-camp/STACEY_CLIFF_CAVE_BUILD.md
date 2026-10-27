@@ -35,3 +35,13 @@ Reference: latest beach screenshot (looking left, lake on right) and generated t
 ## Exterior mystery / player curiosity — clarification 2026-10-26
 - The waterfall cave is **not invisible** before the quest. Players should recognize a cavern entrance, dark recess and unmistakable boulder barrier from a suitable exterior viewpoint. Give subtle visual intrigue without revealing the enormous room.
 - “Dark and Damp” controls **access and loading of the deep cave**, not whether the entrance exists visually. Keep the exterior boulder persistent and collidable until the player's quest progression permits entry.
+
+## Secret underwater one-way exit (approved direction 2026-10-26)
+- Inside the enormous natural cavern is a separate **deep pool**. At its bottom, keen explorers can discover a small submerged opening.
+- Underwater passage is just wide enough for a single player avatar to swim through (single-file navigation, no bypass by walking). It leads from the cavern pool to an underwater outlet in **Stacey Lake immediately beneath the slope of the central island**.
+- **Strict one-way traversal**: cavern pool -> narrow submerged passage -> lake beneath island. No reverse passage, entrance, door, or teleport back from lake into cavern. Prevent backtracking using one-way flow/collision/triggers and player-specific gate state. Do not expose cavern assets from the lake outlet.
+- Cave access still requires beginning **Dark and Damp**; external waterfall cave mouth and blocking boulder remain visible before the quest, but not enterable.
+- Implement as a continuous-feeling swim transition, keeping camera, movement and buoyancy coherent. Never trap players mid-tunnel. Include sufficient breathing/air or other safe in-game traversal mechanics to guarantee a possible successful exit; avoid frustrating soft locks.
+- Design outlet to avoid island terrain intersection, lake water-surface bugs or accidental reverse access, and maintain physical continuity with actual lake underwater environment.
+- Multiplayer: serialize single-file tunnel occupancy or handle collision/instancing safely. On reconnect during transit, spawn player in safe cavern-pool or island-lake location consistent with progress.
+- Test underwater entry, tunnel traversal, one-way enforcement, island emergence, quest-lock bypass, reload, and mobile FPS. Not yet built or visually verified.
