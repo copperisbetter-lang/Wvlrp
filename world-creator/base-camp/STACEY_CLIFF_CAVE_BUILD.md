@@ -81,3 +81,11 @@ Canonical user-provided story:
 - This is per-player relationship progression. Other players who have not completed the quest still get Brooke's original shy/swim-away behavior. Prevent multiplayer state or NPC movement for one player from incorrectly changing another player's unlocked state; design an instanced or interaction-specific presentation as needed.
 - Preserve Brooke's agency: player-initiated conversations and optional sitting, not automatic pursuit. Specific dialogue and further friendship steps await user direction.
 - Design requirement only; no NPC code has yet been modified.
+
+## Brooke's quest-aware friendly conversations (2026-10-26)
+- After the player completes **For the Love of Brooke**, Brooke is approachable for sitting and conversation. She organically mentions the **specific past quests that this player actually completed**. Her dialogue reflects the player's reputation and known deeds around town.
+- Example for a player who completed **Jenny's Surprise** and helped rescue the mother dog and nine puppies: “I heard you helped Jenny save those helpless little pups and their mama. That was so nice of you. Folks around town think you did that family a great service.” This is illustrative dialogue based on the user's example, not a required verbatim line.
+- No spoilers: Brooke must not mention Jenny's puppy rescue before that player's quest is completed, in keeping with existing quest dialogue gates; likewise no comments revealing undiscovered plot details from other quests.
+- Choose contextually relevant lines from completed-quest flags, with varied wording, gentle transitions and natural repeat handling. Avoid repeating the same story every time the player sits with her. Keep her warm, believable, and conversational rather than robotic or overly flattering.
+- Multiplayer: query the interacting player's completed-quest state, not another player's. Brooke's approach behavior remains gated per player.
+- Dialogue engine and actual character runtime remain to be implemented and tested.
