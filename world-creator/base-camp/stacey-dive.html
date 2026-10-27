@@ -115,6 +115,15 @@ mat.onBeforeCompile=s=>{
  vec3 rockC=texture2D(creekBedrockMap,vGround.xz*.23).rgb;
  // Submerged creek rock is darker/wetter, and stone replaces loose sand.
  c=mix(c,rockC*vec3(.90,.95,.96),rockMask);
+ // Uneven mineral-silt banks beside the scoured rock bed, not a smooth gray ramp.
+ // Fade naturally into the original sandy beach a few meters from the outlet.
+ float bankRange=smoothstep(.04,.22,creekT)*(1.-smoothstep(1.08,1.37,creekT));
+ float bankOffset=lateral+irregular+.24*sin(vGround.x*1.81+vGround.z*.74);
+ float bankBand=bankRange*smoothstep(width-2.3,width+.5,bankOffset)
+      *(1.-smoothstep(width+2.0,width+6.4,bankOffset));
+ float waterErosion=.5+.5*sin(vGround.x*4.8+vGround.z*2.1+1.6*sin(vGround.x*.39-vGround.z*.78));
+ vec3 silt=mix(rockC*vec3(.80,.86,.83),soilC*vec3(.80,.82,.70),.23+.18*waterErosion);
+ c=mix(c,silt,bankBand*.86);
  float wet=1.-smoothstep(-5.6,-5.05,vGround.y);
  diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`);
 };
@@ -148,6 +157,34 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const material=new T.MeshStandardMaterial({map:creekBedrockMap,roughness:.96,metalness:0,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
  const shelf=new T.Mesh(geo,material);shelf.name='Exposed creek-bed bedrock, water-worn shore and submerged mouth';
  scene.add(shelf);window.staceyCreekBedrock=shelf;
+})();
+// Local, small weather-rounded shale and cobbles add depth along both creek banks.
+// Single instanced draw call; no replacement for the approved V6 cliff or lake beach.
+(function addCreekBankStones(){
+ const count=136,geom=new T.IcosahedronGeometry(1,1);
+ const material=new T.MeshStandardMaterial({map:creekBedrockMap,color:0xffffff,roughness:.99,metalness:0});
+ const stones=new T.InstancedMesh(geom,material,count),pose=new T.Object3D();
+ const color=new T.Color(),tints=[0xb8b4a7,0x9fa9a6,0xaaa899,0xc0b7a4,0x879393];
+ const random=(n)=>{const f=Math.sin(n*127.1+81.7)*43758.5453;return f-Math.floor(f);};
+ for(let i=0;i<count;i++){
+  const t=.075+.92*(i+.22*random(i+73))/count;
+  const x=T.MathUtils.lerp(pondX+7,fallShore+4,t);
+  const pathT=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+  const center=creekCenter(pathT),width=3.95+3.2*smooth(.35,1,pathT);
+  const side=i%2===0?-1:1;
+  const lateral=width+.1+random(i+101)*3.85;
+  const z=center+side*(lateral+.2*Math.sin(i*1.78));
+  const radius=.14+Math.pow(random(i+201),3)*.60;
+  pose.position.set(x,ground(x,z)+radius*.18,z);
+  pose.scale.set(radius*(1.05+random(i+301)*1.2),radius*(.28+random(i+401)*.28),radius*(.9+random(i+501)*.7));
+  pose.rotation.set(random(i+601)*.3,random(i+701)*Math.PI,random(i+801)*.16);
+  pose.updateMatrix();stones.setMatrixAt(i,pose.matrix);
+  color.setHex(tints[i%tints.length]);stones.setColorAt(i,color);
+ }
+ stones.name='Stacey creek: 136 low-profile water-worn bank stones';
+ stones.instanceMatrix.needsUpdate=true;
+ stones.computeBoundingSphere();scene.add(stones);
+ diag.assets['creek banks']='wet layered silt, irregular scoured edge, 136 instanced shale stones';
 })();
 // H1 revision: WEST / left bank rock escarpment, away from the island sightline.
 // The lake's west shore is x=CX-outer(PI), not the north bank behind the island.
@@ -243,7 +280,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 
  // Shared pool with a single continuous outlet; both falls land in this basin.
  const poolGeo=new T.CircleGeometry(1,72);poolGeo.rotateX(-Math.PI/2);poolGeo.scale(8,1,17);
- const poolMat=new T.MeshPhysicalMaterial({color:0x287d77,roughness:.24,metalness:0,transparent:true,opacity:.88,side:T.DoubleSide});
+ const poolMat=new T.MeshPhysicalMaterial({color:0x318d96,roughness:.24,metalness:0,transparent:true,opacity:.88,side:T.DoubleSide});
  const pool=new T.Mesh(poolGeo,poolMat);pool.position.set(pondX,pondY,CZ);pool.name='Single shared waterfall pond';group.add(pool);
 
  const foam=new T.MeshBasicMaterial({color:0xecf5f3,transparent:true,opacity:.34,depthWrite:false,side:T.DoubleSide});
@@ -298,14 +335,16 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
     'float froth=smoothstep(.31,.77,a.r*.56+b.r*.44);',
     'float ribbons=smoothstep(.38,.80,a.r);',
     'float clearWater=clamp(.24+.52*froth+.23*ribbons,0.,1.);',
-    'diffuseColor.rgb=mix(vec3(.12,.33,.37),vec3(.91,.96,.96),clearWater);',
+    'vec3 coolFlow=mix(vec3(.10,.38,.43),vec3(.46,.76,.79),clearWater);',
+     'float foamyHighlights=smoothstep(.71,.92,a.r*.60+b.r*.40)*'+(downfall?'.46':'.22')+';',
+     'diffuseColor.rgb=mix(coolFlow,vec3(.91,.96,.96),foamyHighlights);',
     'float softEdges=smoothstep(.005,.18,p.x)*(1.-smoothstep(.82,.995,p.x));',
     'diffuseColor.a*=softEdges*(.20+.31*a.a+.26*b.a+.19*froth)'+(downfall?'*(1.-smoothstep(.90,1.,p.y));':';')
    ].join('\n');
    shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;\n'
        +shader.fragmentShader.replace('#include <map_fragment>',code);
   };
-  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v9-crestfeather':'stacey-creek-out-v7';
+  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v10-blueflow';
   return mat;
  }
  const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false);
@@ -367,7 +406,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
  window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*2.7);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
- diag.assets['waterfall cliff']='twin gravity-down rapid sheets + mist V9 twin crest fix, one shared pond and creek';
+ diag.assets['waterfall cliff']='twin gravity-down blue-turquoise rapid sheets, white foam, creek and wet bank V10';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
  // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
@@ -477,6 +516,6 @@ let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX
 function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V9 · Bedrock V1';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V1 · Banks V1';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
