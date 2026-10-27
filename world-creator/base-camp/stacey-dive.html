@@ -19,7 +19,7 @@ let seed=61728;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;ret
 function outer(a){return 113.797805566*(1+.038*Math.sin(a*5)+.022*Math.cos(a*9))}function inner(a){return 22*(1+.1*Math.sin(a*5+.6)+.06*Math.cos(a*8))}
 function ground(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
 // Far north shoreline: replace the rounded hill with a ravine and vertical rock escarpment.
-const cliffAngle=Math.abs(Math.atan2(Math.sin(a+Math.PI/2),Math.cos(a+Math.PI/2)));
+const cliffAngle=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
 const cliffWeight=1-smooth(.33,.67,cliffAngle);
 if(cliffWeight>0 && d>=0 && d<105){
  const floor=CY+.035+Math.max(0,d)*.018;
@@ -38,62 +38,64 @@ const mat=new T.MeshStandardMaterial({roughness:.98,side:T.DoubleSide});
 mat.onBeforeCompile=s=>{s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.vertexShader='varying vec3 vGround;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGround=position;');s.fragmentShader='uniform sampler2D sandMap;uniform sampler2D soilMap;varying vec3 vGround;\n'+s.fragmentShader.replace('#include <map_fragment>',`vec3 sandC=texture2D(sandMap,vGround.xz*.15).rgb;vec3 soilC=texture2D(soilMap,vGround.xz*.12).rgb;float r=length(vGround.xz-vec2(140.,-240.));float a=atan(vGround.z+240.,vGround.x-140.);float o=113.797805566*(1.+.038*sin(a*5.)+.022*cos(a*9.));float ir=22.*(1.+.1*sin(a*5.+.6)+.06*cos(a*8.));float beach=1.-smoothstep(7.,22.,r-o);float island=1.-smoothstep(ir-10.,ir-3.,r);float n=sin(vGround.x*.33)*sin(vGround.z*.25);float forest=max(smoothstep(12.+n*2.,25.,r-o),island*.8);vec3 c=mix(sandC,soilC*vec3(.60,.88,.48),forest);float wet=1.-smoothstep(-5.6,-5.05,vGround.y);diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`)};
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
 const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
-// Stacey Lake far-bank rock cliff and waterfall — geometry built in the existing lake coordinates.
+// H1 revision: WEST / left bank rock escarpment, away from the island sightline.
+// The lake's west shore is x=CX-outer(PI), not the north bank behind the island.
 (function createWaterfallCliff(){
- const centerX=CX, shoreZ=CZ-outer(-Math.PI/2), wallZ=shoreZ-51;
- const rockMat=new T.MeshStandardMaterial({color:0x777c75,roughness:1,flatShading:true,side:T.DoubleSide});
- const darkRock=new T.MeshStandardMaterial({color:0x474f4b,roughness:1,flatShading:true,side:T.DoubleSide});
- const strata=new T.Group();strata.name='Stacey Lake waterfall cliff';scene.add(strata);
- // Stratified exposed cliff surface follows the carved steep terrain profile.
- const verts=[],uv=[],idx=[],segments=82,levels=20;
- for(let j=0;j<=levels;j++){
-  const v=j/levels;
-  for(let i=0;i<=segments;i++){
-   const u=i/segments,x=centerX+(u-.5)*100;
-   const z=wallZ+17-4*v+1.4*Math.sin(u*11+v*7)+.55*Math.sin(u*35+v*17);
-   const top=ground(x,wallZ-5);
-   const y=CY+.55+v*Math.max(18,top-CY-1);
-   verts.push(x,y,z);uv.push(u*9,v*5);
+ const westShore=CX-outer(Math.PI),wallX=westShore-51,group=new T.Group();
+ group.name='Stacey Lake west-bank twin waterfalls';scene.add(group);
+ const rock=new T.MeshStandardMaterial({color:0x777d75,roughness:1,flatShading:true,side:T.DoubleSide});
+ const shadow=new T.MeshStandardMaterial({color:0x454b45,roughness:1,flatShading:true,side:T.DoubleSide});
+ const faceV=[],faceI=[],faceUV=[],cols=96,rows=26;
+ // Irregular 3D face with meaningful relief; no floating flat rectangular wall.
+ for(let j=0;j<=rows;j++){const v=j/rows;for(let i=0;i<=cols;i++){
+  const u=i/cols,z=CZ+(u-.5)*105;
+  const ridge=ground(wallX-5,z);
+  const h=CY+.4+v*Math.max(19,ridge-CY-1);
+  const x=wallX+17-4*v+2.0*Math.sin(u*13+v*7)+.85*Math.sin(u*37-v*19);
+  faceV.push(x,h,z);faceUV.push(u*8,v*6);
+ }}
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
+ const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
+ group.add(new T.Mesh(cliffGeo,rock));
+ // Broken rock terraces and boulders hide the planar silhouette.
+ for(let i=0;i<85;i++){const z=CZ+(rand()-.5)*102,v=rand(),y=CY+2+v*30;
+  const x=wallX+17-v*4+1.5+rand()*1.5;
+  const b=new T.Mesh(new T.DodecahedronGeometry(1,0),i%4===0?shadow:rock);
+  b.position.set(x,y,z);b.scale.set(.55+rand()*2.1,.35+rand()*1.3,1.1+rand()*3.1);
+  b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);
+ }
+ const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.77,roughness:.32,metalness:0,side:T.DoubleSide,depthWrite:false});
+ const splashMat=new T.MeshBasicMaterial({color:0xebf7f1,transparent:true,opacity:.45,depthWrite:false,side:T.DoubleSide});
+ const ribbons=[];
+ const fallCenters=[CZ-25,CZ+25]; // roughly 50 metres apart along the left bank
+ for(let fall=0;fall<2;fall++){
+  const center=fallCenters[fall],width=fall===0?10:7.8;
+  // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
+  for(let strip=0;strip<9;strip++){
+   const w=width/9*(.75+rand()*.6),z=center+(strip-4)*width/9;
+   const meshGeo=new T.PlaneGeometry(w,28,2,30),a=meshGeo.attributes.position;
+   for(let k=0;k<a.count;k++){const t=(a.getY(k)+14)/28;
+    a.setX(k,wallX+20-4*t+.4*Math.sin(12*t+strip*.9+fall));
+    a.setY(k,CY+2+28*t);
+    a.setZ(k,z+a.getX(k)*0+Math.sin(t*14+strip)*.24+(rand()-.5)*.12);
+   }
+   meshGeo.computeVertexNormals();
+   const mesh=new T.Mesh(meshGeo,falling.clone());group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
   }
- }
- for(let j=0;j<levels;j++)for(let i=0;i<segments;i++){const k=j*(segments+1)+i;idx.push(k,k+1,k+segments+1,k+1,k+segments+2,k+segments+1)}
- const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
- const face=new T.Mesh(geo,rockMat);strata.add(face);
- // Dark fractured horizontal bedding bands, with irregular broken segments.
- for(let level=0;level<7;level++)for(let side=0;side<8;side++){
-  const x=centerX-46+side*13+(rand()-.5)*5,y=CY+4+level*3.6;
-  const z=wallZ+18-4*(y-CY)/31+1.3;
-  const stone=new T.Mesh(new T.BoxGeometry(8+rand()*8,.28+rand()*.65,.7+rand()*.8),darkRock);
-  stone.position.set(x,y,z);stone.rotation.z=(rand()-.5)*.12;strata.add(stone);
- }
- const waterfallMaterial=new T.MeshPhysicalMaterial({color:0xa6e4e9,transparent:true,opacity:.78,roughness:.12,metalness:0,side:T.DoubleSide,depthWrite:false});
- const sprayMaterial=new T.MeshBasicMaterial({color:0xdbf6f3,transparent:true,opacity:.35,depthWrite:false,side:T.DoubleSide});
- const falls=[],foam=[];
- for(let strip=0;strip<7;strip++){
-  const width=1.1+rand()*1.8,x=centerX-7+strip*2.2;
-  const g=new T.PlaneGeometry(width,32,1,24);
-  const p=g.attributes.position;
-  for(let n=0;n<p.count;n++){const h=(p.getY(n)+16)/32;p.setZ(n,wallZ+19-4*h+Math.sin(h*8+strip)*.65);p.setX(n,p.getX(n)+Math.sin(h*12+strip)*.28)}
-  g.computeVertexNormals();
-  const mesh=new T.Mesh(g,waterfallMaterial.clone());mesh.position.set(x,CY+16.5,0);strata.add(mesh);falls.push({mesh,phase:strip*.83});
- }
- // A descending, narrow rocky outflow carries waterfall water to the actual lake edge.
- const streamPoints=[],streamIndices=[];
- for(let i=0;i<=40;i++){
-  const t=i/40,z=wallZ+18+(shoreZ-wallZ-16)*t,x=centerX+Math.sin(t*5.1)*3.1;
-  for(const edge of [-1,1]){
-   const px=x+edge*(2.2+1.1*Math.sin(t*3.4)**2);
-   streamPoints.push(px,ground(px,z)+.2,z);
+  // Water reaches lake via the west shoreline rather than terminating in the cliff.
+  const sv=[],si=[];
+  for(let n=0;n<=32;n++){const t=n/32,x=wallX+19+(westShore-wallX-19)*t,z=center+Math.sin(t*4+fall)*1.6;
+   for(const sign of [-1,1]){const zz=z+sign*(2+1.1*(1-t));sv.push(x,ground(x,zz)+.28,zz)}
+   if(n<32){const k=n*2;si.push(k,k+1,k+2,k+1,k+3,k+2)}
   }
-  if(i<40){const k=i*2;streamIndices.push(k,k+1,k+2,k+1,k+3,k+2)}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(sv,3));g.setIndex(si);g.computeVertexNormals();
+  group.add(new T.Mesh(g,new T.MeshPhysicalMaterial({color:0xa6d6d7,roughness:.3,transparent:true,opacity:.73,side:T.DoubleSide,depthWrite:false})));
+  for(let n=0;n<10;n++){const mist=new T.Mesh(new T.PlaneGeometry(1+rand()*2,.15+rand()*.35),splashMat);
+   mist.rotation.x=-Math.PI/2;mist.position.set(wallX+19+rand()*5,CY+1.7,center+(rand()-.5)*width*1.5);group.add(mist);}
  }
- const streamGeo=new T.BufferGeometry();streamGeo.setAttribute('position',new T.Float32BufferAttribute(streamPoints,3));streamGeo.setIndex(streamIndices);streamGeo.computeVertexNormals();
- strata.add(new T.Mesh(streamGeo,new T.MeshPhysicalMaterial({color:0x9ddadd,roughness:.19,transparent:true,opacity:.82,side:T.DoubleSide,depthWrite:false})));
- const pool=new T.Mesh(new T.CircleGeometry(12,32),new T.MeshBasicMaterial({color:0xb3ded8,transparent:true,opacity:.44,depthWrite:false,side:T.DoubleSide}));
- pool.rotation.x=-Math.PI/2;pool.scale.set(1.35,.7,1);pool.position.set(centerX,CY+.12,shoreZ-12);strata.add(pool);
- for(let i=0;i<16;i++){const f=new T.Mesh(new T.PlaneGeometry(.45+rand()*.85,.12+rand()*.2),sprayMaterial);f.rotation.x=-Math.PI/2;f.position.set(centerX+(rand()-.5)*19,CY+.15,shoreZ-8-rand()*19);strata.add(f);foam.push({mesh:f,phase:rand()*6.28})}
- window.staceyWaterfall={update(t){for(const v of falls){v.mesh.material.opacity=.69+.1*Math.sin(t*2.2+v.phase);v.mesh.position.x=centerX-7+Math.round(v.phase/.83)*2.2+Math.sin(t*1.4+v.phase)*.12}sprayMaterial.opacity=.25+.1*Math.sin(t*2.5)},scene:strata};
- diag.assets['waterfall cliff']='procedural geometry ready';diag.waterfall='far north bank, animated cascades';
+ window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.65+.14*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
+ diag.assets['waterfall cliff']='west bank twin falls';
+ diag.waterfall='west shore, two cascades spaced 50m apart';
 })();
 
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
