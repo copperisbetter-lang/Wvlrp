@@ -158,25 +158,85 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const poolGeo=new T.CircleGeometry(1,72);poolGeo.rotateX(-Math.PI/2);poolGeo.scale(8,1,17);
  const poolMat=new T.MeshPhysicalMaterial({color:0x287d77,roughness:.24,metalness:0,transparent:true,opacity:.88,side:T.DoubleSide});
  const pool=new T.Mesh(poolGeo,poolMat);pool.position.set(pondX,pondY,CZ);pool.name='Single shared waterfall pond';group.add(pool);
- const foam=new T.MeshBasicMaterial({color:0xe8f4ed,transparent:true,opacity:.52,depthWrite:false,side:T.DoubleSide});
- const flowUniform={value:0};
- const falling=new T.MeshStandardMaterial({color:0xe4f1e9,roughness:.3,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false});
- // Irregular flowing water with feathered edges: no repeating straight stripes.
- falling.onBeforeCompile=shader=>{
-  shader.uniforms.flowTime=flowUniform;
-  shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
-  shader.fragmentShader='uniform float flowTime;varying vec2 flowUV;\n'+shader.fragmentShader.replace('#include <map_fragment>',`
-   vec2 p=flowUV;
-   float drift=sin(p.y*22.-flowTime*6.+sin(p.x*9.))*.065
-              +sin(p.y*41.+p.x*12.-flowTime*9.)*.022;
-   float cascade=sin(p.y*37.-flowTime*8.+sin((p.x+drift)*19.+p.y*9.));
-   float foamF=pow(.5+.5*cascade,4.);
-   float crossing=.5+.5*sin(p.y*70.-flowTime*13.+p.x*11.);
-   float breakup=.5+.5*sin((p.x+drift)*27.+p.y*51.-flowTime*6.);
-   float edge=smoothstep(0.,.17,p.x)*(1.-smoothstep(.83,1.,p.x));
-   diffuseColor.rgb=mix(vec3(.10,.38,.44),vec3(.82,.93,.92),.38+.45*foamF+.17*crossing);
-   diffuseColor.a*=edge*(.40+.26*breakup+.24*foamF);`);
- };
+
+ const foam=new T.MeshBasicMaterial({color:0xecf5f3,transparent:true,opacity:.34,depthWrite:false,side:T.DoubleSide});
+ // One compact (256x512 RGBA) tileable turbulence texture is built once, not each frame.
+ // Vertical streaks are broken by mid-frequency bubbles and high-frequency spray;
+ // two samples of this texture are cheaper on older phones than dense per-pixel noise.
+ function makeRapidTexture(){
+  const W=256,H=512,pixels=new Uint8Array(W*H*4),pi=Math.PI;
+  function hash(x,y){
+   let h=(Math.imul(x,374761393)+Math.imul(y,668265263))|0;
+   h=Math.imul(h^(h>>>13),1274126177);
+   return ((h^(h>>>16))>>>0)/4294967295;
+  }
+  function noise(u,v,sx,sy){
+   const x=u*sx,y=v*sy,ix=Math.floor(x),iy=Math.floor(y);
+   let fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+   const x0=((ix%sx)+sx)%sx,x1=(x0+1)%sx,y0=((iy%sy)+sy)%sy,y1=(y0+1)%sy;
+   const a=hash(x0,y0),b=hash(x1,y0),c=hash(x0,y1),d=hash(x1,y1);
+   return (a+(b-a)*fx)*(1-fy)+(c+(d-c)*fx)*fy;
+  }
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const u=x/W,v=y/H;
+   const warp=.036*Math.sin(2*pi*v*3+2*pi*u*2)+.014*Math.sin(2*pi*v*11-2*pi*u*5);
+   const long=noise(u+warp,v,13,3),chunks=noise(u+warp*.5,v,37,14),bubbles=noise(u,v,91,59);
+   const stream=Math.min(1,Math.max(0,.11+.61*long+.34*chunks+.20*bubbles));
+   const i=(y*W+x)*4,value=Math.round(255*stream);
+   pixels[i]=pixels[i+1]=pixels[i+2]=value;
+   pixels[i+3]=Math.round(255*Math.min(1,.22+.49*chunks+.34*bubbles));
+  }
+  const texture=new T.DataTexture(pixels,W,H,T.RGBAFormat);
+  texture.wrapS=texture.wrapT=T.RepeatWrapping;
+  texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;
+  texture.generateMipmaps=true;texture.needsUpdate=true;
+  return texture;
+ }
+ const rapidMap=makeRapidTexture(),flowUniform={value:0};
+ // UV.y is 0 at the basin, 1 at the crest. Sampling (UV.y + time)
+ // makes the image travel toward SMALLER y: gravity-down, not backward/up.
+ // The creek travels in its own +UV.y direction toward the lake.
+ function makeRapidMaterial(downfall){
+  const mat=new T.MeshStandardMaterial({color:0xffffff,roughness:.38,metalness:0,transparent:true,opacity:.92,side:T.DoubleSide,depthWrite:false,emissive:0x102529,emissiveIntensity:.12});
+  mat.onBeforeCompile=shader=>{
+   shader.uniforms.flowTime=flowUniform;shader.uniforms.rapidMap={value:rapidMap};
+   shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
+   const code=[
+    'vec2 p=flowUV;',
+    'float scroll=flowTime*'+(downfall?'1.0':'-1.0')+';',
+    'vec2 aUV=vec2(p.x+.024*sin(p.y*20.+flowTime*.8),p.y*1.45+scroll*.78);',
+    'vec2 bUV=vec2(p.x*1.37+.34+.017*sin(p.y*35.-flowTime*.7),p.y*2.15+scroll*1.21);',
+    'vec4 a=texture2D(rapidMap,aUV);',
+    'vec4 b=texture2D(rapidMap,bUV);',
+    'float froth=smoothstep(.31,.77,a.r*.56+b.r*.44);',
+    'float ribbons=smoothstep(.38,.80,a.r);',
+    'float clearWater=clamp(.24+.52*froth+.23*ribbons,0.,1.);',
+    'diffuseColor.rgb=mix(vec3(.12,.33,.37),vec3(.91,.96,.96),clearWater);',
+    'float softEdges=smoothstep(.005,.18,p.x)*(1.-smoothstep(.82,.995,p.x));',
+    'diffuseColor.a*=softEdges*(.20+.31*a.a+.26*b.a+.19*froth);'
+   ].join('\n');
+   shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;\n'
+       +shader.fragmentShader.replace('#include <map_fragment>',code);
+  };
+  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v7':'stacey-creek-out-v7';
+  return mat;
+ }
+ const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false);
+ // Low-overhead frothy impact mist, rather than solid white concentric discs.
+ function makeSprayTexture(){
+  const N=64,pixels=new Uint8Array(N*N*4);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+   const x=(i+.5-N/2)/(N/2),y=(j+.5-N/2)/(N/2);
+   const radius=x*x*.68+y*y*1.38;
+   const fleck=.68+.32*Math.sin(i*5.73+j*7.91)*Math.sin(i*11.3-j*3.17);
+   const alpha=Math.round(255*Math.pow(Math.max(0,1-radius),1.8)*fleck);
+   const k=(j*N+i)*4;pixels[k]=228;pixels[k+1]=243;pixels[k+2]=242;pixels[k+3]=alpha;
+  }
+  const tex=new T.DataTexture(pixels,N,N,T.RGBAFormat);
+  tex.magFilter=T.LinearFilter;tex.minFilter=T.LinearMipmapLinearFilter;
+  tex.generateMipmaps=true;tex.needsUpdate=true;return tex;
+ }
+ const sprayMap=makeSprayTexture(),sprays=[];
  const impacts=[];
  for(let fall=0;fall<2;fall++){
   const center=CZ+(fall===0?-3.81:3.81),width=fall===0?3.0:2.5,top=CY+(fall===0?20.1:19.3);
@@ -186,6 +246,12 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    const warped=lateral*(1+.14*(1-t))+.18*Math.sin(t*24.+fall*2.6)+.12*Math.sin(t*53.+lateral*2.4);
    a.setXYZ(k,wallX+21-5*t+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+lateral*3),T.MathUtils.lerp(pondY,top,t),center+warped);
   }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
+  for(let n=0;n<2;n++){
+   const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.32}));
+   spr.position.set(wallX+21.5,pondY+.72+n*.47,center+(n?.29:-.29));
+   spr.scale.set(width*(n?1.1:1.75),n?1.6:2.1,1);
+   group.add(spr);sprays.push({mesh:spr,phase:fall*1.7+n*1.2,baseY:spr.position.y});
+  }
   for(let n=0;n<4;n++){
    const ring=new T.Mesh(new T.RingGeometry(.65,1,32),foam);
    ring.rotation.x=-Math.PI/2;ring.position.set(wallX+21,pondY+.035+n*.008,center);
@@ -198,7 +264,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   if(n<64){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
  }
  const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
- const creek=new T.Mesh(cg,falling);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
+ const creek=new T.Mesh(cg,creekFlow);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
  // Old low-poly pond/rim rocks are not part of the approved canyon.
  const banks=new T.InstancedMesh(new T.DodecahedronGeometry(1,1),rock,100),bpose=new T.Object3D();
  banks.visible=false;
@@ -207,8 +273,8 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
- window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*3);}},scene:group,pond:pool,creek};
- diag.assets['waterfall cliff']='layered west cliff, twin falls, one pond and creek';
+ window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*2.7);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
+ diag.assets['waterfall cliff']='twin gravity-down rapid sheets + mist V7, one shared pond and creek';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
  // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
