@@ -77,6 +77,18 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   g.computeVertexNormals();
   const mesh=new T.Mesh(g,waterfallMaterial.clone());mesh.position.set(x,CY+16.5,0);strata.add(mesh);falls.push({mesh,phase:strip*.83});
  }
+ // A descending, narrow rocky outflow carries waterfall water to the actual lake edge.
+ const streamPoints=[],streamIndices=[];
+ for(let i=0;i<=40;i++){
+  const t=i/40,z=wallZ+8+(shoreZ-wallZ-4)*t,x=centerX+Math.sin(t*5.1)*3.1;
+  for(const edge of [-1,1]){
+   const px=x+edge*(2.2+1.1*Math.sin(t*3.4)**2);
+   streamPoints.push(px,ground(px,z)+.2,z);
+  }
+  if(i<40){const k=i*2;streamIndices.push(k,k+1,k+2,k+1,k+3,k+2)}
+ }
+ const streamGeo=new T.BufferGeometry();streamGeo.setAttribute('position',new T.Float32BufferAttribute(streamPoints,3));streamGeo.setIndex(streamIndices);streamGeo.computeVertexNormals();
+ strata.add(new T.Mesh(streamGeo,new T.MeshPhysicalMaterial({color:0x9ddadd,roughness:.19,transparent:true,opacity:.82,side:T.DoubleSide,depthWrite:false})));
  const pool=new T.Mesh(new T.CircleGeometry(12,32),new T.MeshBasicMaterial({color:0xb3ded8,transparent:true,opacity:.44,depthWrite:false,side:T.DoubleSide}));
  pool.rotation.x=-Math.PI/2;pool.scale.set(1.35,.7,1);pool.position.set(centerX,CY+.12,shoreZ-12);strata.add(pool);
  for(let i=0;i<34;i++){const f=new T.Mesh(new T.PlaneGeometry(.45+rand()*.85,.12+rand()*.2),sprayMaterial);f.rotation.x=-Math.PI/2;f.position.set(centerX+(rand()-.5)*19,CY+.15,shoreZ-8-rand()*19);strata.add(f);foam.push({mesh:f,phase:rand()*6.28})}
