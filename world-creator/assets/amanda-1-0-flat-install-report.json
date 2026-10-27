@@ -4,12 +4,15 @@
   "updated_existing_attachment_in_place": true,
   "surface_offset_blender_y_m": -0.018,
   "surface_offset_gltf_z_m": 0.018,
-  "surface_offset_delta_blender_y_m": 0.018,
-  "surface_offset_delta_gltf_z_m": -0.018,
+  "surface_offset_delta_blender_y_m": -0.0,
+  "surface_offset_delta_gltf_z_m": 0.0,
+  "surface_offset_vertical_gltf_y_m": 0.02,
+  "surface_offset_delta_vertical_gltf_y_m": 0.02,
+  "old_support_geometry_removed": true,
   "replacement_vertex_count": 4702,
   "replacement_face_count": 1568,
   "replacement_vertex_group_count": 52,
   "replacement_has_armature_binding": true,
-  "export_bytes": 9694372,
+  "export_bytes": 9633932,
   "status": "surface fit corrected; reimport verified"
 }
