@@ -76,6 +76,40 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);portal.add(sealStone);
  // Quest manager may change this flag later; default always stays locked.
  window.staceyCave={locked:true,entrance:portal,seal:sealStone,quest:'Dark and Damp',secondTunnel:'one-way underwater exit beneath island'};
+ // Underground structures remain hidden until quest access; the outer portal is always visible.
+ const subterranean=new T.Group();subterranean.name='Dark and Damp — tunnel 1, ballroom and submerged tunnel 2';scene.add(subterranean);
+ const caveRock=new T.MeshStandardMaterial({color:0x494f48,roughness:1,flatShading:true,side:T.DoubleSide});
+ const floorRock=new T.MeshStandardMaterial({color:0x535b52,roughness:1,flatShading:true,side:T.DoubleSide});
+ function rockPassage(a,b,radius,segments=16){
+  const diff=new T.Vector3().subVectors(b,a),mid=new T.Vector3().addVectors(a,b).multiplyScalar(.5);
+  const pipe=new T.Mesh(new T.CylinderGeometry(radius,radius, diff.length(),segments,1,true),caveRock);
+  pipe.position.copy(mid);pipe.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),diff.clone().normalize());subterranean.add(pipe);
+  // Ceiling and sides form a readable stone-lined corridor; individual chambers use separate mesh.
+  return pipe;
+ }
+ // Tunnel 1 gently descends inland from west cliff; cavern rests below the outer hill.
+ const caveMouth=new T.Vector3(caveX-2,caveY-.5,caveZ);
+ const bend=new T.Vector3(caveX-25,CY-3,CZ-5);
+ const hall=new T.Vector3(caveX-63,CY-16,CZ-4);
+ rockPassage(caveMouth,bend,3.7);rockPassage(bend,hall,4.8);
+ const ballroom=new T.Mesh(new T.SphereGeometry(20,24,14),caveRock);
+ ballroom.name='Underground ballroom cavern';ballroom.position.copy(hall);ballroom.scale.set(1.35,.76,1);subterranean.add(ballroom);
+ const hallFloor=new T.Mesh(new T.CylinderGeometry(17,18,1,24),floorRock);hallFloor.position.set(hall.x,hall.y-11.6,hall.z);subterranean.add(hallFloor);
+ // Deep pool at the cavern end, separate from lake water plane.
+ const darkWater=new T.Mesh(new T.CircleGeometry(8,24),new T.MeshPhysicalMaterial({color:0x126375,roughness:.18,metalness:.06,transparent:true,opacity:.8,side:T.DoubleSide}));
+ darkWater.rotation.x=-Math.PI/2;darkWater.position.set(hall.x+16,hall.y-9.8,hall.z);darkWater.name='Ballroom escape pool';subterranean.add(darkWater);
+ // Underwater tunnel 2 follows an isolated submerged route from pool to below island slope.
+ const exitPos=new T.Vector3(CX-inner(0)-8,CY-7.6,CZ+4);
+ const course=[new T.Vector3(hall.x+16,hall.y-12,hall.z),new T.Vector3(westShore-12,CY-20,CZ-4),new T.Vector3(CX-68,CY-24,CZ-16),new T.Vector3(CX-24,CY-17,CZ-12),exitPos];
+ const line=new T.CatmullRomCurve3(course);
+ const tube=new T.Mesh(new T.TubeGeometry(line,66,2.35,9,false),caveRock);tube.name='Tunnel 2 — underwater one-way escape';subterranean.add(tube);
+ // Distinguishable exit aperture below island, invisible before quest.
+ const exitRing=new T.Mesh(new T.TorusGeometry(2.6,.7,7,12),floorRock);exitRing.position.copy(exitPos);exitRing.rotation.y=Math.PI/2;subterranean.add(exitRing);
+ subterranean.visible=false;
+ window.staceyUnderground={group:subterranean,entrance:caveMouth,ballroom:hall,pool:darkWater,exit:exitPos,questLocked:true,tunnel2OneWay:true,
+   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=!complete;window.staceyCave.locked=!complete;}};
+ diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
+
  diag.assets['cave entrance']='visible, boulder sealed — quest locked';
 
  // Broken rock terraces and boulders hide the planar silhouette.
