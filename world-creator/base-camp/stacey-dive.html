@@ -43,19 +43,23 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 (function createWaterfallCliff(){
  const westShore=CX-outer(Math.PI),wallX=westShore-51,group=new T.Group();
  group.name='Stacey Lake west-bank twin waterfalls';scene.add(group);
- const rock=new T.MeshStandardMaterial({color:0x777d75,roughness:1,flatShading:true,side:T.DoubleSide});
+ const rock=new T.MeshStandardMaterial({color:0x92968b,roughness:1,side:T.DoubleSide,vertexColors:true});
  const shadow=new T.MeshStandardMaterial({color:0x454b45,roughness:1,flatShading:true,side:T.DoubleSide});
- const faceV=[],faceI=[],faceUV=[],cols=96,rows=26;
+ const faceV=[],faceI=[],faceUV=[],faceColors=[],cols=120,rows=52;
  // Irregular 3D face with meaningful relief; no floating flat rectangular wall.
  for(let j=0;j<=rows;j++){const v=j/rows;for(let i=0;i<=cols;i++){
   const u=i/cols,z=CZ+(u-.5)*105;
   const ridge=ground(wallX-5,z);
   const h=CY+.4+v*Math.max(19,ridge-CY-1);
-  const x=wallX+17-4*v+2.0*Math.sin(u*13+v*7)+.85*Math.sin(u*37-v*19);
+  const x=wallX+18-5*v+1.0*Math.sin(u*10+v*2.4)+.48*Math.sin(u*47+v*13)+.28*Math.sin(u*99-v*33);
   faceV.push(x,h,z);faceUV.push(u*8,v*6);
+  const layer=Math.sin(h*2.8+.6*Math.sin(z*.09)),joint=Math.abs(Math.sin(z*.29+h*.16));
+  const grain=Math.sin(z*1.71+h*1.27)*.045+Math.sin(z*3.49-h*2.61)*.025;
+  const tone=Math.max(.42,Math.min(1.13,.76+.17*layer-.11*Math.pow(joint,24)+grain));
+  faceColors.push(tone*.91,tone*.94,tone*.85);
  }}
  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
- const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
+ const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
  group.add(new T.Mesh(cliffGeo,rock));
  // Quest-locked cave portal: visible between the two falls but intentionally sealed.
  // This is an exterior facade, NOT an accessible passage before Dark and Damp.
@@ -112,14 +116,8 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 
  diag.assets['cave entrance']='visible, boulder sealed — quest locked';
 
- // Broken rock terraces and boulders hide the planar silhouette.
- for(let i=0;i<85;i++){const z=CZ+(rand()-.5)*102,v=rand(),y=CY+2+v*30;
-  const x=wallX+17-v*4+1.5+rand()*1.5;
-  const b=new T.Mesh(new T.DodecahedronGeometry(1,0),i%4===0?shadow:rock);
-  b.position.set(x,y,z);b.scale.set(.55+rand()*2.1,.35+rand()*1.3,1.1+rand()*3.1);
-  b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);
- }
- const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.77,roughness:.32,metalness:0,side:T.DoubleSide,depthWrite:false});
+ // Remove oversized procedural boulders that made the cliff look like concrete.
+ const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.93,roughness:.16,metalness:0,side:T.DoubleSide,depthWrite:false});
  const splashMat=new T.MeshBasicMaterial({color:0xebf7f1,transparent:true,opacity:.45,depthWrite:false,side:T.DoubleSide});
  const ribbons=[];
  const fallCenters=[CZ-7.62,CZ+7.62]; // 50 feet (15.24 metres) apart on west bank
@@ -128,11 +126,11 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
   for(let strip=0;strip<9;strip++){
    const w=width/9*(.75+rand()*.6),z=center+(strip-4)*width/9;
-   const meshGeo=new T.PlaneGeometry(w,28,2,30),a=meshGeo.attributes.position;
-   for(let k=0;k<a.count;k++){const t=(a.getY(k)+14)/28;
-    a.setX(k,wallX+20-4*t+.4*Math.sin(12*t+strip*.9+fall));
-    a.setY(k,CY+2+28*t);
-    a.setZ(k,z+a.getX(k)*0+Math.sin(t*14+strip)*.24+(rand()-.5)*.12);
+   const meshGeo=new T.PlaneGeometry(w,31,2,44),a=meshGeo.attributes.position;
+   for(let k=0;k<a.count;k++){const t=(a.getY(k)+15.5)/31;
+    a.setX(k,wallX+22-5*t+.55*Math.sin(12*t+strip*.9+fall));
+    a.setY(k,CY+1.5+31*t);
+    a.setZ(k,z+Math.sin(t*14+strip)*.35+(rand()-.5)*.15);
    }
    meshGeo.computeVertexNormals();
    const mesh=new T.Mesh(meshGeo,falling.clone());group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
