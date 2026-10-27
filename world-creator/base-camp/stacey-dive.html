@@ -246,14 +246,16 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
      if(/OriginalPhotos|SeamBlended|Dry/i.test(m.name||'')){
       m.onBeforeCompile=shader=>{
        shader.vertexShader='varying float photoHeight;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nphotoHeight=position.y;');
-       shader.fragmentShader='varying float photoHeight;\n'+shader.fragmentShader.replace('#include <map_fragment>',`
+       shader.fragmentShader='varying float photoHeight;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        // The embedded rock color texture must remain sampled before masking blue photo-sky pixels.
+
         // Upper cyan photographic sky, never the gray/brown cliff.
         if(photoHeight>17. && diffuseColor.b>.26
           && diffuseColor.b>diffuseColor.r*1.32
           && diffuseColor.g>diffuseColor.r*1.18
           && diffuseColor.b>diffuseColor.g*.87) discard;`);
       };
-      m.customProgramCacheKey=()=> 'v6-photo-sky-mask-1';
+      m.customProgramCacheKey=()=> 'v6-photo-sky-mask-texture-restored-2';
      }
      m.needsUpdate=true;
     }
