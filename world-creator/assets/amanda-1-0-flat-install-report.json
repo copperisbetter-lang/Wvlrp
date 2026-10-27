@@ -2,12 +2,13 @@
   "character": "Amanda 1.0",
   "replacement": "Flat V1",
   "updated_existing_attachment_in_place": true,
-  "surface_offset_blender_y_m": -0.018,
-  "surface_offset_gltf_z_m": 0.018,
+  "surface_offset_blender_y_m": -0.036,
+  "surface_offset_gltf_z_m": 0.036,
   "replacement_vertex_count": 4702,
   "replacement_face_count": 1568,
   "replacement_vertex_group_count": 52,
   "replacement_has_armature_binding": true,
   "export_bytes": 9694304,
-  "status": "surface fit corrected; reimport verified"
+  "status": "surface fit corrected; reimport verified",
+  "surface_offset_correction_pending_m": -0.018
 }
