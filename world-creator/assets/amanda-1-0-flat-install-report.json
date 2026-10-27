@@ -6,8 +6,8 @@
   "surface_offset_gltf_z_m": 0.018,
   "replacement_vertex_count": 4702,
   "replacement_face_count": 1568,
-  "replacement_vertex_group_count": 0,
-  "replacement_has_armature_binding": false,
-  "export_bytes": 9599768,
+  "replacement_vertex_group_count": 52,
+  "replacement_has_armature_binding": true,
+  "export_bytes": 9694304,
   "status": "surface fit corrected; reimport verified"
 }
