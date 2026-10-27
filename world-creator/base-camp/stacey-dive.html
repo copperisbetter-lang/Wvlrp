@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Stacey Lake · Complete Reference Build</title><style>
-*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
-</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to walk / swim</div><div id="panel"><button id="shore">Beach</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;flex-wrap:wrap;max-width:65vw;justify-content:flex-end;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
+</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to walk / swim</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
@@ -74,13 +74,13 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  shader.vertexShader='varying vec3 cliffPoint;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncliffPoint=position;');
  shader.fragmentShader='varying vec3 cliffPoint;\n'+shader.fragmentShader.replace('#include <map_fragment>',`float seam=pow(.5+.5*sin(cliffPoint.y*5.7+sin(cliffPoint.z*.33)*.55),16.);float grain=sin(cliffPoint.z*12.1+cliffPoint.y*25.3)*sin(cliffPoint.x*18.7-cliffPoint.y*7.1);diffuseColor.rgb*=mix(1.08,.48,seam)+grain*.065;`);
 };
- group.add(new T.Mesh(cliffGeo,rock));
+ const legacyFace=new T.Mesh(cliffGeo,rock);group.add(legacyFace);const legacyCliffParts=[legacyFace];
  const ledges=new T.InstancedMesh(new T.BoxGeometry(1,1,1),rock,160),ledgePose=new T.Object3D();
  for(let i=0;i<160;i++){const row=Math.floor(i/16),col=i%16;
   ledgePose.position.set(wallX+18-row*.34+Math.sin(i*2.3)*.7,CY+2+row*2.8,CZ+(col-7.5)*6.3);
   ledgePose.scale.set(2.4+rand()*1.8,.6+rand()*.55,5.9+rand()*.8);
   ledgePose.rotation.set(0,(rand()-.5)*.08,(rand()-.5)*.05);ledgePose.updateMatrix();ledges.setMatrixAt(i,ledgePose.matrix);
- }group.add(ledges);
+ }group.add(ledges);legacyCliffParts.push(ledges);
  // Quest-locked cave portal: visible between the two falls but intentionally sealed.
  // This is an exterior facade, NOT an accessible passage before Dark and Damp.
  const portal=new T.Group();portal.name='Dark and Damp — sealed cave entrance';group.add(portal);
@@ -141,7 +141,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const x=wallX+17-v*4+1.5+rand()*1.5;
   const b=new T.Mesh(new T.DodecahedronGeometry(1,0),i%4===0?shadow:rock);
   b.position.set(x,y,z);b.scale.set(.55+rand()*2.1,.35+rand()*1.3,1.1+rand()*3.1);
-  b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);
+  b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);legacyCliffParts.push(b);
  }
 
  // Shared pool with a single continuous outlet; both falls land in this basin.
@@ -158,7 +158,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  };
  const impacts=[];
  for(let fall=0;fall<2;fall++){
-  const center=CZ+(fall===0?-7.62:7.62),width=fall===0?5.4:3.7,top=CY+(fall===0?30:27);
+  const center=CZ+(fall===0?-3.81:3.81),width=fall===0?3.0:2.5,top=CY+(fall===0?20.1:19.3);
   const g=new T.PlaneGeometry(width,1,8,48),a=g.attributes.position;
   for(let k=0;k<a.count;k++){
    const lateral=a.getX(k),t=a.getY(k)+.5;
@@ -185,7 +185,42 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }group.add(banks);
  window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*3);}},scene:group,pond:pool,creek};
  diag.assets['waterfall cliff']='layered west cliff, twin falls, one pond and creek';
- diag.waterfall='two falls 15.24 m apart feed one pond; one outlet enters lake';
+ diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
+
+ // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
+ // The waterfalls, shared pond, creek, quest cave, lake water and fish are separate game objects.
+ async function installCanyonV6(){
+  diag.assets['Canyon V6']='loading';
+  try{
+   const urls=Array.from({length:9},(_,i)=>'./canyon-v6/chunk-'+String(i).padStart(2,'0')+'.bin');
+   const chunks=await Promise.all(urls.map(async u=>{
+    const r=await fetch(u);if(!r.ok)throw Error('Canyon chunk HTTP '+r.status+' '+u);
+    return new Uint8Array(await r.arrayBuffer());
+   }));
+   const size=chunks.reduce((a,c)=>a+c.length,0);
+   if(size!==6468040)throw Error('Canyon asset length '+size);
+   const bytes=new Uint8Array(size);let offset=0;
+   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+   if(new DataView(bytes.buffer).getUint32(0,true)!==0x46546c67)throw Error('Invalid GLB header');
+   if(crypto?.subtle){
+    const check=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('');
+    if(check!=='69d79d22169cdf1f7fc7082e28a6521ad47e98ab397531eb4e6784b6d0b06f22')throw Error('Canyon V6 hash mismatch');
+   }
+   const glb=new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
+   const root=await new Promise((resolve,reject)=>glb.parse(bytes.buffer,'',r=>resolve(r.scene),reject));
+   root.scale.setScalar(.3048); // original canyon geometry is measured in feet; game uses meters
+   root.rotation.y=Math.PI/2; // open mouth faces the lake on the west/left bank
+   root.position.set(wallX+23,pondY-.5,CZ);
+   root.name='Stacey Canyon V6 approved photo-rock';
+   root.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material:[o.material];for(const x of m){if(x){x.side=T.DoubleSide;x.needsUpdate=true;}}}});
+   scene.add(root);
+   for(const mesh of legacyCliffParts)mesh.visible=false;
+   window.staceyCanyonV6={scene:root,source:'approved V6',bytes:size,westShore};
+   diag.assets['Canyon V6']='loaded';
+  }catch(e){diag.assets['Canyon V6']='FAILED';diag.errors.push('Canyon V6 '+String(e));}
+ }
+ installCanyonV6();
+
 
 })();
 
@@ -208,7 +243,7 @@ function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixW
 async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?60+rand()*63:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
-function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
+function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
