@@ -65,3 +65,11 @@ Canonical user-provided story:
 - Preserve both quests' separate state. Proposed flags: darkDamp.started, loveOfBrooke.started, pendant.referenceSeen, pendant.recovered, pendant.returned, brooke.fatherMemoryTold, darkDamp.symbolRockClueDiscovered. Completion gate for Dark and Damp requires at least pendant.returned plus subsequent symbol-rock clue chain.
 - Brooke's father and pendant are handled with emotional care; avoid trivializing her loss or automatically solving the mystery. Re-entry to the cavern remains via the waterfall entrance, not reverse passage from island.
 - On reload/multiplayer, phone-photo disclosure, pendant handoff, memory reveal and clue gate must each occur once per player. Do not invent the rest of the quest.
+
+## Pendant mystery — actual loss location (user reveal 2026-10-26)
+- **Canon: Brooke did NOT lose the keepsake necklace at Stacey Lake.** She mistakenly assumes it happened there because she noticed it missing after swimming and getting out to sunbathe.
+- The actual event: **Brooke left her father's pendant at the Mercantile while trying on another necklace she was considering buying.**
+- This is the central misdirection in **For the Love of Brooke**. Players should have reason to investigate the lake initially, but ultimately discover the Mercantile connection through as-yet-undefined clues.
+- Do not assume or invent who found the necklace, where it was stored afterward, who may have moved it, how it is recovered, or how two additional connected quests unfold. Those links remain reserved for future user direction.
+- The pendant must ultimately be recovered and returned to Brooke; only then does her father's recollection of the symbol-marked cavern rock unlock the next Dark and Damp stage.
+- This reveal is internal design canon; **do not spoil it in player-facing dialogue, objectives, item descriptions or UI before discovery**.
