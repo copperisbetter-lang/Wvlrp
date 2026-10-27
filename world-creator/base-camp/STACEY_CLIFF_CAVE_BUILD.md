@@ -26,8 +26,12 @@ Reference: latest beach screenshot (looking left, lake on right) and generated t
 
 ## Quest gate — Dark and Damp (user direction, 2026-10-26)
 - Quest name: **Dark and Damp** (interpreted from voice transcription “fark amd damp”; verify exact label before shipping UI).
-- BEFORE this quest is started by the individual player: a **large natural boulder** fully blocks the concealed entrance behind one waterfall. Cave entrance is not visible or traversable; cave interior must not activate/render/load as player-visible content. Waterfalls, pond and stream remain visible and work normally.
+- BEFORE this quest is started by the individual player: a **large natural boulder** fully blocks the concealed entrance behind one waterfall. The cave mouth MUST remain visibly identifiable from outside: show a dark, intriguing rock opening or recess behind the falls, with the large natural boulder lodged across the passage. The boulder prevents access, not curiosity. The actual deep cave interior must not activate/render/load as player-visible content. Waterfalls, pond and stream remain visible and work normally.
 - WHEN this player's quest transitions to STARTED: remove or move the blocking stone according to quest reveal event and enable that player's cave passage / cavern geometry, visibility, collision and navigation. Never reveal due to proximity alone.
 - Persist the quest state per player; gate must survive reload and multiplayer joins. Players without quest activation must not see the opened cave because another player started the quest. Avoid collision mismatches across player instances (instance/phase the cave or use a per-player portal transition).
-- Until unlocked, no camera clipping, aerial view, swimming, or terrain seam may reveal the interior. If practical, don't download heavy cavern assets until the gate opens (mobile FPS).
-- Acceptance tests: prequest blocked/no glimpse; quest-start transition; entry/exit and reload; two players with different quest states; mobile performance.
+- Until unlocked, players MAY see the cave mouth and the blocking rock, but camera clipping, aerial view, swimming, or terrain seams must not reveal the large hidden interior. If practical, don't download heavy cavern assets until the gate opens (mobile FPS).
+- Acceptance tests: prequest cave mouth visibly recognizable, blocked and inaccessible, with no glimpse of the underground ballroom; quest-start transition; entry/exit and reload; two players with different quest states; mobile performance.
+
+## Exterior mystery / player curiosity — clarification 2026-10-26
+- The waterfall cave is **not invisible** before the quest. Players should recognize a cavern entrance, dark recess and unmistakable boulder barrier from a suitable exterior viewpoint. Give subtle visual intrigue without revealing the enormous room.
+- “Dark and Damp” controls **access and loading of the deep cave**, not whether the entrance exists visually. Keep the exterior boulder persistent and collidable until the player's quest progression permits entry.
