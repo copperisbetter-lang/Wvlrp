@@ -24,3 +24,11 @@ The owner-approved photorealistic Canyon V6 from the 2026-10-27 conversation is 
 - Production freeze in Issue 29 respected. Nothing merged/deployed to `main`.
 
 Review game URL: https://raw.githack.com/copperisbetter-lang/Wvlrp/g1/stacey-v6-canyon-install-20261027/world-creator/base-camp/stacey-dive.html
+
+## Android screenshot correction (2026-10-27)
+- Owner's 6:25 PM Android screenshots documented a hard left photo-wall seam, old polygon rock portal/stone-ring overlays, obsolete west-bank terrain overlapping the photo-rock GLB, straight-striped waterfalls, and cyan photo sky that did not match the live Three.js sky.
+- Updated `stacey-dive.html` in this branch: blended terrain relief carve below V6, hidden legacy wall/ledge/facade rocks and the cave-portal polygon seal when GLB is loaded, suppressed blocky old pond stones and shore clutter in the canyon footprint, changed waterfall sheet shader to animated broken-up turbulent alpha with feathered edges, cross-mesh seam normal averaging, and selective blue photo-sky clipping to expose the live sky.
+- Added in-view V6 load/fallback status on the FPS HUD. Original nine GLB chunks and their checksum are unmodified. Lake, fish, island and tunnel quest data remain untouched; cave entrance visual is suppressed under V6, not quest logic.
+- Latest reviewed code commit: `b8a741a52d264b20b05f5d519b5ff80c27a33505`; inline JavaScript parses after removing ES module imports.
+- **Caution:** This code has NOT been validated by live Three.js render or owner's Android follow-up. In particular, sky blue-color masking and photo seam improvement are experimental and need owner review. Neither main nor production was changed.
+- Pinned mobile preview: https://raw.githack.com/copperisbetter-lang/Wvlrp/b8a741a52d264b20b05f5d519b5ff80c27a33505/world-creator/base-camp/stacey-dive.html
