@@ -89,3 +89,12 @@ Canonical user-provided story:
 - Choose contextually relevant lines from completed-quest flags, with varied wording, gentle transitions and natural repeat handling. Avoid repeating the same story every time the player sits with her. Keep her warm, believable, and conversational rather than robotic or overly flattering.
 - Multiplayer: query the interacting player's completed-quest state, not another player's. Brooke's approach behavior remains gated per player.
 - Dialogue engine and actual character runtime remain to be implemented and tested.
+
+## Brooke three-quest completion -> verified adult Resort trial (2026-10-26)
+- After the player has completed **all three Brooke-related quests** (only **For the Love of Brooke** is named so far; do not fabricate the others), Brooke personally invites that player for a drink at **the Resort**, a separate adults-only member subworld.
+- Invite available ONLY if the account has passed appropriate **adult (18+) verification**, all three quests are completed, and the account has not already redeemed its one-time invitation. No inferred adulthood from avatar appearance, chat statements, or self-selected birthdate alone.
+- Reward is a **single-use complimentary Resort visit/pass** to preview the adult-membership subworld. It is NOT an automatic subscription, automatic purchase, renewal, or paid conversion. Show clear pass terms and a distinct optional opt-in if user later decides to subscribe.
+- Enforce eligibility, entitlement issuance, redemption and account separation **server-side**, with an auditable consumed flag, even if the client is modified or links are shared. No guest/underage route into the Resort through portal, deep link, or multiplayer.
+- Brooke's invitation should fit the friendship progression and feel natural rather than a jarring purchase pitch. If the player is not adult-verified, do not show or tease adult-only features; use normal friendship dialogue without the invite.
+- 'One-time' here means one complimentary access redemption, not a recurring free perk. Pass duration and whether re-entry during the same visit is allowed are TBD and require explicit product definition.
+- No Resort access/verification/subscription mechanics implemented in this branch. These are design requirements only.
