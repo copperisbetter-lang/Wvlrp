@@ -17,7 +17,7 @@ renderer.debug.onShaderError=(gl,program,vs,fs)=>{diag.errors.push('Shader: '+gl
 const sky=new Sky();sky.scale.setScalar(1800);sky.material.uniforms.turbidity.value=2.5;sky.material.uniforms.rayleigh.value=1.3;sky.material.uniforms.mieCoefficient.value=.003;sky.material.uniforms.mieDirectionalG.value=.83;sky.material.uniforms.sunPosition.value.copy(lightDir);scene.add(sky);
 let seed=61728;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);const CY=-5.5,CX=140,CZ=-240;
 function outer(a){return 113.797805566*(1+.038*Math.sin(a*5)+.022*Math.cos(a*9))}function inner(a){return 22*(1+.1*Math.sin(a*5+.6)+.06*Math.cos(a*8))}
-function ground(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
+function baseGround(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
 // Far north shoreline: replace the rounded hill with a ravine and vertical rock escarpment.
 const cliffAngle=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
 const cliffWeight=1-smooth(.33,.67,cliffAngle);
@@ -30,6 +30,20 @@ if(cliffWeight>0 && d>=0 && d<105){
  return T.MathUtils.lerp(native,rockProfile,cliffWeight);
 }
 if(d<13.716)return CY+.035+d*.035;const ridge=CY+.515+14*smooth(14,85,d)+19*smooth(70,160,d)+8*Math.sin(a*4+.5)**2*smooth(22,120,d);return ridge+Math.sin(x*.025)*Math.cos(z*.023)*4*smooth(14,70,d)}
+// Shared waterfall catchment: west-bank basin and one outlet carved into terrain.
+const fallShore=CX-outer(Math.PI),pondX=fallShore-26,pondY=CY+1.4;
+function creekCenter(t){return CZ+Math.sin(t*Math.PI*2)*1.8;}
+function ground(x,z){
+ const original=baseGround(x,z);
+ const basin=Math.hypot((x-pondX)/8,(z-CZ)/17);
+ if(basin<1.24)return T.MathUtils.lerp(pondY-1.9,Math.max(original,pondY+.35),smooth(.72,1.24,basin));
+ const t=(x-(pondX+6))/(fallShore+2-(pondX+6));
+ if(t>=0&&t<=1){
+  const dist=Math.abs(z-creekCenter(t)),level=T.MathUtils.lerp(pondY,CY,t);
+  if(dist<4.5)return T.MathUtils.lerp(level-.55,Math.max(original,level+.2),smooth(1.7,4.5,dist));
+ }
+ return original;
+}
 const loader=new T.TextureLoader();const manager=new T.LoadingManager();
 function texture(url,key){const t=loader.load(url,()=>{diag.assets[key]='ready'},undefined,e=>{diag.assets[key]='FAILED';diag.errors.push(key+' failed')});t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
 const sand=texture('https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_diff_1k.jpg','sand');
@@ -43,7 +57,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 (function createWaterfallCliff(){
  const westShore=CX-outer(Math.PI),wallX=westShore-51,group=new T.Group();
  group.name='Stacey Lake west-bank twin waterfalls';scene.add(group);
- const rock=new T.MeshStandardMaterial({color:0x777d75,roughness:1,flatShading:true,side:T.DoubleSide});
+ const rock=new T.MeshStandardMaterial({color:0x938976,roughness:1,flatShading:false,side:T.DoubleSide});
  const shadow=new T.MeshStandardMaterial({color:0x454b45,roughness:1,flatShading:true,side:T.DoubleSide});
  const faceV=[],faceI=[],faceUV=[],cols=96,rows=26;
  // Irregular 3D face with meaningful relief; no floating flat rectangular wall.
@@ -56,7 +70,17 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }}
  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
  const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
+ rock.onBeforeCompile=shader=>{
+ shader.vertexShader='varying vec3 cliffPoint;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncliffPoint=position;');
+ shader.fragmentShader='varying vec3 cliffPoint;\n'+shader.fragmentShader.replace('#include <map_fragment>',`float seam=pow(.5+.5*sin(cliffPoint.y*5.7+sin(cliffPoint.z*.33)*.55),16.);float grain=sin(cliffPoint.z*12.1+cliffPoint.y*25.3)*sin(cliffPoint.x*18.7-cliffPoint.y*7.1);diffuseColor.rgb*=mix(1.08,.48,seam)+grain*.065;`);
+};
  group.add(new T.Mesh(cliffGeo,rock));
+ const ledges=new T.InstancedMesh(new T.BoxGeometry(1,1,1),rock,160),ledgePose=new T.Object3D();
+ for(let i=0;i<160;i++){const row=Math.floor(i/16),col=i%16;
+  ledgePose.position.set(wallX+18-row*.34+Math.sin(i*2.3)*.7,CY+2+row*2.8,CZ+(col-7.5)*6.3);
+  ledgePose.scale.set(2.4+rand()*1.8,.6+rand()*.55,5.9+rand()*.8);
+  ledgePose.rotation.set(0,(rand()-.5)*.08,(rand()-.5)*.05);ledgePose.updateMatrix();ledges.setMatrixAt(i,ledgePose.matrix);
+ }group.add(ledges);
  // Quest-locked cave portal: visible between the two falls but intentionally sealed.
  // This is an exterior facade, NOT an accessible passage before Dark and Damp.
  const portal=new T.Group();portal.name='Dark and Damp — sealed cave entrance';group.add(portal);
@@ -119,38 +143,50 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   b.position.set(x,y,z);b.scale.set(.55+rand()*2.1,.35+rand()*1.3,1.1+rand()*3.1);
   b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);
  }
- const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.77,roughness:.32,metalness:0,side:T.DoubleSide,depthWrite:false});
- const splashMat=new T.MeshBasicMaterial({color:0xebf7f1,transparent:true,opacity:.45,depthWrite:false,side:T.DoubleSide});
- const ribbons=[];
- const fallCenters=[CZ-7.62,CZ+7.62]; // 50 feet (15.24 metres) apart on west bank
+
+ // Shared pool with a single continuous outlet; both falls land in this basin.
+ const poolGeo=new T.CircleGeometry(1,72);poolGeo.rotateX(-Math.PI/2);poolGeo.scale(8,1,17);
+ const poolMat=new T.MeshPhysicalMaterial({color:0x287d77,roughness:.24,metalness:0,transparent:true,opacity:.88,side:T.DoubleSide});
+ const pool=new T.Mesh(poolGeo,poolMat);pool.position.set(pondX,pondY,CZ);pool.name='Single shared waterfall pond';group.add(pool);
+ const foam=new T.MeshBasicMaterial({color:0xe8f4ed,transparent:true,opacity:.52,depthWrite:false,side:T.DoubleSide});
+ const flowUniform={value:0};
+ const falling=new T.MeshStandardMaterial({color:0xe4f1e9,roughness:.3,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false});
+ falling.onBeforeCompile=shader=>{
+  shader.uniforms.flowTime=flowUniform;
+  shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
+  shader.fragmentShader='uniform float flowTime;varying vec2 flowUV;\n'+shader.fragmentShader.replace('#include <map_fragment>',`float streak=.5+.5*sin(flowUV.x*74.+sin(flowUV.y*17.-flowTime*5.));float surge=.5+.5*sin(flowUV.y*95.-flowTime*15.+flowUV.x*12.);diffuseColor.rgb*=.75+.25*surge;diffuseColor.a*=.4+.6*streak;`);
+ };
+ const impacts=[];
  for(let fall=0;fall<2;fall++){
-  const center=fallCenters[fall],width=fall===0?10:7.8;
-  // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
-  for(let strip=0;strip<9;strip++){
-   const w=width/9*(.75+rand()*.6),z=center+(strip-4)*width/9;
-   const meshGeo=new T.PlaneGeometry(w,28,2,30),a=meshGeo.attributes.position;
-   for(let k=0;k<a.count;k++){const t=(a.getY(k)+14)/28;
-    a.setX(k,wallX+20-4*t+.4*Math.sin(12*t+strip*.9+fall));
-    a.setY(k,CY+2+28*t);
-    a.setZ(k,z+a.getX(k)*0+Math.sin(t*14+strip)*.24+(rand()-.5)*.12);
-   }
-   meshGeo.computeVertexNormals();
-   const mesh=new T.Mesh(meshGeo,falling.clone());group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
+  const center=CZ+(fall===0?-7.62:7.62),width=fall===0?5.4:3.7,top=CY+(fall===0?30:27);
+  const g=new T.PlaneGeometry(width,1,8,48),a=g.attributes.position;
+  for(let k=0;k<a.count;k++){
+   const lateral=a.getX(k),t=a.getY(k)+.5;
+   a.setXYZ(k,wallX+21-5*t+.35*Math.sin(t*12+fall),T.MathUtils.lerp(pondY,top,t),center+lateral*(1+.22*(1-t))+.2*Math.sin(t*15));
+  }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
+  for(let n=0;n<4;n++){
+   const ring=new T.Mesh(new T.RingGeometry(.65,1,32),foam);
+   ring.rotation.x=-Math.PI/2;ring.position.set(wallX+21,pondY+.035+n*.008,center);
+   group.add(ring);impacts.push({mesh:ring,phase:n/4});
   }
-  // Water reaches lake via the west shoreline rather than terminating in the cliff.
-  const sv=[],si=[];
-  for(let n=0;n<=32;n++){const t=n/32,x=wallX+19+(westShore-wallX-19)*t,z=center+Math.sin(t*4+fall)*1.6;
-   for(const sign of [-1,1]){const zz=z+sign*(2+1.1*(1-t));sv.push(x,ground(x,zz)+.28,zz)}
-   if(n<32){const k=n*2;si.push(k,k+1,k+2,k+1,k+3,k+2)}
-  }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(sv,3));g.setIndex(si);g.computeVertexNormals();
-  group.add(new T.Mesh(g,new T.MeshPhysicalMaterial({color:0xa6d6d7,roughness:.3,transparent:true,opacity:.73,side:T.DoubleSide,depthWrite:false})));
-  for(let n=0;n<10;n++){const mist=new T.Mesh(new T.PlaneGeometry(1+rand()*2,.15+rand()*.35),splashMat);
-   mist.rotation.x=-Math.PI/2;mist.position.set(wallX+19+rand()*5,CY+1.7,center+(rand()-.5)*width*1.5);group.add(mist);}
  }
- window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.65+.14*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
- diag.assets['waterfall cliff']='west bank twin falls';
- diag.waterfall='west shore, two cascades spaced 50 feet apart';
+ const cv=[],ci=[],cu=[];
+ for(let n=0;n<=64;n++){const t=n/64,x=T.MathUtils.lerp(pondX+6,fallShore+2,t),z=creekCenter(t),y=T.MathUtils.lerp(pondY,CY,t)+.025;
+  for(const sign of [-1,1]){cv.push(x,y,z+sign*(1.9+.35*Math.sin(t*15)));cu.push(sign===-1?0:1,t*3);}
+  if(n<64){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
+ }
+ const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
+ const creek=new T.Mesh(cg,falling);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
+ const banks=new T.InstancedMesh(new T.DodecahedronGeometry(1,1),rock,100),bpose=new T.Object3D();
+ for(let i=0;i<100;i++){
+  let x,z;if(i<60){const a=i/60*Math.PI*2;x=pondX+Math.cos(a)*8.6;z=CZ+Math.sin(a)*17.6;if(x>pondX+5&&Math.abs(z-CZ)<4){bpose.scale.setScalar(0);bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);continue;}}
+  else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
+  const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
+ }group.add(banks);
+ window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*3);}},scene:group,pond:pool,creek};
+ diag.assets['waterfall cliff']='layered west cliff, twin falls, one pond and creek';
+ diag.waterfall='two falls 15.24 m apart feed one pond; one outlet enters lake';
+
 })();
 
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
