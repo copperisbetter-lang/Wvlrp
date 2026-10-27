@@ -53,3 +53,15 @@ Reference: latest beach screenshot (looking left, lake on right) and generated t
 - Track discovery, transit completion, Brooke first interaction and follow-on quest state **per player**; ensure idempotent triggers on rejoin/reload/multiplayer. Brooke's normal lake animation can remain visible earlier, but her quest interaction is locked until this event.
 - Dialogue and detailed objectives for For the Love of Brooke are pending authoring; do not invent them.
 - This is an approved narrative specification, not yet implemented gameplay.
+
+## Interlocked quest narrative: For the Love of Brooke / Dark and Damp (2026-10-26)
+Canonical user-provided story:
+- Brooke lost her father when she was young. Her father bought her a treasured keepsake pendant necklace.
+- At the beginning of this summer, Brooke was swimming in Stacey Lake. When she got out to sunbathe, she realized the pendant was missing. She does not know exactly how or where she lost it.
+- During Brooke's first interaction after the player exits the hidden cavern-to-island underwater passage, she shares the story and **shows the player a photograph of the pendant on her phone**. The goal of **For the Love of Brooke** is to work out how and where it was lost, recover the real pendant, and personally return it to Brooke. The pendant's actual location, loss mechanism, and search clues are NOT YET SPECIFIED; do not fabricate a solution.
+- **Dark and Damp cannot be completed** until the pendant is found and returned to Brooke. This is a strict quest dependency, not merely optional dialogue.
+- Upon return of the pendant, Brooke recalls her father bringing her to Stacey Lake as a little girl. She remembers a particular rock **inside the cavern**, bearing a symbol.
+- This unlocks the next stage of **Dark and Damp**: return to the underground cavern, identify that symbol-marked rock, and discover the next clue there. The nature of the symbol and actual next clue remain unspecified.
+- Preserve both quests' separate state. Proposed flags: darkDamp.started, loveOfBrooke.started, pendant.referenceSeen, pendant.recovered, pendant.returned, brooke.fatherMemoryTold, darkDamp.symbolRockClueDiscovered. Completion gate for Dark and Damp requires at least pendant.returned plus subsequent symbol-rock clue chain.
+- Brooke's father and pendant are handled with emotional care; avoid trivializing her loss or automatically solving the mystery. Re-entry to the cavern remains via the waterfall entrance, not reverse passage from island.
+- On reload/multiplayer, phone-photo disclosure, pendant handoff, memory reveal and clue gate must each occur once per player. Do not invent the rest of the quest.
