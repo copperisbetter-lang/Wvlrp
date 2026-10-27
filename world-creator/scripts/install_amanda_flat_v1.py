@@ -39,6 +39,37 @@ if existing_flat:
         bsdf.inputs['Roughness'].default_value=0.88
     existing_flat.data.materials.clear()
     existing_flat.data.materials.append(mat)
+    rig=next((o for o in scene.objects if o.type=='ARMATURE'),None)
+    candidates=[o for o in scene.objects if o.type=='MESH' and len(o.vertex_groups)>=20]
+    body=max(candidates,key=lambda o:len(o.data.vertices)) if candidates else None
+    if not rig or not body:
+        raise RuntimeError('Amanda armature/body skin weights unavailable for Flat V1 binding')
+    body_points=[body.matrix_world @ v.co for v in body.data.vertices]
+    kdt=KDTree(len(body_points))
+    for i,p in enumerate(body_points): kdt.insert(p,i)
+    kdt.balance()
+    group_names={g.index:g.name for g in body.vertex_groups}
+    rows=[]
+    for v in existing_flat.data.vertices:
+        p=existing_flat.matrix_world @ v.co
+        _co,idx,_dist=kdt.find(p)
+        weights={group_names[g.group]:float(g.weight) for g in body.data.vertices[idx].groups if g.group in group_names and g.weight>1e-8}
+        total=sum(weights.values())
+        if total<=0: raise RuntimeError('No nearby Amanda skin weights found for Flat V1')
+        rows.append({name:value/total for name,value in weights.items()})
+    for group in list(existing_flat.vertex_groups): existing_flat.vertex_groups.remove(group)
+    groups={name:existing_flat.vertex_groups.new(name=name) for name in group_names.values()}
+    for i,row in enumerate(rows):
+        for name,weight in row.items(): groups[name].add([i],weight,'REPLACE')
+    world_matrix=existing_flat.matrix_world.copy()
+    existing_flat.parent=rig
+    existing_flat.matrix_parent_inverse=rig.matrix_world.inverted()
+    existing_flat.matrix_world=world_matrix
+    for modifier in list(existing_flat.modifiers):
+        if modifier.type=='ARMATURE': existing_flat.modifiers.remove(modifier)
+    arm=existing_flat.modifiers.new('Amanda 1.0 Flat V1 armature binding','ARMATURE')
+    arm.object=rig
+    arm.use_vertex_groups=True
     for o in scene.objects: o.select_set(False)
     for o in scene.objects: o.select_set(True)
     bpy.context.view_layer.objects.active=existing_flat
