@@ -57,6 +57,27 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
  const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
  group.add(new T.Mesh(cliffGeo,rock));
+ // Quest-locked cave portal: visible between the two falls but intentionally sealed.
+ // This is an exterior facade, NOT an accessible passage before Dark and Damp.
+ const portal=new T.Group();portal.name='Dark and Damp — sealed cave entrance';group.add(portal);
+ const caveX=wallX+19.55,caveY=CY+7.3,caveZ=CZ;
+ const black=new T.MeshStandardMaterial({color:0x101a18,roughness:1,side:T.DoubleSide});
+ const throat=new T.Mesh(new T.CircleGeometry(5.1,32),black);
+ throat.rotation.y=Math.PI/2;throat.scale.set(1,1.13,1);throat.position.set(caveX+.08,caveY,caveZ);portal.add(throat);
+ const rimMat=new T.MeshStandardMaterial({color:0x626a63,roughness:1,flatShading:true});
+ // A naturally irregular stone rim surrounding the dark cave mouth.
+ for(let i=0;i<20;i++){const angle=i*Math.PI*2/20,radius=5.4+Math.sin(i*2.7)*.6;
+  const k=new T.Mesh(new T.DodecahedronGeometry(1,0),rimMat);
+  k.position.set(caveX+.45+Math.sin(i*4.3)*.25,caveY+Math.sin(angle)*radius,caveZ+Math.cos(angle)*radius);
+  k.scale.set(.85+rand()*.75,1.1+rand()*.8,1.1+rand()*.75);k.rotation.set(rand(),rand(),rand());portal.add(k);
+ }
+ const sealStone=new T.Mesh(new T.DodecahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x747b72,roughness:1,flatShading:true}));
+ sealStone.name='Quest seal boulder — Dark and Damp';sealStone.scale.set(3.4,4.55,4.2);
+ sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);portal.add(sealStone);
+ // Quest manager may change this flag later; default always stays locked.
+ window.staceyCave={locked:true,entrance:portal,seal:sealStone,quest:'Dark and Damp',secondTunnel:'one-way underwater exit beneath island'};
+ diag.assets['cave entrance']='visible, boulder sealed — quest locked';
+
  // Broken rock terraces and boulders hide the planar silhouette.
  for(let i=0;i<85;i++){const z=CZ+(rand()-.5)*102,v=rand(),y=CY+2+v*30;
   const x=wallX+17-v*4+1.5+rand()*1.5;
