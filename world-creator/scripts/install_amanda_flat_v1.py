@@ -12,7 +12,7 @@ report_path=asset_dir/'amanda-1-0-flat-install-report.json'
 OLD_TOKEN='Vulva2 MHX2 true auto-fit'
 BODY_TOKEN='SAV 4 adult petite character_sav4'
 FRONT_SURFACE_OFFSET=0.018  # target outward offset in meters
-VERTICAL_SURFACE_OFFSET=0.020  # raise Flat V1 into the attachment opening
+VERTICAL_SURFACE_OFFSET=0.008  # seat Flat V1 slightly lower in the attachment opening
 previous_report={}
 if report_path.exists():
     try: previous_report=json.loads(report_path.read_text())
