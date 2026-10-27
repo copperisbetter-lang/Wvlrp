@@ -16,6 +16,56 @@ FRONT_SURFACE_OFFSET=0.018  # meters toward the character front
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(base_path))
 scene=bpy.context.scene
+# The Amanda branch already has Flat V1 installed. Move that mesh in place so
+# repeat runs remain safe and do not require the removed original attachment.
+existing_flat=next((o for o in scene.objects if o.type=='MESH' and (
+    'Flat V1 fitted static preview mesh' in o.name or
+    'Flat V1 replacement attachment' in o.name
+)),None)
+if existing_flat:
+    inv=existing_flat.matrix_world.inverted()
+    for v in existing_flat.data.vertices:
+        p=existing_flat.matrix_world @ v.co
+        p.y-=FRONT_SURFACE_OFFSET
+        v.co=inv @ p
+    existing_flat.data.update()
+    mat=bpy.data.materials.new('Flat V1 | matte skin fit')
+    mat.diffuse_color=(0.73,0.51,0.42,1.0)
+    mat.use_nodes=True
+    bsdf=mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value=(0.73,0.51,0.42,1.0)
+        bsdf.inputs['Metallic'].default_value=0.0
+        bsdf.inputs['Roughness'].default_value=0.88
+    existing_flat.data.materials.clear()
+    existing_flat.data.materials.append(mat)
+    for o in scene.objects: o.select_set(False)
+    for o in scene.objects: o.select_set(True)
+    bpy.context.view_layer.objects.active=existing_flat
+    bpy.ops.export_scene.gltf(filepath=str(temp_out_path),export_format='GLB',use_selection=True,export_apply=True,export_animations=False,export_skins=True,export_morph=False,export_yup=True)
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=str(temp_out_path))
+    meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']
+    new=next((o for o in meshes if 'Flat V1' in o.name),None)
+    if not new: raise RuntimeError('Exported Amanda GLB lost Flat V1')
+    if any(OLD_TOKEN in o.name for o in meshes): raise RuntimeError('Old visible attachment remains')
+    report={
+        'character':'Amanda 1.0',
+        'replacement':'Flat V1',
+        'updated_existing_attachment_in_place':True,
+        'surface_offset_blender_y_m':-FRONT_SURFACE_OFFSET,
+        'surface_offset_gltf_z_m':FRONT_SURFACE_OFFSET,
+        'replacement_vertex_count':len(new.data.vertices),
+        'replacement_face_count':len(new.data.polygons),
+        'replacement_vertex_group_count':len(new.vertex_groups),
+        'replacement_has_armature_binding':any(m.type=='ARMATURE' and m.object for m in new.modifiers),
+        'export_bytes':temp_out_path.stat().st_size,
+        'status':'surface fit corrected; reimport verified'
+    }
+    temp_out_path.replace(base_path)
+    report_path.write_text(json.dumps(report,indent=2))
+    print('AMANDA_FLAT_INSTALL_REPORT',json.dumps(report))
+    sys.exit(0)
 old=next((o for o in scene.objects if o.type=='MESH' and OLD_TOKEN in o.name),None)
 body=next((o for o in scene.objects if o.type=='MESH' and o.name==BODY_TOKEN),None)
 rig=next((o for o in scene.objects if o.type=='ARMATURE'),None)
