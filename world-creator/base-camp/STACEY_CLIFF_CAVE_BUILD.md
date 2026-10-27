@@ -104,3 +104,12 @@ Canonical user-provided story:
 - Brooke intentionally performs a playful, flirtatious **bend-over animation** in front of the player as part of the Resort encounter. Treat this as an adult character's suggestive, non-explicit animation, not a graphic or forced sexual scene.
 - Ensure adult-only access gate described above applies to this encounter. Confirm mesh, clothing physics, pose rigging, camera behavior and mobile FPS in implementation.
 - Do not alter Brooke's ordinary lakeside appearance or behavior for players outside the Resort. Design note only; not yet implemented.
+
+## Resort Brooke — progressive comfort and opt-in preference (2026-10-26)
+- Brooke arrives in her Resort miniskirt but stays fully clothed. No exposed intimate body parts by default, including during bending animations (ensure clothing/pose coverage and camera-safe presentation).
+- Before any revealing adult-only presentation, Brooke can engage the adult-verified player in a short sequence of natural, tactful preference questions. These are conversation choices, not deceptive "tests" or inferences from player behavior.
+- The player must get a **clear, unambiguous opt-in** to reveal more. Neutral, declining, skipping, or unclear answers mean Brooke remains clothed, and the player can enjoy the Resort without pressure or penalty.
+- Offer a simple, accessible setting to change preferences or withdraw consent anytime. Treat answers as privacy-sensitive, minimize retention, and avoid sharing preferences with other players.
+- The Resort's promotional purpose may inform optional preference research but must not manipulate the player or gate ordinary subscriptions behind sexualized engagement. Never assume willingness to subscribe based on interest in revealing content.
+- These rules only apply to the adult-gated Resort encounter. Do not change main-game Brooke's knee-length-skirt wardrobe or her ordinary quests.
+- This is design documentation, not a completed feature or implemented content.
