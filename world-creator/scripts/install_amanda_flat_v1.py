@@ -11,6 +11,7 @@ temp_out_path=asset_dir/'amanda-1-0-base.replacement.glb'
 report_path=asset_dir/'amanda-1-0-flat-install-report.json'
 OLD_TOKEN='Vulva2 MHX2 true auto-fit'
 BODY_TOKEN='SAV 4 adult petite character_sav4'
+FRONT_SURFACE_OFFSET=0.018  # meters toward the character front
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(base_path))
@@ -48,12 +49,24 @@ if max(scale)>3 or min(scale)<.25: raise RuntimeError('Flat V1 fit scale outside
 fit_points=[]
 for p in flat_world:
     fit_points.append(Vector(tuple(old_center[i]+(p[i]-flat_center[i])*scale[i] for i in range(3))))
+# Blender's front-facing direction is negative Y. Bring Flat V1 out to Amanda's skin surface.
+fit_points=[Vector((p.x,p.y-FRONT_SURFACE_OFFSET,p.z)) for p in fit_points]
 flat.name='Amanda 1.0 | Flat V1 replacement attachment'
 flat.data.name='Flat V1 fitted anatomical mesh'
 flat.parent=None
 flat.matrix_world.identity()
 for v,p in zip(flat.data.vertices,fit_points): v.co=rig.matrix_world.inverted() @ p
 flat.data.update()
+# Give the replacement a matte skin tone instead of Blender's neutral metallic-looking default.
+mat=bpy.data.materials.new('Flat V1 | matte skin fit')
+mat.diffuse_color=(0.73,0.51,0.42,1.0)
+mat.use_nodes=True
+bsdf=mat.node_tree.nodes.get('Principled BSDF')
+if bsdf:
+    bsdf.inputs['Base Color'].default_value=(0.73,0.51,0.42,1.0)
+    bsdf.inputs['Metallic'].default_value=0.0
+    bsdf.inputs['Roughness'].default_value=0.88
+flat.data.materials.clear(); flat.data.materials.append(mat)
 
 # Transfer deform weights from Amanda's body at the nearest body vertex.
 body_points=[body.matrix_world @ v.co for v in body.data.vertices]
@@ -116,6 +129,8 @@ report={
  'source_flat_bounds_min':list(flat_min),
  'source_flat_bounds_max':list(flat_max),
  'fit_scale_xyz':list(scale),
+ 'surface_offset_blender_y_m':-FRONT_SURFACE_OFFSET,
+ 'surface_offset_gltf_z_m':FRONT_SURFACE_OFFSET,
  'replacement_vertex_count':len(new.data.vertices),
  'replacement_face_count':len(new.data.polygons),
  'replacement_vertex_group_count':len(new.vertex_groups),
