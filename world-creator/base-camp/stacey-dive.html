@@ -67,7 +67,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.77,roughness:.32,metalness:0,side:T.DoubleSide,depthWrite:false});
  const splashMat=new T.MeshBasicMaterial({color:0xebf7f1,transparent:true,opacity:.45,depthWrite:false,side:T.DoubleSide});
  const ribbons=[];
- const fallCenters=[CZ-25,CZ+25]; // roughly 50 metres apart along the left bank
+ const fallCenters=[CZ-7.62,CZ+7.62]; // 50 feet (15.24 metres) apart on west bank
  for(let fall=0;fall<2;fall++){
   const center=fallCenters[fall],width=fall===0?10:7.8;
   // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
@@ -95,7 +95,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.65+.14*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
  diag.assets['waterfall cliff']='west bank twin falls';
- diag.waterfall='west shore, two cascades spaced 50m apart';
+ diag.waterfall='west shore, two cascades spaced 50 feet apart';
 })();
 
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
