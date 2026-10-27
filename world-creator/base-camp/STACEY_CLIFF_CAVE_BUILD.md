@@ -45,3 +45,11 @@ Reference: latest beach screenshot (looking left, lake on right) and generated t
 - Design outlet to avoid island terrain intersection, lake water-surface bugs or accidental reverse access, and maintain physical continuity with actual lake underwater environment.
 - Multiplayer: serialize single-file tunnel occupancy or handle collision/instancing safely. On reconnect during transit, spawn player in safe cavern-pool or island-lake location consistent with progress.
 - Test underwater entry, tunnel traversal, one-way enforcement, island emergence, quest-lock bypass, reload, and mobile FPS. Not yet built or visually verified.
+
+## Brooke first encounter / follow-on quest (2026-10-26)
+- Exact quest title: **The Love of Brooke** (user-corrected spelling).
+- Sequence: Start **Dark and Damp** -> uncover/enter the waterfall cave -> discover the deep cavern pool -> swim the one-way underwater passage -> emerge in Stacey Lake near the slope of the central island -> Brooke interacts with the player for the first time -> trigger **The Love of Brooke**.
+- Trigger requires verified completion of the cave-to-island underwater passage AND surfacing/emerging into Stacey Lake. Ordinary swimmers near the island, teleporting, or passing close to Brooke do NOT trigger this first encounter.
+- Track discovery, transit completion, Brooke first interaction and follow-on quest state **per player**; ensure idempotent triggers on rejoin/reload/multiplayer. Brooke's normal lake animation can remain visible earlier, but her quest interaction is locked until this event.
+- Dialogue and detailed objectives for The Love of Brooke are pending authoring; do not invent them.
+- This is an approved narrative specification, not yet implemented gameplay.
