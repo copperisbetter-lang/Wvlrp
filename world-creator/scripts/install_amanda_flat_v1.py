@@ -11,7 +11,12 @@ temp_out_path=asset_dir/'amanda-1-0-base.replacement.glb'
 report_path=asset_dir/'amanda-1-0-flat-install-report.json'
 OLD_TOKEN='Vulva2 MHX2 true auto-fit'
 BODY_TOKEN='SAV 4 adult petite character_sav4'
-FRONT_SURFACE_OFFSET=0.018  # meters toward the character front
+FRONT_SURFACE_OFFSET=0.018  # target offset in meters
+previous_surface_offset=0.0
+if report_path.exists():
+    try: previous_surface_offset=float(json.loads(report_path.read_text()).get('surface_offset_gltf_z_m',0.0))
+    except Exception: previous_surface_offset=0.0
+offset_delta_gltf=FRONT_SURFACE_OFFSET-previous_surface_offset
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(base_path))
@@ -26,7 +31,7 @@ if existing_flat:
     inv=existing_flat.matrix_world.inverted()
     for v in existing_flat.data.vertices:
         p=existing_flat.matrix_world @ v.co
-        p.y-=FRONT_SURFACE_OFFSET
+        p.y-=offset_delta_gltf
         v.co=inv @ p
     existing_flat.data.update()
     mat=bpy.data.materials.new('Flat V1 | matte skin fit')
@@ -86,6 +91,8 @@ if existing_flat:
         'updated_existing_attachment_in_place':True,
         'surface_offset_blender_y_m':-FRONT_SURFACE_OFFSET,
         'surface_offset_gltf_z_m':FRONT_SURFACE_OFFSET,
+        'surface_offset_delta_blender_y_m':-offset_delta_gltf,
+        'surface_offset_delta_gltf_z_m':offset_delta_gltf,
         'replacement_vertex_count':len(new.data.vertices),
         'replacement_face_count':len(new.data.polygons),
         'replacement_vertex_group_count':len(new.vertex_groups),
@@ -131,7 +138,7 @@ fit_points=[]
 for p in flat_world:
     fit_points.append(Vector(tuple(old_center[i]+(p[i]-flat_center[i])*scale[i] for i in range(3))))
 # Blender's front-facing direction is negative Y. Bring Flat V1 out to Amanda's skin surface.
-fit_points=[Vector((p.x,p.y-FRONT_SURFACE_OFFSET,p.z)) for p in fit_points]
+fit_points=[Vector((p.x,p.y-offset_delta_gltf,p.z)) for p in fit_points]
 flat.name='Amanda 1.0 | Flat V1 replacement attachment'
 flat.data.name='Flat V1 fitted anatomical mesh'
 flat.parent=None
@@ -212,6 +219,8 @@ report={
  'fit_scale_xyz':list(scale),
  'surface_offset_blender_y_m':-FRONT_SURFACE_OFFSET,
  'surface_offset_gltf_z_m':FRONT_SURFACE_OFFSET,
+ 'surface_offset_delta_blender_y_m':-offset_delta_gltf,
+ 'surface_offset_delta_gltf_z_m':offset_delta_gltf,
  'replacement_vertex_count':len(new.data.vertices),
  'replacement_face_count':len(new.data.polygons),
  'replacement_vertex_group_count':len(new.vertex_groups),
