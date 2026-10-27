@@ -98,3 +98,9 @@ Canonical user-provided story:
 - Brooke's invitation should fit the friendship progression and feel natural rather than a jarring purchase pitch. If the player is not adult-verified, do not show or tease adult-only features; use normal friendship dialogue without the invite.
 - 'One-time' here means one complimentary access redemption, not a recurring free perk. Pass duration and whether re-entry during the same visit is allowed are TBD and require explicit product definition.
 - No Resort access/verification/subscription mechanics implemented in this branch. These are design requirements only.
+
+## Brooke's Resort presentation (adult-only environment, 2026-10-26)
+- After adult-verified player earns/redeems their one-time Resort invitation, Brooke appears in a **tiny miniskirt**, distinct from her lake attire.
+- Brooke intentionally performs a playful, flirtatious **bend-over animation** in front of the player as part of the Resort encounter. Treat this as an adult character's suggestive, non-explicit animation, not a graphic or forced sexual scene.
+- Ensure adult-only access gate described above applies to this encounter. Confirm mesh, clothing physics, pose rigging, camera behavior and mobile FPS in implementation.
+- Do not alter Brooke's ordinary lakeside appearance or behavior for players outside the Resort. Design note only; not yet implemented.
