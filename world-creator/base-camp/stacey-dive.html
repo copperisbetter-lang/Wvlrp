@@ -42,6 +42,16 @@ function ground(x,z){
   const dist=Math.abs(z-creekCenter(t)),level=T.MathUtils.lerp(pondY,CY,t);
   if(dist<4.5)return T.MathUtils.lerp(level-.55,Math.max(original,level+.2),smooth(1.7,4.5,dist));
  }
+ // V6 has its own rocks and ridge: lower the OLD procedural west hill
+ // under the canyon footprint and blend the cut into untouched terrain.
+ const sideFade=1-smooth(35,55,Math.abs(z-CZ));
+ const backFade=smooth(-96,-69,x);
+ const shoreFade=1-smooth(7,19,x);
+ const cut=sideFade*backFade*shoreFade;
+ if(cut>.001){
+  const bed=Math.min(original,CY+.20+Math.max(0,-x-24)*.017);
+  return T.MathUtils.lerp(original,bed,cut);
+ }
  return original;
 }
 const loader=new T.TextureLoader();const manager=new T.LoadingManager();
@@ -151,10 +161,21 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const foam=new T.MeshBasicMaterial({color:0xe8f4ed,transparent:true,opacity:.52,depthWrite:false,side:T.DoubleSide});
  const flowUniform={value:0};
  const falling=new T.MeshStandardMaterial({color:0xe4f1e9,roughness:.3,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false});
+ // Irregular flowing water with feathered edges: no repeating straight stripes.
  falling.onBeforeCompile=shader=>{
   shader.uniforms.flowTime=flowUniform;
   shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
-  shader.fragmentShader='uniform float flowTime;varying vec2 flowUV;\n'+shader.fragmentShader.replace('#include <map_fragment>',`float streak=.5+.5*sin(flowUV.x*74.+sin(flowUV.y*17.-flowTime*5.));float surge=.5+.5*sin(flowUV.y*95.-flowTime*15.+flowUV.x*12.);diffuseColor.rgb*=.75+.25*surge;diffuseColor.a*=.4+.6*streak;`);
+  shader.fragmentShader='uniform float flowTime;varying vec2 flowUV;\n'+shader.fragmentShader.replace('#include <map_fragment>',`
+   vec2 p=flowUV;
+   float drift=sin(p.y*22.-flowTime*6.+sin(p.x*9.))*.065
+              +sin(p.y*41.+p.x*12.-flowTime*9.)*.022;
+   float cascade=sin(p.y*37.-flowTime*8.+sin((p.x+drift)*19.+p.y*9.));
+   float foamF=pow(.5+.5*cascade,4.);
+   float crossing=.5+.5*sin(p.y*70.-flowTime*13.+p.x*11.);
+   float breakup=.5+.5*sin((p.x+drift)*27.+p.y*51.-flowTime*6.);
+   float edge=smoothstep(0.,.17,p.x)*(1.-smoothstep(.83,1.,p.x));
+   diffuseColor.rgb=mix(vec3(.10,.38,.44),vec3(.82,.93,.92),.38+.45*foamF+.17*crossing);
+   diffuseColor.a*=edge*(.40+.26*breakup+.24*foamF);`);
  };
  const impacts=[];
  for(let fall=0;fall<2;fall++){
@@ -162,7 +183,8 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const g=new T.PlaneGeometry(width,1,8,48),a=g.attributes.position;
   for(let k=0;k<a.count;k++){
    const lateral=a.getX(k),t=a.getY(k)+.5;
-   a.setXYZ(k,wallX+21-5*t+.35*Math.sin(t*12+fall),T.MathUtils.lerp(pondY,top,t),center+lateral*(1+.22*(1-t))+.2*Math.sin(t*15));
+   const warped=lateral*(1+.14*(1-t))+.18*Math.sin(t*24.+fall*2.6)+.12*Math.sin(t*53.+lateral*2.4);
+   a.setXYZ(k,wallX+21-5*t+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+lateral*3),T.MathUtils.lerp(pondY,top,t),center+warped);
   }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
   for(let n=0;n<4;n++){
    const ring=new T.Mesh(new T.RingGeometry(.65,1,32),foam);
@@ -177,7 +199,9 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
  const creek=new T.Mesh(cg,falling);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
+ // Old low-poly pond/rim rocks are not part of the approved canyon.
  const banks=new T.InstancedMesh(new T.DodecahedronGeometry(1,1),rock,100),bpose=new T.Object3D();
+ banks.visible=false;
  for(let i=0;i<100;i++){
   let x,z;if(i<60){const a=i/60*Math.PI*2;x=pondX+Math.cos(a)*8.6;z=CZ+Math.sin(a)*17.6;if(x>pondX+5&&Math.abs(z-CZ)<4){bpose.scale.setScalar(0);bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);continue;}}
   else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
@@ -212,11 +236,57 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    root.rotation.y=Math.PI/2; // open mouth faces the lake on the west/left bank
    root.position.set(wallX+23,pondY-.5,CZ);
    root.name='Stacey Canyon V6 approved photo-rock';
-   root.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material:[o.material];for(const x of m){if(x){x.side=T.DoubleSide;x.needsUpdate=true;}}}});
+   // One real sky: remove BLUE photo-background pixels baked into the canyon's
+   // dry-rock atlas near the skyline; the scene's Sky then shows through.
+   const patched=new Set();
+   root.traverse(o=>{if(!o.isMesh)return;
+    const materials=Array.isArray(o.material)?o.material:[o.material];
+    for(const m of materials){if(!m||patched.has(m))continue;patched.add(m);
+     m.side=T.DoubleSide;
+     if(/OriginalPhotos|SeamBlended|Dry/i.test(m.name||'')){
+      m.onBeforeCompile=shader=>{
+       shader.vertexShader='varying float photoHeight;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nphotoHeight=position.y;');
+       shader.fragmentShader='varying float photoHeight;\n'+shader.fragmentShader.replace('#include <map_fragment>',`
+        // Upper cyan photographic sky, never the gray/brown cliff.
+        if(photoHeight>17. && diffuseColor.b>.26
+          && diffuseColor.b>diffuseColor.r*1.32
+          && diffuseColor.g>diffuseColor.r*1.18
+          && diffuseColor.b>diffuseColor.g*.87) discard;`);
+      };
+      m.customProgramCacheKey=()=> 'v6-photo-sky-mask-1';
+     }
+     m.needsUpdate=true;
+    }
+   });
+   // Soften the dark vertical lighting seam at common photo-wall/wing vertices.
+   // Only vertices shared by DIFFERENT wall meshes are affected.
+   const shared=new Map(),v=new T.Vector3(),n=new T.Vector3();
+   root.updateMatrixWorld(true);
+   root.traverse(o=>{if(!o.isMesh||!/wing|core|upper-slope/i.test(o.name))return;
+    const g=o.geometry,pa=g.getAttribute('position'),na=g.getAttribute('normal');
+    if(!pa||!na)return;
+    for(let i=0;i<pa.count;i++){
+     v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld);
+     const key=Math.round(v.x*20)+','+Math.round(v.y*20)+','+Math.round(v.z*20);
+     n.fromBufferAttribute(na,i);
+     let bucket=shared.get(key);if(!bucket){bucket=[];shared.set(key,bucket);}
+     bucket.push({o,na,i,x:n.x,y:n.y,z:n.z});
+    }
+   });
+   for(const a of shared.values()){
+    if(a.length<2||!a.some(p=>p.o!==a[0].o))continue;
+    let nx=0,ny=0,nz=0;for(const p of a){nx+=p.x;ny+=p.y;nz+=p.z;}
+    const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
+    for(const p of a)p.na.setXYZ(p.i,p.x*.25+nx*.75,p.y*.25+ny*.75,p.z*.25+nz*.75);
+   }
+   root.traverse(o=>{if(o.isMesh){const a=o.geometry.getAttribute('normal');if(a)a.needsUpdate=true;}});
    scene.add(root);
+   // Old polygon cave seal and stone halo must NOT show through the new canyon.
+   // Keep the locked quest objects alive for future tunnel logic.
+   portal.visible=false;
    for(const mesh of legacyCliffParts)mesh.visible=false;
    window.staceyCanyonV6={scene:root,source:'approved V6',bytes:size,westShore};
-   diag.assets['Canyon V6']='loaded';
+   diag.assets['Canyon V6']='loaded, old cliff and portal hidden';
   }catch(e){diag.assets['Canyon V6']='FAILED';diag.errors.push('Canyon V6 '+String(e));}
  }
  installCanyonV6();
