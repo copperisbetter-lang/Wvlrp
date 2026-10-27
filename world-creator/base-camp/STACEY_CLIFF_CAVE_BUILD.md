@@ -73,3 +73,11 @@ Canonical user-provided story:
 - Do not assume or invent who found the necklace, where it was stored afterward, who may have moved it, how it is recovered, or how two additional connected quests unfold. Those links remain reserved for future user direction.
 - The pendant must ultimately be recovered and returned to Brooke; only then does her father's recollection of the symbol-marked cavern rock unlock the next Dark and Damp stage.
 - This reveal is internal design canon; **do not spoil it in player-facing dialogue, objectives, item descriptions or UI before discovery**.
+
+## Brooke friendship interaction unlock after quest (2026-10-26)
+- Before the player completes **For the Love of Brooke**, retain Brooke's established behavior of swimming away when that player approaches her sunbathing rock. Initial story interaction after island tunnel emergence is an explicit scripted exception.
+- Once that individual player **completes For the Love of Brooke** (pendant returned and quest completion acknowledged), Brooke no longer swims away from THAT player.
+- The player can approach, sit beside Brooke and talk with her via a friendly repeatable conversation interaction. "Sit and stalk" in voice dictation is understood contextually as **sit and talk**; confirm wording if later necessary.
+- This is per-player relationship progression. Other players who have not completed the quest still get Brooke's original shy/swim-away behavior. Prevent multiplayer state or NPC movement for one player from incorrectly changing another player's unlocked state; design an instanced or interaction-specific presentation as needed.
+- Preserve Brooke's agency: player-initiated conversations and optional sitting, not automatic pursuit. Specific dialogue and further friendship steps await user direction.
+- Design requirement only; no NPC code has yet been modified.
