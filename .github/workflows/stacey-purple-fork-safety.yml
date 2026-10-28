@@ -1,0 +1,17 @@
+name: Stacey Purple Main + Lake Spur Safety
+on:
+  push:
+    branches:
+      - gater/stacey-purple-through-path-lake-spur-20261028
+  workflow_dispatch:
+jobs:
+  geometry-and-grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check continuous through-path, lake spur, cavern, shoreline, grade
+        run: node --test world-creator/tests/stacey-purple-fork.test.mjs
