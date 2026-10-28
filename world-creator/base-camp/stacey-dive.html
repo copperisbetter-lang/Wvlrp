@@ -517,6 +517,94 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    }
    root.traverse(o=>{if(o.isMesh){const a=o.geometry.getAttribute('normal');if(a)a.needsUpdate=true;}});
    scene.add(root);
+
+   // V12 canyon hill JOIN: construct natural shoulders to each end of the
+   // owner's unchanged photographic V6 cliff, not flat filler panels.
+   function addCanyonHillJoins(canyon){
+     canyon.updateMatrixWorld(true);
+     const box=new T.Box3().setFromObject(canyon);
+     const p=new T.Vector3(),scan=[];
+     canyon.traverse(o=>{
+       if(!o.isMesh)return;
+       const a=o.geometry?.getAttribute('position');if(!a)return;
+       for(let j=0,step=Math.max(1,Math.ceil(a.count/2100));j<a.count;j+=step){
+         p.fromBufferAttribute(a,j).applyMatrix4(o.matrixWorld);
+         if(p.y>CY-2&&p.y<CY+55&&p.x>-98&&p.x<23)scan.push({x:p.x,y:p.y,z:p.z});
+       }
+     });
+     const dirt=new T.Color(0x665e46),stone=new T.Color(0x505449),grass=new T.Color(0x67734e);
+     const material=new T.MeshStandardMaterial({vertexColors:true,roughness:1,side:T.DoubleSide});
+     const x0=Math.max(-94,Math.min(-72,box.min.x-9)),x1=Math.min(17,Math.max(9,box.max.x+6));
+     const nx=48,nz=26,joins=[];
+     for(const s of [-1,1]){
+       const extent=s>0?box.max.z-CZ:CZ-box.min.z;
+       const near=T.MathUtils.clamp(extent-2.8,12,43),far=Math.max(59,near+17);
+       const candidates=scan.filter(v=>{const d=s*(v.z-CZ);return d>near-7&&d<near+8});
+       const heights=[];
+       for(let i=0;i<=nx;i++){
+         const x=T.MathUtils.lerp(x0,x1,i/nx);
+         let h=-Infinity;
+         for(const v of candidates)if(Math.abs(v.x-x)<5.8)h=Math.max(h,v.y);
+         const native=baseGround(x,CZ+s*near);
+         heights.push(T.MathUtils.clamp(Math.max(Number.isFinite(h)?h:native,native-2),CY+1,CY+38));
+       }
+       const crest=heights.map((_,i)=>{
+         let sum=0,wSum=0;
+         for(let k=-3;k<=3;k++){
+           const w=4-Math.abs(k);
+           sum+=heights[T.MathUtils.clamp(i+k,0,nx)]*w;wSum+=w;
+         }
+         return sum/wSum;
+       });
+       function surface(i,j){
+         const x=T.MathUtils.lerp(x0,x1,i/nx),t=j/nz;
+         const r=T.MathUtils.lerp(near,far,t)+Math.sin(x*.17+s)*1.5*t*(1-t);
+         const z=CZ+s*r,native=ground(x,z);
+         const edge=1-smooth(.03,.96,t),blend=smooth(-94,-70,x)*(1-smooth(5,17,x));
+         const rockLevel=T.MathUtils.lerp(crest[i],baseGround(x,z),smooth(.13,.82,t));
+         const breakup=(Math.sin(x*.49+z*.3)+Math.sin(x*.82-z*.21)*.55)*.26*edge;
+         const y=T.MathUtils.lerp(native+.10,Math.max(native+.10,rockLevel+breakup),edge*blend);
+         return {x,y,z,t};
+       }
+       const pos=[],rgb=[],ind=[];
+       for(let i=0;i<=nx;i++)for(let j=0;j<=nz;j++){
+         const v=surface(i,j);
+         pos.push(v.x,v.y,v.z);
+         const tone=stone.clone().lerp(dirt,smooth(.04,.49,v.t)).lerp(grass,smooth(.40,.97,v.t));
+         tone.multiplyScalar(.93+.08*Math.sin(v.x*.31+v.z*.62)*Math.cos(v.z*.23));
+         rgb.push(tone.r,tone.g,tone.b);
+       }
+       for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){
+         const a=i*(nz+1)+j,b=a+nz+1;
+         ind.push(a,b,a+1,b,b+1,a+1);
+       }
+       const g=new T.BufferGeometry();
+       g.setAttribute('position',new T.Float32BufferAttribute(pos,3));
+       g.setAttribute('color',new T.Float32BufferAttribute(rgb,3));
+       g.setIndex(ind);g.computeVertexNormals();
+       const mesh=new T.Mesh(g,material);
+       mesh.name=s<0?'Left canyon hill-to-stone shoulder':'Right canyon hill-to-stone shoulder';
+       scene.add(mesh);joins.push({surface,near,far});
+     }
+     // Submerged-in-soil limestone fragments break up each hard material boundary.
+     const rocks=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),
+       new T.MeshStandardMaterial({color:0x596052,roughness:1,flatShading:true}),100);
+     const dummy=new T.Object3D(),color=new T.Color();
+     for(let i=0;i<100;i++){
+       const j=joins[i%2],ix=5+((i*23)%37),iz=2+((i*31)%19),v=j.surface(ix,iz);
+       const size=.40+((i*17)%23)/23*1.05;
+       dummy.position.set(v.x,v.y-size*.52,v.z);
+       dummy.rotation.set(i*.7,i*2.4,i*.23);
+       dummy.scale.set(size*1.35,size*.75,size*1.1);
+       dummy.updateMatrix();rocks.setMatrixAt(i,dummy.matrix);
+       color.setHex(i%3===0?0x535c52:i%3===1?0x6a6a54:0x4a554d);
+       rocks.setColorAt(i,color);
+     }
+     rocks.computeBoundingSphere();rocks.name='Canyon integrated limestone';scene.add(rocks);
+     diag.assets['V6 hillside joins']='two textured graded shoulders and limestone';
+     diag.canyonHillJoins={rockExtentLeft:joins[0].near,rockExtentRight:joins[1].near};
+   }
+   addCanyonHillJoins(root);
    // Old polygon cave seal and stone halo must NOT show through the new canyon.
    // Keep the locked quest objects alive for future tunnel logic.
    portal.visible=false;
@@ -560,6 +648,6 @@ let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX
 function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Hill Join V1';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
