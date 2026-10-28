@@ -1238,6 +1238,9 @@ const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY
 const playerMoving=Math.hypot(xx,yy)>.10&&!isSitting;
 masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
  sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive'});
+// First-person view must not look through Mason's own face. Keep the avatar
+// visible in third-person, even when it finishes loading after a mode switch.
+if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
 if(chaseCamera){
  const distance=depthMode==='dive'?2.6:4.4;
  const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
