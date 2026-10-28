@@ -27,7 +27,7 @@ try{
   }))));
   assert.equal(await page.evaluate(()=>window.staceyPlayable.avatar),'Mason');
   await page.waitForFunction(()=>window.staceyPlayable?.masonReady===true ||
-    !!window.staceyPlayable?.masonError,{timeout:105000});
+    !!window.staceyPlayable?.masonError,null,{timeout:105000});
   const state=await page.evaluate(()=>({
     ready:window.staceyPlayable.masonReady,
     error:window.staceyPlayable.masonError,
