@@ -580,98 +580,144 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 
 })();
 
-// Rock cliff V4: collider uses world-space V6 geometry, never photo texture.
-// V3 incorrectly multiplied rock support by smooth(-27,-6,x): zero on much of cliff.
-const canyonTopMeshes=[],solidCells=new Map(),solidStep=2.5;
-const solidBounds=new T.Box3(),solidP=new T.Vector3(),solidRay=new T.Raycaster();
-const solidRayFrom=new T.Vector3(),solidDown=new T.Vector3(0,-1,0);
-const solidN=new T.Vector3(),solidNormalMatrix=new T.Matrix3();
-const solidMetrics={cells:0,vertices:0,rockSteps:0,wallStops:0,edgeStops:0};
-let solidReady=false,solidLastCell='',solidLastHit=null;
-const key=(i,j)=>i+','+j;
+// V5 whole-rock solid collider, both sides and the interior, without new
+// visible meshes. V4 indexed only the top and its waist-level ray missed walls.
+const canyonTopMeshes=[],stoneCols=new Map(),stoneStep=1.5;
+const stoneP0=new T.Vector3(),stoneP1=new T.Vector3(),stoneP2=new T.Vector3();
+const stoneXYZ=new T.Vector3(),stoneBounds=new T.Box3();
+let stoneReady=false;
+const stoneStats={triangles:0,cells:0,wallStops:0,edgeStops:0,roofSteps:0,interiorStops:0,holesFilled:0};
+const stoneKey=(i,j)=>i+','+j;
 function buildSolidCliff(root){
- root.updateMatrixWorld(true);solidBounds.setFromObject(root);solidCells.clear();
- let count=0;
- root.traverse(o=>{
-  if(!o.isMesh||/sky|background|panorama/i.test(o.name||''))return;
-  const a=o.geometry?.getAttribute('position');if(!a)return;
-  for(let i=0;i<a.count;i++){
-   solidP.fromBufferAttribute(a,i).applyMatrix4(o.matrixWorld);
-   if(solidP.y<CY+9||solidP.y>CY+45||solidP.x<-105||solidP.x>32||Math.abs(solidP.z-CZ)>70)continue;
-   const k=key(Math.floor(solidP.x/solidStep),Math.floor(solidP.z/solidStep));
-   solidCells.set(k,Math.max(solidP.y,solidCells.get(k)??-Infinity));count++;
-  }
+ root.updateMatrixWorld(true);stoneBounds.setFromObject(root);stoneCols.clear();
+ const raw=new Map();
+ const put=(x,z,y)=>{
+   if(x<-108||x>36||Math.abs(z-CZ)>73||y<CY-8||y>CY+55)return;
+   const i=Math.floor(x/stoneStep),j=Math.floor(z/stoneStep),k=stoneKey(i,j);
+   const rec=raw.get(k);
+   if(!rec)raw.set(k,{hi:y,lo:y});
+   else{rec.hi=Math.max(rec.hi,y);rec.lo=Math.min(rec.lo,y);}
+ };
+ function trace(p,q){
+   const n=Math.max(1,Math.ceil(Math.hypot(p.x-q.x,p.z-q.z)/(.65*stoneStep)));
+   for(let k=0;k<=n;k++){
+     const t=k/n;put(p.x+(q.x-p.x)*t,p.z+(q.z-p.z)*t,p.y+(q.y-p.y)*t);
+   }
+ }
+ root.traverse(mesh=>{
+   if(!mesh.isMesh||/sky|background|panorama/i.test(mesh.name||''))return;
+   const g=mesh.geometry,p=g?.getAttribute('position');if(!p)return;
+   const idx=g.index,triCount=idx?Math.floor(idx.count/3):Math.floor(p.count/3);
+   for(let t=0;t<triCount;t++){
+     const k=t*3;
+     stoneP0.fromBufferAttribute(p,idx?idx.getX(k):k).applyMatrix4(mesh.matrixWorld);
+     stoneP1.fromBufferAttribute(p,idx?idx.getX(k+1):k+1).applyMatrix4(mesh.matrixWorld);
+     stoneP2.fromBufferAttribute(p,idx?idx.getX(k+2):k+2).applyMatrix4(mesh.matrixWorld);
+     const low=Math.min(stoneP0.y,stoneP1.y,stoneP2.y);
+     const high=Math.max(stoneP0.y,stoneP1.y,stoneP2.y);
+     if(high<CY-8||low>CY+55)continue;
+     // Discard photo-background pieces outside the actual canyon footprint.
+     if(Math.max(stoneP0.x,stoneP1.x,stoneP2.x)<-108||
+        Math.min(stoneP0.x,stoneP1.x,stoneP2.x)>36)continue;
+     stoneStats.triangles++;
+     trace(stoneP0,stoneP1);trace(stoneP1,stoneP2);trace(stoneP2,stoneP0);
+     // Fill triangle footprints. Vertical wall triangles still work via
+     // edge traces; wide rock surfaces get filled rather than just outlined.
+     const x0=Math.max(-108,Math.min(stoneP0.x,stoneP1.x,stoneP2.x));
+     const x1=Math.min(36,Math.max(stoneP0.x,stoneP1.x,stoneP2.x));
+     const z0=Math.max(CZ-73,Math.min(stoneP0.z,stoneP1.z,stoneP2.z));
+     const z1=Math.min(CZ+73,Math.max(stoneP0.z,stoneP1.z,stoneP2.z));
+     const den=(stoneP1.z-stoneP2.z)*(stoneP0.x-stoneP2.x)+
+       (stoneP2.x-stoneP1.x)*(stoneP0.z-stoneP2.z);
+     if(Math.abs(den)<.001)continue;
+     const ia=Math.floor(x0/stoneStep),ib=Math.ceil(x1/stoneStep);
+     const ja=Math.floor(z0/stoneStep),jb=Math.ceil(z1/stoneStep);
+     for(let i=ia;i<=ib;i++)for(let j=ja;j<=jb;j++){
+       const x=(i+.5)*stoneStep,z=(j+.5)*stoneStep;
+       const u=((stoneP1.z-stoneP2.z)*(x-stoneP2.x)+(stoneP2.x-stoneP1.x)*(z-stoneP2.z))/den;
+       const v=((stoneP2.z-stoneP0.z)*(x-stoneP2.x)+(stoneP0.x-stoneP2.x)*(z-stoneP2.z))/den;
+       if(u<-.001||v<-.001||u+v>1.001)continue;
+       put(x,z,u*stoneP0.y+v*stoneP1.y+(1-u-v)*stoneP2.y);
+     }
+   }
  });
- solidReady=solidCells.size>8;solidMetrics.cells=solidCells.size;solidMetrics.vertices=count;
- solidLastCell='';solidLastHit=null;
- diag.assets['Solid cliff V4']=solidReady?'rock collision grid ready':'rock collision grid unavailable';
- diag.cliffPhysics=solidMetrics;
-}
-function rockTop(x,z,feet){
- if(!solidReady||x<solidBounds.min.x-6||x>solidBounds.max.x+6||
- z<solidBounds.min.z-6||z>solidBounds.max.z+6)return null;
- const ix=Math.floor(x/solidStep),iz=Math.floor(z/solidStep);
- let roof=-Infinity;
- for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){
-  const y=solidCells.get(key(ix+i,iz+j));if(y===undefined)continue;
-  const dx=(ix+i+.5)*solidStep-x,dz=(iz+j+.5)*solidStep-z;
-  if(dx*dx+dz*dz<64)roof=Math.max(roof,y);
+ // Thicken each photogrammetry wall to real rock: close tiny scan holes,
+ // and give front, inside and rear faces a shared, impenetrable core.
+ for(const [k,r] of raw){
+   const ij=k.split(','),i=+ij[0],j=+ij[1];
+   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+     const nx=i+dx,nz=j+dz;
+     const rec=stoneCols.get(stoneKey(nx,nz));
+     if(!rec||r.hi>rec.hi)stoneCols.set(stoneKey(nx,nz),{hi:r.hi,lo:Math.min(r.lo,CY-7)});
+   }
  }
- if(!Number.isFinite(roof))return null;
- const cell=key(Math.round(x*2),Math.round(z*2));
- if(solidLastCell!==cell){
-  solidLastCell=cell;solidLastHit=null;
-  solidRayFrom.set(x,CY+72,z);solidRay.set(solidRayFrom,solidDown);solidRay.near=0;solidRay.far=80;
-  let best=Infinity;
-  for(const h of solidRay.intersectObjects(canyonTopMeshes,false)){
-   if(!h.face||h.point.y<CY+9||h.point.y>CY+44)continue;
-   solidNormalMatrix.getNormalMatrix(h.object.matrixWorld);
-   solidN.copy(h.face.normal).applyMatrix3(solidNormalMatrix).normalize();
-   if(Math.abs(solidN.y)<.3)continue;
-   const d=Math.abs(h.point.y-feet);
-   if(d<best){best=d;solidLastHit=h.point.y;}
-  }
+ // One-cell pinholes are repaired, without filling the open pond/canyon area.
+ const repairs=[];
+ for(const [k,r] of stoneCols){
+   const [i,j]=k.split(',').map(Number);
+   for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){
+     const nk=stoneKey(i+di,j+dj);
+     if(stoneCols.has(nk))continue;
+     const a=stoneCols.get(stoneKey(i+di*2,j+dj*2));
+     const left=stoneCols.get(stoneKey(i+dj,j-di));
+     const right=stoneCols.get(stoneKey(i-dj,j+di));
+     if(a&&left&&right)repairs.push([nk,Math.min(r.hi,a.hi,left.hi,right.hi)]);
+   }
  }
- return solidLastHit!==null&&Math.abs(solidLastHit-feet)<5?solidLastHit:roof;
-}
-function cliffFooting(x,z,feet){
- const dirt=ground(x,z),roof=feet>=CY+7?rockTop(x,z,feet):null;
- if(roof===null)return {floor:dirt,rock:false,wall:false};
- if(roof>feet+1.5&&dirt<roof-1.5)return {floor:dirt,rock:false,wall:true};
- if(feet>=roof-4.5)return {floor:Math.max(dirt,roof),rock:true,wall:false};
- return {floor:dirt,rock:false,wall:true};
-}
-// A short waist-level segment stops entry through vertical rock faces, too.
-// Performs no raycasts away from the imported canyon and never affects swimming.
-const cliffHorizontalDir=new T.Vector3();
-function crossesRockWall(x0,z0,x1,z1,feet){
- if(!solidReady||feet<CY-2||x1<solidBounds.min.x-3||x1>solidBounds.max.x+3||
- z1<solidBounds.min.z-3||z1>solidBounds.max.z+3)return false;
- const dx=x1-x0,dz=z1-z0,d=Math.hypot(dx,dz);
- if(d<.0001)return false;
- solidRayFrom.set(x0,feet+1.05,z0);
- cliffHorizontalDir.set(dx/d,0,dz/d);
- solidRay.set(solidRayFrom,cliffHorizontalDir);
- solidRay.near=.015;solidRay.far=d+.18;
- for(const h of solidRay.intersectObjects(canyonTopMeshes,false)){
-  if(h.point.y<CY-2||h.point.y>CY+47)continue;
-  if(h.distance<=d+.12)return true;
+ for(const [k,hi] of repairs)if(!stoneCols.has(k)){
+   stoneCols.set(k,{hi,lo:CY-7});stoneStats.holesFilled++;
  }
- return false;
+ stoneStats.cells=stoneCols.size;
+ stoneReady=stoneCols.size>40;
+ diag.assets['solid cliff V5']=stoneReady
+   ?'full-height inner/outer rock volumes: '+stoneStats.cells+' cells'
+   :'FAILED to build cliff volume';
+ diag.cliffPhysics=stoneStats;
+ window.staceyRockCollider={metrics:stoneStats,solidCells:stoneCols.size};
 }
-function solidCliffStep(oldX,oldZ,nextX,nextZ,feet){
- const before=cliffFooting(oldX,oldZ,feet),after=cliffFooting(nextX,nextZ,feet);
- if(crossesRockWall(oldX,oldZ,nextX,nextZ,feet)&&!after.rock){
-  solidMetrics.wallStops++;return {x:oldX,z:oldZ,floor:before.floor};
- }
- if(after.wall){solidMetrics.wallStops++;return {x:oldX,z:oldZ,floor:before.floor};}
- if(before.rock&&!after.rock&&after.floor<feet-1.6){
-  solidMetrics.edgeStops++;return {x:oldX,z:oldZ,floor:before.floor};
- }
- if(after.rock)solidMetrics.rockSteps++;
- return {x:nextX,z:nextZ,floor:after.floor};
+function rockColumn(x,z){
+ if(!stoneReady||x<stoneBounds.min.x-4||x>stoneBounds.max.x+4||
+    z<stoneBounds.min.z-4||z>stoneBounds.max.z+4)return null;
+ return stoneCols.get(stoneKey(Math.floor(x/stoneStep),Math.floor(z/stoneStep)))||null;
 }
-window.staceyRockCollider={metrics:solidMetrics,topAt:rockTop};
+function cliffContact(x,z,feet){
+ const dirt=ground(x,z);
+ const column=rockColumn(x,z);
+ if(!column)return {floor:dirt,solid:false,onTop:false,roof:null};
+ const roof=column.hi;
+ // Rock is filled from the cliff base to its top, even if the GLB is a
+ // paper-thin/open scan. No walking in from front, inside, or rear.
+ const onTop=feet>=roof-2.0&&feet<=roof+3.5;
+ return {floor:onTop?Math.max(dirt,roof):dirt,
+   solid:!onTop&&feet<roof-1.0,onTop,roof};
+}
+function solidCliffStep(x0,z0,x1,z1,feet){
+ const before=cliffContact(x0,z0,feet);
+ const delta=Math.hypot(x1-x0,z1-z0);
+ // Continuous sweep keeps collisions stable on fast phones, at corners,
+ // or if a later version increases walking speed.
+ const steps=Math.max(1,Math.ceil(delta/.28));
+ let x=x0,z=z0,found=before;
+ for(let s=1;s<=steps;s++){
+   const t=s/steps,xx=x0+(x1-x0)*t,zz=z0+(z1-z0)*t;
+   const next=cliffContact(xx,zz,feet);
+   if(next.solid){
+     stoneStats.wallStops++;stoneStats.interiorStops++;
+     return {x,z,floor:found.floor};
+   }
+   // Don't drop through an open scan edge after walking onto its top.
+   if(found.onTop&&!next.onTop&&next.floor<feet-1.65){
+     stoneStats.edgeStops++;return {x,z,floor:found.floor};
+   }
+   // Do not step vertically onto a roof from far below it.
+   if(next.onTop&&next.roof>feet+2){
+     stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
+   x=xx;z=zz;found=next;
+ }
+ if(found.onTop)stoneStats.roofSteps++;
+ return {x,z,floor:found.floor};
+}
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
@@ -707,6 +753,6 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Solid Cliff V4';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Solid Cliff V5';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
