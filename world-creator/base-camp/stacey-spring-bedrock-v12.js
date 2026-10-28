@@ -21,7 +21,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   const bedPhoto=photo('dry spring bedrock','rock_06','rock_06_diff_1k.jpg');
   rockMaterial=new T.MeshStandardMaterial({map:rockPhoto,color:0x9ba9a8,roughness:1,metalness:0,side:T.DoubleSide});
   const darkerRock=new T.MeshStandardMaterial({map:rockPhoto,color:0x939d99,roughness:1,metalness:0,side:T.DoubleSide});
-  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,color:0xb4c4c6,roughness:.93,metalness:0,
+  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,color:0x999b93,roughness:.96,metalness:0,
      side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
   const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);
 
@@ -57,7 +57,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   float spRough=.36*sin(vGround.x*.89+vGround.z*1.16)+.24*sin(vGround.x*2.1-vGround.z*.61);
   float spMask=spRun*(1.-smoothstep(spRockWidth-1.2,spRockWidth+4.5,spSide+spRough));
   vec3 springDry=texture2D(springBedPhoto,vGround.xz*.25).rgb;
-  c=mix(c,springDry*vec3(.92,.96,.98),spMask);
+  c=mix(c,springDry*vec3(.85,.87,.83),spMask);
 `+anchor);
   };
   mat.customProgramCacheKey=()=> 'stacey-terrain-v12-photographic-spring-bed';
@@ -72,10 +72,20 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
       const p=line[i],a=line[Math.max(0,i-1)],b=line[Math.min(i+1,line.length-1)];
       const dx=b.x-a.x,dz=b.z-a.z,len=Math.max(.001,Math.hypot(dx,dz));
       for(let j=0;j<=cross;j++){
-        const q=j/cross*2-1,edge=Math.abs(q),shoulder=p.w*.5+(n===0?4.9:2.7);
+        const q=j/cross*2-1,edge=Math.abs(q);
+        // At both ends the photographed rock shelf narrows into real terrain,
+        // rather than exposing an enormous rectangular photograph from above.
+        const endFade=smooth(0,5,i)*smooth(0,5,line.length-1-i);
+        const shore=(n===0?3.8:2.1)*(.18+.82*endFade);
+        const shoulder=p.w*.5+shore+edge*.38*Math.sin(i*1.31+q*2.7);
         const x=p.x-dz/len*shoulder*q,z=p.z+dx/len*shoulder*q;
-        const raised=.07*(1-smooth(.72,.95,edge))+.025*Math.sin(x*2.3+z*.6)*(1-edge);
-        const y=ground(x,z)+raised-.24*smooth(.77,1,edge);
+        // Rough banks rise outside the active stream, while the center stays
+        // submerged below the original animated water surface.
+        const bankRidge=.36*smooth(.42,.8,edge)*(1-smooth(.92,1,edge));
+        const rough=.105*Math.sin(x*1.71+z*.83)*Math.sin(z*1.19-x*.37)*smooth(.35,.75,edge);
+        const center=.028*(1-smooth(.32,.63,edge));
+        const edgeBury=.40*smooth(.78,1,edge)+.13*(1-endFade)*smooth(.45,.98,edge);
+        const y=ground(x,z)+bankRidge+rough+center-edgeBury;
         v.push(x,y,z);uv.push(x*.28,z*.28);
         if(i<line.length-1&&j<cross){
           const k=i*(cross+1)+j;
@@ -92,12 +102,13 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     group.add(bed);beds.push(bed);
   }
 
+  // V14 / owner's ground and aerial QA: do not bridge the spring with boulders.
   // V13 / owner's aerial QA: the former 40x12 continuous arched roof looked
   // like a giant draped tarp or stacks of hay bales. DO NOT create another
   // full-width cloth-like sheet or rectangular photo billboard.
   // Build the lip instead out of overlapping irregular 3-D rock masses.
   const grotto=new T.Group();
-  grotto.name='V13 embedded fractured limestone spring — no tarp roof';
+  grotto.name='V14 hillside spring with separate embedded rock banks — no overhead rock bridge';
   group.add(grotto);
   const pose=new T.Object3D();
   const capRockGeo=new T.IcosahedronGeometry(1,2);
@@ -127,39 +138,28 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   const hollowGeo=new T.BufferGeometry();
   hollowGeo.setAttribute('position',new T.Float32BufferAttribute(holeVerts,3));
   hollowGeo.setIndex(holeIndices);hollowGeo.computeVertexNormals();
-  const recess=new T.Mesh(hollowGeo,new T.MeshBasicMaterial({
-    color:0x26302f,side:T.DoubleSide,depthWrite:true
+  const recess=new T.Mesh(hollowGeo,new T.MeshStandardMaterial({
+    map:rockPhoto,color:0x535b58,roughness:1,metalness:0,side:T.DoubleSide,depthWrite:true
   }));
   recess.name='Uneven narrow spring recess behind real stones';grotto.add(recess);
-  // Main fractured lip: varied sizes and rotations produce an organic broken
-  // rock silhouette, rather than a smooth arch or stacked squared slabs.
-  const cap=new T.InstancedMesh(capRockGeo,rockMaterial,26);
-  for(let i=0;i<26;i++){
-    const t=i/25,top=i<12,side=i>=12&&i<22,sgn=i%2?1:-1;
-    let x,z,y,sx,sy,sz;
-    if(top){
-      z=CZ-5.65+(i/11)*11.3+.22*Math.sin(i*2.31);
-      x=startX+1.05+.74*Math.sin(i*1.89);
-      y=24.77+.43*Math.sin(i*1.73)+.16*Math.cos(i*4.12);
-      sx=1.1+.52*((i*7%11)/11);sy=.74+.21*Math.sin(i*1.2)**2;
-      sz=1.06+.48*((i*3%13)/13);
-    }else if(side){
-      const j=i-12;z=CZ+sgn*(4.55+.76*((j*7%9)/9));
-      x=startX+.50+.69*Math.sin(j*2.04);
-      y=21.35+((j*7)%5)*.77+.32*Math.sin(j*1.64);
-      sx=1.1+.3*((j*5%11)/11);sy=.95+.27*((j*3%7)/7);
-      sz=1.23+.39*Math.sin(j*1.9)**2;
-    }else{
-      const j=i-22;z=CZ+sgn*(6.3+.8*j);
-      x=startX-1.25-1.1*j;
-      y=Math.max(24.15,ground(x,z)-.16);
-      sx=1.8;sy=1.15;sz=1.65;
-    }
-    pose.position.set(x,y,z);
-    pose.rotation.set(.16*Math.sin(i*1.4),i*.67,.21*Math.sin(i*2.2));
+  // NEVER span the opening with a row of disconnected floating rocks.
+  // The river emerges from the actual hillside between two banks, each made
+  // of small embedded native stones; the center 9m stays fully open for water.
+  const cap=new T.InstancedMesh(capRockGeo,rockMaterial,32);
+  for(let i=0;i<32;i++){
+    const side=i%2?1:-1,j=Math.floor(i/2),t=j/15;
+    // Rock centers stay outside the +/-4.4m wide source stream, with
+    // fragments submerged in the terrain. No overhead bridge, ever.
+    const x=startX-2.0+t*5.7+.18*Math.sin(i*2.1);
+    const z=CZ+side*(6.3+t*3.1+.27*Math.sin(i*1.77));
+    const sx=.53+.31*((i*7%13)/13),sy=.42+.26*((i*3%11)/11);
+    const sz=.62+.33*((i*5%17)/17);
+    pose.position.set(x,ground(x,z)+sy*.10,z);
+    pose.rotation.set(.12*Math.sin(i*1.43),i*.71,.14*Math.sin(i*2.03));
     pose.scale.set(sx,sy,sz);pose.updateMatrix();cap.setMatrixAt(i,pose.matrix);
   }
-  cap.name='26 irregular overhanging stone formations';cap.computeBoundingSphere();grotto.add(cap);
+  cap.name='32 embedded bank rocks, no overhead spring bridge';
+  cap.computeBoundingSphere();grotto.add(cap);
   // Small broken fragments at the shoulders and up the mountain edge.
   // Each outer fragment sinks into the same terrain as the walking collider,
   // so no rectangular alpha or geometry corners remain visible from above.
@@ -179,7 +179,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   rubble.name='48 small embedded natural rock shoulders';
   rubble.computeBoundingSphere();grotto.add(rubble);
   // Expose a diagnostic count for owners' aerial QA.
-  diag.assets['natural spring silhouette V13']='26 faceted lip rocks, 48 buried edge fragments, smaller irregular shadow; no roof sheet';
+  diag.assets['natural spring silhouette V14']='32 embedded bank rocks, 48 buried edge fragments, textured recessed mouth; NO overhead stone bridge';
   const splitterGeo=new T.IcosahedronGeometry(1,2);
   const position=splitterGeo.getAttribute('position');
   for(let i=0;i<position.count;i++){
@@ -205,10 +205,10 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     pose.updateMatrix();flanks.setMatrixAt(k,pose.matrix);
   }
   flanks.name='Natural scattered streamside rocks';flanks.computeBoundingSphere();group.add(flanks);
-  diag.assets['photo spring V13']='smaller irregular rock recess, real jagged stone overhang, dry photo bedrock under all 3 flows';
+  diag.assets['photo spring V14']='photographed stone recess, open stream channel, buried bank rocks, tapered dry bedrock under all 3 original flows';
   const report={grotto,splitter,beds,photoRock:'Poly Haven rock_face_03',
-    bedrock:'Poly Haven rock_06',facetedLipRocks:26,buriedEdgeRocks:48,waterSource:'existing animated scene water',
+    bedrock:'Poly Haven rock_06',facetedLipRocks:32,buriedEdgeRocks:48,waterSource:'existing animated scene water',
     trunkWidth:8.8,branches:2,mainAndLakeIntact:true};
-  window.staceySpringV12=report;window.staceySpringV13=report;
+  window.staceySpringV12=report;window.staceySpringV13=report;window.staceySpringV14=report;
   return report;
 }
