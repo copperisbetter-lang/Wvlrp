@@ -8,7 +8,7 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
   scene.add(carrier);
   const state = {ready:false, avatar:'Mason', clothing:'loading', clips:[], error:null};
   let model=null, mixer=null, standing=null, clothing=null;
-  let footOriginY=0, gaitPhase=0, gaitBlend=0;
+  let footOriginY=0, gaitPhase=0, gaitBlend=0, gaitRunBlend=0;
   const gaitBones={};
   const gaitRotation=new T.Quaternion();
 
@@ -73,21 +73,32 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
   function animateGait(dt,walking,running,sitting,flying,swimming,diving){
     const grounded=walking&&!sitting&&!flying&&!swimming&&!diving;
     const t=Math.max(0,Math.min(.05,dt));
-    gaitBlend+=(Number(grounded)-gaitBlend)*(1-Math.exp(-10*t));
+    const ease=(rate)=>1-Math.exp(-rate*t);
+    gaitBlend+=(Number(grounded)-gaitBlend)*ease(9);
+    // Blend RUN and WALK smoothly rather than snapping a leg mid-step.
+    gaitRunBlend+=(Number(grounded&&running)-gaitRunBlend)*ease(5);
     if(!state.gaitReady||gaitBlend<.001)return;
-    if(grounded)gaitPhase+=t*(running?14.2:10.2);
-    const swing=Math.sin(gaitPhase), leftLift=Math.max(0,swing),rightLift=Math.max(0,-swing);
-    const stride=(running?.68:.41)*gaitBlend;
-    const knee=(running?.94:.55)*gaitBlend;
-    // Opposite, alternating thigh swing; only the advancing leg folds at
-    // the knee. Arms counter-swing to the legs. Standing blend returns joints
-    // smoothly to the GLB standing pose after movement ends.
-    bend('leftThigh',swing*stride);
-    bend('rightThigh',-swing*stride);
-    bend('leftShin',leftLift*knee);
-    bend('rightShin',rightLift*knee);
-    bend('leftArm',-swing*(running?.42:.24)*gaitBlend);
-    bend('rightArm',swing*(running?.42:.24)*gaitBlend);
+    if(grounded)gaitPhase+=t*(8.6+3.1*gaitRunBlend);
+    const swing=Math.sin(gaitPhase),midSwing=Math.cos(gaitPhase);
+    // Modest thigh motion instead of the high-knee hurdling effect:
+    // walk ±14 degrees, run ±24 degrees. No body bounce.
+    const thigh=(.245+.18*gaitRunBlend)*gaitBlend;
+    // Bend the knee during center-of-swing recovery, then straighten it
+    // BEFORE forward foot plant, rather than folding at maximum thigh lift.
+    // Walk knee ~17 degrees, run ~31 degrees; slight flex on planted leg.
+    const knee=(.29+.25*gaitRunBlend)*gaitBlend;
+    const softKnee=(.025+.035*gaitRunBlend)*gaitBlend;
+    const leftRecovery=Math.pow(Math.max(0,midSwing),1.25);
+    const rightRecovery=Math.pow(Math.max(0,-midSwing),1.25);
+    bend('leftThigh',swing*thigh);
+    bend('rightThigh',-swing*thigh);
+    bend('leftShin',softKnee*(1-leftRecovery)+knee*leftRecovery);
+    bend('rightShin',softKnee*(1-rightRecovery)+knee*rightRecovery);
+    // Arms counter-swing naturally rather than pumping too far.
+    const arm=(.15+.14*gaitRunBlend)*gaitBlend;
+    bend('leftArm',-swing*arm);
+    bend('rightArm',swing*arm);
+    state.gaitMode=grounded?(gaitRunBlend>.5?'run':'walk'):'settling';
   }
   const info = diagnostics?.assets || {};
   info['Playable Mason']='loading original 52-bone GLB';
@@ -222,6 +233,7 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
       state.clips=glb.animations.map(a=>a.name);
       mixer=new T.AnimationMixer(model);
       configureGait(glb.animations);
+      state.gaitVersion='natural stride v2 · lower knee / mid-swing bend';
       const stand=glb.animations.find(a=>/Mason Stand/i.test(a.name));
       if(stand){
         standing=mixer.clipAction(stand);
