@@ -159,8 +159,8 @@ export function createStaceyPurpleTrails(natural){
         const dx=next.x-prev.x,dz=next.z-prev.z,len=Math.max(.001,Math.hypot(dx,dz)),nx=-dz/len,nz=dx/len;
         for(const offset of [-1.3,-.65,0,.65,1.3]){
           const x=p.x+nx*offset,z=p.z+nz*offset;
-          v.push(x,ground(x,z)+.065,z);
-          uv.push(offset/2.6+.5,p.s/8);
+          v.push(x,ground(x,z)+.022,z);
+          uv.push(offset/2.6+.5,p.s/7.5);
         }
         if(i>0)for(let j=1;j<5;j++){const k=i*5+j;tri.push(k,k-1,k-5,k-1,k-6,k-5)}
       }
