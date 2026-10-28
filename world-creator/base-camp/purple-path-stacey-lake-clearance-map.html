@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WVLRP — Purple Path Stops At Stacey Lake Woods</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#131c1b;color:#e9efe9;font-family:system-ui,sans-serif}
+header{padding:17px 18px 9px;max-width:970px;margin:auto}h1{font-size:20px;margin:0 0 6px}p{font-size:13px;color:#b5c9c1;line-height:1.5;margin:5px 0 9px}
+main{max-width:970px;padding:0 8px 20px;margin:auto}.key{display:flex;gap:10px;flex-wrap:wrap;padding:7px 12px 10px;font-size:12px;color:#c3d1c5}
+.key span{display:inline-flex;gap:6px;align-items:center}.sw{width:18px;height:8px;border-radius:9px;background:#9c73b5}
+svg{display:block;width:100%;aspect-ratio:1/1;max-height:78vh;border:1px solid #355248;border-radius:12px;background:#22372e;touch-action:pan-x pan-y}
+#stats{padding:12px;font:13px/1.5 system-ui;max-width:970px;margin:auto}.pill{display:inline-block;border-radius:12px;padding:4px 8px;background:#35493e;margin:3px 4px 3px 0}
+button{background:#456455;border:1px solid #6c9283;color:white;padding:7px 11px;border-radius:7px;cursor:pointer}
+</style></head><body>
+<header><h1>The Wild · Purple Path / Stacey Lake Clearance</h1>
+<p><strong>Protective route preview.</strong> The purple path ends at the woods on the near shore and restarts from the woods across the lake. The lake stays at its new location; no bridge, beach path, or excavation through water.</p></header>
+<main><div class="key">
+<span><i class="sw"></i>Purple route — wooded sections only</span>
+<span><i class="sw" style="background:#58b1bb"></i>Actual new Stacey Lake shoreline</span>
+<span><i class="sw" style="background:#95a7a0"></i>60 m cleared woodland edge</span>
+<span><i class="sw" style="background:#e8c77f"></i>Path endpoints</span>
+</div>
+<svg viewBox="-445 -445 890 890" role="img" aria-label="Top-down game-world diagram showing new Stacey Lake at x 140 z negative 240, wooded gap in purple ring, and two trail endpoints">
+<defs><pattern id="forest" width="35" height="35" patternUnits="userSpaceOnUse"><circle cx="8" cy="11" r="4" fill="#3e5c46" opacity=".3"/><circle cx="29" cy="32" r="6" fill="#3e5c46" opacity=".22"/></pattern></defs>
+<rect x="-445" y="-445" width="890" height="890" fill="url(#forest)"/>
+<circle cx="0" cy="0" r="402.336" fill="none" stroke="#5e806b" stroke-width="2" stroke-dasharray="7 8"/>
+<circle cx="0" cy="0" r="268.224" fill="none" stroke="#5b705f" stroke-width="2" stroke-dasharray="3 8"/>
+<path id="woods" fill="#3a584a" fill-opacity=".45" stroke="#96a8a0" stroke-width="2.4" stroke-dasharray="8 7"/>
+<path id="lake" fill="#277480" stroke="#81d0d6" stroke-width="3.4"/>
+<path id="dryTrail" fill="none" stroke="#bd8cd5" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<g id="endcaps"></g>
+<circle cx="0" cy="0" r="6.2" fill="#f6edc3" stroke="#34483f" stroke-width="2"/>
+<text x="-22" y="20" font-size="13" fill="#fff3ca">BASE CAMP</text>
+<circle cx="317.861" cy="-169.010" r="5" fill="#f2dd82" stroke="#273c31" stroke-width="2"/>
+<text x="302" y="-184" font-size="12" fill="#fff6bd" text-anchor="end">Campsite 64</text>
+<text x="142" y="-249" fill="#e1fcff" text-anchor="middle" font-size="19" font-weight="700">STACEY LAKE</text>
+<text x="142" y="-230" fill="#c4eaf2" text-anchor="middle" font-size="11">New location (140, −240)</text>
+<text x="0" y="-423" font-size="16" fill="#d6e9e0" text-anchor="middle">N ↑</text>
+</svg>
+<p id="stats"><span class="pill">Calculated from actual new lake shoreline geometry</span><span class="pill">60 m tree-clearance edge + 1 m safety margin</span><span class="pill">Path gap ≈ 341 meters</span></p>
+<p style="padding:0 5px">Map units are game-world meters. This drawing verifies route geometry; it is <strong>not</strong> the actual Stacey Lake water or a fully graded trail gameplay test. The full lake scene remains unchanged.</p></main>
+<script>
+const R=268.224,cx=140,cz=-240,base=113.797805566,rad=Math.PI/180;
+const open=[263.6736605122942,336.5114860430782];
+function lakePt(a,d=0){const r=base*(1+.038*Math.sin(5*a)+.022*Math.cos(9*a))+d;return [cx+r*Math.cos(a),cz+r*Math.sin(a)]}
+function pt(a){return [R*Math.cos(a*rad),R*Math.sin(a*rad)]}
+function pathCoords(coords,close=true){return coords.map(([x,y],i)=>(i?'L':'M')+x.toFixed(3)+','+y.toFixed(3)).join(' ')+(close?' Z':'')}
+let shore=[],woods=[],dry=[];
+for(let i=0;i<=720;i++){let a=i*2*Math.PI/720;shore.push(lakePt(a));woods.push(lakePt(a,60));}
+for(let a=open[1];a<=open[0]+360;a+=.05)dry.push(pt(a));dry.push(pt(open[0]+360));
+document.getElementById('lake').setAttribute('d',pathCoords(shore));
+document.getElementById('woods').setAttribute('d',pathCoords(woods));
+document.getElementById('dryTrail').setAttribute('d',pathCoords(dry,false));
+const caps=document.getElementById('endcaps');
+open.forEach((a,i)=>{
+ const [x,z]=pt(a),e=document.createElementNS('http://www.w3.org/2000/svg','circle');
+ e.setAttribute('cx',x);e.setAttribute('cy',z);e.setAttribute('r','8');e.setAttribute('fill','#f4cc73');e.setAttribute('stroke','#422f47');e.setAttribute('stroke-width','3');caps.append(e);
+ const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+ label.setAttribute('x',x+(i?12:-12));label.setAttribute('y',z-15);label.setAttribute('text-anchor',i?'start':'end');label.setAttribute('font-size','12');label.setAttribute('fill','#ffe5a7');
+ label.textContent=i?'TRAIL RESUMES IN WOODS':'TRAIL ENDS AT WOODS';caps.append(label);
+});
+</script></body></html>
