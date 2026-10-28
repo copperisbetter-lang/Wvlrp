@@ -6,9 +6,10 @@
 #actionConsole{position:fixed;right:12px;top:126px;display:grid;grid-template-columns:repeat(2,68px);gap:6px;z-index:5}
 #actionConsole button{min-height:43px;padding:8px 5px;background:#143a3de6;font-size:12px;font-weight:700}
 #actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8;outline-offset:0}
-#actionConsole button:last-child{grid-column:1/-1}
+#actionConsole #viewMode{white-space:pre-line;line-height:1.12;font-size:11px}
 @media(max-width:640px){#panel{max-width:70vw;gap:4px}#panel button{padding:7px 9px;font-size:11px}#actionConsole{top:118px;right:8px;grid-template-columns:repeat(2,58px);gap:5px}#actionConsole button{min-height:40px;padding:6px 3px;font-size:11px}#hint{max-width:43vw}#status{max-width:58%}}
-</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to move · look up while flying to climb</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="viewMode" type="button" aria-pressed="true">View: 3rd</button><button id="quality">Quality</button></div><div id="actionConsole" role="group" aria-label="Game movement console"><button id="actionRun" type="button" aria-pressed="false">RUN</button><button id="actionFly" type="button" aria-pressed="false">FLY</button><button id="actionSwim" type="button" aria-pressed="false">SWIM</button><button id="actionDive" type="button" aria-pressed="false">DIVE</button><button id="actionSit" type="button" aria-pressed="false">SIT</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to move · look up while flying to climb</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="actionConsole" role="group" aria-label="Game movement console"><button id="actionRun" type="button" aria-pressed="false">RUN</button><button id="actionFly" type="button" aria-pressed="false">FLY</button><button id="actionSwim" type="button" aria-pressed="false">SWIM</button><button id="actionDive" type="button" aria-pressed="false">DIVE</button><button id="actionSit" type="button" aria-pressed="false">SIT</button><button id="viewMode" type="button" aria-pressed="true" aria-label="Third-person camera; tap to switch to first-person" title="Toggle first- and third-person camera">3RD
+PERSON</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
@@ -1192,8 +1193,10 @@ document.querySelector('#actionSit').onclick=toggleSit;
 const viewButton=document.querySelector('#viewMode');
 viewButton.onclick=()=>{
  chaseCamera=!chaseCamera;
- viewButton.textContent=chaseCamera?'View: 3rd':'View: 1st';
+ viewButton.textContent=chaseCamera?'3RD\nPERSON':'1ST\nPERSON';
  viewButton.setAttribute('aria-pressed',String(chaseCamera));
+ viewButton.setAttribute('aria-label',chaseCamera?'Third-person camera; tap to switch to first-person':'First-person camera; tap to switch to third-person');
+ if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
 };
 beach();
  if(new URLSearchParams(location.search).get('spawn')==='lake'){
