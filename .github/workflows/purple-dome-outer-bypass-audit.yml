@@ -1,0 +1,29 @@
+name: Stacey V8 dome-safe outer purple bypass QA
+on:
+  push:
+    branches:
+      - gater/purple-dome-outer-bypass-20261028
+    paths:
+      - 'world-creator/base-camp/index.html'
+      - 'world-creator/base-camp/purple-dome-outer-bypass.js'
+      - 'world-creator/tests/purple-dome-bypass.test.mjs'
+      - '.github/workflows/purple-dome-outer-bypass-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check bypass module JS syntax
+        run: node --check world-creator/base-camp/purple-dome-outer-bypass.js
+      - name: Verify V8 cavern, campsite, lake, terrain geometry and grades
+        run: node world-creator/tests/purple-dome-bypass.test.mjs
+      - name: Verify unchanged graded woodland path and safe lake endpoints
+        run: |
+          node world-creator/tests/purple-woodland-grade.test.mjs
+          node world-creator/tests/purple-ring-excavation-integration.test.mjs
