@@ -56,3 +56,5 @@ export function applyWoodlandTrail360Photo(THREE,meshes){
   image.src=new URL(asset,import.meta.url).href;
   return status;
 }
+
+// Original 360 reference retained.
