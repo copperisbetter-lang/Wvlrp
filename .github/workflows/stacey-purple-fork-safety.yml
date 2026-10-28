@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - gater/stacey-purple-through-path-lake-spur-20261028
+      - gater/stacey-purple-walkable-grade-v2-20261028
   workflow_dispatch:
 jobs:
   geometry-and-grade:
