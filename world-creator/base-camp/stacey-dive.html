@@ -32,6 +32,19 @@ if(cliffWeight>0 && d>=0 && d<105){
 if(d<13.716)return CY+.035+d*.035;const ridge=CY+.515+14*smooth(14,85,d)+19*smooth(70,160,d)+8*Math.sin(a*4+.5)**2*smooth(22,120,d);return ridge+Math.sin(x*.025)*Math.cos(z*.023)*4*smooth(14,70,d)}
 // Shared waterfall catchment: west-bank basin and one outlet carved into terrain.
 const fallShore=CX-outer(Math.PI),pondX=fallShore-26,pondY=CY+1.4;
+// One walk-height opening in the center of the 7.62-meter-separated waterfalls.
+const hiddenCave={x:fallShore-51+19.55,z:CZ,floor:CY+1.65,halfWidth:1.32,
+ innerEnd:fallShore-51+19.55-13.8,outerEnd:fallShore-51+19.55+7.5};
+function isHiddenCaveOpening(x,z,feet){
+ return x>=hiddenCave.innerEnd&&x<=hiddenCave.outerEnd&&
+  Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth&&feet>=CY-2&&feet<hiddenCave.floor+3.15;
+}
+function hiddenCaveFloor(x){
+ return hiddenCave.floor-1.1*smooth(hiddenCave.x+1.2,hiddenCave.outerEnd,x);
+}
+window.staceyHiddenCave={centerX:hiddenCave.x,centerZ:hiddenCave.z,
+ floor:hiddenCave.floor,width:2*hiddenCave.halfWidth,
+ length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:true};
 function creekCenter(t){return CZ+Math.sin(t*Math.PI*2)*1.8;}
 function ground(x,z){
  // Build the canyon ends from real soil terrain, not artificial cliff panels.
@@ -314,6 +327,37 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  subterranean.visible=false;
  window.staceyUnderground={group:subterranean,entrance:caveMouth,ballroom:hall,pool:darkWater,exit:exitPos,questLocked:true,tunnel2OneWay:true,
    setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=!complete;window.staceyCave.locked=!complete;}};
+ // An accessible 14m vestibule, separate from quest-locked Dark and Damp.
+ const vestibule=new T.Group();
+ vestibule.name='Secret cave vestibule — hidden between the waterfalls';scene.add(vestibule);
+ const floorMat=new T.MeshStandardMaterial({color:0x555d51,roughness:1,side:T.DoubleSide});
+ const caveLen=hiddenCave.outerEnd-hiddenCave.innerEnd;
+ const floor=new T.Mesh(new T.BoxGeometry(caveLen,.25,hiddenCave.halfWidth*2.3),floorMat);
+ floor.position.set((hiddenCave.innerEnd+hiddenCave.outerEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
+ floor.name='Hidden cave stone floor';vestibule.add(floor);
+ const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,caveLen-7,11,1,true),
+   new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:true}));
+ shell.rotation.z=Math.PI/2;
+ shell.position.set((hiddenCave.innerEnd+hiddenCave.x)/2,hiddenCave.floor+1.12,hiddenCave.z);
+ shell.name='Interior stone tunnel roof and side walls';vestibule.add(shell);
+ const backWall=new T.Mesh(new T.BoxGeometry(.72,3.4,hiddenCave.halfWidth*2.7),
+   new T.MeshStandardMaterial({color:0x444c45,roughness:1,side:T.DoubleSide}));
+ backWall.position.set(hiddenCave.innerEnd-.2,hiddenCave.floor+1.5,hiddenCave.z);
+ backWall.name='Quest-locked deeper cave door';vestibule.add(backWall);
+ const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),
+   new T.MeshStandardMaterial({color:0x61685c,roughness:1,flatShading:true}),12);
+ const pose=new T.Object3D();
+ for(let k=0;k<12;k++){
+  const side=k%2?-1:1;
+  pose.position.set(hiddenCave.x+(k<6?1.1:-1.2)+(k%3)*.5,
+   hiddenCave.floor+.2+(k%3)*.48,hiddenCave.z+side*(hiddenCave.halfWidth+.35));
+  pose.scale.set(.4+(k%3)*.22,.35+(k%4)*.17,.43+(k%3)*.13);
+  pose.rotation.set(k*.27,k*.65,k*.23);pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+ }
+ rubble.computeBoundingSphere();rubble.name='Concealed entrance rubble';vestibule.add(rubble);
+ window.staceyHiddenCave.vestibule=vestibule;
+ diag.assets['secret cave']='centered entrance + walk-in vestibule; deeper quest still locked';
+
  diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
 
  diag.assets['cave entrance']='visible, boulder sealed — quest locked';
@@ -682,6 +726,9 @@ function rockColumn(x,z){
 }
 function cliffContact(x,z,feet){
  const dirt=ground(x,z);
+ // The ONLY authorized void through otherwise full-height solid cliff.
+ if(isHiddenCaveOpening(x,z,feet))
+  return {floor:Math.max(dirt,hiddenCaveFloor(x)),solid:false,onTop:false,roof:null,cave:true};
  const column=rockColumn(x,z);
  if(!column)return {floor:dirt,solid:false,onTop:false,roof:null};
  const roof=column.hi;
@@ -701,6 +748,12 @@ function solidCliffStep(x0,z0,x1,z1,feet){
  for(let s=1;s<=steps;s++){
    const t=s/steps,xx=x0+(x1-x0)*t,zz=z0+(z1-z0)*t;
    const next=cliffContact(xx,zz,feet);
+   if(found.cave&&xx<hiddenCave.innerEnd+.15){
+    stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
+   if(found.cave&&!next.cave&&Math.abs(zz-hiddenCave.z)>=hiddenCave.halfWidth){
+    stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
    if(next.solid){
      stoneStats.wallStops++;stoneStats.interiorStops++;
      return {x,z,floor:found.floor};
@@ -753,6 +806,6 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Solid Cliff V5';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Hidden Cave V6';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
