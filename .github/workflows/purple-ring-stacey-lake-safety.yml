@@ -1,0 +1,24 @@
+name: Purple ring — Stacey Lake woodland-gap safety
+on:
+  push:
+    branches:
+      - gater/purple-ring-lake-buffer-20261028
+    paths:
+      - world-creator/base-camp/index.html
+      - world-creator/base-camp/purple-ring-excavation.js
+      - world-creator/tests/purple-ring-excavation-integration.test.mjs
+      - .github/workflows/purple-ring-stacey-lake-safety.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify Stacey shoreline and woodland gap against trail and earthworks
+        run: node world-creator/tests/purple-ring-excavation-integration.test.mjs
+      - name: Check path code JavaScript module syntax
+        run: node --check world-creator/base-camp/purple-ring-excavation.js
