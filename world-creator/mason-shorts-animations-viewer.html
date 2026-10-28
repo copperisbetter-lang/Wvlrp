@@ -254,7 +254,7 @@ function generateFittedShorts(body){
      for(let k=0;k<segments;k++){
        const a=j*segments+k,b=j*segments+(k+1)%segments;
        const c=(j+1)*segments+k,d=(j+1)*segments+(k+1)%segments;
-       faces.push(a,c,b,b,c,d);
+       faces.push(a,b,c,b,d,c);
      }
    }
    const garment=new BABYLON.Mesh(name,scene);
