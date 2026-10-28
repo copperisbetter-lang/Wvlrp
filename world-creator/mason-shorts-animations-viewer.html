@@ -28,7 +28,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 @media(max-height:700px){#stage{height:57dvh;min-height:280px}}
 </style>
 </head><body>
-<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V5</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
+<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V6</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
 <main>
 <div id="stage"><canvas id="renderCanvas" aria-label="Rotate and zoom Mason's three-dimensional model"></canvas><div role="status" id="status">Loading Mason's real 3D model…</div></div>
 <div class="panel">
@@ -56,7 +56,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 <div class="tiny">Drag to rotate · pinch to zoom · shorts and body follow the same articulated skeleton.</div>
 </fieldset>
 </div>
-<p class="note"><strong>Shorts V5:</strong> Replaced invisible cloned V4 clothing with a genuinely new opaque, skin-weighted fabric mesh, expanded slightly beyond Mason's body. Animation system and source GLB unchanged. Phone visual validation required.</p>
+<p class="note"><strong>Shorts V6:</strong> Preserves the opaque, skin-weighted fabric mesh from V5 and expands rear/side coverage to eliminate large cutouts on the seat. Clean hem and animation fit still require phone inspection. Animation system and source GLB unchanged. Phone visual validation required.</p>
 <p class="note"><strong>Source:</strong> the original <code>world-creator/assets/mason-mpfb-trial.glb</code> (not Rob). The animation menu is populated directly from the loaded GLB, with source clip names. Existing stand, bend, kneel, hands-and-knees and elbows-and-knees clips are expected; any others only appear if actually present in the asset. Walk, run, swim, sit and other unbuilt actions are not mislabeled as working clips. This is a separate QA viewer, not a game deployment. The shorts are a nondestructive fitted skinned-mesh preview; check their fit during deep knee/hip movements.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
@@ -166,13 +166,19 @@ function generateFittedShorts(body){
    BABYLON.Vector3.TransformCoordinatesToRef(point,world,out);
    worldPoints[i]={x:out.x,y:out.y,z:out.z};
  }
- // Select full source triangles (never centroid triangles that reach stomach)
- // from waistband near hip to above the knee. Ignore arms in T-pose.
+ // Select full body-surface triangles from waistband to above knee.
+ // V6 coverage repairs avoid clipping the broad posterior seat.
+ // V6: previous depth caps clipped the back of the seat, producing large
+ // skin-colored holes in the owner's rear Android screenshot. The source
+ // body's posterior surface extends beyond those caps. Limit sideways
+ // reach to exclude the lowered arms/hands, NOT the front/back seat depth.
+ // Avoid arbitrary material holes when filtering all-three-vertices faces.
  const inside=i=>{
    const p=worldPoints[i],y=(p.y-low.y)/height;
    if(y<.390||y>.650)return false;
-   return Math.abs(p.x-cx)<height*(y>.515?.146:.191) &&
-     Math.abs(p.z-cz)<height*(y>.515?.112:.132);
+   const lateralCap=height*(y>.515?.160:.204);
+   const depthCap=height*.285;
+   return Math.abs(p.x-cx)<lateralCap && Math.abs(p.z-cz)<depthCap;
  };
  const selected=[];
  for(let i=0;i<indices.length;i+=3){
@@ -194,7 +200,7 @@ function generateFittedShorts(body){
    expanded[i*3+1]=out.y+normals[i*3+1]*normalLift;
    expanded[i*3+2]=out.z+normals[i*3+2]*normalLift;
  }
- const cloth=new BABYLON.Mesh("Mason shorts V5 · conformal skinned fabric",scene);
+ const cloth=new BABYLON.Mesh("Mason shorts V6 · full-seat skinned fabric",scene);
  cloth.parent=body.parent;
  cloth.position.copyFrom(body.position);
  cloth.scaling.copyFrom(body.scaling);
@@ -227,10 +233,10 @@ function generateFittedShorts(body){
  cloth.refreshBoundingInfo();
  cloth.computeWorldMatrix(true);
  $("clothSummary").textContent=
-   "Shorts V5 · "+selected.length/3+" real body-surface triangles; "+
-   "new opaque fabric mesh with exact original skeleton weights. "+
+   "Shorts V6 · "+selected.length/3+" real body-surface triangles; "+
+   "expanded rear coverage; exact original skeleton weights. "+
    "Check front/back/side and bending.";
- console.info("Mason shorts V5 verified",{
+ console.info("Mason shorts V6 candidate",{
    model:"Mason MPFB",triangles:selected.length/3,
    vertices:worldPoints.length,skeletonBones:body.skeleton.bones.length,
    visible:cloth.isVisible,enabled:cloth.isEnabled(),color:palettes[$("shortsColor").value]
@@ -294,7 +300,7 @@ try{
   $("smile").disabled=smileTargets.length===0;
   modelReady=true;
   motionClipsImported();
-  updateStatus("Mason V5 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
+  updateStatus("Mason V6 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
     " GLB clips · shorts "+(clothing.length?clothing[0].getTotalIndices()/3+" garment faces":"FAILED; see Clothing note"));
  }).catch(err=>{updateStatus("Mason GLB failed: "+(err.message||err));console.error(err);});
  engine.runRenderLoop(()=>{
