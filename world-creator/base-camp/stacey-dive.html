@@ -565,7 +565,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
      // transparent at the one passage aligned between the waterfall sheets.
      const originalCompile=m.onBeforeCompile;
      m.onBeforeCompile=shader=>{
-      if(originalCompile)originalCompile(shader);
+      if(originalCompile)originalCompile.call(m,shader);
       shader.vertexShader='varying vec3 hiddenDoorWorld;\n'+shader.vertexShader.replace(
        '#include <begin_vertex>',
        '#include <begin_vertex>\nhiddenDoorWorld=(modelMatrix*vec4(position,1.0)).xyz;');
@@ -581,7 +581,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
        '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
      };
      const priorProgramKey=m.customProgramCacheKey;
-     m.customProgramCacheKey=()=>String(priorProgramKey?priorProgramKey():'v6-photo')+'-hidden-entrance-v6';
+     m.customProgramCacheKey=()=>String(priorProgramKey?priorProgramKey.call(m):'v6-photo')+'-hidden-entrance-v6';
      m.needsUpdate=true;
     }
    });
