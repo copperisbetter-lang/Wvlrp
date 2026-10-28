@@ -72,13 +72,14 @@ function makeCreekBedrockMap(){
  };
  for(let z=0;z<S;z++)for(let x=0;x<S;x++){
   const u=x/S,v=z/S;
-  const grain=value(u,v,24)*.52+value(u,v,64)*.24+value(u,v,8)*.24;
-  const crack=Math.abs(Math.sin(u*31.4159+1.2*Math.sin(v*18.85)+value(u,v,8)*2.3));
-  const fissure=crack>.992?-.19:0; // hairline mineral fractures, not broad stripes
-  const wet=grain*.28+fissure;
+  // Multiscale granular shale: no sinusoidal crack lattice or repeating dark paving joints.
+  const broad=value(u,v,5),mottle=value(u,v,17),grain=value(u,v,58);
+  const rock=.53*broad+.31*mottle+.16*grain+(hash(x,z)-.5)*.07;
+  const warm=value(u+.23,v+.17,9);
   const k=(z*S+x)*4;
-  data[k]=Math.round(65+wet*82);data[k+1]=Math.round(72+wet*76);
-  data[k+2]=Math.round(69+wet*68);data[k+3]=255;
+  data[k]=Math.round(74+rock*64+warm*9);
+  data[k+1]=Math.round(77+rock*59+warm*6);
+  data[k+2]=Math.round(73+rock*55+warm*3);data[k+3]=255;
  }
  const map=new T.DataTexture(data,S,S,T.RGBAFormat);
  map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;
@@ -112,7 +113,8 @@ mat.onBeforeCompile=s=>{
  float irregular=.58*sin(vGround.x*.71+vGround.z*.39)+.36*sin(vGround.z*1.27-vGround.x*.44);
  float rockMask=smoothstep(-.08,.18,creekT)*(1.-smoothstep(1.10,1.45,creekT))
                 *(1.-smoothstep(width-1.9,width+1.5,lateral+irregular));
- vec3 rockC=texture2D(creekBedrockMap,vGround.xz*.23).rgb;
+ vec3 rockC=mix(texture2D(creekBedrockMap,vGround.xz*.07).rgb,
+                texture2D(creekBedrockMap,vGround.xz*.24).rgb,.23);
  // Submerged creek rock is darker/wetter, and stone replaces loose sand.
  c=mix(c,rockC*vec3(.90,.95,.96),rockMask);
  // Uneven mineral-silt banks beside the scoured rock bed, not a smooth gray ramp.
@@ -121,9 +123,9 @@ mat.onBeforeCompile=s=>{
  float bankOffset=lateral+irregular+.24*sin(vGround.x*1.81+vGround.z*.74);
  float bankBand=bankRange*smoothstep(width-2.3,width+.5,bankOffset)
       *(1.-smoothstep(width+2.0,width+6.4,bankOffset));
- float waterErosion=.5+.5*sin(vGround.x*4.8+vGround.z*2.1+1.6*sin(vGround.x*.39-vGround.z*.78));
- vec3 silt=mix(rockC*vec3(.80,.86,.83),soilC*vec3(.80,.82,.70),.23+.18*waterErosion);
- c=mix(c,silt,bankBand*.86);
+ float waterErosion=texture2D(creekBedrockMap,vGround.xz*.055+vec2(.21,.17)).r;
+ vec3 silt=mix(rockC*vec3(.89,.92,.88),soilC*vec3(.78,.84,.73),.24+.17*waterErosion);
+ c=mix(c,silt,bankBand*.57);
  float wet=1.-smoothstep(-5.6,-5.05,vGround.y);
  diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`);
 };
@@ -144,8 +146,9 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    const edge=.17*Math.sin(t*31+q*8)+.13*Math.sin(t*63-q*4);
    const z=center+q*(w+edge);
    const relief=(.032*Math.sin(x*2.6+z*1.2)+.021*Math.sin(z*4.2-x*.8))*(1-.5*Math.abs(q));
-   const y=ground(x,z)+.065+relief;
-   vertices.push(x,y,z);uvs.push(x*.23,z*.23);
+   const edgeBlend=1-smooth(.65,1,Math.abs(q));
+   const y=ground(x,z)+(.058+relief)*edgeBlend-.022*(1-edgeBlend);
+   vertices.push(x,y,z);uvs.push(x*.07,z*.07);
    if(i<steps&&j<cross){
     const k=i*(cross+1)+j;indices.push(k,k+1,k+cross+1,k+1,k+cross+2,k+cross+1);
    }
@@ -161,7 +164,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 // Local, small weather-rounded shale and cobbles add depth along both creek banks.
 // Single instanced draw call; no replacement for the approved V6 cliff or lake beach.
 (function addCreekBankStones(){
- const count=136,geom=new T.IcosahedronGeometry(1,1);
+ const count=116,geom=new T.IcosahedronGeometry(1,1);
  const material=new T.MeshStandardMaterial({map:creekBedrockMap,color:0xffffff,roughness:.99,metalness:0});
  const stones=new T.InstancedMesh(geom,material,count),pose=new T.Object3D();
  const color=new T.Color(),tints=[0xb8b4a7,0x9fa9a6,0xaaa899,0xc0b7a4,0x879393];
@@ -174,17 +177,17 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const side=i%2===0?-1:1;
   const lateral=width+.1+random(i+101)*3.85;
   const z=center+side*(lateral+.2*Math.sin(i*1.78));
-  const radius=.14+Math.pow(random(i+201),3)*.60;
+  const radius=.17+Math.pow(random(i+201),2.3)*.86;
   pose.position.set(x,ground(x,z)+radius*.18,z);
   pose.scale.set(radius*(1.05+random(i+301)*1.2),radius*(.28+random(i+401)*.28),radius*(.9+random(i+501)*.7));
   pose.rotation.set(random(i+601)*.3,random(i+701)*Math.PI,random(i+801)*.16);
   pose.updateMatrix();stones.setMatrixAt(i,pose.matrix);
   color.setHex(tints[i%tints.length]);stones.setColorAt(i,color);
  }
- stones.name='Stacey creek: 136 low-profile water-worn bank stones';
+ stones.name='Stacey creek: 116 mixed-size embedded bank cobbles';
  stones.instanceMatrix.needsUpdate=true;
  stones.computeBoundingSphere();scene.add(stones);
- diag.assets['creek banks']='wet layered silt, irregular scoured edge, 136 instanced shale stones';
+ diag.assets['creek banks']='mixed silt/soil, softly feathered shale shelf, 116 embedded cobbles';
 })();
 // H1 revision: WEST / left bank rock escarpment, away from the island sightline.
 // The lake's west shore is x=CX-outer(PI), not the north bank behind the island.
@@ -321,30 +324,30 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  // makes the image travel toward SMALLER y: gravity-down, not backward/up.
  // The creek travels in its own +UV.y direction toward the lake.
  function makeRapidMaterial(downfall){
-  const mat=new T.MeshStandardMaterial({color:0xffffff,roughness:.38,metalness:0,transparent:true,opacity:.92,side:T.DoubleSide,depthWrite:false,emissive:0x102529,emissiveIntensity:.12});
+  const mat=new T.MeshStandardMaterial({color:0xffffff,roughness:.38,metalness:0,transparent:true,opacity:downfall?.92:.72,side:T.DoubleSide,depthWrite:false,emissive:0x102529,emissiveIntensity:.12});
   mat.onBeforeCompile=shader=>{
    shader.uniforms.flowTime=flowUniform;shader.uniforms.rapidMap={value:rapidMap};
    shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
    const code=[
     'vec2 p=flowUV;',
-    'float scroll=flowTime*'+(downfall?'1.0':'-1.0')+';',
-    'vec2 aUV=vec2(p.x+.024*sin(p.y*20.+flowTime*.8),p.y*1.45+scroll*.78);',
-    'vec2 bUV=vec2(p.x*1.37+.34+.017*sin(p.y*35.-flowTime*.7),p.y*2.15+scroll*1.21);',
+    'float scroll=flowTime*'+(downfall?'1.0':'-0.18')+';',
+    'vec2 aUV=vec2(p.x+.024*sin(p.y*20.+flowTime*'+(downfall?'.8':'.16')+'),p.y*1.45+scroll*.78);',
+    'vec2 bUV=vec2(p.x*1.37+.34+.017*sin(p.y*35.-flowTime*'+(downfall?'.7':'.14')+'),p.y*2.15+scroll*1.21);',
     'vec4 a=texture2D(rapidMap,aUV);',
     'vec4 b=texture2D(rapidMap,bUV);',
     'float froth=smoothstep(.31,.77,a.r*.56+b.r*.44);',
     'float ribbons=smoothstep(.38,.80,a.r);',
     'float clearWater=clamp(.24+.52*froth+.23*ribbons,0.,1.);',
-    'vec3 coolFlow=mix(vec3(.10,.38,.43),vec3(.46,.76,.79),clearWater);',
-     'float foamyHighlights=smoothstep(.71,.92,a.r*.60+b.r*.40)*'+(downfall?'.46':'.22')+';',
+    'vec3 coolFlow='+(downfall?'mix(vec3(.10,.38,.43),vec3(.46,.76,.79),clearWater);':'mix(vec3(.09,.37,.45),vec3(.31,.62,.69),clearWater);'),
+     'float foamyHighlights=smoothstep(.71,.92,a.r*.60+b.r*.40)*'+(downfall?'.46':'.10')+';',
      'diffuseColor.rgb=mix(coolFlow,vec3(.91,.96,.96),foamyHighlights);',
     'float softEdges=smoothstep(.005,.18,p.x)*(1.-smoothstep(.82,.995,p.x));',
-    'diffuseColor.a*=softEdges*(.20+.31*a.a+.26*b.a+.19*froth)'+(downfall?'*(1.-smoothstep(.90,1.,p.y));':';')
+    'diffuseColor.a*=softEdges*(.20+.31*a.a+.26*b.a+.19*froth)'+(downfall?'*(1.-smoothstep(.90,1.,p.y));':'*(1.-smoothstep(2.05,2.99,p.y));')
    ].join('\n');
    shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;\n'
        +shader.fragmentShader.replace('#include <map_fragment>',code);
   };
-  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v10-blueflow';
+  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v11-gentle-mouth';
   return mat;
  }
  const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false);
@@ -391,8 +394,16 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   }
  }
  const cv=[],ci=[],cu=[];
- for(let n=0;n<=64;n++){const t=n/64,x=T.MathUtils.lerp(pondX+6,fallShore+2,t),z=creekCenter(t),y=T.MathUtils.lerp(pondY,CY,t)+.025;
-  for(const sign of [-1,1]){cv.push(x,y,z+sign*(1.9+.35*Math.sin(t*15)));cu.push(sign===-1?0:1,t*3);}
+ for(let n=0;n<=64;n++){
+  const t=n/64,x=T.MathUtils.lerp(pondX+6,fallShore+6,t);
+  const pathT=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+  const z=creekCenter(pathT),y=T.MathUtils.lerp(pondY,CY,pathT)+.045;
+  const spread=1.10*smooth(.72,.98,t);
+  for(const sign of [-1,1]){
+   const edge=.12*Math.sin(t*27+sign*.8)+.07*Math.sin(t*63+sign*1.3);
+   cv.push(x,y,z+sign*(1.9+.24*Math.sin(pathT*15)+spread+edge));
+   cu.push(sign===-1?0:1,t*3);
+  }
   if(n<64){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
  }
  const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
@@ -406,7 +417,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
  window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*2.7);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
- diag.assets['waterfall cliff']='twin gravity-down blue-turquoise rapid sheets, white foam, creek and wet bank V10';
+ diag.assets['waterfall cliff']='V10 falling sheets unchanged; calmer creek with soft lake confluence V11';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
  // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
@@ -516,6 +527,6 @@ let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX
 function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V1 · Banks V1';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V2 · Creek V11';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
