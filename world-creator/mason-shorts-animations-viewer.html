@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15251e"><meta name="robots" content="noindex,nofollow">
+<title>WVLRP — Mason | Shorts & Motion Viewer</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#12221c;color:#eff7ef}
+*{box-sizing:border-box}body{margin:0}
+header{padding:13px 14px 10px;background:#1b3126;border-bottom:1px solid #42644e}
+h1{font-size:1.08rem;letter-spacing:.02em;margin:0 0 3px}small{color:#bad2c2}
+main{max-width:1150px;margin:auto;padding:10px}
+#stage{height:62dvh;min-height:335px;max-height:790px;position:relative;border:1px solid #476351;border-radius:14px;overflow:hidden;background:#aab9b0}
+#renderCanvas{width:100%;height:100%;touch-action:none;display:block}
+#status{position:absolute;bottom:10px;left:9px;right:9px;max-width:700px;font-size:12px;line-height:1.35;background:#14291fe9;padding:8px 10px;border-radius:9px}
+.panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:10px}
+fieldset{min-width:0;margin:0;padding:11px;border:1px solid #476351;border-radius:12px;background:#1c3027}
+legend{padding:0 6px;color:#c8e0d2;font-weight:650}
+label{font-size:.9rem;display:block;margin:7px 0 4px}
+select,button,input[type="range"]{font:inherit}
+select,button{border:1px solid #5b8166;background:#2b4937;color:#fff;border-radius:9px;min-height:41px;padding:7px 11px}
+select{width:100%}button{cursor:pointer}button:disabled{opacity:.48;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #c6f1cb;outline-offset:2px}
+.buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+input[type="range"]{width:100%;accent-color:#a8d4b4}
+.note{font-size:.84rem;line-height:1.55;color:#cadace;margin:10px 3px 16px}
+strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
+@media(max-height:700px){#stage{height:57dvh;min-height:280px}}
+</style>
+</head><body>
+<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
+<main>
+<div id="stage"><canvas id="renderCanvas" aria-label="Rotate and zoom Mason's three-dimensional model"></canvas><div role="status" id="status">Loading Mason's real 3D model…</div></div>
+<div class="panel">
+<fieldset><legend>Animations — all clips in GLB</legend>
+<label for="motions">Select animation / pose</label>
+<select id="motions" disabled><option>Loading model animations…</option></select>
+<div class="buttons"><button id="play" disabled>Play</button><button id="hold" disabled>Hold final pose</button><button id="stand" disabled>Stand / reset pose</button></div>
+<label for="scrub">Scrub selected motion <output id="pct">0%</output></label><input type="range" id="scrub" min="0" max="100" value="0" disabled>
+<label><input type="checkbox" id="loop"> Repeat motion</label>
+<div class="tiny" id="motionSummary">Only real imported animation clips are enabled; absent motions are not simulated.</div>
+</fieldset>
+<fieldset><legend>Clothing — new removable shorts</legend>
+<label><input type="checkbox" id="shortsOn" checked> Show Mason's fitted shorts</label>
+<label for="shortsColor">Shorts fabric</label>
+<select id="shortsColor">
+<option value="denim">Dark denim blue</option>
+<option value="olive">Forest olive</option>
+<option value="charcoal">Charcoal gray</option>
+</select>
+<div class="tiny" id="clothSummary">Shorts are generated from a separate copy of Mason's body surface and share his skeleton; original GLB is not modified.</div>
+</fieldset>
+<fieldset><legend>Camera & face</legend>
+<div class="buttons"><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="reset">Full body</button><button id="face">Face</button><button id="full">Fullscreen</button></div>
+<label><input type="checkbox" id="smile" checked> Natural smile (if embedded)</label>
+<div class="tiny">Drag to rotate · pinch to zoom · shorts and body follow the same articulated skeleton.</div>
+</fieldset>
+</div>
+<p class="note"><strong>Source:</strong> the original <code>world-creator/assets/mason-mpfb-trial.glb</code> (not Rob). The animation menu is populated directly from the loaded GLB, with source clip names. Existing stand, bend, kneel, hands-and-knees and elbows-and-knees clips are expected; any others only appear if actually present in the asset. Walk, run, swim, sit and other unbuilt actions are not mislabeled as working clips. This is a separate QA viewer, not a game deployment. The shorts are a nondestructive fitted skinned-mesh preview; check their fit during deep knee/hip movements.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id), status=$("status");
+const canvas=$("renderCanvas");
+let engine,scene,camera,groups=[],current=null,modelResult=null,bodyBounds=null;
+let clothing=[],smileTargets=[],animated=false,modelReady=false;
+const updateStatus=msg=>{status.textContent=msg};
+const palettes={denim:"#253a55",olive:"#46503a",charcoal:"#36383e"};
+function setClip(name,playNow=true) {
+ const group=groups.find(g=>g.name===name);
+ if(!group) return;
+ groups.forEach(g=>g.stop());
+ current=group;
+ const repeat=$("loop").checked;
+ group.start(repeat,1,group.from,group.to,false);
+ if(!playNow) {group.goToFrame(group.to);group.pause();}
+ animated=playNow;
+ $("scrub").value=playNow?0:100;$("pct").textContent=$("scrub").value+"%";
+ $("play").textContent=playNow?"Pause":"Play";
+ updateStatus("Mason · "+group.name+(playNow?" · playing":" · holding final pose")+" · shorts "+(clothing.some(x=>x.isVisible)?"on":"off"));
+}
+function motionClipsImported(){
+ const s=$("motions");s.replaceChildren();
+ for(const g of groups){
+   const op=document.createElement("option");op.value=g.name;op.textContent=g.name;s.appendChild(op);
+ }
+ if(groups.length===0){const op=document.createElement("option");op.textContent="No animation clips in GLB";s.appendChild(op);}
+ s.disabled=groups.length===0;
+ $("play").disabled=$("hold").disabled=$("stand").disabled=$("scrub").disabled=groups.length===0;
+ $("motionSummary").textContent=groups.length+" original GLB animation clip(s) found. Menu lists each one exactly, without invented clips.";
+ if(groups.length) {
+   const first=groups.find(g=>/stand/i.test(g.name))||groups[0];
+   s.value=first.name;setClip(first.name,true);
+ }
+}
+function fitCamera(){
+ if(!bodyBounds)return;
+ const {center,height}=bodyBounds;
+ camera.setTarget(center.clone());
+ camera.alpha=-Math.PI/2;
+ camera.beta=Math.PI/2.06;
+ camera.radius=Math.max(2.2,height*1.55);
+ camera.lowerRadiusLimit=Math.max(.55,height*.25);
+ camera.upperRadiusLimit=Math.max(8,height*6);
+}
+function setView(which) {
+ if(!bodyBounds)return;
+ const {center,height}=bodyBounds;
+ camera.setTarget(center.clone());
+ camera.alpha=which==="back"?Math.PI/2:which==="side"?0:-Math.PI/2;
+ camera.beta=Math.PI/2.06;
+ camera.radius=Math.max(2.2,height*1.55);
+}
+function faceZoom(){
+ if(!bodyBounds)return;
+ const {center,height}=bodyBounds;
+ camera.setTarget(new BABYLON.Vector3(center.x,bodyBounds.low.y+height*.89,center.z));
+ camera.alpha=-Math.PI/2;camera.beta=Math.PI/2;
+ camera.radius=Math.max(.38,height*.33);
+}
+function findBody(meshes){
+ const candidates=meshes.filter(m=>m instanceof BABYLON.Mesh && m.skeleton &&
+   m.getTotalVertices()>5000 && m.getVerticesData(BABYLON.VertexBuffer.PositionKind));
+ const score=m=>{
+   const n=(m.name||"").toLowerCase();
+   let points=Math.log2(m.getTotalVertices()+1);
+   if(/body|basemesh|human|skin/i.test(n))points+=20;
+   if(/hair|teeth|eye|lash|brow|shirt|dress|short|cloth/i.test(n))points-=35;
+   const b=m.getBoundingInfo().boundingBox;
+   points+=Math.min(10,(b.maximumWorld.y-b.minimumWorld.y)*3);
+   return points;
+ };
+ candidates.sort((a,b)=>score(b)-score(a));
+ return candidates[0]||null;
+}
+function generateFittedShorts(body){
+ // Copy existing body triangles and ORIGINAL SKIN WEIGHTS into a distinct garment.
+ // A cloned skinned mesh shares Mason's real skeleton; no rig or body data is edited.
+ const B=BABYLON.VertexBuffer, basePos=body.getVerticesData(B.PositionKind);
+ const indices=body.getIndices(), n=basePos?.length/3||0;
+ if(!basePos||!indices||n<5000)throw new Error("No suitable rigged full-body surface found.");
+ body.computeWorldMatrix(true);
+ const wm=body.getWorldMatrix();
+ const bounds=body.getBoundingInfo().boundingBox;
+ const low=bounds.minimumWorld,high=bounds.maximumWorld;
+ const height=high.y-low.y,centerX=(low.x+high.x)/2,centerZ=(low.z+high.z)/2;
+ if(height<=.2)throw new Error("Body measurements invalid");
+ const p=new BABYLON.Vector3();
+ const info=new Array(n);
+ for(let i=0;i<n;i++){
+  p.set(basePos[i*3],basePos[i*3+1],basePos[i*3+2]);
+  BABYLON.Vector3.TransformCoordinatesToRef(p,wm,p);
+  info[i]={y:(p.y-low.y)/height,x:Math.abs(p.x-centerX)/height,z:Math.abs(p.z-centerZ)/height};
+ }
+ const within=i=>info[i].x<.235 && info[i].z<.185;
+ const chunks=[];
+ const build=(name,lo,hi,color,expand)=>{
+  const selected=[];
+  for(let t=0;t<indices.length;t+=3){
+    const a=indices[t],b=indices[t+1],c=indices[t+2];
+    if(!(within(a)&&within(b)&&within(c)))continue;
+    const y=(info[a].y+info[b].y+info[c].y)/3;
+    if(y>=lo&&y<=hi)selected.push(a,b,c);
+  }
+  if(selected.length<90) return null;
+  const copy=body.clone(name,body.parent,true);
+  copy.makeGeometryUnique();
+  copy.setIndices(selected);
+  const orig=copy.getVerticesData(B.PositionKind), changed=new Float32Array(orig);
+  const bb=body.getBoundingInfo().boundingBox;
+  const localMidX=(bb.minimum.x+bb.maximum.x)/2;
+  const localMidZ=(bb.minimum.z+bb.maximum.z)/2;
+  for(let i=0;i<changed.length;i+=3){
+    changed[i]=localMidX+(changed[i]-localMidX)*expand;
+    changed[i+2]=localMidZ+(changed[i+2]-localMidZ)*expand;
+  }
+  copy.setVerticesData(B.PositionKind,changed,true);
+  // Surface is a real separate mesh; follows original bone weights, not pose-specific screenshots.
+  const mat=new BABYLON.PBRMaterial(name+" fabric",scene);
+  mat.albedoColor=BABYLON.Color3.FromHexString(color);
+  mat.roughness=.92;mat.metallic=0;
+  mat.backFaceCulling=false;
+  copy.material=mat;
+  copy.isPickable=false;
+  copy.alwaysSelectAsActiveMesh=true;
+  copy.visibility=1;
+  chunks.push(copy);
+  return copy;
+ };
+ const main=build("Mason fitted shorts — skinned cloth",.395,.619,palettes.denim,1.056);
+ if(!main)throw new Error("No shorts triangles could be fitted to body");
+ build("Mason waistband — dark trim",.600,.619,"#1a293e",1.071);
+ return chunks;
+}
+function setClothes(on){
+ clothing.forEach(m=>m.setEnabled(on));
+ $("clothSummary").textContent=clothing.length?
+   "Fitted skinned shorts follow Mason's real leg/hip joints. Garment preview — inspect for clipping at deep bends.":
+   "Shorts need a valid skin-weighted full-body mesh; no substitute avatar is shown.";
+}
+try{
+ engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,antialias:true});
+ engine.setHardwareScalingLevel(Math.max(1,window.devicePixelRatio>2?1.5:1));
+ scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.69,.76,.72,1);
+ camera=new BABYLON.ArcRotateCamera("Mason orbit",-Math.PI/2,Math.PI/2.04,3,new BABYLON.Vector3(0,.92,0),scene);
+ camera.attachControl(canvas,true);
+ camera.minZ=.025;camera.lowerRadiusLimit=.35;camera.upperRadiusLimit=12;
+ camera.wheelDeltaPercentage=.012;camera.pinchDeltaPercentage=.006;camera.panningSensibility=0;
+ const ambient=new BABYLON.HemisphericLight("Mason ambient",new BABYLON.Vector3(0,1,0),scene);
+ ambient.intensity=1.0;
+ const sun=new BABYLON.DirectionalLight("Mason key",new BABYLON.Vector3(-.4,-1,.6),scene);
+ sun.intensity=.65;
+ const modelPath="./assets/mason-mpfb-trial.glb";
+ BABYLON.SceneLoader.ImportMeshAsync(null,"./assets/","mason-mpfb-trial.glb",scene,undefined,".glb").then(res=>{
+  modelResult=res;groups=res.animationGroups||[];
+  // Ensure a relaxed source pose for the clothing capture; animation is started only afterward.
+  groups.forEach(g=>g.stop());
+  const visible=res.meshes.filter(m=>m instanceof BABYLON.Mesh&&m.getTotalVertices()>0);
+  let low=new BABYLON.Vector3(Infinity,Infinity,Infinity);
+  let high=new BABYLON.Vector3(-Infinity,-Infinity,-Infinity);
+  for(const mesh of visible){
+   mesh.computeWorldMatrix(true);
+   const bb=mesh.getBoundingInfo().boundingBox;
+   low=BABYLON.Vector3.Minimize(low,bb.minimumWorld);
+   high=BABYLON.Vector3.Maximize(high,bb.maximumWorld);
+  }
+  if(!Number.isFinite(low.y))throw new Error("Model loaded without visible geometry");
+  const center=low.add(high).scale(.5);
+  const height=Math.max(.3,high.y-low.y);
+  bodyBounds={low,high,center,height};
+  fitCamera();
+  const body=findBody(visible);
+  if(body){
+   try{clothing=generateFittedShorts(body);setClothes($("shortsOn").checked);}
+   catch(err){$("clothSummary").textContent="Shorts fitting failed: "+err.message;}
+  } else $("clothSummary").textContent="No rigged full-body surface detected for shorts. Model remains unchanged.";
+  smileTargets=[];
+  for(const mesh of visible){
+   const manager=mesh.morphTargetManager;
+   if(!manager)continue;
+   for(let i=0;i<manager.numTargets;i++){
+     const target=manager.getTarget(i);
+     if(/Mason Natural Smile/i.test(target.name)){
+      smileTargets.push(target);target.influence=.78;
+     }
+   }
+  }
+  $("smile").disabled=smileTargets.length===0;
+  modelReady=true;
+  motionClipsImported();
+  updateStatus("Mason loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
+    " GLB clips · shorts "+(clothing.length?"fitted to rig":"not fitted; see Clothing note"));
+ }).catch(err=>{updateStatus("Mason GLB failed: "+(err.message||err));console.error(err);});
+ engine.runRenderLoop(()=>{
+  if(animated && current && !current.isPlaying){animated=false;$("play").textContent="Play";}
+  scene.render();
+ });
+ window.addEventListener("resize",()=>engine.resize());
+ $("motions").addEventListener("change",()=>setClip($("motions").value,true));
+ $("play").onclick=()=>{
+  if(!current)return;
+  if(animated){current.pause();animated=false;$("play").textContent="Play";}
+  else {current.play($("loop").checked);animated=true;$("play").textContent="Pause";}
+ };
+ $("hold").onclick=()=>{if(current)setClip(current.name,false)};
+ $("stand").onclick=()=>{
+  const g=groups.find(g=>/stand/i.test(g.name))||groups[0];
+  if(g){$("motions").value=g.name;setClip(g.name,false);}
+ };
+ $("scrub").addEventListener("input",()=>{
+  if(!current)return;
+  current.play(false);
+  const v=Number($("scrub").value)/100;
+  current.goToFrame(current.from+(current.to-current.from)*v);
+  current.pause();animated=false;
+  $("pct").textContent=$("scrub").value+"%";$("play").textContent="Play";
+ });
+ $("loop").addEventListener("change",()=>{if(current&&animated){const name=current.name;setClip(name,true);}});
+ $("shortsOn").addEventListener("change",()=>setClothes($("shortsOn").checked));
+ $("shortsColor").addEventListener("change",()=>{
+  const color=BABYLON.Color3.FromHexString(palettes[$("shortsColor").value]||palettes.denim);
+  if(clothing[0]&&clothing[0].material)clothing[0].material.albedoColor=color;
+ });
+ $("smile").addEventListener("change",()=>smileTargets.forEach(t=>t.influence=$("smile").checked?.78:0));
+ $("front").onclick=()=>setView("front");
+ $("side").onclick=()=>setView("side");
+ $("back").onclick=()=>setView("back");
+ $("reset").onclick=fitCamera;
+ $("face").onclick=faceZoom;
+ $("full").onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $("stage").requestFullscreen?.();};
+}catch(err){updateStatus("Viewer setup error: "+err.message);console.error(err);}
+})();
+</script></body></html>
