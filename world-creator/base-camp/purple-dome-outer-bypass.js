@@ -21,6 +21,12 @@ export function outerBypassRadialOffset(deg){
  const r=1-sm((deg-WEST_BYPASS.offsetPlateauEndDeg)/(WEST_BYPASS.endDeg-WEST_BYPASS.offsetPlateauEndDeg));
  return WEST_BYPASS.peakOutwardM*q*r;
 }
+// The working platform narrows naturally as it reaches the approved lake-side woods end.
+// This avoids cutting toward the V8 dome or across the protected lakeside treeline.
+export function bypassWorkingHalfWidth(deg){
+ const fade=sm((deg-258)/(WEST_BYPASS.endDeg-258));
+ return WEST_BYPASS.meshHalfM-(WEST_BYPASS.meshHalfM-3)*fade;
+}
 export function bypassPoint(deg){
  const a=deg*RAD,r=WEST_BYPASS.ringRadius+outerBypassRadialOffset(deg);
  return {x:r*Math.cos(a),z:r*Math.sin(a)};
@@ -48,7 +54,7 @@ export function closestBypass(x,z){
  let deg=Math.max(WEST_BYPASS.startDeg,Math.min(WEST_BYPASS.endDeg,angle));
  for(let i=0;i<7;i++){
   const p=bypassPoint(deg),t=bypassTangent(deg);
-  const d=Math.hypot(x-p.x,z-p.z),speed=Math.hypot(...[bypassPoint(deg+.02).x-bypassPoint(deg-.02).x,bypassPoint(deg+.02).z-bypassPoint(deg-.02).z])/.04;
+  const speed=Math.hypot(bypassPoint(deg+.02).x-bypassPoint(deg-.02).x,bypassPoint(deg+.02).z-bypassPoint(deg-.02).z)/.04;
   if(!Number.isFinite(speed)||speed<.001)break;
   let delta=((x-p.x)*t.x+(z-p.z)*t.z)/speed;
   delta=Math.max(-3,Math.min(3,delta));
@@ -102,7 +108,7 @@ export function bypassAudit(base){
   const p=bypassPoint(a),d=domeClearance(p.x,p.z);minCenterDome=Math.min(minCenterDome,d);
   maxRadius=Math.max(maxRadius,Math.hypot(p.x,p.z));
   if(prev)length+=Math.hypot(prev.x-p.x,prev.z-p.z);prev=p;
-  for(const off of [-12,-9,-1.3,0,1.3,9,12]){
+  for(const off of [-bypassWorkingHalfWidth(a),-Math.min(9,bypassWorkingHalfWidth(a)),-1.3,0,1.3,Math.min(9,bypassWorkingHalfWidth(a)),bypassWorkingHalfWidth(a)]){
    const q=bypassAt(a,off);
    minShoulderDome=Math.min(minShoulderDome,domeClearance(q.x,q.z));
    minStacey=Math.min(minStacey,staceyClearance(q.x,q.z));
@@ -136,7 +142,7 @@ export function installPurpleDomeBypass(THREE,scene,{terrainY,baseTerrainY,soilM
  for(let i=0;i<rows;i++){
   const a=from+(to-from)*i/(rows-1);
   for(let j=0;j<cols;j++){
-   const offset=-WEST_BYPASS.meshHalfM+j*2*WEST_BYPASS.meshHalfM/(cols-1),p=bypassAt(a,offset);
+   const width=bypassWorkingHalfWidth(a),offset=-width+j*2*width/(cols-1),p=bypassAt(a,offset);
    xyz.push(p.x,terrainY(p.x,p.z)+.035,p.z);uv.push((p.x/402.336+1)/2,(p.z/402.336+1)/2);
    allowed.push(bypassFootprintSafe(p.x,p.z));
    if(i&&j){const n=i*cols+j;
