@@ -24,17 +24,17 @@ test('trail URL starts walking ON the lake-spur photo trail, not in the sky',()=
 test('original 360 photograph uses CORS-clean loading and its actual rocky woodland center',()=>{
  const scene=read('stacey-dive.html'),photo=read('stacey-woodland-360-photo.js');
  const route=read('stacey-purple-main-lake-spur.js');
- assert.match(photo,/woodland-trail-hd\\.webp/);
- assert.match(photo,/img\\.crossOrigin='anonymous'/);
+ assert.match(photo,/woodland-trail-hd\.webp/);
+ assert.match(photo,/img\.crossOrigin='anonymous'/);
  assert.ok(photo.indexOf("img.crossOrigin='anonymous'")<photo.indexOf("img.src=url"));
- assert.match(photo,/ctx\\.drawImage\\(img,sx,sy,sw,sh,0,0,S,S\\)/);
- assert.match(photo,/Math\\.floor\\(w\\*\\.405\\)/);
- assert.match(photo,/Math\\.floor\\(h\\*\\.52\\)/);
+ assert.match(photo,/ctx\.drawImage\(img,sx,sy,sw,sh,0,0,S,S\)/);
+ assert.match(photo,/Math\.floor\(w\*\.405\)/);
+ assert.match(photo,/Math\.floor\(h\*\.52\)/);
  assert.match(photo,/globalCompositeOperation='destination-in'/);
- assert.doesNotMatch(photo,/ctx\\.getImageData\\(/);
- assert.doesNotMatch(photo,/ctx\\.putImageData\\(/);
- assert.match(photo,/status\\.state='ready'/);
+ assert.doesNotMatch(photo,/ctx\.getImageData\(/);
+ assert.doesNotMatch(photo,/ctx\.putImageData\(/);
+ assert.match(photo,/status\.state='ready'/);
  assert.match(scene,/Trail photo /);
- assert.match(route,/uv\\.push\\(offset\\/2\\.6\\+\\.5,p\\.s\\/2\\.8\\)/);
+ assert.match(route,/uv\.push\(offset\/2\.6\+\.5,p\.s\/2\.8\)/);
  assert.ok(fs.existsSync(path.resolve(root,'../../assets/woodland-trail-hd.webp')));
 });
