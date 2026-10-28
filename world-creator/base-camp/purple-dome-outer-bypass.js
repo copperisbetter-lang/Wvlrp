@@ -124,8 +124,8 @@ export function bypassAudit(base){
  }
  return {lengthM:length,coreLengthM:length*(coreEnd-coreStart)/(WEST_BYPASS.endDeg-WEST_BYPASS.startDeg),
  coreStartDeg:coreStart,coreEndDeg:coreEnd,maxLongPct:maxLong,maxCrossPct:maxCross,maxNaturalLongPct:maxNaturalLong,
- maxCutM:maxCut,deepestAtDeg:deepAt,minDomeWallCenterlineM:minCenterDome,minDomeWall±12m:minShoulderDome,
- minStaceyShore±12m:minStacey,maxBaseCampRadiusM:maxRadius,
+ maxCutM:maxCut,deepestAtDeg:deepAt,minDomeWallCenterlineM:minCenterDome,minDomeWallShoulder12m:minShoulderDome,
+ minStaceyShoreShoulder12m:minStacey,maxBaseCampRadiusM:maxRadius,
  coreGradePass:maxLong<=WEST_BYPASS.maxLongPct+.02&&maxCross<=WEST_BYPASS.maxCrossPct+.02,
  domeSafetyPass:minShoulderDome>=13.0};
 }
