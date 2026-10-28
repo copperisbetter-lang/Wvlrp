@@ -177,6 +177,10 @@ export function createStaceyPurpleTrails(natural){
         line.name='Temporary PURPLE route proof (guide mode only)';line.renderOrder=8;scene.add(line);
       }
     }
+    // Apply the approved original Woodland Trail 360 photo to BOTH routes.
+    import('./stacey-woodland-360-photo.js')
+      .then(m=>m.applyWoodlandTrail360Photo(THREE,installed))
+      .catch(e=>{if(typeof window!=='undefined'&&window.staceyDiagnostics)window.staceyDiagnostics.errors.push('Trail photo module: '+e)});
     return installed;
   }
   return {main,spur,audit,near,gradeGround,install,shoreClearance,domeClearance};
