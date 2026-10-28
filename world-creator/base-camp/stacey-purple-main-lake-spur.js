@@ -13,7 +13,7 @@ export const RIDGE_WAYPOINTS=Object.freeze([
 ]);
 // Longer hillside switchbacks in woods. Preserve the approved fork and landing;
 // no loop around the lake, waterfall photo, or underground 84m cavern.
-export const LAKE_SPUR_WAYPOINTS=Object.freeze([[-166,-310],[-142,-332],[-130,-354],[-106,-369],[-106,-370],[-106,-366],[-102,-354],[-90,-346],[-86,-350],[-10,-422],[14,-426],[34,-442],[38,-438],[38,-434],[34,-430],[-26,-366],[-22,-358],[-14,-354],[-10,-358],[6,-374],[8,-374]]);
+export const LAKE_SPUR_WAYPOINTS=Object.freeze([[-166,-310],[-142,-332],[-130,-354],[-106,-369],[-107.5,-370],[-106,-366],[-102,-354],[-90,-346],[-86,-350],[-10,-422],[14,-426],[34,-442],[38,-438],[38,-434],[34,-430],[-26,-366],[-22,-358],[-14,-354],[-10,-358],[6,-374],[8,-374]]);
 const clip=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=clip(t,0,1);return t*t*(3-2*t)};
 function nearSegment(x,z,a,b){
