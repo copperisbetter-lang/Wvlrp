@@ -570,8 +570,8 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
        '#include <begin_vertex>',
        '#include <begin_vertex>\nhiddenDoorWorld=(modelMatrix*vec4(position,1.0)).xyz;');
       const doorwayMask=[
-       'float doorZ=abs(hiddenDoorWorld.z-'+hiddenCave.z.toFixed(2)+');',
-       'float doorY=hiddenDoorWorld.y-'+hiddenCave.floor.toFixed(2)+';',
+       'float doorZ=abs(hiddenDoorWorld.z-('+hiddenCave.z.toFixed(2)+'));',
+       'float doorY=hiddenDoorWorld.y-('+hiddenCave.floor.toFixed(2)+');',
        'float doorHalf=1.32-.46*smoothstep(1.75,2.7,doorY);',
        'if(hiddenDoorWorld.x>'+(hiddenCave.innerEnd-.5).toFixed(2)+
          ' && hiddenDoorWorld.x<'+(hiddenCave.outerEnd-1.7).toFixed(2)+
