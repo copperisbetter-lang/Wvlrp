@@ -61,7 +61,10 @@ export function applyWoodlandTrail360Photo(THREE,meshes){
         map.anisotropy=4;
         for(const mesh of meshes){
           mesh.material.map=map;
-          mesh.material.color.set(0xffffff);
+          // V15 Android visual QA: subtly darken the original photo ~10% under
+          // scene lighting; preserve autumn hue, rocks, leaves and alpha edges.
+          // Neutral tint only: no flattening or extra canvas resampling.
+          mesh.material.color.set(0xf0f0f0);
           mesh.material.transparent=true;
           mesh.material.opacity=1;
           mesh.material.alphaTest=.02;
