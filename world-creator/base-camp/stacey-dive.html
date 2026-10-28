@@ -1191,12 +1191,27 @@ document.querySelector('#actionSwim').onclick=swim;
 document.querySelector('#actionDive').onclick=dive;
 document.querySelector('#actionSit').onclick=toggleSit;
 const viewButton=document.querySelector('#viewMode');
+// Move the camera immediately when tapped, not only on the next render frame.
+// This keeps first-/third-person responsive on slower mobile phones.
+function syncPlayerCamera(){
+ if(chaseCamera){
+  const distance=depthMode==='dive'?2.6:4.4;
+  const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
+  const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
+  const safeY=depthMode==='dive'?followY:Math.max(followY,ground(followX,followZ)+1.15);
+  camera.position.set(followX,safeY,followZ);
+  camera.lookAt(pos.x,pos.y-.25+Math.sin(pitch)*1.5,pos.z);
+ }else{
+  camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+ }
+}
 viewButton.onclick=()=>{
  chaseCamera=!chaseCamera;
  viewButton.textContent=chaseCamera?'3RD\nPERSON':'1ST\nPERSON';
  viewButton.setAttribute('aria-pressed',String(chaseCamera));
  viewButton.setAttribute('aria-label',chaseCamera?'Third-person camera; tap to switch to first-person':'First-person camera; tap to switch to third-person');
  if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
+ syncPlayerCamera();
 };
 beach();
  if(new URLSearchParams(location.search).get('spawn')==='lake'){
@@ -1241,16 +1256,7 @@ masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
 // First-person view must not look through Mason's own face. Keep the avatar
 // visible in third-person, even when it finishes loading after a mode switch.
 if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
-if(chaseCamera){
- const distance=depthMode==='dive'?2.6:4.4;
- const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
- const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
- const safeY=depthMode==='dive'?followY:Math.max(followY,ground(followX,followZ)+1.15);
- camera.position.set(followX,safeY,followZ);
- camera.lookAt(pos.x,pos.y-.25+Math.sin(pitch)*1.5,pos.z);
-}else{
- camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
-}
+syncPlayerCamera();
  // Do not upload any per-instance matrices every frame; only on camera
  // chamber transitions or when another async vegetation GLB finishes.
  const insideCave=cameraInsideHiddenCave(pos);
