@@ -66,5 +66,18 @@ jobs:
                   count=sum(1 for j in range(0,len(idx),3) if zone(idx[j]) and zone(idx[j+1]) and zone(idx[j+2]))
                   entry['v4_triangles_'+str(l)]=count
                 entry['triangle_count']=len(idx)//3
+              if len(positions)>10000 and 'NORMAL' in prim['attributes']:
+                norms=read(prim['attributes']['NORMAL'])
+                selected=[i for i,p in enumerate(positions) if .48<(p[1]-mn[1])/(mx[1]-mn[1])<.59 and abs(p[0])<.17 and abs(p[2]-.08)<.18]
+                dots=[]
+                for i in selected:
+                  p=positions[i];n=norms[i]
+                  radial=(p[0],p[2]-.08)
+                  mag=math.hypot(*radial)
+                  if mag>.02:dots.append((n[0]*radial[0]+n[2]*radial[1])/mag)
+                entry['normal_sample_count']=len(dots)
+                entry['normal_dot_radial_mean']=sum(dots)/len(dots) if dots else None
+                entry['normal_dot_radial_sign_positive']=sum(x>0 for x in dots)
+                entry['rest_body_y_hip_band']=[round(mn[1]+(mx[1]-mn[1])*f,3) for f in [.409,.5,.603]]
               print('MESH_CHECK',json.dumps(entry,default=str))
           PY
