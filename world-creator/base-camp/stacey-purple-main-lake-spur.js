@@ -159,7 +159,7 @@ export function createStaceyPurpleTrails(natural){
         const dx=next.x-prev.x,dz=next.z-prev.z,len=Math.max(.001,Math.hypot(dx,dz)),nx=-dz/len,nz=dx/len;
         for(const offset of [-1.3,-.65,0,.65,1.3]){
           const x=p.x+nx*offset,z=p.z+nz*offset;
-          v.push(x,ground(x,z)+.022,z);
+          v.push(x,ground(x,z)+.055,z);
           uv.push(offset/2.6+.5,p.s/7.5);
         }
         if(i>0)for(let j=1;j<5;j++){const k=i*5+j;tri.push(k,k-1,k-5,k-1,k-6,k-5)}
@@ -169,7 +169,7 @@ export function createStaceyPurpleTrails(natural){
       geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
       geometry.setIndex(tri);geometry.computeVertexNormals();
       const material=new THREE.MeshStandardMaterial({map:soilTexture,color:0xffffff,side:THREE.DoubleSide,roughness:1,polygonOffset:true,polygonOffsetFactor:-1});
-      const mesh=new THREE.Mesh(geometry,material);mesh.name='Stacey purple path — '+route.name;mesh.receiveShadow=true;
+      const mesh=new THREE.Mesh(geometry,material);mesh.name='Stacey photographed walking path — '+route.name;mesh.receiveShadow=true;mesh.renderOrder=2;
       scene.add(mesh);installed.push(mesh);
       if(showGuide){
         const guideGeom=new THREE.BufferGeometry().setFromPoints(route.samples.map(p=>new THREE.Vector3(p.x,ground(p.x,p.z)+.19,p.z)));
@@ -181,6 +181,7 @@ export function createStaceyPurpleTrails(natural){
     import('./stacey-woodland-360-photo.js')
       .then(m=>m.applyWoodlandTrail360Photo(THREE,installed))
       .catch(e=>{if(typeof window!=='undefined'&&window.staceyDiagnostics)window.staceyDiagnostics.errors.push('Trail photo module: '+e)});
+    if(typeof window!=='undefined')window.staceyTrailMeshes=installed;
     return installed;
   }
   return {main,spur,audit,near,gradeGround,install,shoreClearance,domeClearance};
