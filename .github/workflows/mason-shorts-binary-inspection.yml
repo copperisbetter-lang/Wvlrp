@@ -13,6 +13,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            world-creator/assets/mason-mpfb-trial.glb
+          sparse-checkout-cone-mode: false
       - name: Extract source model meshes and garment coverage without Blender
         run: |
           python3 - <<'PY'
