@@ -1,0 +1,32 @@
+name: Temporary Amanda clean GLB handoff
+on:
+  push:
+    branches:
+      - g1/amanda-clean-transfer-20261027
+    paths:
+      - .github/workflows/amanda-clean-glb-transfer-20261027.yml
+permissions:
+  contents: read
+jobs:
+  preserve-clean-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify existing clean Amanda model (do not alter)
+        run: |
+          set -euo pipefail
+          p=world-creator/assets/amanda-1-0-base.glb
+          test -f "$p"
+          test "$(stat -c%s "$p")" -eq 9416324
+          test "$(git hash-object "$p")" = d974cebb10764b6e748dcf9d09bbeef5759118f0
+          echo 'Verified exact clean Amanda GLB; no paid model assets here'
+      - name: Upload clean Amanda for local private fitting
+        uses: actions/upload-artifact@v4
+        with:
+          name: amanda-1-0-clean-glb-transfer
+          path: world-creator/assets/amanda-1-0-base.glb
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
