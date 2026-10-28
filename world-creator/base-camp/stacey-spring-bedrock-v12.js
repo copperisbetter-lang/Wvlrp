@@ -122,7 +122,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   // Fan triangulation follows the jagged roofline and narrow water-level base.
   holeVerts.push(shadowX,shadowY-.20,CZ+4.75);
   holeVerts.push(shadowX,shadowY-.20,CZ-4.75);
-  for(let i=1;i<holeVerts.length/3;i++)holeIndices.push(0,i,i+1);
+  for(let i=1;i<holeVerts.length/3-1;i++)holeIndices.push(0,i,i+1);
   holeIndices.push(0,holeVerts.length/3-1,1);
   const hollowGeo=new T.BufferGeometry();
   hollowGeo.setAttribute('position',new T.Float32BufferAttribute(holeVerts,3));
