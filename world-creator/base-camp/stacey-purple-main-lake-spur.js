@@ -47,20 +47,44 @@ function shoreClearance(x,z){
 function domeClearance(x,z){
   return Math.hypot(x-STACEY_PURPLE_SPEC.domeX,z-STACEY_PURPLE_SPEC.domeZ)-STACEY_PURPLE_SPEC.domeRadius;
 }
-function preparedRoute(name,points,natural,flattenAtEnd){
-  const samples=interpolate(points),end=samples[samples.length-1].s;
-  const endY=natural(samples[samples.length-1].x,samples[samples.length-1].z);
-  for(const p of samples){
-    p.natural=natural(p.x,p.z);
-    const remaining=end-p.s;
-    // Preserve natural uphill topology and avoid deep route cuts.
-    // Only the wooded lake approach levels off over the last 10 metres,
-    // feathered into the earlier slope over the preceding 23 metres.
-    const transition=flattenAtEnd?1-ease((remaining-10)/23):0;
-    const tailTarget=endY+.018*Math.max(0,remaining);
-    p.grade=p.natural-Math.min(2.7,Math.max(0,p.natural-tailTarget))*transition;
+
+function interpolateLinear(points){
+ const out=[];
+ for(let j=0;j<points.length-1;j++){
+  const a=points[j],b=points[j+1],n=Math.ceil(Math.hypot(a[0]-b[0],a[1]-b[1])/1.3);
+  for(let i=0;i<n;i++){
+   const t=i/n,x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t,q=out.at(-1);
+   out.push({x,z,s:q?q.s+Math.hypot(x-q.x,z-q.z):0});
   }
-  return {name,samples,end,width:2.6};
+ }
+ const last=points.at(-1),q=out.at(-1);
+ out.push({x:last[0],z:last[1],s:q.s+Math.hypot(last[0]-q.x,last[1]-q.z)});
+ return out;
+}
+function preparedRoute(name,points,natural,flattenAtEnd,startHeight=null){
+ const samples=flattenAtEnd?interpolateLinear(points):interpolate(points),end=samples.at(-1).s;
+ const low=[],high=[];
+ for(let i=0;i<samples.length;i++){
+  const p=samples[i];p.natural=natural(p.x,p.z);
+  const fixed=i===0||i===samples.length-1;
+  const anchor=i===0&&startHeight!==null?startHeight:p.natural;
+  let l=fixed?anchor:p.natural-3,u=fixed?anchor:p.natural+2.0;
+  if(i){
+   const limit=flattenAtEnd&&end-p.s<=10?.019:.078;
+   const dy=limit*(p.s-samples[i-1].s);
+   l=Math.max(l,low[i-1]-dy);u=Math.min(u,high[i-1]+dy);
+  }
+  if(l>u+1e-6)throw Error('Purple path needs contour redesign: '+name+' s='+p.s.toFixed(1));
+  low.push(l);high.push(u);
+ }
+ samples.at(-1).grade=samples.at(-1).natural;
+ for(let i=samples.length-2;i>=0;i--){
+  const p=samples[i],next=samples[i+1],limit=flattenAtEnd&&end-next.s<=10?.019:.078;
+  const dy=limit*(next.s-p.s),lo=Math.max(low[i],next.grade-dy),hi=Math.min(high[i],next.grade+dy);
+  if(lo>hi+1e-6)throw Error('Purple path grade mismatch '+name+' s='+p.s.toFixed(1));
+  p.grade=clip(p.natural,lo,hi);
+ }
+ return {name,samples,end,width:2.6};
 }
 function nearest(x,z,route){
   let best={distance:Infinity,along:0};
@@ -85,7 +109,9 @@ function heightAt(route,s){
 }
 export function createStaceyPurpleTrails(natural){
   const main=preparedRoute('Continuous ridge through-trail',RIDGE_WAYPOINTS,natural,false);
-  const spur=preparedRoute('Branch down to lake woods',LAKE_SPUR_WAYPOINTS,natural,true);
+  const junction=main.samples.find(p=>Math.hypot(p.x+166,p.z+310)<.001);
+  if(!junction)throw Error('Purple through-path lake fork vertex missing');
+  const spur=preparedRoute('Branch down to lake woods',LAKE_SPUR_WAYPOINTS,natural,true,junction.grade);
   const routes=[main,spur];
   function near(x,z,radius=4.8){return routes.some(route=>nearest(x,z,route).distance<radius)}
   function gradeGround(x,z,original){
@@ -99,21 +125,22 @@ export function createStaceyPurpleTrails(natural){
       if(loc.distance>=STACEY_PURPLE_SPEC.earthShoulder)continue;
       const alpha=1-ease((loc.distance-1.3)/(STACEY_PURPLE_SPEC.earthShoulder-1.3));
       const correction=heightAt(route,loc.along)-original;
-      // Cut only and never deeper than 2.7m (deep trenches require separately approved earthworks).
-      if(alpha>blend){target=original+clip(correction,-2.7,0)*alpha;blend=alpha}
+      // The tread is cross-leveled; small cut and backfill feather gently to native soil.
+      // Terrain, the walk collider and soil path mesh all sample this same height.
+      if(alpha>blend){target=original+correction*alpha;blend=alpha}
     }
     return target;
   }
   const audit=[];
   for(const route of routes){
-    let minDome=Infinity,minLake=Infinity,maxSlope=0,minSlope=Infinity,maxCut=0;
+    let minDome=Infinity,minLake=Infinity,maxSlope=0,minSlope=Infinity,maxCut=0,maxFill=0;
     let prev=null;
     for(const p of route.samples){
       for(const ox of [-5.5,0,5.5]){
         minDome=Math.min(minDome,domeClearance(p.x+ox,p.z));
         minLake=Math.min(minLake,shoreClearance(p.x+ox,p.z));
       }
-      maxCut=Math.max(maxCut,p.natural-p.grade);
+      maxCut=Math.max(maxCut,p.natural-p.grade);maxFill=Math.max(maxFill,p.grade-p.natural);
       if(prev){const grade=Math.abs((p.grade-prev.grade)/(p.s-prev.s));
         maxSlope=Math.max(maxSlope,grade);minSlope=Math.min(minSlope,grade);}
       prev=p;
@@ -121,7 +148,7 @@ export function createStaceyPurpleTrails(natural){
     audit.push({route:route.name,lengthM:Math.round(route.end*10)/10,
       minDomeWallM:Math.round(minDome*10)/10,minLakeShoreM:Math.round(minLake*10)/10,
       maxLongitudinalGradePct:Math.round(maxSlope*1000)/10,
-      maxLocalCutM:Math.round(maxCut*100)/100});
+      maxLocalCutM:Math.round(maxCut*100)/100,maxLocalFillM:Math.round(maxFill*100)/100});
   }
   function install(THREE,scene,ground,soilTexture,showGuide=false){
     const installed=[];
