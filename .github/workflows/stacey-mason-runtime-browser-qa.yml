@@ -14,6 +14,24 @@ jobs:
     timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            index.html
+            public-site.css
+            adventure-portal.html
+            world-creator/package.json
+            world-creator/package-lock.json
+            world-creator/base-camp/stacey-dive.html
+            world-creator/base-camp/stacey-mason-player.js
+            world-creator/base-camp/stacey-bass.js
+            world-creator/base-camp/stacey-flatheads-restored.js
+            world-creator/base-camp/stacey-spring-bedrock-v12.js
+            world-creator/base-camp/stacey-purple-main-lake-spur.js
+            world-creator/base-camp/stacey-woodland-360-photo.js
+            world-creator/assets/mason-mpfb-trial.glb
+            world-creator/tests/stacey-mason-entry-browser.mjs
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Install local browser harness
