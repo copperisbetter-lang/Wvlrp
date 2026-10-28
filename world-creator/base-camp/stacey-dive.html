@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Stacey Lake · Complete Reference Build</title><style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · Stacey Lake · Play as Mason</title><style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;flex-wrap:wrap;max-width:65vw;justify-content:flex-end;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
 
 /* Mobile-friendly movement console; kept separate from scene diagnostics. */
@@ -8,19 +8,20 @@
 #actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8;outline-offset:0}
 #actionConsole button:last-child{grid-column:1/-1}
 @media(max-width:640px){#panel{max-width:70vw;gap:4px}#panel button{padding:7px 9px;font-size:11px}#actionConsole{top:118px;right:8px;grid-template-columns:repeat(2,58px);gap:5px}#actionConsole button{min-height:40px;padding:6px 3px;font-size:11px}#hint{max-width:43vw}#status{max-width:58%}}
-</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to move · look up while flying to climb</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="actionConsole" role="group" aria-label="Game movement console"><button id="actionRun" type="button" aria-pressed="false">RUN</button><button id="actionFly" type="button" aria-pressed="false">FLY</button><button id="actionSwim" type="button" aria-pressed="false">SWIM</button><button id="actionDive" type="button" aria-pressed="false">DIVE</button><button id="actionSit" type="button" aria-pressed="false">SIT</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to move · look up while flying to climb</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="viewMode" type="button" aria-pressed="true">View: 3rd</button><button id="quality">Quality</button></div><div id="actionConsole" role="group" aria-label="Game movement console"><button id="actionRun" type="button" aria-pressed="false">RUN</button><button id="actionFly" type="button" aria-pressed="false">FLY</button><button id="actionSwim" type="button" aria-pressed="false">SWIM</button><button id="actionDive" type="button" aria-pressed="false">DIVE</button><button id="actionSit" type="button" aria-pressed="false">SIT</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
+import {installMasonPlayer} from './stacey-mason-player.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
 import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
 // One complete scene: no dependency on any experimental lake code or terrain module.
-const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false};
+const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false,defaultAvatar:'Mason',defaultSpawn:'Stacey Lake south beach'};
 const status=document.querySelector('#status');window.addEventListener('error',e=>{diag.errors.push(e.message);status.textContent='Scene error: '+e.message});
 const mobile=matchMedia('(pointer:coarse)').matches;const scene=new T.Scene();scene.fog=new T.FogExp2(0xc0d7df,.00085);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1:1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;document.body.prepend(renderer.domElement);
@@ -1152,6 +1153,11 @@ const flatheadSystem=installStaceyFlatheads({T,scene,gltf,ASSET,CX,CY,CZ,inner,o
 let bassSystem=null;
 installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
 window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem.count;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;}};
+// Public Play Game launches Mason at Stacey Lake; preserve original fish and game physics.
+const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
+const playerAvatar='Mason';let chaseCamera=true;
+window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-person':'first-person';},
+ get masonReady(){return masonPlayer.state.ready;},get masonError(){return masonPlayer.state.error;}};
 let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
@@ -1183,6 +1189,12 @@ document.querySelector('#actionFly').onclick=toggleFly;
 document.querySelector('#actionSwim').onclick=swim;
 document.querySelector('#actionDive').onclick=dive;
 document.querySelector('#actionSit').onclick=toggleSit;
+const viewButton=document.querySelector('#viewMode');
+viewButton.onclick=()=>{
+ chaseCamera=!chaseCamera;
+ viewButton.textContent=chaseCamera?'View: 3rd':'View: 1st';
+ viewButton.setAttribute('aria-pressed',String(chaseCamera));
+};
 beach();
  if(new URLSearchParams(location.search).get('spawn')==='lake'){
    // Explicit homepage entry point: standing on the approved Stacey Lake beach.
@@ -1219,7 +1231,20 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-(isSitting?1.05:1.7));
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks visible Mason by default; first-person remains available in caves.
+const playerMoving=Math.hypot(xx,yy)>.10&&!isSitting;
+masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
+ sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive'});
+if(chaseCamera){
+ const distance=depthMode==='dive'?2.6:4.4;
+ const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
+ const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
+ const safeY=depthMode==='dive'?followY:Math.max(followY,ground(followX,followZ)+1.15);
+ camera.position.set(followX,safeY,followZ);
+ camera.lookAt(pos.x,pos.y-.25+Math.sin(pitch)*1.5,pos.z);
+}else{
+ camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+}
  // Do not upload any per-instance matrices every frame; only on camera
  // chamber transitions or when another async vegetation GLB finishes.
  const insideCave=cameraInsideHiddenCave(pos);
@@ -1232,6 +1257,6 @@ const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
