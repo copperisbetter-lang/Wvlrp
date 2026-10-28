@@ -17,8 +17,9 @@ try{
   assert.ok(await play.count(),'Homepage must display Play Game');
   await play.click();
   await page.waitForURL(/stacey-dive\.html\?spawn=lake/,{timeout:30000});
-  assert.ok(await page.locator('#viewMode').count(),'Third-person camera switch is visible');
-  assert.equal(await page.locator('#viewMode').innerText(),'View: 3rd');
+  assert.ok(await page.locator('#actionConsole #viewMode').count(),'Third-person button must be inside game console');
+  assert.equal((await page.locator('#actionConsole #viewMode').innerText()).replace(/\s+/g,' ').trim(),'3RD PERSON');
+  assert.equal(await page.locator('#actionConsole button').count(),6,'Game console must contain six controls');
   await page.waitForFunction(()=>window.staceyPlayable?.avatar==='Mason',{timeout:40000});
   console.log('ENTRY',JSON.stringify(await page.evaluate(()=>({
     avatar:window.staceyPlayable?.avatar,
@@ -41,10 +42,19 @@ try{
   assert.ok(state.ready,'Original Mason GLB + V8 shorts should load: '+JSON.stringify(state));
   assert.ok(state.meshFaces>1200,'V8 body-skinned shorts need full-seat coverage');
   assert.ok(state.clips?.length>=5,'Mason should retain 5 original skeletal clips');
-  await page.locator('#viewMode').click();
+  await page.locator('#actionConsole #viewMode').click();
   assert.equal(await page.evaluate(()=>window.staceyPlayable.view),'first-person');
-  await page.locator('#viewMode').click();
+  assert.equal((await page.locator('#actionConsole #viewMode').innerText()).replace(/\s+/g,' ').trim(),'1ST PERSON');
+  await page.waitForFunction(()=>window.staceyMason?.model?.visible===false,null,{timeout:6000});
+  await page.locator('#actionConsole #viewMode').click();
   assert.equal(await page.evaluate(()=>window.staceyPlayable.view),'third-person');
+  assert.equal((await page.locator('#actionConsole #viewMode').innerText()).replace(/\s+/g,' ').trim(),'3RD PERSON');
+  await page.waitForFunction(()=>window.staceyMason?.model?.visible===true,null,{timeout:6000});
+  const cameraState=await page.evaluate(()=>({camera:window.staceyDebug.camera.position.toArray(),
+    mason:window.staceyMason.carrier.position.toArray(),visible:window.staceyMason.model.visible}));
+  const distance=Math.hypot(...cameraState.camera.map((v,i)=>v-cameraState.mason[i]));
+  assert.ok(distance>2,'Third-person camera must stand behind Mason, distance='+distance);
+  console.log('CONSOLE_THIRD_PERSON_VERIFIED',JSON.stringify({cameraState,distance}));
   await page.waitForTimeout(600);
   await page.screenshot({path:'world-creator/stacey-mason-mobile-test.png'});
   console.log('MASON_BROWSER_QA_PASS',JSON.stringify({state,errors:issues.slice(-8)}));
