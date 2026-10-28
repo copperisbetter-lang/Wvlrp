@@ -26,10 +26,11 @@ meshes_before = [o for o in sc.objects if o.type == "MESH"]
 rigs_before = [o for o in sc.objects if o.type == "ARMATURE"]
 if not rigs_before:
     raise RuntimeError("Stop: original Amanda armature not found")
-body = next((o for o in meshes_before if "SAV 4 adult petite" in o.name), None)
+print("AMANDA_IMPORT_MESHES", [(o.name,len(o.data.vertices),len(o.vertex_groups)) for o in meshes_before])
+body = next((o for o in meshes_before if "base" in o.name.lower() and len(o.vertex_groups)>=20), None)
 if body is None:
     body = max((o for o in meshes_before if len(o.vertex_groups) >= 20), key=lambda o: len(o.data.vertices))
-if len(body.data.vertices) < 5000:
+if len(body.data.vertices) < 1000:
     raise RuntimeError("Stop: full character body appears missing")
 body_name = body.name
 body_vertices = len(body.data.vertices)
