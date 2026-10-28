@@ -52,7 +52,7 @@ function animateFlatheads(t,dt,playerPosition){
   // Gentle tail-driven undulation, without rotating the entire fish side-on.
   f.body.rotation.y=Math.sin(t*(1.9+f.cruise*.9)+f.phase)*(.045+speed*.06);
   // Traveling lateral wave: subtle at head, pronounced through rear body and tail.
-  f.body.traverse(n=>{const d=n.userData.swimDeform;if(!d)return;const {attr,originalPositions,axis,lo,span}=d;const arr=attr.array,cycle=t*(2.5+f.cruise*1.1)+f.phase;for(let i=0;i<attr.count;i++){const j=i*3,along=(originalPositions[j+(axis==='x'?0:2)]-lo)/span;const tail=Math.pow(along,2.3);const wave=Math.sin(cycle-along*3.8)*tail*span*.075;arr[j]=originalPositions[j]+(axis==='z'?wave:0);arr[j+1]=originalPositions[j+1];arr[j+2]=originalPositions[j+2]+(axis==='x'?wave:0);}attr.needsUpdate=true;});
+  if(!playerPosition||f.node.position.distanceToSquared(playerPosition)<65*65)f.body.traverse(n=>{const d=n.userData.swimDeform;if(!d)return;const {attr,originalPositions,axis,lo,span}=d;const arr=attr.array,cycle=t*(2.5+f.cruise*1.1)+f.phase;for(let i=0;i<attr.count;i++){const j=i*3,along=(originalPositions[j+(axis==='x'?0:2)]-lo)/span;const tail=Math.pow(along,2.3);const wave=Math.sin(cycle-along*3.8)*tail*span*.075;arr[j]=originalPositions[j]+(axis==='z'?wave:0);arr[j+1]=originalPositions[j+1];arr[j+2]=originalPositions[j+2]+(axis==='x'?wave:0);}attr.needsUpdate=true;});
   f.body.rotation.z=Math.sin(t*.65+f.phase)*.008;
   const bottom=ground(p.x,p.z);
   const targetY=Math.min(CY-.65,bottom+f.offset+Math.sin(t*.65+f.phase)*.018);
