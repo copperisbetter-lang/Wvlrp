@@ -122,6 +122,23 @@ function makeCreekBedrockMap(){
 }
 const creekBedrockMap=makeCreekBedrockMap();
 diag.assets['creek bedrock']='erosion-cut rock shelf, shore and submerged mouth';
+// V8 cavern excavation: hide native ground only for a camera INSIDE the cave.
+// Original exterior terrain and approved photo remain untouched from outside.
+const cavernTerrainClip=[
+ 'float viewerRoom=length(cameraPosition.xz-vec2('+hiddenCave.chamberX.toFixed(2)+','+hiddenCave.z.toFixed(2)+'));',
+ 'float groundRoom=length(vGround.xz-vec2('+hiddenCave.chamberX.toFixed(2)+','+hiddenCave.z.toFixed(2)+'));',
+ 'bool viewerTunnel=cameraPosition.x>'+hiddenCave.innerEnd.toFixed(2)+
+   ' && cameraPosition.x<'+(hiddenCave.outerEnd+1).toFixed(2)+
+   ' && abs(cameraPosition.z-('+hiddenCave.z.toFixed(2)+'))<2.5;',
+ 'bool viewerInside=(viewerRoom<'+(hiddenCave.chamberR+1.6).toFixed(2)+
+   ' || viewerTunnel) && cameraPosition.y<'+(hiddenCave.floor+6.2).toFixed(2)+';',
+ 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR-0.7).toFixed(2)+
+   ' && vGround.y<'+(hiddenCave.floor+35).toFixed(2)+';',
+ 'bool cutTunnel=vGround.x>'+hiddenCave.innerEnd.toFixed(2)+
+   ' && vGround.x<'+hiddenCave.outerEnd.toFixed(2)+
+   ' && abs(vGround.z-('+hiddenCave.z.toFixed(2)+'))<2.0;',
+ 'if(viewerInside && (cutRoom || cutTunnel)) discard;'
+].join('\n');
 const mat=new T.MeshStandardMaterial({roughness:.98,side:T.DoubleSide});
 mat.onBeforeCompile=s=>{
  s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.uniforms.creekBedrockMap={value:creekBedrockMap};
@@ -176,6 +193,9 @@ mat.onBeforeCompile=s=>{
  c=mix(c,rockC*vec3(.90,.94,.88),crestRock*(.20+.31*naturalMottle));
  float wet=1.-smoothstep(-5.6,-5.05,vGround.y);
  diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`);
+ // Native mountain is excavated from inside only; no cliff photo edits.
+ s.fragmentShader=s.fragmentShader.replace('#include <alphatest_fragment>',
+   '#include <alphatest_fragment>\n'+cavernTerrainClip);
 };
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
 const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
@@ -697,7 +717,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
         'float chamberDX=hiddenDoorWorld.x-('+hiddenCave.chamberX.toFixed(2)+');',
         'float chamberR2=chamberDX*chamberDX+doorZ*doorZ;',
         'if(hiddenDoorWorld.x<'+(hiddenCave.x-3.5).toFixed(2)+' && chamberR2<'+((hiddenCave.chamberR-1.0)**2).toFixed(2)+
-          ' && doorY>-.3 && doorY<14.6)discard;'
+          ' && doorY>-.3 && doorY<35.0)discard;'
       ].join('\n');
       shader.fragmentShader='varying vec3 hiddenDoorWorld;\n'+shader.fragmentShader.replace(
        '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
@@ -948,7 +968,13 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
  }instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
 let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
-function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
+function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();
+ if(new URLSearchParams(location.search).get('spawn')==='dome'){
+  aerial=false;depthMode='surface';
+  pos.set(hiddenCave.chamberX,hiddenCave.floor+1.7,hiddenCave.z);
+  yaw=Math.PI/2;pitch=-.08;
+ }
+ document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);const oldX=pos.x,oldZ=pos.z;pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}let bed=ground(pos.x,pos.z);
