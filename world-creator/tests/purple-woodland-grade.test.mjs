@@ -69,7 +69,7 @@ for(const k of ix){
 }
 const game=readFileSync(new URL('../base-camp/index.html',import.meta.url),'utf8');
 assert.ok(game.includes('const woodlandExcavation=installWoodlandExcavation'),'Woodland excavation not part of game');
-assert.ok(game.includes('woodlandGradeHeight(x,z,excavatedHeight(x,z,baseTerrainY(x,z)),baseTerrainY)'),'Collision does not use same grade');
+assert.ok(game.includes('woodlandGradeHeight(x,z,excavatedHeight(x,z,natural),baseTerrainY)')&&game.includes('bypassGradedHeight(x,z,first,baseTerrainY)'),'Collision does not use same grade');
 assert.ok(game.includes('woodAngle>349.95&&woodAngle<545.05'),'Old coarse triangles still overlap the cut');
 assert.ok(game.includes("spawnTarget==='woodland'"),'No woodland test spawn');
 assert.ok(game.includes('ringTreadWoodlandClearance(deg)'),'New Stacey Lake gap was removed');
