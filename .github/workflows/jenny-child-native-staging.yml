@@ -1,0 +1,82 @@
+name: Jenny child MakeHuman STAGING (no production changes)
+on:
+  push:
+    branches:
+      - gater/jenny-child-mpfb-4675-stage-20261028
+    paths:
+      - .github/workflows/jenny-child-native-staging.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jenny-child-mpfb-stage
+  cancel-in-progress: false
+
+jobs:
+  child-base:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source preflight
+        run: |
+          python3 -m py_compile world-creator/scripts/build_jenny_child_native_STAGE.py
+          grep -q "'age':.125" world-creator/scripts/build_jenny_child_native_STAGE.py
+          grep -q "jenny-child-native-STAGING.glb" world-creator/scripts/build_jenny_child_native_STAGE.py
+          echo 'JENNY_NATIVE_CHILD_SOURCE_PREFLIGHT_PASS'
+      - name: Install Blender and graphics libraries
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          curl -fL --retry 3 --retry-delay 5 --connect-timeout 25 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+      - name: Install official MPFB 2.0.18 extension
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          ( cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/wvlrp-mpfb-ext.zip . )
+          mkdir -p /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_blender_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/wvlrp-mpfb-ext.zip
+      - name: Download official MakeHuman system assets
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 5 --connect-timeout 40 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          unzip -t /tmp/mh-system.zip | tail -n 2
+      - name: Generate independent child body, dress, rig, animations
+        run: |
+          set -euo pipefail
+          xvfb-run -a -s '-screen 0 1280x1024x24' /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_jenny_child_native_STAGE.py 2>&1 | tee /tmp/jenny-child-build.log
+          grep 'WVLRP_JENNY_CHILD_STAGE_REAL_SUCCESS' /tmp/jenny-child-build.log
+      - name: Check non-placeholder full child rigged GLB
+        run: |
+          python3 - <<'PY'
+          import json, struct, pathlib
+          p=pathlib.Path('world-creator/assets/jenny-child-native-STAGING.glb')
+          raw=p.read_bytes()
+          assert raw[:4]==b'glTF' and len(raw)>200000
+          assert struct.unpack_from('<I',raw,8)[0]==len(raw)
+          length=struct.unpack_from('<I',raw,12)[0]
+          doc=json.loads(raw[20:20+length])
+          skins=doc.get('skins',[])
+          assert skins and max(len(s.get('joints',[])) for s in skins)>=25
+          assert len(doc.get('animations',[]))>=3
+          assert doc.get('images') and doc.get('textures')
+          assert any('plaid sundress' in m.get('name','') for m in doc.get('materials',[]))
+          print('JENNY_CHILD_STAGING_RIG_VERIFIED',len(raw),'bytes',len(doc.get('animations',[])),'animation clips')
+          PY
+      - name: Archive staging artifacts ONLY (no commit/push/deployment)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenny-child-native-STAGING
+          path: |
+            world-creator/assets/jenny-child-native-STAGING.glb
+            world-creator/assets/jenny-child-native-STAGING-preview.png
+            /tmp/jenny-child-build.log
+          if-no-files-found: ignore
+          retention-days: 7
