@@ -19,9 +19,9 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   let rockMaterial=null,bedMaterial=null;
   const rockPhoto=photo('spring limestone','rock_face_03','rock_face_03_diff_1k.jpg');
   const bedPhoto=photo('dry spring bedrock','rock_06','rock_06_diff_1k.jpg');
-  rockMaterial=new T.MeshStandardMaterial({map:rockPhoto,color:0xd0d0c8,roughness:.94,metalness:0,side:T.DoubleSide});
-  const darkerRock=new T.MeshStandardMaterial({map:rockPhoto,color:0x9fa197,roughness:1,metalness:0,side:T.DoubleSide});
-  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,roughness:.93,metalness:0,
+  rockMaterial=new T.MeshStandardMaterial({map:rockPhoto,color:0x9ba9a8,roughness:1,metalness:0,side:T.DoubleSide});
+  const darkerRock=new T.MeshStandardMaterial({map:rockPhoto,color:0x939d99,roughness:1,metalness:0,side:T.DoubleSide});
+  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,color:0xb4c4c6,roughness:.93,metalness:0,
      side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
   const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);
 
@@ -92,66 +92,94 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     group.add(bed);beds.push(bed);
   }
 
-  // Real 3D limestone crest: the grooved arch is NOT a rectangular photo billboard.
-  // Its final 2.3m of stone feather into and BELOW the existing mountain ground.
-  const grotto=new T.Group();grotto.name='Natural sculpted mountain spring grotto V12';
+  // V13 / owner's aerial QA: the former 40x12 continuous arched roof looked
+  // like a giant draped tarp or stacks of hay bales. DO NOT create another
+  // full-width cloth-like sheet or rectangular photo billboard.
+  // Build the lip instead out of overlapping irregular 3-D rock masses.
+  const grotto=new T.Group();
+  grotto.name='V13 embedded fractured limestone spring — no tarp roof';
   group.add(grotto);
-  const lipX=startX+1.95,baseY=20.05,segments=40,bands=12;
-  const v=[],uv=[],indices=[];
-  for(let j=0;j<=bands;j++){
-    const t=j/bands;
-    for(let k=0;k<=segments;k++){
-      const a=Math.PI*k/segments,s=Math.sin(a),c=Math.cos(a);
-      const r=4.2+9.3*t,z=CZ+r*c+.17*Math.sin(a*11+t*7);
-      const x=lipX-4.8*t+.37*Math.sin(a*8+t*14);
-      let y=baseY+(4.12+t*7.4)*Math.pow(s,.88)+.21*Math.sin(a*13+t*5);
-      if(t>.76)y=T.MathUtils.lerp(y,ground(x,z)-.72,smooth(.76,1,t));
-      v.push(x,y,z);uv.push(k/segments*2.7,t*2.3);
-      if(j<bands&&k<segments){
-        const p=j*(segments+1)+k;
-        indices.push(p,p+1,p+segments+1,p+1,p+segments+2,p+segments+1);
-      }
-    }
-  }
-  const lipGeo=new T.BufferGeometry();
-  lipGeo.setAttribute('position',new T.Float32BufferAttribute(v,3));
-  lipGeo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
-  lipGeo.setIndex(indices);lipGeo.computeVertexNormals();
-  const lip=new T.Mesh(lipGeo,rockMaterial);
-  lip.name='Natural broken stone crest with buried mountain join';grotto.add(lip);
-  // Smaller shadow sits inside the stone arch, ~1.5 m back, and river covers its base.
-  // Natural curved polygon avoids the giant black circle seen in V11 screenshots.
-  const shadowVertices=[lipX-1.65,baseY+1.45,CZ];
-  const rim=[{y:baseY-1.3,z:CZ-4.1},{y:baseY-1.3,z:CZ+4.1}];
-  for(let k=0;k<=segments;k++){
-    const a=Math.PI*k/segments;
-    rim.push({y:baseY+3.88*Math.pow(Math.sin(a),.9),z:CZ+4.08*Math.cos(a)});
-  }
-  for(const p of rim)shadowVertices.push(lipX-1.65,p.y,p.z);
-  const shadowIndex=[];
-  for(let k=1;k<rim.length;k++)shadowIndex.push(0,k,k+1);
-  shadowIndex.push(0,rim.length,1);
-  const shadowGeo=new T.BufferGeometry();
-  shadowGeo.setAttribute('position',new T.Float32BufferAttribute(shadowVertices,3));
-  shadowGeo.setIndex(shadowIndex);shadowGeo.computeVertexNormals();
-  const recess=new T.Mesh(shadowGeo,new T.MeshBasicMaterial({color:0x11191a,side:T.DoubleSide}));
-  recess.name='Natural recessed dark hollow inside limestone spring';grotto.add(recess);
-
-  // Instanced weathered chunks blend the outer arch with existing terrain.
   const pose=new T.Object3D();
-  const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),darkerRock,42);
-  for(let k=0;k<42;k++){
-    const side=k%2?-1:1,t=(k+1)/43;
-    const x=startX-3.1+5*t+1.05*Math.sin(k*2.2);
-    const z=CZ+side*(4.9+8.2*t+.43*Math.sin(k*1.91));
-    const size=.62+1.23*((k*13%17)/17);
-    pose.position.set(x,ground(x,z)+size*.12,z);
-    pose.rotation.set(k*.31,k*.71,k*.18);
-    pose.scale.set(size*1.35,size*.48,size*.88);
-    pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+  const capRockGeo=new T.IcosahedronGeometry(1,2);
+  const capRockPositions=capRockGeo.getAttribute('position');
+  for(let i=0;i<capRockPositions.count;i++){
+    const x=capRockPositions.getX(i),y=capRockPositions.getY(i),z=capRockPositions.getZ(i);
+    const warp=1+.06*Math.sin(14*x+9*z)*Math.cos(11*y+5*x)+.033*Math.sin(21*z+12*y);
+    capRockPositions.setXYZ(i,x*warp,y*warp,z*warp);
   }
-  rubble.name='Photographic embedded limestone shoulder fragments';
+  capRockGeo.computeVertexNormals();
+  // A recessed irregular *stone* spring, with its blackness BEHIND the rock,
+  // never a large flat, perfectly elliptical cap visible from overhead.
+  const shadowX=startX-2.15,shadowY=20.77;
+  const outline=[
+    [-4.75,20.77],[-4.64,22.22],[-4.23,22.87],[-3.60,23.23],
+    [-2.85,23.78],[-2.10,23.57],[-1.39,23.99],[-.54,23.69],
+    [.36,23.92],[1.06,23.51],[1.91,23.84],[2.64,23.34],
+    [3.44,23.37],[4.12,22.79],[4.68,22.07],[4.75,20.77]
+  ];
+  const holeVerts=[shadowX,shadowY+1.40,CZ],holeIndices=[];
+  for(const [z,y] of outline)holeVerts.push(shadowX,y,CZ+z);
+  // Fan triangulation follows the jagged roofline and narrow water-level base.
+  holeVerts.push(shadowX,shadowY-.20,CZ+4.75);
+  holeVerts.push(shadowX,shadowY-.20,CZ-4.75);
+  for(let i=1;i<holeVerts.length/3;i++)holeIndices.push(0,i,i+1);
+  holeIndices.push(0,holeVerts.length/3-1,1);
+  const hollowGeo=new T.BufferGeometry();
+  hollowGeo.setAttribute('position',new T.Float32BufferAttribute(holeVerts,3));
+  hollowGeo.setIndex(holeIndices);hollowGeo.computeVertexNormals();
+  const recess=new T.Mesh(hollowGeo,new T.MeshBasicMaterial({
+    color:0x26302f,side:T.DoubleSide,depthWrite:true
+  }));
+  recess.name='Uneven narrow spring recess behind real stones';grotto.add(recess);
+  // Main fractured lip: varied sizes and rotations produce an organic broken
+  // rock silhouette, rather than a smooth arch or stacked squared slabs.
+  const cap=new T.InstancedMesh(capRockGeo,rockMaterial,26);
+  for(let i=0;i<26;i++){
+    const t=i/25,top=i<12,side=i>=12&&i<22,sgn=i%2?1:-1;
+    let x,z,y,sx,sy,sz;
+    if(top){
+      z=CZ-5.65+(i/11)*11.3+.22*Math.sin(i*2.31);
+      x=startX+1.05+.74*Math.sin(i*1.89);
+      y=24.77+.43*Math.sin(i*1.73)+.16*Math.cos(i*4.12);
+      sx=1.1+.52*((i*7%11)/11);sy=.74+.21*Math.sin(i*1.2)**2;
+      sz=1.06+.48*((i*3%13)/13);
+    }else if(side){
+      const j=i-12;z=CZ+sgn*(4.55+.76*((j*7%9)/9));
+      x=startX+.50+.69*Math.sin(j*2.04);
+      y=21.35+((j*7)%5)*.77+.32*Math.sin(j*1.64);
+      sx=1.1+.3*((j*5%11)/11);sy=.95+.27*((j*3%7)/7);
+      sz=1.23+.39*Math.sin(j*1.9)**2;
+    }else{
+      const j=i-22;z=CZ+sgn*(6.3+.8*j);
+      x=startX-1.25-1.1*j;
+      y=Math.max(24.15,ground(x,z)-.16);
+      sx=1.8;sy=1.15;sz=1.65;
+    }
+    pose.position.set(x,y,z);
+    pose.rotation.set(.16*Math.sin(i*1.4),i*.67,.21*Math.sin(i*2.2));
+    pose.scale.set(sx,sy,sz);pose.updateMatrix();cap.setMatrixAt(i,pose.matrix);
+  }
+  cap.name='26 irregular overhanging stone formations';cap.computeBoundingSphere();grotto.add(cap);
+  // Small broken fragments at the shoulders and up the mountain edge.
+  // Each outer fragment sinks into the same terrain as the walking collider,
+  // so no rectangular alpha or geometry corners remain visible from above.
+  const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),darkerRock,48);
+  const rubbleTints=new T.Color(),colors=[0x8f9993,0x9a9e96,0x777f7b,0xb3b5aa];
+  for(let k=0;k<48;k++){
+    const side=k%2?-1:1,t=(k+1)/49;
+    const x=startX-3.8+6*t+1.2*Math.sin(k*2.2);
+    const z=CZ+side*(5.9+7.3*t+.45*Math.sin(k*1.9));
+    const size=.55+1.18*((k*13%19)/19);
+    pose.position.set(x,ground(x,z)+size*.13,z);
+    pose.rotation.set(k*.31,k*.71,k*.18);
+    pose.scale.set(size*(1.23+.12*Math.sin(k)),size*.48,size*(.78+.12*Math.cos(k)));
+    pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+    rubbleTints.setHex(colors[k%4]);rubble.setColorAt(k,rubbleTints);
+  }
+  rubble.name='48 small embedded natural rock shoulders';
   rubble.computeBoundingSphere();grotto.add(rubble);
+  // Expose a diagnostic count for owners' aerial QA.
+  diag.assets['natural spring silhouette V13']='26 faceted lip rocks, 48 buried edge fragments, smaller irregular shadow; no roof sheet';
   const splitterGeo=new T.IcosahedronGeometry(1,2);
   const position=splitterGeo.getAttribute('position');
   for(let i=0;i<position.count;i++){
@@ -177,10 +205,10 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     pose.updateMatrix();flanks.setMatrixAt(k,pose.matrix);
   }
   flanks.name='Natural scattered streamside rocks';flanks.computeBoundingSphere();group.add(flanks);
-  diag.assets['photo spring V12']='recessed rock arch, buried edges, photobedrock under all 3 flows';
+  diag.assets['photo spring V13']='smaller irregular rock recess, real jagged stone overhang, dry photo bedrock under all 3 flows';
   const report={grotto,splitter,beds,photoRock:'Poly Haven rock_face_03',
-    bedrock:'Poly Haven rock_06',waterSource:'existing animated scene water',
+    bedrock:'Poly Haven rock_06',facetedLipRocks:26,buriedEdgeRocks:48,waterSource:'existing animated scene water',
     trunkWidth:8.8,branches:2,mainAndLakeIntact:true};
-  window.staceySpringV12=report;
+  window.staceySpringV12=report;window.staceySpringV13=report;
   return report;
 }
