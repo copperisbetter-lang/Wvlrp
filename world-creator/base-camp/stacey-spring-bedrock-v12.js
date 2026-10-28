@@ -34,8 +34,15 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     const uniform={value:bedPhoto};mat.userData.springBedUniform=uniform;
     shader.uniforms.springBedPhoto=uniform;
     shader.fragmentShader='uniform sampler2D springBedPhoto;\n'+shader.fragmentShader;
-    const anchor='  // Low-contrast rock flecks through grassy/silty hillside at both canyon ends.';
-    if(!shader.fragmentShader.includes(anchor))throw Error('V12 spring rock shader anchor missing');
+    // V11's GLSL template adds one leading space here, whereas the V12 test
+    // used two. Match the comment text regardless of indentation.
+    const anchor='// Low-contrast rock flecks through grassy/silty hillside at both canyon ends.';
+    if(!shader.fragmentShader.includes(anchor)){
+      // A missing comment must NEVER prevent the entire lake from rendering.
+      // Photo-rock meshes remain visible even without this optional terrain mask.
+      diag.assets['spring terrain rock mask']='optional anchor missing; mesh beds retained';
+      return;
+    }
     shader.fragmentShader=shader.fragmentShader.replace(anchor,
       `  // Photographed dry stone replaces leaves and grass UNDER all headwater streams.
   float spT=clamp((vGround.x+36.)/28.,0.,1.);
