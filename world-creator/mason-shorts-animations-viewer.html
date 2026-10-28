@@ -28,7 +28,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 @media(max-height:700px){#stage{height:57dvh;min-height:280px}}
 </style>
 </head><body>
-<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V6</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
+<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V7</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
 <main>
 <div id="stage"><canvas id="renderCanvas" aria-label="Rotate and zoom Mason's three-dimensional model"></canvas><div role="status" id="status">Loading Mason's real 3D model…</div></div>
 <div class="panel">
@@ -56,7 +56,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 <div class="tiny">Drag to rotate · pinch to zoom · shorts and body follow the same articulated skeleton.</div>
 </fieldset>
 </div>
-<p class="note"><strong>Shorts V6:</strong> Preserves the opaque, skin-weighted fabric mesh from V5 and expands rear/side coverage to eliminate large cutouts on the seat. Clean hem and animation fit still require phone inspection. Animation system and source GLB unchanged. Phone visual validation required.</p>
+<p class="note"><strong>Shorts V7:</strong> The former all-three-vertices triangle rejection caused irregular exposed-skin cutouts around the rear waistband. V7 clips existing rigged body triangles cleanly against the waistband and leg-hem planes and retains interpolated original skeleton weights. Android rear/side and motion QA required before approval.</p>
 <p class="note"><strong>Source:</strong> the original <code>world-creator/assets/mason-mpfb-trial.glb</code> (not Rob). The animation menu is populated directly from the loaded GLB, with source clip names. Existing stand, bend, kneel, hands-and-knees and elbows-and-knees clips are expected; any others only appear if actually present in the asset. Walk, run, swim, sit and other unbuilt actions are not mislabeled as working clips. This is a separate QA viewer, not a game deployment. The shorts are a nondestructive fitted skinned-mesh preview; check their fit during deep knee/hip movements.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
@@ -138,10 +138,9 @@ function findBody(meshes){
  return candidates[0]||null;
 }
 function generateFittedShorts(body){
- // V5: NEW BABYLON MESH with EXACT SOURCE BODY JOINT INDICES/WEIGHTS.
- // V4 cloned + clipped mesh was invisible on owner's Android although its
- // 1066 selected triangles were present in the original GLB (verified via
- // independent GitHub Actions binary inspection). No clone/submesh state.
+ // V7: clip each skinned body triangle to the waist and thigh planes.
+ // Unlike V4-V6, never discard a partial source triangle at the waistband:
+ // that was producing large irregular exposed-skin holes on the rear.
  const B=BABYLON.VertexBuffer;
  const positions=body.getVerticesData(B.PositionKind);
  const normals=body.getVerticesData(B.NormalKind);
@@ -152,95 +151,142 @@ function generateFittedShorts(body){
  const weightsExtra=body.getVerticesData(B.MatricesWeightsExtraKind);
  const indices=body.getIndices();
  if(!body.skeleton||!positions||!normals||!indices||!jointIds||!jointWeights)
-   throw new Error("Mason original rigging data missing");
+   throw new Error("Mason body or original rigging data missing");
  const world=body.computeWorldMatrix(true);
  const inverse=world.clone().invert();
  const bounds=body.getBoundingInfo().boundingBox;
  const low=bounds.minimumWorld,high=bounds.maximumWorld;
  const height=high.y-low.y,cx=(high.x+low.x)/2,cz=(high.z+low.z)/2;
- if(!(height>1&&height<5))throw new Error("Invalid Mason body bounds");
+ if(!(height>1&&height<5))throw new Error("Invalid Mason body dimensions");
+ const waistY=low.y+height*.652,hemY=low.y+height*.388;
+ const xLimit=height*.221; // excludes outstretched forearms/hands
+ const hasExtra=!!(idsExtra&&weightsExtra);
+ const influencers=hasExtra?8:4;
+ const original=new Array(positions.length/3);
  const point=new BABYLON.Vector3(),out=new BABYLON.Vector3();
- const worldPoints=new Array(positions.length/3);
- for(let i=0;i<worldPoints.length;i++){
+ const allowedBones=new Set([0,1,2,5,6,9,10,11]);
+ for(let i=0;i<original.length;i++){
    point.set(positions[i*3],positions[i*3+1],positions[i*3+2]);
    BABYLON.Vector3.TransformCoordinatesToRef(point,world,out);
-   worldPoints[i]={x:out.x,y:out.y,z:out.z};
+   const bones=[];
+   for(let j=0;j<4;j++){
+     const w=jointWeights[i*4+j];
+     if(w>1e-7)bones.push([Number(jointIds[i*4+j]),w]);
+   }
+   if(hasExtra)for(let j=0;j<4;j++){
+     const w=weightsExtra[i*4+j];
+     if(w>1e-7)bones.push([Number(idsExtra[i*4+j]),w]);
+   }
+   const approved=bones.reduce((sum,b)=>sum+(allowedBones.has(b[0])?b[1]:0),0);
+   original[i]={
+     local:[positions[i*3],positions[i*3+1],positions[i*3+2]],
+     world:[out.x,out.y,out.z],
+     normal:[normals[i*3],normals[i*3+1],normals[i*3+2]],
+     uv:uvs?[uvs[i*2],uvs[i*2+1]]:[0,0],
+     bones,approved
+   };
  }
- // Select full body-surface triangles from waistband to above knee.
- // V6 coverage repairs avoid clipping the broad posterior seat.
- // V6: previous depth caps clipped the back of the seat, producing large
- // skin-colored holes in the owner's rear Android screenshot. The source
- // body's posterior surface extends beyond those caps. Limit sideways
- // reach to exclude the lowered arms/hands, NOT the front/back seat depth.
- // Avoid arbitrary material holes when filtering all-three-vertices faces.
- const inside=i=>{
-   const p=worldPoints[i],y=(p.y-low.y)/height;
-   if(y<.390||y>.650)return false;
-   const lateralCap=height*(y>.515?.160:.204);
-   const depthCap=height*.285;
-   return Math.abs(p.x-cx)<lateralCap && Math.abs(p.z-cz)<depthCap;
- };
- const selected=[];
- for(let i=0;i<indices.length;i+=3){
-   const a=indices[i],b=indices[i+1],c=indices[i+2];
-   if(inside(a)&&inside(b)&&inside(c))selected.push(a,b,c);
+ // Bone weights of newly interpolated seam vertices must still follow
+ // Mason's hips/thighs, not arbitrary arm or chest joints.
+ function mix(a,b,t){
+   const lerp=(p,q)=>p.map((v,i)=>v+(q[i]-v)*t);
+   const influences=new Map();
+   for(const [id,w] of a.bones)influences.set(id,(influences.get(id)||0)+(1-t)*w);
+   for(const [id,w] of b.bones)influences.set(id,(influences.get(id)||0)+t*w);
+   const bones=[...influences].filter(([id,w])=>w>1e-7)
+      .sort((x,y)=>y[1]-x[1]).slice(0,influencers);
+   const total=bones.reduce((s,b)=>s+b[1],0)||1;
+   bones.forEach(b=>b[1]/=total);
+   return {local:lerp(a.local,b.local),world:lerp(a.world,b.world),
+     normal:lerp(a.normal,b.normal),uv:lerp(a.uv,b.uv),
+     bones,approved:a.approved*(1-t)+b.approved*t};
  }
- if(selected.length<1500)
-   throw new Error("Only "+selected.length/3+" shorts faces; source model unsuitable");
- // Make actual fabric stand clear of the skin in its own rest coordinates.
- // V4's 1.2cm normal offset was visually buried; use ~2cm normal spacing
- // plus 5% horizontal allowance typical of lightweight athletic shorts.
- const expanded=new Float32Array(positions.length);
- const rad=1.055,normalLift=height*.012;
- for(let i=0;i<worldPoints.length;i++){
-   const p=worldPoints[i];
-   point.set(cx+(p.x-cx)*rad,p.y,cz+(p.z-cz)*rad);
-   BABYLON.Vector3.TransformCoordinatesToRef(point,inverse,out);
-   expanded[i*3]=out.x+normals[i*3]*normalLift;
-   expanded[i*3+1]=out.y+normals[i*3+1]*normalLift;
-   expanded[i*3+2]=out.z+normals[i*3+2]*normalLift;
+ function clip(poly,plane){
+   if(poly.length===0)return poly;
+   const out=[],score=plane;
+   for(let i=0;i<poly.length;i++){
+     const a=poly[(i+poly.length-1)%poly.length],b=poly[i];
+     const sa=score(a),sb=score(b),ina=sa>=0,inb=sb>=0;
+     if(ina!==inb)out.push(mix(a,b,sa/(sa-sb)));
+     if(inb)out.push(b);
+   }
+   return out;
  }
- const cloth=new BABYLON.Mesh("Mason shorts V6 · full-seat skinned fabric",scene);
+ const pOut=[],nOut=[],uvOut=[],idOut=[],wOut=[],idExtraOut=[],wExtraOut=[],iOut=[];
+ const expansion=1.070,lift=height*.016;
+ const normalWorld=new BABYLON.Vector3(),work=new BABYLON.Vector3();
+ function emit(v){
+   // Push fabric along each actual body normal as well as sideways,
+   // preventing the body from showing through the fabric after rig poses.
+   point.set(...v.normal);
+   BABYLON.Vector3.TransformNormalToRef(point,world,normalWorld);
+   normalWorld.normalize();
+   work.set(cx+(v.world[0]-cx)*expansion,
+     v.world[1],cz+(v.world[2]-cz)*expansion);
+   work.addInPlace(normalWorld.scale(lift));
+   BABYLON.Vector3.TransformCoordinatesToRef(work,inverse,out);
+   pOut.push(out.x,out.y,out.z);
+   nOut.push(...v.normal);
+   uvOut.push(...v.uv);
+   const joints=v.bones.slice().sort((a,b)=>b[1]-a[1]).slice(0,influencers);
+   const total=joints.reduce((s,b)=>s+b[1],0)||1;
+   for(let j=0;j<4;j++){
+     idOut.push(joints[j]?.[0]||0);
+     wOut.push(joints[j]?(joints[j][1]/total):0);
+   }
+   if(hasExtra)for(let j=4;j<8;j++){
+     idExtraOut.push(joints[j]?.[0]||0);
+     wExtraOut.push(joints[j]?(joints[j][1]/total):0);
+   }
+   iOut.push(iOut.length);
+ }
+ let sourceFaces=0,clippedFaces=0,rejectedArm=0;
+ for(let k=0;k<indices.length;k+=3){
+   let poly=[original[indices[k]],original[indices[k+1]],original[indices[k+2]]];
+   // Keep the original pelvis, upper leg, and lower spine influenced skin.
+   // Arm and hand triangles must not grow shorts from the hips.
+   if(poly.some(v=>v.approved<.67)){rejectedArm++;continue;}
+   if(poly.every(v=>v.world[1]<hemY||v.world[1]>waistY))continue;
+   if(poly.every(v=>Math.abs(v.world[0]-cx)>xLimit))continue;
+   sourceFaces++;
+   poly=clip(poly,v=>v.world[1]-hemY);
+   poly=clip(poly,v=>waistY-v.world[1]);
+   poly=clip(poly,v=>v.world[0]-(cx-xLimit));
+   poly=clip(poly,v=>(cx+xLimit)-v.world[0]);
+   if(poly.length<3)continue;
+   if(poly.length>3)clippedFaces++;
+   for(let j=1;j+1<poly.length;j++){
+     emit(poly[0]);emit(poly[j]);emit(poly[j+1]);
+   }
+ }
+ if(iOut.length/3<1550)
+   throw new Error("Incomplete Mason shorts: "+iOut.length/3+" faces");
+ const cloth=new BABYLON.Mesh("Mason shorts V7 · continuous clipped skin",scene);
  cloth.parent=body.parent;
  cloth.position.copyFrom(body.position);
  cloth.scaling.copyFrom(body.scaling);
  if(body.rotationQuaternion)cloth.rotationQuaternion=body.rotationQuaternion.clone();
  else cloth.rotation.copyFrom(body.rotation);
  const data=new BABYLON.VertexData();
- data.positions=expanded;
- data.indices=selected;
- data.normals=normals;
- if(uvs)data.uvs=uvs;
- data.matricesIndices=jointIds;
- data.matricesWeights=jointWeights;
- if(idsExtra&&weightsExtra){
-   data.matricesIndicesExtra=idsExtra;
-   data.matricesWeightsExtra=weightsExtra;
-   cloth.numBoneInfluencers=8;
- }else cloth.numBoneInfluencers=4;
+ data.positions=pOut;data.indices=iOut;data.normals=nOut;data.uvs=uvOut;
+ data.matricesIndices=idOut;data.matricesWeights=wOut;
+ if(hasExtra){data.matricesIndicesExtra=idExtraOut;data.matricesWeightsExtra=wExtraOut;}
+ cloth.numBoneInfluencers=influencers;
  data.applyToMesh(cloth,true);
  cloth.skeleton=body.skeleton;
  cloth.visibility=1;cloth.isVisible=true;cloth.setEnabled(true);
- cloth.alwaysSelectAsActiveMesh=true;
- cloth.isPickable=false;
+ cloth.alwaysSelectAsActiveMesh=true;cloth.isPickable=false;
  const mat=new BABYLON.PBRMaterial("Mason shorts · cotton twill",scene);
  mat.albedoColor=BABYLON.Color3.FromHexString(palettes[$("shortsColor").value]||palettes.denim);
  mat.metallic=0;mat.roughness=.96;mat.alpha=1;
- mat.backFaceCulling=false;
- mat.forceDepthWrite=true;
- mat.zOffset=-1;
+ mat.backFaceCulling=false;mat.forceDepthWrite=true;mat.zOffset=-1;
  cloth.material=mat;
- cloth.refreshBoundingInfo();
- cloth.computeWorldMatrix(true);
- $("clothSummary").textContent=
-   "Shorts V6 · "+selected.length/3+" real body-surface triangles; "+
-   "expanded rear coverage; exact original skeleton weights. "+
-   "Check front/back/side and bending.";
- console.info("Mason shorts V6 candidate",{
-   model:"Mason MPFB",triangles:selected.length/3,
-   vertices:worldPoints.length,skeletonBones:body.skeleton.bones.length,
-   visible:cloth.isVisible,enabled:cloth.isEnabled(),color:palettes[$("shortsColor").value]
- });
+ cloth.refreshBoundingInfo();cloth.computeWorldMatrix(true);
+ const counts={faces:iOut.length/3,sourceFaces,clippedFaces,rejectedArm,
+   vertices:iOut.length,waistY,hemY,bones:body.skeleton.bones.length};
+ $("clothSummary").textContent="Shorts V7 · "+counts.faces+
+   " skinned triangles; waist and hems clipped continuously to body surface. Inspect rear waistband and all five poses.";
+ console.info("Mason V7 fitted shorts coverage",counts);
  return [cloth];
 }
 
@@ -300,7 +346,7 @@ try{
   $("smile").disabled=smileTargets.length===0;
   modelReady=true;
   motionClipsImported();
-  updateStatus("Mason V6 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
+  updateStatus("Mason V7 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
     " GLB clips · shorts "+(clothing.length?clothing[0].getTotalIndices()/3+" garment faces":"FAILED; see Clothing note"));
  }).catch(err=>{updateStatus("Mason GLB failed: "+(err.message||err));console.error(err);});
  engine.runRenderLoop(()=>{
