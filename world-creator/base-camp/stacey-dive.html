@@ -558,6 +558,27 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
       };
       m.customProgramCacheKey=()=> 'v6-photo-sky-mask-texture-restored-2';
      }
+     // Keep the actual V6 photo atlas and mesh unchanged; render a tiny arch
+     // transparent at the one passage aligned between the waterfall sheets.
+     const originalCompile=m.onBeforeCompile;
+     m.onBeforeCompile=shader=>{
+      if(originalCompile)originalCompile(shader);
+      shader.vertexShader='varying vec3 hiddenDoorWorld;\n'+shader.vertexShader.replace(
+       '#include <begin_vertex>',
+       '#include <begin_vertex>\nhiddenDoorWorld=(modelMatrix*vec4(position,1.0)).xyz;');
+      const doorwayMask=[
+       'float doorZ=abs(hiddenDoorWorld.z-'+hiddenCave.z.toFixed(2)+');',
+       'float doorY=hiddenDoorWorld.y-'+hiddenCave.floor.toFixed(2)+';',
+       'float doorHalf=1.32-.46*smoothstep(1.75,2.7,doorY);',
+       'if(hiddenDoorWorld.x>'+(hiddenCave.innerEnd-.5).toFixed(2)+
+         ' && hiddenDoorWorld.x<'+(hiddenCave.outerEnd-1.7).toFixed(2)+
+         ' && doorY>-.20 && doorY<2.7 && doorZ<doorHalf)discard;'
+      ].join('\n');
+      shader.fragmentShader='varying vec3 hiddenDoorWorld;\n'+shader.fragmentShader.replace(
+       '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
+     };
+     const priorProgramKey=m.customProgramCacheKey;
+     m.customProgramCacheKey=()=>String(priorProgramKey?priorProgramKey():'v6-photo')+'-hidden-entrance-v6';
      m.needsUpdate=true;
     }
    });
