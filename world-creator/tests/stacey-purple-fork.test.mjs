@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../base-camp/stacey-purple-main-lake-spur.js',import.meta.url),'utf8');
 const m=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-const flat=(x,z)=>5+.135*(8-x)+.012*(z+374);
+const flat=(x,z)=>5+.10*(8-x)+.012*(z+374);
 const trail=m.createStaceyPurpleTrails(flat);
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 test('owner through-route remains continuous beyond fork',()=>{
@@ -50,4 +50,25 @@ test('last ten metres of approach are nearly level; existing terrain elsewhere u
  assert.equal(trail.gradeGround(-85,-240,flat(-85,-240)),flat(-85,-240),'no cave excavation');
  assert.equal(trail.gradeGround(140,-240,flat(140,-240)),flat(140,-240),'no lake excavation');
  assert.equal(trail.gradeGround(300,-200,flat(300,-200)),flat(300,-200),'no remote terrain change');
+});
+
+test('both trails have walkable grades, bounded earthwork and continuous fork',()=>{
+ const fork=trail.main.samples.find(p=>Math.hypot(p.x+166,p.z+310)<.001);
+ assert.ok(fork,'ridge main contains approved lake fork');
+ assert.ok(Math.abs(fork.grade-trail.spur.samples[0].grade)<.002,'fork tread heights must connect');
+ for(const route of [trail.main,trail.spur]){
+  for(let i=0;i<route.samples.length;i++){
+   const p=route.samples[i];
+   assert.ok(p.natural-p.grade<=3.005,'excessive earth cut at '+route.name+' '+p.s);
+   assert.ok(p.grade-p.natural<=2.005,'excessive earth fill at '+route.name+' '+p.s);
+   if(i>0){
+    const prev=route.samples[i-1],rise=Math.abs(p.grade-prev.grade);
+    assert.ok(rise<=.0781*(p.s-prev.s)+.00001,'steep step at '+route.name+' '+p.s);
+   }
+  }
+ }
+ const samples=trail.spur.samples,end=trail.spur.end,tail=samples.filter(p=>end-p.s<=9);
+ for(let i=1;i<tail.length;i++)assert.ok(
+  Math.abs((tail[i].grade-tail[i-1].grade)/(tail[i].s-tail[i-1].s))<=.02,
+  'last 9 metres must enter lake woods almost level');
 });
