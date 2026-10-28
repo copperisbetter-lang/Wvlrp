@@ -34,17 +34,26 @@ if(d<13.716)return CY+.035+d*.035;const ridge=CY+.515+14*smooth(14,85,d)+19*smoo
 const fallShore=CX-outer(Math.PI),pondX=fallShore-26,pondY=CY+1.4;
 // One walk-height opening in the center of the 7.62-meter-separated waterfalls.
 const hiddenCave={x:fallShore-51+19.55,z:CZ,floor:CY+1.65,halfWidth:1.32,
- innerEnd:fallShore-51+19.55-13.8,outerEnd:fallShore-51+19.55+7.5};
+ innerEnd:fallShore-51+19.55-27,outerEnd:fallShore-51+19.55+7.5,
+ chamberX:fallShore-51+19.55-38,chamberR:14};
 function isHiddenCaveOpening(x,z,feet){
- return x>=hiddenCave.innerEnd&&x<=hiddenCave.outerEnd&&
-  Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth&&feet>=CY-2&&feet<hiddenCave.floor+3.15;
+ // Preserve the one entrance between falls; the tunnel opens into a room
+ // below the hillside. Upper photo-cliff surface remains solid and walkable.
+ const insideHeight=feet>=hiddenCave.floor-2&&feet<hiddenCave.floor+3.15;
+ if(!insideHeight)return false;
+ const tunnel=x>=hiddenCave.innerEnd&&x<=hiddenCave.outerEnd&&
+   Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth;
+ const dx=x-hiddenCave.chamberX,dz=z-hiddenCave.z;
+ const dome=dx*dx+dz*dz<(hiddenCave.chamberR-1.1)**2;
+ return tunnel||dome;
 }
 function hiddenCaveFloor(x){
  return hiddenCave.floor-1.1*smooth(hiddenCave.x+1.2,hiddenCave.outerEnd,x);
 }
 window.staceyHiddenCave={centerX:hiddenCave.x,centerZ:hiddenCave.z,
  floor:hiddenCave.floor,width:2*hiddenCave.halfWidth,
- length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:true};
+ length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:true,
+ chamber:{x:hiddenCave.chamberX,z:hiddenCave.z,radius:hiddenCave.chamberR}};
 function creekCenter(t){return CZ+Math.sin(t*Math.PI*2)*1.8;}
 function ground(x,z){
  // Build the canyon ends from real soil terrain, not artificial cliff panels.
@@ -338,15 +347,61 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const floor=new T.Mesh(new T.BoxGeometry(visibleFloorLen,.25,hiddenCave.halfWidth*2.3),floorMat);
  floor.position.set((hiddenCave.innerEnd+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
  floor.name='Hidden cave stone floor';vestibule.add(floor);
- const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,caveLen-7,11,1,true),
+ const shellLen=visibleFloorEnd-hiddenCave.innerEnd;
+ const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,shellLen,16,1,true),
    new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:true}));
  shell.rotation.z=Math.PI/2;
- shell.position.set((hiddenCave.innerEnd+hiddenCave.x)/2,hiddenCave.floor+1.12,hiddenCave.z);
+ shell.position.set((hiddenCave.innerEnd+visibleFloorEnd)/2,hiddenCave.floor+1.12,hiddenCave.z);
  shell.name='Interior stone tunnel roof and side walls';vestibule.add(shell);
- const backWall=new T.Mesh(new T.BoxGeometry(.72,3.4,hiddenCave.halfWidth*2.7),
-   new T.MeshStandardMaterial({color:0x444c45,roughness:1,side:T.DoubleSide}));
- backWall.position.set(hiddenCave.innerEnd-.2,hiddenCave.floor+1.5,hiddenCave.z);
- backWall.name='Quest-locked deeper cave door';vestibule.add(backWall);
+ // Open the previous dead end. The cave broadens into a freestanding stone dome.
+ // The existing deeper Dark and Damp underworld remains intact and quest-locked.
+ const domeR=hiddenCave.chamberR,domeX=hiddenCave.chamberX,domeY=hiddenCave.floor;
+ const chamber=new T.Group();
+ chamber.name='Walkable hidden domed cavern';vestibule.add(chamber);
+ const chamberStone=new T.MeshStandardMaterial({color:0x575b50,roughness:1,
+    flatShading:true,side:T.BackSide,emissive:0x10150f,emissiveIntensity:.35});
+ const chamberFloorMat=new T.MeshStandardMaterial({color:0x42483e,roughness:1,flatShading:true,side:T.DoubleSide});
+ const chamberFloor=new T.Mesh(new T.CircleGeometry(domeR-.35,64),chamberFloorMat);
+ chamberFloor.rotation.x=-Math.PI/2;
+ chamberFloor.position.set(domeX,domeY-.09,hiddenCave.z);
+ chamberFloor.name='Solid domed cavern stone floor';chamber.add(chamberFloor);
+ const sidewall=new T.Mesh(new T.CylinderGeometry(domeR,domeR,4.1,48,1,true),chamberStone);
+ sidewall.position.set(domeX,domeY+2.05,hiddenCave.z);
+ sidewall.name='Inside of rounded natural stone walls';chamber.add(sidewall);
+ const canopyGeometry=new T.SphereGeometry(domeR,48,20,0,Math.PI*2,0,Math.PI/2);
+ const canopyPos=canopyGeometry.getAttribute('position');
+ for(let i=0;i<canopyPos.count;i++){
+   const x=canopyPos.getX(i),y=canopyPos.getY(i),z=canopyPos.getZ(i);
+   const wav=.26*Math.sin(x*.41+z*.28)+.17*Math.sin(x*.97-z*.61);
+   const radial=1+wav/Math.max(1,domeR);
+   canopyPos.setXYZ(i,x*radial,y*.78+wav*.6,z*radial);
+ }
+ canopyPos.needsUpdate=true;canopyGeometry.computeVertexNormals();
+ const dome=new T.Mesh(canopyGeometry,chamberStone);
+ dome.position.set(domeX,domeY+4.1,hiddenCave.z);
+ dome.name='Irregular domed cavern ceiling';chamber.add(dome);
+ // A gentle warm glow helps the dark chamber read on older mobile devices.
+ const cavernLight=new T.PointLight(0xffd8a0,2.6,34,2);
+ cavernLight.position.set(domeX,domeY+6.7,hiddenCave.z);
+ chamber.add(cavernLight);
+ const stoneStacks=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),
+   new T.MeshStandardMaterial({color:0x53594e,roughness:1,flatShading:true}),42);
+ const stonePose=new T.Object3D();
+ for(let i=0;i<42;i++){
+   const ang=i*2.3999632,radius=domeR-1.0-.48*Math.sin(i*1.7);
+   stonePose.position.set(domeX+Math.cos(ang)*radius,
+      domeY+.3+(i%7)*.19,hiddenCave.z+Math.sin(ang)*radius);
+   stonePose.rotation.set(.19*i,.6*i,.27*i);
+   stonePose.scale.set(.38+(i%4)*.23,.42+(i%5)*.26,.5+(i%3)*.26);
+   stonePose.updateMatrix();stoneStacks.setMatrixAt(i,stonePose.matrix);
+ }
+ stoneStacks.computeBoundingSphere();stoneStacks.name='Cavern rim bedrock';chamber.add(stoneStacks);
+ // Keep a sealed side exit for future Dark and Damp, not at the former passage end.
+ const backWall=new T.Mesh(new T.BoxGeometry(.65,3.5,2.65),
+   new T.MeshStandardMaterial({color:0x363c36,roughness:1,side:T.DoubleSide}));
+ backWall.position.set(domeX-domeR+.4,domeY+1.7,hiddenCave.z);
+ backWall.name='Quest-locked future cavern exit';chamber.add(backWall);
+ window.staceyHiddenCave.chamberGroup=chamber;
  const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),
    new T.MeshStandardMaterial({color:0x61685c,roughness:1,flatShading:true}),12);
  const pose=new T.Object3D();
@@ -359,7 +414,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  rubble.computeBoundingSphere();rubble.name='Concealed entrance rubble';vestibule.add(rubble);
  window.staceyHiddenCave.vestibule=vestibule;
- diag.assets['secret cave']='centered entrance + walk-in vestibule; deeper quest still locked';
+ diag.assets['secret cave']='extended stone passage opens into walkable domed cavern; underwater quest exit locked';
 
  diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
 
@@ -575,7 +630,13 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
        'float doorHalf=1.32-.46*smoothstep(1.75,2.7,doorY);',
        'if(hiddenDoorWorld.x>'+(hiddenCave.innerEnd-.5).toFixed(2)+
          ' && hiddenDoorWorld.x<'+(hiddenCave.outerEnd-1.7).toFixed(2)+
-         ' && doorY>-.20 && doorY<2.7 && doorZ<doorHalf)discard;'
+         ' && doorY>-.20 && doorY<2.7 && doorZ<doorHalf)discard;',
+        // Remove only photo-rock fragments INTERSECTING the internal chamber
+        // volume, safely behind the front photo face. Other photo pixels stay.
+        'float chamberDX=hiddenDoorWorld.x-('+hiddenCave.chamberX.toFixed(2)+');',
+        'float chamberR2=chamberDX*chamberDX+doorZ*doorZ;',
+        'if(hiddenDoorWorld.x<'+(hiddenCave.x-3.5).toFixed(2)+' && chamberR2<'+((hiddenCave.chamberR-1.0)**2).toFixed(2)+
+          ' && doorY>-.3 && doorY<14.6)discard;'
       ].join('\n');
       shader.fragmentShader='varying vec3 hiddenDoorWorld;\n'+shader.fragmentShader.replace(
        '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
@@ -750,9 +811,10 @@ function rockColumn(x,z){
 }
 function cliffContact(x,z,feet){
  const dirt=ground(x,z);
- // The ONLY authorized void through otherwise full-height solid cliff.
+ // Only the hidden passage and domed chamber are hollow. Use their actual
+ // floor height instead of the raised original hillside (which is overhead).
  if(isHiddenCaveOpening(x,z,feet))
-  return {floor:Math.max(dirt,hiddenCaveFloor(x)),solid:false,onTop:false,roof:null,cave:true};
+  return {floor:hiddenCaveFloor(x),solid:false,onTop:false,roof:null,cave:true};
  const column=rockColumn(x,z);
  if(!column)return {floor:dirt,solid:false,onTop:false,roof:null};
  const roof=column.hi;
@@ -772,10 +834,13 @@ function solidCliffStep(x0,z0,x1,z1,feet){
  for(let s=1;s<=steps;s++){
    const t=s/steps,xx=x0+(x1-x0)*t,zz=z0+(z1-z0)*t;
    const next=cliffContact(xx,zz,feet);
-   if(found.cave&&xx<hiddenCave.innerEnd+.15){
+   // Enter only from the waterfall-side mouth; the chamber has no backdoor
+   // into the rest of the mountain through gaps in photo geometry.
+   if(!found.cave&&next.cave&&xx<hiddenCave.outerEnd-.55){
     stoneStats.wallStops++;return {x,z,floor:found.floor};
    }
-   if(found.cave&&!next.cave&&Math.abs(zz-hiddenCave.z)>=hiddenCave.halfWidth){
+   if(found.cave&&!next.cave&&
+      !(xx>=hiddenCave.outerEnd-.5&&Math.abs(zz-hiddenCave.z)<hiddenCave.halfWidth)){
     stoneStats.wallStops++;return {x,z,floor:found.floor};
    }
    if(next.solid){
@@ -830,6 +895,6 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Hidden Cave V6';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Hidden Dome V7';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
