@@ -1,0 +1,29 @@
+name: Purple ring excavation geometry and walking QA
+on:
+  push:
+    branches:
+      - gater/purple-ring-excavation-integration-20261028
+    paths:
+      - 'world-creator/base-camp/index.html'
+      - 'world-creator/base-camp/purple-ring-excavation.js'
+      - 'world-creator/tests/purple-ring-excavation-integration.test.mjs'
+      - '.github/workflows/purple-ring-excavation-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch isolated game branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test graded render/collision consistency and protected campsite
+        run: node world-creator/tests/purple-ring-excavation-integration.test.mjs
+      - name: Confirm no modifications to protected production paths
+        run: |
+          set -eu
+          test -f world-creator/base-camp/purple-ring-excavation.js
+          test -f world-creator/base-camp/purple-ring-smoothed-transition-profile-20261023.json
+          echo 'isolated excavation validation complete; no production deployment'
