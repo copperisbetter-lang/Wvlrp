@@ -21,12 +21,15 @@ jobs:
           test -f "$p"
           test "$(stat -c%s "$p")" -eq 9416324
           test "$(git hash-object "$p")" = d974cebb10764b6e748dcf9d09bbeef5759118f0
+          test "$(git hash-object world-creator/assets/amanda-1-0-with-flat-v1-backup.glb)" = 3e898ec9cc8bf793365eea48b87c10842ae0b260
           echo 'Verified exact clean Amanda GLB; no paid model assets here'
       - name: Upload clean Amanda for local private fitting
         uses: actions/upload-artifact@v4
         with:
-          name: amanda-1-0-clean-glb-transfer
-          path: world-creator/assets/amanda-1-0-base.glb
+          name: amanda-1-0-clean-and-reference-transfer
+          path: |
+            world-creator/assets/amanda-1-0-base.glb
+            world-creator/assets/amanda-1-0-with-flat-v1-backup.glb
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
