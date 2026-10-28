@@ -17,6 +17,8 @@ button{background:#456455;border:1px solid #6c9283;color:white;padding:7px 11px;
 <span><i class="sw" style="background:#58b1bb"></i>Actual new Stacey Lake shoreline</span>
 <span><i class="sw" style="background:#95a7a0"></i>60 m cleared woodland edge</span>
 <span><i class="sw" style="background:#e8c77f"></i>Path endpoints</span>
+<span><i class="sw" style="background:#d87976"></i>V8 cavern footprint (DO NOT CUT)</span>
+<span><i class="sw" style="background:#f0b061"></i>Reroute required / old line conflicts</span>
 </div>
 <svg viewBox="-445 -445 890 890" role="img" aria-label="Top-down game-world diagram showing new Stacey Lake at x 140 z negative 240, wooded gap in purple ring, and two trail endpoints">
 <defs><pattern id="forest" width="35" height="35" patternUnits="userSpaceOnUse"><circle cx="8" cy="11" r="4" fill="#3e5c46" opacity=".3"/><circle cx="29" cy="32" r="6" fill="#3e5c46" opacity=".22"/></pattern></defs>
@@ -26,6 +28,12 @@ button{background:#456455;border:1px solid #6c9283;color:white;padding:7px 11px;
 <path id="woods" fill="#3a584a" fill-opacity=".45" stroke="#96a8a0" stroke-width="2.4" stroke-dasharray="8 7"/>
 <path id="lake" fill="#277480" stroke="#81d0d6" stroke-width="3.4"/>
 <path id="dryTrail" fill="none" stroke="#bd8cd5" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="-86.7442538435" cy="-240" r="54" fill="#e98b7a" fill-opacity=".09" stroke="#e79b8f" stroke-width="1.8" stroke-dasharray="7 7"/>
+<circle cx="-86.7442538435" cy="-240" r="42" fill="#ce545c" fill-opacity=".30" stroke="#e89a97" stroke-width="3"/>
+<path d="M-54.7442538435,-240 L4.75574615645,-240" stroke="#d28f70" stroke-width="2.2" stroke-dasharray="5 5"/>
+<text x="-86.744" y="-244" text-anchor="middle" font-size="13" font-weight="700" fill="#ffe3df">V8 DOME</text>
+<text x="-86.744" y="-231" text-anchor="middle" font-size="11" fill="#ffe3df">84m Ø</text>
+<path id="domeRiskPath" fill="none" stroke="#ffb46b" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="8 7"/>
 <path id="gradedTrail" fill="none" stroke="#cbb28b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
 <path id="gradedCore" fill="none" stroke="#8f6040" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <g id="endcaps"></g>
@@ -37,22 +45,25 @@ button{background:#456455;border:1px solid #6c9283;color:white;padding:7px 11px;
 <text x="142" y="-230" fill="#c4eaf2" text-anchor="middle" font-size="11">New location (140, −240)</text>
 <text x="0" y="-423" font-size="16" fill="#d6e9e0" text-anchor="middle">N ↑</text>
 </svg>
-<p id="stats"><span class="pill">Calculated from actual new lake shoreline geometry</span><span class="pill">60 m tree-clearance edge + 1 m safety margin</span><span class="pill">Path gap ≈ 341 meters</span><span class="pill">913m woodland grading staged</span><span class="pill">857m meets 8%/3% design limits; endpoint ramps pending</span></p>
-<p style="padding:0 5px">Map units are game-world meters. This drawing verifies route geometry; it is <strong>not</strong> the actual Stacey Lake water or a fully graded trail gameplay test. The full lake scene remains unchanged.</p></main>
+<p id="stats"><span class="pill">Calculated from actual new lake shoreline geometry</span><span class="pill">60 m tree-clearance edge + 1 m safety margin</span><span class="pill">Path gap ≈ 341 meters</span><span class="pill">913m woodland grading staged</span><span class="pill">857m meets 8%/3% design limits; endpoint ramps pending</span>
+<span class="pill" style="background:#613c37;color:#ffd9bf">82m provisional path overlaps V8 cavern footprint</span>
+<span class="pill" style="background:#613c37;color:#ffd9bf">~108m including excavation corridor needs reroute</span></p>
+<p style="padding:0 5px">Map units are game-world meters. This drawing verifies route geometry; it is <strong>not</strong> the actual Stacey Lake water or a fully graded trail gameplay test. The full lake scene and new massive dome remain unchanged. <strong>Critical: the ungraded western purple ring line crosses the new 84-meter domed chamber. Do not excavate this orange section; a separate outer-hillside bypass and vertical roof-cover survey are required.</strong></p></main>
 <script>
 const R=268.224,cx=140,cz=-240,base=113.797805566,rad=Math.PI/180;
 const open=[263.6736605122942,336.5114860430782];
 function lakePt(a,d=0){const r=base*(1+.038*Math.sin(5*a)+.022*Math.cos(9*a))+d;return [cx+r*Math.cos(a),cz+r*Math.sin(a)]}
 function pt(a){return [R*Math.cos(a*rad),R*Math.sin(a*rad)]}
 function pathCoords(coords,close=true){return coords.map(([x,y],i)=>(i?'L':'M')+x.toFixed(3)+','+y.toFixed(3)).join(' ')+(close?' Z':'')}
-let shore=[],woods=[],dry=[],graded=[],core=[];
+let shore=[],woods=[],dry=[],graded=[],core=[],risk=[];
 for(let i=0;i<=720;i++){let a=i*2*Math.PI/720;shore.push(lakePt(a));woods.push(lakePt(a,60));}
-for(let a=open[1];a<=open[0]+360;a+=.05)dry.push(pt(a));dry.push(pt(open[0]+360));for(let a=350;a<=545;a+=.125)graded.push(pt(a));graded.push(pt(545));for(let a=356;a<=539;a+=.125)core.push(pt(a));core.push(pt(539));
+for(let a=open[1];a<=open[0]+360;a+=.05)dry.push(pt(a));dry.push(pt(open[0]+360));for(let a=350;a<=545;a+=.125)graded.push(pt(a));graded.push(pt(545));for(let a=356;a<=539;a+=.125)core.push(pt(a));core.push(pt(539));for(let a=238.635;a<=261.625;a+=.125)risk.push(pt(a));risk.push(pt(261.625));
 document.getElementById('lake').setAttribute('d',pathCoords(shore));
 document.getElementById('woods').setAttribute('d',pathCoords(woods));
 document.getElementById('dryTrail').setAttribute('d',pathCoords(dry,false));
 document.getElementById('gradedTrail').setAttribute('d',pathCoords(graded,false));
 document.getElementById('gradedCore').setAttribute('d',pathCoords(core,false));
+document.getElementById('domeRiskPath').setAttribute('d',pathCoords(risk,false));
 const caps=document.getElementById('endcaps');
 open.forEach((a,i)=>{
  const [x,z]=pt(a),e=document.createElementNS('http://www.w3.org/2000/svg','circle');
