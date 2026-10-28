@@ -1,0 +1,27 @@
+name: Purple wooded mountain trail grade QA
+on:
+  push:
+    branches:
+      - gater/purple-path-woodland-grading-20261028
+    paths:
+      - 'world-creator/base-camp/purple-woodland-excavation.js'
+      - 'world-creator/base-camp/index.html'
+      - 'world-creator/tests/purple-woodland-grade.test.mjs'
+      - '.github/workflows/purple-woodland-grade-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  woodland-grade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staged development branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify JS module syntax
+        run: node --check world-creator/base-camp/purple-woodland-excavation.js
+      - name: Check real terrain grading + lake + campsites + player collision
+        run: node world-creator/tests/purple-woodland-grade.test.mjs
+      - name: Preserve Stacey Lake wooded entrances
+        run: node world-creator/tests/purple-ring-excavation-integration.test.mjs
