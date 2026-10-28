@@ -1279,7 +1279,7 @@ if(!aerial&&depthMode!=='dive'){
 }
 const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks visible Mason by default; first-person remains available in caves.
 const playerMoving=(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
-masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
+masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:playerMoving&&(isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight')),
  sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive'});
 // First-person view must not look through Mason's own face. Keep the avatar
 // visible in third-person, even when it finishes loading after a mode switch.
