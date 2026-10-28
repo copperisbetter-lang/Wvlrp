@@ -1,0 +1,19 @@
+{
+  "character": "Amanda 1.0",
+  "operation": "detach previous Flat V1 for Flat 01/02/03 selection",
+  "old_source_backup": "amanda-1-0-with-flat-v1-backup.glb",
+  "detached_meshes": [
+    {
+      "object": "Amanda 1.0 | Flat V1 replacement attachment",
+      "vertices": 4702
+    }
+  ],
+  "original_armature_count": 1,
+  "export_armature_count": 1,
+  "body_vertex_count_before": 14483,
+  "body_vertex_count_after_max": 14483,
+  "body_aperture": "unaltered; existing opening retained for future fit",
+  "new_flat_installed": false,
+  "new_export_bytes": 9416324,
+  "status": "reimport verified, Flat V1 detached, rig/body preserved"
+}
