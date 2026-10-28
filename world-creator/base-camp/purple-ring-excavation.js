@@ -3,9 +3,9 @@
 // Only 300°–344° has a verified 7.8%-maximum mathematical centerline; cap approaches still require QA.
 export const PURPLE_RING=Object.freeze({radius:268.224,startDeg:300,endDeg:344,firstCapDeg:298.75,lastCapDeg:345.25,treadHalfWidth:1.3,shoulderEnd:9});
 // New Stacey Lake authoritative physical shoreline (stacey-dive.html, 2026-10-28).
-// Protect the shoreline and the 60m zone with no planted trees (woods begin beyond it).
+// Protect lake + 60m open tree-clearance, and stop the path 1m BEFORE the estimated woods edge.
 // This guard does NOT alter Stacey's lake model, water shader or approved location.
-export const STACEY_LAKE=Object.freeze({cx:140,cz:-240,baseRadius:113.797805566,woodlandSetbackM:60,shoreFadeM:15});
+export const STACEY_LAKE=Object.freeze({cx:140,cz:-240,baseRadius:113.797805566,treeClearanceM:60,woodlandSetbackM:61,shoreFadeM:15});
 export function staceyLakeShoreClearance(x,z){
  const dx=x-STACEY_LAKE.cx,dz=z-STACEY_LAKE.cz,a=Math.atan2(dz,dx);
  const shore=STACEY_LAKE.baseRadius*(1+.038*Math.sin(5*a)+.022*Math.cos(9*a));
