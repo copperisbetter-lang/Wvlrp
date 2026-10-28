@@ -108,11 +108,11 @@ for(let i=0;i<=tempRingSegments;i++){
  const a=i*2*Math.PI/tempRingSegments,co=Math.cos(a),si=Math.sin(a);
  for(const side of [-1,1]){
   const rr=tempRingRadius+side*tempRingHalfWidth,x=rr*co,z=rr*si;
-  tempRingVertices.push(x,terrainY(x,z)+.14,z);
+  tempRingVertices.push(x,terrainY(x,z)+.075,z);
  }
  if(i<tempRingSegments){
   const deg=i*360/tempRingSegments,next=(i+1)*360/tempRingSegments;
-  if((deg<298.75||deg>345.25)&&ringTreadWoodlandClearance(deg)>=STACEY_LAKE.woodlandSetbackM&&ringTreadWoodlandClearance(next)>=STACEY_LAKE.woodlandSetbackM){
+  if(ringTreadWoodlandClearance(deg)>=STACEY_LAKE.woodlandSetbackM&&ringTreadWoodlandClearance(next)>=STACEY_LAKE.woodlandSetbackM){
    const n=i*2;tempRingIndices.push(n,n+1,n+2,n+1,n+3,n+2);
   }
  }
@@ -120,8 +120,8 @@ for(let i=0;i<=tempRingSegments;i++){
 const tempRingGeo=new THREE.BufferGeometry();
 tempRingGeo.setAttribute('position',new THREE.Float32BufferAttribute(tempRingVertices,3));
 tempRingGeo.setIndex(tempRingIndices);tempRingGeo.computeVertexNormals();
-const tempRingMesh=new THREE.Mesh(tempRingGeo,new THREE.MeshBasicMaterial({color:0x111111,side:THREE.DoubleSide,depthWrite:false}));
-tempRingMesh.name='PROVISIONAL PURPLE RING — STOP AT BOTH STACEY LAKE WOODLAND ENTRANCES';
+const tempRingMesh=new THREE.Mesh(tempRingGeo,new THREE.MeshStandardMaterial({color:0x765e49,roughness:1,side:THREE.DoubleSide,depthWrite:true}));
+tempRingMesh.name='PURPLE ROUTE EARTH-COLORED ALIGNMENT — TWO WOODLAND DEAD ENDS BY STACEY LAKE';
 tempRingMesh.renderOrder=4;scene.add(tempRingMesh);
 // Two reversible markers at the ends of the trail, not over beach or water.
 // 60m woodland opening is the recorded tree-clearance radius in the approved Stacey Lake viewer.
