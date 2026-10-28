@@ -2,20 +2,41 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · Stacey Lake · Play as Mason</title><style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;flex-wrap:wrap;max-width:65vw;justify-content:flex-end;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
 
-/* Mobile-friendly movement console; kept separate from scene diagnostics. */
-#actionConsole{position:fixed;right:12px;top:126px;display:grid;grid-template-columns:repeat(2,68px);gap:6px;z-index:5}
-#actionConsole button{min-height:43px;padding:8px 5px;background:#143a3de6;font-size:12px;font-weight:700}
-#actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8;outline-offset:0}
-#actionConsole #viewMode{white-space:pre-line;line-height:1.12;font-size:11px}
-@media(max-width:640px){#panel{max-width:70vw;gap:4px}#panel button{padding:7px 9px;font-size:11px}#actionConsole{top:118px;right:8px;grid-template-columns:repeat(2,58px);gap:5px}#actionConsole button{min-height:40px;padding:6px 3px;font-size:11px}#hint{max-width:43vw}#status{max-width:58%}}
-</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to move · look up while flying to climb</div><div id="panel"><button id="shore">Beach</button><button id="canyon">Canyon</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="actionConsole" role="group" aria-label="Game movement console"><button id="actionRun" type="button" aria-pressed="false">RUN</button><button id="actionFly" type="button" aria-pressed="false">FLY</button><button id="actionSwim" type="button" aria-pressed="false">SWIM</button><button id="actionDive" type="button" aria-pressed="false">DIVE</button><button id="actionSit" type="button" aria-pressed="false">SIT</button><button id="viewMode" type="button" aria-pressed="true" aria-label="Third-person camera; tap to switch to first-person" title="Toggle first- and third-person camera">3RD
-PERSON</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+
+/* Compact game console: all actions tucked into one dropdown. */
+#gameMenu{position:fixed;z-index:10;top:calc(12px + env(safe-area-inset-top));right:9px;width:158px;max-width:calc(100vw - 175px)}
+#gameMenu summary{list-style:none;cursor:pointer;text-align:center;background:#103c3aee;border:1px solid #d5e9d187;border-radius:9px;padding:11px 6px;font-weight:800;user-select:none;touch-action:manipulation}
+#gameMenu summary::-webkit-details-marker{display:none}
+#gameMenu[open] summary{border-radius:9px 9px 0 0;background:#2d5950}
+#actionConsole{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;max-height:min(70vh,480px);overflow-y:auto;background:#14352fee;border:1px solid #ffffff55;border-radius:0 0 10px 10px;box-shadow:0 5px 20px #0009}
+#actionConsole button{min-height:41px;padding:5px 3px;font-size:11px;font-weight:750;line-height:1.17}
+#actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8}
+#actionConsole #viewMode{white-space:pre-line}
+#joystickToggle{position:fixed;bottom:152px;left:25px;z-index:8;padding:7px 9px;font-size:10px;font-weight:800}
+#pad{z-index:8}#pad.padHidden{display:none}
+#hint{top:auto;bottom:189px;left:12px;max-width:140px}
+@media(max-width:520px){#gameMenu{width:146px;max-width:calc(100vw - 157px)}#actionConsole{gap:4px;padding:6px}#actionConsole button{min-height:38px;padding:5px 2px;font-size:10px}header b{font-size:19px}header small{letter-spacing:.6px}#status{max-width:55%}#hint{font-size:10px}}
+</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Tap map to walk · joystick to steer · drag to look</div><details id="gameMenu"><summary aria-label="Open game options">GAME OPTIONS ▾</summary><div id="actionConsole" role="group" aria-label="Game actions">
+<button id="actionRun" type="button" aria-pressed="false">RUN</button>
+<button id="actionFly" type="button" aria-pressed="false">FLY</button>
+<button id="actionSwim" type="button" aria-pressed="false">SWIM</button>
+<button id="actionDive" type="button" aria-pressed="false">DIVE</button>
+<button id="actionSit" type="button" aria-pressed="false">SIT</button>
+<button id="viewMode" type="button" aria-pressed="true" aria-label="Third-person camera; tap to switch to first-person" title="Switch camera">3RD PERSON</button>
+<button id="shore" type="button">BEACH</button>
+<button id="canyon" type="button">CANYON</button>
+<button id="dive" type="button">DIVE DOWN</button>
+<button id="surface" type="button">SURFACE</button>
+<button id="air" type="button">AERIAL</button>
+<button id="quality" type="button">QUALITY</button>
+</div></details><button id="joystickToggle" type="button" aria-pressed="true">JOYSTICK ON</button><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installMasonPlayer} from './stacey-mason-player.js';
+import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -1159,26 +1180,26 @@ const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
 const playerAvatar='Mason';let chaseCamera=true;
 window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-person':'first-person';},
  get masonReady(){return masonPlayer.state.ready;},get masonError(){return masonPlayer.state.error;}};
-let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
+let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
  const active={actionRun:isRunning&&!isSitting&&!aerial,actionFly:aerial,actionSwim:inLake&&!aerial&&depthMode==='surface',actionDive:inLake&&!aerial&&depthMode==='dive',actionSit:isSitting};
  for(const [id,selected] of Object.entries(active))document.getElementById(id).setAttribute('aria-pressed',String(selected));
  document.getElementById('actionSit').textContent=isSitting?'STAND':'SIT';
 }
-function beach(){depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
-function swim(){aerial=false;isRunning=false;isSitting=false;depthMode='surface';
+function beach(){miniNav.cancel("Returned to beach");depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
+function swim(){miniNav.cancel('Swimming manually');aerial=false;isRunning=false;isSitting=false;depthMode='surface';
  // From dry land, enter the lake at a safe shallow-water point by the spawn beach.
  if(ground(pos.x,pos.z)>=CY-.55){pos.set(CX,CY+.65,CZ+outer(Math.PI/2)-9);yaw=0;pitch=-.04}
  syncActions();
 }
 function dive(){swim();depthMode='dive';syncActions()}
-function surface(){aerial=false;depthMode='surface';syncActions()}
-function toggleFly(){aerial=!aerial;isRunning=false;isSitting=false;depthMode='surface';
+function surface(){miniNav.cancel('Manual surface');aerial=false;depthMode='surface';syncActions()}
+function toggleFly(){miniNav.cancel('Flying manually');aerial=!aerial;isRunning=false;isSitting=false;depthMode='surface';
  pos.y=aerial?Math.max(pos.y,ground(pos.x,pos.z)+6,CY+7):ground(pos.x,pos.z)+1.7;
  syncActions();
 }
-function toggleSit(){const sitNext=!isSitting;
+function toggleSit(){miniNav.cancel('Resting');const sitNext=!isSitting;
  if(sitNext&&(aerial||ground(pos.x,pos.z)<CY-.55))beach();
  aerial=false;depthMode='surface';isRunning=false;isSitting=sitNext;
  pos.y=ground(pos.x,pos.z)+(isSitting?1.05:1.7);
@@ -1235,10 +1256,15 @@ beach();
   pos.set(hiddenCave.chamberX,hiddenCave.floor+1.7,hiddenCave.z);
   yaw=Math.PI/2;pitch=-.08;
  }
- document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
+ document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
+const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
+ let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
+if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
+const autoWalk=miniNav.step(dt,moveSpeed);
+if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
+const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
 if(aerial){
  // Joystick flies in the looking direction; tilt up to climb, tilt down to descend.
  // Space/Control provide extra climb/descent on desktop.
@@ -1250,13 +1276,13 @@ if(!aerial&&depthMode!=='dive'){
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
 const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks visible Mason by default; first-person remains available in caves.
-const playerMoving=Math.hypot(xx,yy)>.10&&!isSitting;
+const playerMoving=(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
 masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
  sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive'});
 // First-person view must not look through Mason's own face. Keep the avatar
 // visible in third-person, even when it finishes loading after a mode switch.
 if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
-syncPlayerCamera();
+syncPlayerCamera();miniNav.draw(now);
  // Do not upload any per-instance matrices every frame; only on camera
  // chamber transitions or when another async vegetation GLB finishes.
  const insideCave=cameraInsideHiddenCave(pos);
