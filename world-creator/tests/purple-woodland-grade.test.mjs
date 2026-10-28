@@ -19,7 +19,7 @@ for(let i=0;i<profile.n;i++){
  if(i)assert.ok(Math.abs(profile.target[i]-profile.target[i-1])/profile.ds<.077501);
 }
 for(const [x,z] of [[140,-240],[140,-125],[0,-108],[-30,-266],[246,-107],[317.861,-169.010]]){
- assert.ok(woodlandStaceyClearance(x,z)<61||Math.abs(terrain(x,z)-base(x,z))<1e-9,'Restricted region modified');
+ assert.ok(Math.abs(terrain(x,z)-base(x,z))<1e-9,'Protected lake or other source terrain modified');
 }
 let minClearance=Infinity;
 for(let a=350;a<=545;a+=.025)for(const off of [-12,-9,-1.3,0,1.3,9,12]){
