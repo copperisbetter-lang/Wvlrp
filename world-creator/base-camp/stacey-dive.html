@@ -641,8 +641,29 @@ function cliffFooting(x,z,feet){
  if(feet>=roof-4.5)return {floor:Math.max(dirt,roof),rock:true,wall:false};
  return {floor:dirt,rock:false,wall:true};
 }
+// A short waist-level segment stops entry through vertical rock faces, too.
+// Performs no raycasts away from the imported canyon and never affects swimming.
+const cliffHorizontalDir=new T.Vector3();
+function crossesRockWall(x0,z0,x1,z1,feet){
+ if(!solidReady||feet<CY-2||x1<solidBounds.min.x-3||x1>solidBounds.max.x+3||
+ z1<solidBounds.min.z-3||z1>solidBounds.max.z+3)return false;
+ const dx=x1-x0,dz=z1-z0,d=Math.hypot(dx,dz);
+ if(d<.0001)return false;
+ solidRayFrom.set(x0,feet+1.05,z0);
+ cliffHorizontalDir.set(dx/d,0,dz/d);
+ solidRay.set(solidRayFrom,cliffHorizontalDir);
+ solidRay.near=.015;solidRay.far=d+.18;
+ for(const h of solidRay.intersectObjects(canyonTopMeshes,false)){
+  if(h.point.y<CY-2||h.point.y>CY+47)continue;
+  if(h.distance<=d+.12)return true;
+ }
+ return false;
+}
 function solidCliffStep(oldX,oldZ,nextX,nextZ,feet){
  const before=cliffFooting(oldX,oldZ,feet),after=cliffFooting(nextX,nextZ,feet);
+ if(crossesRockWall(oldX,oldZ,nextX,nextZ,feet)&&!after.rock){
+  solidMetrics.wallStops++;return {x:oldX,z:oldZ,floor:before.floor};
+ }
  if(after.wall){solidMetrics.wallStops++;return {x:oldX,z:oldZ,floor:before.floor};}
  if(before.rock&&!after.rock&&after.floor<feet-1.6){
   solidMetrics.edgeStops++;return {x:oldX,z:oldZ,floor:before.floor};
