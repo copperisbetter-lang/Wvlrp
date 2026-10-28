@@ -7,6 +7,8 @@ on:
       - 'world-creator/base-camp/index.html'
       - 'world-creator/base-camp/purple-dome-outer-bypass.js'
       - 'world-creator/tests/purple-dome-bypass.test.mjs'
+      - 'world-creator/tests/purple-woodland-grade.test.mjs'
+      - 'world-creator/tests/purple-ring-excavation-integration.test.mjs'
       - '.github/workflows/purple-dome-outer-bypass-audit.yml'
   workflow_dispatch:
 permissions:
