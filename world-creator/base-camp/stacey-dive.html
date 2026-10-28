@@ -543,6 +543,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    // Use real V6 photo-rock surfaces for optional feet-on-rock collision.
    canyonTopMeshes.length=0;
    root.traverse(o=>{if(o.isMesh&&o.geometry?.getAttribute('position'))canyonTopMeshes.push(o);});
+   buildSolidCliff(root);
 
    // V2 uses NO separate hill sheets or tall triangular faces.
    // Small embedded limestone stones sit at elevations sampled from ground().
@@ -579,34 +580,77 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 
 })();
 
-// Rock-crest ground contact (upper slopes only): never teleport a swimmer
-// or walker from the lower canyon floor onto a high photo-rock mesh.
-const canyonTopMeshes=[],canyonDownRay=new T.Raycaster();
-const canyonDown=new T.Vector3(0,-1,0),canyonHitOrigin=new T.Vector3();
-let lastRoofCell='',lastRoofY=null,lastRoofFoot=0;
-function walkableGround(x,z,currentFeet){
- const native=ground(x,z);
- if(!window.staceyCanyonV6||currentFeet<CY+11||
-   x<-77||x>16||Math.abs(z-CZ)>40)return native;
- const cell=Math.round(x*2)+','+Math.round(z*2);
- if(cell!==lastRoofCell||Math.abs(currentFeet-lastRoofFoot)>3){
-   lastRoofCell=cell;lastRoofFoot=currentFeet;lastRoofY=null;
-   canyonHitOrigin.set(x,CY+70,z);canyonDownRay.set(canyonHitOrigin,canyonDown);
-   canyonDownRay.near=0;canyonDownRay.far=75;
-   const hits=canyonDownRay.intersectObjects(canyonTopMeshes,false);
-   for(const h of hits){
-     const y=h.point.y;
-     if(y<CY+10||y>CY+39)continue;
-     if((h.face?.normal?.y??0)<.32)continue;
-     if(Math.abs(y-currentFeet)>5.5)continue;
-     lastRoofY=y;break;
-   }
- }
- if(lastRoofY!==null&&currentFeet>=lastRoofY-3){
-   return T.MathUtils.lerp(native,lastRoofY,smooth(-27,-6,x));
- }
- return native;
+// Rock cliff V4: collider uses world-space V6 geometry, never photo texture.
+// V3 incorrectly multiplied rock support by smooth(-27,-6,x): zero on much of cliff.
+const canyonTopMeshes=[],solidCells=new Map(),solidStep=2.5;
+const solidBounds=new T.Box3(),solidP=new T.Vector3(),solidRay=new T.Raycaster();
+const solidRayFrom=new T.Vector3(),solidDown=new T.Vector3(0,-1,0);
+const solidN=new T.Vector3(),solidNormalMatrix=new T.Matrix3();
+const solidMetrics={cells:0,vertices:0,rockSteps:0,wallStops:0,edgeStops:0};
+let solidReady=false,solidLastCell='',solidLastHit=null;
+const key=(i,j)=>i+','+j;
+function buildSolidCliff(root){
+ root.updateMatrixWorld(true);solidBounds.setFromObject(root);solidCells.clear();
+ let count=0;
+ root.traverse(o=>{
+  if(!o.isMesh||/sky|background|panorama/i.test(o.name||''))return;
+  const a=o.geometry?.getAttribute('position');if(!a)return;
+  for(let i=0;i<a.count;i++){
+   solidP.fromBufferAttribute(a,i).applyMatrix4(o.matrixWorld);
+   if(solidP.y<CY+9||solidP.y>CY+45||solidP.x<-105||solidP.x>32||Math.abs(solidP.z-CZ)>70)continue;
+   const k=key(Math.floor(solidP.x/solidStep),Math.floor(solidP.z/solidStep));
+   solidCells.set(k,Math.max(solidP.y,solidCells.get(k)??-Infinity));count++;
+  }
+ });
+ solidReady=solidCells.size>8;solidMetrics.cells=solidCells.size;solidMetrics.vertices=count;
+ solidLastCell='';solidLastHit=null;
+ diag.assets['Solid cliff V4']=solidReady?'rock collision grid ready':'rock collision grid unavailable';
+ diag.cliffPhysics=solidMetrics;
 }
+function rockTop(x,z,feet){
+ if(!solidReady||x<solidBounds.min.x-6||x>solidBounds.max.x+6||
+ z<solidBounds.min.z-6||z>solidBounds.max.z+6)return null;
+ const ix=Math.floor(x/solidStep),iz=Math.floor(z/solidStep);
+ let roof=-Infinity;
+ for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){
+  const y=solidCells.get(key(ix+i,iz+j));if(y===undefined)continue;
+  const dx=(ix+i+.5)*solidStep-x,dz=(iz+j+.5)*solidStep-z;
+  if(dx*dx+dz*dz<64)roof=Math.max(roof,y);
+ }
+ if(!Number.isFinite(roof))return null;
+ const cell=key(Math.round(x*2),Math.round(z*2));
+ if(solidLastCell!==cell){
+  solidLastCell=cell;solidLastHit=null;
+  solidRayFrom.set(x,CY+72,z);solidRay.set(solidRayFrom,solidDown);solidRay.near=0;solidRay.far=80;
+  let best=Infinity;
+  for(const h of solidRay.intersectObjects(canyonTopMeshes,false)){
+   if(!h.face||h.point.y<CY+9||h.point.y>CY+44)continue;
+   solidNormalMatrix.getNormalMatrix(h.object.matrixWorld);
+   solidN.copy(h.face.normal).applyMatrix3(solidNormalMatrix).normalize();
+   if(Math.abs(solidN.y)<.3)continue;
+   const d=Math.abs(h.point.y-feet);
+   if(d<best){best=d;solidLastHit=h.point.y;}
+  }
+ }
+ return solidLastHit!==null&&Math.abs(solidLastHit-feet)<5?solidLastHit:roof;
+}
+function cliffFooting(x,z,feet){
+ const dirt=ground(x,z),roof=feet>=CY+7?rockTop(x,z,feet):null;
+ if(roof===null)return {floor:dirt,rock:false,wall:false};
+ if(roof>feet+1.5&&dirt<roof-1.5)return {floor:dirt,rock:false,wall:true};
+ if(feet>=roof-4.5)return {floor:Math.max(dirt,roof),rock:true,wall:false};
+ return {floor:dirt,rock:false,wall:true};
+}
+function solidCliffStep(oldX,oldZ,nextX,nextZ,feet){
+ const before=cliffFooting(oldX,oldZ,feet),after=cliffFooting(nextX,nextZ,feet);
+ if(after.wall){solidMetrics.wallStops++;return {x:oldX,z:oldZ,floor:before.floor};}
+ if(before.rock&&!after.rock&&after.floor<feet-1.6){
+  solidMetrics.edgeStops++;return {x:oldX,z:oldZ,floor:before.floor};
+ }
+ if(after.rock)solidMetrics.rockSteps++;
+ return {x:nextX,z:nextZ,floor:after.floor};
+}
+window.staceyRockCollider={metrics:solidMetrics,topAt:rockTop};
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
@@ -637,6 +681,11 @@ let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX
 function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=walkableGround(pos.x,pos.z,pos.y-1.7),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Ridge Walk V3';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);const oldX=pos.x,oldZ=pos.z;pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}let bed=ground(pos.x,pos.z);
+if(!aerial&&depthMode!=='dive'){
+ const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
+ pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
+}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Solid Cliff V4';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
