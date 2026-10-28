@@ -259,9 +259,30 @@ mat.onBeforeCompile=s=>{
 };
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
 const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
-// The photograph lies directly on both walkable trail surfaces. The purple line
-// only appears when explicitly requested with ?trail=guide.
-purpleTrails.install(T,scene,ground,soil,new URLSearchParams(location.search).get('trail')==='guide');
+// A path overlay 2cm above analytic ground was invisible where the drawn
+// terrain's larger triangles crossed ABOVE the overlay. Use those exact triangles
+// to place photographs just above visible terrain, keeping collisions unchanged.
+function photoVisibleGround(x,z){
+ const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz);
+ const a=(Math.atan2(dz,dx)+Math.PI*2)%(Math.PI*2);
+ const ri=Math.min(R-1,Math.max(0,Math.floor(r/340*R)));
+ const ai=Math.min(N-1,Math.max(0,Math.floor(a/(2*Math.PI)*N)));
+ const k=ri*(N+1)+ai,p=terrainGeo.attributes.position;
+ function tri(i,j,l){
+  const ax=p.getX(i),az=p.getZ(i),bx=p.getX(j),bz=p.getZ(j),cx=p.getX(l),cz=p.getZ(l);
+  const den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);
+  if(Math.abs(den)<1e-9)return {inside:-1e4,y:ground(x,z)};
+  const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/den;
+  const v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/den;
+  const w=1-u-v;
+  return {inside:Math.min(u,v,w),y:u*p.getY(i)+v*p.getY(j)+w*p.getY(l)};
+ }
+ const t1=tri(k,k+1,k+N+1),t2=tri(k+1,k+N+2,k+N+1);
+ const t=t1.inside>=t2.inside?t1:t2;
+ return Math.max(ground(x,z),Number.isFinite(t.y)?t.y:ground(x,z));
+}
+// Photographed walkable route, both main and lake spur. Purple guide is opt-in.
+purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(location.search).get('trail')==='guide');
 // A thin 3-D layer of solid, eroded bedrock follows the carved channel.
 // It is 4-8 cm over the landscape, but stays BELOW the moving creek water.
 (function createCreekBedrockShelf(){
@@ -1123,9 +1144,12 @@ function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(
    yaw=.83;pitch=-.07;
   }
   if(new URLSearchParams(location.search).get('spawn')==='trail'){
-   aerial=true;depthMode='surface';pos.set(210,CY+170,-15);
+   // Stand directly on the actual photographic lake spur, not in aerial mode.
+   aerial=false;depthMode='surface';pos.set(-14,ground(-14,-354)+1.7,-354);
    camera.position.copy(pos);camera.rotation.order='YXZ';
-   camera.lookAt(-95,CY+21,-282);yaw=camera.rotation.y;pitch=camera.rotation.x;
+   camera.lookAt(-26,ground(-26,-366)+1.4,-366);
+   yaw=camera.rotation.y;pitch=camera.rotation.x;
+   diag.assets['Trail walk-start']='on lake spur photo surface';
   }
   if(new URLSearchParams(location.search).get('spawn')==='dome'){
   aerial=false;depthMode='surface';
@@ -1135,7 +1159,7 @@ function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(
  document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);const oldX=pos.x,oldZ=pos.z;pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}let bed=ground(pos.x,pos.z);
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);const oldX=pos.x,oldZ=pos.z;pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
 if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
@@ -1152,6 +1176,6 @@ const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY
   }
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
- renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+ renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
