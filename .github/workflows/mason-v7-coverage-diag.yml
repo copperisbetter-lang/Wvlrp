@@ -1,0 +1,76 @@
+name: Mason V7 rear fabric topology diagnostic (isolated)
+on:
+  push:
+    branches: [gater/mason-shorts-rear-seam-v7-20261028]
+    paths: [.github/workflows/mason-v7-coverage-diag.yml]
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            world-creator/assets/mason-mpfb-trial.glb
+          sparse-checkout-cone-mode: false
+      - name: Check raw glTF skin/face coverage
+        run: |
+          python3 - <<'PY'
+          import struct,json,collections,math
+          from pathlib import Path
+          buf=Path("world-creator/assets/mason-mpfb-trial.glb").read_bytes()
+          off=12;doc={};binary=b''
+          while off<len(buf):
+            size,typ=struct.unpack_from("<II",buf,off);off+=8
+            chunk=buf[off:off+size];off+=size
+            if typ==0x4E4F534A:doc=json.loads(chunk)
+            if typ==0x004E4942:binary=chunk
+          access=doc['accessors'];views=doc['bufferViews']
+          formats={5126:'f',5125:'I',5123:'H',5121:'B',5122:'h',5120:'b'}
+          dim={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4}
+          def read(i):
+            a=access[i];v=views[a['bufferView']]
+            fmt='<'+formats[a['componentType']]*dim[a['type']]
+            sz=struct.calcsize(fmt);start=v.get('byteOffset',0)+a.get('byteOffset',0)
+            return [struct.unpack_from(fmt,binary,start+k*v.get('byteStride',sz)) for k in range(a['count'])]
+          print('ANIMS',[(a.get('name')) for a in doc.get('animations',[])])
+          skin=doc['skins'][0]
+          print('BONES',[(i,doc['nodes'][j].get('name')) for i,j in enumerate(skin['joints'])])
+          for node in doc['nodes']:
+            if 'mesh' not in node:continue
+            mesh=doc['meshes'][node['mesh']]
+            for prim in mesh['primitives']:
+              if 'POSITION' not in prim['attributes']:continue
+              p=read(prim['attributes']['POSITION'])
+              if len(p)<10000:continue
+              idx=[x[0] for x in read(prim['indices'])]
+              mn=[min(v[i] for v in p) for i in range(3)]
+              mx=[max(v[i] for v in p) for i in range(3)]
+              h=mx[1]-mn[1];cx=(mn[0]+mx[0])*.5;cz=(mn[2]+mx[2])*.5
+              print('BODY',node.get('name'),mesh.get('name'),'verts',len(p),'triangles',len(idx)//3,'bounds',mn,mx,'center',cx,cz,'h',h,'translation',node.get('translation'))
+              def v6(v):
+                y=(v[1]-mn[1])/h
+                return .39<=y<=.65 and abs(v[0]-cx)<h*(.16 if y>.515 else .204) and abs(v[2]-cz)<h*.285
+              def v7(v):
+                y=(v[1]-mn[1])/h
+                return .385<=y<=.65 and abs(v[0]-cx)<h*.225
+              for name,qual in [('V6',v6),('V7body',v7)]:
+                total=0;back=0;front=0;rear_bins=collections.Counter()
+                for j in range(0,len(idx),3):
+                  tri=[p[idx[j+k]] for k in range(3)]
+                  if not all(qual(q) for q in tri):continue
+                  total+=1
+                  cent=[sum(q[k] for q in tri)/3 for k in range(3)]
+                  if cent[2]>cz:back+=1
+                  else:front+=1
+                  if cent[2]>cz:
+                    iy=int((cent[1]-mn[1])/h*20)
+                    ix=int((cent[0]-cx)/h*10)
+                    rear_bins[(iy,ix)]+=1
+                print('FACE',name,'all',total,'rear z>center',back,'front',front,'rear_yx_bins',str(sorted(rear_bins.items()))[:4500])
+              for ylo,yhi in [(.390,.45),(.45,.50),(.50,.55),(.55,.60),(.60,.65)]:
+                zone=[v for v in p if ylo<=(v[1]-mn[1])/h<yhi and abs(v[0]-cx)<h*.22]
+                print('ZONE',ylo,yhi,'n',len(zone),'zmin',round(min((q[2]-cz)/h for q in zone),4) if zone else None,'zmax',round(max((q[2]-cz)/h for q in zone),4) if zone else None)
+          PY
