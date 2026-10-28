@@ -28,8 +28,9 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
       const worldPos=[tmp.x,tmp.y,tmp.z];bb.expandByPoint(tmp);
       const bones=[];
       for(let k=0;k<4;k++){
-        const id=Math.round(joint.getComponent(i,k));
-        const w=weight.getComponent(i,k);
+        const get=[a=>a.getX(i),a=>a.getY(i),a=>a.getZ(i),a=>a.getW(i)];
+        const id=Math.round(get[k](joint));
+        const w=get[k](weight);
         if(w>1e-7)bones.push([id,w]);
       }
       const good=bones.reduce((s,b)=>s+(allowed.has(b[0])?b[1]:0),0);
@@ -149,7 +150,7 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
       info['Playable Mason']='ready · original GLB · V8 shorts · '+state.clips.length+' clips';
       window.staceyMason={state,carrier,model,clothing,clips:state.clips};
     }catch(e){
-      state.error=String(e);info['Playable Mason']='FAILED '+state.error;
+      state.error=String(e);if(model)model.visible=false;info['Playable Mason']='FAILED '+state.error;
       diagnostics?.errors?.push('Mason fitting: '+state.error);
     }
   },undefined,e=>{
