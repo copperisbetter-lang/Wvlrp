@@ -332,8 +332,11 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  vestibule.name='Secret cave vestibule — hidden between the waterfalls';scene.add(vestibule);
  const floorMat=new T.MeshStandardMaterial({color:0x555d51,roughness:1,side:T.DoubleSide});
  const caveLen=hiddenCave.outerEnd-hiddenCave.innerEnd;
- const floor=new T.Mesh(new T.BoxGeometry(caveLen,.25,hiddenCave.halfWidth*2.3),floorMat);
- floor.position.set((hiddenCave.innerEnd+hiddenCave.outerEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
+ // Keep the rock floor inside the cliff rather than jutting out over the pond.
+ const visibleFloorEnd=hiddenCave.x+1.2;
+ const visibleFloorLen=visibleFloorEnd-hiddenCave.innerEnd;
+ const floor=new T.Mesh(new T.BoxGeometry(visibleFloorLen,.25,hiddenCave.halfWidth*2.3),floorMat);
+ floor.position.set((hiddenCave.innerEnd+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
  floor.name='Hidden cave stone floor';vestibule.add(floor);
  const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,caveLen-7,11,1,true),
    new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:true}));
