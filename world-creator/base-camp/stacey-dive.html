@@ -132,8 +132,8 @@ const cavernTerrainClip=[
    ' && abs(cameraPosition.z-('+hiddenCave.z.toFixed(2)+'))<2.5;',
  'bool viewerInside=(viewerRoom<'+(hiddenCave.chamberR+1.6).toFixed(2)+
    ' || viewerTunnel) && cameraPosition.y<'+(hiddenCave.floor+6.2).toFixed(2)+';',
- 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR-0.2).toFixed(2)+
-   ' && vGround.y<'+(hiddenCave.floor+35).toFixed(2)+';',
+ 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR+2.0).toFixed(2)+
+   ' && vGround.y<'+(hiddenCave.floor+48).toFixed(2)+';',
  'bool cutTunnel=vGround.x>'+hiddenCave.innerEnd.toFixed(2)+
    ' && vGround.x<'+hiddenCave.outerEnd.toFixed(2)+
    ' && abs(vGround.z-('+hiddenCave.z.toFixed(2)+'))<2.0;',
@@ -380,7 +380,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  // V8: a vast, truly excavated hall, set farther under the mountain.
  // 84m / 276ft diameter, domed ~32m / 105ft above its solid walkable floor.
  const domeR=hiddenCave.chamberR,domeX=hiddenCave.chamberX,domeY=hiddenCave.floor;
- const wallHeight=8,capHeight=24;
+ const wallHeight=8,capHeight=24,wallSkirt=.65;
  const chamber=new T.Group();
  chamber.name='Massive excavated domed cavern — 84m diameter';vestibule.add(chamber);
  const rockyMap=creekBedrockMap.clone();rockyMap.repeat.set(5,3);
@@ -410,7 +410,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  // Irregular solid stone floor, 16 concentric rings (not a flat giant triangle fan).
  const floorCoords=[],floorColors=[],floorUV=[],floorIndices=[],rings=16,faces=96;
  for(let j=0;j<=rings;j++){
-   const radius=(domeR-1.0)*j/rings;
+   const radius=(domeR+1.15)*j/rings;
    for(let i=0;i<=faces;i++){
      const a=2*Math.PI*i/faces;
      const x=radius*Math.cos(a),z=radius*Math.sin(a);
@@ -434,8 +434,9 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  chamberFloor.position.set(domeX,domeY-.08,hiddenCave.z);
  chamberFloor.name='Massive domed hall excavated bedrock walking floor';chamber.add(chamberFloor);
  // Smooth 96-section rocky walls. Only a narrow +X slot is left for the corridor.
- const sideWallGeom=new T.CylinderGeometry(domeR,domeR,wallHeight,96,12,true,
-    Math.PI/2+.052,2*Math.PI-.104);
+ const entryAngle=3.55/domeR;
+ const sideWallGeom=new T.CylinderGeometry(domeR,domeR,wallHeight+wallSkirt,96,12,true,
+    Math.PI/2+entryAngle/2,2*Math.PI-entryAngle);
  const wallVerts=sideWallGeom.getAttribute('position');
  for(let i=0;i<wallVerts.count;i++){
    const x=wallVerts.getX(i),y=wallVerts.getY(i),z=wallVerts.getZ(i);
@@ -446,7 +447,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  wallVerts.needsUpdate=true;sideWallGeom.computeVertexNormals();assignColors(sideWallGeom);
  const sidewall=new T.Mesh(sideWallGeom,rockMat);
- sidewall.position.set(domeX,domeY+wallHeight/2,hiddenCave.z);
+ sidewall.position.set(domeX,domeY+(wallHeight-wallSkirt)/2,hiddenCave.z);
  sidewall.name='Cut-away massive domed hall rounded inner walls';chamber.add(sidewall);
  // 96x44 gently weathered dome: high smooth arch, not the dark faceted shell in V7.
  const canopyGeometry=new T.SphereGeometry(domeR,96,44,0,Math.PI*2,0,Math.PI/2);
@@ -454,8 +455,10 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  for(let i=0;i<canopyPos.count;i++){
    const x=canopyPos.getX(i),y=canopyPos.getY(i),z=canopyPos.getZ(i);
    const ripple=.28*Math.sin(x*.27+z*.17)+.19*Math.cos(x*.54-z*.4);
-   const rad=1+ripple/domeR;
-   canopyPos.setXYZ(i,x*rad,y*(capHeight/domeR)+ripple*.21,z*rad);
+   // Rock rim extends below and outside the top wall without moving the apex.
+   const rim=1-T.MathUtils.smoothstep(y,0,2.2);
+   const rad=1+(ripple+.55*rim)/domeR;
+   canopyPos.setXYZ(i,x*rad,y*(capHeight/domeR)+ripple*.21-.55*rim,z*rad);
  }
  canopyPos.needsUpdate=true;canopyGeometry.computeVertexNormals();
  assignColors(canopyGeometry);
@@ -985,6 +988,6 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-1.7);
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Excavated Dome V8';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
