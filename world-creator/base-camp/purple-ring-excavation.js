@@ -66,22 +66,26 @@ export function excavatedHeight(x,z,naturalHeight){
  return graded-swale;
 }
 export function cutMetrics(baseTerrainY){
- let maxCoreLong=0,maxCoreCross=0,maxCut=0;
- const R=PURPLE_RING.radius;
+ let maxCoreLong=0,maxCoreCross=0,maxCut=0,safeStations=0,skippedLakeStations=0;
+ const R=PURPLE_RING.radius, stops=lakeWoodlandEndpoints();
  for(let i=0;i<=1760;i++){
   const deg=300+i*.025,a=deg*RAD;
+  const dry=ringTreadWoodlandClearance(deg)>=STACEY_LAKE.woodlandSetbackM;
+  if(!dry){skippedLakeStations++;continue}
+  safeStations++;
   const at=(offset)=>{const x=(R+offset)*Math.cos(a),z=(R+offset)*Math.sin(a);return excavatedHeight(x,z,baseTerrainY(x,z))};
   maxCoreCross=Math.max(maxCoreCross,Math.abs(at(1.3)-at(-1.3))/2.6*100);
   maxCut=Math.max(maxCut,baseTerrainY(R*Math.cos(a),R*Math.sin(a))-at(0));
-  if(i<1760){
+  if(i<1760&&ringTreadWoodlandClearance(deg+.025)>=STACEY_LAKE.woodlandSetbackM){
    const b=(deg+.025)*RAD;
    for(const o of [-1.3,0,1.3]){
-    const from=at(o),r=R+o,to=excavatedHeight(r*Math.cos(b),r*Math.sin(b),baseTerrainY(r*Math.cos(b),r*Math.sin(b)));
-    maxCoreLong=Math.max(maxCoreLong,Math.abs(to-from)/(r*.025*RAD)*100);
+    const v=at(o),r=R+o,y=excavatedHeight(r*Math.cos(b),r*Math.sin(b),baseTerrainY(r*Math.cos(b),r*Math.sin(b)));
+    maxCoreLong=Math.max(maxCoreLong,Math.abs(y-v)/(r*.025*RAD)*100);
    }
   }
  }
- return {maxCoreLongPct:maxCoreLong,maxCoreCrossPct:maxCoreCross,maxCoreCutMeters:maxCut,coreGradePass:maxCoreLong<=8.01&&maxCoreCross<=3.01};
+ return {maxCoreLongPct:maxCoreLong,maxCoreCrossPct:maxCoreCross,maxCoreCutMeters:maxCut,safeStations,skippedLakeStations,woodlandEndpoints:stops,coreGradePass:safeStations>0&&maxCoreLong<=8.01&&maxCoreCross<=3.01,
+ note:'Only remaining dry 300–344 segment is audited; lake-clearing portion has NO path. Full dry ring is not grade-certified.'};
 }
 export function installPurpleRingExcavation(THREE,scene,{terrainY,baseTerrainY,groundMaterial}){
  // Replaces the deleted coarse-triangle zone with a continuous indexed fine-resolution surface.
