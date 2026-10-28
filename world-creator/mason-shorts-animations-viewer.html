@@ -28,7 +28,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 @media(max-height:700px){#stage{height:57dvh;min-height:280px}}
 </style>
 </head><body>
-<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V7</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
+<header><h1>WVLRP · MASON — SHORTS & ANIMATIONS · V8</h1><small>Original adult MakeHuman/MPFB avatar · isolated mobile inspection</small></header>
 <main>
 <div id="stage"><canvas id="renderCanvas" aria-label="Rotate and zoom Mason's three-dimensional model"></canvas><div role="status" id="status">Loading Mason's real 3D model…</div></div>
 <div class="panel">
@@ -56,7 +56,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 <div class="tiny">Drag to rotate · pinch to zoom · shorts and body follow the same articulated skeleton.</div>
 </fieldset>
 </div>
-<p class="note"><strong>Shorts V7:</strong> The former all-three-vertices triangle rejection caused irregular exposed-skin cutouts around the rear waistband. V7 clips existing rigged body triangles cleanly against the waistband and leg-hem planes and retains interpolated original skeleton weights. Android rear/side and motion QA required before approval.</p>
+<p class="note"><strong>Shorts V8:</strong> Mason V7 fitted shorts with only a small (~1.5 cm) raise of the waistband. Original rear coverage, leg hems, fabric allowance, rigging, and five animations remain unchanged. Android check required before approval.</p>
 <p class="note"><strong>Source:</strong> the original <code>world-creator/assets/mason-mpfb-trial.glb</code> (not Rob). The animation menu is populated directly from the loaded GLB, with source clip names. Existing stand, bend, kneel, hands-and-knees and elbows-and-knees clips are expected; any others only appear if actually present in the asset. Walk, run, swim, sit and other unbuilt actions are not mislabeled as working clips. This is a separate QA viewer, not a game deployment. The shorts are a nondestructive fitted skinned-mesh preview; check their fit during deep knee/hip movements.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
@@ -158,7 +158,7 @@ function generateFittedShorts(body){
  const low=bounds.minimumWorld,high=bounds.maximumWorld;
  const height=high.y-low.y,cx=(high.x+low.x)/2,cz=(high.z+low.z)/2;
  if(!(height>1&&height<5))throw new Error("Invalid Mason body dimensions");
- const waistY=low.y+height*.652,hemY=low.y+height*.388;
+ const waistY=low.y+height*.661,hemY=low.y+height*.388; // V8: +1.5cm at ~1.67m height; hems unchanged
  const xLimit=height*.221; // excludes outstretched forearms/hands
  const hasExtra=!!(idsExtra&&weightsExtra);
  const influencers=hasExtra?8:4;
@@ -261,7 +261,7 @@ function generateFittedShorts(body){
  }
  if(iOut.length/3<1550)
    throw new Error("Incomplete Mason shorts: "+iOut.length/3+" faces");
- const cloth=new BABYLON.Mesh("Mason shorts V7 · continuous clipped skin",scene);
+ const cloth=new BABYLON.Mesh("Mason shorts V8 · continuous clipped skin",scene);
  cloth.parent=body.parent;
  cloth.position.copyFrom(body.position);
  cloth.scaling.copyFrom(body.scaling);
@@ -284,9 +284,9 @@ function generateFittedShorts(body){
  cloth.refreshBoundingInfo();cloth.computeWorldMatrix(true);
  const counts={faces:iOut.length/3,sourceFaces,clippedFaces,rejectedArm,
    vertices:iOut.length,waistY,hemY,bones:body.skeleton.bones.length};
- $("clothSummary").textContent="Shorts V7 · "+counts.faces+
+ $("clothSummary").textContent="Shorts V8 · "+counts.faces+
    " skinned triangles; waist and hems clipped continuously to body surface. Inspect rear waistband and all five poses.";
- console.info("Mason V7 fitted shorts coverage",counts);
+ console.info("Mason V8 fitted shorts coverage",counts);
  return [cloth];
 }
 
@@ -346,7 +346,7 @@ try{
   $("smile").disabled=smileTargets.length===0;
   modelReady=true;
   motionClipsImported();
-  updateStatus("Mason V7 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
+  updateStatus("Mason V8 loaded · "+visible.length+" meshes · "+(res.skeletons?.[0]?.bones?.length||0)+" bones · "+groups.length+
     " GLB clips · shorts "+(clothing.length?clothing[0].getTotalIndices()/3+" garment faces":"FAILED; see Clothing note"));
  }).catch(err=>{updateStatus("Mason GLB failed: "+(err.message||err));console.error(err);});
  engine.runRenderLoop(()=>{
