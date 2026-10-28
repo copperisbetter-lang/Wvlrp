@@ -1,0 +1,65 @@
+name: Inspect Mason GLB garment geometry (isolated diagnostic)
+on:
+  push:
+    branches:
+      - gater/mason-shorts-binary-inspection-20261028
+    paths:
+      - .github/workflows/mason-shorts-binary-inspection.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source model meshes and garment coverage without Blender
+        run: |
+          python3 - <<'PY'
+          import struct,json,math
+          from pathlib import Path
+          data=Path("world-creator/assets/mason-mpfb-trial.glb").read_bytes()
+          assert data[:4]==b'glTF'
+          pos=12;doc=None;binchunk=None
+          while pos<len(data):
+            size,typ=struct.unpack_from('<II',data,pos);pos+=8
+            part=data[pos:pos+size];pos+=size
+            if typ==0x4e4f534a:doc=json.loads(part)
+            if typ==0x004e4942:binchunk=part
+          assert doc and binchunk
+          ac=doc['accessors'];bv=doc['bufferViews']
+          fmts={5126:'f',5125:'I',5123:'H',5121:'B',5122:'h',5120:'b'}
+          types={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4}
+          def read(idx):
+            a=ac[idx];v=bv[a['bufferView']]
+            n=types[a['type']];fmt='<'+fmts[a['componentType']]*n
+            size=struct.calcsize(fmt);start=v.get('byteOffset',0)+a.get('byteOffset',0)
+            step=v.get('byteStride',size)
+            return [struct.unpack_from(fmt,binchunk,start+i*step) for i in range(a['count'])]
+          meshes=doc.get('meshes',[])
+          nodes=doc.get('nodes',[])
+          print('MODEL_SCHEMA',json.dumps({'meshes':len(meshes),'nodes':len(nodes),'skins':len(doc.get('skins',[])),'animations':[a.get('name') for a in doc.get('animations',[])]}))
+          for node in nodes:
+            if 'mesh' not in node:continue
+            m=meshes[node['mesh']]
+            for pi,prim in enumerate(m['primitives']):
+              if 'POSITION' not in prim['attributes']:continue
+              positions=read(prim['attributes']['POSITION'])
+              if len(positions)<200:continue
+              mn=[min(p[j] for p in positions) for j in range(3)]
+              mx=[max(p[j] for p in positions) for j in range(3)]
+              entry={'node':node.get('name'),'mesh':m.get('name'),'vert':len(positions),'bounds_min':[round(x,3) for x in mn],'bounds_max':[round(x,3) for x in mx],'skin':node.get('skin'),'translation':node.get('translation'),'scale':node.get('scale')}
+              if 'indices' in prim:
+                idx=[x[0] for x in read(prim['indices'])]
+                h=mx[1]-mn[1];cx=(mn[0]+mx[0])/2;cz=(mn[2]+mx[2])/2
+                for l,top in [(.409,.603),(.39,.65),(.38,.66)]:
+                  def zone(i):
+                    p=positions[i];frac=(p[1]-mn[1])/h if h>0 else -1
+                    radius=.146 if frac>.505 else .191
+                    depth=.112 if frac>.505 else .132
+                    return l<=frac<=top and abs(p[0]-cx)<h*radius and abs(p[2]-cz)<h*depth
+                  count=sum(1 for j in range(0,len(idx),3) if zone(idx[j]) and zone(idx[j+1]) and zone(idx[j+2]))
+                  entry['v4_triangles_'+str(l)]=count
+                entry['triangle_count']=len(idx)//3
+              print('MESH_CHECK',json.dumps(entry,default=str))
+          PY
