@@ -168,7 +168,7 @@ export function createStaceyPurpleTrails(natural){
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
       geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
       geometry.setIndex(tri);geometry.computeVertexNormals();
-      const material=new THREE.MeshStandardMaterial({map:soilTexture,color:0xaa9277,side:THREE.DoubleSide,roughness:1,polygonOffset:true,polygonOffsetFactor:-1});
+      const material=new THREE.MeshStandardMaterial({map:soilTexture,color:0xffffff,side:THREE.DoubleSide,roughness:1,polygonOffset:true,polygonOffsetFactor:-1});
       const mesh=new THREE.Mesh(geometry,material);mesh.name='Stacey purple path — '+route.name;mesh.receiveShadow=true;
       scene.add(mesh);installed.push(mesh);
       if(showGuide){
