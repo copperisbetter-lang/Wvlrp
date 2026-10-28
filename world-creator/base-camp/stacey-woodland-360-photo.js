@@ -1,81 +1,93 @@
-// Stacey Lake V13: visible PHOTOGRAPHIC woodland tread, no generic soil ribbon.
-// The photographic source is our original 360 Woodland Trail scene; only near-ground
-// pixels are sampled. A subtle, foot-worn central treatment keeps it distinct from
-// the surrounding grassy terrain while preserving photographed rocks and leaf detail.
+// WVLRP Stacey Lake — V14 original Woodland Trail PHOTO-surface.
+// Use the real rocky path in the CENTER of the owner's approved 360 panorama.
+// Native autumn colours, square photographic texels, feathered trail edges.
+// The V13 browser failure was caused by getImageData() on a cross-origin image.
 export function applyWoodlandTrail360Photo(THREE,meshes){
   const asset='../../assets/woodland-trail-hd.webp';
-  const status={asset,state:'loading',meshes:meshes.length,photographic:true};
+  const source=new URL(asset,import.meta.url).href;
+  const pinned='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/044f3db6b25dc23b2277cde07db430f0dd4f1a11/assets/woodland-trail-hd.webp';
+  const sources=[source,pinned];
+  const status={asset,state:'loading',meshes:meshes.length,photographic:true,mode:'original 360 central rocky trail'};
   if(typeof window!=='undefined')window.staceyTrailPhoto=status;
-  const image=new Image();
-  image.onload=()=>{
-    try{
-      const w=image.naturalWidth,h=image.naturalHeight;
-      if(w<512||h<256)throw Error('Woodland photo resolution too small');
-      const S=1024,canvas=document.createElement('canvas');
-      canvas.width=canvas.height=S;
-      const ctx=canvas.getContext('2d',{willReadFrequently:true});
-      if(!ctx)throw Error('Trail photo canvas unavailable');
-      // Equirectangular original: use ONLY the ground BELOW the horizon.
-      // This is a photograph of the actual WVLRP 360 Woodland Trail ground,
-      // not a 360 panorama, painted trees, or a flat brown synthetic ribbon.
-      const sx=Math.floor(w*.36),sy=Math.floor(h*.62);
-      const sw=Math.floor(w*.28),sh=Math.floor(h*.33);
-      ctx.drawImage(image,sx,sy,sw,sh,0,0,S,S);
-      const pixels=ctx.getImageData(0,0,S,S),data=pixels.data;
-      // Narrow compacted-footpath center, with photographed irregular leaf and
-      // stone detail preserved. Feathery, uneven margins merge with real terrain.
-      for(let y=0;y<S;y++){
-        const along=y/S;
-        const meander=.045*Math.sin(along*14.1)+.023*Math.sin(along*33.7+1.8);
-        for(let x=0;x<S;x++){
-          const i=(y*S+x)*4;
-          const across=Math.abs((x/S-.5-meander)*2);
-          const worn=Math.pow(Math.max(0,1-across*across),1.55);
-          const k=.52*worn;
-          // Color-shift only: every photographed stone, crack and leaf survives.
-          data[i]=Math.min(255,Math.round(data[i]*(1-k)+155*k));
-          data[i+1]=Math.min(255,Math.round(data[i+1]*(1-k)+125*k));
-          data[i+2]=Math.min(255,Math.round(data[i+2]*(1-k)+85*k));
-          const fringe=(1-across)/.20;
-          const irregular=.04*Math.sin(along*71+across*16);
-          const alpha=Math.max(0,Math.min(1,fringe+irregular));
-          data[i+3]=Math.round(255*alpha);
+  let attempt=0;
+  function failed(error){
+    status.state='failed';status.error=String(error);
+    if(typeof window!=='undefined'&&window.staceyDiagnostics)
+      window.staceyDiagnostics.errors.push('Woodland photo: '+error);
+  }
+  function tryLoad(){
+    if(attempt>=sources.length){failed('CORS-safe Woodland Trail image unavailable');return;}
+    const url=sources[attempt++];
+    const img=new Image();
+    // IMPORTANT: Must be set BEFORE src for a CORS-clean WebGL CanvasTexture.
+    // The old image lacked this setting and getImageData threw SecurityError.
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      try{
+        const w=img.naturalWidth,h=img.naturalHeight;
+        if(w<512||h<256)throw Error('Original 360 woodland photo too small');
+        const S=1024,canvas=document.createElement('canvas');
+        canvas.width=canvas.height=S;
+        const ctx=canvas.getContext('2d');
+        if(!ctx)throw Error('Photo compositing unavailable');
+        // Central photographed woodland walking track with roots, rocks,
+        // dirt, real golden leaves. Previous V13 photo region took leaf
+        // carpet at the bottom rather than the rocky path in center.
+        // Nearly square pixel crop; path UVs below repeat at 2.8m intervals.
+        const sx=Math.floor(w*.405),sy=Math.floor(h*.52);
+        const sw=Math.floor(w*.19),sh=Math.floor(h*.38);
+        ctx.drawImage(img,sx,sy,sw,sh,0,0,S,S);
+        // Feather ONLY edges, not colours. No desaturation, beige tint,
+        // per-pixel readback, or washed-out faux soil texture.
+        ctx.globalCompositeOperation='destination-in';
+        const edge=ctx.createLinearGradient(0,0,S,0);
+        edge.addColorStop(0,'rgba(255,255,255,0)');
+        edge.addColorStop(.08,'rgba(255,255,255,.25)');
+        edge.addColorStop(.21,'rgba(255,255,255,1)');
+        edge.addColorStop(.79,'rgba(255,255,255,1)');
+        edge.addColorStop(.92,'rgba(255,255,255,.25)');
+        edge.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=edge;ctx.fillRect(0,0,S,S);
+        ctx.globalCompositeOperation='source-over';
+        // With CORS-enabled image, canvas remains origin clean for WebGL.
+        // No getImageData()/putImageData(), which caused the Android crash.
+        const map=new THREE.CanvasTexture(canvas);
+        map.colorSpace=THREE.SRGBColorSpace;
+        map.wrapS=THREE.ClampToEdgeWrapping;
+        map.wrapT=THREE.MirroredRepeatWrapping;
+        map.generateMipmaps=true;
+        map.minFilter=THREE.LinearMipmapLinearFilter;
+        map.magFilter=THREE.LinearFilter;
+        map.anisotropy=4;
+        for(const mesh of meshes){
+          mesh.material.map=map;
+          mesh.material.color.set(0xffffff);
+          mesh.material.transparent=true;
+          mesh.material.opacity=1;
+          mesh.material.alphaTest=.02;
+          mesh.material.depthWrite=false;
+          mesh.material.polygonOffset=true;
+          mesh.material.polygonOffsetFactor=-3;
+          mesh.material.polygonOffsetUnits=-3;
+          mesh.material.needsUpdate=true;
+          mesh.userData.photoSurface=asset;
+          mesh.userData.photoReady=true;
         }
+        status.state='ready';status.photoSize=[w,h];status.photoCrop=[sx,sy,sw,sh];status.loadedFrom=url;
+        if(typeof window!=='undefined'&&window.staceyDiagnostics)
+          window.staceyDiagnostics.assets['360 Woodland Trail photo walking surface']='READY, full-colour '+meshes.length+' meshes';
+      }catch(err){
+        // If browser refuses a CORS-clean canvas after image.onload,
+        // do not quietly call the original beige ground a photo.
+        if(attempt<sources.length)tryLoad();else failed(err);
       }
-      ctx.putImageData(pixels,0,0);
-      const map=new THREE.CanvasTexture(canvas);
-      map.colorSpace=THREE.SRGBColorSpace;
-      map.wrapS=THREE.ClampToEdgeWrapping;
-      map.wrapT=THREE.MirroredRepeatWrapping;
-      map.generateMipmaps=true;
-      map.minFilter=THREE.LinearMipmapLinearFilter;
-      map.magFilter=THREE.LinearFilter;
-      map.anisotropy=4;
-      for(const mesh of meshes){
-        mesh.material.map=map;
-        mesh.material.color.set(0xffffff);
-        mesh.material.transparent=true;
-        mesh.material.alphaTest=.035;
-        mesh.material.depthWrite=false;
-        mesh.material.opacity=1;
-        mesh.material.polygonOffset=true;
-        mesh.material.polygonOffsetFactor=-3;
-        mesh.material.polygonOffsetUnits=-3;
-        mesh.material.needsUpdate=true;
-        mesh.userData.photoSurface=asset;
-        mesh.userData.photoReady=true;
-      }
-      status.state='ready';status.photoSize=[w,h];status.photoCrop=[sx,sy,sw,sh];
-      if(window.staceyDiagnostics)window.staceyDiagnostics.assets['360 Woodland Trail photo walking surface']='READY: '+meshes.length+' trail meshes';
-    }catch(e){
-      status.state='failed';status.error=String(e);
-      if(window.staceyDiagnostics)window.staceyDiagnostics.errors.push('360 photo trail: '+e);
-    }
-  };
-  image.onerror=()=>{
-    status.state='failed';status.error='Woodland Trail photo asset unavailable';
-    if(window.staceyDiagnostics)window.staceyDiagnostics.errors.push(status.error);
-  };
-  image.src=new URL(asset,import.meta.url).href;
+    };
+    img.onerror=()=>{
+      if(attempt<sources.length)tryLoad();
+      else failed('WebP CORS image load rejected for both hosts');
+    };
+    img.src=url;
+  }
+  tryLoad();
   return status;
 }
