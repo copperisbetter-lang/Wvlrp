@@ -56,6 +56,7 @@ strong{color:#fff}.tiny{font-size:.78rem;color:#c8d7ca}
 <div class="tiny">Drag to rotate · pinch to zoom · shorts and body follow the same articulated skeleton.</div>
 </fieldset>
 </div>
+<p class="note"><strong>Shorts V3:</strong> Corrected the flared waist using pelvis-only skinning and tighter body-scale measurements. Owner phone inspection required before approval.</p>
 <p class="note"><strong>Source:</strong> the original <code>world-creator/assets/mason-mpfb-trial.glb</code> (not Rob). The animation menu is populated directly from the loaded GLB, with source clip names. Existing stand, bend, kneel, hands-and-knees and elbows-and-knees clips are expected; any others only appear if actually present in the asset. Walk, run, swim, sit and other unbuilt actions are not mislabeled as working clips. This is a separate QA viewer, not a game deployment. The shorts are a nondestructive fitted skinned-mesh preview; check their fit during deep knee/hip movements.</p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script>
@@ -176,7 +177,7 @@ function generateFittedShorts(body){
    for(const p of points){
      if(Math.abs(p.y-at(level))>h*.013)continue;
      const dx=p.x-cx,dz=p.z-cz;
-     if(Math.abs(dx)>h*.23 || Math.abs(dz)>h*.18)continue;
+     if(Math.abs(dx)>h*.145 || Math.abs(dz)>h*.095)continue;
      if(side && Math.sign(dx)!==side)continue;
      xs.push(Math.abs(dx));zs.push(Math.abs(dz));
      sideX.push(p.x);sideZ.push(p.z);
@@ -185,9 +186,11 @@ function generateFittedShorts(body){
      x:median(sideX),z:median(sideZ)};
  };
  const waist=slice(.580),hip=slice(.525);
- const hipX=Math.max(hip.rx*1.09,h*.085),hipZ=Math.max(hip.rz*1.10,h*.067);
- const waistX=Math.max(waist.rx*1.10,hipX*.85,h*.088);
- const waistZ=Math.max(waist.rz*1.13,hipZ*.88,h*.063);
+ // Tight anthropometric caps stop outstretched arms affecting pants circumference.
+ const hipX=Math.min(h*.128,Math.max(hip.rx*1.075,h*.090));
+ const hipZ=Math.min(h*.089,Math.max(hip.rz*1.095,h*.064));
+ const waistX=Math.min(h*.114,Math.max(waist.rx*1.075,hipX*.89,h*.087));
+ const waistZ=Math.min(h*.078,Math.max(waist.rz*1.10,hipZ*.90,h*.060));
  const left=slice(.430,-1),right=slice(.430,1);
  const baseLegCenter=Math.max(hipX*.46,h*.052);
  const legData=[
@@ -203,11 +206,26 @@ function generateFittedShorts(body){
    const rz=Math.min(hipZ*.96,Math.max(reference.rz*1.11,h*.059));
    return {x,z,rx,rz};
  });
- // Spatial bone-weight lookup: source positions are the unchanged MakeHuman
- // body surface in REST coordinates, never a manually invented rig.
- const candidate=points.filter(p=>p.y>at(.36)&&p.y<at(.69) &&
-   Math.abs(p.x-cx)<h*.26 && Math.abs(p.z-cz)<h*.22);
- if(candidate.length<100)throw new Error("Insufficient torso and thigh vertices for garment rigging");
+ // Reject arms from weight transfer. Original V2 shorts were stretched into
+ // a broad funnel by source skin weights from Mason's outstretched arms.
+ const boneNames=body.skeleton.bones.map(b=>(b.name||"").toLowerCase());
+ const limbBone=/clavicle|shoulder|arm|wrist|hand|finger|thumb|index|middle|pinky|neck|head/;
+ const armWeighted=i=>{
+   for(let u=0;u<4;u++){
+     const name=boneNames[Math.round(boneIds[i*4+u])]||"";
+     if((boneWeights[i*4+u]||0)>.08 && limbBone.test(name))return true;
+   }
+   return false;
+ };
+ const candidate=points.filter(p=>p.y>at(.36)&&p.y<at(.675) &&
+   Math.abs(p.x-cx)<h*.175 && Math.abs(p.z-cz)<h*.13 && !armWeighted(p.i));
+ if(candidate.length<80)throw new Error("Cannot isolate torso and leg skin weights");
+ const hipCandidates=candidate.filter(p=>p.y>at(.485)&&p.y<at(.58) &&
+   Math.abs(p.x-cx)<h*.12 && Math.abs(p.z-cz)<h*.10);
+ if(hipCandidates.length<20)throw new Error("Pelvis reference weights unavailable");
+ const target={x:cx,y:at(.532),z:cz};
+ const dist=p=>(p.x-target.x)**2+(p.y-target.y)**2+(p.z-target.z)**2;
+ const hipAnchor=hipCandidates.reduce((best,p)=>dist(p)<dist(best)?p:best,hipCandidates[0]).i;
  const nearest=(x,y,z)=>{
    let best=candidate[0].i,dist=Infinity;
    for(let j=0;j<candidate.length;j+=2){
@@ -217,6 +235,9 @@ function generateFittedShorts(body){
    }
    return best;
  };
+ console.info("Mason V3 garment fit",{
+   waistWidth:+(waistX*2).toFixed(3),hipWidth:+(hipX*2).toFixed(3),bodyHeight:+h.toFixed(3)
+ });
  const shade=new BABYLON.PBRMaterial("Mason shorts · cotton twill",scene);
  shade.albedoColor=BABYLON.Color3.FromHexString(palettes[$("shortsColor").value]||palettes.denim);
  shade.roughness=.95;shade.metallic=0;shade.backFaceCulling=false;
@@ -239,7 +260,7 @@ function generateFittedShorts(body){
        BABYLON.Vector3.TransformCoordinatesToRef(pWorld,inverse,pLocal);
        local.push(pLocal.x,pLocal.y,pLocal.z);
        uv.push(k/segments,n);
-       const near=nearest(pWorld.x,pWorld.y,pWorld.z);
+       const near=/waist|seat/i.test(name)?hipAnchor:nearest(pWorld.x,pWorld.y,pWorld.z);
        for(let u=0;u<4;u++){
          wids.push(boneIds[near*4+u]||0);
          ww.push(boneWeights[near*4+u]||0);
@@ -281,9 +302,9 @@ function generateFittedShorts(body){
  // Covers waist to fork as one continuous pelvis panel; legs extend below
  // the fork with distinct full cuffs. No torso-long triangles are involved.
  const torsoRings=[
-   {y:.598,scale:.98},{y:.584,scale:1},
-   {y:.553,scale:1.035},{y:.526,scale:1.07},
-   {y:.504,scale:1.08}
+   {y:.598,scale:1.02},{y:.584,scale:1.025},
+   {y:.553,scale:1.035},{y:.526,scale:1.045},
+   {y:.504,scale:1.035}
  ];
  const torsoShape=r=>{
    const t=(.598-r.y)/(.598-.504);
