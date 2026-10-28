@@ -1,14 +1,13 @@
-name: Install Flat V1 on Amanda 1.0
+name: Detach prior Flat V1 from Amanda 1.0
 on:
   push:
     paths:
-      - world-creator/scripts/install_amanda_flat_v1.py
-      - world-creator/assets/flat-v1-anatomical-component.glb
+      - world-creator/scripts/detach_amanda_flat_v1.py
       - .github/workflows/install-amanda-flat-v1.yml
 permissions:
   contents: write
 concurrency:
-  group: amanda-1-0-flat-v1-install
+  group: amanda-1-0-flat-v1-detach
   cancel-in-progress: false
 jobs:
   install:
@@ -25,15 +24,16 @@ jobs:
           sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
           curl -fL --retry 4 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
           tar -xf /tmp/blender.tar.xz -C /tmp
-      - name: Replace Amanda 1.0 attachment
+      - name: Remove Amanda previous attachment and verify rig
         run: |
-          /tmp/blender-4.2.0-linux-x64/blender -b -t 2 --python world-creator/scripts/install_amanda_flat_v1.py
+          /tmp/blender-4.2.0-linux-x64/blender -b -t 2 --python world-creator/scripts/detach_amanda_flat_v1.py
           test -s world-creator/assets/amanda-1-0-base.glb
-          test -s world-creator/assets/amanda-1-0-flat-install-report.json
+          test -s world-creator/assets/amanda-1-0-with-flat-v1-backup.glb
+          test -s world-creator/assets/amanda-1-0-detach-report.json
       - name: Commit Amanda output on this branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add world-creator/assets/amanda-1-0-base.glb world-creator/assets/amanda-1-0-flat-install-report.json
-          git commit -m 'Install Flat V1 on Amanda 1.0'
+          git add world-creator/assets/amanda-1-0-base.glb world-creator/assets/amanda-1-0-with-flat-v1-backup.glb world-creator/assets/amanda-1-0-detach-report.json
+          git commit -m 'Detach Flat V1 from Amanda 1.0 after preserving backup'
           git push origin "HEAD:${GITHUB_REF_NAME}"
