@@ -62,9 +62,9 @@ export function woodlandGradeAudit(base){
  let maxLong=0,maxCross=0,maxCut=0,maxNatural=0,peakAngle=null;
  for(let a=begin;a<=end-.025;a+=.025){
   const v=o=>{const r=R+o,ang=a*RAD,x=r*cos(ang),z=r*sin(ang);return woodlandGradeHeight(x,z,base(x,z),base)};
-  const na=>(o)=>{const r=R+o,ang=na*RAD,x=r*cos(ang),z=r*sin(ang);return woodlandGradeHeight(x,z,base(x,z),base)};
+  const nextValue=(nextA,o)=>{const r=R+o,ang=nextA*RAD,x=r*cos(ang),z=r*sin(ang);return woodlandGradeHeight(x,z,base(x,z),base)};
   maxCross=Math.max(maxCross,Math.abs(v(1.3)-v(-1.3))/2.6*100);
-  for(const o of [-1.3,0,1.3])maxLong=Math.max(maxLong,Math.abs(na(a+.025)(o)-v(o))/((R+o)*.025*RAD)*100);
+  for(const o of [-1.3,0,1.3])maxLong=Math.max(maxLong,Math.abs(nextValue(a+.025,o)-v(o))/((R+o)*.025*RAD)*100);
   const ang=a*RAD,x=R*cos(ang),z=R*sin(ang),natural=base(x,z),cut=natural-v(0);
   if(cut>maxCut){maxCut=cut;peakAngle=a}
   const aa=(a+.025)*RAD;maxNatural=Math.max(maxNatural,Math.abs(base(R*cos(aa),R*sin(aa))-natural)/(R*.025*RAD)*100);
