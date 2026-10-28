@@ -13,6 +13,8 @@ import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {installBass} from './stacey-bass.js';
+import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
@@ -1144,6 +1146,12 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
   }
  }instances(g,p,label==='pines');diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 forest();stones();understory();
+// Restore saved bass and flathead systems independently of approved lake geometry/water.
+diag.assets.bass='loading';diag.assets.flatheads='loading';
+const flatheadSystem=installStaceyFlatheads({T,scene,gltf,ASSET,CX,CY,CZ,inner,outer,ground,diagnostics:diag,rand});
+let bassSystem=null;
+installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
+window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem.count;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;}};
 let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
@@ -1223,6 +1231,7 @@ const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY
   }
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
- renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+ flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
