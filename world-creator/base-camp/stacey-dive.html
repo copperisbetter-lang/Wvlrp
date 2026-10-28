@@ -365,7 +365,10 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  chamberFloor.rotation.x=-Math.PI/2;
  chamberFloor.position.set(domeX,domeY-.09,hiddenCave.z);
  chamberFloor.name='Solid domed cavern stone floor';chamber.add(chamberFloor);
- const sidewall=new T.Mesh(new T.CylinderGeometry(domeR,domeR,4.1,48,1,true),chamberStone);
+ // Leave a real gap in the east (+X) wall for the entrance tunnel to join.
+ // Three.js cylinder theta=PI/2 faces +X; omit a 0.32-radian segment.
+ const sidewall=new T.Mesh(new T.CylinderGeometry(domeR,domeR,4.1,48,1,true,
+   Math.PI/2+.16,Math.PI*2-.32),chamberStone);
  sidewall.position.set(domeX,domeY+2.05,hiddenCave.z);
  sidewall.name='Inside of rounded natural stone walls';chamber.add(sidewall);
  const canopyGeometry=new T.SphereGeometry(domeR,48,20,0,Math.PI*2,0,Math.PI/2);
