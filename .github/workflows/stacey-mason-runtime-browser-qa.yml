@@ -1,0 +1,40 @@
+name: Stacey Lake playable Mason browser QA (isolated)
+on:
+  push:
+    branches: [gater/mason-default-stacey-game-20261028]
+    paths:
+      - world-creator/tests/stacey-mason-entry-browser.mjs
+      - world-creator/base-camp/stacey-mason-player.js
+      - world-creator/base-camp/stacey-dive.html
+      - .github/workflows/stacey-mason-runtime-browser-qa.yml
+permissions: {contents: read}
+jobs:
+  mobile-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install local browser harness
+        run: npm install --no-save --ignore-scripts playwright-core@1.57.0
+        working-directory: world-creator
+      - name: Serve isolated Play Game files
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/stacey-mason-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/stacey-mason-server.log;exit 1
+      - name: Test mobile Play Game CTA, real Mason GLB + V8 shorts, spawn & camera
+        run: node world-creator/tests/stacey-mason-entry-browser.mjs
+      - name: Attach screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stacey-mason-mobile-qa
+          path: |
+            world-creator/stacey-mason-mobile-test.png
+            world-creator/stacey-mason-failure.png
+          if-no-files-found: ignore
