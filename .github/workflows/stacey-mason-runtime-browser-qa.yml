@@ -1,7 +1,7 @@
 name: Stacey Lake playable Mason browser QA (isolated)
 on:
   push:
-    branches: [gater/mason-default-stacey-game-20261028]
+    branches: [gater/mason-console-third-person-20261028]
     paths:
       - world-creator/tests/stacey-mason-entry-browser.mjs
       - world-creator/base-camp/stacey-mason-player.js
