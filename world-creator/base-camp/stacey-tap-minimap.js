@@ -137,17 +137,17 @@ export function installStaceyTapMinimap({pos, getYaw, ground, cliffContact, soli
     return {walking:actual>.001,yaw};
   }
   function draw(now) {
-    if(now-lastPaint<280)return;
+    if(now-lastPaint<420)return;
     lastPaint=now;
     const R=75,c=80,range=ranges[rangeIndex],ratio=74/range;
     g.clearRect(0,0,160,160);g.save();g.beginPath();g.arc(c,c,R,0,Math.PI*2);g.clip();
     g.fillStyle='#52744b';g.fillRect(0,0,160,160);
     // Low-cost terrain raster: same ground heights as actual walk collision.
-    for(let y=0;y<160;y+=8)for(let x=0;x<160;x+=8){
-      const wx=pos.x+(x+4-c)/ratio,wz=pos.z+(y+4-c)/ratio;
+    for(let y=0;y<160;y+=10)for(let x=0;x<160;x+=10){
+      const wx=pos.x+(x+5-c)/ratio,wz=pos.z+(y+5-c)/ratio;
       const h=ground(wx,wz);
       g.fillStyle=h<CY-.55?'#307aa0':h>CY+18?'#68776b':h>CY+4?'#4c7350':'#679760';
-      g.fillRect(x,y,8.5,8.5);
+      g.fillRect(x,y,10.5,10.5);
     }
     const project=p=>[c+(p.x-pos.x)*ratio,c+(p.z-pos.z)*ratio];
     g.save();g.strokeStyle='#c79de9';g.lineWidth=2.3;g.lineCap='round';g.lineJoin='round';
