@@ -11,10 +11,9 @@ export const RIDGE_WAYPOINTS=Object.freeze([
   [-167,-110],[-172,-160],[-169,-208],[-173,-260],
   [-166,-310],[-165,-356],[-153,-382]
 ]);
-export const LAKE_SPUR_WAYPOINTS=Object.freeze([
-  [-166,-310],[-142,-332],[-130,-354],[-106,-369],
-  [-79,-370],[-54,-372],[-30,-373],[-7,-373],[8,-374]
-]);
+// Longer hillside switchbacks in woods. Preserve the approved fork and landing;
+// no loop around the lake, waterfall photo, or underground 84m cavern.
+export const LAKE_SPUR_WAYPOINTS=Object.freeze([[-166,-310],[-142,-332],[-130,-354],[-106,-369],[-106,-370],[-106,-366],[-102,-354],[-90,-346],[-86,-350],[-10,-422],[14,-426],[34,-442],[38,-438],[38,-434],[34,-430],[-26,-366],[-22,-358],[-14,-354],[-10,-358],[6,-374],[8,-374]]);
 const clip=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=clip(t,0,1);return t*t*(3-2*t)};
 function nearSegment(x,z,a,b){
@@ -92,7 +91,7 @@ export function createStaceyPurpleTrails(natural){
   function gradeGround(x,z,original){
     // Perpendicular soil shoulders fall back to untouched mountainside.
     // The approved lake shore, photographed canyon and V9 cave roof are never excavated.
-    if(x< -185||x>22||z< -393||z> -99)return original;
+    if(x< -188||x>44||z< -466||z> -99)return original;
     if(domeClearance(x,z)<13||shoreClearance(x,z)<61)return original;
     let target=original,blend=0;
     for(const route of routes){
