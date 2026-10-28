@@ -132,7 +132,7 @@ const cavernTerrainClip=[
    ' && abs(cameraPosition.z-('+hiddenCave.z.toFixed(2)+'))<2.5;',
  'bool viewerInside=(viewerRoom<'+(hiddenCave.chamberR+1.6).toFixed(2)+
    ' || viewerTunnel) && cameraPosition.y<'+(hiddenCave.floor+6.2).toFixed(2)+';',
- 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR-0.7).toFixed(2)+
+ 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR-0.2).toFixed(2)+
    ' && vGround.y<'+(hiddenCave.floor+35).toFixed(2)+';',
  'bool cutTunnel=vGround.x>'+hiddenCave.innerEnd.toFixed(2)+
    ' && vGround.x<'+hiddenCave.outerEnd.toFixed(2)+
@@ -363,15 +363,18 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const caveLen=hiddenCave.outerEnd-hiddenCave.innerEnd;
  // Keep the rock floor inside the cliff rather than jutting out over the pond.
  const visibleFloorEnd=hiddenCave.x+1.2;
- const visibleFloorLen=visibleFloorEnd-hiddenCave.innerEnd;
+ // Stop tunnel ceiling when it reaches the great chamber; it must not form
+ // a hanging tube inside the domed room or overlap the main hall flooring.
+ const passageStart=hiddenCave.chamberX+hiddenCave.chamberR-1.0;
+ const visibleFloorLen=visibleFloorEnd-passageStart;
  const floor=new T.Mesh(new T.BoxGeometry(visibleFloorLen,.25,hiddenCave.halfWidth*2.3),floorMat);
- floor.position.set((hiddenCave.innerEnd+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
+ floor.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
  floor.name='Hidden cave stone floor';vestibule.add(floor);
- const shellLen=visibleFloorEnd-hiddenCave.innerEnd;
- const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,shellLen,16,1,true),
-   new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:true}));
+ const shellLen=visibleFloorEnd-passageStart;
+ const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,shellLen,24,1,true),
+   new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:false}));
  shell.rotation.z=Math.PI/2;
- shell.position.set((hiddenCave.innerEnd+visibleFloorEnd)/2,hiddenCave.floor+1.12,hiddenCave.z);
+ shell.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor+1.12,hiddenCave.z);
  shell.name='Interior stone tunnel roof and side walls';vestibule.add(shell);
 
  // V8: a vast, truly excavated hall, set farther under the mountain.
