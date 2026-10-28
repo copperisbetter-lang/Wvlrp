@@ -38,7 +38,12 @@ function ground(x,z){
  const sideDist=Math.abs(z-CZ);
  const shoulderBand=smooth(14,24,sideDist)*(1-smooth(33,47,sideDist));
  const hillsideFade=smooth(-69,-44,x)*(1-smooth(-14,7,x));
- const original=baseGround(x,z)+5*shoulderBand*hillsideFade;
+ // Carry the existing walkable soil ridge toward the photo-rock crest on both ends.
+ const ridgeSide=smooth(7,19,sideDist)*(1-smooth(29,43,sideDist));
+ const ridgeLength=smooth(-50,-31,x)*(1-smooth(2,14,x));
+ const crest=CY+30-5*smooth(-42,5,x)+.35*Math.sin(z*.16+x*.08);
+ let original=baseGround(x,z)+5*shoulderBand*hillsideFade;
+ original+=Math.max(0,crest-original)*ridgeSide*ridgeLength;
  const basin=Math.hypot((x-pondX)/8,(z-CZ)/17);
  if(basin<1.24)return T.MathUtils.lerp(pondY-1.9,Math.max(original,pondY+.35),smooth(.72,1.24,basin));
  const t=(x-(pondX+6))/(fallShore+2-(pondX+6));
@@ -50,7 +55,8 @@ function ground(x,z){
  // under the canyon footprint and blend the cut into untouched terrain.
  // Old cut removed earth more than fifty meters sideways, leaving air gaps.
  const cutDistance=Math.abs(z-CZ)+.85*Math.sin(x*.12+z*.19);
- const sideFade=1-smooth(15,28,cutDistance);
+ // Leave only the real lower waterfall basin open, not a gap under the ridge.
+ const sideFade=1-smooth(5,15,cutDistance);
  const backFade=smooth(-96,-69,x);
  const shoreFade=1-smooth(7,19,x);
  const cut=sideFade*backFade*shoreFade;
@@ -141,6 +147,11 @@ mat.onBeforeCompile=s=>{
  float rockySlope=smoothstep(29.,54.,r-o)*(1.-smoothstep(82.,104.,r-o));
  float naturalMottle=.5+.5*sin(vGround.x*.35+vGround.z*.49)*sin(vGround.x*.19-vGround.z*.25);
  c=mix(c,rockC*vec3(.86,.90,.83),joinBand*rockySlope*(.12+.29*naturalMottle));
+ // Weathered rock gradually emerges from the grass along the walkable crest.
+ float crestBand=smoothstep(7.,19.,joinSide)*(1.-smoothstep(26.,43.,joinSide));
+ float crestRun=smoothstep(-50.,-30.,vGround.x)*(1.-smoothstep(1.,14.,vGround.x));
+ float crestRock=crestBand*crestRun*smoothstep(8.,19.,vGround.y);
+ c=mix(c,rockC*vec3(.90,.94,.88),crestRock*(.20+.31*naturalMottle));
  float wet=1.-smoothstep(-5.6,-5.05,vGround.y);
  diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`);
 };
@@ -529,6 +540,9 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
    }
    root.traverse(o=>{if(o.isMesh){const a=o.geometry.getAttribute('normal');if(a)a.needsUpdate=true;}});
    scene.add(root);
+   // Use real V6 photo-rock surfaces for optional feet-on-rock collision.
+   canyonTopMeshes.length=0;
+   root.traverse(o=>{if(o.isMesh&&o.geometry?.getAttribute('position'))canyonTopMeshes.push(o);});
 
    // V2 uses NO separate hill sheets or tall triangular faces.
    // Small embedded limestone stones sit at elevations sampled from ground().
@@ -565,6 +579,34 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
 
 })();
 
+// Rock-crest ground contact (upper slopes only): never teleport a swimmer
+// or walker from the lower canyon floor onto a high photo-rock mesh.
+const canyonTopMeshes=[],canyonDownRay=new T.Raycaster();
+const canyonDown=new T.Vector3(0,-1,0),canyonHitOrigin=new T.Vector3();
+let lastRoofCell='',lastRoofY=null,lastRoofFoot=0;
+function walkableGround(x,z,currentFeet){
+ const native=ground(x,z);
+ if(!window.staceyCanyonV6||currentFeet<CY+11||
+   x<-77||x>16||Math.abs(z-CZ)>40)return native;
+ const cell=Math.round(x*2)+','+Math.round(z*2);
+ if(cell!==lastRoofCell||Math.abs(currentFeet-lastRoofFoot)>3){
+   lastRoofCell=cell;lastRoofFoot=currentFeet;lastRoofY=null;
+   canyonHitOrigin.set(x,CY+70,z);canyonDownRay.set(canyonHitOrigin,canyonDown);
+   canyonDownRay.near=0;canyonDownRay.far=75;
+   const hits=canyonDownRay.intersectObjects(canyonTopMeshes,false);
+   for(const h of hits){
+     const y=h.point.y;
+     if(y<CY+10||y>CY+39)continue;
+     if((h.face?.normal?.y??0)<.32)continue;
+     if(Math.abs(y-currentFeet)>5.5)continue;
+     lastRoofY=y;break;
+   }
+ }
+ if(lastRoofY!==null&&currentFeet>=lastRoofY-3){
+   return T.MathUtils.lerp(native,lastRoofY,smooth(-27,-6,x));
+ }
+ return native;
+}
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
@@ -595,6 +637,6 @@ let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX
 function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{aerial=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;};document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Hill Join V2';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=walkableGround(pos.x,pos.z,pos.y-1.7),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');status.textContent+=' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Ridge Walk V3';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
