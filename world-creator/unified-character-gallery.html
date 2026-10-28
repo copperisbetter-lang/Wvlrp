@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>WVLRP — Unified 3D Character Gallery</title>
+<style>
+:root{color-scheme:dark;--bg:#101919;--p:#182525;--pp:#203333;--line:#37504e;--text:#edf5f0;--muted:#afc3ba;--acc:#9cdec3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,sans-serif}
+header{padding:13px 16px;background:#142121;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}header p{margin:3px 0 0;color:var(--muted);font-size:12px}.count{background:#2b4b3e;border:1px solid #4d7865;color:#d5fbea;padding:6px 10px;border-radius:20px;font-size:12px}
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);height:calc(100dvh - 76px);min-height:440px}
+aside{min-height:0;border-right:1px solid var(--line);background:#152222;display:flex;flex-direction:column}
+.filterbox{padding:10px;border-bottom:1px solid var(--line)}
+input,select,button{font:inherit}input[type=search]{width:100%;border-radius:8px;background:#0f1b1a;color:white;border:1px solid var(--line);padding:11px}
+.tabs{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+button{border:1px solid #45665c;background:#29483f;border-radius:8px;color:var(--text);padding:9px 11px;cursor:pointer;min-height:39px}button:hover{background:#386053}button:focus-visible{outline:2px solid #a4e6be;outline-offset:2px}button:disabled{opacity:.5;cursor:default}
+button.active,.tabs button.active{background:#4f806c;border-color:#a0e4bd;color:white}
+.tabs button{font-size:12px;padding:6px 9px;min-height:31px}
+#catalog{overflow:auto;flex:1;min-height:0;padding:8px}
+.groupname{font-weight:700;color:#ccebdd;font-size:12px;letter-spacing:.04em;padding:12px 7px 6px}
+.char{display:flex;width:100%;text-align:left;align-items:center;justify-content:space-between;gap:8px;background:none;border:1px solid transparent;min-height:47px;padding:8px;border-radius:9px}
+.char:hover{background:#243935}.char.active{background:#2f5148;border:1px solid #90c5ab}
+.char .title{font-weight:640;display:block}.char .meta{color:#b4c8bd;font-size:11px;display:block}
+.char .number{font-size:11px;color:#94aa9f;white-space:nowrap}
+.sidebarfoot{border-top:1px solid var(--line);padding:9px 11px;color:var(--muted);font-size:11px}
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:7px;background:#1a2a28}
+.toolbar .tag{background:#355347;border:1px solid #65816e;border-radius:16px;font-size:12px;padding:7px 10px}
+#stage{position:relative;min-height:240px;flex:1;background:radial-gradient(ellipse at 50% 36%,#38504a,#101b1c 75%);overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:absolute;left:12px;top:11px;max-width:calc(100% - 24px);background:#081310d9;border:1px solid #416358;color:#e2f4e9;border-radius:10px;padding:9px 12px;font-size:12px;pointer-events:none;white-space:pre-line}
+#labels{position:absolute;bottom:14px;left:10px;right:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;pointer-events:none}
+#labels span{background:#0a1819d9;border:1px solid #567668;border-radius:15px;padding:5px 9px;font-size:12px}
+#panel{background:#182725;border-top:1px solid var(--line);padding:10px 14px;max-height:35vh;overflow:auto}
+#panel h2{font-size:15px;margin:1px 0 3px}#panel p{margin:4px 0;font-size:12px;color:#c4d5ce}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.actions select{min-height:36px;border:1px solid #45665c;border-radius:7px;background:#203a33;color:white;max-width:180px}
+#source{color:#ace7c4}#missing{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+details summary{cursor:pointer;font-weight:650}details p{line-height:1.55}
+@media(max-width:700px){header{padding:9px 12px}h1{font-size:17px}.layout{display:flex;flex-direction:column;height:calc(100dvh - 67px);min-height:0}
+aside{border-right:0;border-bottom:1px solid var(--line);max-height:190px;min-height:106px}
+.filterbox{padding:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}input[type=search]{flex:1;width:auto;min-width:130px;padding:8px}
+.tabs{margin:0}.tabs button{min-height:30px}
+#catalog{display:flex;align-items:stretch;gap:4px;overflow-x:auto;overflow-y:hidden;padding:5px}
+.groupname{display:none}.char{min-width:145px;width:145px;min-height:54px;padding:6px 8px;flex-shrink:0}.char .title{font-size:12px}.char .number{display:none}
+.sidebarfoot{display:none}main{flex:1}.toolbar{padding:5px 7px;gap:5px}.toolbar button{padding:7px 8px;min-height:34px;font-size:12px}
+.toolbar .tag{padding:5px 8px}#panel{max-height:29vh;padding:8px 11px}
+}
+</style>
+</head>
+<body>
+<header><div><h1>WVLRP · All Created Characters</h1><p>One 3D inspection studio · Existing GitHub models · Originals never modified</p></div><span class="count" id="count"></span></header>
+<div class="layout">
+<aside><div class="filterbox"><input type="search" id="search" aria-label="Find a character" placeholder="Search characters…"><div class="tabs" id="tabs"><button data-filter="All" class="active">All</button><button data-filter="Core characters">Core</button><button data-filter="Character variants">Variants</button><button data-filter="Created test models">Tests</button><button data-filter="Heads and face studies">Heads</button></div></div><div id="catalog"></div><div class="sidebarfoot">Tap any name to open its actual GLB. Only selected models load, protecting phone performance.</div></aside>
+<main>
+<div class="toolbar">
+<button id="prev" title="Previous character">◀ Previous</button><button id="next" title="Next character">Next ▶</button>
+<button id="lineup">3D lineup</button><button id="nextset" hidden>Next group ▶</button><span class="tag" id="modeTag">Single</span>
+</div>
+<div id="stage"><div id="status" role="status" aria-live="polite">Preparing studio…</div><div id="labels"></div></div>
+<div id="panel">
+<h2 id="name">Select a character</h2><p id="notes">Tap a character in the gallery.</p>
+<div class="actions"><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="fit">Fit view</button><button id="spin">Auto rotate: off</button><button id="fullscreen">Fullscreen</button>
+<select id="clips" aria-label="Available animations"><option value="">No exported animation</option></select><button id="pause" disabled>Pause animation</button></div>
+<p id="diagnostic" aria-live="polite"></p><p><a id="source" href="#" target="_blank" rel="noopener noreferrer">GitHub source asset</a></p>
+<details id="missing"><summary>Characters not available as a verified standalone GLB</summary><p>Brooke 1.0 complete assembly, Becky, Rob's original Blender rig, Jackie (Tripo external), Amber V1, Beatrice, Ethan, Liliana, and additional proposed NPCs have no verified usable public character GLB in the reviewed main-branch inventory. They have not been replaced with fake lookalikes. Amanda 1.0 is sourced from her separate review branch, and may load differently from main.</p></details>
+</div>
+</main></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const DATA=[{"id":"sophie1","name":"Sophie 1","group":"Core characters","state":"approved reference","file":"world-creator/assets/sophie-1-native-fit.glb","note":"Protected V21 master reference — source unchanged."},{"id":"car1","name":"CAR 1","group":"Core characters","state":"built","file":"world-creator/characters/car/car-1.glb","note":"Original CAR 1 character export."},{"id":"car2","name":"CAR 2 · Carol","group":"Core characters","state":"built","file":"world-creator/assets/car2-completed.glb","note":"Carol character build; animation clips only if included in this file."},{"id":"car3","name":"CAR 3 · 35D","group":"Core characters","state":"working","file":"world-creator/assets/car35d-vulva2-cut-fit.glb","note":"Existing CAR 3 experimental integrated-body revision."},{"id":"car5","name":"CAR 5","group":"Core characters","state":"built","file":"world-creator/assets/car-5-v21.glb","note":"V21 CAR 5 export."},{"id":"car6","name":"CAR 6","group":"Core characters","state":"working","file":"world-creator/assets/sav4-vulva2-native-fit.glb","note":"Current CAR 6 viewer reuses this saved V21 asset; no independent final CAR 6 export verified."},{"id":"laura2","name":"Laura 2","group":"Core characters","state":"base","file":"world-creator/assets/laura-2-base.glb","note":"Laura 2 preserved working base, not a finished distinct head/body."},{"id":"amanda1","name":"Amanda 1.0","group":"Core characters","state":"review branch","file":"world-creator/assets/amanda-1-0-base.glb","branch":"g1/amanda-1-0-clone-20261027","note":"Separate Amanda branch build with Flat V1; paused for fit review. Not merged to main."},{"id":"brooke31","name":"Brooke 3.1 · body candidate","group":"Core characters","state":"candidate","file":"avatar-work/brooke/second-chance/brooke-3-1-body-candidate.glb","note":"Body-only candidate; head-to-body assembly NOT verified."},{"id":"caroline","name":"Caroline","group":"Core characters","state":"inspection","file":"world-creator/assets/caroline-inspection.glb","note":"Caroline/Carol inspection source; may be another version of CAR 2."},{"id":"mona","name":"Mona","group":"Core characters","state":"inspection","file":"ImageToStl.com_Mona (1).glb","note":"Mona exported GLB. Full Blender rig controls are not necessarily in this export."},{"id":"sav4","name":"SAV4 · realistic","group":"Character variants","state":"working","file":"world-creator/assets/sav4-realistic.glb","note":"SAV4 geometry variant."},{"id":"sav4native","name":"SAV4 · native fit","group":"Character variants","state":"working","file":"world-creator/assets/sav4-vulva2-native-fit.glb","note":"Native-fit SAV4 build."},{"id":"savproto","name":"SAV · prototype","group":"Character variants","state":"prototype","file":"world-creator/assets/sav-prototype.glb","note":"Older SAV experimental body."},{"id":"savshell","name":"SAV · realistic shell","group":"Character variants","state":"prototype","file":"world-creator/assets/sav-realistic-shell.glb","note":"Older surface/skin research body."},{"id":"car3skin","name":"CAR 3 · skin experiment","group":"Character variants","state":"prototype","file":"world-creator/assets/car35b-integrated-skin.glb","note":"Historical CAR 3 experiment."},{"id":"car3alt","name":"CAR 3 · 35C","group":"Character variants","state":"prototype","file":"world-creator/assets/car35c-vulva2-integrated.glb","note":"Older integrated revision."},{"id":"rileyreal","name":"Riley · Real","group":"Character variants","state":"test","file":"world-creator/assets/riley-real.glb","note":"Riley realistic research model, not a finished NPC."},{"id":"rileyrig","name":"Riley · rigged","group":"Character variants","state":"test","file":"world-creator/assets/riley-rigged-v1.glb","note":"Riley rigged study."},{"id":"rileyblonde","name":"Riley · blonde standing","group":"Character variants","state":"test","file":"world-creator/assets/riley-blonde-standing.glb","note":"Standing-pose exported model."},{"id":"rileykneeling","name":"Riley · kneeling","group":"Character variants","state":"test","file":"world-creator/assets/riley-kneeling.glb","note":"Pose-specific exported Riley study."},{"id":"amy","name":"Amy","group":"Created test models","state":"test","file":"world-creator/assets/amy-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"caitlyn","name":"Caitlyn","group":"Created test models","state":"test","file":"world-creator/assets/caitlyn-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"chrissy","name":"Chrissy","group":"Created test models","state":"test","file":"world-creator/assets/chrissy-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"mason","name":"Mason","group":"Created test models","state":"test","file":"world-creator/assets/mason-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"sha","name":"Sha","group":"Created test models","state":"test","file":"world-creator/assets/sha-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"rileympfb","name":"Riley · MPFB trial","group":"Created test models","state":"test","file":"world-creator/assets/riley-mpfb-trial.glb","note":"MakeHuman / MPFB character trial."},{"id":"rileytop","name":"Riley · Blender trial","group":"Created test models","state":"test","file":"world-creator/assets/riley-top-shelf-blender-trial.glb","note":"Top-shelf character research version."},{"id":"rileyblondeneel","name":"Riley · blonde kneeling","group":"Character variants","state":"test","file":"world-creator/assets/riley-blonde-kneeling.glb","note":"Pose-specific Riley version."},{"id":"rileyblondeall","name":"Riley · blonde all fours","group":"Character variants","state":"test","file":"world-creator/assets/riley-blonde-allfours.glb","note":"Pose-specific Riley version."},{"id":"brookehead","name":"Brooke Head 3.0","group":"Heads and face studies","state":"head only","file":"avatar-work/brooke/second-chance/brooke-head-3-0.glb","kind":"head","note":"Protected standalone head master, not attached."},{"id":"brookeproto","name":"Brooke Head 3.0 · facial prototype","group":"Heads and face studies","state":"head only","file":"avatar-work/brooke/second-chance/brooke-head-3-0-facial-prototype.glb","kind":"head","note":"Separate facial rig prototype head."},{"id":"laurahead","name":"Laura · combined head","group":"Heads and face studies","state":"head only","file":"world-creator/assets/laura-head-combined.glb","kind":"head","note":"Laura head-only export; body not attached."},{"id":"lauraheadtest","name":"Laura · inspection head","group":"Heads and face studies","state":"head only","file":"world-creator/assets/laura-head-inspection.glb","kind":"head","note":"Laura standalone inspection head."},{"id":"head3948","name":"3948 · head study","group":"Heads and face studies","state":"head only","file":"3948-3d.glb","kind":"head","note":"Generated 3D face/head research model."},{"id":"head4105","name":"4105 · original head","group":"Heads and face studies","state":"head only","file":"4105-3d.glb","kind":"head","note":"Unmodified source used for Brooke Head 3.0."},{"id":"head3ddfa","name":"3DDFA · source study","group":"Heads and face studies","state":"head only","file":"world-creator/assets/3ddfa-build10.glb","kind":"head","note":"3DDFA facial geometry research model."}];
+const $=id=>document.getElementById(id);
+const raw='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/';
+const rawAlt='https://raw.githack.com/copperisbetter-lang/Wvlrp/';
+const encodePath=p=>p.split('/').map(encodeURIComponent).join('/');
+const url=(item,alt=false)=>(alt?rawAlt:raw)+(item.branch||'main')+'/'+encodePath(item.file);
+const initial = new URL(location.href).searchParams.get('character');
+let selected=Math.max(0,DATA.findIndex(x=>x.id===initial)),filter='All',term='',lineup=false,lineStart=0,sequence=0;
+let shown=[],mixers=[],actions=[],activeAction=null,clock=new THREE.Clock(),lastFrame=0;
+let statusText='Ready';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x172524);
+scene.fog=new THREE.Fog(0x172524,10,25);
+scene.add(new THREE.HemisphereLight(0xffffff,0x667d70,2.15));
+const key=new THREE.DirectionalLight(0xfff9e9,2.6);key.position.set(-3,7,6);scene.add(key);
+const fill=new THREE.DirectionalLight(0xccecff,1.2);fill.position.set(4,4,-3);scene.add(fill);
+const floor=new THREE.GridHelper(12,16,0x41554e,0x2b433d);floor.position.y=-.01;scene.add(floor);
+const group=new THREE.Group();scene.add(group);
+const camera=new THREE.PerspectiveCamera(42,1,.01,150);camera.position.set(0,1.25,5.5);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;
+$('stage').prepend(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=.35;controls.maxDistance=20;controls.target.set(0,.88,0);
+function resize(){const w=$('stage').clientWidth,h=$('stage').clientHeight; if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe($('stage'));resize();
+function currentList(){return DATA.filter(x=>(filter==='All'||x.group===filter)&&((x.name+' '+x.state+' '+x.note).toLowerCase().includes(term)));}
+function renderList(){
+const list=currentList();$('count').textContent=DATA.length+' stored model entries';$('catalog').replaceChildren();
+let g='';
+list.forEach((x,i)=>{
+if(g!==x.group&&window.innerWidth>700){g=x.group;const h=document.createElement('div');h.className='groupname';h.textContent=g;$('catalog').append(h);}
+const b=document.createElement('button');b.className='char'+(x.id===DATA[selected].id&&!lineup?' active':'');b.setAttribute('aria-label','View '+x.name);
+const left=document.createElement('span'),name=document.createElement('span'),st=document.createElement('span'),number=document.createElement('span');
+name.className='title';name.textContent=x.name;st.className='meta';st.textContent=x.state;number.className='number';number.textContent=String(i+1).padStart(2,'0');
+left.append(name,st);b.append(left,number);b.onclick=()=>{lineup=false;selected=DATA.findIndex(a=>a.id===x.id);show();renderList();};
+$('catalog').append(b);
+});
+if(!list.length){const p=document.createElement('p');p.textContent='No matching models';$('catalog').append(p);}
+}
+function fitCamera(){
+const n=shown.length;controls.target.set(0,.90,0);
+const dist=n<=1?4.5:n===2?6.2:8.2;camera.position.set(0,1.6,dist);controls.minDistance=.3;controls.maxDistance=26;controls.update();
+}
+function view(dir){const d=Math.max(4.2,shown.length*2.8);const x=dir==='side'?d:0,z=dir==='back'?-d:dir==='side'?0:d;camera.position.set(x,1.5,z);controls.target.set(0,.9,0);controls.update();}
+function disposeObject(obj){obj.traverse(x=>{if(x.isMesh){x.geometry?.dispose();(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>{if(!m)return;for(const v of Object.values(m))if(v?.isTexture)v.dispose();m.dispose();});}});}
+function reset(){for(const c of [...group.children]){group.remove(c);disposeObject(c);}mixers=[];actions=[];activeAction=null;$('clips').replaceChildren(new Option('No exported animation',''));$('pause').disabled=true;}
+function setStatus(s){statusText=s;$('status').textContent=s;}
+async function loadAsset(item,token){
+let err;
+for(let n=0;n<2;n++){
+try{return await new GLTFLoader().loadAsync(url(item,n===1),event=>{if(token===sequence&&event.total>0)setStatus('Loading '+item.name+' · '+Math.round(100*event.loaded/event.total)+'%');});}
+catch(e){err=e; if(token!==sequence)break;}
+}
+throw err||Error('Network/model loading failed');
+}
+function fitModel(item,model,index,total){
+let box=new THREE.Box3().setFromObject(model);if(box.isEmpty())throw Error('Empty model');
+let dim=box.getSize(new THREE.Vector3()),big=Math.max(dim.x,dim.y,dim.z);
+if(!(big>1e-7)||!Number.isFinite(big))throw Error('Invalid model bounds');
+const target=item.kind==='head'?.80:1.82;
+const s=Math.min(10000,Math.max(.000001,target/big));model.scale.multiplyScalar(s);
+model.updateMatrixWorld(true);box.setFromObject(model);
+const ctr=box.getCenter(new THREE.Vector3());
+const spread=total===1?0:total===2?1.65:2.05;
+model.position.x+=(index-(total-1)/2)*spread-ctr.x;model.position.z-=ctr.z;model.position.y+=(item.kind==='head'?.86:0)-box.min.y;
+model.updateMatrixWorld(true);
+}
+async function show(){
+const token=++sequence,items=lineup?currentList().slice(lineStart,lineStart+(window.innerWidth<=700?2:3)):[DATA[selected]];
+$('lineup').classList.toggle('active',lineup);$('lineup').textContent=lineup?'Single model':'3D lineup';
+$('nextset').hidden=!lineup;$('modeTag').textContent=lineup?'Lineup':'Single';
+$('labels').replaceChildren();reset();shown=[];
+if(!items.length){setStatus('No models in this filter. Clear search or switch filter.');return;}
+const selectedItem=items[0];$('name').textContent=lineup?'3D character lineup — '+(lineStart+1)+' to '+(lineStart+items.length):selectedItem.name;
+$('notes').textContent=lineup?'Each visible model is loaded from its actual GitHub export. Use Next group to inspect the rest.':selectedItem.note;
+$('source').href=url(selectedItem);$('source').textContent=lineup?'Open first model source':'Open source GLB on GitHub';
+$('diagnostic').textContent='';
+let failed=[];
+for(let i=0;i<items.length;i++){
+const item=items[i];if(token!==sequence)return;
+setStatus('Loading '+(i+1)+'/'+items.length+' · '+item.name+'…');
+try{
+const gltf=await loadAsset(item,token);
+if(token!==sequence){disposeObject(gltf.scene);return;}
+const node=gltf.scene;fitModel(item,node,i,items.length);group.add(node);shown.push(item);
+if(!lineup&&gltf.animations.length){const mixer=new THREE.AnimationMixer(node);mixers.push(mixer);actions=gltf.animations.map(x=>mixer.clipAction(x));$('clips').replaceChildren(new Option('No animation / rest pose',''));gltf.animations.forEach((c,i)=>$('clips').add(new Option(c.name||'Clip '+(i+1),String(i))));}
+}catch(e){failed.push(item.name+': '+String(e.message||e).slice(0,110));}
+}
+if(token!==sequence)return;
+fitCamera();
+shown.forEach(item=>{const s=document.createElement('span');s.textContent=item.name;$('labels').append(s);});
+let meshes=0,vertices=0,bones=0;
+group.traverse(o=>{if(o.isMesh){meshes++;vertices+=o.geometry?.attributes?.position?.count||0;}if(o.isBone)bones++;});
+$('diagnostic').textContent='Loaded: '+shown.length+'/'+items.length+' · '+meshes+' meshes · '+vertices.toLocaleString()+' vertices · '+bones+' bones'+(actions.length?' · '+actions.length+' exported clips':' · no animation clips in current export');
+if(failed.length)setStatus('Loaded '+shown.length+'/'+items.length+'. Problems: '+failed.join('; '));
+else setStatus('Ready · drag to rotate · pinch to zoom · '+shown.length+' real GitHub model'+(shown.length===1?'':'s'));
+renderList();
+if(!lineup){const p=new URL(location.href);p.searchParams.set('character',selectedItem.id);history.replaceState(null,'',p);}
+}
+function step(delta){if(lineup){const list=currentList();const size=window.innerWidth<=700?2:3;lineStart=(lineStart+delta*size+Math.max(1,list.length)*100)%Math.max(1,list.length);show();return;}
+const list=currentList();if(!list.length)return;let idx=list.findIndex(x=>x.id===DATA[selected].id);idx=(idx+delta+list.length)%list.length;selected=DATA.findIndex(x=>x.id===list[idx].id);show();}
+$('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
+$('lineup').onclick=()=>{lineup=!lineup;lineStart=0;const l=currentList(),idx=l.findIndex(x=>x.id===DATA[selected].id);if(idx>=0)lineStart=idx;show();};
+$('nextset').onclick=()=>step(1);$('front').onclick=()=>view('front');$('side').onclick=()=>view('side');$('back').onclick=()=>view('back');
+$('fit').onclick=fitCamera;$('fullscreen').onclick=()=>{if(!document.fullscreenElement)$('stage').requestFullscreen?.();else document.exitFullscreen?.();};
+$('spin').onclick=()=>{controls.autoRotate=!controls.autoRotate;$('spin').textContent='Auto rotate: '+(controls.autoRotate?'on':'off');};
+$('clips').onchange=()=>{actions.forEach(a=>a.stop());activeAction=null;const i=Number($('clips').value);if($('clips').value!==''&&actions[i]){activeAction=actions[i];activeAction.reset().play();$('pause').disabled=false;$('pause').textContent='Pause animation';}else $('pause').disabled=true;};
+$('pause').onclick=()=>{if(!activeAction)return;activeAction.paused=!activeAction.paused;$('pause').textContent=activeAction.paused?'Play animation':'Pause animation';};
+$('search').oninput=e=>{term=e.target.value.toLowerCase().trim();renderList();if(lineup){lineStart=0;show();}};
+$('tabs').onclick=e=>{const b=e.target.closest('button[data-filter]');if(!b)return;filter=b.dataset.filter;for(const x of $('tabs').querySelectorAll('button'))x.classList.toggle('active',x===b);renderList();if(lineup){lineStart=0;show();}};
+let visible=true;document.addEventListener('visibilitychange',()=>{visible=!document.hidden;clock.getDelta();});
+renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);if(!visible)return;for(const m of mixers)m.update(dt);controls.update();renderer.render(scene,camera);});
+window.addEventListener('error',e=>{if(!shown.length)setStatus('Viewer error: '+e.message);});
+renderList();show();
+</script>
+</body></html>
