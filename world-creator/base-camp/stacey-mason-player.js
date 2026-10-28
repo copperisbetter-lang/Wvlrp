@@ -8,6 +8,87 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
   scene.add(carrier);
   const state = {ready:false, avatar:'Mason', clothing:'loading', clips:[], error:null};
   let model=null, mixer=null, standing=null, clothing=null;
+  let footOriginY=0, gaitPhase=0, gaitBlend=0;
+  const gaitBones={};
+  const gaitRotation=new T.Quaternion();
+
+  // The five original Mason GLB clips are POSES, not walking animations.
+  // Use the actual 52-bone rig and derive each joint's local bend axis from
+  // the original Kneel clip, so glTF / Blender axis conversions stay correct.
+  // Drive the bones AFTER the Stand mixer update; leave the master GLB alone.
+  function configureGait(animations){
+    const norm=name=>String(name).toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^mixamorig/,'');
+    const bones=[];
+    model.traverse(o=>{if(o.isBone)bones.push(o);});
+    const kneel=animations.find(a=>/Mason Kneel/i.test(a.name));
+    const names={
+      leftThigh:['leftupleg','leftthigh','lthigh'],
+      rightThigh:['rightupleg','rightthigh','rthigh'],
+      leftShin:['leftleg','leftshin','lshin'],
+      rightShin:['rightleg','rightshin','rshin'],
+      leftArm:['leftarm','leftupperarm','lupperarm'],
+      rightArm:['rightarm','rightupperarm','rupperarm']
+    };
+    for(const [part,aliases] of Object.entries(names)){
+      const bone=bones.find(b=>aliases.some(alias=>norm(b.name).endsWith(alias)));
+      if(!bone)continue;
+      const track=kneel?.tracks.find(t=>
+        t.name.endsWith('.quaternion') &&
+        (norm(t.name.slice(0,-'.quaternion'.length))===norm(bone.name) ||
+         norm(t.name.slice(0,-'.quaternion'.length)).endsWith(norm(bone.name))));
+      // A nonzero pose delta yields the correct signed local joint axis
+      // even when the imported skeleton has rotated bone bases.
+      let axis=new T.Vector3(1,0,0);
+      if(track?.values?.length>=8){
+        const values=track.values;
+        const first=new T.Quaternion(...Array.from(values.slice(0,4))).normalize();
+        let best=0;
+        for(let i=4;i+3<values.length;i+=4){
+          const next=new T.Quaternion(values[i],values[i+1],values[i+2],values[i+3]).normalize();
+          const delta=first.clone().invert().multiply(next).normalize();
+          if(delta.w<0)delta.set(-delta.x,-delta.y,-delta.z,-delta.w);
+          const amount=delta.x*delta.x+delta.y*delta.y+delta.z*delta.z;
+          if(amount>best){
+            best=amount;
+            axis.set(delta.x,delta.y,delta.z).normalize();
+          }
+        }
+      }
+      gaitBones[part]={bone,axis};
+    }
+    const required=['leftThigh','rightThigh','leftShin','rightShin'];
+    state.gaitBones=Object.keys(gaitBones).map(part=>part+':'+gaitBones[part].bone.name);
+    state.gaitReady=required.every(part=>!!gaitBones[part]);
+    info['Mason gait']=state.gaitReady
+      ?'original hip/knee rig driven · walk/run · '+state.gaitBones.length+' bones'
+      :'missing leg joints: '+required.filter(part=>!gaitBones[part]).join(', ');
+    if(!state.gaitReady)diagnostics?.errors?.push('Mason gait rig incomplete');
+  }
+  function bend(part,angle){
+    const entry=gaitBones[part];
+    if(!entry)return;
+    gaitRotation.setFromAxisAngle(entry.axis,angle);
+    entry.bone.quaternion.multiply(gaitRotation).normalize();
+  }
+  function animateGait(dt,walking,running,sitting,flying,swimming,diving){
+    const grounded=walking&&!sitting&&!flying&&!swimming&&!diving;
+    const t=Math.max(0,Math.min(.05,dt));
+    gaitBlend+=(Number(grounded)-gaitBlend)*(1-Math.exp(-10*t));
+    if(!state.gaitReady||gaitBlend<.001)return;
+    if(grounded)gaitPhase+=t*(running?14.2:10.2);
+    const swing=Math.sin(gaitPhase), leftLift=Math.max(0,swing),rightLift=Math.max(0,-swing);
+    const stride=(running?.68:.41)*gaitBlend;
+    const knee=(running?.94:.55)*gaitBlend;
+    // Opposite, alternating thigh swing; only the advancing leg folds at
+    // the knee. Arms counter-swing to the legs. Standing blend returns joints
+    // smoothly to the GLB standing pose after movement ends.
+    bend('leftThigh',swing*stride);
+    bend('rightThigh',-swing*stride);
+    bend('leftShin',leftLift*knee);
+    bend('rightShin',rightLift*knee);
+    bend('leftArm',-swing*(running?.42:.24)*gaitBlend);
+    bend('rightArm',swing*(running?.42:.24)*gaitBlend);
+  }
   const info = diagnostics?.assets || {};
   info['Playable Mason']='loading original 52-bone GLB';
 
@@ -140,12 +221,20 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
       state.clothing='V8 skinned dark-denim shorts';
       state.clips=glb.animations.map(a=>a.name);
       mixer=new T.AnimationMixer(model);
+      configureGait(glb.animations);
       const stand=glb.animations.find(a=>/Mason Stand/i.test(a.name));
       if(stand){
         standing=mixer.clipAction(stand);
         standing.setLoop(T.LoopRepeat,Infinity);
         standing.play();
       }
+      // Anchor the lowest skinned foot to terrain, not an assumed mesh origin.
+      // The game's eye is already 1.7m above land; this offset eliminates
+      // gliding in the air on models whose GLB root is above the soles.
+      model.updateMatrixWorld(true);
+      const bodyBox=new T.Box3().setFromObject(model);
+      footOriginY=Number.isFinite(bodyBox.min.y)?bodyBox.min.y:0;
+      state.footOriginY=footOriginY;
       state.ready=true;
       info['Playable Mason']='ready · original GLB · V8 shorts · '+state.clips.length+' clips';
       window.staceyMason={state,carrier,model,clothing,clips:state.clips};
@@ -162,16 +251,14 @@ export function installMasonPlayer({T, GLTFLoader, scene, diagnostics}) {
     update({eye,yaw,dt,walking,running,sitting,flying,swimming,diving}){
       if(!state.ready)return;
       mixer?.update(Math.min(.05,Math.max(0,dt)));
+      animateGait(dt,walking,running,sitting,flying,swimming,diving);
       // Existing game physics uses camera-eye height (1.7m on dry land).
+      // Compensate for the GLB foot elevation rather than floating the feet
+      // above the collision floor. Never use a cosmetic up/down hover bob.
       const height=diving?1.4:swimming?1.0:sitting?1.05:1.7;
-      carrier.position.set(eye.x,eye.y-height,eye.z);
+      carrier.position.set(eye.x,eye.y-height-footOriginY,eye.z);
       // MPFB source faces +Z. Existing game forward at yaw 0 is -Z.
       carrier.rotation.y=Math.PI+yaw;
-      // Cosmetic bob only. True walking, running, swimming and sitting
-      // skeletal clips must be built separately before they can be enabled.
-      const moving=walking||running;
-      carrier.position.y+=moving&&!swimming&&!diving&&!flying&&!sitting
-        ?Math.sin(performance.now()*.001*(running?13:8))*.015:0;
       if(flying)carrier.rotation.x=-.15;else if(swimming||diving)carrier.rotation.x=-.20;else carrier.rotation.x=0;
     }
   };
