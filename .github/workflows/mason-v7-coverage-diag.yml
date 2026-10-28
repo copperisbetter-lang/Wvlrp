@@ -2,7 +2,7 @@ name: Mason V7 rear fabric topology diagnostic (isolated)
 on:
   push:
     branches: [gater/mason-shorts-rear-seam-v7-20261028]
-    paths: [.github/workflows/mason-v7-coverage-diag.yml]
+    paths: [.github/workflows/mason-v7-coverage-diag.yml, world-creator/mason-shorts-animations-viewer.html]
 permissions: {contents: read}
 jobs:
   inspect:
@@ -14,7 +14,23 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             world-creator/assets/mason-mpfb-trial.glb
+            world-creator/mason-shorts-animations-viewer.html
           sparse-checkout-cone-mode: false
+      - name: Check browser viewer JavaScript syntax
+        run: |
+          python3 - <<'PY2'
+          from pathlib import Path
+          p=Path('world-creator/mason-shorts-animations-viewer.html').read_text()
+          js=p.split('<script>')[-1].split('</script>')[0]
+          Path('/tmp/mason-v7.js').write_text(js)
+          assert 'MASON — SHORTS & ANIMATIONS · V7' in p
+          assert 'poly=clip(poly,v=>waistY-v.world[1])' in js
+          assert 'data.matricesWeights=wOut' in js
+          assert 'Mason V7 loaded' in js
+          print('SOURCE_ASSERTIONS PASS')
+          PY2
+          node --check /tmp/mason-v7.js
+          echo 'VIEWER_JS_SYNTAX PASS'
       - name: Check raw glTF skin/face coverage
         run: |
           python3 - <<'PY'
