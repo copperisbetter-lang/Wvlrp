@@ -1,7 +1,7 @@
 name: Stacey Lake Mason default-avatar isolated QA
 on:
   push:
-    branches: [gater/mason-default-stacey-game-20261028]
+    branches: [gater/mason-console-third-person-20261028]
     paths:
       - world-creator/base-camp/stacey-mason-player.js
       - world-creator/base-camp/stacey-dive.html
@@ -41,7 +41,10 @@ jobs:
           assert "import {installMasonPlayer} from './stacey-mason-player.js'" in inline
           assert "const playerAvatar='Mason';let chaseCamera=true;" in inline
           assert "masonPlayer.update({eye:pos,yaw,dt" in inline
-          assert 'id="viewMode"' in game
+          assert '<button id="viewMode"' in game and game.index('id="viewMode"') > game.index('id="actionConsole"')
+          assert game.count('id="viewMode"')==1
+          assert "viewButton.textContent=chaseCamera?'3RD" in inline
+          assert "window.staceyMason.model.visible=chaseCamera" in inline
           assert "if(new URLSearchParams(location.search).get('spawn')==='lake')" in inline
           assert 'const masonPlayer=installMasonPlayer' in inline
           assert 'installBass(' in inline and 'installStaceyFlatheads(' in inline
