@@ -790,8 +790,8 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
       // Uneven edges change down the fall; holes grow after the coherent crest.
       float ragged=.025+.085*mass.r*descent;
       float edge=smoothstep(ragged,ragged+.07,p.x)*(1.-smoothstep(1.-ragged-.07,1.-ragged,p.x));
-      float coherent=1.-smoothstep(.0,.30,descent);
-      float density=mix(.27+.24*broken,.055+.58*broken+.20*droplets,1.-coherent);
+      float crestContinuity=1.-smoothstep(.0,.30,descent);
+      float density=mix(.27+.24*broken,.055+.58*broken+.20*droplets,1.-crestContinuity);
       diffuseColor.a=edge*density*smoothstep(0.,.025,p.y);
      `:`
       // Sparse whitewater at shallow shelves; clear runs expose real stone below.
@@ -812,7 +812,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
      normal=normalize(normal+tangent*waveX+bitangent*waveY);
     `);
    };
-   mat.customProgramCacheKey=()=>downfall?'stacey-falling-water-r4':'stacey-clear-headwater-r3';
+   mat.customProgramCacheKey=()=>downfall?'stacey-falling-water-r4-1':'stacey-clear-headwater-r3';
   }
   return mat;
  }
@@ -1428,7 +1428,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Waterfalls R4 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Waterfalls R4 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Waterfalls R4.1 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Waterfalls R4.1 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
