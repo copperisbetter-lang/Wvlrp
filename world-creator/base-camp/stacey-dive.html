@@ -122,22 +122,20 @@ function mountainGround(x,z,h){
  }
  const cap=smooth(-63,-52,x)*(1-smooth(-11,-4,x))*(1-smooth(5,13,Math.abs(z-CZ)));
  h+=Math.max(0,hiddenCave.floor+12-h)*cap; // cover tunnel, leave door intact
- // Build a solid watercourse in the actual uphill rock, not a floating water mesh.
- const run=smooth(-39,-35,x)*(1-smooth(-7.1,-5.5,x));
+ // A single elevation profile drives both the excavation and visible water.
+ const run=smooth(-39.8,-38.4,x)*(1-smooth(-7.3,-5.5,x));
  if(run<=0)return h;
- const t=T.MathUtils.clamp((x+36)/28.7,0,1),waterY=T.MathUtils.lerp(21.30,12.04,t);
- const spread=smooth(-19.5,-10,x)*3.81;
- const sourceZ=CZ+.32*Math.sin(t*2.8);
- const lateral=x<-19.5?Math.abs(z-sourceZ):
-   Math.min(Math.abs(z-CZ-spread),Math.abs(z-CZ+spread));
- // Wide trunk, then two separately carved narrow beds past the splitting boulder.
- // Bed width tracks the actual 8.8–8.2m water strip, then the two 2.5–2.6m branches.
- const fork=smooth(-17,-9.5,x);
- const fullBed=T.MathUtils.lerp(4.5,1.45,fork);
- const bankEdge=T.MathUtils.lerp(6.4,3.2,fork);
- const outerBank=T.MathUtils.lerp(14.0,5.5,fork);
- const bed=waterY-.18,bank=1-smooth(bankEdge,outerBank,lateral),channel=1-smooth(fullBed,bankEdge,lateral);
- h=T.MathUtils.lerp(h,Math.max(h,bed+.92+.18*Math.sin(x*.17+z*.26)),run*bank);
+ const t=T.MathUtils.clamp((x+36)/17.4,0,1);
+ const branchT=T.MathUtils.clamp((x+18.6)/11.3057,0,1);
+ const waterY=x<=-18.6?T.MathUtils.lerp(21.34,15.49,t):T.MathUtils.lerp(15.49,12.04,branchT);
+ const spread=T.MathUtils.lerp(1.1,3.81,smooth(0,1,branchT));
+ const center=CZ+.32*Math.sin(t*2.8);
+ const lateral=x<-18.6?Math.abs(z-center):Math.min(Math.abs(z-CZ-spread),Math.abs(z-CZ+spread));
+ const half=x<-18.6?T.MathUtils.lerp(4.4,4.1,t):T.MathUtils.lerp(1.1,1.3,branchT);
+ const bed=waterY-.48;
+ const bankBlend=1-smooth(half+.35,half+4.5,lateral);
+ const channel=1-smooth(half-.1,half+.65,lateral);
+ h=T.MathUtils.lerp(h,Math.min(h,waterY+.7),run*bankBlend);
  return T.MathUtils.lerp(h,bed,run*channel);
 }
 function naturalGround(x,z){
@@ -291,7 +289,26 @@ mat.onBeforeCompile=s=>{
    '#include <alphatest_fragment>\n'+cavernTerrainClip);
 };
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
-const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
+const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}// Refine the source/stream region with conforming edge interpolation.
+const refinedIds=[];
+for(let tri=0;tri<ids.length;tri+=3){
+ const corners=ids.slice(tri,tri+3).map(i=>positions.slice(i*3,i*3+3));
+ if(!corners.some(p=>p[0]>-44&&p[0]<-5&&Math.abs(p[2]-CZ)<17)){refinedIds.push(...ids.slice(tri,tri+3));continue;}
+ const n=6,grid=[];
+ for(let u=0;u<=n;u++){grid[u]=[];for(let v=0;v<=n-u;v++){
+  const w=[1-(u+v)/n,u/n,v/n];const x=corners.reduce((s,p,i)=>s+p[0]*w[i],0),z=corners.reduce((s,p,i)=>s+p[2]*w[i],0);
+  const linear=corners.reduce((s,p,i)=>s+p[1]*w[i],0);
+  const edge=Math.min(...w),blend=smooth(0,.16,edge);
+  const y=T.MathUtils.lerp(linear,ground(x,z),blend);
+  grid[u][v]=positions.length/3;positions.push(x,y,z);uvs.push(x/10,z/10);
+ }}
+ for(let u=0;u<n;u++)for(let v=0;v<n-u;v++){
+  refinedIds.push(grid[u][v],grid[u+1][v],grid[u][v+1]);
+  if(v<n-u-1)refinedIds.push(grid[u+1][v],grid[u+1][v+1],grid[u][v+1]);
+ }
+}
+ids.length=0;for(const index of refinedIds)ids.push(index);
+const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
 // A path overlay 2cm above analytic ground was invisible where the drawn
 // terrain's larger triangles crossed ABOVE the overlay. Use those exact triangles
 // to place photographs just above visible terrain, keeping collisions unchanged.
@@ -725,6 +742,15 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;\n'
        +shader.fragmentShader.replace('#include <map_fragment>',code);
   };
+  const compileFlow=mat.onBeforeCompile;
+  mat.onBeforeCompile=shader=>{
+   compileFlow(shader);
+   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+    vec2 flowP=flowUV*vec2(9.,18.);
+    vec3 rippleNormal=vec3(cos(flowP.x+flowP.y-flowTime*.9),sin(flowP.y*1.7+flowP.x*.6-flowTime*1.4),0.);
+    normal=normalize(normal+rippleNormal*.075);
+   `);
+  };
   mat.customProgramCacheKey=()=>headwater?'stacey-headwater-realism-r1':downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v12-lake-palette-gradient';
   return mat;
  }
@@ -735,20 +761,20 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   const startX=-36,splitX=-17.6,lipX=wallX+21-5-1.05;
   const flowMeshes=[];
   function strip(points,label){
-   const vert=[],uv=[],ix=[];
+   const vert=[],uv=[],ix=[],cross=10;
    for(let i=0;i<points.length;i++){
     const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];
     const dx=b.x-a.x,dz=b.z-a.z,d=Math.max(.001,Math.hypot(dx,dz));
-    for(const side of [-1,1]){
-     vert.push(p.x-dz/d*p.w*side*.5,p.y,p.z+dx/d*p.w*side*.5);
-     uv.push(side<0?0:1,i/(points.length-1)*1.7);
+    for(let j=0;j<=cross;j++){
+     const q=j/cross*2-1;
+     const edgeWarp=.07*Math.sin(p.x*1.9+q*3.1)*Math.sin(Math.PI*i/(points.length-1));
+     vert.push(p.x-dz/d*(p.w*.5+edgeWarp)*q,p.y+.012*Math.sin(i*1.7+j*.9)*Math.sin(Math.PI*j/cross),p.z+dx/d*(p.w*.5+edgeWarp)*q);
+     uv.push(j/cross,i/(points.length-1)*1.7);
+     if(i<points.length-1&&j<cross){const k=i*(cross+1)+j;ix.push(k,k+cross+1,k+1,k+1,k+cross+1,k+cross+2);}
     }
-    if(i<points.length-1){const j=i*2;ix.push(j,j+2,j+1,j+1,j+2,j+3);}
    }
-   const g=new T.BufferGeometry();
-   g.setAttribute('position',new T.Float32BufferAttribute(vert,3));
-   g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
-   g.setIndex(ix);g.computeVertexNormals();
+   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vert,3));
+   g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(ix);g.computeVertexNormals();
    const m=new T.Mesh(g,headwaterFlow);m.name=label;group.add(m);flowMeshes.push(m);
   }
   const trunk=[];
@@ -765,7 +791,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    for(let i=0;i<=20;i++){
     const t=i/20;
     branch.push({x:T.MathUtils.lerp(splitX-1,lipX,t),
-      y:T.MathUtils.lerp(15.50,CY+17.5,t)+.04,
+      y:T.MathUtils.lerp(15.49,CY+17.54,t),
       z:CZ+side*T.MathUtils.lerp(1.1,3.81,smooth(0,1,t)),
       w:T.MathUtils.lerp(2.2,side>0?2.5:2.6,t)});
    }
@@ -1321,7 +1347,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Water Realism R1 · Rock Inlet V16 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Watercourse R2 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Watercourse R2 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
