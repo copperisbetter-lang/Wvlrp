@@ -1577,7 +1577,7 @@ const viewButton=document.querySelector('#viewMode');
 function syncPlayerCamera(){
  if(chaseCamera){
   const distance=depthMode==='dive'?2.6:4.4;
-  const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
+  const followX=pos.x-Math.sin(yaw)*distance,followZ=pos.z-Math.cos(yaw)*distance;
   const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
   const safeY=depthMode==='dive'?followY:Math.max(followY,ground(followX,followZ)+1.15);
   camera.position.set(followX,safeY,followZ);
