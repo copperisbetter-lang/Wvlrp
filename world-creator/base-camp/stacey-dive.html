@@ -752,6 +752,56 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    `);
   };
   mat.customProgramCacheKey=()=>headwater?'stacey-headwater-realism-r1':downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v12-lake-palette-gradient';
+  if(downfall||headwater){
+   mat.roughness=downfall?.22:.16;mat.emissiveIntensity=0;
+   mat.opacity=1;
+   mat.onBeforeCompile=shader=>{
+    shader.uniforms.flowTime=flowUniform;shader.uniforms.rapidMap={value:rapidMap};
+    shader.vertexShader='uniform float flowTime;varying vec2 flowUV;varying vec3 flowWorld;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+     flowUV=uv;
+     ${downfall?`float pin=sin(clamp(uv.y,0.,1.)*3.14159265);
+     transformed.x+=pin*(.045*sin(uv.y*39.+uv.x*9.+flowTime*3.1)+.025*sin(uv.y*67.-flowTime*4.3));`:''}
+     flowWorld=(modelMatrix*vec4(transformed,1.)).xyz;
+    `);
+    shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;varying vec3 flowWorld;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
+     vec2 p=flowUV;
+     // The square-root travel coordinate makes texture motion accelerate downward.
+     float travel=${downfall?'sqrt(max(.015,1.-p.y))':'p.y'};
+     float clock=flowTime*${downfall?'.68':'-.24'};
+     vec2 flowA=vec2(p.x*2.7+.035*sin(p.y*23.+flowTime*.6),${downfall?'-travel':'travel'}*3.5+clock);
+     vec4 noiseA=texture2D(rapidMap,flowA);
+     vec4 noiseB=texture2D(rapidMap,flowA*vec2(1.91,1.37)+vec2(.41,-clock*.27));
+     float turbulence=noiseA.r*.64+noiseB.r*.36;
+     float rim=smoothstep(.0,.055,p.x)*(1.-smoothstep(.945,1.,p.x));
+     ${downfall?`
+      float breakup=smoothstep(.26,.62,turbulence);
+      float impact=1.-smoothstep(.03,.28,p.y);
+      float aeration=smoothstep(.46,.75,turbulence)*(.50+.50*(1.-p.y));
+      diffuseColor.rgb=mix(vec3(.12,.27,.28),vec3(.82,.89,.88),aeration);
+      diffuseColor.a= rim*(.10+.62*breakup+.19*impact)*smoothstep(0.,.018,p.y);
+     `:`
+      // Sparse whitewater at shallow shelves; clear runs expose real stone below.
+      float shelf=pow(.5+.5*sin(flowWorld.x*2.05+sin(flowWorld.z*1.4)*.8),14.);
+      float bank=pow(abs(p.x*2.-1.),5.);
+      float foam=smoothstep(.55,.77,turbulence)*clamp(shelf*.82+bank*.45,.0,1.);
+      diffuseColor.rgb=mix(vec3(.065,.22,.20),vec3(.79,.87,.84),foam);
+      diffuseColor.a=rim*(.22+.13*noiseA.r+foam*.52);
+     `}
+    `);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+     // Derivative-based tangent frame makes ripple highlights follow the actual surface.
+     vec3 tangent=normalize(dFdx(vViewPosition));
+     vec3 bitangent=normalize(cross(normal,tangent));
+     vec2 nUV=flowUV*vec2(17.,31.);
+     float waveX=cos(nUV.x+nUV.y*.7-flowTime*1.7)*.055+cos(nUV.x*2.3-nUV.y+flowTime*2.1)*.025;
+     float waveY=sin(nUV.y*1.4+nUV.x*.4-flowTime*2.3)*.075;
+     normal=normalize(normal+tangent*waveX+bitangent*waveY);
+    `);
+   };
+   mat.customProgramCacheKey=()=>downfall?'stacey-falling-water-r3':'stacey-clear-headwater-r3';
+  }
   return mat;
  }
  const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false),headwaterFlow=makeRapidMaterial(false,true);
@@ -837,6 +887,23 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    const crestTuck=smooth(.82,1,t)*(rightFall?1.0:1.1); // both upper lips tucked into stone
    a.setXYZ(k,wallX+21-5*t-crestTuck+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+lateral*3),T.MathUtils.lerp(pondY,top,t),center+warped);
   }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
+  const strandV=[],strandUV=[],strandI=[];
+  for(let strand=0;strand<7;strand++){
+   const offset=(strand/6-.5)*width*.87;
+   const half=.055+.025*(.5+.5*Math.sin(strand*3.7+fall));
+   for(let row=0;row<=48;row++){
+    const t=row/48,crestTuck=smooth(.82,1,t)*(rightFall?1.:1.1);
+    const x=wallX+21-5*t-crestTuck+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+offset*3)+.08*Math.sin(Math.PI*t);
+    const z=center+offset*(1+.14*(1-t))+.18*Math.sin(t*24+fall*2.6)+.12*Math.sin(t*53+offset*2.4);
+    for(const side of [-1,1]){strandV.push(x,T.MathUtils.lerp(pondY,top,t),z+side*half);strandUV.push(side<0?0:1,t);}
+    if(row<48){const k=strand*98+row*2;strandI.push(k,k+2,k+1,k+1,k+2,k+3);}
+   }
+  }
+  const strands=new T.BufferGeometry();strands.setAttribute('position',new T.Float32BufferAttribute(strandV,3));
+  strands.setAttribute('uv',new T.Float32BufferAttribute(strandUV,2));strands.setIndex(strandI);strands.computeVertexNormals();
+  const strandMat=falling.clone();strandMat.onBeforeCompile=falling.onBeforeCompile;strandMat.customProgramCacheKey=falling.customProgramCacheKey;
+  const threads=new T.Mesh(strands,strandMat);threads.name='Broken falling rivulets '+fall;group.add(threads);
+
   for(let n=0;n<2;n++){
    const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.32}));
    spr.position.set(wallX+21.5,pondY+.72+n*.47,center+(n?.29:-.29));
@@ -848,6 +915,20 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    ring.rotation.x=-Math.PI/2;ring.position.set(wallX+21,pondY+.035+n*.008,center);
    group.add(ring);impacts.push({mesh:ring,phase:n/4});
   }
+ }
+ const dropletCount=96,dropletPos=new Float32Array(dropletCount*3);
+ const dropletGeo=new T.BufferGeometry();dropletGeo.setAttribute('position',new T.BufferAttribute(dropletPos,3));
+ const droplets=new T.Points(dropletGeo,new T.PointsMaterial({map:sprayMap,color:0xd6e9e5,size:.10,transparent:true,opacity:.42,depthWrite:false,sizeAttenuation:true}));
+ droplets.name='Twin fall impact droplets';droplets.frustumCulled=false;group.add(droplets);
+ function updateDroplets(time){
+  for(let i=0;i<dropletCount;i++){
+   const phase=(time*.77+i*.61803398875)%1,age=phase*.83;
+   const angle=i*2.39996323,speed=.7+(i%7)*.15;
+   dropletPos[i*3]=wallX+21+Math.cos(angle)*speed*age;
+   dropletPos[i*3+1]=pondY+.08+(2.0+(i%5)*.18)*age-4.9*age*age;
+   dropletPos[i*3+2]=CZ+(i%2?-3.81:3.81)+Math.sin(angle)*speed*age;
+  }
+  dropletGeo.attributes.position.needsUpdate=true;
  }
  const cv=[],ci=[],cu=[];
  for(let n=0;n<=64;n++){
@@ -872,8 +953,8 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
- window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
- diag.assets['waterfall cliff']='V10 falling sheets unchanged; creekwater blends slowly to lake V12';
+ window.staceyWaterfall={update(t){flowUniform.value=t;updateDroplets(t);for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
+ diag.assets['waterfall cliff']='R3 translucent accelerating twin falls, clear upstream runs, impact droplets';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
  // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
@@ -1347,7 +1428,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Watercourse R2 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Watercourse R2 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Falls & Stream R3 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Falls & Stream R3 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
