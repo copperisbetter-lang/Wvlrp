@@ -58,7 +58,7 @@ def main():
         raise RuntimeError("FLAT03_RIM must match exactly one real topological open boundary component")
     if len([n for n in ids if sum(n in e for e in edges)!=2]):
         raise RuntimeError("Rim is not a single closed 2-valent loop")
-    pts=[insert.matrix_world @ insert.data.vertices[i].co for i in ids]
+    pts=[insert.matrix_world @ insert.data.vertices[i].co for i in sorted(ids)]
     tree=KDTree(len(body.data.vertices))
     for v in body.data.vertices:tree.insert(body.matrix_world @ v.co,v.index)
     tree.balance()
@@ -73,6 +73,9 @@ def main():
             "note":"Nearest vertex gap is only a preflight, not a proof of watertight attachment. Cutting needs ordered border correspondence and validated body surface patch."}
     if max(mm)<=a.max_gap_mm:
         report["status"]="PREFLIGHT_PASS_READY_FOR_EXACT_SURFACE_CUT"
+    report["boundary_components_total"]=len(comps)
+    report["body_mesh_unchanged"]=True
+    report["geometry_operations_performed"]=0
     Path(a.output).parent.mkdir(parents=True,exist_ok=True)
     Path(a.output).write_text(json.dumps(report,indent=2))
     print("BEV_FLAT03_EXACT_RIM",json.dumps(report))
