@@ -27,7 +27,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   // Photographic relief and world-space wetness remain continuous across
   // separate stones; lower faces darken and polish where flow touches them.
   for(const material of [rockMaterial,darkerRock,bedMaterial]){
-    material.bumpMap=material.map;material.bumpScale=.075;
+    // Triplanar color avoids UV distortion; geometry supplies relief.
     material.onBeforeCompile=shader=>{
       shader.vertexShader='varying vec3 wetRockWorld;\n'+shader.vertexShader.replace('#include <worldpos_vertex>',`#include <worldpos_vertex>
        vec4 wetPoint=vec4(transformed,1.);
@@ -37,6 +37,15 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
        wetRockWorld=(modelMatrix*wetPoint).xyz;
       `);
       shader.fragmentShader='varying vec3 wetRockWorld;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
+       #ifdef USE_MAP
+        vec3 weights=pow(abs(normalize(cross(dFdx(wetRockWorld),dFdy(wetRockWorld)))),vec3(4.));
+        weights/=max(dot(weights,vec3(1.)),.001);
+        vec3 rp=wetRockWorld*.38;
+        vec4 rockSample=texture2D(map,rp.yz)*weights.x+texture2D(map,rp.xz)*weights.y+texture2D(map,rp.xy)*weights.z;
+        diffuseColor*=rockSample;
+       #endif
+      `);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
        float rockT=clamp((wetRockWorld.x+36.)/28.7,0.,1.);
        float waterHeight=mix(21.30,12.04,rockT);
@@ -71,9 +80,9 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
       `  // V16 Android fix: clip ONLY the stone-level river inlet.
   // V15 cut a >7m-long, >4m-high hole in the terrain shader, creating a
   // broad unsupported black undercut. Leave most of the mountain SOLID.
-  float inletAx=smoothstep(-38.85,-38.22,vGround.x)*(1.-smoothstep(-36.10,-35.52,vGround.x));
+  float inletAx=smoothstep(-40.6,-40.0,vGround.x)*(1.-smoothstep(-35.8,-35.2,vGround.x));
   float inletZ=abs(vGround.z+240.+.12*sin(vGround.x*1.37+vGround.z*.47));
-  float inletRoof=22.95+.22*sin(vGround.z*1.48+vGround.x*.76);
+  float inletRoof=23.8+.25*cos((vGround.z+240.)*.7)+.12*sin(vGround.z*2.3);
   float inletFloor=20.79+.08*sin(vGround.z*1.12-vGround.x*.45);
   float inletHalf=4.34+.17*sin(vGround.z*1.93-vGround.x*.52);
   if(inletAx>.52 && inletZ<inletHalf && vGround.y>inletFloor && vGround.y<inletRoof) discard;
@@ -89,7 +98,11 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   float spRockWidth=mix(6.2,3.0,spFork);
   float spRough=.36*sin(vGround.x*.89+vGround.z*1.16)+.24*sin(vGround.x*2.1-vGround.z*.61);
   float spMask=spRun*(1.-smoothstep(spRockWidth-1.2,spRockWidth+4.5,spSide+spRough));
-  vec3 springDry=texture2D(springBedPhoto,vGround.xz*.25).rgb;
+  vec3 spN=abs(normalize(cross(dFdx(vGround),dFdy(vGround))));
+  spN=pow(spN,vec3(4.));spN/=max(dot(spN,vec3(1.)),.001);
+  vec3 springDry=texture2D(springBedPhoto,vGround.yz*.32).rgb*spN.x
+   +texture2D(springBedPhoto,vGround.xz*.32).rgb*spN.y
+   +texture2D(springBedPhoto,vGround.xy*.32).rgb*spN.z;
   c=mix(c,springDry*vec3(.85,.87,.83),spMask);
 `+anchor);
   };
@@ -118,7 +131,10 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
         const rough=.105*Math.sin(x*1.71+z*.83)*Math.sin(z*1.19-x*.37)*smooth(.35,.75,edge);
         const center=.028*(1-smooth(.32,.63,edge));
         const edgeBury=.40*smooth(.78,1,edge)+.13*(1-endFade)*smooth(.45,.98,edge);
-        const y=ground(x,z)+bankRidge+rough+center-edgeBury;
+        const flowBed=p.y-.35+.035*Math.sin(x*2.2+z*1.4);
+        const waterHalf=p.w*.5;
+        const waterMask=1-smooth(waterHalf+.05,waterHalf+.85,Math.abs(shoulder*q));
+        const y=T.MathUtils.lerp(ground(x,z)+bankRidge+rough+center-edgeBury,flowBed,waterMask);
         v.push(x,y,z);uv.push(x*.28,z*.28);
         if(i<line.length-1&&j<cross){
           const k=i*(cross+1)+j;
@@ -139,9 +155,9 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   // recess. Same water material, same width/y as the preserved V11 source.
   const riverHead=group.children.find(o=>o.name==='Single mountain spring stream before boulder');
   if(riverHead && riverHead.material){
-    const sourcePositions=[],sourceUV=[],sourceIndices=[],rows=24;
+    const sourcePositions=[],sourceUV=[],sourceIndices=[],rows=36;
     for(let i=0;i<=rows;i++){
-      const t=i/rows,wx=startX-2.35+2.35*t,wz=CZ+.07*Math.sin(t*1.7);
+      const t=i/rows,wx=startX-4.0+4.0*t,wz=CZ+.07*Math.sin(t*1.7);
       // V16: real existing water runs out of the face, gently widening into
       // the full 8.8m trunk with uneven natural bank lines, not a square patch.
       const halfWidth=4.04+.35*t+.055*Math.sin(t*11.4)*(1-t);
@@ -180,7 +196,7 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   capRockGeo.computeVertexNormals();
   // A recessed irregular *stone* spring, with its blackness BEHIND the rock,
   // never a large flat, perfectly elliptical cap visible from overhead.
-  const shadowX=startX-2.60,shadowY=20.77;
+  const shadowX=startX-4.15,shadowY=20.77;
   const outline=[
     [-4.75,20.77],[-4.64,22.22],[-4.23,22.87],[-3.60,23.23],
     [-2.85,23.78],[-2.10,23.57],[-1.39,23.99],[-.54,23.69],
@@ -201,6 +217,20 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     map:rockPhoto,color:0x676e67,roughness:1,metalness:0,side:T.DoubleSide,depthWrite:true
   }));
   recess.name='Uneven narrow spring recess behind real stones';grotto.add(recess);
+  const tunnelV=[],tunnelUV=[],tunnelI=[],depthRows=18,arcSegments=36;
+  for(let r=0;r<=depthRows;r++)for(let j=0;j<=arcSegments;j++){
+   const t=r/depthRows,a=j/arcSegments*Math.PI;
+   const x=startX+.15-4.3*t;
+   const width=4.52-.14*t;
+   const z=CZ+Math.cos(a)*width;
+   const y=20.78+3.32*Math.pow(Math.sin(a),.68)+.10*Math.sin(a*9+t*7)*Math.sin(a);
+   tunnelV.push(x,y,z);tunnelUV.push(x*.35,a*1.5);
+   if(r<depthRows&&j<arcSegments){const k=r*(arcSegments+1)+j;tunnelI.push(k,k+1,k+arcSegments+1,k+1,k+arcSegments+2,k+arcSegments+1);}
+  }
+  const tunnelGeo=new T.BufferGeometry();tunnelGeo.setAttribute('position',new T.Float32BufferAttribute(tunnelV,3));
+  tunnelGeo.setAttribute('uv',new T.Float32BufferAttribute(tunnelUV,2));tunnelGeo.setIndex(tunnelI);tunnelGeo.computeVertexNormals();
+  const lining=new T.Mesh(tunnelGeo,darkerRock);lining.name='Recessed stone source walls and ceiling, four meters deep';grotto.add(lining);
+
   // NEVER span the opening with a row of disconnected floating rocks.
   // The river emerges from the actual hillside between two banks, each made
   // of small embedded native stones; the center 9m stays fully open for water.
