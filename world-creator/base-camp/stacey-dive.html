@@ -761,7 +761,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
      flowUV=uv;
      ${downfall?`float pin=sin(clamp(uv.y,0.,1.)*3.14159265);
-     transformed.x+=pin*(.045*sin(uv.y*39.+uv.x*9.+flowTime*3.1)+.025*sin(uv.y*67.-flowTime*4.3));`:''}
+     transformed.x+=pin*(.012*sin(uv.y*57.+uv.x*17.+flowTime*5.1)+.008*sin(uv.y*93.-flowTime*6.3));`:''}
      flowWorld=(modelMatrix*vec4(transformed,1.)).xyz;
     `);
     shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;varying vec3 flowWorld;\n'+shader.fragmentShader;
@@ -776,11 +776,23 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
      float turbulence=noiseA.r*.64+noiseB.r*.36;
      float rim=smoothstep(.0,.055,p.x)*(1.-smoothstep(.945,1.,p.x));
      ${downfall?`
-      float breakup=smoothstep(.26,.62,turbulence);
-      float impact=1.-smoothstep(.03,.28,p.y);
-      float aeration=smoothstep(.46,.75,turbulence)*(.50+.50*(1.-p.y));
-      diffuseColor.rgb=mix(vec3(.12,.27,.28),vec3(.82,.89,.88),aeration);
-      diffuseColor.a= rim*(.10+.62*breakup+.19*impact)*smoothstep(0.,.018,p.y);
+      // Broad irregular volume plus small fast droplets, not seven opaque ribbons.
+      vec4 mass=texture2D(rapidMap,vec2(p.x*.83+.23,-travel*1.9+clock*.92));
+      vec4 fine=texture2D(rapidMap,vec2(p.x*7.7+.17,-travel*13.+clock*4.7));
+      float descent=1.-p.y;
+      float impact=1.-smoothstep(.02,.24,p.y);
+      float broken=smoothstep(.30,.68,mass.r*.63+noiseB.r*.37);
+      float droplets=smoothstep(.43,.73,fine.r)*smoothstep(.15,.84,descent);
+      float aeration=clamp(smoothstep(.40,.73,turbulence)*(.20+.64*descent)+droplets*.35+impact*.12,0.,.88);
+      vec3 clearFall=vec3(.065,.13,.14);
+      vec3 whiteWater=vec3(.59,.68,.68);
+      diffuseColor.rgb=mix(clearFall,whiteWater,aeration);
+      // Uneven edges change down the fall; holes grow after the coherent crest.
+      float ragged=.025+.085*mass.r*descent;
+      float edge=smoothstep(ragged,ragged+.07,p.x)*(1.-smoothstep(1.-ragged-.07,1.-ragged,p.x));
+      float coherent=1.-smoothstep(.0,.30,descent);
+      float density=mix(.27+.24*broken,.055+.58*broken+.20*droplets,1.-coherent);
+      diffuseColor.a=edge*density*smoothstep(0.,.025,p.y);
      `:`
       // Sparse whitewater at shallow shelves; clear runs expose real stone below.
       float shelf=pow(.5+.5*sin(flowWorld.x*2.05+sin(flowWorld.z*1.4)*.8),14.);
@@ -800,7 +812,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
      normal=normalize(normal+tangent*waveX+bitangent*waveY);
     `);
    };
-   mat.customProgramCacheKey=()=>downfall?'stacey-falling-water-r3':'stacey-clear-headwater-r3';
+   mat.customProgramCacheKey=()=>downfall?'stacey-falling-water-r4':'stacey-clear-headwater-r3';
   }
   return mat;
  }
@@ -880,34 +892,22 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   const rightFall=fall===0;
   const center=CZ+(rightFall?-3.81:3.81),width=rightFall?3.0:2.5;
   const top=CY+(rightFall?17.4:17.6); // left lowered 1.7 m to match seated right crest
-  const g=new T.PlaneGeometry(width,1,8,48),a=g.attributes.position;
+  const g=new T.PlaneGeometry(width,1,18,72),a=g.attributes.position;
   for(let k=0;k<a.count;k++){
    const lateral=a.getX(k),t=a.getY(k)+.5;
-   const warped=lateral*(1+.14*(1-t))+.18*Math.sin(t*24.+fall*2.6)+.12*Math.sin(t*53.+lateral*2.4);
-   const crestTuck=smooth(.82,1,t)*(rightFall?1.0:1.1); // both upper lips tucked into stone
-   a.setXYZ(k,wallX+21-5*t-crestTuck+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+lateral*3),T.MathUtils.lerp(pondY,top,t),center+warped);
+   const descent=1-t;
+   // Anchored lip and impact, smooth gravity-directed trajectory with no serpentine sheet.
+   const topX=wallX+16-(rightFall?1.0:1.1),bottomX=wallX+21;
+   const travel=(Math.sqrt(.045+descent)-Math.sqrt(.045))/(Math.sqrt(1.045)-Math.sqrt(.045));
+   const x=T.MathUtils.lerp(topX,bottomX,travel);
+   const fringe=.024*Math.sin(lateral*17+fall*2.3)*descent;
+   const warped=lateral*(1+.17*descent)+fringe;
+   a.setXYZ(k,x,T.MathUtils.lerp(pondY,top,t),center+warped);
   }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
-  const strandV=[],strandUV=[],strandI=[];
-  for(let strand=0;strand<7;strand++){
-   const offset=(strand/6-.5)*width*.87;
-   const half=.055+.025*(.5+.5*Math.sin(strand*3.7+fall));
-   for(let row=0;row<=48;row++){
-    const t=row/48,crestTuck=smooth(.82,1,t)*(rightFall?1.:1.1);
-    const x=wallX+21-5*t-crestTuck+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+offset*3)+.08*Math.sin(Math.PI*t);
-    const z=center+offset*(1+.14*(1-t))+.18*Math.sin(t*24+fall*2.6)+.12*Math.sin(t*53+offset*2.4);
-    for(const side of [-1,1]){strandV.push(x,T.MathUtils.lerp(pondY,top,t),z+side*half);strandUV.push(side<0?0:1,t);}
-    if(row<48){const k=strand*98+row*2;strandI.push(k,k+2,k+1,k+1,k+2,k+3);}
-   }
-  }
-  const strands=new T.BufferGeometry();strands.setAttribute('position',new T.Float32BufferAttribute(strandV,3));
-  strands.setAttribute('uv',new T.Float32BufferAttribute(strandUV,2));strands.setIndex(strandI);strands.computeVertexNormals();
-  const strandMat=falling.clone();strandMat.onBeforeCompile=falling.onBeforeCompile;strandMat.customProgramCacheKey=falling.customProgramCacheKey;
-  const threads=new T.Mesh(strands,strandMat);threads.name='Broken falling rivulets '+fall;group.add(threads);
-
   for(let n=0;n<2;n++){
    const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.32}));
    spr.position.set(wallX+21.5,pondY+.72+n*.47,center+(n?.29:-.29));
-   spr.scale.set(width*(n?1.1:1.75),n?1.6:2.1,1);
+   spr.scale.set(width*(n?1.25:1.9),n?1.85:1.7,1);
    group.add(spr);sprays.push({mesh:spr,phase:fall*1.7+n*1.2,baseY:spr.position.y});
   }
   for(let n=0;n<4;n++){
@@ -953,7 +953,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
- window.staceyWaterfall={update(t){flowUniform.value=t;updateDroplets(t);for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
+ window.staceyWaterfall={update(t){flowUniform.value=t;updateDroplets(t);for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.17+.045*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
  diag.assets['waterfall cliff']='R3 translucent accelerating twin falls, clear upstream runs, impact droplets';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
@@ -1428,7 +1428,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Falls & Stream R3 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Falls & Stream R3 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Waterfalls R4 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Waterfalls R4 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
