@@ -1414,6 +1414,49 @@ function solidCliffStep(x0,z0,x1,z1,feet){
  if(found.onTop)stoneStats.roofSteps++;
  return {x,z,floor:found.floor};
 }
+// R11: safe, dry landing at the OUTWARD shore of the small twin waterfall pond.
+// Search near the water first. Never start inside the real scanned V6 rock,
+// in either the pond or the outgoing stream, or atop a steep rock lip.
+function findSafePondLanding(){
+ const candidates=[
+  [10.8,10.5],[11.7,11.5],[10.4,-10.5],[12.2,-11.8],
+  [13.3,12.7],[13.5,-12.7],[14.9,13.8],[14.9,-13.8],
+  [12.5,16],[15.7,16.7],[16.4,-16.3],[17.5,11],[17.5,-11],
+  [19,18],[20.5,14],[22,-14]
+ ];
+ const check=(x,z)=>{
+  const h=ground(x,z);
+  if(!Number.isFinite(h)||h<pondY+.20)return null;
+  if(Math.hypot((x-pondX)/8,(z-CZ)/17)<1.31)return null;
+  // Also keep the third-person follow camera clear behind Mason.
+  const footprints=[[0,0],[1.4,0],[-1.4,0],[0,1.4],[0,-1.4],
+    [1,1],[1,-1],[-1,1],[-1,-1],[4.4,0]];
+  let rough=0;
+  for(const [dx,dz] of footprints){
+   const xx=x+dx,zz=z+dz,hh=ground(xx,zz);
+   if(!Number.isFinite(hh)||hh<pondY-.2)return null;
+   if(rockColumn(xx,zz))return null;
+   const c=cliffContact(xx,zz,hh);
+   if(c.solid||c.onTop||c.cave)return null;
+   if(Math.abs(dx)<2&&Math.abs(dz)<2)
+    rough=Math.max(rough,Math.abs(hh-h));
+  }
+  if(rough>1.8)return null;
+  return {x,z,ground:h,rough,rockChecked:stoneReady};
+ };
+ for(const [dx,dz] of candidates){
+  const point=check(pondX+dx,CZ+dz);
+  if(point)return point;
+ }
+ // If later canyon versions add rocks near the bank, look farther out.
+ for(let dx=18;dx<=48;dx+=3){
+  for(const dz of [12,-12,18,-18,24,-24,30,-30]){
+   const point=check(pondX+dx,CZ+dz);
+   if(point)return {...point,rescue:true};
+  }
+ }
+ return null;
+}
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
@@ -1486,6 +1529,24 @@ function syncActions(){
  for(const [id,selected] of Object.entries(active))document.getElementById(id).setAttribute('aria-pressed',String(selected));
  document.getElementById('actionSit').textContent=isSitting?'STAND':'SIT';
 }
+const spawnParams=new URLSearchParams(location.search);
+const startingAtPond=['spring','pond','falls'].includes(spawnParams.get('spawn'));
+let pendingPondSpawnRecheck=startingAtPond,initialPondLanding=null;
+function placePondLanding(reason){
+ const landing=findSafePondLanding();
+ if(!landing){
+  diag.errors.push('R11: no dry collision-clear pond landing, using beach');
+  beach();diag.assets['pond spawn R11']='fallback beach';return;
+ }
+ miniNav.cancel('Placed at small pond '+reason);
+ aerial=false;isRunning=false;isSitting=false;depthMode='surface';
+ pos.set(landing.x,landing.ground+1.7,landing.z);
+ yaw=-Math.PI/2;pitch=-.08; // face west, directly toward the twin falls
+ if(reason==='initial')initialPondLanding=pos.clone();
+ diag.assets['pond spawn R11']=stoneReady?'solid-rock verified':'provisional while V6 loads';
+ window.staceySpawnQA={...landing,reason,facing:'west toward both falls'};
+ syncActions();syncPlayerCamera();
+}
 function beach(){miniNav.cancel("Returned to beach");depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
 function swim(){miniNav.cancel('Swimming manually');aerial=false;isRunning=false;isSitting=false;depthMode='surface';
  // From dry land, enter the lake at a safe shallow-water point by the spawn beach.
@@ -1538,9 +1599,8 @@ beach();
    // Explicit homepage entry point: standing on the approved Stacey Lake beach.
    beach();diag.assets['Adventures game spawn']='Stacey Lake south shore';
   }
- if(new URLSearchParams(location.search).get('spawn')==='spring'){
-   aerial=false;depthMode='surface';pos.set(-25,ground(-25,CZ+11)+1.7,CZ+11);
-   yaw=.83;pitch=-.07;
+ if(startingAtPond){
+   placePondLanding('initial');
   }
   if(new URLSearchParams(location.search).get('spawn')==='trail'){
    // Stand directly on the actual photographic lake spur, not in aerial mode.
@@ -1555,12 +1615,24 @@ beach();
   pos.set(hiddenCave.chamberX,hiddenCave.floor+1.7,hiddenCave.z);
   yaw=Math.PI/2;pitch=-.08;
  }
- document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
+ document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{pendingPondSpawnRecheck=!stoneReady;placePondLanding('canyon button');};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 document.getElementById('stopWalk').onclick=()=>miniNav.cancel('Walking stopped');
 const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
- let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
+ let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
+ // V6 photo-rock collider builds ASYNCHRONOUSLY after the initial spawn.
+ // Recheck once it exists. Never teleport a player who has already walked away.
+ if(pendingPondSpawnRecheck&&stoneReady){
+  pendingPondSpawnRecheck=false;
+  const c=cliffContact(pos.x,pos.z,pos.y-1.7);
+  const nearStart=initialPondLanding&&
+    Math.hypot(pos.x-initialPondLanding.x,pos.z-initialPondLanding.z)<3.5;
+  if(nearStart||c.solid||c.onTop||rockColumn(pos.x,pos.z))
+   placePondLanding('V6 loaded');
+  else diag.assets['pond spawn R11']='V6 loaded; player already exploring';
+ }
+ window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
 if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
 const autoWalk=miniNav.step(dt,moveSpeed);
 if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
@@ -1595,7 +1667,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond & Outlet R10 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Pond & Outlet R10 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond & Outlet R10 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Safe Pond Spawn R11 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
