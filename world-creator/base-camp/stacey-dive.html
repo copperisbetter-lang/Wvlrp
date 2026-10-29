@@ -885,50 +885,77 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
  }
  const sprayMap=makeSprayTexture(),sprays=[];
  const impacts=[];
- // Two localized plunge-pool foam fields, sharing one material and existing noise map.
+ // R7: tileable 256x256 CPU-built churning foam; no per-fragment sin/hash noise.
+ // Independent broad islands, lace and microbubble channels preserve sharp pores.
+ function makeImpactFoamTexture(){
+  const N=256,pixels=new Uint8Array(N*N*4);
+  function hash(x,y){
+   let h=Math.imul(x+41,374761393)^Math.imul(y+173,668265263);
+   h=Math.imul(h^(h>>>13),1274126177);
+   return ((h^(h>>>16))>>>0)/4294967295;
+  }
+  function noise(u,v,cells){
+   const x=u*cells,y=v*cells,ix=Math.floor(x),iy=Math.floor(y);
+   let fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+   const x0=((ix%cells)+cells)%cells,y0=((iy%cells)+cells)%cells;
+   const x1=(x0+1)%cells,y1=(y0+1)%cells;
+   const a=hash(x0,y0),b=hash(x1,y0),c=hash(x0,y1),d=hash(x1,y1);
+   return (a+(b-a)*fx)*(1-fy)+(c+(d-c)*fx)*fy;
+  }
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+   const u=x/N,v=y/N,warp=(noise(u,v,7)-.5)*.037;
+   const broad=.53*noise(u+warp,v-warp,7)+.32*noise(u,v,15)+.15*noise(u,v,29);
+   const lace=.56*noise(u+warp,v,25)+.44*noise(u,v+warp,53);
+   const sparkle=.48*noise(u,v,61)+.52*noise(u,v,101);
+   const k=(y*N+x)*4;
+   pixels[k]=Math.round(255*broad);pixels[k+1]=Math.round(255*lace);
+   pixels[k+2]=Math.round(255*sparkle);pixels[k+3]=255;
+  }
+  const tex=new T.DataTexture(pixels,N,N,T.RGBAFormat);
+  tex.wrapS=tex.wrapT=T.RepeatWrapping;
+  tex.magFilter=T.LinearFilter;tex.minFilter=T.LinearMipmapLinearFilter;
+  tex.generateMipmaps=true;tex.needsUpdate=true;return tex;
+ }
+ const impactFoamMap=makeImpactFoamTexture();
+ // Two foam planes share one material + 256 KB texture, without extra draw calls.
  const impactFoamMaterial=new T.ShaderMaterial({
-  uniforms:{foamTime:flowUniform,foamNoise:{value:rapidMap},basinCenter:{value:new T.Vector2(pondX,CZ)}},
+  uniforms:{foamTime:flowUniform,foamPattern:{value:impactFoamMap},basinCenter:{value:new T.Vector2(pondX,CZ)}},
   transparent:true,depthWrite:false,depthTest:true,side:T.DoubleSide,
   vertexShader:`varying vec2 foamUV;varying vec3 foamWorld;
    void main(){foamUV=uv;foamWorld=(modelMatrix*vec4(position,1.)).xyz;
     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`uniform float foamTime;uniform sampler2D foamNoise;uniform vec2 basinCenter;
+  fragmentShader:`uniform float foamTime;uniform sampler2D foamPattern;uniform vec2 basinCenter;
    varying vec2 foamUV;varying vec3 foamWorld;
-   float foamHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-   float foamN(vec2 p){
-    vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-    return mix(mix(foamHash(i),foamHash(i+vec2(1.,0.)),f.x),mix(foamHash(i+vec2(0.,1.)),foamHash(i+vec2(1.)),f.x),f.y);
-   }
    void main(){
-    vec2 p=(foamUV-.5)*2.;
-    // Uniform translations keep spatial detail stable at any elapsed runtime.
-    vec2 world=foamWorld.xz;
-    float t=foamTime;
-    vec2 drift=world*1.8-vec2(t*.42,t*.11);
-    vec2 curl=vec2(foamN(world*.72+vec2(t*.12,0.)),foamN(world*.72-vec2(0.,t*.13)))-.5;
-    vec2 q=drift+curl*.85;
-    float broad=foamN(q*.72),clumps=foamN(q*2.1+vec2(8.3,1.7));
-    float bubbles=foamN(q*7.7),grain=foamN(q*19.1);
+    vec2 p=(foamUV-.5)*2.,world=foamWorld.xz;
+    // Slow translating tiled texture, bounded in size no matter how long the game runs.
+    vec2 drift=vec2(foamTime*.032,-foamTime*.021);
+    vec4 a=texture2D(foamPattern,world*vec2(.21,.24)+drift);
+    vec4 b=texture2D(foamPattern,world*vec2(.43,.47)-drift*1.47+vec2(.31,.64));
+    float broad=a.r*.69+b.r*.31;
+    float lace=a.g*.43+b.g*.57;
+    float fine=a.b*.38+b.b*.62;
+    // Shift strike center under the actual vertical falling-water sheets.
     vec2 strike=p-vec2(-.23,0.);
-    float spread=length(strike*vec2(.92,1.16));
-    float irregular=spread+(broad-.5)*.50+(clumps-.5)*.16;
-    float envelope=1.-smoothstep(.40,.93,irregular);
-    float core=1.-smoothstep(.06,.34,length(strike*vec2(1.3,.9)));
-    // Thick patches are separated by water; fine porous boundaries break up the edge.
-    float islands=smoothstep(.44,.61,broad*.44+clumps*.56);
-    float porous=smoothstep(.23,.52,bubbles*.72+grain*.28);
-    float cover=mix(islands*porous, .52+.38*porous,core);
+    float radius=length(strike*vec2(.93,1.13));
+    float shape=radius+(broad-.5)*.48+(lace-.5)*.19;
+    float envelope=1.-smoothstep(.48,.95,shape);
+    float core=1.-smoothstep(.11,.40,radius+(broad-.5)*.12);
+    // Dense white impact, irregular patches outward; visible transparent water holes.
+    float islands=smoothstep(.37,.58,broad*.64+lace*.36);
+    float pores=smoothstep(.30,.58,lace*.59+fine*.41);
+    float coverage=mix(.24+.53*islands+.20*pores,.79+.18*pores,core);
+    coverage*=mix(.66+.34*smoothstep(.31,.66,broad*.53+lace*.47),1.,core);
     float basinR=length((world-basinCenter)/vec2(8.,17.));
-    float waterOnly=1.-smoothstep(.90,.995,basinR);
-    float border=smoothstep(0.,.10,foamUV.x)*smoothstep(0.,.10,foamUV.y)
-      *(1.-smoothstep(.90,1.,foamUV.x))*(1.-smoothstep(.90,1.,foamUV.y));
-    float opacity=envelope*cover*waterOnly*border*.88;
-    vec3 white=mix(vec3(.40,.53,.51),vec3(.90,.94,.90),.38+.62*bubbles);
+    float waterOnly=1.-smoothstep(.89,.995,basinR);
+    float edge=smoothstep(0.,.065,foamUV.x)*smoothstep(0.,.065,foamUV.y)
+      *(1.-smoothstep(.935,1.,foamUV.x))*(1.-smoothstep(.935,1.,foamUV.y));
+    float opacity=clamp(envelope*coverage*waterOnly*edge*.96,0.,.95);
+    vec3 white=mix(vec3(.56,.69,.67),vec3(.92,.96,.94),.41+.59*fine);
     gl_FragColor=vec4(white,opacity);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
    }`
-
  });
  for(const side of [-1,1]){
   const impactPatch=new T.Mesh(new T.PlaneGeometry(8.2,6.5),impactFoamMaterial);
@@ -958,9 +985,9 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    a.setXYZ(k,x,T.MathUtils.lerp(pondY,top,t),center+warped);
   }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
   for(let n=0;n<2;n++){
-   const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.32}));
-   spr.position.set(wallX+21.5,pondY+.72+n*.47,center+(n?.29:-.29));
-   spr.scale.set(width*(n?1.25:1.9),n?1.85:1.7,1);
+   const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.14}));
+   spr.position.set(wallX+21.5,pondY+.36+n*.27,center+(n?.29:-.29));
+   spr.scale.set(width*(n?1.12:1.45),n?1.1:1.25,1);
    group.add(spr);sprays.push({mesh:spr,phase:fall*1.7+n*1.2,baseY:spr.position.y});
   }
 
@@ -1002,7 +1029,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
   const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
  }group.add(banks);
- window.staceyWaterfall={update(t){flowUniform.value=t;updateDroplets(t);for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.17+.045*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
+ window.staceyWaterfall={update(t){flowUniform.value=t;updateDroplets(t);for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.set(.6+phase*2.7,.6+phase*2.45,1);r.mesh.material.opacity=.23*(1-phase)*(1-phase);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.095+.025*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
  diag.assets['waterfall cliff']='R3 translucent accelerating twin falls, clear upstream runs, impact droplets';
  diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
 
