@@ -1444,7 +1444,7 @@ function findSafePondLanding(){
   let rough=0;
   for(const [dx,dz] of footprints){
    const xx=x+dx,zz=z+dz,hh=ground(xx,zz);
-   if(!Number.isFinite(hh)||hh<pondY-.2)return null;
+   if(!Number.isFinite(hh)||(Math.hypot(dx,dz)<2.1&&hh<pondY-.2))return null;
    if(rockColumn(xx,zz))return null;
    const c=cliffContact(xx,zz,hh);
    if(c.solid||c.onTop||c.cave)return null;
