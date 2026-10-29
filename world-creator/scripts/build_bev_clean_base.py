@@ -356,6 +356,6 @@ def main():
         print("WVLRP_PREVIEW_SAVED",PNG,PNG.stat().st_size)
     except Exception:
         print("WVLRP_RENDER_WARNING",traceback.format_exc())
-    print("WVLRP_REDHEAD_MPFB_SUCCESS")
+    print("WVLRP_BEV_MPFB_SUCCESS")
 
 if __name__=="__main__":main()
