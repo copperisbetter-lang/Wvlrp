@@ -19,11 +19,35 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   let rockMaterial=null,bedMaterial=null;
   const rockPhoto=photo('spring limestone','rock_face_03','rock_face_03_diff_1k.jpg');
   const bedPhoto=photo('dry spring bedrock','rock_06','rock_06_diff_1k.jpg');
-  rockMaterial=new T.MeshStandardMaterial({map:rockPhoto,color:0xd0d0c8,roughness:.94,metalness:0,side:T.DoubleSide});
-  const darkerRock=new T.MeshStandardMaterial({map:rockPhoto,color:0x9fa197,roughness:1,metalness:0,side:T.DoubleSide});
-  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,roughness:.93,metalness:0,
+  rockMaterial=new T.MeshStandardMaterial({map:rockPhoto,color:0x9ba9a8,roughness:1,metalness:0,side:T.DoubleSide});
+  const darkerRock=new T.MeshStandardMaterial({map:rockPhoto,color:0x939d99,roughness:1,metalness:0,side:T.DoubleSide});
+  bedMaterial=new T.MeshStandardMaterial({map:bedPhoto,color:0x999b93,roughness:.96,metalness:0,
      side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
   const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);
+  // Photographic relief and world-space wetness remain continuous across
+  // separate stones; lower faces darken and polish where flow touches them.
+  for(const material of [rockMaterial,darkerRock,bedMaterial]){
+    material.bumpMap=material.map;material.bumpScale=.075;
+    material.onBeforeCompile=shader=>{
+      shader.vertexShader='varying vec3 wetRockWorld;\n'+shader.vertexShader.replace('#include <worldpos_vertex>',`#include <worldpos_vertex>
+       vec4 wetPoint=vec4(transformed,1.);
+       #ifdef USE_INSTANCING
+        wetPoint=instanceMatrix*wetPoint;
+       #endif
+       wetRockWorld=(modelMatrix*wetPoint).xyz;
+      `);
+      shader.fragmentShader='varying vec3 wetRockWorld;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+       float rockT=clamp((wetRockWorld.x+36.)/28.7,0.,1.);
+       float waterHeight=mix(21.30,12.04,rockT);
+       float wet=1.-smoothstep(waterHeight-.12,waterHeight+.48,wetRockWorld.y);
+       diffuseColor.rgb*=mix(1.,.64,wet);
+       roughnessFactor=mix(roughnessFactor,.32,wet);
+      `);
+    };
+    material.customProgramCacheKey=()=> 'stacey-wet-photo-rock-r1';
+  }
+
 
   // Replace the upstream forest-floor pixels in the terrain's shader with the
   // DRY rock photograph; alpha-free geometry skirts bury themselves at the edges.
@@ -44,7 +68,16 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
       return;
     }
     shader.fragmentShader=shader.fragmentShader.replace(anchor,
-      `  // Photographed dry stone replaces leaves and grass UNDER all headwater streams.
+      `  // V16 Android fix: clip ONLY the stone-level river inlet.
+  // V15 cut a >7m-long, >4m-high hole in the terrain shader, creating a
+  // broad unsupported black undercut. Leave most of the mountain SOLID.
+  float inletAx=smoothstep(-38.85,-38.22,vGround.x)*(1.-smoothstep(-36.10,-35.52,vGround.x));
+  float inletZ=abs(vGround.z+240.+.12*sin(vGround.x*1.37+vGround.z*.47));
+  float inletRoof=22.95+.22*sin(vGround.z*1.48+vGround.x*.76);
+  float inletFloor=20.79+.08*sin(vGround.z*1.12-vGround.x*.45);
+  float inletHalf=4.34+.17*sin(vGround.z*1.93-vGround.x*.52);
+  if(inletAx>.52 && inletZ<inletHalf && vGround.y>inletFloor && vGround.y<inletRoof) discard;
+  // Photographed dry stone replaces leaves and grass UNDER all headwater streams.
   float spT=clamp((vGround.x+36.)/28.,0.,1.);
   float spRun=smoothstep(-40.,-35.0,vGround.x)*(1.-smoothstep(-7.4,-4.8,vGround.x));
   float spFork=smoothstep(-17.8,-9.5,vGround.x);
@@ -57,10 +90,10 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
   float spRough=.36*sin(vGround.x*.89+vGround.z*1.16)+.24*sin(vGround.x*2.1-vGround.z*.61);
   float spMask=spRun*(1.-smoothstep(spRockWidth-1.2,spRockWidth+4.5,spSide+spRough));
   vec3 springDry=texture2D(springBedPhoto,vGround.xz*.25).rgb;
-  c=mix(c,springDry*vec3(.92,.96,.98),spMask);
+  c=mix(c,springDry*vec3(.85,.87,.83),spMask);
 `+anchor);
   };
-  mat.customProgramCacheKey=()=> 'stacey-terrain-v12-photographic-spring-bed';
+  mat.customProgramCacheKey=()=> 'stacey-terrain-v16-narrow-headwater-mouth';
   mat.needsUpdate=true;
 
   // Create three *separate* real, walk-height-aligned rock beds just under existing
@@ -72,10 +105,20 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
       const p=line[i],a=line[Math.max(0,i-1)],b=line[Math.min(i+1,line.length-1)];
       const dx=b.x-a.x,dz=b.z-a.z,len=Math.max(.001,Math.hypot(dx,dz));
       for(let j=0;j<=cross;j++){
-        const q=j/cross*2-1,edge=Math.abs(q),shoulder=p.w*.5+(n===0?4.9:2.7);
+        const q=j/cross*2-1,edge=Math.abs(q);
+        // At both ends the photographed rock shelf narrows into real terrain,
+        // rather than exposing an enormous rectangular photograph from above.
+        const endFade=smooth(0,5,i)*smooth(0,5,line.length-1-i);
+        const shore=(n===0?3.8:2.1)*(.18+.82*endFade);
+        const shoulder=p.w*.5+shore+edge*.38*Math.sin(i*1.31+q*2.7);
         const x=p.x-dz/len*shoulder*q,z=p.z+dx/len*shoulder*q;
-        const raised=.07*(1-smooth(.72,.95,edge))+.025*Math.sin(x*2.3+z*.6)*(1-edge);
-        const y=ground(x,z)+raised-.24*smooth(.77,1,edge);
+        // Rough banks rise outside the active stream, while the center stays
+        // submerged below the original animated water surface.
+        const bankRidge=.36*smooth(.42,.8,edge)*(1-smooth(.92,1,edge));
+        const rough=.105*Math.sin(x*1.71+z*.83)*Math.sin(z*1.19-x*.37)*smooth(.35,.75,edge);
+        const center=.028*(1-smooth(.32,.63,edge));
+        const edgeBury=.40*smooth(.78,1,edge)+.13*(1-endFade)*smooth(.45,.98,edge);
+        const y=ground(x,z)+bankRidge+rough+center-edgeBury;
         v.push(x,y,z);uv.push(x*.28,z*.28);
         if(i<line.length-1&&j<cross){
           const k=i*(cross+1)+j;
@@ -92,66 +135,110 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     group.add(bed);beds.push(bed);
   }
 
-  // Real 3D limestone crest: the grooved arch is NOT a rectangular photo billboard.
-  // Its final 2.3m of stone feather into and BELOW the existing mountain ground.
-  const grotto=new T.Group();grotto.name='Natural sculpted mountain spring grotto V12';
-  group.add(grotto);
-  const lipX=startX+1.95,baseY=20.05,segments=40,bands=12;
-  const v=[],uv=[],indices=[];
-  for(let j=0;j<=bands;j++){
-    const t=j/bands;
-    for(let k=0;k<=segments;k++){
-      const a=Math.PI*k/segments,s=Math.sin(a),c=Math.cos(a);
-      const r=4.2+9.3*t,z=CZ+r*c+.17*Math.sin(a*11+t*7);
-      const x=lipX-4.8*t+.37*Math.sin(a*8+t*14);
-      let y=baseY+(4.12+t*7.4)*Math.pow(s,.88)+.21*Math.sin(a*13+t*5);
-      if(t>.76)y=T.MathUtils.lerp(y,ground(x,z)-.72,smooth(.76,1,t));
-      v.push(x,y,z);uv.push(k/segments*2.7,t*2.3);
-      if(j<bands&&k<segments){
-        const p=j*(segments+1)+k;
-        indices.push(p,p+1,p+segments+1,p+1,p+segments+2,p+segments+1);
+  // Extend the ORIGINAL real moving river slightly into the newly visible rock
+  // recess. Same water material, same width/y as the preserved V11 source.
+  const riverHead=group.children.find(o=>o.name==='Single mountain spring stream before boulder');
+  if(riverHead && riverHead.material){
+    const sourcePositions=[],sourceUV=[],sourceIndices=[],rows=24;
+    for(let i=0;i<=rows;i++){
+      const t=i/rows,wx=startX-2.35+2.35*t,wz=CZ+.07*Math.sin(t*1.7);
+      // V16: real existing water runs out of the face, gently widening into
+      // the full 8.8m trunk with uneven natural bank lines, not a square patch.
+      const halfWidth=4.04+.35*t+.055*Math.sin(t*11.4)*(1-t);
+      for(const side of [-1,1]){
+        sourcePositions.push(wx,21.34,wz+side*halfWidth);
+        sourceUV.push(side<0?0:1,-.20*(1-t));
       }
+      if(i<rows){const j=2*i;sourceIndices.push(j,j+2,j+1,j+1,j+2,j+3);}
     }
-  }
-  const lipGeo=new T.BufferGeometry();
-  lipGeo.setAttribute('position',new T.Float32BufferAttribute(v,3));
-  lipGeo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
-  lipGeo.setIndex(indices);lipGeo.computeVertexNormals();
-  const lip=new T.Mesh(lipGeo,rockMaterial);
-  lip.name='Natural broken stone crest with buried mountain join';grotto.add(lip);
-  // Smaller shadow sits inside the stone arch, ~1.5 m back, and river covers its base.
-  // Natural curved polygon avoids the giant black circle seen in V11 screenshots.
-  const shadowVertices=[lipX-1.65,baseY+1.45,CZ];
-  const rim=[{y:baseY-1.3,z:CZ-4.1},{y:baseY-1.3,z:CZ+4.1}];
-  for(let k=0;k<=segments;k++){
-    const a=Math.PI*k/segments;
-    rim.push({y:baseY+3.88*Math.pow(Math.sin(a),.9),z:CZ+4.08*Math.cos(a)});
-  }
-  for(const p of rim)shadowVertices.push(lipX-1.65,p.y,p.z);
-  const shadowIndex=[];
-  for(let k=1;k<rim.length;k++)shadowIndex.push(0,k,k+1);
-  shadowIndex.push(0,rim.length,1);
-  const shadowGeo=new T.BufferGeometry();
-  shadowGeo.setAttribute('position',new T.Float32BufferAttribute(shadowVertices,3));
-  shadowGeo.setIndex(shadowIndex);shadowGeo.computeVertexNormals();
-  const recess=new T.Mesh(shadowGeo,new T.MeshBasicMaterial({color:0x11191a,side:T.DoubleSide}));
-  recess.name='Natural recessed dark hollow inside limestone spring';grotto.add(recess);
+    const sourceGeo=new T.BufferGeometry();
+    sourceGeo.setAttribute('position',new T.Float32BufferAttribute(sourcePositions,3));
+    sourceGeo.setAttribute('uv',new T.Float32BufferAttribute(sourceUV,2));
+    sourceGeo.setIndex(sourceIndices);sourceGeo.computeVertexNormals();
+    const sourceFlow=new T.Mesh(sourceGeo,riverHead.material);
+    sourceFlow.name='V16 continuous real spring water visible inside narrow mountain inlet';
+    group.add(sourceFlow);
+    diag.assets['spring live source']='original animated V11 water extended 2.35m into narrow natural inlet';
+  }else{diag.errors.push('Spring live source water shader not found');}
 
-  // Instanced weathered chunks blend the outer arch with existing terrain.
+  // V14 / owner's ground and aerial QA: do not bridge the spring with boulders.
+  // V13 / owner's aerial QA: the former 40x12 continuous arched roof looked
+  // like a giant draped tarp or stacks of hay bales. DO NOT create another
+  // full-width cloth-like sheet or rectangular photo billboard.
+  // Build the lip instead out of overlapping irregular 3-D rock masses.
+  const grotto=new T.Group();
+  grotto.name='V14 hillside spring with separate embedded rock banks — no overhead rock bridge';
+  group.add(grotto);
   const pose=new T.Object3D();
-  const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),darkerRock,42);
-  for(let k=0;k<42;k++){
-    const side=k%2?-1:1,t=(k+1)/43;
-    const x=startX-3.1+5*t+1.05*Math.sin(k*2.2);
-    const z=CZ+side*(4.9+8.2*t+.43*Math.sin(k*1.91));
-    const size=.62+1.23*((k*13%17)/17);
-    pose.position.set(x,ground(x,z)+size*.12,z);
-    pose.rotation.set(k*.31,k*.71,k*.18);
-    pose.scale.set(size*1.35,size*.48,size*.88);
-    pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+  const capRockGeo=new T.IcosahedronGeometry(1,2);
+  const capRockPositions=capRockGeo.getAttribute('position');
+  for(let i=0;i<capRockPositions.count;i++){
+    const x=capRockPositions.getX(i),y=capRockPositions.getY(i),z=capRockPositions.getZ(i);
+    const warp=1+.06*Math.sin(14*x+9*z)*Math.cos(11*y+5*x)+.033*Math.sin(21*z+12*y);
+    capRockPositions.setXYZ(i,x*warp,y*warp,z*warp);
   }
-  rubble.name='Photographic embedded limestone shoulder fragments';
+  capRockGeo.computeVertexNormals();
+  // A recessed irregular *stone* spring, with its blackness BEHIND the rock,
+  // never a large flat, perfectly elliptical cap visible from overhead.
+  const shadowX=startX-2.60,shadowY=20.77;
+  const outline=[
+    [-4.75,20.77],[-4.64,22.22],[-4.23,22.87],[-3.60,23.23],
+    [-2.85,23.78],[-2.10,23.57],[-1.39,23.99],[-.54,23.69],
+    [.36,23.92],[1.06,23.51],[1.91,23.84],[2.64,23.34],
+    [3.44,23.37],[4.12,22.79],[4.68,22.07],[4.75,20.77]
+  ];
+  const holeVerts=[shadowX,shadowY+1.40,CZ],holeIndices=[];
+  for(const [z,y] of outline)holeVerts.push(shadowX,y,CZ+z);
+  // Fan triangulation follows the jagged roofline and narrow water-level base.
+  holeVerts.push(shadowX,shadowY-.20,CZ+4.75);
+  holeVerts.push(shadowX,shadowY-.20,CZ-4.75);
+  for(let i=1;i<holeVerts.length/3-1;i++)holeIndices.push(0,i,i+1);
+  holeIndices.push(0,holeVerts.length/3-1,1);
+  const hollowGeo=new T.BufferGeometry();
+  hollowGeo.setAttribute('position',new T.Float32BufferAttribute(holeVerts,3));
+  hollowGeo.setIndex(holeIndices);hollowGeo.computeVertexNormals();
+  const recess=new T.Mesh(hollowGeo,new T.MeshStandardMaterial({
+    map:rockPhoto,color:0x676e67,roughness:1,metalness:0,side:T.DoubleSide,depthWrite:true
+  }));
+  recess.name='Uneven narrow spring recess behind real stones';grotto.add(recess);
+  // NEVER span the opening with a row of disconnected floating rocks.
+  // The river emerges from the actual hillside between two banks, each made
+  // of small embedded native stones; the center 9m stays fully open for water.
+  const cap=new T.InstancedMesh(capRockGeo,rockMaterial,32);
+  for(let i=0;i<32;i++){
+    const side=i%2?1:-1,j=Math.floor(i/2),t=j/15;
+    // Rock centers stay outside the +/-4.4m wide source stream, with
+    // fragments submerged in the terrain. No overhead bridge, ever.
+    const x=startX-2.0+t*5.7+.18*Math.sin(i*2.1);
+    const z=CZ+side*(6.3+t*3.1+.27*Math.sin(i*1.77));
+    const sx=.53+.31*((i*7%13)/13),sy=.42+.26*((i*3%11)/11);
+    const sz=.62+.33*((i*5%17)/17);
+    pose.position.set(x,ground(x,z)+sy*.10,z);
+    pose.rotation.set(.12*Math.sin(i*1.43),i*.71,.14*Math.sin(i*2.03));
+    pose.scale.set(sx,sy,sz);pose.updateMatrix();cap.setMatrixAt(i,pose.matrix);
+  }
+  cap.name='32 embedded bank rocks, no overhead spring bridge';
+  cap.computeBoundingSphere();grotto.add(cap);
+  // Small broken fragments at the shoulders and up the mountain edge.
+  // Each outer fragment sinks into the same terrain as the walking collider,
+  // so no rectangular alpha or geometry corners remain visible from above.
+  const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),darkerRock,48);
+  const rubbleTints=new T.Color(),colors=[0x8f9993,0x9a9e96,0x777f7b,0xb3b5aa];
+  for(let k=0;k<48;k++){
+    const side=k%2?-1:1,t=(k+1)/49;
+    const x=startX-3.8+6*t+1.2*Math.sin(k*2.2);
+    const z=CZ+side*(5.9+7.3*t+.45*Math.sin(k*1.9));
+    const size=.55+1.18*((k*13%19)/19);
+    pose.position.set(x,ground(x,z)+size*.13,z);
+    pose.rotation.set(k*.31,k*.71,k*.18);
+    pose.scale.set(size*(1.23+.12*Math.sin(k)),size*.48,size*(.78+.12*Math.cos(k)));
+    pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+    rubbleTints.setHex(colors[k%4]);rubble.setColorAt(k,rubbleTints);
+  }
+  rubble.name='48 small embedded natural rock shoulders';
   rubble.computeBoundingSphere();grotto.add(rubble);
+  // Expose a diagnostic count for owners' aerial QA.
+  diag.assets['natural spring silhouette V16']='32 embedded bank rocks; V16 low narrow river inlet, hillside intact, original live water';
   const splitterGeo=new T.IcosahedronGeometry(1,2);
   const position=splitterGeo.getAttribute('position');
   for(let i=0;i<position.count;i++){
@@ -177,10 +264,11 @@ export function addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines,mat,di
     pose.updateMatrix();flanks.setMatrixAt(k,pose.matrix);
   }
   flanks.name='Natural scattered streamside rocks';flanks.computeBoundingSphere();group.add(flanks);
-  diag.assets['photo spring V12']='recessed rock arch, buried edges, photobedrock under all 3 flows';
+  diag.assets['photo spring V16']='low narrow real-water emergence, mountain roof intact, V14 banks and tapered bedrock preserved';
   const report={grotto,splitter,beds,photoRock:'Poly Haven rock_face_03',
-    bedrock:'Poly Haven rock_06',waterSource:'existing animated scene water',
+    bedrock:'Poly Haven rock_06',facetedLipRocks:32,buriedEdgeRocks:48,waterSource:'existing animated scene water',
     trunkWidth:8.8,branches:2,mainAndLakeIntact:true};
-  window.staceySpringV12=report;
+  window.staceySpringV12=report;window.staceySpringV13=report;window.staceySpringV14=report;window.staceySpringV15=report;window.staceySpringV16=report;
   return report;
 }
+
