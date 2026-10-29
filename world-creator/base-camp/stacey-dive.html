@@ -894,33 +894,41 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
   fragmentShader:`uniform float foamTime;uniform sampler2D foamNoise;uniform vec2 basinCenter;
    varying vec2 foamUV;varying vec3 foamWorld;
+   float foamHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+   float foamN(vec2 p){
+    vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+    return mix(mix(foamHash(i),foamHash(i+vec2(1.,0.)),f.x),mix(foamHash(i+vec2(0.,1.)),foamHash(i+vec2(1.)),f.x),f.y);
+   }
    void main(){
     vec2 p=(foamUV-.5)*2.;
-    // Offset the strike toward the cliff; foam drifts forward into the pool.
-    vec2 origin=vec2(-.23,0.);
-    vec2 delta=p-origin;float r=length(delta);vec2 outward=delta/max(r,.015);
+    // Uniform translations keep spatial detail stable at any elapsed runtime.
+    vec2 world=foamWorld.xz;
     float t=foamTime;
-    vec2 flow=delta-outward*t*.105;
-    float cloud=texture2D(foamNoise,flow*1.13+vec2(.13,.28)).r;
-    float detail=texture2D(foamNoise,flow*3.71+vec2(t*.023,-t*.017)).r;
-    float fine=texture2D(foamNoise,flow*9.3+vec2(-t*.041,t*.033)).r;
-    float raggedRadius=r+.18*(cloud-.5)+.10*(detail-.5);
-    float margin=1.-smoothstep(.48,.99,raggedRadius);
-    float boiling=1.-smoothstep(.08,.43,r);
-    float cells=smoothstep(.39,.65,cloud*.45+detail*.35+fine*.20);
-    float wake=pow(.5+.5*sin(r*28.-t*3.0+cloud*5.),3.)*.12;
-    float foamAmount=clamp(boiling*.75+(1.-boiling)*cells*.72+wake,0.,.94);
-    // Never paint foam onto the bank or give the patch a rectangular edge.
-    float basinR=length((foamWorld.xz-basinCenter)/vec2(8.,17.));
+    vec2 drift=world*1.8-vec2(t*.42,t*.11);
+    vec2 curl=vec2(foamN(world*.72+vec2(t*.12,0.)),foamN(world*.72-vec2(0.,t*.13)))-.5;
+    vec2 q=drift+curl*.85;
+    float broad=foamN(q*.72),clumps=foamN(q*2.1+vec2(8.3,1.7));
+    float bubbles=foamN(q*7.7),grain=foamN(q*19.1);
+    vec2 strike=p-vec2(-.23,0.);
+    float spread=length(strike*vec2(.92,1.16));
+    float irregular=spread+(broad-.5)*.50+(clumps-.5)*.16;
+    float envelope=1.-smoothstep(.40,.93,irregular);
+    float core=1.-smoothstep(.06,.34,length(strike*vec2(1.3,.9)));
+    // Thick patches are separated by water; fine porous boundaries break up the edge.
+    float islands=smoothstep(.44,.61,broad*.44+clumps*.56);
+    float porous=smoothstep(.23,.52,bubbles*.72+grain*.28);
+    float cover=mix(islands*porous, .52+.38*porous,core);
+    float basinR=length((world-basinCenter)/vec2(8.,17.));
     float waterOnly=1.-smoothstep(.90,.995,basinR);
-    float border=smoothstep(0.,.12,foamUV.x)*smoothstep(0.,.12,foamUV.y)
-      *(1.-smoothstep(.88,1.,foamUV.x))*(1.-smoothstep(.88,1.,foamUV.y));
-    float opacity=margin*foamAmount*waterOnly*border;
-    vec3 white=mix(vec3(.49,.66,.65),vec3(.91,.96,.94),.50+.50*fine);
+    float border=smoothstep(0.,.10,foamUV.x)*smoothstep(0.,.10,foamUV.y)
+      *(1.-smoothstep(.90,1.,foamUV.x))*(1.-smoothstep(.90,1.,foamUV.y));
+    float opacity=envelope*cover*waterOnly*border*.88;
+    vec3 white=mix(vec3(.40,.53,.51),vec3(.90,.94,.90),.38+.62*bubbles);
     gl_FragColor=vec4(white,opacity);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
    }`
+
  });
  for(const side of [-1,1]){
   const impactPatch=new T.Mesh(new T.PlaneGeometry(8.2,6.5),impactFoamMaterial);
@@ -955,11 +963,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    spr.scale.set(width*(n?1.25:1.9),n?1.85:1.7,1);
    group.add(spr);sprays.push({mesh:spr,phase:fall*1.7+n*1.2,baseY:spr.position.y});
   }
-  for(let n=0;n<4;n++){
-   const ring=new T.Mesh(new T.RingGeometry(.91,1,48),foam.clone());
-   ring.rotation.x=-Math.PI/2;ring.position.set(wallX+21,pondY+.035+n*.008,center);
-   group.add(ring);impacts.push({mesh:ring,phase:n/4});
-  }
+
  }
  const dropletCount=96,dropletPos=new Float32Array(dropletCount*3);
  const dropletGeo=new T.BufferGeometry();dropletGeo.setAttribute('position',new T.BufferAttribute(dropletPos,3));
@@ -1473,7 +1477,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Plunge Foam R5 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Plunge Foam R5 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Broken Foam R6 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Broken Foam R6 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
