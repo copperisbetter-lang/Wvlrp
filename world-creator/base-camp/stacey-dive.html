@@ -151,6 +151,15 @@ function naturalGround(x,z){
  original+=Math.max(0,crest-original)*ridgeSide*ridgeLength;
  const basin=Math.hypot((x-pondX)/8,(z-CZ)/17);
  if(basin<1.24)return T.MathUtils.lerp(pondY-1.9,Math.max(original,pondY+.35),smooth(.72,1.24,basin));
+ // R11: natural dry shoulder at the front edge of the small waterfall pond.
+ // Previously the ground dropped below pond level at radius 1.24, so a
+ // character couldn't safely stand and walk there. Do NOT alter the creek.
+ if(basin<1.82&&x>pondX+4&&Math.abs(z-CZ)>6.5){
+  const shoulder=(1-smooth(1.24,1.82,basin))
+    *smooth(pondX+4,pondX+7,x)
+    *smooth(6.5,8.7,Math.abs(z-CZ));
+  original+=Math.max(0,pondY+.35-original)*shoulder;
+ }
  const t=(x-(pondX+6))/(fallShore+2-(pondX+6));
  if(t>=0&&t<=1){
   const dist=Math.abs(z-creekCenter(t)),level=T.MathUtils.lerp(pondY,CY,t);
@@ -1419,15 +1428,16 @@ function solidCliffStep(x0,z0,x1,z1,feet){
 // in either the pond or the outgoing stream, or atop a steep rock lip.
 function findSafePondLanding(){
  const candidates=[
+  [8.6,11.4],[8.6,-11.4],[9.3,11.4],[9.3,-11.4],
+  [8.0,12.4],[8.0,-12.4],[9.7,10.9],[9.7,-10.9],
   [10.8,10.5],[11.7,11.5],[10.4,-10.5],[12.2,-11.8],
   [13.3,12.7],[13.5,-12.7],[14.9,13.8],[14.9,-13.8],
-  [12.5,16],[15.7,16.7],[16.4,-16.3],[17.5,11],[17.5,-11],
-  [19,18],[20.5,14],[22,-14]
+  [12.5,16],[15.7,16.7],[16.4,-16.3],[17.5,11],[17.5,-11]
  ];
  const check=(x,z)=>{
   const h=ground(x,z);
   if(!Number.isFinite(h)||h<pondY+.20)return null;
-  if(Math.hypot((x-pondX)/8,(z-CZ)/17)<1.31)return null;
+  if(Math.hypot((x-pondX)/8,(z-CZ)/17)<1.245)return null;
   // Also keep the third-person follow camera clear behind Mason.
   const footprints=[[0,0],[1.4,0],[-1.4,0],[0,1.4],[0,-1.4],
     [1,1],[1,-1],[-1,1],[-1,-1],[4.4,0]];
