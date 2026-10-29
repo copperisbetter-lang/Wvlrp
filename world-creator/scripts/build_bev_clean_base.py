@@ -237,7 +237,7 @@ def main():
         except Exception as ex:
             print("WVLRP_PROP_SKIPPED",key,str(ex)[:140])
     TargetService.reapply_macro_details(h)
-    for key,expected in (("gender",0.0),("cupsize",.64),("firmness",.60)):
+    for key,expected in (("gender",0.0),("cupsize",.85),("firmness",.12)):
         actual=float(HumanObjectProperties.get_value(key,entity_reference=h))
         print("WVLRP_VERIFY_MACRO",key,actual)
         if abs(actual-expected)>.01:
