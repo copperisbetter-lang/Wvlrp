@@ -720,25 +720,30 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    vec2 fromHit=p-hit;
    float distance=max(length(fromHit),.05);
    vec2 ray=fromHit/distance;
-   float warp=.19*sin(p.x*.78+p.y*.46+t*.23+seed)
-              +.13*sin(p.y*1.11-p.x*.57-t*.17+seed*.7);
-   float phase=distance*3.25-t*4.72+warp;
-   float angular=.75+.25*sin(p.x*.40-p.y*.53+seed+distance*.68);
-   float reach=1.-smoothstep(11.5,16.0,distance);
-   float energy=exp(-distance*.22)*reach*angular;
-   float wave=.095*sin(phase)+.025*sin(phase*1.71+seed);
-   float radialSlope=(.095*cos(phase)+.025*1.71*cos(phase*1.71+seed))*3.25-.22*wave;
-   return vec3(wave*energy,ray*radialSlope*energy);
+   float theta=atan(fromHit.y,fromHit.x);
+   float warp=.82*sin(theta*3.2+t*.16+seed)
+     +.43*cos(theta*6.9-t*.12+seed*.8)
+     +.23*sin(p.x*.63+p.y*.45+t*.13);
+   float phase=distance*2.45-t*2.87+warp;
+   // Random-looking arc lengths around each impact, no perfect concentric rings.
+   float fragments=.28+.72*smoothstep(.19,.82,.5+.5*sin(
+     theta*7.35+1.2*sin(distance*1.24+theta*2.4+seed)-t*.34+seed));
+   float energy=exp(-distance*.30)*(1.-smoothstep(8.6,13.4,distance));
+   float churn=.025*sin(p.x*4.3+p.y*2.5+t*3.35+seed)
+      *sin(p.y*3.8-p.x*2.2-t*3.9)*exp(-distance*.74);
+   float wave=.038*sin(phase)*fragments*energy+churn;
+   float radialSlope=.038*2.45*cos(phase)*fragments*energy;
+   return vec3(wave,ray*radialSlope);
   }
   vec3 pondResponse(vec2 p, float t){
    vec3 leftFall=pondFallResponse(p,vec2(-4.,-3.81),t,.4);
    vec3 rightFall=pondFallResponse(p,vec2(-4.,3.81),t,1.8);
    float a=p.x*.90+p.y*.78+t*.66;
    float b=p.x*1.34-p.y*.63-t*1.03;
-   float small=.012*sin(a)+.008*cos(b);
-   vec2 slope=vec2(.0108*cos(a)-.01072*sin(b),
-                   .00936*cos(a)+.00504*sin(b));
-   float bank=1.-smoothstep(.73,.985,length(p/vec2(8.,17.)));
+   float small=.008*sin(a)+.006*cos(b);
+   vec2 slope=vec2(.0068*cos(a)-.00846*sin(b),
+                   .0056*cos(a)+.00444*sin(b));
+   float bank=1.-smoothstep(.70,.97,length(p/vec2(8.,17.)));
    return vec3((leftFall.x+rightFall.x+small)*bank,
        (leftFall.yz+rightFall.yz+slope)*bank);
   }
@@ -761,7 +766,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    normal=normalize(normal+mat3(viewMatrix)*vec3(-response.y,0.,-response.z)*.92);
   `);
  };
- poolMat.customProgramCacheKey=()=> 'stacey-pond-dual-impact-height-r9';
+ poolMat.customProgramCacheKey=()=> 'stacey-pond-organic-impact-r10';
  // UV.y is 0 at the basin, 1 at the crest. Sampling (UV.y + time)
  // makes the image travel toward SMALLER y: gravity-down, not backward/up.
  // The creek travels in its own +UV.y direction toward the lake.
@@ -866,7 +871,27 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   }
   return mat;
  }
- const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false),headwaterFlow=makeRapidMaterial(false,true);
+ const falling=makeRapidMaterial(true),headwaterFlow=makeRapidMaterial(false,true);
+ // Same moving flow shader as the APPROVED upper creek; only the outlet gets
+ // pond color and transparency. Upper creek remains byte-for-byte unchanged.
+ const creekFlow=makeRapidMaterial(false,true);
+ const compileOutlet=creekFlow.onBeforeCompile;
+ creekFlow.onBeforeCompile=shader=>{
+  compileOutlet(shader);
+  shader.fragmentShader=shader.fragmentShader.replace(
+   'diffuseColor.rgb=mix(vec3(.065,.22,.20),vec3(.79,.87,.84),foam);',
+   `float outProgress=clamp(flowUV.y/3.,0.,1.);
+    float outDepth=mix(.55,.62,smoothstep(0.,1.,outProgress));
+    vec3 pondShallow=vec3(.08,.52,.44),pondDeep=vec3(.005,.10,.23);
+    vec3 outColor=mix(pondShallow,pondDeep,1.-exp(-outDepth*.36));
+    diffuseColor.rgb=mix(outColor*(.95+.08*noiseA.r),
+                         vec3(.79,.87,.84),foam*.20);`
+  );
+  shader.fragmentShader=shader.fragmentShader.replace(
+   'diffuseColor.a=rim*(.22+.13*noiseA.r+foam*.52);',
+   'diffuseColor.a=rim*(.62+.16*noiseA.r+foam*.12);');
+ };
+ creekFlow.customProgramCacheKey=()=> 'stacey-pond-matched-outlet-r10';
  // V11: one WIDE source creek emerges from the mountain, meets ONE big boulder,
  // then divides into exactly two branches to the existing paired waterfall lips.
  (function buildHeadwaters(){
@@ -981,7 +1006,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
     // R8: active foam at BOTH falls. R7 footprint and color are preserved.
     // Surface-dependent motion is oscillatory / bounded, preventing blur over time.
     vec2 strike=p-vec2(-.23,0.);
-    float radius=length(strike*vec2(.93,1.13));
+    float radius=length(strike*vec2(.82,1.19));
     vec2 radial=normalize(strike+vec2(.001,.002));
     vec2 tangent=vec2(-radial.y,radial.x);
     float eddy=1.-smoothstep(.14,.91,radius);
@@ -1001,13 +1026,14 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
     float lace=a.g*.43+b.g*.57;
     float fine=a.b*.38+b.b*.62;
     float brokenEdge=sin(time*2.75+lace*9.1+fine*3.5);
-    float shape=radius+(broad-.5)*.48+(lace-.5)*.19
-        +.042*brokenEdge*(1.-smoothstep(.10,.9,radius));
-    float envelope=1.-smoothstep(.48,.95,shape);
-    float core=1.-smoothstep(.11,.40,radius+(broad-.5)*.12);
+    float shape=radius+(broad-.5)*.63+(lace-.5)*.33
+      +.095*brokenEdge*(1.-smoothstep(.12,.94,radius))
+      +.09*sin(p.y*8.7+p.x*3.5+foamTime*.37);
+    float envelope=1.-smoothstep(.36,.82,shape);
+    float core=1.-smoothstep(.08,.31,radius+(broad-.5)*.17);
     float islands=smoothstep(.37,.58,broad*.64+lace*.36);
     float pores=smoothstep(.30,.58,lace*.59+fine*.41);
-    float coverage=mix(.24+.53*islands+.20*pores,.79+.18*pores,core);
+    float coverage=mix(.13+.49*islands+.19*pores,.76+.18*pores,core);
     coverage*=mix(.66+.34*smoothstep(.31,.66,broad*.53+lace*.47),1.,core);
     // Asynchronous microbursts, never synchronized bullseye rings.
     coverage*=.95+.05*sin(time*4.15+fine*10.2+lace*3.4);
@@ -1015,7 +1041,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
     float waterOnly=1.-smoothstep(.89,.995,basinR);
     float edge=smoothstep(0.,.065,foamUV.x)*smoothstep(0.,.065,foamUV.y)
       *(1.-smoothstep(.935,1.,foamUV.x))*(1.-smoothstep(.935,1.,foamUV.y));
-    float opacity=clamp(envelope*coverage*waterOnly*edge*.96,0.,.95);
+    float opacity=clamp(envelope*coverage*waterOnly*edge*.82,0.,.84);
     vec3 white=mix(vec3(.56,.69,.67),vec3(.92,.96,.94),.41+.59*fine);
     gl_FragColor=vec4(white,opacity);
     #include <tonemapping_fragment>
@@ -1023,9 +1049,9 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    }`
  });
  for(const side of [-1,1]){
-  const impactPatch=new T.Mesh(new T.PlaneGeometry(8.2,6.5),impactFoamMaterial);
+  const impactPatch=new T.Mesh(new T.PlaneGeometry(7.4,5.8),impactFoamMaterial);
   impactPatch.rotation.x=-Math.PI/2;
-  impactPatch.position.set(wallX+22,pondY+.065,CZ+side*3.81);
+  impactPatch.position.set(wallX+21.8,pondY+.065,CZ+side*3.81);
   impactPatch.name='Churning plunge-pool whitewater '+side;
   impactPatch.renderOrder=3;group.add(impactPatch);
  }
@@ -1569,7 +1595,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Waterfall Pond Reaction R9 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Churning Foam R8 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond & Outlet R10 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Pond & Outlet R10 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
