@@ -1598,8 +1598,8 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
   // Existing textured fern GLB, naturally distributed along the upper stream banks.
   // R20: increase the existing textured Appalachian fern asset density at
   // shaded rocky pond edges and along both creek banks, never in water.
-  for(let j=0;j<135;j++){
-   let x,z,nearPool=j<55;
+  for(let j=0;j<184;j++){
+   let x,z,nearPool=j<70;
    if(nearPool){
     const a=j*2.399963+.34*rand(),r=1.15+rand()*.43;
     x=pondX+Math.cos(a)*8*r;z=CZ+Math.sin(a)*17*r;
@@ -1613,7 +1613,7 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
    const y=ground(x,z);if(y<(nearPool?pondY+.12:CY+.1))continue;
    if(Math.hypot(x-(pondX+8.6),z-(CZ+11.4))<4.4||purpleTrails.near(x,z,2.1))continue;
    if(Math.max(Math.abs(ground(x+.5,z)-y),Math.abs(ground(x,z+.5)-y))>1.4)continue;
-   p.push({x,z,y:y-.04,h:.45+rand()*.48,w:.85+rand()*.26,a:rand()*6.283});
+   p.push({x,z,y:y-.045,h:.74+rand()*.54,w:1.0+rand()*.21,a:rand()*6.283});
   }
  }instances(g,p,label==='pines');diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
 // R20: natural waterfall-glen planting, inspired by the owner's approved
@@ -1625,68 +1625,103 @@ async function understory(){for(const [file,label,count] of [['village-pbr-pine_
   {name:'white woodland asters',petal:[.77,.80,.75],leaf:[.20,.34,.19]},
   {name:'creekside goldenrod',petal:[.73,.56,.20],leaf:[.23,.34,.16]}
  ];
- const batches=[],budget=mobile?[30,24,16]:[48,36,26];
+ const batches=[],budget=mobile?[43,34,24]:[65,50,35];
  function flowerGeometry(spec,kind){
+  // R21: head-on-readable 3D flowers, not 7cm HORIZONTAL disks lost at 20m.
+  // Five uneven stems, elevated and cupped/tilted blossoms, foliage near base.
   const pos=[],color=[];
   function tri(a,b,c,col){for(const p of [a,b,c]){pos.push(...p);color.push(...col)}}
-  for(let stem=0;stem<3;stem++){
-   const angle=stem*2.399+.3,height=.32+.13*(stem%3),bx=.07*Math.cos(angle),bz=.07*Math.sin(angle);
-   const stemCol=spec.leaf.map(x=>x*.81);
-   tri([bx,0,bz],[bx+.008,0,bz+.007],[bx+.05,height,bz+.04],stemCol);
-   for(let l=0;l<3;l++){
-    const a=angle+2.25*l,y=height*(.24+.19*l),px=bx+.04*y/height,pz=bz+.03*y/height;
-    const tip=[px+Math.cos(a)*.16,y+.018,pz+Math.sin(a)*.16];
-    tri([px,y,pz],[px+Math.sin(a)*.037,y,pz-Math.cos(a)*.037],tip,spec.leaf);
-    tri([px,y,pz],tip,[px-Math.sin(a)*.037,y,pz+Math.cos(a)*.037],spec.leaf.map(x=>x*.76));
+  function petal(head,a,size,col){
+   const dx=Math.cos(a),dz=Math.sin(a),side=.20*size;
+   const l=[head[0]+dx*size*.55-dz*side,head[1]+size*.24,head[2]+dz*size*.55+dx*side];
+   const r=[head[0]+dx*size*.55+dz*side,head[1]+size*.24,head[2]+dz*size*.55-dx*side];
+   const tip=[head[0]+dx*size,head[1]+size*.58,head[2]+dz*size];
+   tri(head,l,tip,col);tri(head,tip,r,col.map(v=>v*.85));
+  }
+  for(let stem=0;stem<5;stem++){
+   const a=stem*2.399+.41,basex=.13*Math.cos(a),basez=.13*Math.sin(a),
+     height=(kind===2?.62:.55)+.09*(stem%4),bx=basex+.14*Math.cos(a),bz=basez+.14*Math.sin(a);
+   // three-sided tapered green stems
+   for(let i=0;i<3;i++){
+    const aa=i*2.094,bb=(i+1)*2.094;
+    tri([basex+.008*Math.cos(aa),0,basez+.008*Math.sin(aa)],
+        [basex+.008*Math.cos(bb),0,basez+.008*Math.sin(bb)],
+        [bx+.003*Math.cos(aa),height,bz+.003*Math.sin(aa)],spec.leaf.map(c=>c*.76));
    }
-   const cx=bx+.05,cz=bz+.04,petals=kind===2?6:9,r=kind===2?.052:.073;
-   for(let n=0;n<petals;n++){
-    const a=n*6.283185/petals+stem*.14,dx=Math.cos(a),dz=Math.sin(a),nx=-dz,nz=dx;
-    const p0=[cx,height,cz],p1=[cx+dx*r*.60+nx*.020,height+.014,cz+dz*r*.60+nz*.020],
-      p2=[cx+dx*r,height+.018,cz+dz*r],p3=[cx+dx*r*.60-nx*.020,height+.014,cz+dz*r*.60-nz*.020];
-    tri(p0,p1,p2,spec.petal);tri(p0,p2,p3,spec.petal.map(x=>x*.89));
+   // broad, folded asymmetric leaves along stems
+   for(let leaf=0;leaf<4;leaf++){
+    const ang=a+leaf*2.29,h=height*(.17+leaf*.16),
+     px=basex+(bx-basex)*h/height,pz=basez+(bz-basez)*h/height;
+    const len=.19+.025*(leaf%2),side=.06;
+    tri([px,h,pz],[px+Math.sin(ang)*side,h+.005,pz-Math.cos(ang)*side],
+      [px+Math.cos(ang)*len,h+.055,pz+Math.sin(ang)*len],spec.leaf);
+    tri([px,h,pz],[px+Math.cos(ang)*len,h+.055,pz+Math.sin(ang)*len],
+      [px-Math.sin(ang)*side,h+.005,pz+Math.cos(ang)*side],spec.leaf.map(v=>v*.78));
    }
-   const gold=[.65,.56,.22];
-   for(let n=0;n<6;n++){
-    const a=n*6.283185/6,b=(n+1)*6.283185/6;
-    tri([cx,height+.019,cz],[cx+Math.cos(a)*.014,height+.018,cz+Math.sin(a)*.014],
-      [cx+Math.cos(b)*.014,height+.018,cz+Math.sin(b)*.014],gold);
+   // Appalachian goldenrod: small upright branching yellow sprays.
+   if(kind===2){
+    for(let branch=0;branch<4;branch++){
+     const phi=a+branch*2.18,spread=.08+.028*(branch%2),rad=.045;
+     const c=[bx+Math.cos(phi)*spread,height-.09+branch*.036,bz+Math.sin(phi)*spread];
+     for(let k=0;k<6;k++)petal(c,k*6.283/6,rad,spec.petal);
+    }
+   }else{
+    // Blue-violet and white asters. Multiple lively angled flower heads
+    // with petals curved UP, so camera sees the blossoms from creek level.
+    const head=[bx,height,bz],size=.115+.017*(stem%3),petals=9;
+    for(let k=0;k<petals;k++)petal(head,k*6.283/petals+stem*.11,size,spec.petal);
+    const centerColor=[.72,.56,.19];
+    for(let k=0;k<8;k++){
+     const aa=k*6.283/8,bb=(k+1)*6.283/8;
+     tri([head[0],head[1]+.03,head[2]],
+       [head[0]+.029*Math.cos(aa),head[1]+.02,head[2]+.029*Math.sin(aa)],
+       [head[0]+.029*Math.cos(bb),head[1]+.02,head[2]+.029*Math.sin(bb)],centerColor);
+    }
    }
   }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));
-  g.setAttribute('color',new T.Float32BufferAttribute(color,3));g.computeVertexNormals();return g;
+  const g=new T.BufferGeometry();
+  g.setAttribute('position',new T.Float32BufferAttribute(pos,3));
+  g.setAttribute('color',new T.Float32BufferAttribute(color,3));
+  g.computeVertexNormals();return g;
  }
  const mat=new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.92});
  for(let k=0;k<3;k++){const m=new T.InstancedMesh(flowerGeometry(plants[k],k),mat,budget[k]);
-   m.name='Waterfall native wildflowers R20: '+plants[k].name;
+   m.name='Waterfall native wildflowers R21: '+plants[k].name;
    m.frustumCulled=false;m.count=0;m.castShadow=false;scene.add(m);batches.push(m);}
  const hashes=n=>{const x=Math.sin(n*127.9+49.7)*43758.5453;return x-Math.floor(x)};
  const counts=[0,0,0],o=new T.Object3D();let poolCount=0,bankCount=0;
- for(let i=0;i<420;i++){
-  let x,z,pool=i<175;
+ for(let i=0;i<690;i++){
+  let x,z,pool=i<280;
   const r1=hashes(i*17+2),r2=hashes(i*19+3),r3=hashes(i*23+7);
   if(pool){
-   const angle=i*2.399963+(.5-r1)*.38,ring=1.14+r2*.43;
+   const angle=i*2.399963+(.5-r1)*.38,ring=1.11+r2*.51;
    x=pondX+8*ring*Math.cos(angle);z=CZ+17*ring*Math.sin(angle);
    if(x>pondX+5&&Math.abs(z-CZ)<8.2)continue;
   }else{
    const t=.07+r1*.88,u=T.MathUtils.lerp(pondX+7,fallShore-.9,t);
    const v=T.MathUtils.clamp((u-pondX-6)/(fallShore+2-pondX-6),0,1);
-   x=u;z=creekCenter(v)+(r2<.5?-1:1)*(5.1+5.0*hashes(i*31+4));
+   x=u;z=creekCenter(v)+(r2<.5?-1:1)*(4.6+5.1*hashes(i*31+4));
   }
-  const y=ground(x,z);if(!Number.isFinite(y)||y<(pool?pondY+.16:CY+.09))continue;
+  const y=ground(x,z);
+  if(!Number.isFinite(y))continue;
+  if(pool){if(y<pondY+.095)continue;}
+  else{
+   const t=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1),
+     waterLine=T.MathUtils.lerp(pondY,CY,t);
+   if(y<waterLine+.10||Math.abs(z-creekCenter(t))<4.1)continue;
+  }
   if(Math.hypot(x-(pondX+8.6),z-(CZ+11.4))<4.4)continue;
   if(Math.hypot(x-hiddenCave.x,z-hiddenCave.z)<5.4)continue;
   if(purpleTrails.near(x,z,2.3))continue;
-  if(Math.max(Math.abs(ground(x+.5,z)-y),Math.abs(ground(x,z+.5)-y))>1.15)continue;
+  if(Math.max(Math.abs(ground(x+.5,z)-y),Math.abs(ground(x,z+.5)-y))>1.62)continue;
   const k=r3<.45?0:r3<.79?1:2;if(counts[k]>=budget[k])continue;
   o.position.set(x,y-.025,z);o.rotation.set(0,hashes(i*29+1)*6.283,0);
-  const sz=.84+.49*hashes(i*37+8);o.scale.set(sz,sz*(.88+.24*r1),sz);o.updateMatrix();
+  const sz=.96+.45*hashes(i*37+8);o.scale.set(sz,sz*(.90+.26*r1),sz);o.updateMatrix();
   batches[k].setMatrixAt(counts[k]++,o.matrix);pool?poolCount++:bankCount++;
  }
  for(let k=0;k<3;k++){batches[k].count=counts[k];batches[k].instanceMatrix.needsUpdate=true;}
- diag.assets['waterfall flowers R20']='ready: '+counts.reduce((a,b)=>a+b,0)+' native flower clumps';
- window.staceyWildflowerQA={counts,poolCount,bankCount};
+ diag.assets['waterfall flowers R21']='ready: '+counts.reduce((a,b)=>a+b,0)+' native flower clumps';
+ window.staceyWildflowerQA={counts,poolCount,bankCount,version:'R21',visibleBlossomScale:'0.12m petals / up to 0.9m tall'};
 })();
 
 forest();stones();understory();
@@ -1846,7 +1881,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Creek Bleed Fix R19 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Waterfall Flora R20 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Creek Bleed Fix R19 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Waterfall Flora R21 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
