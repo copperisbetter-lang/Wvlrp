@@ -7,7 +7,7 @@ on:
       - 'tools/GatorGameReady/**'
       - '.github/workflows/build-game-ready.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,6 +32,15 @@ jobs:
           "$SDKMGR" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build installable debug APK
         run: gradle --no-daemon :app:assembleDebug
+      - name: Publish APK directly to this branch for simple phone install
+        working-directory: .
+        run: |
+          cp tools/GatorGameReady/app/build/outputs/apk/debug/app-debug.apk tools/GatorGameReady/Gator_Game_Ready.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/GatorGameReady/Gator_Game_Ready.apk
+          git commit -m "Publish signed Gator Game Ready APK [skip ci]" || true
+          git push origin HEAD:gator/game-ready-android-app-20261029
       - uses: actions/upload-artifact@v4
         with:
           name: GatorGameReady-debug-APK
