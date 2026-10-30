@@ -942,7 +942,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   shader.fragmentShader=shader.fragmentShader.replace(
    'diffuseColor.a=rim*(.22+.13*noiseA.r+foam*.52);',
    `// Creek center stays opaque before shore. Fade starts only about
-    // 0.4m INSIDE Stacey Lake and finishes 6m into the actual lake.
+    // Roughly 1.1m INSIDE Stacey Lake; finishes about 7.8m into it.
     // Wider soft side edges hide the artificial trapezoid.
     float mouthAlong=clamp(flowUV.y/3.,0.,1.);
     float mouthFade=1.-smoothstep(.66,.87,mouthAlong);
