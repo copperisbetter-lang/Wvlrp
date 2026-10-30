@@ -932,7 +932,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    `float outProgress=clamp(flowUV.y/3.,0.,1.);
     // The old .34 blend started almost 9m BEFORE Stacey Lake.
      // R18: retain pond/creek hue to within 1m of the real shoreline.
-     float lakeMerge=smoothstep(.59,.78,outProgress);
+     float lakeMerge=smoothstep(.625,.84,outProgress);
     float outDepth=mix(.55,.62,smoothstep(0.,1.,outProgress));
     vec3 pondShallow=vec3(.20,.37,.39),pondDeep=vec3(.08,.21,.27);
     vec3 outColor=mix(pondShallow,pondDeep,1.-exp(-outDepth*.36));
@@ -941,7 +941,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
                       1.-exp(-mix(.55,2.4,lakeMerge)*.36));
     float skyGlint=.90+.040*noiseA.r+.014*noiseB.r;
     diffuseColor.rgb=mix(outColor*skyGlint,lakeColor,lakeMerge);
-    float whiteBreak=foam*.07*(1.-smoothstep(.59,.79,outProgress));
+    float whiteBreak=foam*.07*(1.-smoothstep(.625,.84,outProgress));
     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.79,.87,.84),whiteBreak);`
   );
   // Until it overlaps lake water the creek is opaque enough to hide its bed.
@@ -952,20 +952,21 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    `// R17: the real lake starts before the nominal x=fallShore.
     // Match color/motion first; dissolve creek *at* shoreline, not 10m in.
     float mouthAlong=clamp(flowUV.y/3.,0.,1.);
-    float shoreSoft=smoothstep(.55,.82,mouthAlong);
+    float shoreSoft=smoothstep(.625,.84,mouthAlong);
     float sideBlend=mix(.13,.28,shoreSoft);
     float edgeFade=smoothstep(0.,sideBlend,flowUV.x)
         *(1.-smoothstep(1.-sideBlend,1.,flowUV.x));
-    diffuseColor.a=rim*(.62+.16*noiseA.r+foam*.12)*edgeFade
-        *(1.-smoothstep(.56,.82,mouthAlong));`);
+    // Upstream creek is no longer semi-transparent over Lake Water.js.
+    diffuseColor.a=rim*(.96+.035*noiseA.r)*edgeFade
+        *(1.-smoothstep(.625,.84,mouthAlong));`);
   // Calmer directional flow at the lake mouth (not at the upper spring).
   const prior='normal=normalize(normal+tangent*waveX+bitangent*waveY);';
   if(shader.fragmentShader.includes(prior))
    shader.fragmentShader=shader.fragmentShader.replace(prior,
-     'normal=normalize(normal+(tangent*waveX+bitangent*waveY)*(1.-.95*smoothstep(.58,.81,flowUV.y/3.)));');
+     'normal=normalize(normal+(tangent*waveX+bitangent*waveY)*(1.-.95*smoothstep(.625,.84,flowUV.y/3.)));');
  };
  creekFlow.roughness=.22;
- creekFlow.customProgramCacheKey=()=> 'stacey-creek-natural-mouth-r18';
+ creekFlow.customProgramCacheKey=()=> 'stacey-creek-no-lake-bleed-r19';
  // V11: one WIDE source creek emerges from the mountain, meets ONE big boulder,
  // then divides into exactly two branches to the existing paired waterfall lips.
  (function buildHeadwaters(){
@@ -1540,15 +1541,24 @@ function findSafePondLanding(){
  }
  return null;
 }
-const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
+// R19: mask ONLY Stacey Lake's water directly underneath the upstream
+// creek, where a dipped bank had been showing blue lake water through it.
+const wp=[],wi=[],depth=[],creekCut=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)));
+ const channelT=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+ const cross=Math.abs(z-creekCenter(channelT));
+ // Outside this short creek corridor, the real lake stays untouched.
+ const across=1-smooth(2.3,4.7,cross);
+ const upstream=1-smooth(fallShore-.2,fallShore+2.2,x);
+ creekCut.push(across*upstream);
+ }for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setAttribute('creekCut',new T.Float32BufferAttribute(creekCut,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
 // Water.js planar reflection contains actual island, rocks and trees. Depth is
 // sampled from the same terrain function, so color/opacity follow submerged bed.
-water.material.vertexShader='attribute float bedDepth;varying float vBed;\n'+water.material.vertexShader.replace('void main() {','void main() {\nvBed=bedDepth;');
-water.material.fragmentShader='varying float vBed;\n'+water.material.fragmentShader.replace('float rf0 = 0.3;','float rf0 = 0.02;').replace('vec3( 1.5, 1.0, 1.5 )','vec3( .45, 1.0, .45 )');
+water.material.vertexShader='attribute float bedDepth;attribute float creekCut;varying float vBed;varying float vLakeCreekCut;\n'+water.material.vertexShader.replace('void main() {','void main() {\nvBed=bedDepth;\nvLakeCreekCut=creekCut;');
+water.material.fragmentShader='varying float vBed;varying float vLakeCreekCut;\n'+water.material.fragmentShader.replace('float rf0 = 0.3;','float rf0 = 0.02;').replace('vec3( 1.5, 1.0, 1.5 )','vec3( .45, 1.0, .45 )');
 water.material.fragmentShader=water.material.fragmentShader.replace('vec3 outgoingLight = albedo;',`vec3 absorption=mix(vec3(.08,.52,.44),vec3(.005,.10,.23),1.-exp(-vBed*.36));vec3 outgoingLight=mix(absorption,reflectionSample,clamp(reflectance,.05,.82))+sunColor*specularLight*.65;float wetEdge=1.-smoothstep(.0,.22,vBed);float wash=(.5+.5*sin(vBed*23.-time*1.2+worldPosition.x*.3))*wetEdge;outgoingLight+=vec3(.10,.13,.12)*pow(wash,8.);`);
-water.material.fragmentShader=water.material.fragmentShader.replace('gl_FragColor = vec4( outgoingLight, alpha );','gl_FragColor = vec4( outgoingLight, smoothstep(0.0,0.50,vBed)*.96 );');scene.add(water);
+water.material.fragmentShader=water.material.fragmentShader.replace('gl_FragColor = vec4( outgoingLight, alpha );','gl_FragColor = vec4( outgoingLight, smoothstep(0.0,0.50,vBed)*.96*(1.-vLakeCreekCut) );');scene.add(water);
 const gltf=new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);const ASSET='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/';
 function instances(source,placements,maskCavern=false){
  source.updateMatrixWorld(true);
@@ -1750,7 +1760,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Pond & Creek Color R18 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Pond & Creek Color R18 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Creek Bleed Fix R19 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Creek Bleed Fix R19 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
