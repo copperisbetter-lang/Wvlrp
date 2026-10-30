@@ -1,0 +1,44 @@
+name: Round03 clean MPFB adult female source - isolated QA
+on:
+  push:
+    branches: [gater/round03-clean-mpfb-body-20261030]
+    paths: [.github/workflows/round03-clean-mpfb-qa.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  clean-body:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender and MPFB system assets
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip unzip
+          curl -fL --retry 4 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/mpfb.zip .)
+          mkdir -p /tmp/wvlrp_round03_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/wvlrp_round03_ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/mpfb.zip
+          curl -fL --retry 4 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip
+          unzip -tq /tmp/mh-system.zip >/dev/null
+      - name: Build independent clean female body
+        run: |
+          set -euo pipefail
+          python3 -m py_compile world-creator/scripts/build_amy_mpfb.py
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_amy_mpfb.py 2>&1 | tee /tmp/round03-clean-body.log
+          test -s world-creator/assets/amy-mpfb-trial.glb
+      - name: Preserve QA-only artifacts privately in workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: round03-clean-mpfb-body-qa
+          path: |
+            world-creator/assets/amy-mpfb-trial.glb
+            world-creator/assets/amy-mpfb-trial-preview.png
+            /tmp/round03-clean-body.log
+          retention-days: 7
