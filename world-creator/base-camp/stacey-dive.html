@@ -925,23 +925,36 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
  const compileOutlet=creekFlow.onBeforeCompile;
  creekFlow.onBeforeCompile=shader=>{
   compileOutlet(shader);
+  // R16 uses the same single animated creek mesh and the actual lake
+  // underneath. No separate fake blending plane, no extra reflection pass.
   shader.fragmentShader=shader.fragmentShader.replace(
    'diffuseColor.rgb=mix(vec3(.065,.22,.20),vec3(.79,.87,.84),foam);',
    `float outProgress=clamp(flowUV.y/3.,0.,1.);
-    // Exact same lighter pond palette, with motion from the approved upper
-    // creek water shader and delicate highlights, not painted white strips.
+    float lakeMerge=smoothstep(.52,.96,outProgress);
     float outDepth=mix(.55,.62,smoothstep(0.,1.,outProgress));
     vec3 pondShallow=vec3(.32,.45,.44),pondDeep=vec3(.13,.26,.29);
     vec3 outColor=mix(pondShallow,pondDeep,1.-exp(-outDepth*.36));
+    vec3 lakeShallow=vec3(.08,.52,.44),lakeDeep=vec3(.005,.10,.23);
+    vec3 lakeColor=mix(lakeShallow,lakeDeep,
+                      1.-exp(-mix(.55,2.4,lakeMerge)*.36));
     float skyGlint=.96+.052*noiseA.r+.017*noiseB.r;
-    diffuseColor.rgb=mix(outColor*skyGlint,
-                         vec3(.79,.87,.84),foam*.11);`
+    diffuseColor.rgb=mix(outColor*skyGlint,lakeColor,lakeMerge*.82);
+    float whiteBreak=foam*.11*(1.-smoothstep(.50,.89,outProgress));
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.79,.87,.84),whiteBreak);`
   );
+  // Until it overlaps lake water the creek is opaque enough to hide its bed.
+  // Across the last 10m its layer fades smoothly to the REAL lake reflection,
+  // removing both the straight color seam and the visible cut-off end.
   shader.fragmentShader=shader.fragmentShader.replace(
    'diffuseColor.a=rim*(.22+.13*noiseA.r+foam*.52);',
-   'diffuseColor.a=rim*(.62+.16*noiseA.r+foam*.12)*smoothstep(.0,.16,flowUV.x)*(1.-smoothstep(.84,1.,flowUV.x));');
+   'diffuseColor.a=rim*(.62+.16*noiseA.r+foam*.12)*smoothstep(.0,.13,flowUV.x)*(1.-smoothstep(.87,1.,flowUV.x))*(1.-smoothstep(.68,.985,flowUV.y/3.));');
+  // Calmer directional flow at the lake mouth (not at the upper spring).
+  const prior='normal=normalize(normal+tangent*waveX+bitangent*waveY);';
+  if(shader.fragmentShader.includes(prior))
+   shader.fragmentShader=shader.fragmentShader.replace(prior,
+     'normal=normalize(normal+(tangent*waveX+bitangent*waveY)*(1.-.93*smoothstep(.62,.98,flowUV.y/3.)));');
  };
- creekFlow.customProgramCacheKey=()=> 'stacey-creek-muted-shore-r13';
+ creekFlow.customProgramCacheKey=()=> 'stacey-creek-lake-seamless-r16';
  // V11: one WIDE source creek emerges from the mountain, meets ONE big boulder,
  // then divides into exactly two branches to the existing paired waterfall lips.
  (function buildHeadwaters(){
@@ -1147,21 +1160,27 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   }
   dropletGeo.attributes.position.needsUpdate=true;
  }
- const cv=[],ci=[],cu=[];
- for(let n=0;n<=64;n++){
-  const t=n/64,x=T.MathUtils.lerp(pondX+6,fallShore+6,t);
+ const cv=[],ci=[],cu=[],mouthEnd=fallShore+12;
+ for(let n=0;n<=88;n++){
+  const t=n/88,x=T.MathUtils.lerp(pondX+6,mouthEnd,t);
   const pathT=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
-  const z=creekCenter(pathT),y=T.MathUtils.lerp(pondY,CY,pathT)+.045;
-  const spread=1.10*smooth(.72,.98,t);
+  const z=creekCenter(pathT);
+  // Gradual descent into Stacey's surface, then ~1cm above real lake water.
+  const settle=smooth(.73,.99,pathT);
+  const y=T.MathUtils.lerp(pondY,CY,pathT)+T.MathUtils.lerp(.045,.012,settle);
+  // The flowing creek widens at the lake mouth; the tail is transparent
+  // and overlaps the actual lake so its end cannot form a visible hard line.
+  const spread=1.10*smooth(.70,.91,t)+1.4*smooth(.62,.93,t);
   for(const sign of [-1,1]){
-   const edge=.12*Math.sin(t*27+sign*.8)+.07*Math.sin(t*63+sign*1.3);
-   cv.push(x,y,z+sign*(1.9+.24*Math.sin(pathT*15)+spread+edge));
+   const edge=(.12*Math.sin(t*27+sign*.8)+.07*Math.sin(t*63+sign*1.3))
+        *(1.-smooth(.78,1,t));
+   cv.push(x,y,z+sign*(1.9+.24*Math.sin(pathT*15)*(1.-smooth(.75,1,t))+spread+edge));
    cu.push(sign===-1?0:1,t*3);
   }
-  if(n<64){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
+  if(n<88){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
  }
  const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
- const creek=new T.Mesh(cg,creekFlow);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
+ const creek=new T.Mesh(cg,creekFlow);creek.name='Creek blending into Stacey Lake R16';group.add(creek);
  // Old low-poly pond/rim rocks are not part of the approved canyon.
  const banks=new T.InstancedMesh(new T.DodecahedronGeometry(1,1),rock,100),bpose=new T.Object3D();
  banks.visible=false;
@@ -1718,7 +1737,7 @@ syncPlayerCamera();miniNav.draw(now);
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
  flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Pond Restored R15 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Pond Restored R15 · Creek–Lake Blend R16 · Safe Pond Spawn R11 · Rock Inlet V16 · Woodland 360 Trails';status.title=status.textContent;status.textContent='Creek–Lake Blend R16 · '+fps+' FPS'+(diag.errors.length?' · asset errors: '+diag.errors.length:'');diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
 
