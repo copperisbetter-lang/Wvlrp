@@ -679,14 +679,16 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
  // Shared pool with a single continuous outlet; both falls land in this basin.
  // R9: more than one ring of vertices is needed for waves that actually
  // displace the pool surface. Radial pond mesh, no added reflection pass.
- const poolPositions=[0,0,0],poolUV=[.5,.5],poolIndices=[];
+ const poolPositions=[0,0,0],poolUV=[.5,.5],poolDepth=[pondY-ground(pondX,CZ)],poolIndices=[];
  const poolSpokes=96,poolRings=46;
  for(let ring=1;ring<=poolRings;ring++){
   const radius=ring/poolRings;
   for(let side=0;side<poolSpokes;side++){
    const angle=side*2*Math.PI/poolSpokes,c=Math.cos(angle),s=Math.sin(angle);
-   poolPositions.push(c*8*radius,0,s*17*radius);
+   const lx=c*8*radius,lz=s*17*radius;
+   poolPositions.push(lx,0,lz);
    poolUV.push(.5+.5*c*radius,.5+.5*s*radius);
+   poolDepth.push(pondY-ground(pondX+lx,CZ+lz));
   }
  }
  for(let side=0;side<poolSpokes;side++)
@@ -701,6 +703,7 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
  const poolGeo=new T.BufferGeometry();
  poolGeo.setAttribute('position',new T.Float32BufferAttribute(poolPositions,3));
  poolGeo.setAttribute('uv',new T.Float32BufferAttribute(poolUV,2));
+ poolGeo.setAttribute('pondDepth',new T.Float32BufferAttribute(poolDepth,1));
  poolGeo.setIndex(poolIndices);poolGeo.computeVertexNormals();
  const poolMat=new T.MeshPhysicalMaterial({color:0xffffff,roughness:.14,metalness:0,transparent:true,opacity:.82,side:T.DoubleSide,depthWrite:false});
  const pool=new T.Mesh(poolGeo,poolMat);pool.position.set(pondX,pondY,CZ);pool.name='Single shared waterfall pond · twin impact waves';group.add(pool);
@@ -777,9 +780,9 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
  `;
  poolMat.onBeforeCompile=shader=>{
   shader.uniforms.pondTime=flowUniform;
-  shader.vertexShader='uniform float pondTime; varying vec3 pondLocal;\n'+pondWaveGLSL+shader.vertexShader.replace(
-   '#include <begin_vertex>','#include <begin_vertex>\npondLocal=position;\ntransformed.y+=pondResponse(position.xz,pondTime).x;');
-  shader.fragmentShader='uniform float pondTime; varying vec3 pondLocal;\n'+pondWaveGLSL+shader.fragmentShader;
+  shader.vertexShader='uniform float pondTime; attribute float pondDepth; varying float pondBelowBank; varying vec3 pondLocal;\n'+pondWaveGLSL+shader.vertexShader.replace(
+   '#include <begin_vertex>','#include <begin_vertex>\npondLocal=position;\npondBelowBank=pondDepth;\ntransformed.y+=pondResponse(position.xz,pondTime).x;');
+  shader.fragmentShader='uniform float pondTime; varying float pondBelowBank; varying vec3 pondLocal;\n'+pondWaveGLSL+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
    float basinR=length(pondLocal.xz/vec2(8.,17.));
    float depth=1.9*(1.-smoothstep(.28,1.,basinR));
@@ -787,14 +790,14 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
    // Outlet uses the identical palette. Approved Stacey Lake stays unchanged.
    vec3 pondShallow=vec3(.32,.45,.44),pondDeep=vec3(.13,.26,.29);
    diffuseColor.rgb=mix(pondShallow,pondDeep,1.-exp(-depth*.36));
-   diffuseColor.a*=smoothstep(0.,.26,depth)*(1.-smoothstep(.93,1.,basinR));
+   diffuseColor.a*=smoothstep(0.,.26,depth)*(1.-smoothstep(.93,1.,basinR))*smoothstep(.01,.24,pondBelowBank);
   `);
   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
    vec3 response=pondResponse(pondLocal.xz,pondTime);
    normal=normalize(normal+mat3(viewMatrix)*vec3(-response.y,0.,-response.z)*.92);
   `);
  };
- poolMat.customProgramCacheKey=()=> 'stacey-pond-sunken-shore-r13';
+ poolMat.customProgramCacheKey=()=> 'stacey-pond-terrain-masked-r13';
  // UV.y is 0 at the basin, 1 at the crest. Sampling (UV.y + time)
  // makes the image travel toward SMALLER y: gravity-down, not backward/up.
  // The creek travels in its own +UV.y direction toward the lake.
