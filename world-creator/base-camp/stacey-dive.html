@@ -153,8 +153,13 @@ function naturalGround(x,z){
  // The bank must meet water level at r=1; old 0.72..1.24 transition
  // left the outer edge of the pond suspended above terrain.
  if(basin<1.24){
-  let shore=T.MathUtils.lerp(pondY-1.9,Math.max(original,pondY+.35),
-      smooth(.70,1.055,basin));
+  // Keep tall V6 rocky canyon walls on their original gentle grade;
+  // accelerate only LOW, previously floating waterline banks.
+  const targetBank=Math.max(original,pondY+.35);
+  const tallBank=smooth(pondY+1.,pondY+3.,targetBank);
+  const blend=T.MathUtils.lerp(smooth(.70,1.055,basin),
+      smooth(.72,1.24,basin),tallBank);
+  let shore=T.MathUtils.lerp(pondY-1.9,targetBank,blend);
   const outletT=(x-(pondX+6))/(fallShore+2-(pondX+6));
   if(outletT>=0&&outletT<=1){
    const dist=Math.abs(z-creekCenter(outletT));
