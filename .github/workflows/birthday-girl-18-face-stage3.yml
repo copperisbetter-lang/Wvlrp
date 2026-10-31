@@ -26,8 +26,8 @@ jobs:
           path: /tmp/birthday-stage2
       - name: Confirm previous editable MakeHuman source is present
         run: |
-          find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE3.blend -type f
-          test "$(find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE3.blend -type f | wc -l)" -eq 1
+          find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE2.blend -type f
+          test "$(find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE2.blend -type f | wc -l)" -eq 1
       - name: Restore cached Blender and official MPFB tools
         uses: actions/cache@v4
         with:
