@@ -175,7 +175,59 @@ print('BIRTHDAY_MATERIAL_SCAN',changes,
       'scene_meshes',len([o for o in bpy.data.objects if o.type=='MESH']))
 if min(changes.values())<1:raise RuntimeError('Texture modification incomplete '+str(changes))
 print('BIRTHDAY_STAGE2_MATERIAL_MAPS',changes)
+
+# Brows and lashes are separate MakeHuman assets. Their PNGs are NOT embedded
+# in the original GLB because the Stage 1 .blend retained paths from a prior
+# CI runner; the glTF exporter skipped those missing images. The workflow has
+# restored the official CC0 pack under the MPFB user data folder. Rebind the
+# actual PNG files to the *existing* brow/lash materials, keeping UVs & alpha.
+from bl_ext.wvlrp_local.mpfb.services.locationservice import LocationService
+assetroot=Path(LocationService.get_user_data())
+assetimages={}
+for category, basename in [('eyebrows','eyebrow001.png'),
+                           ('eyelashes','eyelashes01.png')]:
+    category_root=assetroot/category
+    candidates_img=sorted(p for p in category_root.rglob('*')
+                          if p.is_file() and p.name.lower()==basename)
+    if not candidates_img:
+        raise RuntimeError('Missing official CC0 '+category+' texture '+basename+
+                           ' in '+str(category_root))
+    assetimages[basename]=candidates_img[0]
+    print('BIRTHDAY_RESTORED_ASSET_PATH',category,str(candidates_img[0]))
+fixed={'eyebrow001.png':0,'eyelashes01.png':0}
+for ob in bpy.data.objects:
+    if ob.type!='MESH':continue
+    for mat in ob.data.materials:
+        if not mat or not mat.use_nodes:continue
+        for node in mat.node_tree.nodes:
+            if node.type!='TEX_IMAGE' or not node.image:continue
+            img=node.image
+            for basename,source in assetimages.items():
+                if basename not in img.name.lower():continue
+                repaired=bpy.data.images.load(str(source),check_existing=False)
+                if min(repaired.size)<4:
+                    raise RuntimeError('Official CC0 brow/lash image has invalid size '+str(source))
+                repaired.pack()
+                node.image=repaired
+                fixed[basename]+=1
+                print('BIRTHDAY_RELINKED_BROW_LASH',ob.name,mat.name,
+                      basename,'pixels',list(repaired.size))
+if any(n<1 for n in fixed.values()):
+    raise RuntimeError('Brow/lash material not connected on native model '+str(fixed))
+for ob in bpy.data.objects:
+    if ob.type!='MESH':continue
+    for mat in ob.data.materials:
+        if not mat or not mat.use_nodes:continue
+        for node in mat.node_tree.nodes:
+            if node.type=='TEX_IMAGE' and node.image:
+                if any(n in node.image.name.lower() for n in ('eyebrow001','eyelashes01')):
+                    if min(node.image.size)<4:
+                        raise RuntimeError('Brow/lash is still untextured '+node.image.name)
+print('BIRTHDAY_BROWS_LASHES_RESTORED',fixed)
+
 h['birthgirl_reference']='Approved Blonde Character Study Montage (front/profile/closeups)'
+h['birthgirl_reference_library_path']='/The Wild/Character References/Birthday Girl 18/Blonde Character Study Montage.png'
+h['birthgirl_reference_library_id']='libfile_051fca84c7388191b702a1f86c18407b'
 h['birthgirl_age_years']=18
 h['birthgirl_stage']='stage2 native-MPFB likeness and realistic-material trial; not approved'
 h['birthgirl_parent']='Birthday_Girl_18_EDITABLE_MPFB_STAGE1.blend'
@@ -235,7 +287,8 @@ for angle,point in [('front',(0,-3,headz)),('left',(3,0,headz)),('right',(-3,0,h
     scene.render.filepath=str(OUT/('birthday_stage2_'+angle+'.png'))
     bpy.ops.render.render(write_still=True)
 report={'age':18,'actual_source':'prior saved stage1 Blender project','native_morph_controls':T,
-        'material_maps_changed':changes,
+        'material_maps_changed':changes, 'eyebrow_lash_maps_fixed':fixed,
+        'approved_reference_library_path':'/The Wild/Character References/Birthday Girl 18/Blonde Character Study Montage.png',
         'status':'first refined likeness trial; needs side-by-side human visual approval',
         'untouched':'Original Stage 1 blend, GLB, approved master characters'}
 (OUT/'birthday_stage2_report.json').write_text(json.dumps(report,indent=2))
