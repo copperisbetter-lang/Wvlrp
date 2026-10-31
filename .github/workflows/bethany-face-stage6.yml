@@ -1,0 +1,125 @@
+name: Bethany Stage 6 native MPFB facial refinement
+on:
+  push:
+    branches: [feature/birthday-girl-18-mpfb-face-20261031]
+    paths:
+      - world-creator/scripts/build_bethany_stage6.py
+      - .github/workflows/bethany-face-stage6.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore certified Stage 5 native source
+        uses: actions/download-artifact@v4
+        with:
+          name: bethany-native-mpfb-face-stage5
+          repository: copperisbetter-lang/Wvlrp
+          run-id: 41230565781
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/bethany-stage5
+      - name: Syntax and Stage 5 source preflight
+        run: |
+          python3 - <<'PY'
+          import ast,json,struct
+          from pathlib import Path
+          script=Path('world-creator/scripts/build_bethany_stage6.py')
+          ast.parse(script.read_text(),filename=str(script))
+          p=Path('/tmp/bethany-stage5')
+          blend=list(p.rglob('Bethany_EDITABLE_MPFB_STAGE5.blend'))
+          glb=list(p.rglob('Bethany_STAGE5.glb'))
+          assert len(blend)==1 and blend[0].stat().st_size>1000000
+          assert len(glb)==1 and glb[0].stat().st_size>1000000
+          raw=glb[0].read_bytes()
+          assert raw[:4]==b'glTF' and len(raw)==struct.unpack_from('<I',raw,8)[0]
+          n=struct.unpack_from('<I',raw,12)[0]
+          j=json.loads(raw[20:20+n])
+          assert len(j.get('skins',[])) and len(j['skins'][0]['joints'])>=50
+          names=' '.join(i.get('name','').lower() for i in j['images'])
+          for key in ('warm_skin','brown_eye','long01','eyebrow001','eyelashes01'):
+              assert key in names, 'Source image missing: '+key
+          print('BETHANY_STAGE6_STAGE5_SOURCE_VERIFIED')
+          PY
+      - uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/blender-4.2.0-linux-x64
+            /tmp/mpfb2
+            /tmp/mh-system.zip
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+      - name: Set up Blender and MPFB2
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp/
+          fi
+          if [ ! -d /tmp/mpfb2/src/mpfb ]; then
+            git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          fi
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/stage6-mpfb.zip .)
+          mkdir -p /tmp/stage6-blender-ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/stage6-blender-ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/stage6-mpfb.zip
+          python3 - <<'PY'
+          import zipfile,shutil
+          from pathlib import Path
+          root=Path.home()/'.config/blender/4.2/extensions/.user/wvlrp_local/mpfb/data'
+          with zipfile.ZipFile('/tmp/mh-system.zip') as z:
+              for info in z.infolist():
+                  parts=Path(info.filename).parts
+                  idx=next((i for i,p in enumerate(parts) if p in {'skins','hair','eyes','eyebrows','eyelashes','teeth'}),None)
+                  if idx is None or info.is_dir():continue
+                  rel=Path(*parts[idx:])
+                  if '..' in rel.parts:continue
+                  dst=root/rel
+                  dst.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(info) as inp,dst.open('wb') as out:shutil.copyfileobj(inp,out)
+          PY
+      - name: Build Bethany Stage 6 editable native 3D
+        run: |
+          set -euo pipefail
+          BETHANY_STAGE5_DIR=/tmp/bethany-stage5 xvfb-run -a -s "-screen 0 1280x1024x24" /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_bethany_stage6.py 2>&1 | tee /tmp/bethany-stage6.log
+          grep BETHANY_STAGE6_SUCCESS /tmp/bethany-stage6.log
+      - name: Verify rig and real images
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path('world-creator/assets/bethany-face-stage6')
+          assert (p/'Bethany_EDITABLE_MPFB_STAGE6.blend').stat().st_size>1000000
+          b=(p/'Bethany_STAGE6.glb').read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n=struct.unpack_from('<I',b,12)[0]
+          j=json.loads(b[20:20+n])
+          assert len(j.get('skins',[]))>0 and len(j['skins'][0]['joints'])>=50
+          names=' '.join(i.get('name','').lower() for i in j.get('images',[]))
+          for key in ('eyebrow001','eyelashes01','brown_eye','long01','warm_skin'):
+              assert key in names, 'Exported map missing: '+key
+          for side in ('front','left','right','threequarter'):
+              assert (p/f'bethany_stage6_{side}.png').stat().st_size>20000
+          report=json.loads((p/'bethany_stage6_report.json').read_text())
+          assert report['native_shape_count']>=56
+          assert len(report['changed_native_controls'])>=20
+          assert report['evaluated_geometry_max_displacement_m']>0.00002
+          assert report['owner_approval'] is False
+          print('BETHANY_STAGE6_VERIFIED',len(b),len(j['skins'][0]['joints']),
+                report['evaluated_geometry_max_displacement_m'])
+          PY
+      - name: Archive independent Stage 6 trial
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bethany-native-mpfb-face-stage6
+          path: |
+            /tmp/bethany-stage6.log
+            world-creator/assets/bethany-face-stage6/
+          retention-days: 7
+          if-no-files-found: ignore
