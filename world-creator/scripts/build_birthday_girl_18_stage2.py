@@ -69,19 +69,25 @@ def tweak_image(material, kind, fx):
         if node.type!='TEX_IMAGE' or not node.image: continue
         img=node.image
         if kind not in img.name.lower():continue
-        copy=img.copy()
-        copy.name='Birthday18_STAGE2_'+img.name
-        pixels=np.empty(len(copy.pixels),dtype=np.float32)
-        copy.pixels.foreach_get(pixels)
+        # Blender's Image.copy() can produce a generated image with zero
+        # decoded data when the original texture came from a packed .blend.
+        # Allocate a fresh image, then explicitly copy source RGBA pixels.
+        if img.size[0]<2 or img.size[1]<2:
+            raise RuntimeError('Source image size invalid '+img.name)
+        pixels=np.empty(img.size[0]*img.size[1]*4,dtype=np.float32)
+        img.pixels.foreach_get(pixels)
         a=pixels.reshape((-1,4))
         rgb=a[:,:3]
         fx(rgb,a[:,3])
         np.clip(rgb,0,1,out=rgb)
+        copy=bpy.data.images.new('Birthday18_STAGE2_'+img.name,
+                  width=img.size[0],height=img.size[1],
+                  alpha=True,float_buffer=bool(img.is_float))
         copy.pixels.foreach_set(pixels)
         copy.update()
-        try:copy.pack()
-        except Exception as exc: print('BIRTHDAY_PACK_WARNING',type(exc).__name__)
+        copy.pack()
         node.image=copy
+        print('BIRTHDAY_TEXTURE_EDIT',kind,img.name,'size',list(img.size))
         n+=1
     return n
 
