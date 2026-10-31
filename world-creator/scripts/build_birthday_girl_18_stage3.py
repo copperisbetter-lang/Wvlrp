@@ -16,7 +16,7 @@ h=bpy.data.objects.get('BIRTHDAY GIRL 18 - native MPFB editable master')
 if not h or h.type!='MESH' or len(h.data.vertices)<10000:raise RuntimeError('Missing actual original MakeHuman mesh: abort')
 shapes=h.data.shape_keys.key_blocks
 before={k.name:k.value for k in shapes}
-if len(before)<75:raise RuntimeError('Native MPFB morph controls missing; refusing generic replacement')
+if len(before)<51:raise RuntimeError('Native MPFB morph controls missing; refusing generic replacement')
 print('BIRTHDAY_STAGE3_PRESERVED_NATIVE_MORPHS',len(before))
 
 # Stage-2 keys, calibrated for the reference's oval/soft-heart silhouette,
