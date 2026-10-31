@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Wild | All Saved Characters</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d191b;color:#e9f7ed;font:13px system-ui;overflow:hidden}
+#world{position:fixed;inset:0;touch-action:none}
+header{position:fixed;top:0;left:0;right:0;padding:10px 13px;background:#102c2be8;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:12px}
+header strong{font-size:14px;letter-spacing:.05em}#count{font-size:11px;text-align:right}
+nav{position:fixed;z-index:5;bottom:max(10px,env(safe-area-inset-bottom));left:6px;right:6px;background:#13332fea;border:1px solid #87a998;border-radius:12px;padding:7px;display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+button,select{font:600 12px system-ui;padding:8px;border:1px solid #94b8a1;background:#245749;color:white;border-radius:8px;min-height:37px;touch-action:manipulation}
+select{min-width:125px;max-width:190px;flex:1}#hint{position:fixed;right:9px;top:60px;text-align:right;font-size:11px;color:#e5fbecb3;pointer-events:none}#note{position:fixed;bottom:95px;left:8px;max-width:85%;border-radius:8px;background:#0e2c29c9;padding:7px 9px;font-size:11px}
+details{position:fixed;top:64px;left:8px;max-width:53%;z-index:4;background:#143331d9;padding:7px;border-radius:8px;font-size:11px}summary{cursor:pointer}details p{line-height:1.4}
+@media(max-width:500px){nav{padding:5px;gap:4px}button,select{padding:6px;min-height:34px;font-size:11px}header strong{font-size:12px}#note{bottom:111px}}
+</style></head><body>
+<div id="world"></div><header><strong>THE WILD · CHARACTER LINEUP</strong><span id="count">Starting 18 models…</span></header>
+<details><summary>Other characters / missing versions ▾</summary><p>Jenny, Rob, Bev, Amanda, Jessica, Ethan, Liliana, and Gater NPC do not have verified standalone 3D files in this public lineup. Bethany's newer morphs are separate; the model here is an earlier inspection version. No substitutes are used.</p></details>
+<div id="hint">Drag: rotate · Pinch: zoom · Two fingers: pan</div>
+<div id="note">Real saved GLBs load progressively. The full group is a large download.</div>
+<nav><button id="fit">FIT ALL</button><button data-turn="0">FRONT</button><button data-turn="-1.5707963">LEFT</button><button data-turn="1.5707963">RIGHT</button><button data-turn="3.1415926">BACK</button><select id="pick" aria-label="Focus on a character"><option value="">Choose character…</option></select></nav>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as T from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+const roster=[
+['Mason','assets/mason-mpfb-trial.glb','MPFB player'],
+['Sophie 1','assets/sophie-1-native-fit.glb','master variant'],
+['Laura 2','assets/laura-2-base.glb','base clone'],
+['SAV 4','assets/sav4-realistic.glb','Savannah studio'],
+['CAR 1','characters/car/car-1.glb','Carol clone'],
+['CAR 2','assets/car2-completed.glb','Carol clone'],
+['CAR 5','assets/car-5-v21.glb','V21 clone'],
+['Caroline','assets/caroline-inspection.glb','inspection'],
+['Amy','assets/amy-mpfb-trial.glb','MPFB model'],
+['Caitlyn','assets/caitlyn-mpfb-trial.glb','MPFB model'],
+['Chrissy','assets/chrissy-mpfb-trial.glb','MPFB model'],
+['Riley','assets/riley-mpfb-trial.glb','MPFB model'],
+['Riley Real','assets/riley-real.glb','alternate'],
+['Riley Blonde','assets/riley-blonde-standing.glb','standing variant'],
+['Sha','assets/sha-mpfb-trial.glb','MPFB model'],
+['Brooke','../avatar-work/brooke/second-chance/brooke-3-1-body-candidate.glb','body candidate'],
+['Mona','../ImageToStl.com_Mona%20(1).glb','imported GLB study'],
+['Bethany','../birthday-girl-18-inspection.glb','early inspection']
+];
+const holder=document.getElementById('world'),count=document.getElementById('count'),note=document.getElementById('note'),pick=document.getElementById('pick');
+const renderer=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+holder.appendChild(renderer.domElement);
+const scene=new T.Scene();scene.background=new T.Color(0x122022);
+scene.add(new T.HemisphereLight(0xe9f4ff,0x716a5c,2.4));
+const sun=new T.DirectionalLight(0xfff2df,2.7);sun.position.set(-6,15,17);scene.add(sun);
+const fill=new T.DirectionalLight(0xd8eafa,1.1);fill.position.set(9,12,-8);scene.add(fill);
+const camera=new T.OrthographicCamera(-8,8,8,-8,.1,300);camera.position.set(0,8,34);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.screenSpacePanning=true;orbit.minZoom=.35;orbit.maxZoom=16;
+const pods=[],plateGeo=new T.CylinderGeometry(1.06,1.09,.13,24);
+let cols=3,rows=6,fitHeight=20,selected=-1,ready=0,bad=0,finished=0,turn=0;
+function namePlate(model,tag){
+ const c=document.createElement('canvas');c.width=512;c.height=116;const g=c.getContext('2d'),tex=new T.CanvasTexture(c);
+ tex.colorSpace=T.SRGBColorSpace;
+ function paint(state){g.fillStyle='#092a29';g.fillRect(0,0,512,116);g.textAlign='center';g.fillStyle='#fff';g.font='bold 38px system-ui';g.fillText(model[0],256,39,485);g.fillStyle=state==='LOADED'?'#9cf1b7':state==='ERROR'?'#ffc0b0':'#f3db9d';g.font='23px system-ui';g.fillText(state+' · '+model[2],256,84,495);tex.needsUpdate=true}
+ paint(tag);const m=new T.Mesh(new T.PlaneGeometry(2.4,.54),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:T.DoubleSide}));m.position.set(0,-.28,.27);return {mesh:m,paint}
+}
+roster.forEach((m,i)=>{
+ const pod=new T.Group(),figure=new T.Group(),plate=new T.Mesh(plateGeo,new T.MeshStandardMaterial({color:0x274740,roughness:1})),label=namePlate(m,'WAITING');
+ plate.position.y=.02;pod.add(plate,figure,label.mesh);scene.add(pod);pod.userData={figure,plate,label};pods.push(pod);
+ const o=document.createElement('option');o.value=String(i);o.textContent=m[0];pick.appendChild(o);
+});
+function arrange(){
+ const aspect=innerWidth/innerHeight;cols=aspect<.74?3:aspect<1.15?4:6;rows=Math.ceil(pods.length/cols);
+ for(let i=0;i<pods.length;i++){const row=Math.floor(i/cols),n=Math.min(cols,pods.length-row*cols),column=i%cols;pods[i].position.set((column-(n-1)/2)*2.72,(rows-row-1)*3.1,0)}
+ fitHeight=Math.max(rows*3.1+1,cols*2.72/aspect+1.4);
+ camera.left=-fitHeight*aspect/2;camera.right=fitHeight*aspect/2;camera.top=fitHeight/2;camera.bottom=-fitHeight/2;camera.updateProjectionMatrix();
+}
+function all(){
+ selected=-1;pick.value='';arrange();const mid=(rows-1)*3.1/2+1.1;camera.position.set(0,mid,Math.max(30,fitHeight*1.45));camera.zoom=1;camera.updateProjectionMatrix();orbit.target.set(0,mid,0);orbit.update();
+ pods.forEach(p=>p.userData.plate.material.color.setHex(0x274740))
+}
+function focus(i){
+ selected=i;pick.value=String(i);const p=pods[i].position;orbit.target.set(p.x,p.y+1.05,0);camera.position.set(p.x,p.y+1.05,Math.max(14,camera.position.z));camera.zoom=Math.min(14,fitHeight/3.4);camera.updateProjectionMatrix();orbit.update();
+ pods.forEach((q,n)=>q.userData.plate.material.color.setHex(n===i?0x648e74:0x274740))
+}
+document.getElementById('fit').onclick=all;pick.onchange=()=>pick.value===''?all():focus(Number(pick.value));
+document.querySelectorAll('[data-turn]').forEach(b=>b.onclick=()=>{turn=Number(b.dataset.turn);pods.forEach(p=>p.userData.figure.rotation.y=turn)});
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);if(selected<0)all();else{const n=selected;arrange();focus(n)}});
+all();
+const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);let cursor=0;
+function progress(){count.textContent=ready+' / '+roster.length+' loaded'+(bad?' · '+bad+' errors':'');note.textContent=finished===roster.length?'Lineup finished. Zoom or choose a name for a close inspection.': 'Loading real character models: '+finished+' / '+roster.length+' processed. Models appear as they arrive.'}
+async function worker(){
+ while(cursor<roster.length){
+  const i=cursor++,item=roster[i],pod=pods[i];
+  try{
+   const url=new URL(item[1],document.baseURI).href;
+   const model=(await loader.loadAsync(url)).scene;model.updateMatrixWorld(true);
+   let box=new T.Box3().setFromObject(model),h=box.max.y-box.min.y;
+   if(!(h>0.00001)||!Number.isFinite(h))throw Error('No model bounds');
+   model.scale.multiplyScalar(Math.max(.000001,Math.min(10000,2.18/h)));model.updateMatrixWorld(true);
+   box=new T.Box3().setFromObject(model);
+   model.position.x-=(box.max.x+box.min.x)/2;model.position.y+=.12-box.min.y;model.position.z-=(box.max.z+box.min.z)/2;
+   pod.userData.figure.add(model);pod.userData.label.paint('LOADED');ready++;
+  }catch(e){bad++;pod.userData.label.paint('ERROR');console.warn(item[0]+' could not load',e)}
+  finished++;progress()
+ }
+}
+progress();Promise.all([worker(),worker()]).catch(e=>{note.textContent=String(e)});
+window.wvlrpLineup={roster,pods,loaded:()=>ready,errors:()=>bad};
+function render(){requestAnimationFrame(render);orbit.update();renderer.render(scene,camera)}render();
+</script></body></html>
