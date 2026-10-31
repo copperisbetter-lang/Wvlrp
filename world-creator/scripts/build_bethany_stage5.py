@@ -107,8 +107,15 @@ def recover(family):
     dst.write_bytes(data)
     im=bpy.data.images.load(str(dst),check_existing=False)
     im.name='BethanyStage5_Restored_'+family
-    if not im.has_data or min(im.size)<16:raise RuntimeError('Invalid Stage4 image pixels '+family)
+    # Blender 4.2 lazily loads pixel buffers: has_data may still be false
+    # immediately after bpy.data.images.load even for a valid embedded PNG.
+    # Force pixel decode before packing and checking availability.
+    if min(im.size)<16:raise RuntimeError('Invalid Stage4 image dimensions '+family)
+    pixel_sample=float(im.pixels[0])
     im.pack()
+    if not im.packed_file or min(im.size)<16:
+        raise RuntimeError('Stage4 image could not be decoded/packed '+family)
+    print('BETHANY_STAGE5_IMAGE_RECOVERED',family,list(im.size),pixel_sample)
     return im
 for ob in bpy.data.objects:
     if ob.type!='MESH':continue
@@ -122,8 +129,13 @@ for ob in bpy.data.objects:
                 if not node.image.has_data:
                     if key not in recovered:recovered[key]=recover(key)
                     node.image=recovered[key]
-                if not node.image.has_data:raise RuntimeError('Missing texture pixel buffer '+name)
+                # A packed image can be valid even when has_data is initially
+                # false in Blender background mode. Trigger its lazy pixels first.
+                if not node.image.has_data:
+                    _=float(node.image.pixels[0])
                 if not node.image.packed_file:node.image.pack()
+                if not node.image.packed_file:
+                    raise RuntimeError('Texture image was not packed '+name)
                 seen[key]+=1
 if any(x==0 for x in seen.values()):raise RuntimeError('Critical skin/eye/brow/hair material missing '+str(seen))
 print('BETHANY_STAGE5_TEXTURE_FAMILIES',seen,'RECOVERED',list(recovered))
