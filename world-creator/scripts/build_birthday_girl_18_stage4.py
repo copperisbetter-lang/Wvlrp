@@ -237,7 +237,7 @@ for name,loc in [('front',(0,-3,z)),('left',(3,0,z)),('right',(-3,0,z)),('threeq
     scene.render.filepath=str(OUT/('birthday_stage4_'+name+'.png'))
     bpy.ops.render.render(write_still=True)
 report={
- 'source':'certified Stage3 native editable MakeHuman .blend from workflow 41223456507',
+ 'source':'certified Stage3 native editable MakeHuman .blend from workflow 41225002227',
  'reference_library':'/The Wild/Character References/Birthday Girl 18/Blonde Character Study Montage.png',
  'stage4_target':'Stage4 eye/silhouette/mouth refinement toward 70-75% target; subjective likeness unmeasured',
  'native_morph_count_before':len(before),
