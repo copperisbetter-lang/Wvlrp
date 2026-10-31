@@ -1,0 +1,118 @@
+name: Bethany Stage 8 native MPFB facial refinement
+on:
+  push:
+    branches: [feature/bethany-stage8-face-20261031]
+    paths:
+      - world-creator/scripts/build_bethany_stage8.py
+      - .github/workflows/bethany-face-stage8.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore certified Stage 7 native source
+        uses: actions/download-artifact@v4
+        with:
+          name: bethany-native-mpfb-face-stage7
+          repository: copperisbetter-lang/Wvlrp
+          run-id: 41232686709
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/bethany-stage7
+      - name: Syntax and Stage 7 source preflight
+        run: |
+          python3 - <<'PY'
+          import ast,json,struct
+          from pathlib import Path
+          script=Path('world-creator/scripts/build_bethany_stage8.py')
+          ast.parse(script.read_text(),filename=str(script))
+          p=Path('/tmp/bethany-stage7')
+          blend=list(p.rglob('Bethany_EDITABLE_MPFB_STAGE7.blend'))
+          glb=list(p.rglob('Bethany_STAGE7.glb'))
+          assert len(blend)==1 and blend[0].stat().st_size>1000000
+          assert len(glb)==1 and glb[0].stat().st_size>1000000
+          raw=glb[0].read_bytes()
+          assert raw[:4]==b'glTF' and len(raw)==struct.unpack_from('<I',raw,8)[0]
+          n=struct.unpack_from('<I',raw,12)[0]
+          j=json.loads(raw[20:20+n])
+          assert len(j.get('skins',[])) and len(j['skins'][0]['joints'])>=50
+          names=' '.join(i.get('name','').lower() for i in j['images'])
+          for key in ('warm_skin','brown_eye','long01','eyebrow001','eyelashes01'):
+              assert key in names, 'Source image missing: '+key
+          print('BETHANY_STAGE8_STAGE7_SOURCE_VERIFIED')
+          PY
+      - uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/blender-4.2.0-linux-x64
+            /tmp/mpfb2
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+      - name: Set up Blender and MPFB2
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb zip
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp/
+          fi
+          if [ ! -d /tmp/mpfb2/src/mpfb ]; then
+            git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          fi
+          (cd /tmp/mpfb2/src/mpfb && zip -qr /tmp/stage8-mpfb.zip .)
+          mkdir -p /tmp/stage8-blender-ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/stage8-blender-ext
+          /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/stage8-mpfb.zip
+          # Stage8 loads the fully verified Stage7 .blend and its GLB with
+          # embedded textures, and only needs the MPFB2 extension API.
+          # Do not fetch a redundant multi-hundred-MB MakeHuman system pack.
+          test -f /tmp/bethany-stage7/Bethany_EDITABLE_MPFB_STAGE7.blend || find /tmp/bethany-stage7 -name 'Bethany_EDITABLE_MPFB_STAGE7.blend' -print | grep -q .
+      - name: Build Bethany Stage 8 editable native 3D
+        run: |
+          set -euo pipefail
+          BETHANY_STAGE7_DIR=/tmp/bethany-stage7 xvfb-run -a -s "-screen 0 1280x1024x24" /tmp/blender-4.2.0-linux-x64/blender --background --python world-creator/scripts/build_bethany_stage8.py 2>&1 | tee /tmp/bethany-stage8.log
+          grep BETHANY_STAGE8_SUCCESS /tmp/bethany-stage8.log
+      - name: Verify rig and real images
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path('world-creator/assets/bethany-face-stage8')
+          assert (p/'Bethany_EDITABLE_MPFB_STAGE8.blend').stat().st_size>1000000
+          b=(p/'Bethany_STAGE8.glb').read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n=struct.unpack_from('<I',b,12)[0]
+          j=json.loads(b[20:20+n])
+          assert len(j.get('skins',[]))>0 and len(j['skins'][0]['joints'])>=50
+          names=' '.join(i.get('name','').lower() for i in j.get('images',[]))
+          for key in ('eyebrow001','eyelashes01','brown_eye','long01','warm_skin'):
+              assert key in names, 'Exported map missing: '+key
+          for side in ('front','left','right','threequarter'):
+              assert (p/f'bethany_stage8_{side}.png').stat().st_size>20000
+          report=json.loads((p/'bethany_stage8_report.json').read_text())
+          assert report['native_shape_count']>=56
+          assert len(report['changed_native_controls'])>=30
+          assert report['evaluated_geometry_max_displacement_m']>0.0015
+          assert report['owner_approval'] is False
+          assert report['native_shape_count']>=56
+          pairs=[(k,'r-'+k[2:]) for k in report['changed_native_controls'] if k.startswith('l-')]
+          assert all(abs(report['changed_native_controls'][l]-report['changed_native_controls'][r])<1e-8 for l,r in pairs)
+          assert 'forehead-scale-vert-decr' in report['changed_native_controls']
+          assert 'mouth-scale-horiz-decr' in report['changed_native_controls']
+          print('BETHANY_STAGE8_VERIFIED',len(b),len(j['skins'][0]['joints']),
+                report['evaluated_geometry_max_displacement_m'])
+          PY
+      - name: Archive independent Stage 8 trial
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bethany-native-mpfb-face-stage8
+          path: |
+            /tmp/bethany-stage8.log
+            world-creator/assets/bethany-face-stage8/
+          retention-days: 7
+          if-no-files-found: ignore
