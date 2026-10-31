@@ -68,6 +68,12 @@ jobs:
           mkdir -p /tmp/stage7-blender-ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension repo-add wvlrp_local --name WVLRP --directory /tmp/stage7-blender-ext
           /tmp/blender-4.2.0-linux-x64/blender --command extension install-file -r wvlrp_local -e /tmp/stage7-mpfb.zip
+          # New feature branches cannot always access Actions caches from siblings.
+          # Fetch the official CC0 system asset pack if the branch cache is cold.
+          if [ ! -s /tmp/mh-system.zip ]; then
+            curl -fL --retry 4 --connect-timeout 30 --speed-time 120 --speed-limit 1024 'https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip' -o /tmp/mh-system.zip.part
+            mv /tmp/mh-system.zip.part /tmp/mh-system.zip
+          fi
           python3 - <<'PY'
           import zipfile,shutil
           from pathlib import Path
