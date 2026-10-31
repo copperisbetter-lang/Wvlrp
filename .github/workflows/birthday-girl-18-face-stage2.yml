@@ -100,6 +100,12 @@ jobs:
           meta=json.loads((d/'birthday_stage2_report.json').read_text())
           assert len(meta['native_morph_controls'])>=34
           assert all(v>0 for v in meta['material_maps_changed'].values())
+          assert all(v>0 for v in meta['eyebrow_lash_maps_fixed'].values()), meta['eyebrow_lash_maps_fixed']
+          assert meta['approved_reference_library_path'].endswith('Blonde Character Study Montage.png')
+          print('BIRTHDAY_STAGE2_EYEBROWS_LASHES_OK',meta['eyebrow_lash_maps_fixed'])
+          # These maps were missing from the original GLB, which caused hot-pink previews.
+          names=' '.join(i.get('name','').lower() for i in doc.get('images',[]))
+          assert 'eyebrow001' in names and 'eyelashes01' in names, names
           for side in ('front','left','right'):
               assert (d/('birthday_stage2_'+side+'.png')).stat().st_size>20000
           print('BIRTHDAY_STAGE2_3D_VERIFIED',blend.stat().st_size,glb.stat().st_size,
