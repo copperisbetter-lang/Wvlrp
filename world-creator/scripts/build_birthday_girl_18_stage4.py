@@ -181,7 +181,7 @@ for ob in bpy.data.objects:
 if any(v<1 for v in verified.values()):raise RuntimeError('Original Stage3 eye/brow/hair assets lost '+str(verified))
 print('BIRTHDAY_STAGE4_TEXTURES_PRESERVED',verified)
 
-h['birthgirl_stage']='Stage4 isolated likeness refinement, incremental resemblance improvement toward owner's 70-75% checkpoint, NOT yet visually approved'
+h['birthgirl_stage']="Stage4 isolated likeness refinement, incremental resemblance improvement toward owner's 70-75% checkpoint, NOT yet visually approved"
 h['birthgirl_parent']='Birthday_Girl_18_EDITABLE_MPFB_STAGE3.blend'
 h['birthgirl_reference_library_path']='/The Wild/Character References/Birthday Girl 18/Blonde Character Study Montage.png'
 h['birthgirl_approval']='Pending user comparison, no objective similarity score available'
