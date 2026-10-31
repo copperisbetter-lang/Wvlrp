@@ -81,7 +81,7 @@ def restore_embedded_glb_image(image_name):
         if image_info.get('name','').lower()!=image_name.lower():continue
         view=meta['bufferViews'][image_info['bufferView']]
         data=raw[binary_at+view.get('byteOffset',0):binary_at+view.get('byteOffset',0)+view['byteLength']]
-        if not data.startswith(b'\\x89PNG\\r\\n\\x1a\\n'):
+        if not data.startswith(bytes.fromhex('89504e470d0a1a0a')):
             raise RuntimeError('Source embedded texture not PNG: '+image_name)
         outpath=Path('/tmp/birthday18-restored-textures')
         outpath.mkdir(exist_ok=True)
