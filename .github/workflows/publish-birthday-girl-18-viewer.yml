@@ -1,0 +1,120 @@
+name: Publish Birthday Girl 18 inspection viewer
+on:
+  push:
+    branches: [feature/birthday-girl-18-mpfb-face-20261031]
+    paths:
+      - .github/workflows/publish-birthday-girl-18-viewer.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-birthday-girl-18-viewer
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout current production website
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Download VERIFIED corrected eyebrow-and-lash Stage 2 3D model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/birthday-girl-fixed
+          gh run download 41223456507 -R "$GITHUB_REPOSITORY" -n birthday-girl-18-mpfb-face-stage2 -D /tmp/birthday-girl-fixed
+          model="$(find /tmp/birthday-girl-fixed -name Birthday_Girl_18_STAGE2.glb -type f -print -quit)"
+          test -n "$model" && test -s "$model"
+          cp "$model" birthday-girl-18-inspection.glb
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          src=Path('birthday-girl-18-inspection.glb')
+          b=src.read_bytes()
+          assert b[:4]==b'glTF'
+          assert len(b)==struct.unpack_from('<I',b,8)[0]
+          n,typ=struct.unpack_from('<II',b,12)
+          assert typ==0x4e4f534a
+          gltf=json.loads(b[20:20+n])
+          image_names=' '.join(img.get('name','').lower() for img in gltf.get('images',[]))
+          assert 'eyebrow001' in image_names, image_names
+          assert 'eyelashes01' in image_names, image_names
+          assert len(gltf.get('skins',[]))>=1
+          print('BIRTHDAY_GIRL_PUBLISHABLE_MODEL_CONFIRMED',len(b),image_names[:240])
+          PY
+      - name: Create genuine mobile interactive 3D viewer, no reference photo
+        run: |
+          cat > birthday-girl-18-viewer.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+          <meta name="robots" content="noindex,nofollow">
+          <meta name="theme-color" content="#141b25">
+          <title>Birthday Girl 18 — Actual 3D MakeHuman Inspection | WVLRP</title>
+          <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
+          <style>
+          *{box-sizing:border-box}body{margin:0;background:#141b25;color:#f2f6fd;font:15px system-ui,Arial,sans-serif}
+          header{padding:12px 14px;background:#1d2837}h1{margin:0;font-size:19px}header p{font-size:12px;color:#c5d1e2;margin:5px 0 0}
+          model-viewer{display:block;width:100%;height:69dvh;min-height:330px;background:radial-gradient(ellipse,#657084,#212d3c 70%,#111923);touch-action:none}
+          #state{padding:8px 14px;background:#1b2430;font-size:13px;color:#d3e3f5;min-height:36px}
+          .controls{display:flex;flex-wrap:wrap;gap:7px;padding:12px;background:#141b25}
+          button{flex:1 1 100px;border:1px solid #8996aa;background:#334b65;border-radius:8px;color:white;min-height:43px;font-weight:650;font-size:14px}
+          button:focus-visible{outline:3px solid #f1da9e}
+          footer{padding:0 14px 15px;font-size:12px;color:#abbcd2;line-height:1.5}
+          </style></head><body>
+          <header><h1>Birthday Girl 18 — 3D inspection</h1>
+          <p>Actual Stage 2 MakeHuman model · eyebrow and eyelash textures repaired · drag to rotate, pinch to zoom</p></header>
+          <model-viewer id="viewer" src="./birthday-girl-18-inspection.glb" alt="Actual rigged editable-MakeHuman-derived Birthday Girl 18 Stage 2 character"
+            camera-controls camera-target="0m 0.9m 0m" camera-orbit="0deg 77deg 2.8m"
+            environment-image="neutral" exposure="1.05" shadow-intensity=".55"
+            interaction-prompt="none" loading="eager"></model-viewer>
+          <div id="state" role="status" aria-live="polite">Loading her actual 3D model…</div>
+          <div class="controls">
+            <button id="front">Front</button><button id="left">Left side</button>
+            <button id="right">Right side</button><button id="face">Face close-up</button>
+            <button id="full">Full body</button><button id="spin">Rotate</button>
+          </div>
+          <footer>Unapproved facial-likeness trial. The approved reference photograph is preserved privately in the Birthday Girl 18 Library folder and is NOT published here.</footer>
+          <script>
+          const v=document.getElementById('viewer'), state=document.getElementById('state');
+          let az=0,close=false,rotate=false;
+          function position(){v.cameraTarget=close?'0m 1.51m 0m':'0m 0.9m 0m';
+            v.cameraOrbit=az+'deg 77deg '+(close?'0.58m':'2.8m');}
+          document.getElementById('front').onclick=()=>{az=0;position()};
+          document.getElementById('left').onclick=()=>{az=90;position()};
+          document.getElementById('right').onclick=()=>{az=-90;position()};
+          document.getElementById('face').onclick=()=>{close=true;position()};
+          document.getElementById('full').onclick=()=>{close=false;position()};
+          document.getElementById('spin').onclick=e=>{rotate=!rotate;v.autoRotate=rotate;e.target.textContent=rotate?'Stop':'Rotate'};
+          v.addEventListener('load',()=>state.textContent='3D model loaded. Rotate and zoom to inspect.');
+          v.addEventListener('error',()=>state.textContent='3D failed to load. Check your internet connection and reload this page.');
+          </script></body></html>
+          HTML
+          test -s birthday-girl-18-viewer.html
+      - name: Publish only these two unlisted viewer files; preserve all characters and pages
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add birthday-girl-18-viewer.html birthday-girl-18-inspection.glb
+          git diff --cached --quiet && { echo "Viewer files already current"; exit 0; }
+          git commit -m "Publish isolated Birthday Girl Stage 2 interactive viewer"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "BIRTHDAY_GIRL_VIEWER_PUBLISHED https://wvlrp.com/birthday-girl-18-viewer.html"
+              exit 0
+            fi
+            git fetch origin main
+            if git diff --name-only HEAD origin/main -- birthday-girl-18-viewer.html birthday-girl-18-inspection.glb | grep -q .; then
+              echo "Conflicting edit to same Birthday Girl viewer; refusing overwrite."
+              exit 1
+            fi
+            git rebase origin/main
+          done
+          exit 1
