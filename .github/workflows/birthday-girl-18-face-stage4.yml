@@ -23,6 +23,15 @@ jobs:
           run-id: 41225002227
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: /tmp/birthday-stage3
+      - name: Compile-check Stage 4 script before starting Blender
+        run: |
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          script=Path('world-creator/scripts/build_birthday_girl_18_stage4.py')
+          ast.parse(script.read_text(), filename=str(script))
+          print('STAGE4_PYTHON_SYNTAX_OK')
+          PY
       - name: Preflight Stage 3 editable project and embedded textures
         run: |
           python3 - <<'PY'
