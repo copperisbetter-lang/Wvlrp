@@ -28,6 +28,39 @@ jobs:
         run: |
           find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE2.blend -type f
           test "$(find /tmp/birthday-stage2 -name Birthday_Girl_18_EDITABLE_MPFB_STAGE2.blend -type f | wc -l)" -eq 1
+      - name: Preflight original GLB images and native editable source before Blender
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,struct
+          root=Path('/tmp/birthday-stage2')
+          blends=list(root.rglob('Birthday_Girl_18_EDITABLE_MPFB_STAGE2.blend'))
+          glbs=list(root.rglob('Birthday_Girl_18_STAGE2.glb'))
+          assert len(blends)==1 and blends[0].stat().st_size>1000000, 'Native Stage2 source absent'
+          assert len(glbs)==1 and glbs[0].stat().st_size>1000000, 'Embedded original Stage2 textures absent'
+          raw=glbs[0].read_bytes()
+          assert raw[:4]==b'glTF' and len(raw)==struct.unpack_from('<I',raw,8)[0], 'Invalid source GLB'
+          n,t=struct.unpack_from('<II',raw,12)
+          assert t==0x4e4f534a, 'Missing JSON chunk'
+          j=json.loads(raw[20:20+n])
+          p=20+((n+3)//4)*4
+          binary_len,binary_type=struct.unpack_from('<II',raw,p)
+          assert binary_type==0x004e4942, 'Missing binary chunk'
+          binary_start=p+8
+          needs=['young_lightskinned_female_diffuse','brown_eye','long01','eyebrow001','eyelashes01']
+          found={}
+          for name in needs:
+              matches=[i for i in j.get('images',[]) if name in i.get('name','').lower()]
+              assert matches, 'Stage2 lacks source texture '+name
+              i=matches[0]
+              view=j['bufferViews'][i['bufferView']]
+              start=binary_start+view.get('byteOffset',0)
+              buf=raw[start:start+view['byteLength']]
+              assert len(buf)>1024 and (buf.startswith(bytes.fromhex('89504e470d0a1a0a')) or buf.startswith(bytes.fromhex('ffd8ff'))), 'Invalid embedded pixels for '+name
+              found[name]=len(buf)
+          print('BIRTHDAY_STAGE3_SOURCE_TEXTURE_PREFLIGHT_PASSED',found)
+          PY
       - name: Restore cached Blender and official MPFB tools
         uses: actions/cache@v4
         with:
