@@ -145,22 +145,34 @@ def eyes_fx(rgb,alpha):
     rgb[mask,2]=np.clip(lum*1.22+.085,0,.92)
 
 changes={'skin':0,'blonde':0,'eyes':0}
-for ob in [h]+list(h.children_recursive):
+# In MPFB the eyes and hair can be siblings of the basemesh, NOT its children.
+# Search the whole isolated saved Blender scene for the exact original texture
+# names rather than only basemesh descendants.
+for ob in list(bpy.data.objects):
     if ob.type!='MESH':continue
     for index,existing in enumerate(ob.data.materials):
-        if not existing:continue
-        m=existing.copy();ob.data.materials[index]=m
-        n=m.name.lower()
-        if ob==h or 'body' in n:
+        if not existing or not existing.use_nodes:continue
+        original_images={n.image.name.lower() for n in existing.node_tree.nodes
+                         if n.type=='TEX_IMAGE' and n.image}
+        match_skin=any('young_lightskinned_female_diffuse' in s for s in original_images)
+        match_hair=any('long01_diffuse' in s for s in original_images)
+        match_eyes=any('brown_eye' in s for s in original_images)
+        if not any((match_skin,match_hair,match_eyes)):continue
+        m=existing.copy()
+        ob.data.materials[index]=m
+        if match_skin:
             changes['skin']+=tweak_image(m,'young_lightskinned_female_diffuse',skin_fx)
             for node in m.node_tree.nodes:
                 if node.type=='BSDF_PRINCIPLED':
                     node.inputs['Roughness'].default_value=.76
-                    if 'Subsurface Weight' in node.inputs:node.inputs['Subsurface Weight'].default_value=.075
-        if 'long01' in ob.name.lower() or 'long01' in n:
+                    if 'Subsurface Weight' in node.inputs:
+                        node.inputs['Subsurface Weight'].default_value=.075
+        if match_hair:
             changes['blonde']+=tweak_image(m,'long01_diffuse',hair_fx)
-        if 'high-poly' in ob.name.lower() or 'eye' in n:
+        if match_eyes:
             changes['eyes']+=tweak_image(m,'brown_eye',eyes_fx)
+print('BIRTHDAY_MATERIAL_SCAN',changes,
+      'scene_meshes',len([o for o in bpy.data.objects if o.type=='MESH']))
 if min(changes.values())<1:raise RuntimeError('Texture modification incomplete '+str(changes))
 print('BIRTHDAY_STAGE2_MATERIAL_MAPS',changes)
 h['birthgirl_reference']='Approved Blonde Character Study Montage (front/profile/closeups)'
