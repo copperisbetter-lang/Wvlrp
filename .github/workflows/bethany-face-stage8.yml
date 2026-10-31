@@ -1,7 +1,7 @@
 name: Bethany Stage 8 native MPFB facial refinement
 on:
   push:
-    branches: [feature/bethany-stage8-face-20261031]
+    branches: [feature/bethany-stage8-landmark-morph-20261031]
     paths:
       - world-creator/scripts/build_bethany_stage8.py
       - .github/workflows/bethany-face-stage8.yml
