@@ -276,7 +276,7 @@ function frame(now){
   const minY=bed+.65,maxY=CY-.5;
   pos.y=T.MathUtils.clamp(pos.y+vertical*dt*2.8,Math.min(minY,maxY),Math.max(minY,maxY));
  }else{
-  pos.y=wet?CY+.65:bed+(sitting?.85:1.7);
+  pos.y=wet?CY+.65:bed+(sitting ? 0.85 : 1.7);
   if(!wet&&depthMode==='dive')depthMode='surface';
  }
  camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
