@@ -101,9 +101,15 @@ def stage3_embedded_texture(name):
 # Stage3 raster skin maps no longer retain original diffuse name.
 # Both original/Stage3 identifiers are supported so a blank .blend image
 # can always be rehydrated from the source GLB before pixel edits begin.
+# Stage 3's .blend retains the *image dimensions* even after temporary
+# /tmp paths are gone. Therefore image.size is NOT a valid availability check.
+# Always bind real embedded Stage 3 GLB pixels to every relevant texture node.
+# This guarantees the exporter sees loaded image pixel buffers, not a stale
+# placeholder. Store the source as a packed Blender image for future stages.
 restore_names=('birthday18_stage3_warm_skin','young_lightskinned_female_diffuse',
                'brown_eye','long01_diffuse','eyebrow001','eyelashes01')
 restored_map={}
+restored_nodes={}
 for ob in bpy.data.objects:
     if ob.type!='MESH':continue
     for mat in ob.data.materials:
@@ -112,11 +118,25 @@ for ob in bpy.data.objects:
             if node.type!='TEX_IMAGE' or not node.image:continue
             name=node.image.name.lower()
             found=next((kind for kind in restore_names if kind in name),None)
-            if not found or min(node.image.size)>=16:continue
-            if found not in restored_map:
-                restored_map[found]=stage3_embedded_texture(found)
-            node.image=restored_map[found]
-print('BIRTHDAY_STAGE4_TEXTURES_RECOVERED',list(restored_map))
+            if found is None:continue
+            # Original skin aliases from Stage 2 must resolve to Stage 3
+            # warm-skin embedded texture, not a missing Stage 2 image.
+            source_kind=('birthday18_stage3_warm_skin'
+                         if found=='young_lightskinned_female_diffuse' else found)
+            if source_kind not in restored_map:
+                restored_map[source_kind]=stage3_embedded_texture(source_kind)
+            node.image=restored_map[source_kind]
+            restored_nodes[source_kind]=restored_nodes.get(source_kind,0)+1
+for name,image in restored_map.items():
+    if min(image.size)<16 or not image.has_data:
+        raise RuntimeError('Missing actual Stage3 image pixels after GLB recovery '+name)
+    if not image.packed_file:
+        image.pack()
+if not all(restored_nodes.get(k,0)>0 for k in (
+    'birthday18_stage3_warm_skin','brown_eye','long01_diffuse',
+    'eyebrow001','eyelashes01')):
+    raise RuntimeError('Missing required restored material nodes '+str(restored_nodes))
+print('BIRTHDAY_STAGE4_TEXTURES_REBOUND_FROM_GLTF',restored_nodes)
 
 # Adjust a COPY of the already packed Stage 3 original human skin.
 # Preserve pores and map grain, alpha, and the entire original eye/lash/hair maps.
@@ -176,8 +196,10 @@ for ob in bpy.data.objects:
                 if k in name:
                     if min(image.size)<16:raise RuntimeError('Texture became blank: '+name)
                     verified[k]+=1
-            try:image.pack()
-            except Exception as e:print('PACK_WARNING',name,str(e)[:100])
+            if not image.has_data:
+                raise RuntimeError('Image has dimensions but no actual pixels: '+name)
+            if not image.packed_file:
+                image.pack()
 if any(v<1 for v in verified.values()):raise RuntimeError('Original Stage3 eye/brow/hair assets lost '+str(verified))
 print('BIRTHDAY_STAGE4_TEXTURES_PRESERVED',verified)
 
