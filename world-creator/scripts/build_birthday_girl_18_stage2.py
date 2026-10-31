@@ -62,6 +62,37 @@ print('BIRTHDAY_STAGE2_NATIVE_FACE_CONTROLS',len(T),
 # Modify copies of original MakeHuman texture IMAGES, not material color swatches.
 # Texture-aware edits retain freckles/skin structure, iris variation, hair strands,
 # skin UVs, and transparency. This stage is a visual material study, not measured skin.
+def restore_embedded_glb_image(image_name):
+    """Stage 1 saved .blend has external paths to missing textures.
+    The VERIFIED stage-one GLB embeds original CC0 texture PNGs. Recover them
+    from its bufferViews instead of assuming unloaded .blend images have pixels.
+    """
+    import struct
+    glb=candidates[0].with_name('Birthday_Girl_18_STAGE1.glb')
+    raw=glb.read_bytes()
+    if raw[:4]!=b'glTF':raise RuntimeError('Invalid saved source GLB')
+    length,kind=struct.unpack_from('<II',raw,12)
+    meta=json.loads(raw[20:20+length])
+    binary_at=20+((length+3)//4)*4
+    nbytes,bintype=struct.unpack_from('<II',raw,binary_at)
+    if bintype!=0x004e4942:raise RuntimeError('Source GLB missing binary chunk')
+    binary_at+=8
+    for image_info in meta.get('images',[]):
+        if image_info.get('name','').lower()!=image_name.lower():continue
+        view=meta['bufferViews'][image_info['bufferView']]
+        data=raw[binary_at+view.get('byteOffset',0):binary_at+view.get('byteOffset',0)+view['byteLength']]
+        if not data.startswith(b'\\x89PNG\\r\\n\\x1a\\n'):
+            raise RuntimeError('Source embedded texture not PNG: '+image_name)
+        outpath=Path('/tmp/birthday18-restored-textures')
+        outpath.mkdir(exist_ok=True)
+        dest=outpath/(image_name+'.png')
+        dest.write_bytes(data)
+        recovered=bpy.data.images.load(str(dest),check_existing=False)
+        recovered.name=image_name+'_Stage1_GLB_restored'
+        print('BIRTHDAY_RESTORED_VERIFIED_SOURCE',image_name,list(recovered.size))
+        return recovered
+    raise RuntimeError('Source GLB missing image '+image_name)
+
 def tweak_image(material, kind, fx):
     if not material or not material.use_nodes:return 0
     n=0
@@ -69,11 +100,11 @@ def tweak_image(material, kind, fx):
         if node.type!='TEX_IMAGE' or not node.image: continue
         img=node.image
         if kind not in img.name.lower():continue
-        # Blender's Image.copy() can produce a generated image with zero
-        # decoded data when the original texture came from a packed .blend.
-        # Allocate a fresh image, then explicitly copy source RGBA pixels.
+        # When unpacked image paths point to the old GitHub runner, reload
+        # this *exact* original texture from the saved stage-one GLB.
         if img.size[0]<2 or img.size[1]<2:
-            raise RuntimeError('Source image size invalid '+img.name)
+            img=restore_embedded_glb_image(kind)
+            node.image=img
         pixels=np.empty(img.size[0]*img.size[1]*4,dtype=np.float32)
         img.pixels.foreach_get(pixels)
         a=pixels.reshape((-1,4))
