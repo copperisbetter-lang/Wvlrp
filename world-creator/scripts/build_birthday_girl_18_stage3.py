@@ -4,6 +4,7 @@ Preserve every earlier original. This is a resemblance trial, NOT a verified 75%
 import bpy, os, json, math, numpy as np
 from pathlib import Path
 from mathutils import Vector
+from bl_ext.wvlrp_local.mpfb.services.targetservice import TargetService
 from bl_ext.wvlrp_local.mpfb.services.exportservice import ExportService
 from bl_ext.wvlrp_local.mpfb.services.objectservice import ObjectService
 
@@ -42,8 +43,12 @@ adjust={
  'l-ear-wing-decr':.12,'r-ear-wing-decr':.12
 }
 for name,value in adjust.items():
-    if name not in shapes:raise RuntimeError('Expected original MPFB face control missing: '+name)
-    shapes[name].value=value
+    if name not in shapes:
+        target=TargetService.target_full_path(name)
+        if not target:raise RuntimeError('Native MPFB face target unavailable: '+name)
+        TargetService.load_target(h,target,weight=value,name=name)
+    else:
+        shapes[name].value=value
 if any(abs(shapes[k].value-v)>1e-5 for k,v in adjust.items()):
     raise RuntimeError('Native face adjustments were not applied')
 print('BIRTHDAY_STAGE3_ADJUSTED_NATIVE_CONTROLS',len(adjust))
