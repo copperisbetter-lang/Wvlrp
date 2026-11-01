@@ -1,0 +1,130 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123b34"><title>The Wild — Blonde V6H Owner23 Exact Cut Inspection</title>
+<style>
+*{box-sizing:border-box}
+body{font:14px system-ui,-apple-system,sans-serif;background:#102022;color:#e7faf0;margin:0;overflow:hidden}
+#stage{position:fixed;inset:0;touch-action:none}
+#stage canvas{display:block;width:100%;height:100%}
+header{position:fixed;top:0;left:0;right:0;z-index:5;background:#133b35ec;border-bottom:1px solid #79a89a;padding:11px 14px;display:flex;gap:10px;justify-content:space-between;align-items:center}
+h1{font-size:17px;margin:0}header small{display:block;color:#c1ddcf;font-size:11px}
+#status{font-size:11px;color:#d6f4e3;max-width:45%;text-align:right;line-height:1.4}
+#start{position:fixed;z-index:8;left:12px;right:12px;top:50%;transform:translateY(-50%);max-width:550px;margin:auto;background:#173f36f7;border:1px solid #93baad;border-radius:18px;padding:21px;box-shadow:0 8px 36px #0008;text-align:center}
+#start h2{font-size:20px;margin:0 0 10px}
+#start p{font-size:13px;line-height:1.5;color:#dcf1e6}
+#start strong{color:#fff}
+#file{position:absolute;width:1px;height:1px;opacity:0}
+#choose{display:inline-block;cursor:pointer;border-radius:12px;padding:15px 22px;background:#a5ddbb;color:#09342b;font-weight:800;border:0;font-size:15px}
+#note{font-size:12px;color:#c5e5d7;margin-top:16px}
+#panel{position:fixed;z-index:6;bottom:max(9px,env(safe-area-inset-bottom));left:8px;right:8px;border:1px solid #8aafa1;border-radius:14px;background:#153f38ed;padding:9px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+button{background:#2b6255;border:1px solid #91c0ad;border-radius:9px;color:#e8ffef;min-height:38px;padding:7px 11px;font-size:12px;font-weight:700}
+button[aria-pressed=true]{background:#b5ddbd;color:#14372e}
+#bustrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-size:12px}
+input[type=range]{width:min(42vw,225px);accent-color:#c2f0c9}
+#hint{position:fixed;z-index:2;top:86px;left:9px;color:#d6f0df;font-size:11px;pointer-events:none}
+#loadagain{margin-left:5px}
+@media(max-width:380px){header h1{font-size:14px}#panel button{padding:7px 8px}}
+[hidden]{display:none!important}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script></head><body>
+<div id="stage"></div>
+<header><div><h1>THE WILD · V6H CUT TEST</h1><small>Owner's 23-point cut · PRIVATE test · NOT WELDED</small></div><div id="status" role="status">Choose the private V6H exact-cut GLB</div></header>
+<div id="hint">One finger: rotate · Pinch: zoom · Two fingers: move</div>
+<section id="start">
+<h2>Inspect your actual 23-point cut</h2>
+<p>Download <strong>Owner23_Round03_ExactCut_V6H_PRIVATE.glb</strong> from this chat first. Choose it from <strong>Downloads</strong>. The host body now has the exact opening you marked; Round 3 is still separate and NOT welded or pose-approved.</p>
+<input id="file" type="file" accept=".glb,model/gltf-binary,application/octet-stream">
+<label for="file" id="choose">SELECT V6H CUT TEST GLB</label>
+<p id="note">Your private model remains on your phone and is not uploaded to GitHub. Round 3 is a separate skinned object; host body is cut to your 23-point outline. Inspect the seam from underneath; this is not finished.</p>
+</section>
+<div id="panel" hidden>
+<button id="front">FRONT</button><button id="left">LEFT</button><button id="right">RIGHT</button><button id="back">BACK</button>
+<button id="fit">FIT</button><button id="face">FACE</button><button id="pelvis">PELVIS</button><button id="under">UNDER</button><button id="hair" aria-pressed="true">HAIR ON</button><button id="round" aria-pressed="true">ROUND 3 ON</button><button id="loadagain">NEW FILE</button>
+<div id="bustrow">Bust fullness <input id="bust" type="range" min="0" max="1" step=".01" value="1"><span id="bustVal">100%</span></div>
+</div>
+<script type="module">
+import * as T from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+const $=id=>document.getElementById(id), status=$('status'), stage=$('stage'), choose=$('file');
+let renderer,scene,camera,orbit,root,bounds,center=new T.Vector3(),height=1.7,frontDistance=3.1,headHeight=1.35,hair=[],round3=[],morph=[],fileName='';
+try{
+renderer=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;stage.appendChild(renderer.domElement);
+scene=new T.Scene();scene.background=new T.Color(0x303a3b);
+camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,.01,1000);camera.position.set(0,1,3.4);
+orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.enablePan=true;orbit.minDistance=.12;orbit.maxDistance=30;
+scene.add(new T.HemisphereLight(0xffffff,0x788893,1.6));
+let light=new T.DirectionalLight(0xfff4e7,2.4);light.position.set(-2,4,3);scene.add(light);
+let fill=new T.DirectionalLight(0xbad9f4,.9);fill.position.set(3,1,-2);scene.add(fill);
+function frame(a=0,face=false){
+ if(!bounds)return;
+ const at=face?new T.Vector3(center.x,headHeight,center.z):center.clone();
+ const d=face?Math.max(height*.34,.55):frontDistance;
+ orbit.target.copy(at);camera.position.set(at.x+d*Math.sin(a),at.y+height*.025,at.z+d*Math.cos(a));
+ camera.near=.012;camera.far=Math.max(100,height*100);camera.updateProjectionMatrix();orbit.update()
+}
+for(const [button,a] of [['front',0],['left',-Math.PI/2],['right',Math.PI/2],['back',Math.PI]])$(button).onclick=()=>frame(a);
+$('fit').onclick=()=>frame();$('face').onclick=()=>frame(0,true);
+$('loadagain').onclick=()=>choose.click();
+$('pelvis').onclick=()=>{
+ if(!bounds)return;
+ const p=new T.Vector3(center.x,bounds.min.y+height*.405,center.z),d=height*.40;
+ orbit.target.copy(p);camera.position.set(p.x,p.y+height*.06,p.z+d);orbit.update()
+};
+$('under').onclick=()=>{
+ if(!bounds)return;
+ const p=new T.Vector3(center.x,bounds.min.y+height*.405,center.z);
+ orbit.target.copy(p);camera.position.set(p.x,p.y-height*.22,p.z+height*.22);orbit.update()
+};
+$('round').onclick=()=>{
+ const visible=$('round').getAttribute('aria-pressed')!=='true';
+ $('round').setAttribute('aria-pressed',String(visible));
+ $('round').textContent=visible?'ROUND 3 ON':'ROUND 3 OFF';
+ round3.forEach(o=>o.visible=visible)
+};
+$('hair').onclick=()=>{const show=$('hair').getAttribute('aria-pressed')!=='true';$('hair').setAttribute('aria-pressed',String(show));$('hair').textContent=show?'HAIR ON':'HAIR OFF';hair.forEach(o=>o.visible=show)};
+$('bust').oninput=()=>{const value=+$('bust').value;$('bustVal').textContent=Math.round(value*100)+'%';for(const [mesh,index] of morph)mesh.morphTargetInfluences[index]=value};
+choose.addEventListener('change',async()=>{
+ const file=choose.files?.[0];if(!file)return;
+ if(!file.name.toLowerCase().endsWith('.glb')){status.textContent='Please select the private V6 inset .glb, not the ZIP';return}
+ if(file.name!=='Owner23_Round03_ExactCut_V6H_PRIVATE.glb'){status.textContent='Select the new V6H exact-cut GLB, not the old uncut model';return}
+ if(file.size<100000){status.textContent='That file is too small to be the private test model';return}
+ if(file.size>120000000){status.textContent='File over 120MB; choose the V5 model';return}
+ status.textContent='Opening '+file.name+' ('+(file.size/1048576).toFixed(1)+' MB)…';
+ try{
+ const array=await file.arrayBuffer();
+ const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);
+ const model=await loader.parseAsync(array,'');
+ if(root)scene.remove(root);
+ root=model.scene;scene.add(root);fileName=file.name;
+ hair=[];round3=[];morph=[];let boneCount=0,morphCount=0;
+ root.traverse(o=>{
+  if(o.isBone)boneCount++;
+  if(o.isMesh||o.isSkinnedMesh){
+   o.frustumCulled=false;
+   if(/hair|long01|salon/i.test(o.name))hair.push(o);
+   if(/round_03|round03/i.test(o.name))round3.push(o);
+   if(o.morphTargetDictionary){
+    morphCount=Math.max(morphCount,Object.keys(o.morphTargetDictionary).length);
+    for(const [key,index] of Object.entries(o.morphTargetDictionary)){if(/Fresh18 Bust Fullness/i.test(key))morph.push([o,index])}
+   }
+  }
+ });
+ bounds=new T.Box3().setFromObject(root,true);
+ height=Math.max(bounds.max.y-bounds.min.y,.5);
+ center=bounds.getCenter(new T.Vector3());headHeight=bounds.min.y+height*.81;
+ const fov=(camera.fov*Math.PI)/180;frontDistance=Math.max(height*1.20,height/(2*Math.tan(fov/2))*1.1);
+ if(!Number.isFinite(frontDistance))throw Error('Invalid model bounds');
+ $('start').hidden=true;$('panel').hidden=false;$('hair').setAttribute('aria-pressed','true');$('hair').textContent='HAIR ON';
+ $('bust').value=1;$('bust').oninput();$('round').setAttribute('aria-pressed','true');$('round').textContent='ROUND 3 ON';
+ status.textContent='V6H CUT TEST · '+boneCount+' bones · '+morphCount+' morphs · '+round3.length+' Round3 meshes';
+ frame();
+ }catch(e){console.error(e);status.textContent='Cannot open GLB: '+(e?.message||e);$('start').hidden=false;$('panel').hidden=true}
+});
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+function tick(){requestAnimationFrame(tick);orbit.update();renderer.render(scene,camera)}tick();
+}catch(e){status.textContent='3D viewer setup failed: '+(e.message||e);console.error(e)}
+</script></body></html>
