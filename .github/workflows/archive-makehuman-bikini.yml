@@ -1,0 +1,35 @@
+name: Archive MakeHuman underwear03 bikini (review only)
+
+on:
+  push:
+    branches:
+      - assets/bev-makehuman-bikini-20261101
+    paths:
+      - .github/workflows/archive-makehuman-bikini.yml
+      - world-creator/scripts/archive_makehuman_underwear03.py
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-verify-store:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: assets/bev-makehuman-bikini-20261101
+          persist-credentials: true
+      - name: Download only from official MakeHuman links and verify ZIP
+        run: python3 world-creator/scripts/archive_makehuman_underwear03.py
+      - name: Save verified pack and attribution on isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-creator/assets/third-party/makehuman/underwear03/underwear03.zip
+          git add world-creator/assets/third-party/makehuman/underwear03/SOURCE_AND_ATTRIBUTION.md
+          git diff --cached --quiet && { echo "Files already archived."; exit 0; }
+          git commit -m "Archive verified MakeHuman underwear03 bikini pack with attribution"
+          git push origin HEAD:assets/bev-makehuman-bikini-20261101
