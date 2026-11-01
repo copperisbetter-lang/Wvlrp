@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#153c38"><title>The Wild · Owner Cut Marker · Blonde V6</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{width:100%;height:100%;margin:0;background:#111d1f;color:#eafff1;font:14px system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;touch-action:none}
+#stage canvas{display:block;width:100%;height:100%}
+header{position:fixed;z-index:7;top:0;left:0;right:0;background:#153e38ed;border-bottom:1px solid #83ad9a;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:17px;margin:0}
+small{font-size:11px;display:block;color:#c5e0d2;margin-top:3px}
+#status{max-width:39%;font-size:11px;line-height:1.35;text-align:right}
+#openbox{position:fixed;z-index:9;left:10px;right:10px;top:50%;transform:translateY(-50%);max-width:520px;margin:auto;padding:21px 15px;background:#143a36f5;border:1px solid #8fc4a9;border-radius:16px;text-align:center;box-shadow:0 8px 48px #000b}
+#openbox h2{margin:0;font-size:20px}#openbox p{line-height:1.55;font-size:13px}
+#file{position:absolute;opacity:0;left:-200vw;top:0}
+#selectlabel{display:inline-block;padding:14px 16px;background:#b3e1bd;color:#123b31;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer}
+#infotop{position:fixed;z-index:3;top:89px;left:9px;right:9px;color:#d9f3df;font-size:11px;text-shadow:0 1px 5px #122}
+#controls{position:fixed;z-index:8;bottom:max(env(safe-area-inset-bottom),8px);left:7px;right:7px;max-width:800px;margin:auto;background:#153d38f2;border:1px solid #92b9a8;border-radius:14px;padding:10px 8px;display:flex;justify-content:center;flex-wrap:wrap;gap:6px}
+button{border:1px solid #91c4ad;background:#2b5b52;color:white;padding:9px 11px;border-radius:9px;font:700 12px system-ui;min-height:39px}
+button[aria-pressed=true]{background:#bef2bd;color:#123b2a}
+button:disabled{opacity:.45}
+#controls #mark{background:#c3eba4;color:#1d3c2a}
+#controls #mark[aria-pressed=true]{background:#f2dd60;color:#403000}
+#count{font-size:11px;text-align:center;width:100%;color:#e8f7ec}
+#instructions{position:fixed;top:132px;right:10px;z-index:2;font-size:12px;color:#f6ffda;text-align:right;max-width:55%;pointer-events:none;text-shadow:0 1px 6px black}
+#exports{position:fixed;z-index:12;inset:0;background:#091512e9;display:flex;align-items:center;justify-content:center;padding:12px}
+#exportCard{background:#153d34;border:1px solid #98c2a4;border-radius:14px;max-width:550px;width:100%;padding:15px;max-height:84vh;overflow:auto}
+#exportCard p{font-size:12px;line-height:1.5}
+#marks{width:100%;height:190px;background:#0d2724;color:#efffec;border:1px solid #729e8c;border-radius:8px;font:11px ui-monospace,monospace;padding:8px;resize:vertical}
+#exportActions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
+#exportActions button{font-size:13px}
+#fileBtn{margin:8px 0 2px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head><body>
+<div id="stage"></div>
+<header><div><h1>THE WILD · CUT MARKER</h1><small>Blonde V6 · OWNER chooses the location · NO CUT performed</small></div><div id="status">Select the uncut V6 body</div></header>
+<div id="infotop">Drag to rotate · Pinch to zoom · Zoom on the pelvis before marking</div>
+<div id="instructions">Yellow dots = owner's cut boundary<br>Nothing is removed from the mesh</div>
+<section id="openbox">
+<h2>Mark YOUR cut location</h2>
+<p>Select the separate <strong>Blonde18_V6_UNCUT_For_Owner_Marking.glb</strong> file from your phone's Downloads folder.</p>
+<input id="file" type="file" accept=".glb,model/gltf-binary,application/octet-stream">
+<label for="file" id="selectlabel">CHOOSE CLEAN V6 BODY</label>
+<p style="font-size:12px;color:#b8e2cf">This page only reads the file on your phone. Private Round 3 geometry is NOT in this body. We will not cut anything until you mark and approve it.</p>
+</section>
+<div id="controls" hidden>
+<button id="front">FRONT</button><button id="back">BACK</button><button id="side">SIDE</button>
+<button id="fit">FULL BODY</button><button id="pelvis">PELVIS ZOOM</button>
+<button id="orbit" aria-pressed="true">ROTATE MODE</button><button id="mark" aria-pressed="false">MARK CUT</button>
+<button id="undo" disabled>UNDO</button><button id="clear" disabled>CLEAR</button>
+<button id="review" disabled>REVIEW MARKS</button>
+<div id="count">0 boundary points · the body is untouched</div>
+</div>
+<section id="exports" hidden><div id="exportCard">
+<h2 style="margin:0">Your cut boundary</h2>
+<p>Copy the measurements below and paste them into our ChatGPT conversation, or take a screenshot of the yellow outline. <strong>This is an approval proposal only—no geometry has been cut.</strong> Three or more points form a closed outline; you can add as many points as you need.</p>
+<textarea id="marks" readonly></textarea>
+<div id="exportActions"><button id="copy">COPY COORDINATES</button><button id="download">SAVE JSON</button><button id="done">BACK TO MODEL</button></div>
+<p id="copyStatus"></p>
+</div></section>
+<script type="module">
+import * as T from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id);
+let scene,camera,renderer,orbit,root,body,bounds,height=1.65,at=new T.Vector3(),points=[],dots=[],line=null,markMode=false,loadedFile='';
+const stage=$('stage'), status=$('status'), input=$('file'),ray=new T.Raycaster(),mouse=new T.Vector2();
+let down=null;
+try{
+renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;
+renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;stage.appendChild(renderer.domElement);
+scene=new T.Scene();scene.background=new T.Color(0x374240);
+camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,.01,100);
+orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.08;orbit.maxDistance=20;
+scene.add(new T.HemisphereLight(0xffffff,0x6e7983,2.0));
+for(const [x,y,z,i] of [[-3,5,6,2.8],[3,2,-3,1.7]]){const l=new T.DirectionalLight(0xffffff,i);l.position.set(x,y,z);scene.add(l)}
+function cameraView(angle=0,area='all'){
+ if(!bounds)return;
+ const target=area==='pelvis'?new T.Vector3(at.x,bounds.min.y+height*.49,at.z):at.clone();
+ const dist=area==='pelvis'?height*.65:height*1.85;
+ orbit.target.copy(target);
+ camera.position.set(target.x+dist*Math.sin(angle),target.y+height*.015,target.z+dist*Math.cos(angle));camera.near=.007;camera.far=height*100;camera.updateProjectionMatrix();orbit.update()
+}
+$('front').onclick=()=>cameraView(0);
+$('back').onclick=()=>cameraView(Math.PI);
+$('side').onclick=()=>cameraView(Math.PI/2);
+$('fit').onclick=()=>cameraView(0,'all');
+$('pelvis').onclick=()=>cameraView(0,'pelvis');
+function setMode(mode){
+ markMode=mode;orbit.enableRotate=!mode;orbit.enablePan=!mode;
+ $('mark').setAttribute('aria-pressed',String(mode));$('orbit').setAttribute('aria-pressed',String(!mode));
+ $('count').textContent=points.length+' boundary points · '+(mode?'Tap on skin to add more points':'Rotate or zoom, then tap MARK CUT');
+}
+$('mark').onclick=()=>setMode(true);$('orbit').onclick=()=>setMode(false);
+const markerMaterial=new T.MeshBasicMaterial({color:0xffed52,depthTest:false,depthWrite:false});
+const pathMaterial=new T.LineBasicMaterial({color:0xffdf38,linewidth:3,depthTest:false,depthWrite:false});
+function drawPoints(){
+ for(const d of dots)scene.remove(d);dots=[];
+ if(line){scene.remove(line);line.geometry.dispose();line=null}
+ for(const p of points){
+  const d=new T.Mesh(new T.SphereGeometry(Math.max(height*.005,.006),10,10),markerMaterial);
+  d.position.copy(p.world);d.renderOrder=100;scene.add(d);dots.push(d)
+ }
+ if(points.length>=2){
+  const pp=points.map(p=>p.world);
+  if(points.length>=3)pp.push(points[0].world);
+  line=new T.Line(new T.BufferGeometry().setFromPoints(pp),pathMaterial);
+  line.renderOrder=100;scene.add(line);
+ }
+ $('undo').disabled=points.length===0;$('clear').disabled=points.length===0;$('review').disabled=points.length===0;
+ $('count').textContent=points.length+' points marked · NO CUT MADE'+(points.length>=3?' · closed boundary':'');
+}
+$('undo').onclick=()=>{points.pop();drawPoints()};
+$('clear').onclick=()=>{if(points.length&&confirm('Clear all marked cut boundary points?')){points=[];drawPoints()}};
+const gltfLoader=new GLTFLoader();
+input.addEventListener('change',async()=>{
+ const file=input.files?.[0];if(!file)return;
+ if(file.name!=='Blonde18_V6_UNCUT_For_Owner_Marking.glb'){status.textContent='Choose the UN-CUT V6 marking GLB, not V5 or Round 3';return}
+ if(file.size<1000000){status.textContent='Model file appears incomplete';return}
+ status.textContent='Opening clean V6 body…';
+ try{
+ const binary=await file.arrayBuffer();const m=await gltfLoader.parseAsync(binary,'');
+ if(root)scene.remove(root);root=m.scene;scene.add(root);loadedFile=file.name;
+ let best=0;body=null;let bones=0;
+ root.traverse(o=>{if(o.isBone)bones++;if(o.isSkinnedMesh&&o.geometry?.attributes?.position?.count>best){body=o;best=o.geometry.attributes.position.count}});
+ if(!body||best<10000)throw Error('Real female body mesh missing');
+ bounds=new T.Box3().setFromObject(root,true);height=Math.max(.5,bounds.max.y-bounds.min.y);at.copy(bounds.getCenter(new T.Vector3()));
+ points=[];drawPoints();setMode(false);
+ $('openbox').hidden=true;$('controls').hidden=false;status.textContent='UNCUT V6 · '+best+' body vertices · '+bones+' bones';
+ cameraView();
+ }catch(e){console.error(e);status.textContent='Failed to load model: '+(e.message||e)}
+});
+renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,t:e.timeStamp}}, {passive:true});
+renderer.domElement.addEventListener('pointerup',e=>{
+ if(!markMode||!body||!down)return;
+ const delta=Math.hypot(down.x-e.clientX,down.y-e.clientY);down=null;
+ if(delta>15)return;
+ const rect=renderer.domElement.getBoundingClientRect();
+ mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ ray.setFromCamera(mouse,camera);
+ const hits=ray.intersectObject(body,true);
+ if(!hits.length){status.textContent='Tap directly on the visible body surface';return}
+ const hit=hits[0],p=hit.point.clone(),local=body.worldToLocal(p.clone());
+ points.push({world:p,local:local.toArray().map(n=>+n.toFixed(6)),worldMeters:p.toArray().map(n=>+n.toFixed(6))});
+ drawPoints();status.textContent='Boundary point '+points.length+' placed · body untouched';
+},{passive:true});
+function boundaryData(){return JSON.stringify({
+name:'Blonde18 V6 Owner Cut Boundary',model:loadedFile,mesh:body?.name||'base.002',
+coordinateSystem:'3D meters; localXYZ relative to skinned MakeHuman body mesh; worldXYZ in glTF viewer',
+pointCount:points.length,closed:points.length>=3,cutPerformed:false,ownerApprovalPending:true,
+boundaryPoints:points.map((p,i)=>({number:i+1,localXYZ:p.local,worldXYZ:p.worldMeters}))
+},null,2)}
+$('review').onclick=()=>{$('marks').value=boundaryData();$('exports').hidden=false;$('copyStatus').textContent=''};
+$('done').onclick=()=>{$('exports').hidden=true};
+$('copy').onclick=async()=>{
+ const txt=$('marks').value;
+ try{await navigator.clipboard.writeText(txt);$('copyStatus').textContent='Copied! Paste it into chat.'}
+ catch(e){const a=$('marks');a.focus();a.select();document.execCommand('copy');$('copyStatus').textContent='Coordinates selected; use Copy if needed.'}
+};
+$('download').onclick=()=>{
+ const blob=new Blob([$('marks').value],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Blonde18_V6_OWNER_CUT_MARKS.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+};
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+function tick(){requestAnimationFrame(tick);orbit.update();renderer.render(scene,camera)}tick();
+}catch(e){status.textContent='Viewer error: '+(e.message||e);console.error(e)}
+</script></body></html>
