@@ -25,7 +25,7 @@ PAGE_URLS = [
 DEST = Path("world-creator/assets/third-party/makehuman/underwear03/underwear03.zip")
 MAX_BYTES = 90 * 1024 * 1024
 UA = "Mozilla/5.0 (compatible; WVLRP-asset-archive/1.0)"
-ANCHOR = re.compile(r"<a\b[^>]*href=[\\"']([^\\"']+)[\\"'][^>]*>(.*?)</a>", re.I | re.S)
+ANCHOR = re.compile(r'<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>', re.I | re.S)
 
 
 def get(url, timeout=35):
