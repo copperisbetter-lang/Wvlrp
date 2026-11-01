@@ -25,7 +25,7 @@ PAGE_URLS = [
 DEST = Path("world-creator/assets/third-party/makehuman/underwear03/underwear03.zip")
 MAX_BYTES = 90 * 1024 * 1024
 UA = "Mozilla/5.0 (compatible; WVLRP-asset-archive/1.0)"
-ANCHOR = re.compile(r"<a\\b[^>]*href=[\\\"']([^\\\"']+)[\\\"'][^>]*>(.*?)</a>", re.I | re.S)
+ANCHOR = re.compile(r"<a\b[^>]*href=[\\"']([^\\"']+)[\\"'][^>]*>(.*?)</a>", re.I | re.S)
 
 
 def get(url, timeout=35):
@@ -60,12 +60,12 @@ def find_links():
                     links.append(target)
             if links:
                 print("Official download page:", url)
-                print("Verified mirror URLs:", *links, sep="\\n  ")
+                print("Verified mirror URLs:", *links, sep="\n  ")
                 return links, url
             errors.append(f"{url}: mirror links not found")
         except Exception as e:
             errors.append(f"{url}: {type(e).__name__}: {e}")
-    raise RuntimeError("Could not retrieve the official mirror links:\\n" + "\\n".join(errors))
+    raise RuntimeError("Could not retrieve the official mirror links:\n" + "\n".join(errors))
 
 
 def download(link):
@@ -88,7 +88,7 @@ def download(link):
                         raise RuntimeError("Archive exceeds 90 MB safety cap")
                     tmp.write(chunk)
                     digest.update(chunk)
-            if n < 1024 or temp.open("rb").read(4) != b"PK\\x03\\x04":
+            if n < 1024 or temp.open("rb").read(4) != b"PK\x03\x04":
                 raise RuntimeError("Not a ZIP file")
             with ZipFile(temp) as archive:
                 names = archive.namelist()
@@ -115,18 +115,18 @@ if __name__ == "__main__":
             sha, count = download(url)
             manifest = DEST.parent / "SOURCE_AND_ATTRIBUTION.md"
             manifest.write_text(
-                "# Underwear 03 — MakeHuman Community\\n\\n"
-                "Original asset pack ZIP (unaltered).\\n\\n"
-                "- Source page: " + frompage + "\\n"
-                "- Actual download: " + url + "\\n"
-                "- License: CC-BY, per the MakeHuman Community listing.\\n"
-                "- Contributors include Elvaerwyn (elvs_all_tied_up_bikini); individual included assets may have additional named authors.\\n"
-                "- Full upstream asset list and individual attribution: " + frompage + "\\n"
-                "- File: underwear03.zip\\n"
-                "- Size: " + str(count) + " bytes\\n"
-                "- SHA256: " + sha + "\\n\\n"
-                "Keep per-asset author credits when reusing or distributing in The Wild.\\n"
-                "Nothing here is fitted to Bev yet. Original Bev remains unchanged.\\n",
+                "# Underwear 03 — MakeHuman Community\n\n"
+                "Original asset pack ZIP (unaltered).\n\n"
+                "- Source page: " + frompage + "\n"
+                "- Actual download: " + url + "\n"
+                "- License: CC-BY, per the MakeHuman Community listing.\n"
+                "- Contributors include Elvaerwyn (elvs_all_tied_up_bikini); individual included assets may have additional named authors.\n"
+                "- Full upstream asset list and individual attribution: " + frompage + "\n"
+                "- File: underwear03.zip\n"
+                "- Size: " + str(count) + " bytes\n"
+                "- SHA256: " + sha + "\n\n"
+                "Keep per-asset author credits when reusing or distributing in The Wild.\n"
+                "Nothing here is fitted to Bev yet. Original Bev remains unchanged.\n",
                 encoding="utf-8",
             )
             print("SUCCESS: source and attribution saved")
