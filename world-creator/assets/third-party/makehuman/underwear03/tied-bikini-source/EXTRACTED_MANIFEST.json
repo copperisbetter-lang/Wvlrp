@@ -6,6 +6,24 @@
     "sha256": "20fee2e1935db1ee0cf9ea128a5e626dbf063f0ca985850c1d7a2361520f2355"
   },
   {
+    "zip_path": "clothes/elvs_all_tied_up_bikini/all_tiedup_kini1.obj",
+    "output": "world-creator/assets/third-party/makehuman/underwear03/tied-bikini-source/all_tiedup_kini1.obj",
+    "size": 7516044,
+    "sha256": "f5ad7f160005bc2579f6133525cf0b601509204593c3daca6813ad2a2be60f87"
+  },
+  {
+    "zip_path": "clothes/elvs_all_tied_up_bikini/elvs_all_tied_up_bikini.mhclo",
+    "output": "world-creator/assets/third-party/makehuman/underwear03/tied-bikini-source/elvs_all_tied_up_bikini.mhclo",
+    "size": 5307794,
+    "sha256": "5f5815a77fc0b84e959e914a350e771caaadd1605899978588c4156eb639453c"
+  },
+  {
+    "zip_path": "clothes/elvs_all_tied_up_bikini/elvs_all_tied_up_bikini.thumb",
+    "output": "world-creator/assets/third-party/makehuman/underwear03/tied-bikini-source/elvs_all_tied_up_bikini.thumb",
+    "size": 33230,
+    "sha256": "1202b0b00d6e74fda709759233c9dbda6b6ae6dc9816712aae578122f4745ab0"
+  },
+  {
     "zip_path": "clothes/elvs_all_tied_up_bikini/swimsuit5.png",
     "output": "world-creator/assets/third-party/makehuman/underwear03/tied-bikini-source/swimsuit5.png",
     "size": 1608016,
