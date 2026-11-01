@@ -24,6 +24,9 @@ button:disabled{opacity:.45}
 #controls #mark{background:#c3eba4;color:#1d3c2a}
 #controls #mark[aria-pressed=true]{background:#f2dd60;color:#403000}
 #count{font-size:11px;text-align:center;width:100%;color:#e8f7ec}
+#dotRow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-size:12px;color:#e9f8e8}
+#dotSize{width:min(45vw,230px);accent-color:#d7eeac;touch-action:auto}
+#dotValue{font-variant-numeric:tabular-nums;min-width:54px;text-align:right}
 #instructions{position:fixed;top:132px;right:10px;z-index:2;font-size:12px;color:#f6ffda;text-align:right;max-width:55%;pointer-events:none;text-shadow:0 1px 6px black}
 #exports{position:fixed;z-index:12;inset:0;background:#091512e9;display:flex;align-items:center;justify-content:center;padding:12px}
 #exportCard{background:#153d34;border:1px solid #98c2a4;border-radius:14px;max-width:550px;width:100%;padding:15px;max-height:84vh;overflow:auto}
@@ -48,11 +51,11 @@ button:disabled{opacity:.45}
 </section>
 <div id="controls" hidden>
 <button id="front">FRONT</button><button id="back">BACK</button><button id="side">SIDE</button>
-<button id="fit">FULL BODY</button><button id="pelvis">PELVIS ZOOM</button>
+<button id="fit">FULL BODY</button><button id="pelvis">PELVIS ZOOM</button><button id="detail">DETAIL ZOOM</button>
 <button id="orbit" aria-pressed="true">ROTATE MODE</button><button id="mark" aria-pressed="false">MARK CUT</button>
 <button id="undo" disabled>UNDO</button><button id="clear" disabled>CLEAR</button>
 <button id="review" disabled>REVIEW MARKS</button>
-<div id="count">0 boundary points · the body is untouched</div>
+<div id="dotRow"><label for="dotSize">Dot diameter</label><input id="dotSize" type="range" min="0.5" max="4" step="0.1" value="1.5"><span id="dotValue">1.5 mm</span></div><div id="count">0 boundary points · the body is untouched</div>
 </div>
 <section id="exports" hidden><div id="exportCard">
 <h2 style="margin:0">Your cut boundary</h2>
@@ -80,8 +83,8 @@ scene.add(new T.HemisphereLight(0xffffff,0x6e7983,2.0));
 for(const [x,y,z,i] of [[-3,5,6,2.8],[3,2,-3,1.7]]){const l=new T.DirectionalLight(0xffffff,i);l.position.set(x,y,z);scene.add(l)}
 function cameraView(angle=0,area='all'){
  if(!bounds)return;
- const target=area==='pelvis'?new T.Vector3(at.x,bounds.min.y+height*.49,at.z):at.clone();
- const dist=area==='pelvis'?height*.65:height*1.85;
+ const target=(area==='pelvis'||area==='detail')?new T.Vector3(at.x,bounds.min.y+height*.49,at.z):at.clone();
+ const dist=area==='detail'?height*.23:area==='pelvis'?height*.65:height*1.85;
  orbit.target.copy(target);
  camera.position.set(target.x+dist*Math.sin(angle),target.y+height*.015,target.z+dist*Math.cos(angle));camera.near=.007;camera.far=height*100;camera.updateProjectionMatrix();orbit.update()
 }
@@ -90,6 +93,7 @@ $('back').onclick=()=>cameraView(Math.PI);
 $('side').onclick=()=>cameraView(Math.PI/2);
 $('fit').onclick=()=>cameraView(0,'all');
 $('pelvis').onclick=()=>cameraView(0,'pelvis');
+$('detail').onclick=()=>cameraView(0,'detail');
 function setMode(mode){
  markMode=mode;orbit.enableRotate=!mode;orbit.enablePan=!mode;
  $('mark').setAttribute('aria-pressed',String(mode));$('orbit').setAttribute('aria-pressed',String(!mode));
@@ -97,12 +101,14 @@ function setMode(mode){
 }
 $('mark').onclick=()=>setMode(true);$('orbit').onclick=()=>setMode(false);
 const markerMaterial=new T.MeshBasicMaterial({color:0xffed52,depthTest:false,depthWrite:false});
-const pathMaterial=new T.LineBasicMaterial({color:0xffdf38,linewidth:3,depthTest:false,depthWrite:false});
+const pathMaterial=new T.LineBasicMaterial({color:0xffdf38,linewidth:1,depthTest:false,depthWrite:false});
+let dotDiameterMm=1.5;
+$('dotSize').oninput=()=>{dotDiameterMm=Number($('dotSize').value);$('dotValue').textContent=dotDiameterMm.toFixed(1)+' mm';drawPoints()};
 function drawPoints(){
- for(const d of dots)scene.remove(d);dots=[];
+ for(const d of dots){scene.remove(d);d.geometry.dispose()}dots=[];
  if(line){scene.remove(line);line.geometry.dispose();line=null}
  for(const p of points){
-  const d=new T.Mesh(new T.SphereGeometry(Math.max(height*.005,.006),10,10),markerMaterial);
+  const d=new T.Mesh(new T.SphereGeometry(dotDiameterMm/2000,8,6),markerMaterial);
   d.position.copy(p.world);d.renderOrder=100;scene.add(d);dots.push(d)
  }
  if(points.length>=2){
