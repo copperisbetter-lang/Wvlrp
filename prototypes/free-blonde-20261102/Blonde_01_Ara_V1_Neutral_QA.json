@@ -1,0 +1,27 @@
+{
+  "model": "Blonde_01_Ara_V1_Neutral",
+  "bytes": 17290636,
+  "sha256": "3af531f75effc8b17a19201e5ab71ee5b2435cd6835cf9c23602d64fff19c42e",
+  "meshes": 1,
+  "skins": 1,
+  "animations": 77,
+  "morph_primitives": 8,
+  "materials": [
+    "Skin",
+    "Skin details",
+    "Eyes",
+    "Eyebrows",
+    "Eyelashes",
+    "Teeth",
+    "Tongue",
+    "Hair"
+  ],
+  "garments": {
+    "outfit": "none",
+    "top": "none",
+    "bottom": "none",
+    "underwear": false,
+    "shoes": "none"
+  },
+  "status": "unapproved prototype; 36C is appearance target, not measured bra size"
+}
