@@ -1,0 +1,72 @@
+name: Redhead 18 V2 Neutral Mesh Review
+on:
+  push:
+    branches: [feature/free-redhead-ara-20261101]
+    paths:
+      - '.github/workflows/redhead-v2-neutral.yml'
+      - 'prototypes/free-redhead-20261101/Redhead18_AraV2_Neutral.params.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  export-neutral-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout isolated review branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/free-redhead-ara-20261101
+          persist-credentials: true
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone Ara open-source generator
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: /tmp/ara3dgen
+      - name: Obtain CC0 MakeHuman character assets
+        run: npm run setup-assets
+        working-directory: /tmp/ara3dgen
+      - name: Export original neutral body V2
+        run: |
+          npm run export -- --params "$GITHUB_WORKSPACE/prototypes/free-redhead-20261101/Redhead18_AraV2_Neutral.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/free-redhead-20261101/v2-out"
+        working-directory: /tmp/ara3dgen
+      - name: Structural, rig and clothing check
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, struct, hashlib
+          base=pathlib.Path('prototypes/free-redhead-20261101')
+          params=json.loads((base/'Redhead18_AraV2_Neutral.params.json').read_text())
+          assert params['outfit']==params['top']==params['bottom']==params['shoes']=='none'
+          assert params['underwear']==False and params['age']>=0.34375
+          src=next((base/'v2-out').glob('*.glb'))
+          b=src.read_bytes(); assert b[:4]==b'glTF'
+          jlen=struct.unpack_from('<I',b,12)[0]
+          doc=json.loads(b[20:20+jlen])
+          qa={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'meshes':len(doc.get('meshes',[])),'skins':len(doc.get('skins',[])),'animations':len(doc.get('animations',[])),'facialMorphs':sum(bool(p.get('targets')) for m in doc.get('meshes',[]) for p in m.get('primitives',[])),'garments':{'outfit':params['outfit'],'top':params['top'],'bottom':params['bottom'],'underwear':params['underwear'],'shoes':params['shoes']},'status':'unapproved prototype'}
+          assert qa['meshes']>=1 and qa['skins']>=1
+          (base/'Redhead18_AraV2_Neutral_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
+          dest=base/'Redhead18_Ara_V2_Neutral.glb'
+          dest.write_bytes(b)
+          print(json.dumps(qa,indent=2))
+          PY
+      - name: Commit V2 review mesh only (no deployment)
+        run: |
+          set -e
+          git config user.name 'Gator Character Preview'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/free-redhead-20261101/Redhead18_Ara_V2_Neutral.glb prototypes/free-redhead-20261101/Redhead18_AraV2_Neutral_QA.json
+          git commit -m 'Review: publish redhead V2 neutral rigged mesh [skip ci]'
+          git push origin HEAD:feature/free-redhead-ara-20261101
+      - name: Archive V2 model
+        uses: actions/upload-artifact@v4
+        with:
+          name: Redhead18_AraV2_Neutral_Review
+          path: |
+            prototypes/free-redhead-20261101/Redhead18_Ara_V2_Neutral.glb
+            prototypes/free-redhead-20261101/Redhead18_AraV2_Neutral.params.json
+            prototypes/free-redhead-20261101/Redhead18_AraV2_Neutral_QA.json
+          retention-days: 30
