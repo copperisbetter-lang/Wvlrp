@@ -1,0 +1,33 @@
+name: Gina 5 — actual pelvic cross-section measurement (no fitting)
+on:
+  push:
+    branches: [feature/gina5-true-blonde-20261102]
+    paths:
+      - '.github/workflows/gina5-measure-pelvis.yml'
+      - 'prototypes/gina5-20261102/measure_real_pelvis.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  measure-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gina5-true-blonde-20261102
+          sparse-checkout: |
+            prototypes/gina5-20261102
+          persist-credentials: true
+      - name: Measure body geometry
+        run: |
+          python prototypes/gina5-20261102/measure_real_pelvis.py \
+            prototypes/gina5-20261102/Gina_5_TRUE_BLONDE_V2.glb \
+            prototypes/gina5-20261102/Gina_5_Pelvis_Body_Measurement.json
+      - name: Commit diagnostic only
+        run: |
+          git config user.name "Gator Character Preview"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prototypes/gina5-20261102/Gina_5_Pelvis_Body_Measurement.json
+          git commit -m "Save measured Gina5 pelvic surface, no modifications [skip ci]"
+          git pull --rebase origin feature/gina5-true-blonde-20261102
+          git push origin HEAD:feature/gina5-true-blonde-20261102
