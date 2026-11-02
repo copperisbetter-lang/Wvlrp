@@ -1,0 +1,63 @@
+{
+  "name": "Gina 5 Dark Brown \u2014 review build",
+  "status": "UNAPPROVED model; actual hair material repigmented after Ara export",
+  "model_bytes": 18877012,
+  "sha256": "2f9341f1d0969195a5239042ba372d397a630058f5cf1c39e865045e1966ef87",
+  "skins": 1,
+  "animations": 77,
+  "meshes": 1,
+  "morph_primitives": 8,
+  "hair_material_index": 7,
+  "old_hair_baseColorFactor": [
+    0.042311410620809675,
+    0.017641954488384078,
+    0.010960094006488246,
+    1
+  ],
+  "old_hair_texture_index": 8,
+  "old_hair_image": {
+    "name": "hair_long01.png",
+    "mime": "image/png"
+  },
+  "forced_brunette_base_rgb": [
+    71,
+    47,
+    34
+  ],
+  "hair_image_recolored": true,
+  "new_hair_texture_png_bytes": 1359715,
+  "vertex_reddish_tints_removed": 0,
+  "hair_material": {
+    "name": "Hair",
+    "pbrMetallicRoughness": {
+      "baseColorFactor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.83,
+      "baseColorTexture": {
+        "index": 9
+      }
+    },
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5,
+    "doubleSided": true,
+    "extras": {
+      "hairColorQA": "ACTUAL TEXTURE deep brunette; #39261D base; no blonde or auburn"
+    }
+  },
+  "all_material_names": [
+    "Skin",
+    "Skin details",
+    "Eyes",
+    "Eyebrows",
+    "Eyelashes",
+    "Teeth",
+    "Tongue",
+    "Hair"
+  ],
+  "production_unchanged": true
+}
