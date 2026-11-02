@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gina 6 — factory-fitted gold bikini / matched neutral</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101c28;color:#fafafa;font:14px system-ui}
+header{padding:12px 16px}h1{font-size:20px;margin:0 0 5px}p{margin:5px 0;line-height:1.3;color:#b9d0db}
+#screen{width:100%;height:calc(100dvh - 205px);min-height:360px;touch-action:none}
+footer{padding:10px;display:flex;flex-wrap:wrap;gap:8px}
+button,select{padding:10px 12px;background:#2b485b;color:white;border:1px solid #60849e;border-radius:7px;font:inherit}
+#message{padding:0 14px 15px;color:#cfe2e5}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body><header><h1>Gina 6 • Native gold bikini test</h1>
+<p>Exact same body settings and rig in two separate exports. Switch to compare original fitted bikini against bare base. This is NOT proof of independent detachable outfit; animation fit is still unapproved.</p></header>
+<div id="screen"></div><footer>
+<button id="on">Bikini ON</button><button id="off">Bikini OFF</button>
+<select id="view"><option value="full">Full</option><option value="front">Front</option><option value="back">Back</option><option value="side">Side</option></select>
+<select id="animations"><option value="">Static standing</option></select>
+</footer><div id="message">Loading the two original GLB exports…</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const el=document.getElementById('screen'),message=document.getElementById('message');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x152332);
+const camera=new THREE.PerspectiveCamera(40,1,.015,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+el.appendChild(renderer.domElement);
+const ctl=new OrbitControls(camera,renderer.domElement);ctl.target.set(0,.86,0);ctl.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xe1f2ff,0x33445d,2.5));
+const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(2,5,4);scene.add(sun);
+const floor=new THREE.GridHelper(5,24,0x455564,0x273647);scene.add(floor);
+function resize(){const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(el);
+const state={on:null,off:null,selected:'on',mode:'',mixers:{},actions:{}};
+const loader=new GLTFLoader();const load=f=>new Promise((ok,err)=>loader.load(f,ok,undefined,err));
+function view(){if(!state.on||!state.off)return;const bb=new THREE.Box3().setFromObject(state.on.scene);const middle=bb.getCenter(new THREE.Vector3());const height=bb.getSize(new THREE.Vector3()).y||1.7;
+  ctl.target.copy(middle);const v=document.getElementById('view').value;
+  camera.position.copy(middle).add(new THREE.Vector3(v==='side'?height*1.5:0,height*.13,v==='back'?-height*1.5:v==='side'?0:height*1.5));ctl.update();}
+function toggle(which){state.selected=which;state.on.scene.visible=which==='on';state.off.scene.visible=which==='off';
+  message.textContent=(which==='on'?'Gina 6: native-fitted bikini ON':'Gina 6: unclothed complete body ON')+' — matched build parameters, separate full model exports';}
+function play(name){state.mode=name;Object.keys(state.mixers).forEach(k=>{const m=state.mixers[k];m.stopAllAction();if(name){const clip=(state[k].animations||[]).find(x=>x.name===name);if(clip){const a=m.clipAction(clip);a.reset().play();}}})}
+Promise.all([load('./Gina_6_FITTED_GOLD_BIKINI.glb'),load('./Gina_6_UNCLOTHED_NATIVE.glb')]).then(([on,off])=>{
+  state.on=on;state.off=off;scene.add(on.scene,off.scene);
+  state.mixers.on=new THREE.AnimationMixer(on.scene);state.mixers.off=new THREE.AnimationMixer(off.scene);
+  const select=document.getElementById('animations');
+  (on.animations||[]).forEach(a=>{const op=document.createElement('option');op.value=a.name;op.textContent=a.name;select.appendChild(op)});
+  select.addEventListener('change',()=>play(select.value));
+  document.getElementById('on').onclick=()=>toggle('on');document.getElementById('off').onclick=()=>toggle('off');
+  document.getElementById('view').onchange=view;
+  toggle('on');view();
+}).catch(err=>message.textContent='Model load error: '+err.message);
+const clk=new THREE.Clock();function frame(){requestAnimationFrame(frame);const dt=Math.min(clk.getDelta(),.08);
+  Object.values(state.mixers).forEach(m=>m.update(dt));ctl.update();renderer.render(scene,camera)}
+resize();frame();
+</script></body></html>
