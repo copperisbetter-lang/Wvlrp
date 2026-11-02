@@ -1,0 +1,57 @@
+name: Publish Redhead 18 review model to isolated branch
+on:
+  push:
+    branches: [feature/free-redhead-ara-20261101]
+    paths:
+      - '.github/workflows/publish-redhead-review.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated branch only
+        uses: actions/checkout@v4
+        with:
+          ref: feature/free-redhead-ara-20261101
+          sparse-checkout: |
+            prototypes/free-redhead-20261101
+          persist-credentials: true
+      - name: Retrieve passing reviewed GLB from original successful build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/redhead-build
+          gh run download 41377981740 -R "$GITHUB_REPOSITORY" --name "Redhead18_AraV1_review_GLb" --dir /tmp/redhead-build
+      - name: Verify frozen model matches original QA before publishing
+        run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          src=Path('/tmp/redhead-build/Redhead18_Ara_V1.glb')
+          q=json.loads(Path('/tmp/redhead-build/qa.json').read_text())
+          b=src.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==q['bytes']
+          jsonsz=struct.unpack_from('<I',b,12)[0]
+          doc=json.loads(b[20:20+jsonsz])
+          assert len(doc.get('skins',[]))>=1
+          assert len(doc.get('animations',[]))>=1
+          assert any(p.get('targets') for m in doc['meshes'] for p in m['primitives'])
+          print('PASS: real rigged GLB with animations and morph targets',len(b))
+          PY
+      - name: Publish only the vetted model and QA, never deploy main
+        shell: bash
+        run: |
+          set -euo pipefail
+          dest=prototypes/free-redhead-20261101
+          cp /tmp/redhead-build/Redhead18_Ara_V1.glb "$dest/"
+          cp /tmp/redhead-build/qa.json "$dest/"
+          git config user.name 'Gater Prototype Automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$dest/Redhead18_Ara_V1.glb" "$dest/qa.json"
+          git commit -m 'Publish isolated redhead Ara V1 review model [skip ci]'
+          git push origin HEAD:feature/free-redhead-ara-20261101
