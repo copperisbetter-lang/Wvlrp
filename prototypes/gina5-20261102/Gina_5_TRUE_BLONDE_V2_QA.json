@@ -1,0 +1,55 @@
+{
+  "source_sha256": "2f9341f1d0969195a5239042ba372d397a630058f5cf1c39e865045e1966ef87",
+  "result_sha256": "199c7f62e0452f02808cf7fde436723612bf2bd92680e90c89cb4ee5791f8e07",
+  "source_size": 18877012,
+  "result_size": 20096296,
+  "status": "TECHNICALLY RECOLORED, NOT YET OWNER-APPROVED",
+  "material_changed": "Hair only",
+  "other_materials_unchanged": true,
+  "hair_texture_replaced": true,
+  "hair_color_dark_rgb": [
+    164,
+    146,
+    109
+  ],
+  "hair_color_light_rgb": [
+    252,
+    240,
+    193
+  ],
+  "source_hair_factor": [
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "animation_count_original": 77,
+  "skin_count_original": 1,
+  "mesh_count_original": 1,
+  "unchanged_original_geometry": true,
+  "unchanged_face_material_and_transparency": true,
+  "source_hair_image": "Gina5_TRUE_GoldenBrunette_Texture",
+  "modified_hair_material": {
+    "name": "Hair",
+    "pbrMetallicRoughness": {
+      "baseColorFactor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.83,
+      "baseColorTexture": {
+        "index": 10
+      }
+    },
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5,
+    "doubleSided": true,
+    "extras": {
+      "hairColorQA": "ACTUAL TEXTURE deep brunette; #39261D base; no blonde or auburn",
+      "gina5_color_revision": "BLONDE texture, light neutral #f0dfab, no copper or auburn"
+    }
+  }
+}
