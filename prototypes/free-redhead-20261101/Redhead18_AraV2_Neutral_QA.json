@@ -1,0 +1,16 @@
+{
+  "bytes": 17290732,
+  "sha256": "65d47a4e24ebdb77e07dd359a30d03809dc0ec63b8e9537cde39f3c2535df295",
+  "meshes": 1,
+  "skins": 1,
+  "animations": 77,
+  "facialMorphs": 8,
+  "garments": {
+    "outfit": "none",
+    "top": "none",
+    "bottom": "none",
+    "underwear": false,
+    "shoes": "none"
+  },
+  "status": "unapproved prototype"
+}
