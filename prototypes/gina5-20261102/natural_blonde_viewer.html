@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Gina 5 · NATURAL GOLDEN BLONDE 3D</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#12151b;color:#e9edf4;overflow:hidden}
+#stage{position:fixed;inset:0;touch-action:none}canvas{display:block}
+#hud{position:fixed;left:12px;top:12px;right:12px;pointer-events:none;display:flex;flex-direction:column;gap:7px}
+#hud .title{font-size:15px;font-weight:700;color:#f3dfd4}
+#status{font-size:12px;color:#d0d7e1}
+.controls{position:fixed;left:8px;right:8px;bottom:8px;padding:10px;background:rgba(22,26,34,.94);border:1px solid #475061;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px}
+button,select{background:#2b3440;color:#f7f8fc;border:1px solid #59677a;border-radius:8px;padding:9px 11px;font-size:13px}
+button:focus,select:focus{outline:2px solid #94c6ee}button:active{background:#64748b}
+#anim{min-width:132px;max-width:210px}
+#credit{font-size:11px;color:#b9c4ce;position:fixed;top:50px;left:12px;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="hud"><div class="title">Gina 5 — REAL BLONDE HAIR — FACE AND 77 ANIMATIONS PRESERVED</div><div id="status" role="status">Loading high-detail 3D model…</div></div>
+<div id="credit">APPROVED GINA 4 · Drag to rotate · Pinch to zoom</div>
+<div class="controls" aria-label="3D viewer controls">
+<button data-view="front">Front</button><button data-view="left">Left</button><button data-view="right">Right</button><button data-view="back">Back</button>
+<button data-view="reset">Reset</button>
+<select id="anim" aria-label="Choose animation"><option value="-1">No animation</option></select>
+<button id="toggle">Pause</button>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const stage=document.getElementById('stage'),status=document.getElementById('status'),animSelect=document.getElementById('anim');
+const scene=new THREE.Scene();scene.background=new THREE.Color('#171d27');
+const camera=new THREE.PerspectiveCamera(38,window.innerWidth/window.innerHeight,.025,200);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+stage.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight('#ffffff','#5a6674',1.25));
+const key=new THREE.DirectionalLight('#fff8ed',1.9);key.position.set(3,5,4);scene.add(key);
+const rim=new THREE.DirectionalLight('#e9f1ff',.9);rim.position.set(-3,3,-4);scene.add(rim);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=.6;controls.maxDistance=10;
+const clock=new THREE.Clock();let mixer=null,actions=[],playing=true,focus=new THREE.Vector3(0,1,0),distance=3.0,model=null;
+function positionView(side){
+ const dir=side==='back'?new THREE.Vector3(0,0,-1):side==='left'?new THREE.Vector3(-1,0,0):side==='right'?new THREE.Vector3(1,0,0):new THREE.Vector3(0,0,1);
+ camera.position.copy(focus).addScaledVector(dir,distance);controls.target.copy(focus);controls.update();
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>positionView(b.dataset.view));
+document.getElementById('toggle').onclick=e=>{playing=!playing;e.target.textContent=playing?'Pause':'Play'};
+animSelect.onchange=()=>{actions.forEach(a=>a.stop());const i=Number(animSelect.value);if(i>=0){actions[i].reset().play();playing=true;document.getElementById('toggle').textContent='Pause';}};
+new GLTFLoader().load('./Gina_5_NATURAL_BLONDE_V3.glb',gltf=>{
+ model=gltf.scene;scene.add(model);
+ const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),c=bounds.getCenter(new THREE.Vector3());
+ focus.set(c.x,c.y,c.z);distance=Math.max(2.2,size.y*1.5);positionView('front');
+ controls.minDistance=Math.max(.18,size.y*.25);controls.maxDistance=Math.max(7,size.y*4);
+ if(gltf.animations.length){
+  mixer=new THREE.AnimationMixer(model);
+  gltf.animations.forEach((clip,i)=>{actions.push(mixer.clipAction(clip));const o=document.createElement('option');o.value=i;o.textContent=clip.name||('Clip '+(i+1));animSelect.append(o)});
+  actions[0].play();animSelect.value='0';
+ }
+ let meshes=0,skins=0,shapes=0;
+ model.traverse(o=>{if(o.isMesh){meshes++;if(o.isSkinnedMesh)skins++;if(o.morphTargetInfluences?.length)shapes+=o.morphTargetInfluences.length;}});
+ status.textContent='3D loaded · '+meshes+' meshes · '+skins+' skinned meshes · '+shapes+' morph targets · '+gltf.animations.length+' clips';
+},xhr=>{if(xhr.total)status.textContent='Loading 3D: '+Math.round(xhr.loaded/xhr.total*100)+'%';},e=>{status.textContent='Gina 5 master could not be loaded. Check GitHub model file.';console.error(e)});
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+addEventListener('resize',resize);
+function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(playing&&mixer)mixer.update(dt);controls.update();renderer.render(scene,camera)}frame();
+</script></body></html>
