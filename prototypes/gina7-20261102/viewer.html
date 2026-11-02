@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gina 7 — factory-fitted gold bikini / matched neutral</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101c28;color:#fafafa;font:14px system-ui}
+header{padding:12px 16px}h1{font-size:20px;margin:0 0 5px}p{margin:5px 0;line-height:1.3;color:#b9d0db}
+#screen{width:100%;height:calc(100dvh - 205px);min-height:360px;touch-action:none}
+footer{padding:10px;display:flex;flex-wrap:wrap;gap:8px}
+button,select{padding:10px 12px;background:#2b485b;color:white;border:1px solid #60849e;border-radius:7px;font:inherit}
+#message{padding:0 14px 15px;color:#cfe2e5}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body><header><h1>Gina 7 • American flag bikini and tank/skirt</h1>
+<p>Matched Gina 7 body settings. Flag bikini is recoloured in this viewer; skirt length and garment fit still need inspection.</p></header>
+<div id="screen"></div><footer>
+<button id="on">Flag bikini</button><button id="off">Tank + skirt</button>
+<select id="view"><option value="full">Full</option><option value="front">Front</option><option value="back">Back</option><option value="side">Side</option></select>
+<select id="animations"><option value="">Static standing</option></select>
+</footer><div id="message">Loading the two original GLB exports…</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const el=document.getElementById('screen'),message=document.getElementById('message');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x152332);
+const camera=new THREE.PerspectiveCamera(40,1,.015,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+el.appendChild(renderer.domElement);
+const ctl=new OrbitControls(camera,renderer.domElement);ctl.target.set(0,.86,0);ctl.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xe1f2ff,0x33445d,2.5));
+const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(2,5,4);scene.add(sun);
+const floor=new THREE.GridHelper(5,24,0x455564,0x273647);scene.add(floor);
+function resize(){const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(el);
+const state={on:null,off:null,selected:'on',mode:'',mixers:{},actions:{}};
+const loader=new GLTFLoader();const load=f=>new Promise((ok,err)=>loader.load(f,ok,undefined,err));
+function view(){if(!state.on||!state.off)return;const bb=new THREE.Box3().setFromObject(state.on.scene);const middle=bb.getCenter(new THREE.Vector3());const height=bb.getSize(new THREE.Vector3()).y||1.7;
+  ctl.target.copy(middle);const v=document.getElementById('view').value;
+  camera.position.copy(middle).add(new THREE.Vector3(v==='side'?height*1.5:0,height*.13,v==='back'?-height*1.5:v==='side'?0:height*1.5));ctl.update();}
+function toggle(which){state.selected=which;state.on.scene.visible=which==='on';state.off.scene.visible=which==='off';
+  message.textContent=(which==='on'?'Gina 7: American-flag bikini ON':'Gina 7: tank top + skirt ON')+' — two matched Gina 7 outfit exports';}
+function play(name){state.mode=name;Object.keys(state.mixers).forEach(k=>{const m=state.mixers[k];m.stopAllAction();if(name){const clip=(state[k].animations||[]).find(x=>x.name===name);if(clip){const a=m.clipAction(clip);a.reset().play();}}})}
+Promise.all([load('./Gina_7_STRING_BIKINI.glb'),load('./Gina_7_MINISKIRT_TANK.glb')]).then(([on,off])=>{
+  state.on=on;state.off=off;scene.add(on.scene,off.scene);
+            // Recolour the fitted bikini fabric in-place; no mesh changes.
+            const flagTexture=(stars)=>{const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');if(stars){x.fillStyle='#173a79';x.fillRect(0,0,512,512);for(let row=0;row<8;row++)for(let col=0;col<9;col++){let cx=30+col*56+(row%2)*28,cy=28+row*62;let r=12;x.fillStyle='#fff';x.beginPath();for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5,rr=k%2?r*.43:r;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath();x.fill()}}else{for(let i=0;i<13;i++){x.fillStyle=i%2?'#fff':'#b22234';x.fillRect(0,i*512/13,512,512/13+1)}}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t};const stars=flagTexture(true),stripes=flagTexture(false);on.scene.traverse(o=>{if(!o.isMesh)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(!m||!/bikini/i.test(m.name))continue;m.map=/bottom/i.test(m.name)?stripes:stars;if(/strings/i.test(m.name)){m.map=null;m.color.set('#b22234')}else m.color.set('#ffffff');m.metalness=0;m.roughness=.65;m.needsUpdate=true}});
+  state.mixers.on=new THREE.AnimationMixer(on.scene);state.mixers.off=new THREE.AnimationMixer(off.scene);
+  const select=document.getElementById('animations');
+  (on.animations||[]).forEach(a=>{const op=document.createElement('option');op.value=a.name;op.textContent=a.name;select.appendChild(op)});
+  select.addEventListener('change',()=>play(select.value));
+  document.getElementById('on').onclick=()=>toggle('on');document.getElementById('off').onclick=()=>toggle('off');
+  document.getElementById('view').onchange=view;
+  toggle('on');view();
+}).catch(err=>message.textContent='Model load error: '+err.message);
+const clk=new THREE.Clock();function frame(){requestAnimationFrame(frame);const dt=Math.min(clk.getDelta(),.08);
+  Object.values(state.mixers).forEach(m=>m.update(dt));ctl.update();renderer.render(scene,camera)}
+resize();frame();
+</script></body></html>
