@@ -1,0 +1,173 @@
+name: Gina 6 — native fitted bikini on/off test
+
+on:
+  push:
+    branches: [feature/gina6-native-wardrobe-toggle-20261102]
+    paths:
+      - '.github/workflows/gina6-native-wardrobe-toggle.yml'
+      - 'prototypes/gina6-20261102/*.params.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gina6-native-outfit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated non-production branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/gina6-native-wardrobe-toggle-20261102
+          sparse-checkout: |
+            .github/workflows/gina6-native-wardrobe-toggle.yml
+            prototypes/gina6-20261102
+          persist-credentials: true
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Get official Ara 3D Gen source
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install generator and CC0 MakeHuman data
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Export actual Gina 6 neutral with all animation clips
+        working-directory: /tmp/ara3dgen
+        run: npm run export -- --params "$GITHUB_WORKSPACE/prototypes/gina6-20261102/Gina_6_UNCLOTHED_NATIVE.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/gina6-20261102/out"
+      - name: Export same Gina 6 with native fitted gold bikini
+        working-directory: /tmp/ara3dgen
+        run: npm run export -- --params "$GITHUB_WORKSPACE/prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/gina6-20261102/out"
+      - name: Compare body instructions, actual meshes, skin joints, clips, and bikini
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,pathlib,struct,hashlib
+          base=pathlib.Path('prototypes/gina6-20261102')
+          n=json.loads((base/'Gina_6_UNCLOTHED_NATIVE.params.json').read_text())
+          c=json.loads((base/'Gina_6_FITTED_GOLD_BIKINI.params.json').read_text())
+          diff={k:[n.get(k),c.get(k)] for k in set(n)|set(c) if n.get(k)!=c.get(k)}
+          assert set(diff)=={'name','outfit'}, f'Body mismatch: {diff}'
+          assert n['outfit']=='none' and c['outfit']=='set_gold_bikini'
+          assert n['age']>.4 and not n['underwear']
+          info={}
+          for label in ['Gina_6_UNCLOTHED_NATIVE','Gina_6_FITTED_GOLD_BIKINI']:
+            paths=list((base/'out').glob(label+'*.glb'))
+            assert len(paths)==1, f'{label}: {paths}'
+            b=paths[0].read_bytes()
+            assert b[:4]==b'glTF' and b[16:20]==b'JSON'
+            jl=struct.unpack_from('<I',b,12)[0]; j=json.loads(b[20:20+jl])
+            mats=[m.get('name','') for m in j.get('materials',[])]
+            skins=j.get('skins',[]); anim=j.get('animations',[])
+            info[label]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),
+              'skins':len(skins),'joint_count':len(skins[0]['joints']) if skins else 0,
+              'animation_count':len(anim),'animation_names':[a.get('name','') for a in anim],
+              'mesh_count':len(j.get('meshes',[])),
+              'materials':mats,'bikini_materials':[s for s in mats if 'bikini' in s.lower()],
+              'body_surface_face_culling_possible':True}
+            assert skins and len(anim)>=70, info[label]
+            if 'FITTED' in label:
+              assert info[label]['bikini_materials'], f'No bikini garment materials found: {mats}'
+            else:
+              assert not info[label]['bikini_materials'], f'Neutral has bikini material: {mats}'
+            (base/(label+'.glb')).write_bytes(b)
+          na=info['Gina_6_UNCLOTHED_NATIVE']; ca=info['Gina_6_FITTED_GOLD_BIKINI']
+          assert na['joint_count']==ca['joint_count'], 'Different skeleton size'
+          assert na['animation_names']==ca['animation_names'], 'Different animation clips'
+          qa={'experiment':'Gina6 native gold bikini source fitted as separate export, paired with neutral export',
+             'generator':'olatunde85/3d-gen', 'status':'geometry/rig metadata verified; NOT user-approved and dynamic visual fit untested',
+             'same_shape_seed_and_morph_parameters':True,'expected_param_differences':diff,
+             'neutral':na,'clothed':ca,
+             'warning':'Native generated clothing and body face-culling may prevent toggling garment alone on one exported GLB; viewer switches matched complete exports. Actual detachable garment and animation clip tests still needed.'}
+          (base/'Gina_6_NATIVE_BIKINI_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
+          print(json.dumps({k:qa[k] for k in ['status','same_shape_seed_and_morph_parameters']},indent=2))
+          print('Neutral',na['bytes'],na['joint_count'],na['animation_count'])
+          print('Clothed',ca['bytes'],ca['joint_count'],ca['animation_count'],ca['bikini_materials'])
+          PY
+      - name: Build comparison page for two REAL rigged files
+        shell: bash
+        run: |
+          cat > prototypes/gina6-20261102/viewer.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Gina 6 — factory-fitted gold bikini / matched neutral</title>
+          <style>
+          *{box-sizing:border-box}body{margin:0;background:#101c28;color:#fafafa;font:14px system-ui}
+          header{padding:12px 16px}h1{font-size:20px;margin:0 0 5px}p{margin:5px 0;line-height:1.3;color:#b9d0db}
+          #screen{width:100%;height:calc(100dvh - 205px);min-height:360px;touch-action:none}
+          footer{padding:10px;display:flex;flex-wrap:wrap;gap:8px}
+          button,select{padding:10px 12px;background:#2b485b;color:white;border:1px solid #60849e;border-radius:7px;font:inherit}
+          #message{padding:0 14px 15px;color:#cfe2e5}
+          </style>
+          <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+          </head><body><header><h1>Gina 6 • Native gold bikini test</h1>
+          <p>Exact same body settings and rig in two separate exports. Switch to compare original fitted bikini against bare base. This is NOT proof of independent detachable outfit; animation fit is still unapproved.</p></header>
+          <div id="screen"></div><footer>
+          <button id="on">Bikini ON</button><button id="off">Bikini OFF</button>
+          <select id="view"><option value="full">Full</option><option value="front">Front</option><option value="back">Back</option><option value="side">Side</option></select>
+          <select id="animations"><option value="">Static standing</option></select>
+          </footer><div id="message">Loading the two original GLB exports…</div>
+          <script type="module">
+          import * as THREE from 'three';
+          import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+          import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+          const el=document.getElementById('screen'),message=document.getElementById('message');
+          const scene=new THREE.Scene();scene.background=new THREE.Color(0x152332);
+          const camera=new THREE.PerspectiveCamera(40,1,.015,100);
+          const renderer=new THREE.WebGLRenderer({antialias:true});
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+          el.appendChild(renderer.domElement);
+          const ctl=new OrbitControls(camera,renderer.domElement);ctl.target.set(0,.86,0);ctl.enableDamping=true;
+          scene.add(new THREE.HemisphereLight(0xe1f2ff,0x33445d,2.5));
+          const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(2,5,4);scene.add(sun);
+          const floor=new THREE.GridHelper(5,24,0x455564,0x273647);scene.add(floor);
+          function resize(){const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+          new ResizeObserver(resize).observe(el);
+          const state={on:null,off:null,selected:'on',mode:'',mixers:{},actions:{}};
+          const loader=new GLTFLoader();const load=f=>new Promise((ok,err)=>loader.load(f,ok,undefined,err));
+          function view(){if(!state.on||!state.off)return;const bb=new THREE.Box3().setFromObject(state.on.scene);const middle=bb.getCenter(new THREE.Vector3());const height=bb.getSize(new THREE.Vector3()).y||1.7;
+            ctl.target.copy(middle);const v=document.getElementById('view').value;
+            camera.position.copy(middle).add(new THREE.Vector3(v==='side'?height*1.5:0,height*.13,v==='back'?-height*1.5:v==='side'?0:height*1.5));ctl.update();}
+          function toggle(which){state.selected=which;state.on.scene.visible=which==='on';state.off.scene.visible=which==='off';
+            message.textContent=(which==='on'?'Gina 6: native-fitted bikini ON':'Gina 6: unclothed complete body ON')+' — matched build parameters, separate full model exports';}
+          function play(name){state.mode=name;Object.keys(state.mixers).forEach(k=>{const m=state.mixers[k];m.stopAllAction();if(name){const clip=(state[k].animations||[]).find(x=>x.name===name);if(clip){const a=m.clipAction(clip);a.reset().play();}}})}
+          Promise.all([load('./Gina_6_FITTED_GOLD_BIKINI.glb'),load('./Gina_6_UNCLOTHED_NATIVE.glb')]).then(([on,off])=>{
+            state.on=on;state.off=off;scene.add(on.scene,off.scene);
+            state.mixers.on=new THREE.AnimationMixer(on.scene);state.mixers.off=new THREE.AnimationMixer(off.scene);
+            const select=document.getElementById('animations');
+            (on.animations||[]).forEach(a=>{const op=document.createElement('option');op.value=a.name;op.textContent=a.name;select.appendChild(op)});
+            select.addEventListener('change',()=>play(select.value));
+            document.getElementById('on').onclick=()=>toggle('on');document.getElementById('off').onclick=()=>toggle('off');
+            document.getElementById('view').onchange=view;
+            toggle('on');view();
+          }).catch(err=>message.textContent='Model load error: '+err.message);
+          const clk=new THREE.Clock();function frame(){requestAnimationFrame(frame);const dt=Math.min(clk.getDelta(),.08);
+            Object.values(state.mixers).forEach(m=>m.update(dt));ctl.update();renderer.render(scene,camera)}
+          resize();frame();
+          </script></body></html>
+          HTML
+      - name: Commit isolated prototype only after successful export and metadata validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator Character Prototype'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/gina6-20261102/Gina_6_UNCLOTHED_NATIVE.glb \
+                  prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb \
+                  prototypes/gina6-20261102/Gina_6_NATIVE_BIKINI_QA.json \
+                  prototypes/gina6-20261102/viewer.html
+          git commit -m 'Gina6 native fitted outfit on/off paired exports [skip ci]'
+          git pull --rebase origin feature/gina6-native-wardrobe-toggle-20261102
+          git push origin HEAD:feature/gina6-native-wardrobe-toggle-20261102
+      - name: Upload QA review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gina6-native-bikini-on-off-test
+          path: |
+            prototypes/gina6-20261102/*.glb
+            prototypes/gina6-20261102/*.json
+            prototypes/gina6-20261102/viewer.html
+          retention-days: 30
