@@ -1,0 +1,32 @@
+name: Gina 5 — extract exact real pelvis geometry for private Round fit
+on:
+  push:
+    branches: [feature/gina5-natural-blonde-v3-20261102]
+    paths:
+      - '.github/workflows/gina5-extract-pelvis.yml'
+      - 'prototypes/gina5-20261102/extract_real_pelvis.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gina5-natural-blonde-v3-20261102
+          sparse-checkout: |
+            prototypes/gina5-20261102
+      - name: Extract actual Skin pelvis triangles and weights
+        run: |
+          python prototypes/gina5-20261102/extract_real_pelvis.py \
+           prototypes/gina5-20261102/Gina_5_NATURAL_BLONDE_V3.glb \
+           prototypes/gina5-20261102/Gina_5_PELVIS_PATCH.b85
+      - name: Commit fitting reference ONLY (no purchased assets)
+        run: |
+          git config user.name "Gator Character Prototype"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prototypes/gina5-20261102/Gina_5_PELVIS_PATCH.b85
+          git commit -m "Save extracted Gina5 pelvis topology and weights for private fit [skip ci]"
+          git pull --rebase origin feature/gina5-natural-blonde-v3-20261102
+          git push origin HEAD:feature/gina5-natural-blonde-v3-20261102
