@@ -17,6 +17,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: feature/free-redhead-ara-20261101
+          sparse-checkout: |
+            prototypes/free-redhead-20261101
           persist-credentials: true
       - name: Install Node 22
         uses: actions/setup-node@v4
