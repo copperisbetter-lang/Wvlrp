@@ -1,0 +1,93 @@
+name: Build Gina 5 — Asian brunette, Gina 5 bust, rigged
+on:
+  push:
+    branches: [feature/gina5-round01-private-fit-20261102]
+    paths:
+      - '.github/workflows/gina5-ara.yml'
+      - 'prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.params.json'
+      - 'prototypes/gina5-20261102/recolor_glb_hair.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-gina4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout isolated Gina 5 prototype
+        uses: actions/checkout@v4
+        with:
+          ref: feature/gina5-round01-private-fit-20261102
+          sparse-checkout: |
+            prototypes/gina5-20261102
+          persist-credentials: true
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install pillow
+      - name: Clone free Ara generator
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install Ara dependencies
+        working-directory: /tmp/ara3dgen
+        run: npm ci
+      - name: Download CC0 MakeHuman assets
+        working-directory: /tmp/ara3dgen
+        run: npm run setup-assets
+      - name: Verify slider names, adult age and fuller bust
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.params.json','utf8'));
+          const c=JSON.parse(fs.readFileSync('/tmp/ara3dgen/public/assets/catalog.json','utf8'));
+          const sliders=new Set(c.sliders.flatMap(g=>g.sliders.map(s=>s.id)));
+          const invalid=Object.keys(p.modifiers).filter(k=>!sliders.has(k));
+          if(invalid.length)throw Error('Unknown sliders: '+invalid.join(','));
+          if(p.age<.34||p.age>.35||p.breastSize!==.94||p.top!=='none'||p.bottom!=='none'||p.underwear!==false)throw Error('Invalid neutral adult build parameters');
+          if(p.hair!=='long01')throw Error('Wrong hair mesh');
+          console.log('Bust slider',p.breastSize,'hair metadata',p.hairColor,p.hairTint);
+          NODE
+      - name: Export new high-detail rigged character
+        working-directory: /tmp/ara3dgen
+        run: npm run export -- --params "$GITHUB_WORKSPACE/prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/gina5-20261102/out"
+      - name: Paint actual Hair mesh texture dark brunette & verify rig
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=prototypes/gina5-20261102
+          MODEL=$(find "$BASE/out" -name '*.glb' -type f | head -n 1)
+          test -n "$MODEL"
+          python "$BASE/recolor_glb_hair.py" "$MODEL" "$BASE/Gina_5_Ara_V1_AsianBrunette.glb" "$BASE/Gina_5_Ara_V1_AsianBrunette_QA.json"
+          test -s "$BASE/Gina_5_Ara_V1_AsianBrunette.glb"
+          python - <<'PY'
+          import json,pathlib
+          r=json.loads(pathlib.Path('prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette_QA.json').read_text())
+          assert r['animations']>=70 and r['skins']>=1 and r['morph_primitives']>=1
+          assert r['forced_brunette_base_rgb']==[71,47,34]
+          print('PASS: true dark-brown material &',r['animations'],'animation clips preserved')
+          PY
+      - name: Save actual Gina 5 GLB on this feature branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator Character Preview'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.glb prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette_QA.json
+          git commit -m 'Save actual Gina 5 blonde model + material QA [skip ci]'
+          git pull --rebase origin feature/gina5-round01-private-fit-20261102
+          git push origin HEAD:feature/gina5-round01-private-fit-20261102
+      - name: Back up Gina 5 3D review
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gina_5_AsianBrunette_Review
+          path: |
+            prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.glb
+            prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette_QA.json
+            prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.params.json
+            prototypes/gina5-20261102/viewer.html
+          retention-days: 30
