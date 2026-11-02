@@ -1,0 +1,71 @@
+name: Free Redhead Ara 3D Prototype (isolated)
+on:
+  push:
+    branches: [feature/free-redhead-ara-20261101]
+    paths:
+      - '.github/workflows/free-redhead-ara.yml'
+      - 'prototypes/free-redhead-20261101/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-redhead:
+    name: Export original Ara 3D Gen high-detail redhead
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout isolated parameters only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            prototypes/free-redhead-20261101
+          persist-credentials: false
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone open-source Ara character generator
+        shell: bash
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git ara3dgen
+      - name: Install generator dependencies
+        working-directory: ara3dgen
+        run: npm ci
+      - name: Download CC0 MakeHuman body/skin/morph assets
+        working-directory: ara3dgen
+        run: npm run setup-assets
+      - name: Generate original adult redhead from saved parameters
+        working-directory: ara3dgen
+        run: npm run export -- --params ../prototypes/free-redhead-20261101/Redhead18_AraV1.params.json --detail high --formats glb,zip --out out
+      - name: Validate exported GLB, rig and animated mesh
+        working-directory: ara3dgen
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const files=fs.readdirSync('out').filter(f=>f.endsWith('.glb'));
+          if(!files.length) throw Error('No GLB created');
+          for(const f of files){
+            const b=fs.readFileSync(path.join('out',f));
+            if(b.toString('utf8',0,4)!=='glTF') throw Error('Bad GLB magic');
+            const n=b.readUInt32LE(12), t=b.toString('ascii',16,20);
+            if(t!=='JSON') throw Error('Bad GLB JSON');
+            const j=JSON.parse(b.subarray(20,20+n).toString('utf8'));
+            const info={file:f,bytes:b.length,meshes:j.meshes?.length||0,skins:j.skins?.length||0,animations:j.animations?.length||0,facialMorphMeshes:(j.meshes||[]).filter(m=>(m.primitives||[]).some(p=>p.targets?.length)).length};
+            fs.writeFileSync(path.join('out','qa.json'), JSON.stringify(info,null,2));
+            console.log(JSON.stringify(info));
+            if(info.skins<1) throw Error('Skinning missing');
+            if(info.meshes<1) throw Error('Body mesh missing');
+          }
+          NODE
+      - name: Include exact reconstruction parameters
+        run: cp prototypes/free-redhead-20261101/Redhead18_AraV1.params.json ara3dgen/out/
+      - name: Upload review files only (no production deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Redhead18_AraV1_review_GLb
+          path: ara3dgen/out/
+          if-no-files-found: error
+          retention-days: 30
