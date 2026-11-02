@@ -1,0 +1,61 @@
+name: Gina 7 matched wardrobe exports
+on:
+  push:
+    branches: [feature/gina7-two-outfits-20261102]
+    paths: ['.github/workflows/gina7-wardrobe.yml','prototypes/gina7-20261102/*.params.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gina7-two-outfits-20261102
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Ara generator
+        run: |
+          git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+          cd /tmp/ara3dgen
+          npm ci
+          npm run setup-assets
+      - name: Generate two matched Gina 7 characters
+        run: |
+          mkdir -p prototypes/gina7-20261102/out
+          for p in prototypes/gina7-20261102/*.params.json; do
+            (cd /tmp/ara3dgen && npm run export -- --params "$GITHUB_WORKSPACE/$p" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/gina7-20261102/out")
+          done
+      - name: Verify outputs and preserve originals
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,struct
+          root=pathlib.Path('prototypes/gina7-20261102')
+          for name in ['Gina_7_STRING_BIKINI','Gina_7_MINISKIRT_TANK']:
+            matches=list((root/'out').glob(name+'*.glb'))
+            assert len(matches)==1,(name,matches)
+            data=matches[0].read_bytes()
+            assert data[:4]==b'glTF'
+            length=struct.unpack_from('<I',data,12)[0]
+            gltf=json.loads(data[20:20+length])
+            print(name, len(data),len(gltf.get('animations',[])),[m.get('name') for m in gltf.get('materials',[])])
+            assert len(gltf.get('animations',[]))>=70
+            (root/(name+'.glb')).write_bytes(data)
+          PY
+      - name: Commit generated exports
+        run: |
+          git config user.name 'Gator Character Prototype'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/gina7-20261102/*.glb
+          git commit -m 'Generate two matched Gina 7 wardrobe exports [skip ci]'
+          git pull --rebase origin feature/gina7-two-outfits-20261102
+          git push origin HEAD:feature/gina7-two-outfits-20261102
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gina7-wardrobe-exports
+          path: prototypes/gina7-20261102/*.glb
+          retention-days: 30
