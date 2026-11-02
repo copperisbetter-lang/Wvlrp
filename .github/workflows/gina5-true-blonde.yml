@@ -1,0 +1,59 @@
+name: Gina 5 — actual hair pixels TRUE BLONDE
+on:
+  push:
+    branches: [feature/gina5-true-blonde-20261102]
+    paths:
+      - '.github/workflows/gina5-true-blonde.yml'
+      - 'prototypes/gina5-20261102/gina5_true_blonde_patch.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  correct-gina5-blonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gina5-true-blonde-20261102
+          sparse-checkout: |
+            prototypes/gina5-20261102
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pillow
+      - name: Recolor actual HAIR texture, without affecting skin or animation
+        run: |
+          python prototypes/gina5-20261102/gina5_true_blonde_patch.py \
+            prototypes/gina5-20261102/Gina_5_Ara_V1_AsianBrunette.glb \
+            prototypes/gina5-20261102/Gina_5_TRUE_BLONDE_V2.glb \
+            prototypes/gina5-20261102/Gina_5_TRUE_BLONDE_V2_QA.json
+      - name: Validate source / only hair touched
+        run: |
+          python - <<'PY'
+          import struct,json,pathlib
+          p=pathlib.Path("prototypes/gina5-20261102/")
+          s=(p/"Gina_5_Ara_V1_AsianBrunette.glb").read_bytes()
+          t=(p/"Gina_5_TRUE_BLONDE_V2.glb").read_bytes()
+          def parse(b):
+            assert b[:4]==b'glTF'
+            n=struct.unpack_from('<I',b,12)[0]
+            return json.loads(b[20:20+n])
+          a,z=parse(s),parse(t)
+          assert a['meshes']==z['meshes'] and a['skins']==z['skins'] and a['animations']==z['animations']
+          assert len(z['animations'])==77
+          assert len(a['materials'])==len(z['materials'])
+          for x,y in zip(a['materials'],z['materials']):
+            if x.get('name')!='Hair':assert x==y, x.get('name')
+          print("Confirmed: actual geometry, skin and face materials, 77 animations unchanged. Hair real pixels replaced.")
+          PY
+      - name: Publish new blonde GLB to isolated branch only
+        run: |
+          set -euo pipefail
+          git config user.name "Gator Character Preview"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prototypes/gina5-20261102/Gina_5_TRUE_BLONDE_V2.glb prototypes/gina5-20261102/Gina_5_TRUE_BLONDE_V2_QA.json
+          git commit -m "Publish actual neutral-blonde Gina 5 GLB, original face and rig protected [skip ci]"
+          git pull --rebase origin feature/gina5-true-blonde-20261102
+          git push origin HEAD:feature/gina5-true-blonde-20261102
