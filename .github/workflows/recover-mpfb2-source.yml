@@ -1,0 +1,26 @@
+name: Recover upstream MPFB2 source for isolated Bev clothing fit
+on:
+  push:
+    branches: [gator1/mpfb-recovery-bikini-20261102]
+    paths: ['.github/workflows/recover-mpfb2-source.yml']
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone official MakeHuman/MPFB version used by WVLRP
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/mpfb2
+          test -s /tmp/mpfb2/src/mpfb/blender_manifest.toml
+          cd /tmp/mpfb2/src
+          zip -qr "$RUNNER_TEMP/mpfb2-v2.0.18-source.zip" mpfb
+          unzip -tq "$RUNNER_TEMP/mpfb2-v2.0.18-source.zip"
+      - name: Upload public GPL/MPFB addon source for private local fit
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpfb2-v2.0.18-source
+          path: ${{ runner.temp }}/mpfb2-v2.0.18-source.zip
+          retention-days: 3
