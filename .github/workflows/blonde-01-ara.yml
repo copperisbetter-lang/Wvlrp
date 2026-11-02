@@ -1,0 +1,93 @@
+name: Build Blender-ready Blonde 01 Ara V1 (neutral adult)
+on:
+  push:
+    branches: [feature/free-blonde-ara-20261102]
+    paths:
+      - '.github/workflows/blonde-01-ara.yml'
+      - 'prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.params.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export-blonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout isolated blonde branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/free-blonde-ara-20261102
+          sparse-checkout: |
+            prototypes/free-blonde-20261102
+          persist-credentials: true
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone public Ara 3D Gen
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install generator dependencies
+        working-directory: /tmp/ara3dgen
+        run: npm ci
+      - name: Load CC0 MakeHuman assets and build slider catalog
+        working-directory: /tmp/ara3dgen
+        run: npm run setup-assets
+      - name: Verify MakeHuman sliders actually exist
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.params.json','utf8'));
+          const c=JSON.parse(fs.readFileSync('/tmp/ara3dgen/public/assets/catalog.json','utf8'));
+          const sliders=new Set(c.sliders.flatMap(g=>g.sliders.map(s=>s.id)));
+          const applied=Object.entries(p.modifiers).filter(([k])=>sliders.has(k));
+          const unknown=Object.keys(p.modifiers).filter(k=>!sliders.has(k));
+          console.log('Requested shape mods:',JSON.stringify(applied));
+          console.log('Unavailable mods:',JSON.stringify(unknown));
+          if(unknown.length) throw new Error('Reject unrecognized face/body sliders: '+unknown.join(', '));
+          if(p.age<.4 || p.age>.5 || p.top!=='none'||p.bottom!=='none'||p.underwear!==false) throw Error('Not an adult neutral baseline');
+          NODE
+      - name: Export actual original 3D character
+        working-directory: /tmp/ara3dgen
+        run: npm run export -- --params "$GITHUB_WORKSPACE/prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/prototypes/free-blonde-20261102/out"
+      - name: Validate rig and face/animation data
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,hashlib,struct,pathlib
+          base=pathlib.Path('prototypes/free-blonde-20261102')
+          params=json.loads((base/'Blonde_01_Ara_V1_Neutral.params.json').read_text())
+          files=list((base/'out').glob('*.glb')); assert len(files)==1, files
+          b=files[0].read_bytes(); assert b[:4]==b'glTF'
+          jslen=struct.unpack_from('<I',b,12)[0]
+          assert b[16:20]==b'JSON'
+          doc=json.loads(b[20:20+jslen])
+          materials=[x.get('name','') for x in doc.get('materials',[])]
+          assert not any(any(w in m.lower() for w in ['shirt','shorts','shoes','bikini','pants','bra','underwear']) for m in materials)
+          info={'model':params['name'],'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'meshes':len(doc.get('meshes',[])),'skins':len(doc.get('skins',[])),'animations':len(doc.get('animations',[])),'morph_primitives':sum(bool(x.get('targets')) for m in doc.get('meshes',[]) for x in m.get('primitives',[])),'materials':materials,'garments':{'outfit':params['outfit'],'top':params['top'],'bottom':params['bottom'],'underwear':params['underwear'],'shoes':params['shoes']},'status':'unapproved prototype; 36C is appearance target, not measured bra size'}
+          assert info['skins']>=1 and info['animations']>=1 and info['morph_primitives']>=1
+          (base/'Blonde_01_Ara_V1_Neutral.glb').write_bytes(b)
+          (base/'Blonde_01_Ara_V1_Neutral_QA.json').write_text(json.dumps(info,indent=2)+'\n')
+          print(json.dumps(info,indent=2))
+          PY
+      - name: Publish only on isolated preview branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator Character Preview'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.glb prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral_QA.json
+          git commit -m 'Publish isolated unapproved Blonde 01 high detail GLB [skip ci]'
+          git pull --rebase origin feature/free-blonde-ara-20261102
+          git push origin HEAD:feature/free-blonde-ara-20261102
+      - name: Upload private review artifact copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: Blonde_01_Ara_V1_Neutral
+          path: |
+            prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.glb
+            prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral.params.json
+            prototypes/free-blonde-20261102/Blonde_01_Ara_V1_Neutral_QA.json
+          retention-days: 30
