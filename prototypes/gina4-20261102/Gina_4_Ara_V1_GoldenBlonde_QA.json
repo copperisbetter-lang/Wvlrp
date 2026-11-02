@@ -1,0 +1,63 @@
+{
+  "name": "Gina 4 Golden Blonde \u2014 review build",
+  "status": "UNAPPROVED model; actual hair material repigmented after Ara export",
+  "model_bytes": 18784388,
+  "sha256": "56ad360d753ea77002b5fa20709f7c487329626bcd4518651d845f379e6c4efe",
+  "skins": 1,
+  "animations": 77,
+  "meshes": 1,
+  "morph_primitives": 8,
+  "hair_material_index": 7,
+  "old_hair_baseColorFactor": [
+    1,
+    0.8879231178819663,
+    0.47353149614800955,
+    1
+  ],
+  "old_hair_texture_index": 8,
+  "old_hair_image": {
+    "name": "hair_long01.png",
+    "mime": "image/png"
+  },
+  "forced_blonde_base_rgb": [
+    246,
+    217,
+    119
+  ],
+  "hair_image_recolored": true,
+  "new_hair_texture_png_bytes": 1493476,
+  "vertex_reddish_tints_removed": 0,
+  "hair_material": {
+    "name": "Hair",
+    "pbrMetallicRoughness": {
+      "baseColorFactor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.83,
+      "baseColorTexture": {
+        "index": 9
+      }
+    },
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5,
+    "doubleSided": true,
+    "extras": {
+      "hairColorQA": "ACTUAL TEXTURE warm golden blonde; #F6D876 base; no auburn"
+    }
+  },
+  "all_material_names": [
+    "Skin",
+    "Skin details",
+    "Eyes",
+    "Eyebrows",
+    "Eyelashes",
+    "Teeth",
+    "Tongue",
+    "Hair"
+  ],
+  "production_unchanged": true
+}
