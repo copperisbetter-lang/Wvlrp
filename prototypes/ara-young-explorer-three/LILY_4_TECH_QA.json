@@ -1,0 +1,36 @@
+{
+  "status": "TECHNICAL STRUCTURAL QA PASS; NO UNCOVERED CHILD PREVIEW",
+  "source_website": "Ara 3D Gen",
+  "name": "Lily_4",
+  "bytes": 15620844,
+  "sha256": "a50727c3900f3cd2410c997c3850199e2af3b1f54aeccb190af87c1254e5ad24",
+  "body_indices": 80268,
+  "rig_bones": 69,
+  "animations": 77,
+  "clothing_scene_objects": 0,
+  "removed_source_clothing_materials": [
+    "Cargo shorts",
+    "Skin details",
+    "Tank top"
+  ],
+  "remaining_materials": [
+    "Skin",
+    "Eyes",
+    "Eyebrows",
+    "Eyelashes",
+    "Teeth",
+    "Tongue",
+    "Hair"
+  ],
+  "hair_and_eyes_preserved": true,
+  "approved_original_master_unchanged": true,
+  "required_preview": "Neutral technical mannequin with opaque censoring of sensitive areas",
+  "finish_report": {
+    "raw_body_height_m": 1.23691,
+    "root_scale": 0.9863292,
+    "final_body_height_m": 1.22,
+    "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+    "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+    "bytes": 15624144
+  }
+}
