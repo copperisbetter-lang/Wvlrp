@@ -13,12 +13,12 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head><body>
 <header><h1>Lily 3, 4 and 5 • build preview</h1>
-<p>Saved new Lily exports: 3 (T-shirt and shorts), 4 (technical rig/measurement reference), 5 (hiking outfit). All age-seven, dusty blonde, green eyes. Lily 2&#39;s real sundress is still being sourced. The technical model is displayed as a rig and measurement box, without rendering uncovered child geometry.</p></header>
+<p>Saved new Lily exports: 3 (T-shirt and shorts), 4 (solid technical fitting mannequin), 5 (hiking outfit). All age-seven, dusty blonde, green eyes. Lily 2&#39;s real sundress is still being sourced. The technical view uses the actual preserved body shape as a smooth, opaque measuring mannequin with obscured sensitive surfaces, rather than exposing uncovered child anatomy.</p></header>
 <div id="canvas"></div>
 <footer><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
-<button data-name="Lily_4" aria-pressed="false">Lily 4 • Technical rig</button>
+<button data-name="Lily_4" aria-pressed="false">Lily 4 • Body shape</button>
 <button data-name="Lily_5" aria-pressed="false">Lily 5 • Hiking clothes</button>
-<select id="clip"><option value="">Standing pose</option></select><button id="recenter">Recenter</button></footer>
+<select id="clip"><option value="">Standing pose</option></select><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="recenter">Recenter</button></footer>
 <div id="msg">Loading character…</div>
 <script type="module">
 import * as THREE from 'three';
@@ -42,6 +42,15 @@ function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(active
 const c=b.getCenter(new THREE.Vector3()),h=Math.max(.8,b.getSize(new THREE.Vector3()).y);
 orbit.target.copy(c);camera.position.set(c.x,c.y+h*.11,c.z+h*1.8);orbit.update();}
 document.getElementById('recenter').onclick=focus;
+function faceView(side){
+ if(!active)return;
+ const b=new THREE.Box3().setFromObject(active),c=b.getCenter(new THREE.Vector3());
+ const h=Math.max(.8,b.getSize(new THREE.Vector3()).y),d=h*1.85;
+ orbit.target.copy(c);
+ camera.position.set(c.x+(side==='side'?d:0),c.y+h*.09,c.z+(side==='back'?-d:side==='front'?d:0));
+ orbit.update();
+}
+for(const side of ['front','side','back'])document.getElementById(side).onclick=()=>faceView(side);
 function play(v){if(!mixer)return;mixer.stopAllAction();if(v){const clip=clips.find(x=>x.name===v);if(clip)mixer.clipAction(clip).reset().play();}}
 chooser.onchange=()=>play(chooser.value);
 function dispose(obj){obj.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m)continue;for(const k in m){const a=m[k];if(a?.isTexture)a.dispose();}m.dispose();}}});}
@@ -52,18 +61,88 @@ async function show(name){
   chooser.innerHTML='<option value="">Standing pose</option>';
   try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb?version=lily-new-build-20261103',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
   active=gltf.scene;scene.add(active);
-  // Keep the complete technical GLB in memory for rig inspection, but never render an uncovered child body.
+  // A child-safe solid measuring mannequin, NOT an uncovered mesh or new garment asset.
+  // Geometry remains untouched in the GLB. Viewer-only opaque clay surface + smoothed torso shield.
   if(name==='Lily_4') {
-    const bounds=new THREE.Box3().setFromObject(active);
-    active.traverse(o=>{if(o.isMesh)o.visible=false;});
-    const rig=new THREE.SkeletonHelper(active);rig.material.color.set(0x7bf1e4);active.add(rig);
-    const boundsHelper=new THREE.Box3Helper(bounds,0x7ab6e0);active.add(boundsHelper);
+    active.updateWorldMatrix(true,true);
+    const skinMeshes=[];
+    active.traverse(o=>{
+      if(!o.isMesh)return;
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      if(mats.some(m=>m?.name==='Skin')){
+        o.visible=true;
+        skinMeshes.push(o);
+        o.material=new THREE.MeshStandardMaterial({
+          color:0x9aaab4,metalness:0,roughness:1,side:THREE.DoubleSide
+        });
+      }else o.visible=false;
+    });
+    if(!skinMeshes.length)throw Error('Technical source has no preserved Skin mesh');
+    const bounds=new THREE.Box3();
+    for(const m of skinMeshes)bounds.expandByObject(m);
+    const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+    const H=size.y,y0=bounds.min.y;
+    // Source-measured horizontal outlines. Exclude outstretched arms when sampling the torso.
+    const samples=[];
+    for(const m of skinMeshes) {
+      const a=m.geometry.attributes.position;
+      const step=Math.max(1,Math.floor(a.count/25000));
+      for(let i=0;i<a.count;i+=step){
+        const v=new THREE.Vector3().fromBufferAttribute(a,i);
+        m.localToWorld(v); active.worldToLocal(v);
+        if(Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z))samples.push(v);
+      }
+    }
+    const rings=[];
+    for(const t of [.35,.38,.42,.46,.50,.54,.59,.64,.69,.74,.79,.83,.87]){
+      const y=y0+H*t,near=samples.filter(p=>Math.abs(p.y-y)<H*.016 && Math.abs(p.x-center.x)<H*.175 && Math.abs(p.z-center.z)<H*.145);
+      const xs=near.map(p=>Math.abs(p.x-center.x)).sort((a,b)=>a-b);
+      const zs=near.map(p=>Math.abs(p.z-center.z)).sort((a,b)=>a-b);
+      // A smooth, generic opaque envelope deliberately replaces the detailed torso/pelvis.
+      const width=xs.length?xs[Math.floor(xs.length*.96)]:H*.105;
+      const depth=zs.length?zs[Math.floor(zs.length*.96)]:H*.082;
+      const xRad=THREE.MathUtils.clamp(width+H*.018,H*.075,H*.158);
+      const zRad=THREE.MathUtils.clamp(depth+H*.018,H*.065,H*.132);
+      rings.push({y,xRad,zRad});
+    }
+    const verts=[],faces=[],SEG=40;
+    rings.forEach(r=>{
+      for(let j=0;j<SEG;j++){
+        const a=j*Math.PI*2/SEG;
+        verts.push(center.x+Math.cos(a)*r.xRad,r.y,center.z+Math.sin(a)*r.zRad);
+      }
+    });
+    for(let i=0;i<rings.length-1;i++)for(let j=0;j<SEG;j++){
+      const a=i*SEG+j,b=i*SEG+(j+1)%SEG,c=(i+1)*SEG+j,d=(i+1)*SEG+(j+1)%SEG;
+      faces.push(a,b,c,b,d,c);
+    }
+    const geom=new THREE.BufferGeometry();
+    geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+    geom.setIndex(faces);
+    geom.computeVertexNormals();
+    const cover=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({
+      color:0x7e979f,roughness:1,metalness:0,side:THREE.DoubleSide
+    }));
+    cover.name='Opaque technical silhouette shield — viewer only';
+    active.add(cover);
+    // Height ruler makes overall scale visible. No fabricated circumference measurements.
+    const guide=new THREE.Group(),x=bounds.max.x+H*.09;
+    const pts=[new THREE.Vector3(x,y0,center.z),new THREE.Vector3(x,y0+H,center.z)];
+    const marks=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x8de1e8}));
+    guide.add(marks);
+    for(let k=0;k<=12;k++){
+      const y=y0+H*k/12;
+      guide.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x-H*.017,y,center.z),new THREE.Vector3(x+H*.017,y,center.z)
+      ]),new THREE.LineBasicMaterial({color:0x8de1e8})));
+    }
+    active.add(guide);
   }
   clips=gltf.animations||[];mixer=new THREE.AnimationMixer(active);
-  for(const clip of clips.filter(c=>/^(Idle|Walk|Run|Wave|Young Explorer (Idle|Walk|Run|Wave))$/i.test(c.name))) {
+  for(const clip of (name==='Lily_4'?[]:clips.filter(c=>/^(Idle|Walk|Run|Wave|Young Explorer (Idle|Walk|Run|Wave))$/i.test(c.name)))) {
     let o=document.createElement('option');o.value=clip.name;o.textContent=clip.name;chooser.appendChild(o);
   }
-  focus();msg.textContent=name.replaceAll('_',' ')+' loaded · drag to rotate, pinch to zoom · '+clips.length+' animation clips available';
+  focus();msg.textContent=name==='Lily_4'?'Lily 4: solid body proportions · smooth opaque technical covering · 1.22 m model height · drag/zoom or use Front / Side / Back':name.replaceAll('_',' ')+' loaded · drag to rotate, pinch to zoom · '+clips.length+' animation clips available';
   }catch(e){msg.textContent='Model not yet available or cannot load: '+(e?.message||String(e));}
 }
 for(const b of document.querySelectorAll('[data-name]'))b.onclick=()=>show(b.dataset.name);
