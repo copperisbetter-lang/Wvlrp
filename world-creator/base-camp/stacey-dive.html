@@ -38,6 +38,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installBeverlyShorelineWalk} from './beverly-shoreline-npc.js?v=20261103';
 import {installGinaLocomotion} from './beverly-gina-locomotion.js?v=20261103b';
+import {installBeverlyArmSwing} from './beverly-arm-swing.js?v=20261103c';
 import {installMasonPlayer} from './stacey-mason-player.js';
 import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
@@ -1192,6 +1193,7 @@ gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).h
  if(!clip){diag.assets.Beverly='FAILED';diag.errors.push('Beverly walk animation missing');return;}
  model.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
  const mixer=new T.AnimationMixer(model);mixer.clipAction(clip).setLoop(T.LoopRepeat,Infinity).play();model.userData.beverlyWalkMixer=mixer;
+ const arms=installBeverlyArmSwing({THREE:T,model,speed:1.2});model.userData.beverlyArmSwing=arms;diag.assets.Beverly='walking; arm bones '+arms.detected.join(',');
  beverlyNPC=installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY:ground,lake:{x:CX,z:CZ}});
  window.beverlyShoreline=beverlyNPC;diag.assets.Beverly='walking shoreline';
  // Transfer Gina's walk/run motion only; preserve the certified Beverly mesh.
