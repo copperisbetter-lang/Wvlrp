@@ -12,8 +12,8 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head><body>
-<header><h1>Lily 2–5 • build preview · QA build 72</h1><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button>
-<p>Lily 2 is a <strong>trial pink floral Ankara one-piece gown</strong> from the original Ara catalog, not an approved sundress. Lily 3: T-shirt/shorts. Lily 5: hiking clothes. Lily 4: safe technical skeleton and measurement box only. All visual approvals pending.</p></header>
+<header><h1>Lily 2–5 • measured shape QA 73</h1><button id="removeDress" aria-pressed="false">Inspect body proportions</button>
+<p>Lily 2 is a <strong>trial pink floral Ankara one-piece gown</strong> from the original Ara catalog, not an approved sundress. Lily 3: T-shirt/shorts. Lily 5: hiking clothes. Lily 4: solid, proportion-measured technical fit form, without uncovered child geometry. All visual approvals pending.</p></header>
 <div id="canvas"></div>
 <footer><button data-name="Lily_2" aria-pressed="false">Lily 2 • Floral gown TRIAL</button><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
 <button data-name="Lily_4" aria-pressed="false">Lily 4 • Technical rig</button>
@@ -35,16 +35,16 @@ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=tr
 scene.add(new THREE.HemisphereLight(0xe9f7ff,0x647181,2.3));
 let light=new THREE.DirectionalLight(0xffffff,2.7);light.position.set(3,5,4);scene.add(light);
 const grid=new THREE.GridHelper(3,24,0x577185,0x314759);scene.add(grid);
-const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0,selectedName="",dressRemoved=false,inspectionModel=null;
+const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0,selectedName="",dressRemoved=false,inspectionModel=null,technicalFormPromise=null;
 function resize(){const w=panel.clientWidth,h=panel.clientHeight||320;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 new ResizeObserver(resize).observe(panel);resize();
-function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(active);
+function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(inspectionModel||active);
 const c=b.getCenter(new THREE.Vector3()),h=Math.max(.8,b.getSize(new THREE.Vector3()).y);
 orbit.target.copy(c);camera.position.set(c.x,c.y+h*.11,c.z+h*1.8);orbit.update();}
 document.getElementById('recenter').onclick=focus;
 function faceView(side){
  if(!active)return;
- const b=new THREE.Box3().setFromObject(active),c=b.getCenter(new THREE.Vector3());
+ const b=new THREE.Box3().setFromObject(inspectionModel||active),c=b.getCenter(new THREE.Vector3());
  const h=Math.max(.8,b.getSize(new THREE.Vector3()).y),d=h*1.85;
  orbit.target.copy(c);
  camera.position.set(c.x+(side==='side'?d:0),c.y+h*.09,c.z+(side==='back'?-d:side==='front'?d:0));
@@ -55,41 +55,150 @@ function play(v){if(!mixer)return;mixer.stopAllAction();if(v){const clip=clips.f
 chooser.onchange=()=>play(chooser.value);
 function dispose(obj){obj.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m)continue;for(const k in m){const a=m[k];if(a?.isTexture)a.dispose();}m.dispose();}}});}
 function clearInspection(){
- if(inspectionModel){scene.remove(inspectionModel);inspectionModel.traverse(o=>{if(o.isMesh)o.geometry.dispose()});inspectionModel=null;}
+ if(inspectionModel){scene.remove(inspectionModel);inspectionModel=null;}
  if(active)active.visible=true;
 }
-function applyDressInspection(){
+// Non-anatomical fit-form derived from the actual Lily 4 source skin vertices.
+// The genuine source mesh is *never displayed*: smooth ellipsoidal rings preserve
+// measured widths/depths while suppressing details and sensitive geometry.
+function buildMeasuredForm(source){
+ source.updateMatrixWorld(true);
+ const meshes=[];source.traverse(o=>{
+  if(!o.isMesh||!o.geometry?.attributes?.position)return;
+  const mats=Array.isArray(o.material)?o.material:[o.material];
+  if(mats.some(m=>(m?.name||'').trim().toLowerCase()==='skin'))meshes.push(o);
+ });
+ if(!meshes.length)throw Error('No technical Skin geometry in Lily 4 export');
+ const pts=[],p=new THREE.Vector3();
+ for(const mesh of meshes){
+  const pos=mesh.geometry.attributes.position,step=Math.max(1,Math.floor(pos.count/18000));
+  mesh.updateMatrixWorld(true);
+  for(let i=0;i<pos.count;i+=step){
+   p.fromBufferAttribute(pos,i);
+   if(mesh.isSkinnedMesh && mesh.applyBoneTransform)mesh.applyBoneTransform(i,p);
+   mesh.localToWorld(p);
+   if(Number.isFinite(p.x+p.y+p.z))pts.push([p.x,p.y,p.z]);
+  }
+ }
+ if(pts.length<100)throw Error('Technical geometry did not yield usable contour measurements');
+ let minY=Infinity,maxY=-Infinity,minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+ for(const [x,y,z] of pts){
+  minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+  minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+  minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);
+ }
+ const H=maxY-minY,cx=(minX+maxX)/2,cz=(minZ+maxZ)/2;
+ if(H<.3||H>2)throw Error('Measured technical body dimensions out of range');
+ const neutral=new THREE.MeshStandardMaterial({color:0x7acbd4,roughness:1,metalness:0,flatShading:false,side:THREE.DoubleSide});
+ const group=new THREE.Group();group.name='Lily4_Measured_ChildSafe_Form';
+ const segments=20;
+ function station(f,region){
+  const y=minY+H*f,band=H*.022;
+  let chosen=[];
+  const eligible=([x,v,z])=>{
+   if(region==='torso')return Math.abs(x-cx)<H*.245;
+   if(region==='head')return Math.abs(x-cx)<H*.145;
+   if(region==='leftleg')return x<cx-H*.014 && x>cx-H*.24;
+   if(region==='rightleg')return x>cx+H*.014 && x<cx+H*.24;
+   return false;
+  };
+  for(const a of pts)if(Math.abs(a[1]-y)<=band&&eligible(a))chosen.push(a);
+  if(chosen.length<8){
+    const near=pts.filter(a=>eligible(a)).sort((a,b)=>Math.abs(a[1]-y)-Math.abs(b[1]-y));
+    chosen=near.slice(0,Math.min(60,near.length));
+  }
+  if(chosen.length<4)return null;
+  let a=Infinity,b=-Infinity,c=Infinity,d=-Infinity;
+  for(const [x,v,z] of chosen){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,z);d=Math.max(d,z);}
+  if(!(b>a && d>c))return null;
+  let mx=(a+b)/2,mz=(c+d)/2,rx=(b-a)/2,rz=(d-c)/2;
+  // Smooth technical contour bands, never the raw child surface.
+  const cap=region==='torso'?H*.17:region==='head'?H*.095:H*.09;
+  rx=Math.max(H*.026,Math.min(rx,cap));
+  rz=Math.max(H*.03,Math.min(rz,cap));
+  return [y,mx,mz,rx,rz];
+ }
+ function smoothRings(rings){
+  return rings.map((r,i)=>{
+   const around=rings.slice(Math.max(0,i-2),Math.min(rings.length,i+3));
+   let total=0;const s=[0,0,0,0,0];
+   for(const v of around){for(let k=0;k<5;k++)s[k]+=v[k];total++;}
+   return [r[0],s[1]/total,s[2]/total,s[3]/total,s[4]/total];
+  });
+ }
+ function shell(region,from,to,n=30){
+  let rings=[];
+  for(let i=0;i<=n;i++){const r=station(from+(to-from)*i/n,region);if(r)rings.push(r);}
+  if(rings.length<9)return false;
+  rings=smoothRings(rings);
+  const verts=[],idx=[];
+  for(let i=0;i<rings.length;i++){
+   const [y,x,z,rx,rz]=rings[i];
+   for(let j=0;j<=segments;j++){
+    const a=2*Math.PI*j/segments;
+    verts.push(x+rx*Math.cos(a),y,z+rz*Math.sin(a));
+    if(i>0&&j>0){
+     const t=i*(segments+1)+j;
+     idx.push(t,t-1,t-(segments+1),t-1,t-(segments+2),t-(segments+1));
+    }
+   }
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setIndex(idx);geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,neutral);mesh.name=region+'MeasuredFit';group.add(mesh);
+  return true;
+ }
+ const ok=shell('torso',.40,.83,37)&&shell('head',.82,.99,16);
+ if(!ok)throw Error('Unable to sample technical shoulder/torso silhouette');
+ shell('leftleg',.025,.43,30);shell('rightleg',.025,.43,30);
+ // Arms are intentionally generic technical fit tubes, not raw skin triangles.
+ const limb=new THREE.SphereGeometry(1,18,12);
+ for(const sign of [-1,1]){
+  const arm=new THREE.Mesh(limb,neutral);arm.position.set(cx+sign*H*.19,minY+H*.615,cz);
+  arm.scale.set(H*.055,H*.17,H*.060);group.add(arm);
+  const hand=new THREE.Mesh(limb,neutral);hand.position.set(cx+sign*H*.205,minY+H*.445,cz);
+  hand.scale.set(H*.038,H*.07,H*.041);group.add(hand);
+ }
+ // Ground/reference ruler: source height, not an invented body measurement.
+ const marks=new THREE.Group(),lineMat=new THREE.LineBasicMaterial({color:0xa9d4e4});
+ const rulerX=minX-H*.085;
+ for(let i=0;i<=10;i++){
+  const yy=minY+H*i/10,small=[new THREE.Vector3(rulerX,yy,cz),new THREE.Vector3(rulerX+H*.035,yy,cz)];
+  marks.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(small),lineMat));
+ }
+ marks.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(rulerX,minY,cz),new THREE.Vector3(rulerX,maxY,cz)]),lineMat));
+ group.add(marks);
+ group.userData.realSourceHeightMeters=H;
+ return group;
+}
+async function getTechnicalForm(){
+ if(!technicalFormPromise)technicalFormPromise=new Promise((resolve,reject)=>{
+  loader.load(dir+'Lily_4.glb?version=measured-qa-73',gltf=>{
+   try{const form=buildMeasuredForm(gltf.scene);dispose(gltf.scene);resolve(form);}
+   catch(e){reject(e);}
+  },undefined,reject);
+ }).catch(e=>{technicalFormPromise=null;throw e;});
+ return await technicalFormPromise;
+}
+async function applyDressInspection(){
  const btn=document.getElementById('removeDress');
  btn.disabled=selectedName!=='Lily_2';
  btn.setAttribute('aria-pressed',String(dressRemoved));
- btn.textContent=dressRemoved?'Restore dress':'Remove dress • solid QA';
+ btn.textContent=dressRemoved?'Restore gown':'Inspect body proportions';
  if(!active||selectedName!=='Lily_2')return;
  clearInspection();
- if(!dressRemoved){msg.textContent='Lily 2 gown restored · QA build 72';return;}
- const bounds=new THREE.Box3().setFromObject(active);
- const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
- const H=Math.max(size.y,0.8),w=Math.min(Math.max(size.x,H*.26),H*.5),base=bounds.min.y;
- // Scene-level mannequin, independent of imported GLB visibility, hierarchy and rig.
- const group=new THREE.Group();group.name='lilySolidTechnicalQA72';
- const material=new THREE.MeshStandardMaterial({color:0x70c8dd,roughness:.85,metalness:0,depthTest:true});
- function oval(x,y,z,rx,ry,rz){
-  const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),material);
-  mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);group.add(mesh);
- }
- const x=center.x,z=center.z;
- oval(x,base+H*.89,z,w*.22,H*.105,w*.21);
- oval(x,base+H*.645,z,w*.37,H*.195,w*.23);
- oval(x,base+H*.46,z,w*.30,H*.11,w*.22);
- for(const side of [-1,1]){
-  oval(x+side*w*.47,base+H*.61,z,w*.115,H*.17,w*.12);
-  oval(x+side*w*.48,base+H*.35,z,w*.09,H*.115,w*.09);
-  oval(x+side*w*.17,base+H*.265,z,w*.14,H*.195,w*.14);
-  oval(x+side*w*.17,base+H*.08,z,w*.105,H*.09,w*.11);
- }
- inspectionModel=group;
- active.visible=false;
- scene.add(inspectionModel);
- msg.textContent='QA build 72: SOLID BLUE TECHNICAL MANNEQUIN · approximate proportions only · no uncovered child geometry';
+ if(!dressRemoved){msg.textContent='Lily 2 gown restored · measured QA 73';return;}
+ msg.textContent='Loading Lily 4 measured technical form (no uncovered geometry)…';
+ const rid=requestId;
+ try{
+  const form=await getTechnicalForm();
+  if(rid!==requestId||selectedName!=='Lily_2'||!dressRemoved)return;
+  inspectionModel=form;active.visible=false;scene.add(form);
+  focus();
+  msg.textContent='Measured technical form from Lily 4 source mesh · solid proportions, NO exposed skin. Source height '+form.userData.realSourceHeightMeters.toFixed(2)+' m.';
+ }catch(e){dressRemoved=false;applyDressInspection();msg.textContent='Technical body view unavailable: '+(e?.message||e);}
 }
 document.getElementById('removeDress').onclick=()=>{if(selectedName!=='Lily_2'||!active)return;dressRemoved=!dressRemoved;applyDressInspection();};
 async function show(name){
@@ -99,19 +208,18 @@ async function show(name){
   chooser.innerHTML='<option value="">Standing pose</option>';
   try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb?version=lily-new-build-20261103',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
   active=gltf.scene;scene.add(active);
-  // Safety boundary: Lily 4 is a technical skeleton and bounding box ONLY.
-  // No uncovered child mesh is rendered, even with neutral material or shielding.
-  if(name==='Lily_4') {
-    const bounds=new THREE.Box3().setFromObject(active);
+  // Lily 4: use real source vertices for a smooth, child-safe technical fit form.
+  // Hide *every* original mesh before showing any part of its scene.
+  if(name==='Lily_4'){
+    const form=buildMeasuredForm(active);
     active.traverse(o=>{if(o.isMesh)o.visible=false;});
-    const rig=new THREE.SkeletonHelper(active);rig.material.color.set(0x7bf1e4);active.add(rig);
-    const box=new THREE.Box3Helper(bounds,0x7ab6e0);active.add(box);
+    inspectionModel=form;scene.add(form);
   }
   clips=gltf.animations||[];mixer=new THREE.AnimationMixer(active);
   for(const clip of (name==='Lily_4'?[]:clips.filter(c=>/^(Idle|Walk|Run|Wave|Young Explorer (Idle|Walk|Run|Wave))$/i.test(c.name)))) {
     let o=document.createElement('option');o.value=clip.name;o.textContent=clip.name;chooser.appendChild(o);
   }
-  focus();msg.textContent=name==='Lily_4'?'Lily 4: technical skeleton and bounds only · no uncovered mesh rendered':name.replaceAll('_',' ')+' loaded · drag to rotate, pinch to zoom · '+clips.length+' animation clips available';
+  focus();msg.textContent=name==='Lily_4'?'Lily 4: solid measured technical fit form · raw geometry hidden · source height '+inspectionModel.userData.realSourceHeightMeters.toFixed(2)+' m':name.replaceAll('_',' ')+' loaded · drag to rotate, pinch to zoom · '+clips.length+' animation clips available';
   }catch(e){msg.textContent='Model not yet available or cannot load: '+(e?.message||String(e));}
 }
 for(const b of document.querySelectorAll('[data-name]'))b.onclick=()=>show(b.dataset.name);
