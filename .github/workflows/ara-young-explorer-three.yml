@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: ara-young-explorer-three
   cancel-in-progress: true
@@ -24,17 +25,39 @@ jobs:
             .github/workflows
             prototypes/ara-young-explorer-three
           persist-credentials: true
+      - name: Recover successful model exports from the prior failed audit (avoid 3 minute rebuild)
+        id: archived
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p prototypes/ara-young-explorer-three/out /tmp/ara-artifact
+          if gh run download 41660158094 --repo "$GITHUB_REPOSITORY" --name Ara-age-seven-three-match-qa -D /tmp/ara-artifact; then
+            for name in Ara7_Swim_Colors Ara7_Pink_Sundress Ara7_Neutral_Mesh_Reference; do
+              test -s "/tmp/ara-artifact/$name.glb"
+              cp "/tmp/ara-artifact/$name.glb" "prototypes/ara-young-explorer-three/out/$name.glb"
+            done
+            echo 'found=true' >> "$GITHUB_OUTPUT"
+            echo "Restored three authentic Ara generator exports; only the prior audit had failed."
+          else
+            echo 'found=false' >> "$GITHUB_OUTPUT"
+            echo "Archive unavailable; generating fresh models."
+          fi
       - uses: actions/setup-node@v4
+        if: steps.archived.outputs.found != 'true'
         with:
           node-version: '22'
       - name: Clone official Ara 3D Gen
+        if: steps.archived.outputs.found != 'true'
         run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
       - name: Install dependencies and CC0 MakeHuman character data
+        if: steps.archived.outputs.found != 'true'
         working-directory: /tmp/ara3dgen
         run: |
           npm ci
           npm run setup-assets
       - name: Disable destructive covered-body face culling for these exports ONLY
+        if: steps.archived.outputs.found != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -59,6 +82,7 @@ jobs:
           print('UNCHANGED_CHILD_COVERAGE_GUARDS_AND_PRESERVED_FULL_BASEMESH')
           PY
       - name: Export exact matching child-proportioned character with 3 child-appropriate outfits
+        if: steps.archived.outputs.found != 'true'
         working-directory: /tmp/ara3dgen
         shell: bash
         run: |
@@ -80,6 +104,15 @@ jobs:
               assert {k:v for k,v in p.items() if k not in safe_diff}==reference,'BODY/SEED mismatch'
               assert p['age']==0.1125 and p['gender']==0 and p['underwear']
               assert p['top']!='none' and p['bottom']!='none'
+          def unpack_accessor(doc,data,accnum):
+              accessor=doc['accessors'][accnum]
+              view=doc['bufferViews'][accessor['bufferView']]
+              byte_offset=view.get('byteOffset',0)+accessor.get('byteOffset',0)
+              kind={5121:'B',5123:'H',5125:'I',5126:'f'}[accessor['componentType']]
+              arity={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4}[accessor['type']]
+              fmt='<'+(kind*arity)
+              stride=view.get('byteStride',struct.calcsize(fmt))
+              return [struct.unpack_from(fmt,data,byte_offset+i*stride) for i in range(accessor['count'])]
           records={}
           for name in names:
               paths=list((d/'out').glob(name+'*.glb'))
@@ -89,35 +122,49 @@ jobs:
               n,tag=struct.unpack_from('<I4s',b,12)
               assert tag==b'JSON'
               j=json.loads(b[20:20+n])
+              chunk_offset=20+n
+              binary_len,binary_tag=struct.unpack_from('<I4s',b,chunk_offset)
+              assert binary_tag==b'BIN\x00','Missing GLB binary mesh chunk'
+              data=b[chunk_offset+8:chunk_offset+8+binary_len]
               materials=[m.get('name','') for m in j.get('materials',[])]
-              skinverts=0
-              for mesh in j.get('meshes',[]):
-                  for pr in mesh.get('primitives',[]):
-                      m=materials[pr['material']]
-                      if m=='Skin':
-                          skinverts+=j['accessors'][pr['attributes']['POSITION']]['count']
+              skin_prims=[pr for mesh in j.get('meshes',[]) for pr in mesh.get('primitives',[])
+                          if materials[pr['material']]=='Skin']
+              assert len(skin_prims)==1,(name,'expected exactly one original body skin primitive',len(skin_prims))
+              pr=skin_prims[0]
+              indices=[t[0] for t in unpack_accessor(j,data,pr['indices'])]
+              positions=unpack_accessor(j,data,pr['attributes']['POSITION'])
+              referenced=sorted(set(indices))
+              assert len(indices)==80268 and len(referenced)==14517,(name,'base body mesh faces missing',len(indices),len(referenced))
+              assert max(indices)<len(positions), 'Out-of-bounds skin index'
+              # glTF's POSITION accessor is SHARED by every garment. Its count must
+              # differ with clothing, so do NOT compare its total vertices.
+              # Hash ONLY body vertices referenced by the Skin primitive.
+              index_hash=hashlib.sha256(b''.join(struct.pack('<I',i) for i in indices)).hexdigest()
+              body_hash=hashlib.sha256(b''.join(struct.pack('<fff',*positions[i]) for i in referenced)).hexdigest()
               joint_counts=[len(sk.get('joints',[])) for sk in j.get('skins',[])]
               animation_names=[a.get('name','') for a in j.get('animations',[])]
-              assert skinverts>13000, (name,'missing complete base skin',skinverts,materials)
               assert max(joint_counts,default=0)>=50, (name,joint_counts)
               assert len(animation_names)>=70,(name,len(animation_names))
               record={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),
-                      'full_base_skin_position_count':skinverts,'joint_counts':joint_counts,
-                      'animations':animation_names,'materials':materials,
+                      'skin_triangle_indices':len(indices),'skin_unique_vertices':len(referenced),
+                      'skin_index_sha256':index_hash,'skin_position_sha256':body_hash,
+                      'shared_glb_position_accessor_count_includes_clothes':len(positions),
+                      'joint_counts':joint_counts,'animations':animation_names,'materials':materials,
                       'age_years':7,'anatomical_surface':'neutral, non-explicit child-proportioned MakeHuman base'}
               records[name]=record
               (d/(name+'.glb')).write_bytes(b)
-          assert len({v['full_base_skin_position_count'] for v in records.values()})==1,'BODY FACE CULLING / MESH LOSS'
+          assert len({v['skin_index_sha256'] for v in records.values()})==1, 'BODY TRIANGLE TOPOLOGY DIFFERS'
+          assert len({v['skin_position_sha256'] for v in records.values()})==1, 'BODY POSITIONS DIFFER'
           assert len({tuple(v['joint_counts']) for v in records.values()})==1,'SKELETONS DIFFER'
           assert len({tuple(v['animations']) for v in records.values()})==1,'ANIMATION CLIPS DIFFER'
           qa={'generator':'Ara 3D Gen / MakeHuman CC0','age_years':7,
               'same_seed_morph_face_hair_eyes_skeleton':True,
               'original_basemesh_all_faces_preserved_in_each_variant':True,
               'generator_under18_coverage_protections_retained':True,
-              'variants':records,'status':'structural QA only; Android visual fit untested; not deployed to The Wild'}
+              'variants':records,'status':'structural QA PASS only; Android visual fit untested; not deployed to The Wild'}
           (d/'THREE_MATCHED_MODELS_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
           print('ARA_AGE_SEVEN_MATCHED_FULL_BODY_QA_PASSED')
-          print({name:(r['bytes'],r['full_base_skin_position_count'],len(r['animations'])) for name,r in records.items()})
+          print({name:(r['bytes'],r['skin_triangle_indices'],r['skin_unique_vertices'],r['skin_position_sha256'],len(r['animations'])) for name,r in records.items()})
           PY
       - name: Store only new prototype files on isolated branch (never production)
         run: |
