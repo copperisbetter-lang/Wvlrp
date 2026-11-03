@@ -1,0 +1,170 @@
+{
+  "project": "Bev USA Bikini",
+  "source": "Owner-provided Bev_Bikini_Strap_Dots (1).json",
+  "source_version": 15,
+  "source_mark_count": 22,
+  "source_original_sha256": null,
+  "units": "meters",
+  "coordinate_system": "Three.js world XYZ",
+  "status": "Exact marker-position coordinate backup and route interpretation ONLY. V14 approved bikini mesh NOT recovered or modified. Not an installed garment.",
+  "bow_anchor_mark_indices": {
+    "left": 0,
+    "right": 1
+  },
+  "marks_xyz": [
+    [
+      -0.16338,
+      0.9455,
+      0.04976
+    ],
+    [
+      0.16488,
+      0.95039,
+      0.03234
+    ],
+    [
+      -0.06195,
+      0.90829,
+      0.12792
+    ],
+    [
+      -0.09808,
+      0.93146,
+      0.12474
+    ],
+    [
+      -0.12999,
+      0.94388,
+      0.11507
+    ],
+    [
+      -0.15176,
+      0.95,
+      0.0937
+    ],
+    [
+      0.06714,
+      0.91241,
+      0.1278
+    ],
+    [
+      0.09964,
+      0.92671,
+      0.12413
+    ],
+    [
+      0.13162,
+      0.94134,
+      0.11376
+    ],
+    [
+      0.15534,
+      0.94668,
+      0.08963
+    ],
+    [
+      0.16991,
+      0.9501,
+      0.05551
+    ],
+    [
+      0.09948,
+      0.93069,
+      -0.08592
+    ],
+    [
+      0.1183,
+      0.93956,
+      -0.07263
+    ],
+    [
+      0.13968,
+      0.94036,
+      -0.05317
+    ],
+    [
+      0.15614,
+      0.94448,
+      -0.02975
+    ],
+    [
+      0.16782,
+      0.94794,
+      -0.00103
+    ],
+    [
+      -0.11079,
+      0.92906,
+      -0.08034
+    ],
+    [
+      -0.12632,
+      0.93657,
+      -0.06738
+    ],
+    [
+      -0.14555,
+      0.9353,
+      -0.04735
+    ],
+    [
+      -0.15908,
+      0.93578,
+      -0.02784
+    ],
+    [
+      -0.1676,
+      0.94129,
+      -0.00551
+    ],
+    [
+      -0.17209,
+      0.94236,
+      0.01434
+    ]
+  ],
+  "paths": {
+    "left_front_to_bow": [
+      2,
+      3,
+      4,
+      5,
+      0
+    ],
+    "left_back_to_bow": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      0
+    ],
+    "right_front_to_bow": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      1
+    ],
+    "right_back_to_bow": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      1
+    ]
+  },
+  "notes": [
+    "Front garment attachment points have positive z; back garment attachment points have negative z.",
+    "Connect points per path in listed order ending at the matching left/right hip anchor. Two bows only, one per hip.",
+    "Do not connect left hip to right or front to back bypassing bow.",
+    "Original category labels in uploaded JSON are unreliable (all except the right anchor tagged Left hip). Use x sign.",
+    "Owner-approved V14 front and back cloth outline MUST stay unchanged. Earlier teal V42 is rejected as substitute.",
+    "Compact bows must lie flat against hip surface, no sideways-projecting wings.",
+    "User upload contains per-point surface coordinate metadata not included in this stripped down portable GitHub backup; see exact private source in current chat.",
+    "3 mm diameter spline/tube suggestion; adjust with approved model surface when its binary is recovered."
+  ]
+}
