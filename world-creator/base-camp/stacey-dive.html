@@ -1,20 +1,51 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Stacey Lake · Complete Reference Build</title><style>
-*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
-</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Drag to look · joystick to walk / swim</div><div id="panel"><button id="shore">Beach</button><button id="dive">DIVE ▼</button><button id="surface">SURFACE ▲</button><button id="air">Aerial</button><button id="quality">Quality</button></div><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script>
-window.__lakeBooted=false;
-window.addEventListener('error',e=>{const n=document.querySelector('#status');if(n)n.textContent='Load error: '+(e.message||'failed resource');});
-window.addEventListener('unhandledrejection',e=>{const n=document.querySelector('#status');if(n)n.textContent='Asset error: '+String(e.reason).slice(0,180);});
-setTimeout(()=>{if(!window.__lakeBooted){const n=document.querySelector('#status');if(n)n.textContent='Viewer did not start — try reload. CDN script may be blocked.';}},12000);
-</script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · Stacey Lake · Beverly</title><style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#b6d9ea;color:#fff;font:14px system-ui}canvas{display:block}#look{position:fixed;inset:0;touch-action:none}header{position:fixed;top:18px;left:20px;pointer-events:none;text-shadow:0 2px 8px #122d38}header b{font:24px Georgia;letter-spacing:3px}header small{display:block;letter-spacing:2px;font-size:10px;margin-top:5px}#panel{position:fixed;right:14px;top:16px;display:flex;flex-wrap:wrap;max-width:65vw;justify-content:flex-end;gap:6px}button{border:1px solid #ffffff55;border-radius:8px;color:white;background:#173d40d9;padding:10px 12px;font:inherit;touch-action:manipulation}#status{position:fixed;bottom:18px;right:14px;background:#102d39d9;padding:9px 12px;border-radius:8px;max-width:52%;font-size:11px}#pad{position:fixed;bottom:35px;left:25px;width:110px;height:110px;border:1px solid #fff8;background:#143c4044;border-radius:50%;touch-action:none}#nub{position:absolute;width:42px;height:42px;left:33px;top:33px;border-radius:50%;background:#ffffffa0}#hint{position:fixed;left:20px;top:90px;font-size:11px;text-shadow:0 1px 5px #123;pointer-events:none}#fatal{position:fixed;inset:30%;background:#173d40;padding:20px;display:none}
+
+
+/* Compact game console: all actions tucked into one dropdown. */
+#gameMenu{position:fixed;z-index:10;top:calc(12px + env(safe-area-inset-top));right:9px;width:158px;max-width:calc(100vw - 175px)}
+#gameMenu summary{list-style:none;cursor:pointer;text-align:center;background:#103c3aee;border:1px solid #d5e9d187;border-radius:9px;padding:11px 6px;font-weight:800;user-select:none;touch-action:manipulation}
+#gameMenu summary::-webkit-details-marker{display:none}
+#gameMenu[open] summary{border-radius:9px 9px 0 0;background:#2d5950}
+#actionConsole{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;max-height:min(70vh,480px);overflow-y:auto;background:#14352fee;border:1px solid #ffffff55;border-radius:0 0 10px 10px;box-shadow:0 5px 20px #0009}
+#actionConsole button{min-height:41px;padding:5px 3px;font-size:11px;font-weight:750;line-height:1.17}
+#actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8}
+#actionConsole #viewMode{white-space:pre-line}
+#joystickToggle{position:fixed;bottom:152px;left:25px;z-index:8;padding:7px 9px;font-size:10px;font-weight:800}
+#pad{z-index:8}#pad.padHidden{display:none}
+#hint{top:auto;bottom:189px;left:12px;max-width:140px}
+@media(max-width:520px){#gameMenu{width:146px;max-width:calc(100vw - 157px)}#actionConsole{gap:4px;padding:6px}#actionConsole button{min-height:38px;padding:5px 2px;font-size:10px}header b{font-size:19px}header small{letter-spacing:.6px}#status{max-width:55%}#hint{font-size:10px}}
+</style></head><body><div id="look"></div><header><b>STACEY LAKE</b><small>WVLRP · WE DO IT LIVE</small></header><div id="hint">Tap map to walk · joystick to steer · drag to look</div><details id="gameMenu"><summary aria-label="Open game options">GAME OPTIONS ▾</summary><div id="actionConsole" role="group" aria-label="Game actions">
+<button id="actionRun" type="button" aria-pressed="false">RUN</button>
+<button id="actionFly" type="button" aria-pressed="false">FLY</button>
+<button id="actionSwim" type="button" aria-pressed="false">SWIM</button>
+<button id="actionDive" type="button" aria-pressed="false">DIVE</button>
+<button id="actionSit" type="button" aria-pressed="false">SIT</button>
+<button id="viewMode" type="button" aria-pressed="true" aria-label="Third-person camera; tap to switch to first-person" title="Switch camera">3RD PERSON</button>
+<button id="shore" type="button">BEACH</button>
+<button id="canyon" type="button">CANYON</button>
+<button id="dive" type="button">DIVE DOWN</button>
+<button id="surface" type="button">SURFACE</button>
+<button id="air" type="button">AERIAL</button>
+<button id="quality" type="button">QUALITY</button>
+<button id="stopWalk" type="button">STOP WALK</button>
+</div></details><button id="joystickToggle" type="button" aria-pressed="true">JOYSTICK ON</button><div id="pad"><div id="nub"></div></div><div id="status">Loading lake…</div><div id="fatal"></div><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as T from 'three';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {installBass} from './stacey-bass.js';
+import {installBeverlyShorelineWalk} from './beverly-shoreline-npc.js?v=20261103';
+import {installMasonPlayer} from './stacey-mason-player.js';
+import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
+import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
+import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
 // One complete scene: no dependency on any experimental lake code or terrain module.
-const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false};
+const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false,defaultAvatar:'Mason',defaultSpawn:'Stacey Lake south beach'};
 const status=document.querySelector('#status');window.addEventListener('error',e=>{diag.errors.push(e.message);status.textContent='Scene error: '+e.message});
 const mobile=matchMedia('(pointer:coarse)').matches;const scene=new T.Scene();scene.fog=new T.FogExp2(0xc0d7df,.00085);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1:1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;document.body.prepend(renderer.domElement);
@@ -22,7 +53,7 @@ renderer.debug.onShaderError=(gl,program,vs,fs)=>{diag.errors.push('Shader: '+gl
 const sky=new Sky();sky.scale.setScalar(1800);sky.material.uniforms.turbidity.value=2.5;sky.material.uniforms.rayleigh.value=1.3;sky.material.uniforms.mieCoefficient.value=.003;sky.material.uniforms.mieDirectionalG.value=.83;sky.material.uniforms.sunPosition.value.copy(lightDir);scene.add(sky);
 let seed=61728;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);const CY=-5.5,CX=140,CZ=-240;
 function outer(a){return 113.797805566*(1+.038*Math.sin(a*5)+.022*Math.cos(a*9))}function inner(a){return 22*(1+.1*Math.sin(a*5+.6)+.06*Math.cos(a*8))}
-function ground(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
+function baseGround(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
 // Far north shoreline: replace the rounded hill with a ravine and vertical rock escarpment.
 const cliffAngle=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
 const cliffWeight=1-smooth(.33,.67,cliffAngle);
@@ -35,37 +66,363 @@ if(cliffWeight>0 && d>=0 && d<105){
  return T.MathUtils.lerp(native,rockProfile,cliffWeight);
 }
 if(d<13.716)return CY+.035+d*.035;const ridge=CY+.515+14*smooth(14,85,d)+19*smooth(70,160,d)+8*Math.sin(a*4+.5)**2*smooth(22,120,d);return ridge+Math.sin(x*.025)*Math.cos(z*.023)*4*smooth(14,70,d)}
+// Shared waterfall catchment: west-bank basin and one outlet carved into terrain.
+const fallShore=CX-outer(Math.PI),pondX=fallShore-26,pondY=CY+1.4;
+// One walk-height opening in the center of the 7.62-meter-separated waterfalls.
+const hiddenCave={x:fallShore-51+19.55,z:CZ,floor:CY+1.65,halfWidth:1.32,
+ innerEnd:fallShore-51+19.55-52,outerEnd:fallShore-51+19.55+7.5,
+ chamberX:fallShore-51+19.55-84,chamberR:42};
+function isHiddenCaveOpening(x,z,feet){
+ // Preserve the one entrance between falls; the tunnel opens into a room
+ // below the hillside. Upper photo-cliff surface remains solid and walkable.
+ const insideHeight=feet>=hiddenCave.floor-2&&feet<hiddenCave.floor+3.15;
+ if(!insideHeight)return false;
+ const tunnel=x>=hiddenCave.innerEnd&&x<=hiddenCave.outerEnd&&
+   Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth;
+ const dx=x-hiddenCave.chamberX,dz=z-hiddenCave.z;
+ const dome=dx*dx+dz*dz<(hiddenCave.chamberR-1.1)**2;
+ return tunnel||dome;
+}
+function hiddenCaveFloor(x){
+ return hiddenCave.floor-1.1*smooth(hiddenCave.x+1.2,hiddenCave.outerEnd,x);
+}
+window.staceyHiddenCave={centerX:hiddenCave.x,centerZ:hiddenCave.z,
+ floor:hiddenCave.floor,width:2*hiddenCave.halfWidth,
+ length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:true,
+ chamber:{x:hiddenCave.chamberX,z:hiddenCave.z,radius:hiddenCave.chamberR}};
+// Surface vegetation still renders everywhere above ground. Inside the
+// cavern, conceal only trees whose trunks or crowns overlap its excavated
+// footprint; saved matrices are restored upon leaving the cave.
+const cavernTreeMasks=[];
+let cavernMaskState=null,cavernMaskCount=-1;
+const hiddenTreeMatrix=new T.Matrix4().makeScale(.00001,.00001,.00001);
+function overHiddenCave(x,z,reach=0){
+ const dx=x-hiddenCave.chamberX,dz=z-hiddenCave.z,r=hiddenCave.chamberR+reach;
+ return dx*dx+dz*dz<r*r||
+ (x>hiddenCave.innerEnd-reach&&x<hiddenCave.outerEnd+reach&&
+ Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth+reach);
+}
+function cameraInsideHiddenCave(p){
+ return p.y<hiddenCave.floor+6.2&&overHiddenCave(p.x,p.z,1.8);
+}
+function creekCenter(t){return CZ+Math.sin(t*Math.PI*2)*1.8;}
+// V10: The 84-meter domed room is INSIDE a natural continuous MOUNTAIN.
+// Exterior terrain, vegetation and walking all share this height function.
+// The existing V9 clip hides exterior rock only from inside the hollow.
+function protectedMountain(x,z){
+ const room=1-smooth(43,66,Math.hypot(x-hiddenCave.chamberX,z-CZ));
+ const tunnel=smooth(-70,-60,x)*(1-smooth(-12,-6,x))*(1-smooth(8,18,Math.abs(z-CZ)));
+ return Math.max(room,tunnel);
+}
+function mountainGround(x,z,h){
+ const dist=Math.hypot(x-hiddenCave.chamberX,z-CZ),R=hiddenCave.chamberR;
+ if(dist<66){
+  const roof=hiddenCave.floor+8+24*Math.sqrt(Math.max(0,1-Math.pow(Math.min(1,dist/R),2)));
+  const blend=1-smooth(43,66,dist);
+  h+=Math.max(0,roof+7.3-h)*blend; // thick natural rock roof, no exposed dome
+ }
+ const cap=smooth(-63,-52,x)*(1-smooth(-11,-4,x))*(1-smooth(5,13,Math.abs(z-CZ)));
+ h+=Math.max(0,hiddenCave.floor+12-h)*cap; // cover tunnel, leave door intact
+ // Build a solid watercourse in the actual uphill rock, not a floating water mesh.
+ const run=smooth(-39,-35,x)*(1-smooth(-7.1,-5.5,x));
+ if(run<=0)return h;
+ const t=T.MathUtils.clamp((x+36)/28.7,0,1),waterY=T.MathUtils.lerp(21.30,12.04,t);
+ const spread=smooth(-19.5,-10,x)*3.81;
+ const sourceZ=CZ+.32*Math.sin(t*2.8);
+ const lateral=x<-19.5?Math.abs(z-sourceZ):
+   Math.min(Math.abs(z-CZ-spread),Math.abs(z-CZ+spread));
+ // Wide trunk, then two separately carved narrow beds past the splitting boulder.
+ // Bed width tracks the actual 8.8–8.2m water strip, then the two 2.5–2.6m branches.
+ const fork=smooth(-17,-9.5,x);
+ const fullBed=T.MathUtils.lerp(4.5,1.45,fork);
+ const bankEdge=T.MathUtils.lerp(6.4,3.2,fork);
+ const outerBank=T.MathUtils.lerp(14.0,5.5,fork);
+ const bed=waterY-.18,bank=1-smooth(bankEdge,outerBank,lateral),channel=1-smooth(fullBed,bankEdge,lateral);
+ h=T.MathUtils.lerp(h,Math.max(h,bed+.92+.18*Math.sin(x*.17+z*.26)),run*bank);
+ return T.MathUtils.lerp(h,bed,run*channel);
+}
+function naturalGround(x,z){
+ // Build the canyon ends from real soil terrain, not artificial cliff panels.
+ const sideDist=Math.abs(z-CZ);
+ const shoulderBand=smooth(14,24,sideDist)*(1-smooth(33,47,sideDist));
+ const hillsideFade=smooth(-69,-44,x)*(1-smooth(-14,7,x));
+ // Carry the existing walkable soil ridge toward the photo-rock crest on both ends.
+ const ridgeSide=smooth(7,19,sideDist)*(1-smooth(29,43,sideDist));
+ const ridgeLength=smooth(-50,-31,x)*(1-smooth(2,14,x));
+ const crest=CY+30-5*smooth(-42,5,x)+.35*Math.sin(z*.16+x*.08);
+ let original=baseGround(x,z)+5*shoulderBand*hillsideFade;
+ original+=Math.max(0,crest-original)*ridgeSide*ridgeLength;
+ const basin=Math.hypot((x-pondX)/8,(z-CZ)/17);
+ if(basin<1.24)return T.MathUtils.lerp(pondY-1.9,Math.max(original,pondY+.35),smooth(.72,1.24,basin));
+ const t=(x-(pondX+6))/(fallShore+2-(pondX+6));
+ if(t>=0&&t<=1){
+  const dist=Math.abs(z-creekCenter(t)),level=T.MathUtils.lerp(pondY,CY,t);
+  if(dist<4.5)return T.MathUtils.lerp(level-.55,Math.max(original,level+.2),smooth(1.7,4.5,dist));
+ }
+ // V6 has its own rocks and ridge: lower the OLD procedural west hill
+ // under the canyon footprint and blend the cut into untouched terrain.
+ // Old cut removed earth more than fifty meters sideways, leaving air gaps.
+ const cutDistance=Math.abs(z-CZ)+.85*Math.sin(x*.12+z*.19);
+ // Leave only the real lower waterfall basin open, not a gap under the ridge.
+ const sideFade=1-smooth(5,15,cutDistance);
+ const backFade=smooth(-96,-69,x);
+ const shoreFade=1-smooth(7,19,x);
+ const cut=sideFade*backFade*shoreFade*(1-protectedMountain(x,z));
+ if(cut>.001){
+  const bed=Math.min(original,CY+.20+Math.max(0,-x-24)*.017);
+  return mountainGround(x,z,T.MathUtils.lerp(original,bed,cut));
+ }
+ return mountainGround(x,z,original);
+}
+// Reuse Gater 1's preserved continuous 360-photo main trail + separate lake spur,
+// but grade against V11's REAL mountain (rather than obsolete V9 ground).
+// Creek, spring, dome and lake continue to share walk collision and terrain height.
+const purpleTrails=createStaceyPurpleTrails(naturalGround);
+function ground(x,z){return purpleTrails.gradeGround(x,z,naturalGround(x,z))}
+window.staceyPurpleTrail={main:purpleTrails.main.samples,spur:purpleTrails.spur.samples,
+ audit:purpleTrails.audit,shoreClearance:purpleTrails.shoreClearance,domeClearance:purpleTrails.domeClearance};
+diag.assets['360 woodland trail + spring V12']='combined QA: mountain, spring, graded ridge + lake spur';
 const loader=new T.TextureLoader();const manager=new T.LoadingManager();
 function texture(url,key){const t=loader.load(url,()=>{diag.assets[key]='ready'},undefined,e=>{diag.assets[key]='FAILED';diag.errors.push(key+' failed')});t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
 const sand=texture('https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_diff_1k.jpg','sand');
 const soil=texture('https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_floor/forest_floor_diff_1k.jpg','forest floor');
+// Scoured bedrock beneath the final creek run and into the lake: shared tiny
+// texture for the shore terrain and a real, slightly raised stone channel mesh.
+// Deterministic and self-contained: no extra network requests on mobile.
+function makeCreekBedrockMap(){
+ const S=256,data=new Uint8Array(S*S*4);
+ const hash=(x,z)=>{let n=Math.imul(x,374761393)+Math.imul(z,668265263);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967295;};
+ const value=(u,v,cells)=>{
+  let x=u*cells,y=v*cells,i=Math.floor(x),j=Math.floor(y);
+  let fx=x-i,fy=y-j;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+  const h=(ix,iy)=>hash((ix%cells+cells)%cells,(iy%cells+cells)%cells);
+  return (h(i,j)*(1-fx)+h(i+1,j)*fx)*(1-fy)+(h(i,j+1)*(1-fx)+h(i+1,j+1)*fx)*fy;
+ };
+ for(let z=0;z<S;z++)for(let x=0;x<S;x++){
+  const u=x/S,v=z/S;
+  // Multiscale granular shale: no sinusoidal crack lattice or repeating dark paving joints.
+  const broad=value(u,v,5),mottle=value(u,v,17),grain=value(u,v,58);
+  const rock=.53*broad+.31*mottle+.16*grain+(hash(x,z)-.5)*.07;
+  const warm=value(u+.23,v+.17,9);
+  const k=(z*S+x)*4;
+  data[k]=Math.round(74+rock*64+warm*9);
+  data[k+1]=Math.round(77+rock*59+warm*6);
+  data[k+2]=Math.round(73+rock*55+warm*3);data[k+3]=255;
+ }
+ const map=new T.DataTexture(data,S,S,T.RGBAFormat);
+ map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;
+ map.magFilter=T.LinearFilter;map.minFilter=T.LinearMipmapLinearFilter;
+ map.generateMipmaps=true;map.needsUpdate=true;return map;
+}
+const creekBedrockMap=makeCreekBedrockMap();
+diag.assets['creek bedrock']='erosion-cut rock shelf, shore and submerged mouth';
+// V8 cavern excavation: hide native ground only for a camera INSIDE the cave.
+// Original exterior terrain and approved photo remain untouched from outside.
+const cavernTerrainClip=[
+ 'float viewerRoom=length(cameraPosition.xz-vec2('+hiddenCave.chamberX.toFixed(2)+','+hiddenCave.z.toFixed(2)+'));',
+ 'float groundRoom=length(vGround.xz-vec2('+hiddenCave.chamberX.toFixed(2)+','+hiddenCave.z.toFixed(2)+'));',
+ 'bool viewerTunnel=cameraPosition.x>'+hiddenCave.innerEnd.toFixed(2)+
+   ' && cameraPosition.x<'+(hiddenCave.outerEnd+1).toFixed(2)+
+   ' && abs(cameraPosition.z-('+hiddenCave.z.toFixed(2)+'))<2.5;',
+ 'bool viewerInside=(viewerRoom<'+(hiddenCave.chamberR+1.6).toFixed(2)+
+   ' || viewerTunnel) && cameraPosition.y<'+(hiddenCave.floor+6.2).toFixed(2)+';',
+ 'bool cutRoom=groundRoom<'+(hiddenCave.chamberR+2.0).toFixed(2)+
+   ' && vGround.y<'+(hiddenCave.floor+48).toFixed(2)+';',
+ 'bool cutTunnel=vGround.x>'+hiddenCave.innerEnd.toFixed(2)+
+   ' && vGround.x<'+hiddenCave.outerEnd.toFixed(2)+
+   ' && abs(vGround.z-('+hiddenCave.z.toFixed(2)+'))<2.0;',
+ 'if(viewerInside && (cutRoom || cutTunnel)) discard;'
+].join('\n');
 const mat=new T.MeshStandardMaterial({roughness:.98,side:T.DoubleSide});
-mat.onBeforeCompile=s=>{s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.vertexShader='varying vec3 vGround;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGround=position;');s.fragmentShader='uniform sampler2D sandMap;uniform sampler2D soilMap;varying vec3 vGround;\n'+s.fragmentShader.replace('#include <map_fragment>',`vec3 sandC=texture2D(sandMap,vGround.xz*.15).rgb;vec3 soilC=texture2D(soilMap,vGround.xz*.12).rgb;float r=length(vGround.xz-vec2(140.,-240.));float a=atan(vGround.z+240.,vGround.x-140.);float o=113.797805566*(1.+.038*sin(a*5.)+.022*cos(a*9.));float ir=22.*(1.+.1*sin(a*5.+.6)+.06*cos(a*8.));float beach=1.-smoothstep(7.,22.,r-o);float island=1.-smoothstep(ir-10.,ir-3.,r);float n=sin(vGround.x*.33)*sin(vGround.z*.25);float forest=max(smoothstep(12.+n*2.,25.,r-o),island*.8);vec3 c=mix(sandC,soilC*vec3(.60,.88,.48),forest);float wet=1.-smoothstep(-5.6,-5.05,vGround.y);diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`)};
+mat.onBeforeCompile=s=>{
+ s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.uniforms.creekBedrockMap={value:creekBedrockMap};
+ s.vertexShader='varying vec3 vGround;\n'.replace('\n','\n')+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGround=position;'.replace('\n','\n'));
+ s.fragmentShader='uniform sampler2D sandMap;uniform sampler2D soilMap;uniform sampler2D creekBedrockMap;varying vec3 vGround;\n'.replace('\n','\n')
+  +s.fragmentShader.replace('#include <map_fragment>',`vec3 sandC=texture2D(sandMap,vGround.xz*.15).rgb;
+ vec3 soilC=texture2D(soilMap,vGround.xz*.12).rgb;
+ float r=length(vGround.xz-vec2(140.,-240.));
+ float a=atan(vGround.z+240.,vGround.x-140.);
+ float o=113.797805566*(1.+.038*sin(a*5.)+.022*cos(a*9.));
+ float ir=22.*(1.+.1*sin(a*5.+.6)+.06*cos(a*8.));
+ float beach=1.-smoothstep(7.,22.,r-o);
+ float island=1.-smoothstep(ir-10.,ir-3.,r);
+ float n=sin(vGround.x*.33)*sin(vGround.z*.25);
+ float forest=max(smoothstep(12.+n*2.,25.,r-o),island*.8);
+ vec3 c=mix(sandC,soilC*vec3(.60,.88,.48),forest);
+ // Narrow, irregular bedrock channel fans out at the creek's lake entry.
+ // Keep the rest of Stacey's beach unchanged.
+ float creekT=(vGround.x-8.7057)/22.0000;
+ float pathZ=-240.+sin(clamp(creekT,0.,1.)*6.2831853)*1.8;
+ float lateral=abs(vGround.z-pathZ);
+ float width=mix(4.3,8.6,smoothstep(.45,1.0,creekT));
+ float irregular=.58*sin(vGround.x*.71+vGround.z*.39)+.36*sin(vGround.z*1.27-vGround.x*.44);
+ float rockMask=smoothstep(-.08,.18,creekT)*(1.-smoothstep(1.10,1.45,creekT))
+                *(1.-smoothstep(width-1.9,width+1.5,lateral+irregular));
+ vec3 rockC=mix(texture2D(creekBedrockMap,vGround.xz*.07).rgb,
+                texture2D(creekBedrockMap,vGround.xz*.24).rgb,.23);
+ // Submerged creek rock is darker/wetter, and stone replaces loose sand.
+ c=mix(c,rockC*vec3(.90,.95,.96),rockMask);
+ // Uneven mineral-silt banks beside the scoured rock bed, not a smooth gray ramp.
+ // Fade naturally into the original sandy beach a few meters from the outlet.
+ float bankRange=smoothstep(.04,.22,creekT)*(1.-smoothstep(1.08,1.37,creekT));
+ float bankOffset=lateral+irregular+.24*sin(vGround.x*1.81+vGround.z*.74);
+ float bankBand=bankRange*smoothstep(width-2.3,width+.5,bankOffset)
+      *(1.-smoothstep(width+2.0,width+6.4,bankOffset));
+ float waterErosion=texture2D(creekBedrockMap,vGround.xz*.055+vec2(.21,.17)).r;
+ vec3 silt=mix(rockC*vec3(.89,.92,.88),soilC*vec3(.78,.84,.73),.24+.17*waterErosion);
+ c=mix(c,silt,bankBand*.57);
+ float moss=texture2D(soilMap,vGround.xz*.29+vec2(.13,.25)).g;
+ float growth=smoothstep(.44,.73,moss)*bankBand*(1.-smoothstep(width+.8,width+3.2,lateral));
+ c=mix(c,soilC*vec3(.61,.86,.56),growth*.27);
+ // Low-contrast rock flecks through grassy/silty hillside at both canyon ends.
+ float joinSide=abs(vGround.z+240.);
+ float joinBand=smoothstep(14.,23.,joinSide)*(1.-smoothstep(31.,45.,joinSide));
+ float rockySlope=smoothstep(29.,54.,r-o)*(1.-smoothstep(82.,104.,r-o));
+ float naturalMottle=.5+.5*sin(vGround.x*.35+vGround.z*.49)*sin(vGround.x*.19-vGround.z*.25);
+ c=mix(c,rockC*vec3(.86,.90,.83),joinBand*rockySlope*(.12+.29*naturalMottle));
+ // Weathered rock gradually emerges from the grass along the walkable crest.
+ float crestBand=smoothstep(7.,19.,joinSide)*(1.-smoothstep(26.,43.,joinSide));
+ float crestRun=smoothstep(-50.,-30.,vGround.x)*(1.-smoothstep(1.,14.,vGround.x));
+ float crestRock=crestBand*crestRun*smoothstep(8.,19.,vGround.y);
+ c=mix(c,rockC*vec3(.90,.94,.88),crestRock*(.20+.31*naturalMottle));
+ float wet=1.-smoothstep(-5.6,-5.05,vGround.y);
+ diffuseColor.rgb*=c*mix(.67,1.,1.-wet);`);
+ // Native mountain is excavated from inside only; no cliff photo edits.
+ s.fragmentShader=s.fragmentShader.replace('#include <alphatest_fragment>',
+   '#include <alphatest_fragment>\n'+cavernTerrainClip);
+};
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
 const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
+// A path overlay 2cm above analytic ground was invisible where the drawn
+// terrain's larger triangles crossed ABOVE the overlay. Use those exact triangles
+// to place photographs just above visible terrain, keeping collisions unchanged.
+function photoVisibleGround(x,z){
+ const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz);
+ const a=(Math.atan2(dz,dx)+Math.PI*2)%(Math.PI*2);
+ const ri=Math.min(R-1,Math.max(0,Math.floor(r/340*R)));
+ const ai=Math.min(N-1,Math.max(0,Math.floor(a/(2*Math.PI)*N)));
+ const k=ri*(N+1)+ai,p=terrainGeo.attributes.position;
+ function tri(i,j,l){
+  const ax=p.getX(i),az=p.getZ(i),bx=p.getX(j),bz=p.getZ(j),cx=p.getX(l),cz=p.getZ(l);
+  const den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);
+  if(Math.abs(den)<1e-9)return {inside:-1e4,y:ground(x,z)};
+  const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/den;
+  const v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/den;
+  const w=1-u-v;
+  return {inside:Math.min(u,v,w),y:u*p.getY(i)+v*p.getY(j)+w*p.getY(l)};
+ }
+ const t1=tri(k,k+1,k+N+1),t2=tri(k+1,k+N+2,k+N+1);
+ const t=t1.inside>=t2.inside?t1:t2;
+ return Math.max(ground(x,z),Number.isFinite(t.y)?t.y:ground(x,z));
+}
+// Photographed walkable route, both main and lake spur. Purple guide is opt-in.
+purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(location.search).get('trail')==='guide');
+// A thin 3-D layer of solid, eroded bedrock follows the carved channel.
+// It is 4-8 cm over the landscape, but stays BELOW the moving creek water.
+(function createCreekBedrockShelf(){
+ const vertices=[],uvs=[],indices=[],steps=56,cross=16;
+ const startX=pondX+10.5,endX=fallShore+6;
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,x=T.MathUtils.lerp(startX,endX,t);
+  const creekT=(x-(pondX+6))/(fallShore+2-(pondX+6));
+  const center=creekCenter(Math.max(0,Math.min(1,creekT)));
+  const w=3.95+3.2*smooth(.35,1,creekT);
+  for(let j=0;j<=cross;j++){
+   const q=j/cross*2-1;
+   const edge=.17*Math.sin(t*31+q*8)+.13*Math.sin(t*63-q*4);
+   const z=center+q*(w+edge);
+   const relief=(.032*Math.sin(x*2.6+z*1.2)+.021*Math.sin(z*4.2-x*.8))*(1-.5*Math.abs(q));
+   const edgeBlend=1-smooth(.65,1,Math.abs(q));
+   const y=ground(x,z)+(.058+relief)*edgeBlend-.022*(1-edgeBlend);
+   vertices.push(x,y,z);uvs.push(x*.07,z*.07);
+   if(i<steps&&j<cross){
+    const k=i*(cross+1)+j;indices.push(k,k+1,k+cross+1,k+1,k+cross+2,k+cross+1);
+   }
+  }
+ }
+ const geo=new T.BufferGeometry();
+ geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
+ geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();
+ const material=new T.MeshStandardMaterial({map:creekBedrockMap,roughness:.96,metalness:0,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+ const shelf=new T.Mesh(geo,material);shelf.name='Exposed creek-bed bedrock, water-worn shore and submerged mouth';
+ scene.add(shelf);window.staceyCreekBedrock=shelf;
+})();
+// Realistic riparian banks V3: scattered stones and low growth, avoiding open water and beach.
+(function creekBanksV3(){
+ const rnd=i=>{const x=Math.sin(i*127.1+81.7)*43758.5453;return x-Math.floor(x)};
+ function point(i,k,extent){
+  const t=.03+extent*rnd(i*3.17+k),x=T.MathUtils.lerp(pondX+7,fallShore+2,t);
+  const u=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+  const z=creekCenter(u)+(i%2?1:-1)*(4.3+3.2*smooth(.35,1,u)+.25+rnd(i+k+7)*4.5);
+  return {x,z};
+ }
+ const shades=[0xb7b0a2,0x9ca3a0,0x858a83,0xc1bbae,0xa6a195];
+ function stones(count,detail,k,min,name){
+  const obj=new T.Object3D(),batch=new T.InstancedMesh(new T.IcosahedronGeometry(1,detail),new T.MeshStandardMaterial({map:creekBedrockMap,roughness:1,flatShading:true}),count),col=new T.Color();
+  for(let i=0;i<count;i++){
+   const p=point(i,k,.95),r=min+Math.pow(rnd(i*11+k),2)*.81;
+   obj.position.set(p.x,ground(p.x,p.z)+r*.11,p.z);
+   obj.scale.set(r*(1+rnd(i+k+3)*1.6),r*(.29+rnd(i+k+5)*.34),r*(.88+rnd(i+k+7)));
+   obj.rotation.set(rnd(i+k+8)*.22,rnd(i+k+9)*6.283,rnd(i+k+10)*.18);
+   obj.updateMatrix();batch.setMatrixAt(i,obj.matrix);
+   col.setHex(shades[Math.floor(rnd(i*4+k+16)*shades.length)]);batch.setColorAt(i,col);
+  }
+  batch.name=name;batch.computeBoundingSphere();scene.add(batch);
+ }
+ stones(152,1,121,.14,'Rounded partially buried creek cobbles');
+ stones(56,0,803,.34,'Angular shale and water-worn creek boulders');
+ // Low sedge tufts use 8 tapered curved blades, with no alpha overdraw or texture fetch.
+ const vs=[],cs=[],ix=[];let vi=0;
+ function tri(a,b,c,color){for(const p of [a,b,c]){vs.push(...p);cs.push(...color)}ix.push(vi,vi+1,vi+2);vi+=3}
+ for(let j=0;j<8;j++){
+  const angle=j*Math.PI/4+.14*(j%2),dx=Math.cos(angle),dz=Math.sin(angle),sx=-dz,sz=dx;
+  const h=.55+.31*(j%3)/3,lean=.19+.13*(j%4)/4,w=.055;
+  const left=[sx*w,0,sz*w],right=[-sx*w,0,-sz*w];
+  const l2=[dx*lean*.5+sx*w*.65,h*.6,dz*lean*.5+sz*w*.65];
+  const r2=[dx*lean*.5-sx*w*.65,h*.6,dz*lean*.5-sz*w*.65];
+  tri(left,right,l2,[.32,.52,.23]);tri(right,r2,l2,[.39,.57,.25]);
+  tri(l2,r2,[dx*lean,h,dz*lean],[.45,.64,.29]);
+ }
+ const geom=new T.BufferGeometry();geom.setAttribute('position',new T.Float32BufferAttribute(vs,3));geom.setAttribute('color',new T.Float32BufferAttribute(cs,3));geom.setIndex(ix);geom.computeVertexNormals();
+ const grass=new T.InstancedMesh(geom,new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:1}),135),o=new T.Object3D(),color=new T.Color(),greens=[0x78965a,0x8cac64,0x628550,0x96a66e];
+ for(let i=0;i<135;i++){
+  const p=point(i+300,1601,.78),sc=.32+rnd(i+1644)*.7;
+  o.position.set(p.x,ground(p.x,p.z)-.04,p.z);o.rotation.y=rnd(i+1666)*6.283;
+  o.scale.set(sc,sc*(.75+rnd(i+1677)*.6),sc);o.updateMatrix();grass.setMatrixAt(i,o.matrix);
+  color.setHex(greens[Math.floor(rnd(i+1655)*greens.length)]);grass.setColorAt(i,color);
+ }
+ grass.name='Creekside small sedge clumps';grass.computeBoundingSphere();scene.add(grass);
+ diag.assets['creek banks']='208 natural rocks and 135 grass tufts, plus native fern patches';
+})();
 // H1 revision: WEST / left bank rock escarpment, away from the island sightline.
 // The lake's west shore is x=CX-outer(PI), not the north bank behind the island.
 (function createWaterfallCliff(){
  const westShore=CX-outer(Math.PI),wallX=westShore-51,group=new T.Group();
  group.name='Stacey Lake west-bank twin waterfalls';scene.add(group);
- const rock=new T.MeshStandardMaterial({color:0xffffff,roughness:1,side:T.DoubleSide,vertexColors:true,flatShading:true});
+ const rock=new T.MeshStandardMaterial({color:0x938976,roughness:1,flatShading:false,side:T.DoubleSide});
  const shadow=new T.MeshStandardMaterial({color:0x454b45,roughness:1,flatShading:true,side:T.DoubleSide});
- const faceV=[],faceI=[],faceUV=[],faceColors=[],cols=120,rows=52;
+ const faceV=[],faceI=[],faceUV=[],cols=96,rows=26;
  // Irregular 3D face with meaningful relief; no floating flat rectangular wall.
  for(let j=0;j<=rows;j++){const v=j/rows;for(let i=0;i<=cols;i++){
   const u=i/cols,z=CZ+(u-.5)*105;
   const ridge=ground(wallX-5,z);
   const h=CY+.4+v*Math.max(19,ridge-CY-1);
-  const x=wallX+22-5*v+1.0*Math.sin(u*10+v*2.4)+.48*Math.sin(u*47+v*13)+.28*Math.sin(u*99-v*33);
+  const x=wallX+17-4*v+2.0*Math.sin(u*13+v*7)+.85*Math.sin(u*37-v*19);
   faceV.push(x,h,z);faceUV.push(u*8,v*6);
-  const layer=Math.sin(h*2.8+.6*Math.sin(z*.09)),joint=Math.abs(Math.sin(z*.29+h*.16));
-  const grain=Math.sin(z*1.71+h*1.27)*.045+Math.sin(z*3.49-h*2.61)*.025;
-  const tone=Math.max(.42,Math.min(1.13,.82+.17*layer-.11*Math.pow(joint,24)+grain));
-  faceColors.push(tone*.91,tone*.94,tone*.85);
  }}
  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;faceI.push(k,k+1,k+cols+1,k+1,k+cols+2,k+cols+1)}
- const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
- group.add(new T.Mesh(cliffGeo,rock));
+ const cliffGeo=new T.BufferGeometry();cliffGeo.setAttribute('position',new T.Float32BufferAttribute(faceV,3));cliffGeo.setAttribute('uv',new T.Float32BufferAttribute(faceUV,2));cliffGeo.setIndex(faceI);cliffGeo.computeVertexNormals();
+ rock.onBeforeCompile=shader=>{
+ shader.vertexShader='varying vec3 cliffPoint;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncliffPoint=position;');
+ shader.fragmentShader='varying vec3 cliffPoint;\n'+shader.fragmentShader.replace('#include <map_fragment>',`float seam=pow(.5+.5*sin(cliffPoint.y*5.7+sin(cliffPoint.z*.33)*.55),16.);float grain=sin(cliffPoint.z*12.1+cliffPoint.y*25.3)*sin(cliffPoint.x*18.7-cliffPoint.y*7.1);diffuseColor.rgb*=mix(1.08,.48,seam)+grain*.065;`);
+};
+ const legacyFace=new T.Mesh(cliffGeo,rock);group.add(legacyFace);const legacyCliffParts=[legacyFace];
+ const ledges=new T.InstancedMesh(new T.BoxGeometry(1,1,1),rock,160),ledgePose=new T.Object3D();
+ for(let i=0;i<160;i++){const row=Math.floor(i/16),col=i%16;
+  ledgePose.position.set(wallX+18-row*.34+Math.sin(i*2.3)*.7,CY+2+row*2.8,CZ+(col-7.5)*6.3);
+  ledgePose.scale.set(2.4+rand()*1.8,.6+rand()*.55,5.9+rand()*.8);
+  ledgePose.rotation.set(0,(rand()-.5)*.08,(rand()-.5)*.05);ledgePose.updateMatrix();ledges.setMatrixAt(i,ledgePose.matrix);
+ }group.add(ledges);legacyCliffParts.push(ledges);
  // Quest-locked cave portal: visible between the two falls but intentionally sealed.
  // This is an exterior facade, NOT an accessible passage before Dark and Damp.
  const portal=new T.Group();portal.name='Dark and Damp — sealed cave entrance';group.add(portal);
@@ -82,7 +439,7 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  }
  const sealStone=new T.Mesh(new T.DodecahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x747b72,roughness:1,flatShading:true}));
  sealStone.name='Quest seal boulder — Dark and Damp';sealStone.scale.set(3.4,4.55,4.2);
- sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);sealStone.visible=false;portal.add(sealStone);
+ sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);portal.add(sealStone);
  // Quest manager may change this flag later; default always stays locked.
  window.staceyCave={locked:true,entrance:portal,seal:sealStone,quest:'Dark and Damp',secondTunnel:'one-way underwater exit beneath island'};
  // Underground structures remain hidden until quest access; the outer portal is always visible.
@@ -116,46 +473,650 @@ const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*3
  const exitRing=new T.Mesh(new T.TorusGeometry(2.6,.7,7,12),floorRock);exitRing.position.copy(exitPos);exitRing.rotation.y=Math.PI/2;subterranean.add(exitRing);
  subterranean.visible=false;
  window.staceyUnderground={group:subterranean,entrance:caveMouth,ballroom:hall,pool:darkWater,exit:exitPos,questLocked:true,tunnel2OneWay:true,
-   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=false;window.staceyCave.locked=!complete;}};
+   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=!complete;window.staceyCave.locked=!complete;}};
+ // A tunnel leading to a monumental excavated cavern, separate from Dark and Damp.
+ const vestibule=new T.Group();
+ vestibule.name='Secret cave vestibule — hidden between the waterfalls';scene.add(vestibule);
+ const floorMat=new T.MeshStandardMaterial({color:0x555d51,roughness:1,side:T.DoubleSide});
+ const caveLen=hiddenCave.outerEnd-hiddenCave.innerEnd;
+ // Keep the rock floor inside the cliff rather than jutting out over the pond.
+ const visibleFloorEnd=hiddenCave.x+1.2;
+ // Stop tunnel ceiling when it reaches the great chamber; it must not form
+ // a hanging tube inside the domed room or overlap the main hall flooring.
+ const passageStart=hiddenCave.chamberX+hiddenCave.chamberR-1.0;
+ const visibleFloorLen=visibleFloorEnd-passageStart;
+ const floor=new T.Mesh(new T.BoxGeometry(visibleFloorLen,.25,hiddenCave.halfWidth*2.3),floorMat);
+ floor.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
+ floor.name='Hidden cave stone floor';vestibule.add(floor);
+ const shellLen=visibleFloorEnd-passageStart;
+ const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,shellLen,24,1,true),
+   new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:false}));
+ shell.rotation.z=Math.PI/2;
+ shell.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor+1.12,hiddenCave.z);
+ shell.name='Interior stone tunnel roof and side walls';vestibule.add(shell);
+
+ // V8: a vast, truly excavated hall, set farther under the mountain.
+ // 84m / 276ft diameter, domed ~32m / 105ft above its solid walkable floor.
+ const domeR=hiddenCave.chamberR,domeX=hiddenCave.chamberX,domeY=hiddenCave.floor;
+ const wallHeight=8,capHeight=24,wallSkirt=.65;
+ const chamber=new T.Group();
+ chamber.name='Massive excavated domed cavern — 84m diameter';vestibule.add(chamber);
+ const rockyMap=creekBedrockMap.clone();rockyMap.repeat.set(5,3);
+ rockyMap.needsUpdate=true;
+ const rockMat=new T.MeshStandardMaterial({
+   map:rockyMap,color:0xc7c9bb,roughness:1,metalness:0,side:T.BackSide,
+   vertexColors:true,flatShading:false,emissive:0x1b201a,emissiveIntensity:.42
+ });
+ const floorMatHuge=new T.MeshStandardMaterial({
+   map:creekBedrockMap,color:0xb5b8a9,roughness:1,metalness:0,
+   side:T.DoubleSide,vertexColors:true
+ });
+ const vertShade=(x,y,z)=>{
+   const n=.5+.23*Math.sin(x*.16+z*.2)*Math.cos(z*.13-y*.22)
+     +.13*Math.sin(x*.63-z*.4+y*.18)+.08*Math.sin(z*.83+x*.37);
+   const c=new T.Color(0x8b9185);c.multiplyScalar(T.MathUtils.clamp(n+.55,.53,1.3));
+   return c;
+ };
+ const assignColors=geo=>{
+   const pos=geo.getAttribute('position'),rgb=new Float32Array(pos.count*3);
+   for(let i=0;i<pos.count;i++){
+     const c=vertShade(pos.getX(i),pos.getY(i),pos.getZ(i));
+     rgb[i*3]=c.r;rgb[i*3+1]=c.g;rgb[i*3+2]=c.b;
+   }
+   geo.setAttribute('color',new T.BufferAttribute(rgb,3));
+ };
+ // Irregular solid stone floor, 16 concentric rings (not a flat giant triangle fan).
+ const floorCoords=[],floorColors=[],floorUV=[],floorIndices=[],rings=16,faces=96;
+ for(let j=0;j<=rings;j++){
+   const radius=(domeR+1.15)*j/rings;
+   for(let i=0;i<=faces;i++){
+     const a=2*Math.PI*i/faces;
+     const x=radius*Math.cos(a),z=radius*Math.sin(a);
+     const ripple=.07*Math.sin(x*.32+z*.23)*Math.cos(z*.21-x*.12);
+     floorCoords.push(x,ripple,z);
+     floorUV.push(x*.055+.5,z*.055+.5);
+     const color=vertShade(x,0,z);
+     floorColors.push(color.r,color.g,color.b);
+     if(j<rings&&i<faces){
+       const p=j*(faces+1)+i,q=p+faces+1;
+       floorIndices.push(p,q,p+1,q,q+1,p+1);
+     }
+   }
+ }
+ const hugeFloorGeo=new T.BufferGeometry();
+ hugeFloorGeo.setAttribute('position',new T.Float32BufferAttribute(floorCoords,3));
+ hugeFloorGeo.setAttribute('uv',new T.Float32BufferAttribute(floorUV,2));
+ hugeFloorGeo.setAttribute('color',new T.Float32BufferAttribute(floorColors,3));
+ hugeFloorGeo.setIndex(floorIndices);hugeFloorGeo.computeVertexNormals();
+ const chamberFloor=new T.Mesh(hugeFloorGeo,floorMatHuge);
+ chamberFloor.position.set(domeX,domeY-.08,hiddenCave.z);
+ chamberFloor.name='Massive domed hall excavated bedrock walking floor';chamber.add(chamberFloor);
+ // Smooth 96-section rocky walls. Only a narrow +X slot is left for the corridor.
+ const entryAngle=3.55/domeR;
+ const sideWallGeom=new T.CylinderGeometry(domeR,domeR,wallHeight+wallSkirt,96,12,true,
+    Math.PI/2+entryAngle/2,2*Math.PI-entryAngle);
+ const wallVerts=sideWallGeom.getAttribute('position');
+ for(let i=0;i<wallVerts.count;i++){
+   const x=wallVerts.getX(i),y=wallVerts.getY(i),z=wallVerts.getZ(i);
+   const ang=Math.atan2(x,z);
+   const bulge=.28*Math.sin(ang*9+y*.33)+.14*Math.sin(ang*22-y*.62);
+   const radial=1+bulge/domeR;
+   wallVerts.setXYZ(i,x*radial,y,z*radial);
+ }
+ wallVerts.needsUpdate=true;sideWallGeom.computeVertexNormals();assignColors(sideWallGeom);
+ const sidewall=new T.Mesh(sideWallGeom,rockMat);
+ sidewall.position.set(domeX,domeY+(wallHeight-wallSkirt)/2,hiddenCave.z);
+ sidewall.name='Cut-away massive domed hall rounded inner walls';chamber.add(sidewall);
+ // 96x44 gently weathered dome: high smooth arch, not the dark faceted shell in V7.
+ const canopyGeometry=new T.SphereGeometry(domeR,96,44,0,Math.PI*2,0,Math.PI/2);
+ const canopyPos=canopyGeometry.getAttribute('position');
+ for(let i=0;i<canopyPos.count;i++){
+   const x=canopyPos.getX(i),y=canopyPos.getY(i),z=canopyPos.getZ(i);
+   const ripple=.28*Math.sin(x*.27+z*.17)+.19*Math.cos(x*.54-z*.4);
+   // Rock rim extends below and outside the top wall without moving the apex.
+   const rim=1-T.MathUtils.smoothstep(y,0,2.2);
+   const rad=1+(ripple+.55*rim)/domeR;
+   canopyPos.setXYZ(i,x*rad,y*(capHeight/domeR)+ripple*.21-.55*rim,z*rad);
+ }
+ canopyPos.needsUpdate=true;canopyGeometry.computeVertexNormals();
+ assignColors(canopyGeometry);
+ const dome=new T.Mesh(canopyGeometry,rockMat);
+ dome.position.set(domeX,domeY+wallHeight,hiddenCave.z);
+ dome.name='Vast raised arched bedrock dome ceiling';chamber.add(dome);
+ // Cheap unshadowed area lighting, with some bounce to preserve phone FPS.
+ const amber=new T.PointLight(0xffdfb0,3.0,93,1.1);
+ amber.position.set(domeX+4,domeY+18,hiddenCave.z+4);chamber.add(amber);
+ const coolFill=new T.PointLight(0xbfd5cb,1.4,70,1.1);
+ coolFill.position.set(domeX-20,domeY+11,hiddenCave.z-12);chamber.add(coolFill);
+ const edgeRocks=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),
+   new T.MeshStandardMaterial({color:0x686e62,roughness:1,flatShading:true}),110);
+ const stonePose=new T.Object3D();
+ for(let i=0;i<110;i++){
+   const a=i*2.3999632,rad=domeR-2.2-.6*Math.sin(i*1.7);
+   stonePose.position.set(domeX+Math.cos(a)*rad,domeY+.3+(i%7)*.15,
+     hiddenCave.z+Math.sin(a)*rad);
+   stonePose.rotation.set(.19*i,.6*i,.27*i);
+   stonePose.scale.set(.35+(i%4)*.26,.36+(i%5)*.30,.46+(i%3)*.27);
+   stonePose.updateMatrix();edgeRocks.setMatrixAt(i,stonePose.matrix);
+ }
+ edgeRocks.computeBoundingSphere();edgeRocks.name='Weathered rock fragments around cavern edge';
+ chamber.add(edgeRocks);
+ // Deeper quest passage remains closed until Dark and Damp is unlocked.
+ const backWall=new T.Mesh(new T.BoxGeometry(1.0,4.5,3.2),
+   new T.MeshStandardMaterial({color:0x3b423a,roughness:1,side:T.DoubleSide}));
+ backWall.position.set(domeX-domeR+1.0,domeY+2.25,hiddenCave.z);
+ backWall.name='Sealed future Dark and Damp cavern exit';chamber.add(backWall);
+ window.staceyHiddenCave.chamberGroup=chamber;
+ const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),
+   new T.MeshStandardMaterial({color:0x61685c,roughness:1,flatShading:true}),12);
+ const pose=new T.Object3D();
+ for(let k=0;k<12;k++){
+  const side=k%2?-1:1;
+  pose.position.set(hiddenCave.x+(k<6?1.1:-1.2)+(k%3)*.5,
+   hiddenCave.floor+.2+(k%3)*.48,hiddenCave.z+side*(hiddenCave.halfWidth+.35));
+  pose.scale.set(.4+(k%3)*.22,.35+(k%4)*.17,.43+(k%3)*.13);
+  pose.rotation.set(k*.27,k*.65,k*.23);pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
+ }
+ rubble.computeBoundingSphere();rubble.name='Concealed entrance rubble';vestibule.add(rubble);
+ window.staceyHiddenCave.vestibule=vestibule;
+ diag.assets['secret cave']='V9 sealed massive 84m cavern; over-cavern trees concealed inside only; quest locked';
+
  diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
 
  diag.assets['cave entrance']='visible, boulder sealed — quest locked';
 
- // Remove oversized procedural boulders that made the cliff look like concrete.
- const falling=new T.MeshPhysicalMaterial({color:0xe4f2ed,transparent:true,opacity:.93,roughness:.16,metalness:0,side:T.DoubleSide,depthWrite:false});
- const splashMat=new T.MeshBasicMaterial({color:0xebf7f1,transparent:true,opacity:.45,depthWrite:false,side:T.DoubleSide});
- const ribbons=[];
- const fallCenters=[CZ-7.62,CZ+7.62]; // 50 feet (15.24 metres) apart on west bank
- for(let fall=0;fall<2;fall++){
-  const center=fallCenters[fall],width=fall===0?10:7.8;
-  // Many separate irregular strands per waterfall, deliberately TWO distinct falls.
-  for(let strip=0;strip<9;strip++){
-   const w=width/9*(.85+rand()*.3),z=center+(strip-4)*width/9;
-   const meshGeo=new T.PlaneGeometry(w,31,2,44),a=meshGeo.attributes.position;
-   for(let k=0;k<a.count;k++){const t=(a.getY(k)+15.5)/31;
-    a.setX(k,wallX+22-5*t+.55*Math.sin(12*t+strip*.9+fall));
-    a.setY(k,CY+1.5+31*t);
-    a.setZ(k,z+a.getX(k)+Math.sin(t*14+strip)*.35+(rand()-.5)*.15);
-   }
-   meshGeo.computeVertexNormals();
-   const mesh=new T.Mesh(meshGeo,falling.clone());mesh.material.opacity=.92;mesh.renderOrder=3;group.add(mesh);ribbons.push({mesh,phase:strip*.7+fall});
-  }
-  // Water reaches lake via the west shoreline rather than terminating in the cliff.
-  const sv=[],si=[];
-  for(let n=0;n<=32;n++){const t=n/32,x=wallX+19+(westShore-wallX-19)*t,z=center+Math.sin(t*4+fall)*1.6;
-   for(const sign of [-1,1]){const zz=z+sign*(2+1.1*(1-t));sv.push(x,ground(x,zz)+.28,zz)}
-   if(n<32){const k=n*2;si.push(k,k+1,k+2,k+1,k+3,k+2)}
-  }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(sv,3));g.setIndex(si);g.computeVertexNormals();
-  group.add(new T.Mesh(g,new T.MeshPhysicalMaterial({color:0xa6d6d7,roughness:.3,transparent:true,opacity:.73,side:T.DoubleSide,depthWrite:false})));
-  for(let n=0;n<10;n++){const mist=new T.Mesh(new T.PlaneGeometry(1+rand()*2,.15+rand()*.35),splashMat);
-   mist.rotation.x=-Math.PI/2;mist.position.set(wallX+19+rand()*5,CY+1.7,center+(rand()-.5)*width*1.5);group.add(mist);}
+ // Broken rock terraces and boulders hide the planar silhouette.
+ for(let i=0;i<85;i++){const z=CZ+(rand()-.5)*102,v=rand(),y=CY+2+v*30;
+  const x=wallX+17-v*4+1.5+rand()*1.5;
+  const b=new T.Mesh(new T.DodecahedronGeometry(1,0),i%4===0?shadow:rock);
+  b.position.set(x,y,z);b.scale.set(.55+rand()*2.1,.35+rand()*1.3,1.1+rand()*3.1);
+  b.rotation.set(rand()*.4,rand()*2,rand()*.3);group.add(b);legacyCliffParts.push(b);
  }
- window.staceyWaterfall={update(t){for(const r of ribbons)r.mesh.material.opacity=.85+.08*Math.sin(t*3+r.phase);splashMat.opacity=.35+.1*Math.sin(t*2)},scene:group};
- diag.assets['waterfall cliff']='west bank twin falls';
- diag.waterfall='west shore, two cascades spaced 50 feet apart';
+
+ // Shared pool with a single continuous outlet; both falls land in this basin.
+ const poolGeo=new T.CircleGeometry(1,72);poolGeo.rotateX(-Math.PI/2);poolGeo.scale(8,1,17);
+ const poolMat=new T.MeshPhysicalMaterial({color:0x318d96,roughness:.24,metalness:0,transparent:true,opacity:.88,side:T.DoubleSide});
+ const pool=new T.Mesh(poolGeo,poolMat);pool.position.set(pondX,pondY,CZ);pool.name='Single shared waterfall pond';group.add(pool);
+
+ const foam=new T.MeshBasicMaterial({color:0xecf5f3,transparent:true,opacity:.34,depthWrite:false,side:T.DoubleSide});
+ // One compact (256x512 RGBA) tileable turbulence texture is built once, not each frame.
+ // Vertical streaks are broken by mid-frequency bubbles and high-frequency spray;
+ // two samples of this texture are cheaper on older phones than dense per-pixel noise.
+ function makeRapidTexture(){
+  const W=256,H=512,pixels=new Uint8Array(W*H*4),pi=Math.PI;
+  function hash(x,y){
+   let h=(Math.imul(x,374761393)+Math.imul(y,668265263))|0;
+   h=Math.imul(h^(h>>>13),1274126177);
+   return ((h^(h>>>16))>>>0)/4294967295;
+  }
+  function noise(u,v,sx,sy){
+   const x=u*sx,y=v*sy,ix=Math.floor(x),iy=Math.floor(y);
+   let fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+   const x0=((ix%sx)+sx)%sx,x1=(x0+1)%sx,y0=((iy%sy)+sy)%sy,y1=(y0+1)%sy;
+   const a=hash(x0,y0),b=hash(x1,y0),c=hash(x0,y1),d=hash(x1,y1);
+   return (a+(b-a)*fx)*(1-fy)+(c+(d-c)*fx)*fy;
+  }
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const u=x/W,v=y/H;
+   const warp=.036*Math.sin(2*pi*v*3+2*pi*u*2)+.014*Math.sin(2*pi*v*11-2*pi*u*5);
+   const long=noise(u+warp,v,13,3),chunks=noise(u+warp*.5,v,37,14),bubbles=noise(u,v,91,59);
+   const stream=Math.min(1,Math.max(0,.11+.61*long+.34*chunks+.20*bubbles));
+   const i=(y*W+x)*4,value=Math.round(255*stream);
+   pixels[i]=pixels[i+1]=pixels[i+2]=value;
+   pixels[i+3]=Math.round(255*Math.min(1,.22+.49*chunks+.34*bubbles));
+  }
+  const texture=new T.DataTexture(pixels,W,H,T.RGBAFormat);
+  texture.wrapS=texture.wrapT=T.RepeatWrapping;
+  texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;
+  texture.generateMipmaps=true;texture.needsUpdate=true;
+  return texture;
+ }
+ const rapidMap=makeRapidTexture(),flowUniform={value:0};
+ // UV.y is 0 at the basin, 1 at the crest. Sampling (UV.y + time)
+ // makes the image travel toward SMALLER y: gravity-down, not backward/up.
+ // The creek travels in its own +UV.y direction toward the lake.
+ function makeRapidMaterial(downfall){
+  const mat=new T.MeshStandardMaterial({color:0xffffff,roughness:.38,metalness:0,transparent:true,opacity:downfall?.92:.72,side:T.DoubleSide,depthWrite:false,emissive:0x102529,emissiveIntensity:.12});
+  mat.onBeforeCompile=shader=>{
+   shader.uniforms.flowTime=flowUniform;shader.uniforms.rapidMap={value:rapidMap};
+   shader.vertexShader='varying vec2 flowUV;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nflowUV=uv;');
+   const code=[
+    'vec2 p=flowUV;',
+    'float scroll=flowTime*'+(downfall?'1.0':'-0.18')+';',
+    'vec2 aUV=vec2(p.x+.024*sin(p.y*20.+flowTime*'+(downfall?'.8':'.16')+'),p.y*1.45+scroll*.78);',
+    'vec2 bUV=vec2(p.x*1.37+.34+.017*sin(p.y*35.-flowTime*'+(downfall?'.7':'.14')+'),p.y*2.15+scroll*1.21);',
+    'vec4 a=texture2D(rapidMap,aUV);',
+    'vec4 b=texture2D(rapidMap,bUV);',
+    'float froth=smoothstep(.31,.77,a.r*.56+b.r*.44);',
+    'float ribbons=smoothstep(.38,.80,a.r);',
+    'float clearWater=clamp(.24+.52*froth+.23*ribbons,0.,1.);',
+    'float waterway=clamp(p.y/3.,0.,1.);',
+    'float lakeMix=smoothstep(.06,.96,waterway);',
+    // Match Stacey Lake's absorption colors, then reveal the actual lake reflections at the outlet.
+    'vec3 coolFlow='+(downfall?'mix(vec3(.10,.38,.43),vec3(.46,.76,.79),clearWater);':'mix(mix(vec3(.19,.48,.51),vec3(.35,.63,.67),clearWater),mix(vec3(.08,.52,.44),vec3(.005,.10,.23),clearWater*.26),lakeMix);'),
+    'float foamyHighlights=smoothstep(.71,.92,a.r*.60+b.r*.40)*'+(downfall?'.46':'.12*(1.-smoothstep(.43,.90,waterway))')+';',
+    'diffuseColor.rgb=mix(coolFlow,vec3(.91,.96,.96),foamyHighlights);',
+    'float softEdges=smoothstep(.005,.18,p.x)*(1.-smoothstep(.82,.995,p.x));',
+    'diffuseColor.a*=softEdges*(.20+.31*a.a+.26*b.a+.19*froth)'+(downfall?'*(1.-smoothstep(.90,1.,p.y));':'*(1.-smoothstep(1.85,2.99,p.y));')
+   ].join('\n');
+   shader.fragmentShader='uniform float flowTime;uniform sampler2D rapidMap;varying vec2 flowUV;\n'
+       +shader.fragmentShader.replace('#include <map_fragment>',code);
+  };
+  mat.customProgramCacheKey=()=>downfall?'stacey-rapid-down-v10-blueflow':'stacey-creek-out-v12-lake-palette-gradient';
+  return mat;
+ }
+ const falling=makeRapidMaterial(true),creekFlow=makeRapidMaterial(false);
+ // V11: one WIDE source creek emerges from the mountain, meets ONE big boulder,
+ // then divides into exactly two branches to the existing paired waterfall lips.
+ (function buildHeadwaters(){
+  const startX=-36,splitX=-17.6,lipX=wallX+21-5-1.05;
+  const flowMeshes=[];
+  function strip(points,label){
+   const vert=[],uv=[],ix=[];
+   for(let i=0;i<points.length;i++){
+    const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];
+    const dx=b.x-a.x,dz=b.z-a.z,d=Math.max(.001,Math.hypot(dx,dz));
+    for(const side of [-1,1]){
+     vert.push(p.x-dz/d*p.w*side*.5,p.y,p.z+dx/d*p.w*side*.5);
+     uv.push(side<0?0:1,i/(points.length-1)*1.7);
+    }
+    if(i<points.length-1){const j=i*2;ix.push(j,j+2,j+1,j+1,j+2,j+3);}
+   }
+   const g=new T.BufferGeometry();
+   g.setAttribute('position',new T.Float32BufferAttribute(vert,3));
+   g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
+   g.setIndex(ix);g.computeVertexNormals();
+   const m=new T.Mesh(g,creekFlow);m.name=label;group.add(m);flowMeshes.push(m);
+  }
+  const trunk=[];
+  for(let i=0;i<=24;i++){
+   const t=i/24;
+   trunk.push({x:T.MathUtils.lerp(startX,splitX-1,t),
+     y:T.MathUtils.lerp(21.30,15.45,t)+.04,
+     z:CZ+.32*Math.sin(t*2.8),w:T.MathUtils.lerp(8.8,8.2,t)});
+  }
+  const springFlowLines=[trunk];
+  strip(trunk,'Single mountain spring stream before boulder');
+  for(const side of [-1,1]){
+   const branch=[];
+   for(let i=0;i<=20;i++){
+    const t=i/20;
+    branch.push({x:T.MathUtils.lerp(splitX-1,lipX,t),
+      y:T.MathUtils.lerp(15.50,CY+17.5,t)+.04,
+      z:CZ+side*T.MathUtils.lerp(1.1,3.81,smooth(0,1,t)),
+      w:T.MathUtils.lerp(2.2,side>0?2.5:2.6,t)});
+   }
+   springFlowLines.push(branch);
+   strip(branch,side>0?'Left feed to waterfall':'Right feed to waterfall');
+  }
+  // V12: eliminate flat black circle, generic halo and egg-like splitter.
+  // 3-D photographic stone beds sit below all existing animated water strips.
+  addStaceySpringV12({T,group,ground,CZ,startX,splitX,lines:springFlowLines,
+    mat,diag,creekBedrockMap});
+  window.staceyHeadwaters={source:[startX,21.3,CZ],split:[splitX,15.25,CZ],
+    trunkWidthAtSpring:8.8,trunkWidthAtBoulder:8.2,branchWidthsAtLip:[2.5,2.6],
+    countUpstream:1,countDownstream:2,mountainContainsCavern:true,waterMeshes:flowMeshes};
+  diag.assets['mountain headwater']='8.8m source creek → one boulder → two 2.5–2.6m waterfall feeds';
+ })();
+ // Low-overhead frothy impact mist, rather than solid white concentric discs.
+ function makeSprayTexture(){
+  const N=64,pixels=new Uint8Array(N*N*4);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+   const x=(i+.5-N/2)/(N/2),y=(j+.5-N/2)/(N/2);
+   const radius=x*x*.68+y*y*1.38;
+   const fleck=.68+.32*Math.sin(i*5.73+j*7.91)*Math.sin(i*11.3-j*3.17);
+   const alpha=Math.round(255*Math.pow(Math.max(0,1-radius),1.8)*fleck);
+   const k=(j*N+i)*4;pixels[k]=228;pixels[k+1]=243;pixels[k+2]=242;pixels[k+3]=alpha;
+  }
+  const tex=new T.DataTexture(pixels,N,N,T.RGBAFormat);
+  tex.magFilter=T.LinearFilter;tex.minFilter=T.LinearMipmapLinearFilter;
+  tex.generateMipmaps=true;tex.needsUpdate=true;return tex;
+ }
+ const sprayMap=makeSprayTexture(),sprays=[];
+ const impacts=[];
+ for(let fall=0;fall<2;fall++){
+  // With the viewer facing west, fall 0 is screen-right. V7's crest
+  // broke the V6 rock skyline. Seat the intake below that rim instead.
+  // Fall 1 (screen-left) remained higher in the close-up; bring both source lips below V6 ridge.
+  const rightFall=fall===0;
+  const center=CZ+(rightFall?-3.81:3.81),width=rightFall?3.0:2.5;
+  const top=CY+(rightFall?17.4:17.6); // left lowered 1.7 m to match seated right crest
+  const g=new T.PlaneGeometry(width,1,8,48),a=g.attributes.position;
+  for(let k=0;k<a.count;k++){
+   const lateral=a.getX(k),t=a.getY(k)+.5;
+   const warped=lateral*(1+.14*(1-t))+.18*Math.sin(t*24.+fall*2.6)+.12*Math.sin(t*53.+lateral*2.4);
+   const crestTuck=smooth(.82,1,t)*(rightFall?1.0:1.1); // both upper lips tucked into stone
+   a.setXYZ(k,wallX+21-5*t-crestTuck+.24*Math.sin(t*16+fall)+.12*Math.sin(t*45+lateral*3),T.MathUtils.lerp(pondY,top,t),center+warped);
+  }g.computeVertexNormals();group.add(new T.Mesh(g,falling));
+  for(let n=0;n<2;n++){
+   const spr=new T.Sprite(new T.SpriteMaterial({map:sprayMap,color:0xe2f7f5,transparent:true,depthWrite:false,opacity:.32}));
+   spr.position.set(wallX+21.5,pondY+.72+n*.47,center+(n?.29:-.29));
+   spr.scale.set(width*(n?1.1:1.75),n?1.6:2.1,1);
+   group.add(spr);sprays.push({mesh:spr,phase:fall*1.7+n*1.2,baseY:spr.position.y});
+  }
+  for(let n=0;n<4;n++){
+   const ring=new T.Mesh(new T.RingGeometry(.65,1,32),foam);
+   ring.rotation.x=-Math.PI/2;ring.position.set(wallX+21,pondY+.035+n*.008,center);
+   group.add(ring);impacts.push({mesh:ring,phase:n/4});
+  }
+ }
+ const cv=[],ci=[],cu=[];
+ for(let n=0;n<=64;n++){
+  const t=n/64,x=T.MathUtils.lerp(pondX+6,fallShore+6,t);
+  const pathT=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+  const z=creekCenter(pathT),y=T.MathUtils.lerp(pondY,CY,pathT)+.045;
+  const spread=1.10*smooth(.72,.98,t);
+  for(const sign of [-1,1]){
+   const edge=.12*Math.sin(t*27+sign*.8)+.07*Math.sin(t*63+sign*1.3);
+   cv.push(x,y,z+sign*(1.9+.24*Math.sin(pathT*15)+spread+edge));
+   cu.push(sign===-1?0:1,t*3);
+  }
+  if(n<64){const k=n*2;ci.push(k,k+1,k+2,k+1,k+3,k+2);}
+ }
+ const cg=new T.BufferGeometry();cg.setAttribute('position',new T.Float32BufferAttribute(cv,3));cg.setAttribute('uv',new T.Float32BufferAttribute(cu,2));cg.setIndex(ci);cg.computeVertexNormals();
+ const creek=new T.Mesh(cg,creekFlow);creek.name='One rocky creek from shared pond to Stacey Lake';group.add(creek);
+ // Old low-poly pond/rim rocks are not part of the approved canyon.
+ const banks=new T.InstancedMesh(new T.DodecahedronGeometry(1,1),rock,100),bpose=new T.Object3D();
+ banks.visible=false;
+ for(let i=0;i<100;i++){
+  let x,z;if(i<60){const a=i/60*Math.PI*2;x=pondX+Math.cos(a)*8.6;z=CZ+Math.sin(a)*17.6;if(x>pondX+5&&Math.abs(z-CZ)<4){bpose.scale.setScalar(0);bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);continue;}}
+  else{const t=(i-60)/39;x=T.MathUtils.lerp(pondX+7,fallShore,t);z=creekCenter(t)+(i%2?1:-1)*(2.5+rand()*.9);}
+  const h=.45+rand()*.95;bpose.position.set(x,ground(x,z)+h*.25,z);bpose.scale.set(h*1.5,h,h*1.3);bpose.rotation.set(rand(),rand()*3,rand());bpose.updateMatrix();banks.setMatrixAt(i,bpose.matrix);
+ }group.add(banks);
+ window.staceyWaterfall={update(t){flowUniform.value=t;for(const r of impacts){const phase=(t*.32+r.phase)%1;r.mesh.scale.setScalar(.6+phase*2.7);}for(const s of sprays){s.mesh.position.y=s.baseY+Math.sin(t*2.4+s.phase)*.12;s.mesh.material.opacity=.27+.07*Math.sin(t*1.9+s.phase);}},scene:group,pond:pool,creek};
+ diag.assets['waterfall cliff']='V10 falling sheets unchanged; creekwater blends slowly to lake V12';
+ diag.waterfall='two falls 7.62 m apart feed one pond; one outlet enters lake';
+
+ // Recover the exact owner-approved V6 GLB from nine byte-for-byte GitHub blobs.
+ // The waterfalls, shared pond, creek, quest cave, lake water and fish are separate game objects.
+ async function installCanyonV6(){
+  diag.assets['Canyon V6']='loading';
+  try{
+   const urls=Array.from({length:9},(_,i)=>'./canyon-v6/chunk-'+String(i).padStart(2,'0')+'.bin');
+   const chunks=await Promise.all(urls.map(async u=>{
+    const r=await fetch(u);if(!r.ok)throw Error('Canyon chunk HTTP '+r.status+' '+u);
+    return new Uint8Array(await r.arrayBuffer());
+   }));
+   const size=chunks.reduce((a,c)=>a+c.length,0);
+   if(size!==6468040)throw Error('Canyon asset length '+size);
+   const bytes=new Uint8Array(size);let offset=0;
+   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+   if(new DataView(bytes.buffer).getUint32(0,true)!==0x46546c67)throw Error('Invalid GLB header');
+   if(crypto?.subtle){
+    const check=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('');
+    if(check!=='69d79d22169cdf1f7fc7082e28a6521ad47e98ab397531eb4e6784b6d0b06f22')throw Error('Canyon V6 hash mismatch');
+   }
+   const glb=new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
+   const root=await new Promise((resolve,reject)=>glb.parse(bytes.buffer,'',r=>resolve(r.scene),reject));
+   root.scale.setScalar(.3048); // original canyon geometry is measured in feet; game uses meters
+   root.rotation.y=Math.PI/2; // open mouth faces the lake on the west/left bank
+   root.position.set(wallX+23,pondY-.5,CZ);
+   root.name='Stacey Canyon V6 approved photo-rock';
+   // One real sky: remove BLUE photo-background pixels baked into the canyon's
+   // dry-rock atlas near the skyline; the scene's Sky then shows through.
+   const patched=new Set();
+   root.traverse(o=>{if(!o.isMesh)return;
+    const materials=Array.isArray(o.material)?o.material:[o.material];
+    for(const m of materials){if(!m||patched.has(m))continue;patched.add(m);
+     m.side=T.DoubleSide;
+     if(/OriginalPhotos|SeamBlended|Dry/i.test(m.name||'')){
+      m.onBeforeCompile=shader=>{
+       shader.vertexShader='varying float photoHeight;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nphotoHeight=position.y;');
+       shader.fragmentShader='varying float photoHeight;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        // The embedded rock color texture must remain sampled before masking blue photo-sky pixels.
+
+        // Upper cyan photographic sky, never the gray/brown cliff.
+        if(photoHeight>17. && diffuseColor.b>.26
+          && diffuseColor.b>diffuseColor.r*1.32
+          && diffuseColor.g>diffuseColor.r*1.18
+          && diffuseColor.b>diffuseColor.g*.87) discard;`);
+      };
+      m.customProgramCacheKey=()=> 'v6-photo-sky-mask-texture-restored-2';
+     }
+     // Keep the actual V6 photo atlas and mesh unchanged; render a tiny arch
+     // transparent at the one passage aligned between the waterfall sheets.
+     const originalCompile=m.onBeforeCompile;
+     m.onBeforeCompile=shader=>{
+      if(originalCompile)originalCompile.call(m,shader);
+      shader.vertexShader='varying vec3 hiddenDoorWorld;\n'+shader.vertexShader.replace(
+       '#include <begin_vertex>',
+       '#include <begin_vertex>\nhiddenDoorWorld=(modelMatrix*vec4(position,1.0)).xyz;');
+      const doorwayMask=[
+       'float doorZ=abs(hiddenDoorWorld.z-('+hiddenCave.z.toFixed(2)+'));',
+       'float doorY=hiddenDoorWorld.y-('+hiddenCave.floor.toFixed(2)+');',
+       'float doorHalf=1.32-.46*smoothstep(1.75,2.7,doorY);',
+       'if(hiddenDoorWorld.x>'+(hiddenCave.innerEnd-.5).toFixed(2)+
+         ' && hiddenDoorWorld.x<'+(hiddenCave.outerEnd-1.7).toFixed(2)+
+         ' && doorY>-.20 && doorY<2.7 && doorZ<doorHalf)discard;',
+        // Remove only photo-rock fragments INTERSECTING the internal chamber
+        // volume, safely behind the front photo face. Other photo pixels stay.
+        'float chamberDX=hiddenDoorWorld.x-('+hiddenCave.chamberX.toFixed(2)+');',
+        'float chamberR2=chamberDX*chamberDX+doorZ*doorZ;',
+        'if(hiddenDoorWorld.x<'+(hiddenCave.x-3.5).toFixed(2)+' && chamberR2<'+((hiddenCave.chamberR-1.0)**2).toFixed(2)+
+          ' && doorY>-.3 && doorY<35.0)discard;'
+      ].join('\n');
+      shader.fragmentShader='varying vec3 hiddenDoorWorld;\n'+shader.fragmentShader.replace(
+       '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
+     };
+     const priorProgramKey=m.customProgramCacheKey;
+     m.customProgramCacheKey=()=>String(priorProgramKey?priorProgramKey.call(m):'v6-photo')+'-hidden-entrance-v6';
+     m.needsUpdate=true;
+    }
+   });
+   // Soften the dark vertical lighting seam at common photo-wall/wing vertices.
+   // Only vertices shared by DIFFERENT wall meshes are affected.
+   const shared=new Map(),v=new T.Vector3(),n=new T.Vector3();
+   root.updateMatrixWorld(true);
+   root.traverse(o=>{if(!o.isMesh||!/wing|core|upper-slope/i.test(o.name))return;
+    const g=o.geometry,pa=g.getAttribute('position'),na=g.getAttribute('normal');
+    if(!pa||!na)return;
+    for(let i=0;i<pa.count;i++){
+     v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld);
+     const key=Math.round(v.x*20)+','+Math.round(v.y*20)+','+Math.round(v.z*20);
+     n.fromBufferAttribute(na,i);
+     let bucket=shared.get(key);if(!bucket){bucket=[];shared.set(key,bucket);}
+     bucket.push({o,na,i,x:n.x,y:n.y,z:n.z});
+    }
+   });
+   for(const a of shared.values()){
+    if(a.length<2||!a.some(p=>p.o!==a[0].o))continue;
+    let nx=0,ny=0,nz=0;for(const p of a){nx+=p.x;ny+=p.y;nz+=p.z;}
+    const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
+    for(const p of a)p.na.setXYZ(p.i,p.x*.25+nx*.75,p.y*.25+ny*.75,p.z*.25+nz*.75);
+   }
+   root.traverse(o=>{if(o.isMesh){const a=o.geometry.getAttribute('normal');if(a)a.needsUpdate=true;}});
+   scene.add(root);
+   // Use real V6 photo-rock surfaces for optional feet-on-rock collision.
+   canyonTopMeshes.length=0;
+   root.traverse(o=>{if(o.isMesh&&o.geometry?.getAttribute('position'))canyonTopMeshes.push(o);});
+   buildSolidCliff(root);
+
+   // V2 uses NO separate hill sheets or tall triangular faces.
+   // Small embedded limestone stones sit at elevations sampled from ground().
+   const joinStones=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),
+     new T.MeshStandardMaterial({map:creekBedrockMap,color:0x979b88,roughness:1,flatShading:true}),76);
+   const joinPose=new T.Object3D(),joinTint=new T.Color();
+   const joinRand=k=>{const n=Math.sin(k*127.1+91.83)*43758.5453;return n-Math.floor(n)};
+   for(let k=0;k<76;k++){
+     const side=k%2?-1:1;
+     const x=-54+joinRand(k*7+2)*45;
+     const z=CZ+side*(16+joinRand(k*9+5)*23);
+     const h=ground(x,z),size=.35+joinRand(k*11+4)*.92;
+     joinPose.position.set(x,h+size*.04,z);
+     joinPose.rotation.set(joinRand(k*3+8)*3,joinRand(k*5+7)*6.28,joinRand(k*13+1)*3);
+     joinPose.scale.set(size*1.48,size*.64,size*1.14);
+     if(h<CY+.22)joinPose.scale.setScalar(0);
+     joinPose.updateMatrix();joinStones.setMatrixAt(k,joinPose.matrix);
+     joinTint.setHex(k%5===0?0x6a705d:k%3===0?0x797e6c:0x5b6154);
+     joinStones.setColorAt(k,joinTint);
+   }
+   joinStones.name='Stacey Canyon V6 embedded end limestone';
+   joinStones.computeBoundingSphere();scene.add(joinStones);
+   diag.assets['V6 hill transition']='native ground restored to both ends, no filler walls';
+   // Old polygon cave seal and stone halo must NOT show through the new canyon.
+   // Keep the locked quest objects alive for future tunnel logic.
+   portal.visible=false;
+   for(const mesh of legacyCliffParts)mesh.visible=false;
+   window.staceyCanyonV6={scene:root,source:'approved V6',bytes:size,westShore};
+   diag.assets['Canyon V6']='loaded, old cliff and portal hidden';
+  }catch(e){diag.assets['Canyon V6']='FAILED';diag.errors.push('Canyon V6 '+String(e));}
+ }
+ installCanyonV6();
+
+
 })();
 
+// V5 whole-rock solid collider, both sides and the interior, without new
+// visible meshes. V4 indexed only the top and its waist-level ray missed walls.
+const canyonTopMeshes=[],stoneCols=new Map(),stoneStep=1.5;
+const stoneP0=new T.Vector3(),stoneP1=new T.Vector3(),stoneP2=new T.Vector3();
+const stoneXYZ=new T.Vector3(),stoneBounds=new T.Box3();
+let stoneReady=false;
+const stoneStats={triangles:0,cells:0,wallStops:0,edgeStops:0,roofSteps:0,interiorStops:0,holesFilled:0};
+const stoneKey=(i,j)=>i+','+j;
+function buildSolidCliff(root){
+ root.updateMatrixWorld(true);stoneBounds.setFromObject(root);stoneCols.clear();
+ const raw=new Map();
+ const put=(x,z,y)=>{
+   if(x<-108||x>36||Math.abs(z-CZ)>73||y<CY-8||y>CY+55)return;
+   const i=Math.floor(x/stoneStep),j=Math.floor(z/stoneStep),k=stoneKey(i,j);
+   const rec=raw.get(k);
+   if(!rec)raw.set(k,{hi:y,lo:y});
+   else{rec.hi=Math.max(rec.hi,y);rec.lo=Math.min(rec.lo,y);}
+ };
+ function trace(p,q){
+   const n=Math.max(1,Math.ceil(Math.hypot(p.x-q.x,p.z-q.z)/(.65*stoneStep)));
+   for(let k=0;k<=n;k++){
+     const t=k/n;put(p.x+(q.x-p.x)*t,p.z+(q.z-p.z)*t,p.y+(q.y-p.y)*t);
+   }
+ }
+ root.traverse(mesh=>{
+   if(!mesh.isMesh||/sky|background|panorama/i.test(mesh.name||''))return;
+   const g=mesh.geometry,p=g?.getAttribute('position');if(!p)return;
+   const idx=g.index,triCount=idx?Math.floor(idx.count/3):Math.floor(p.count/3);
+   for(let t=0;t<triCount;t++){
+     const k=t*3;
+     stoneP0.fromBufferAttribute(p,idx?idx.getX(k):k).applyMatrix4(mesh.matrixWorld);
+     stoneP1.fromBufferAttribute(p,idx?idx.getX(k+1):k+1).applyMatrix4(mesh.matrixWorld);
+     stoneP2.fromBufferAttribute(p,idx?idx.getX(k+2):k+2).applyMatrix4(mesh.matrixWorld);
+     const low=Math.min(stoneP0.y,stoneP1.y,stoneP2.y);
+     const high=Math.max(stoneP0.y,stoneP1.y,stoneP2.y);
+     if(high<CY-8||low>CY+55)continue;
+     // Discard photo-background pieces outside the actual canyon footprint.
+     if(Math.max(stoneP0.x,stoneP1.x,stoneP2.x)<-108||
+        Math.min(stoneP0.x,stoneP1.x,stoneP2.x)>36)continue;
+     stoneStats.triangles++;
+     trace(stoneP0,stoneP1);trace(stoneP1,stoneP2);trace(stoneP2,stoneP0);
+     // Fill triangle footprints. Vertical wall triangles still work via
+     // edge traces; wide rock surfaces get filled rather than just outlined.
+     const x0=Math.max(-108,Math.min(stoneP0.x,stoneP1.x,stoneP2.x));
+     const x1=Math.min(36,Math.max(stoneP0.x,stoneP1.x,stoneP2.x));
+     const z0=Math.max(CZ-73,Math.min(stoneP0.z,stoneP1.z,stoneP2.z));
+     const z1=Math.min(CZ+73,Math.max(stoneP0.z,stoneP1.z,stoneP2.z));
+     const den=(stoneP1.z-stoneP2.z)*(stoneP0.x-stoneP2.x)+
+       (stoneP2.x-stoneP1.x)*(stoneP0.z-stoneP2.z);
+     if(Math.abs(den)<.001)continue;
+     const ia=Math.floor(x0/stoneStep),ib=Math.ceil(x1/stoneStep);
+     const ja=Math.floor(z0/stoneStep),jb=Math.ceil(z1/stoneStep);
+     for(let i=ia;i<=ib;i++)for(let j=ja;j<=jb;j++){
+       const x=(i+.5)*stoneStep,z=(j+.5)*stoneStep;
+       const u=((stoneP1.z-stoneP2.z)*(x-stoneP2.x)+(stoneP2.x-stoneP1.x)*(z-stoneP2.z))/den;
+       const v=((stoneP2.z-stoneP0.z)*(x-stoneP2.x)+(stoneP0.x-stoneP2.x)*(z-stoneP2.z))/den;
+       if(u<-.001||v<-.001||u+v>1.001)continue;
+       put(x,z,u*stoneP0.y+v*stoneP1.y+(1-u-v)*stoneP2.y);
+     }
+   }
+ });
+ // Thicken each photogrammetry wall to real rock: close tiny scan holes,
+ // and give front, inside and rear faces a shared, impenetrable core.
+ for(const [k,r] of raw){
+   const ij=k.split(','),i=+ij[0],j=+ij[1];
+   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+     const nx=i+dx,nz=j+dz;
+     const rec=stoneCols.get(stoneKey(nx,nz));
+     if(!rec||r.hi>rec.hi)stoneCols.set(stoneKey(nx,nz),{hi:r.hi,lo:Math.min(r.lo,CY-7)});
+   }
+ }
+ // One-cell pinholes are repaired, without filling the open pond/canyon area.
+ const repairs=[];
+ for(const [k,r] of stoneCols){
+   const [i,j]=k.split(',').map(Number);
+   for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){
+     const nk=stoneKey(i+di,j+dj);
+     if(stoneCols.has(nk))continue;
+     const a=stoneCols.get(stoneKey(i+di*2,j+dj*2));
+     const left=stoneCols.get(stoneKey(i+dj,j-di));
+     const right=stoneCols.get(stoneKey(i-dj,j+di));
+     if(a&&left&&right)repairs.push([nk,Math.min(r.hi,a.hi,left.hi,right.hi)]);
+   }
+ }
+ for(const [k,hi] of repairs)if(!stoneCols.has(k)){
+   stoneCols.set(k,{hi,lo:CY-7});stoneStats.holesFilled++;
+ }
+ stoneStats.cells=stoneCols.size;
+ stoneReady=stoneCols.size>40;
+ diag.assets['solid cliff V5']=stoneReady
+   ?'full-height inner/outer rock volumes: '+stoneStats.cells+' cells'
+   :'FAILED to build cliff volume';
+ diag.cliffPhysics=stoneStats;
+ window.staceyRockCollider={metrics:stoneStats,solidCells:stoneCols.size};
+}
+function rockColumn(x,z){
+ if(!stoneReady||x<stoneBounds.min.x-4||x>stoneBounds.max.x+4||
+    z<stoneBounds.min.z-4||z>stoneBounds.max.z+4)return null;
+ return stoneCols.get(stoneKey(Math.floor(x/stoneStep),Math.floor(z/stoneStep)))||null;
+}
+function cliffContact(x,z,feet){
+ const dirt=ground(x,z);
+ // Only the hidden passage and domed chamber are hollow. Use their actual
+ // floor height instead of the raised original hillside (which is overhead).
+ if(isHiddenCaveOpening(x,z,feet))
+  return {floor:hiddenCaveFloor(x),solid:false,onTop:false,roof:null,cave:true};
+ const column=rockColumn(x,z);
+ if(!column)return {floor:dirt,solid:false,onTop:false,roof:null};
+ const roof=column.hi;
+ // Rock is filled from the cliff base to its top, even if the GLB is a
+ // paper-thin/open scan. No walking in from front, inside, or rear.
+ const onTop=feet>=roof-2.0&&feet<=roof+3.5;
+ return {floor:onTop?Math.max(dirt,roof):dirt,
+   solid:!onTop&&feet<roof-1.0,onTop,roof};
+}
+function solidCliffStep(x0,z0,x1,z1,feet){
+ const before=cliffContact(x0,z0,feet);
+ const delta=Math.hypot(x1-x0,z1-z0);
+ // Continuous sweep keeps collisions stable on fast phones, at corners,
+ // or if a later version increases walking speed.
+ const steps=Math.max(1,Math.ceil(delta/.28));
+ let x=x0,z=z0,found=before;
+ for(let s=1;s<=steps;s++){
+   const t=s/steps,xx=x0+(x1-x0)*t,zz=z0+(z1-z0)*t;
+   const next=cliffContact(xx,zz,feet);
+   // Enter only from the waterfall-side mouth; the chamber has no backdoor
+   // into the rest of the mountain through gaps in photo geometry.
+   if(!found.cave&&next.cave&&xx<hiddenCave.outerEnd-.55){
+    stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
+   if(found.cave&&!next.cave&&
+      !(xx>=hiddenCave.outerEnd-.5&&Math.abs(zz-hiddenCave.z)<hiddenCave.halfWidth)){
+    stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
+   if(next.solid){
+     stoneStats.wallStops++;stoneStats.interiorStops++;
+     return {x,z,floor:found.floor};
+   }
+   // Don't drop through an open scan edge after walking onto its top.
+   if(found.onTop&&!next.onTop&&next.floor<feet-1.65){
+     stoneStats.edgeStops++;return {x,z,floor:found.floor};
+   }
+   // Do not step vertically onto a roof from far below it.
+   if(next.onTop&&next.roof>feet+2){
+     stoneStats.wallStops++;return {x,z,floor:found.floor};
+   }
+   x=xx;z=zz;found=next;
+ }
+ if(found.onTop)stoneStats.roofSteps++;
+ return {x,z,floor:found.floor};
+}
 const wp=[],wi=[],depth=[];const WN=384,WR=96;for(let i=0;i<=WR;i++)for(let j=0;j<=WN;j++){const a=j/WN*Math.PI*2,r=inner(a)-1+(outer(a)-inner(a)+1.5)*i/WR,x=CX+r*Math.cos(a),z=CZ+r*Math.sin(a);wp.push(x,0,z);depth.push(Math.max(0,CY-ground(x,z)))}for(let i=0;i<WR;i++)for(let j=0;j<WN;j++){const k=i*(WN+1)+j;wi.push(k,k+1,k+WN+1,k+1,k+WN+2,k+WN+1)}const waterGeo=new T.BufferGeometry();waterGeo.setAttribute('position',new T.Float32BufferAttribute(wp,3));waterGeo.setAttribute('bedDepth',new T.Float32BufferAttribute(depth,1));waterGeo.setIndex(wi);waterGeo.computeVertexNormals();waterGeo.rotateX(Math.PI/2);
 const normals=loader.load('https://threejs.org/examples/textures/waternormals.jpg',()=>{diag.assets['water normals']='ready'});normals.wrapS=normals.wrapT=T.RepeatWrapping;
 const water=new Water(waterGeo,{textureWidth:mobile?256:512,textureHeight:mobile?256:512,waterNormals:normals,sunDirection:lightDir,sunColor:0xfff2dc,waterColor:0x126d83,distortionScale:1.5,fog:true});water.rotation.x=-Math.PI/2;water.position.y=CY;water.material.side=T.DoubleSide;water.material.transparent=true;water.material.depthWrite=false;
@@ -166,18 +1127,193 @@ water.material.fragmentShader='varying float vBed;\n'+water.material.fragmentSha
 water.material.fragmentShader=water.material.fragmentShader.replace('vec3 outgoingLight = albedo;',`vec3 absorption=mix(vec3(.08,.52,.44),vec3(.005,.10,.23),1.-exp(-vBed*.36));vec3 outgoingLight=mix(absorption,reflectionSample,clamp(reflectance,.05,.82))+sunColor*specularLight*.65;float wetEdge=1.-smoothstep(.0,.22,vBed);float wash=(.5+.5*sin(vBed*23.-time*1.2+worldPosition.x*.3))*wetEdge;outgoingLight+=vec3(.10,.13,.12)*pow(wash,8.);`);
 water.material.fragmentShader=water.material.fragmentShader.replace('gl_FragColor = vec4( outgoingLight, alpha );','gl_FragColor = vec4( outgoingLight, smoothstep(0.0,0.50,vBed)*.96 );');scene.add(water);
 const gltf=new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);const ASSET='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/world-creator/assets/';
-function instances(source,placements){source.updateMatrixWorld(true);const box=new T.Box3().setFromObject(source),size=box.getSize(new T.Vector3()),base=box.min,center=box.getCenter(new T.Vector3());source.traverse(m=>{if(!m.isMesh)return;const geo=m.geometry.clone().applyMatrix4(m.matrixWorld);geo.translate(-center.x,-base.y,-center.z);const material=m.material.clone();material.side=T.DoubleSide;material.alphaTest=.08;if(material.transparent){material.transparent=false;material.depthWrite=true;}material.needsUpdate=true;(diag.geometry??=[]).push({name:m.name,triangles:(geo.index?geo.index.count:geo.attributes.position.count)/3,instances:placements.length});const batch=new T.InstancedMesh(geo,material,placements.length);const obj=new T.Object3D();placements.forEach((p,i)=>{const s=p.h/Math.max(.001,size.y);obj.position.set(p.x,p.y,p.z);obj.scale.set(s*p.w,s,s*p.w);obj.rotation.y=p.a;obj.updateMatrix();batch.setMatrixAt(i,obj.matrix)});batch.computeBoundingSphere();scene.add(batch)});return size}
-async function forest(){try{const g=(await gltf.loadAsync(ASSET+'maple_trees_planting_clean.glb')).scene;const types=g.children.filter(c=>/large_3|medium_2|medium_3/i.test(c.name));if(!types.length)throw Error('No named tree models');const all=types.map(()=>[]);const TREE_SHORE_CLEARANCE_M=60;for(let i=0;i<155;i++){const a=rand()*Math.PI*2,d=TREE_SHORE_CLEARANCE_M+rand()*124,r=outer(a)+d,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;all[i%types.length].push({x,z,y:ground(x,z),h:12+rand()*13,w:.85+rand()*.3,a:rand()*6.28})}/* Keep the lake island clear of trees as well. */types.forEach((tree,i)=>instances(tree,all[i]));forestBackdrop(types[2]||types[0]);diag.trees+=all.reduce((n,a)=>n+a.length,0);diag.assets.maples='ready';}catch(e){diag.assets.maples='FAILED';diag.errors.push(String(e))}}
-function forestBackdrop(source){const clone=source.clone(true);clone.updateMatrixWorld(true);clone.traverse(m=>{if(m.isMesh){m.material=m.material.clone();m.material.alphaTest=.08;m.material.transparent=false;m.material.depthWrite=true;m.material.side=T.DoubleSide}});const b=new T.Box3().setFromObject(clone),sz=b.getSize(new T.Vector3()),center=b.getCenter(new T.Vector3());clone.position.sub(center);const sc=new T.Scene();sc.add(clone);sc.add(new T.HemisphereLight(0xe5f2ff,0x62753e,2));const dl=new T.DirectionalLight(0xfff1d0,2.5);dl.position.set(-10,20,20);sc.add(dl);const h=sz.y*1.08,w=Math.max(sz.x,sz.z)*1.2,cam=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,h*5);cam.position.set(0,0,h*2);cam.lookAt(0,0,0);const target=new T.WebGLRenderTarget(256,512);const old=renderer.getRenderTarget(),clear=renderer.getClearColor(new T.Color()),alpha=renderer.getClearAlpha();renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.render(sc,cam);renderer.setRenderTarget(old);renderer.setClearColor(clear,alpha);const material=new T.MeshBasicMaterial({map:target.texture,alphaTest:.08,side:T.DoubleSide,fog:true});const mesh=new T.InstancedMesh(new T.PlaneGeometry(w/h,1),material,650);const d=new T.Object3D();for(let i=0;i<650;i++){const a=rand()*Math.PI*2,r=outer(a)+60+rand()*125,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r,height=16+rand()*15;d.position.set(x,ground(x,z)+height/2,z);d.scale.set(height,height,height);d.rotation.y=Math.atan2(CX-x,CZ-z);d.updateMatrix();mesh.setMatrixAt(i,d.matrix)}mesh.computeBoundingSphere();scene.add(mesh);diag.assets['forest backdrop']='ready';diag.trees+=650;}
-async function stones(){try{const root=(await gltf.loadAsync(ASSET+'village-floor-rock_moss_set_01.glb')).scene;root.updateMatrixWorld(true);let m,big=0;root.traverse(c=>{if(c.isMesh){const s=new T.Box3().setFromObject(c).getSize(new T.Vector3()),v=s.x*s.y*s.z;if(v>big){big=v;m=c}}});if(!m)throw Error('No rock mesh');m=m.clone();m.geometry=compactRock(m.geometry);const p=[];for(let i=0;i<510;i++){const a=rand()*6.283,ins=i<130;const r=(ins?inner(a):outer(a))+(rand()-.5)*2.6,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(!ins&&Math.hypot(x-140,z+117.2)<69*.3048)continue;if(Math.sin(a*9+1)<-.2)continue;const h=rand()<.15?.9+rand()*1.0:.27+rand()*.34;p.push({x,z,y:ground(x,z)-.12,h,w:1.1+rand()*.65,a:rand()*6.283})}instances(rootSubset(m),p);diag.rocks=p.length;diag.assets.rocks='ready'}catch(e){diag.assets.rocks='FAILED';diag.errors.push(String(e))}}
+function instances(source,placements,maskCavern=false){
+ source.updateMatrixWorld(true);
+ const box=new T.Box3().setFromObject(source),size=box.getSize(new T.Vector3()),base=box.min,center=box.getCenter(new T.Vector3());
+ source.traverse(m=>{
+  if(!m.isMesh)return;
+  const geo=m.geometry.clone().applyMatrix4(m.matrixWorld);
+  geo.translate(-center.x,-base.y,-center.z);
+  const material=m.material.clone();material.side=T.DoubleSide;material.alphaTest=.08;
+  if(material.transparent){material.transparent=false;material.depthWrite=true;}material.needsUpdate=true;
+  (diag.geometry??=[]).push({name:m.name,triangles:(geo.index?geo.index.count:geo.attributes.position.count)/3,instances:placements.length});
+  const batch=new T.InstancedMesh(geo,material,placements.length),obj=new T.Object3D();
+  placements.forEach((p,i)=>{
+   const scale=p.h/Math.max(.001,size.y);
+   obj.position.set(p.x,p.y,p.z);obj.scale.set(scale*p.w,scale,scale*p.w);
+   obj.rotation.y=p.a;obj.updateMatrix();batch.setMatrixAt(i,obj.matrix);
+  });
+  batch.computeBoundingSphere();scene.add(batch);
+  if(maskCavern){
+   const saved=[];
+   placements.forEach((p,i)=>{
+    if(!overHiddenCave(p.x,p.z,15))return;
+    const matrix=new T.Matrix4();batch.getMatrixAt(i,matrix);
+    saved.push([i,matrix]);
+   });
+   if(saved.length)cavernTreeMasks.push({batch,saved});
+  }
+ });
+ return size;
+}
+async function forest(){try{const g=(await gltf.loadAsync(ASSET+'maple_trees_planting_clean.glb')).scene;const types=g.children.filter(c=>/large_3|medium_2|medium_3/i.test(c.name));if(!types.length)throw Error('No named tree models');const all=types.map(()=>[]);const TREE_SHORE_CLEARANCE_M=60;for(let i=0;i<155;i++){const a=rand()*Math.PI*2,d=TREE_SHORE_CLEARANCE_M+rand()*124,r=outer(a)+d,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(x>-40&&x<-6&&Math.abs(z-CZ)<14)continue;if(purpleTrails.near(x,z,5.5))continue;all[i%types.length].push({x,z,y:ground(x,z),h:12+rand()*13,w:.85+rand()*.3,a:rand()*6.28})}/* Keep the lake island clear of trees as well. */types.forEach((tree,i)=>instances(tree,all[i],true));forestBackdrop(types[2]||types[0]);diag.trees+=all.reduce((n,a)=>n+a.length,0);diag.assets.maples='ready';}catch(e){diag.assets.maples='FAILED';diag.errors.push(String(e))}}
+function forestBackdrop(source){const clone=source.clone(true);clone.updateMatrixWorld(true);clone.traverse(m=>{if(m.isMesh){m.material=m.material.clone();m.material.alphaTest=.08;m.material.transparent=false;m.material.depthWrite=true;m.material.side=T.DoubleSide}});const b=new T.Box3().setFromObject(clone),sz=b.getSize(new T.Vector3()),center=b.getCenter(new T.Vector3());clone.position.sub(center);const sc=new T.Scene();sc.add(clone);sc.add(new T.HemisphereLight(0xe5f2ff,0x62753e,2));const dl=new T.DirectionalLight(0xfff1d0,2.5);dl.position.set(-10,20,20);sc.add(dl);const h=sz.y*1.08,w=Math.max(sz.x,sz.z)*1.2,cam=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,h*5);cam.position.set(0,0,h*2);cam.lookAt(0,0,0);const target=new T.WebGLRenderTarget(256,512);const old=renderer.getRenderTarget(),clear=renderer.getClearColor(new T.Color()),alpha=renderer.getClearAlpha();renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.render(sc,cam);renderer.setRenderTarget(old);renderer.setClearColor(clear,alpha);const material=new T.MeshBasicMaterial({map:target.texture,alphaTest:.08,side:T.DoubleSide,fog:true});const mesh=new T.InstancedMesh(new T.PlaneGeometry(w/h,1),material,650);const d=new T.Object3D(),caveBillboardPositions=[];for(let i=0;i<650;i++){const a=rand()*Math.PI*2,r=outer(a)+60+rand()*125,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r,height=16+rand()*15;if(x>-40&&x<-6&&Math.abs(z-CZ)<14){d.position.set(0,-10000,0);d.scale.set(.00001,.00001,.00001);d.updateMatrix();mesh.setMatrixAt(i,d.matrix);continue;}d.position.set(x,ground(x,z)+height/2,z);d.scale.set(height,height,height);d.rotation.y=Math.atan2(CX-x,CZ-z);d.updateMatrix();mesh.setMatrixAt(i,d.matrix);if(overHiddenCave(x,z,17))caveBillboardPositions.push([i,d.matrix.clone()])}mesh.computeBoundingSphere();scene.add(mesh);if(caveBillboardPositions.length)cavernTreeMasks.push({batch:mesh,saved:caveBillboardPositions});diag.assets['forest backdrop']='ready';diag.trees+=650;}
+async function stones(){try{const root=(await gltf.loadAsync(ASSET+'village-floor-rock_moss_set_01.glb')).scene;root.updateMatrixWorld(true);let m,big=0;root.traverse(c=>{if(c.isMesh){const s=new T.Box3().setFromObject(c).getSize(new T.Vector3()),v=s.x*s.y*s.z;if(v>big){big=v;m=c}}});if(!m)throw Error('No rock mesh');m=m.clone();m.geometry=compactRock(m.geometry);const p=[];for(let i=0;i<510;i++){const a=rand()*6.283,ins=i<130;const r=(ins?inner(a):outer(a))+(rand()-.5)*2.6,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(!ins&&Math.hypot(x-140,z+117.2)<69*.3048)continue;if(!ins&&x<fallShore+14&&Math.abs(z-CZ)<44)continue;if(Math.sin(a*9+1)<-.2)continue;const h=rand()<.15?.9+rand()*1.0:.27+rand()*.34;p.push({x,z,y:ground(x,z)-.12,h,w:1.1+rand()*.65,a:rand()*6.283})}instances(rootSubset(m),p);diag.rocks=p.length;diag.assets.rocks='ready'}catch(e){diag.assets.rocks='FAILED';diag.errors.push(String(e))}}
 function compactRock(g){const a=g.attributes.position,u=g.attributes.uv;g.computeBoundingBox();const box=g.boundingBox,size=box.getSize(new T.Vector3()),map=new Map(),remap=[],v=[],uv=[];for(let i=0;i<a.count;i++){const x=a.getX(i),y=a.getY(i),z=a.getZ(i),key=[Math.round((x-box.min.x)/size.x*10),Math.round((y-box.min.y)/size.y*10),Math.round((z-box.min.z)/size.z*10)].join(',');if(!map.has(key)){map.set(key,v.length/3);v.push(x,y,z);if(u)uv.push(u.getX(i),u.getY(i))}remap.push(map.get(key))}const idx=g.index?g.index.array:Array.from({length:a.count},(_,i)=>i),out=[];for(let i=0;i<idx.length;i+=3){const x=remap[idx[i]],y=remap[idx[i+1]],z=remap[idx[i+2]];if(x!==y&&y!==z&&x!==z)out.push(x,y,z)}const h=new T.BufferGeometry();h.setAttribute('position',new T.Float32BufferAttribute(v,3));if(u)h.setAttribute('uv',new T.Float32BufferAttribute(uv,2));h.setIndex(out);h.computeVertexNormals();diag.rockTriangles=out.length/3;return h}
 function rootSubset(m){const g=new T.Group(),c=m.clone();c.matrix.copy(m.matrixWorld);c.matrixAutoUpdate=false;g.add(c);return g}
-async function understory(){for(const [file,label,count] of [['village-pbr-pine_sapling_small.glb','pines',54],['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?60+rand()*63:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}instances(g,p);diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
-forest();stones();understory();
-let aerial=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
-function beach(){depthMode="surface";aerial=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04}beach();document.querySelector('#shore').onclick=beach;document.querySelector('#air').onclick=()=>{aerial=!aerial;if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
-document.querySelector('#dive').onclick=()=>{aerial=false;depthMode='dive'};document.querySelector('#surface').onclick=()=>{aerial=false;depthMode='surface'};const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
+async function understory(){for(const [file,label,count] of [['village-floor-fern_02.glb','ferns',95]]){try{const g=(await gltf.loadAsync(ASSET+file)).scene;const p=[];for(let i=0;i<count;i++){const a=rand()*6.283,r=outer(a)+(label==='pines'?60+rand()*63:5+rand()*19),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;if(Math.hypot(x-140,z+117.2)<21.0312)continue;p.push({x,z,y:ground(x,z),h:label==='pines'?9+rand()*8:.4+rand()*.45,w:1,a:rand()*6.283})}if(label==='ferns'){
+  // Existing textured fern GLB, naturally distributed along the upper stream banks.
+  for(let j=0;j<44;j++){
+   const t=.05+rand()*.76,x=T.MathUtils.lerp(pondX+7,fallShore+1,t);
+   const u=T.MathUtils.clamp((x-(pondX+6))/(fallShore+2-(pondX+6)),0,1);
+   const z=creekCenter(u)+(j%2?1:-1)*(5.1+3.2*smooth(.35,1,u)+rand()*4);
+   p.push({x,z,y:ground(x,z)-.06,h:.28+rand()*.35,w:1,a:rand()*6.283});
+  }
+ }instances(g,p,label==='pines');diag.assets[label]='ready';if(label==='pines')diag.trees+=p.length;}catch(e){diag.assets[label]='FAILED';diag.errors.push(label+': '+String(e))}}}
+// Owner tree-free inspection mode: do not load maple tree meshes or 650-tree distant billboard forest.
+// Preserve approved rock and non-tree fern ground cover, lake, controls, Mason and minimap.
+diag.assets.maples='disabled (tree-free preview)';diag.assets.pines='disabled (tree-free preview)';
+stones();understory();
+// Restore saved bass and flathead systems independently of approved lake geometry/water.
+diag.assets.bass='loading';diag.assets.flatheads='loading';
+const flatheadSystem=installStaceyFlatheads({T,scene,gltf,ASSET,CX,CY,CZ,inner,outer,ground,diagnostics:diag,rand});
+let bassSystem=null;
+installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
+window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem.count;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;}};
+// Public Play Game launches Mason at Stacey Lake; preserve original fish and game physics.
+const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
+let beverlyNPC=null;
+diag.assets.Beverly='loading approved character';
+// Load the dressed game asset after the lake starts; no embedded editor or reconstruction on phones.
+gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).href,asset=>{
+ const model=asset.scene;model.name='Beverly';
+ const clip=asset.animations.find(a=>a.name==='Beverly_Shoreline_Walk');
+ if(!clip){diag.assets.Beverly='FAILED';diag.errors.push('Beverly walk animation missing');return;}
+ model.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+ const mixer=new T.AnimationMixer(model);mixer.clipAction(clip).setLoop(T.LoopRepeat,Infinity).play();model.userData.beverlyWalkMixer=mixer;
+ beverlyNPC=installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY:ground,lake:{x:CX,z:CZ}});
+ window.beverlyShoreline=beverlyNPC;diag.assets.Beverly='walking shoreline';
+},undefined,error=>{diag.assets.Beverly='FAILED';diag.errors.push('Beverly: '+String(error?.message||error));});
+
+const playerAvatar='Mason';let chaseCamera=true;
+window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-person':'first-person';},
+ get masonReady(){return masonPlayer.state.ready;},get masonError(){return masonPlayer.state.error;}};
+let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
+function syncActions(){
+ const inLake=ground(pos.x,pos.z)<CY-.55;
+ const active={actionRun:isRunning&&!isSitting&&!aerial,actionFly:aerial,actionSwim:inLake&&!aerial&&depthMode==='surface',actionDive:inLake&&!aerial&&depthMode==='dive',actionSit:isSitting};
+ for(const [id,selected] of Object.entries(active))document.getElementById(id).setAttribute('aria-pressed',String(selected));
+ document.getElementById('actionSit').textContent=isSitting?'STAND':'SIT';
+}
+function beach(){miniNav.cancel("Returned to beach");depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
+function swim(){miniNav.cancel('Swimming manually');aerial=false;isRunning=false;isSitting=false;depthMode='surface';
+ // From dry land, enter the lake at a safe shallow-water point by the spawn beach.
+ if(ground(pos.x,pos.z)>=CY-.55){pos.set(CX,CY+.65,CZ+outer(Math.PI/2)-9);yaw=0;pitch=-.04}
+ syncActions();
+}
+function dive(){swim();depthMode='dive';syncActions()}
+function surface(){miniNav.cancel('Manual surface');aerial=false;depthMode='surface';syncActions()}
+function toggleFly(){miniNav.cancel('Flying manually');aerial=!aerial;isRunning=false;isSitting=false;depthMode='surface';
+ pos.y=aerial?Math.max(pos.y,ground(pos.x,pos.z)+6,CY+7):ground(pos.x,pos.z)+1.7;
+ syncActions();
+}
+function toggleSit(){miniNav.cancel('Resting');const sitNext=!isSitting;
+ if(sitNext&&(aerial||ground(pos.x,pos.z)<CY-.55))beach();
+ aerial=false;depthMode='surface';isRunning=false;isSitting=sitNext;
+ pos.y=ground(pos.x,pos.z)+(isSitting?1.05:1.7);
+ syncActions();
+}
+function toggleRun(){isRunning=!isRunning;isSitting=false;syncActions()}
+document.querySelector('#actionRun').onclick=toggleRun;
+document.querySelector('#actionFly').onclick=toggleFly;
+document.querySelector('#actionSwim').onclick=swim;
+document.querySelector('#actionDive').onclick=dive;
+document.querySelector('#actionSit').onclick=toggleSit;
+const viewButton=document.querySelector('#viewMode');
+// Move the camera immediately when tapped, not only on the next render frame.
+// This keeps first-/third-person responsive on slower mobile phones.
+function syncPlayerCamera(){
+ if(chaseCamera){
+  const distance=depthMode==='dive'?2.6:4.4;
+  const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
+  const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
+  const safeY=depthMode==='dive'?followY:Math.max(followY,ground(followX,followZ)+1.15);
+  camera.position.set(followX,safeY,followZ);
+  camera.lookAt(pos.x,pos.y-.25+Math.sin(pitch)*1.5,pos.z);
+ }else{
+  camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
+ }
+}
+viewButton.onclick=()=>{
+ chaseCamera=!chaseCamera;
+ viewButton.textContent=chaseCamera?'3RD\nPERSON':'1ST\nPERSON';
+ viewButton.setAttribute('aria-pressed',String(chaseCamera));
+ viewButton.setAttribute('aria-label',chaseCamera?'Third-person camera; tap to switch to first-person':'First-person camera; tap to switch to third-person');
+ if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
+ syncPlayerCamera();
+};
+beach();
+ if(new URLSearchParams(location.search).get('spawn')==='lake'){
+   // Explicit homepage entry point: standing on the approved Stacey Lake beach.
+   beach();diag.assets['Adventures game spawn']='Stacey Lake south shore';
+  }
+ if(new URLSearchParams(location.search).get('spawn')==='spring'){
+   aerial=false;depthMode='surface';pos.set(-25,ground(-25,CZ+11)+1.7,CZ+11);
+   yaw=.83;pitch=-.07;
+  }
+  if(new URLSearchParams(location.search).get('spawn')==='trail'){
+   // Stand directly on the actual photographic lake spur, not in aerial mode.
+   aerial=false;depthMode='surface';pos.set(-14,ground(-14,-354)+1.7,-354);
+   camera.position.copy(pos);camera.rotation.order='YXZ';
+   camera.lookAt(-26,ground(-26,-366)+1.4,-366);
+   yaw=camera.rotation.y;pitch=camera.rotation.x;
+   diag.assets['Trail walk-start']='on lake spur photo surface';
+  }
+  if(new URLSearchParams(location.search).get('spawn')==='dome'){
+  aerial=false;depthMode='surface';
+  pos.set(hiddenCave.chamberX,hiddenCave.floor+1.7,hiddenCave.z);
+  yaw=Math.PI/2;pitch=-.08;
+ }
+ document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
+document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
-let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),spd=dt*(aerial?28:4.2);pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>305){pos.x=CX+(pos.x-CX)*305/r;pos.z=CZ+(pos.z-CZ)*305/r}const bed=ground(pos.x,pos.z),swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+1.7}}camera.position.copy(pos);camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Aerial':swim?(depthMode==='dive'?'Underwater':'Swimming'):'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+(diag.trees?'Ready':'Loading trees…'));diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
-window.staceyDebug={scene,camera,renderer};window.__lakeBooted=true;requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+document.getElementById('stopWalk').onclick=()=>miniNav.cancel('Walking stopped');
+const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
+ let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);beverlyNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
+if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
+const autoWalk=miniNav.step(dt,moveSpeed);
+if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
+const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
+if(aerial){
+ // Joystick flies in the looking direction; tilt up to climb, tilt down to descend.
+ // Space/Control provide extra climb/descent on desktop.
+ const lift=(-yy*Math.sin(pitch)*moveSpeed+(keys.has('Space')?10:0)-(keys.has('ControlLeft')||keys.has('ControlRight')?10:0))*dt;
+ pos.y=T.MathUtils.clamp(pos.y+lift,bed+2,230);
+}
+if(!aerial&&depthMode!=='dive'){
+ const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-(isSitting?1.05:1.7));
+ pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
+}
+const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks visible Mason by default; first-person remains available in caves.
+const playerMoving=(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
+masonPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
+ sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive'});
+// First-person view must not look through Mason's own face. Keep the avatar
+// visible in third-person, even when it finishes loading after a mode switch.
+if(window.staceyMason?.model)window.staceyMason.model.visible=chaseCamera;
+syncPlayerCamera();miniNav.draw(now);
+ // Do not upload any per-instance matrices every frame; only on camera
+ // chamber transitions or when another async vegetation GLB finishes.
+ const insideCave=cameraInsideHiddenCave(pos);
+ if(insideCave!==cavernMaskState||cavernMaskCount!==cavernTreeMasks.length){
+  for(const entry of cavernTreeMasks){
+   for(const [i,original] of entry.saved)
+    entry.batch.setMatrixAt(i,insideCave?hiddenTreeMatrix:original);
+   entry.batch.instanceMatrix.needsUpdate=true;entry.batch.computeBoundingSphere();
+  }
+  cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
+ }
+ flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Beverly '+(beverlyNPC?'walking':diag.assets.Beverly)+' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>

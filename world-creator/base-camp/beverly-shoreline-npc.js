@@ -1,30 +1,35 @@
-// Beverly — certified The Wild character, shoreline NPC controller.
-// Uses the owner-approved character GLB only. Do not substitute a mannequin.
-// Attach this module to the live scene after Beverly's full approved visual asset is published.
-export function installBeverlyShorelineWalk({THREE, scene, model, lake, terrainY}) {
-  if (!model) throw new Error('Beverly approved visual model is required');
-  const {x:cx,z:cz,rx,rz}=lake;
-  const root=new THREE.Group();root.name='Beverly — Certified Wild Member';
-  root.add(model);scene.add(root);
-  let a=0, distance=0;
-  const speed=1.2, edge=1.035;
-  const positionAt=t=>{
-    const wave=1+.025*Math.sin(5*t)+.018*Math.cos(9*t);
-    const x=cx+Math.cos(t)*rx*wave*edge,z=cz+Math.sin(t)*rz*wave*edge;
-    return new THREE.Vector3(x,terrainY(x,z),z);
+// Beverly — owner-approved V51 appearance, continuous outside-shoreline walk.
+// Path uses the same outer shoreline and terrain sampler as Stacey Lake.
+export function installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY,lake}) {
+  if(!model||!outer||!terrainY)throw new Error('Approved Beverly model and lake terrain are required');
+  const root=new T.Group();root.name='Beverly — Certified Wild Member';root.add(model);scene.add(root);
+  let angle=Math.PI/2,distance=0;
+  const speed=1.2,clearance=3;
+  // Sample once and blend creek-bank elevations into a continuous footpath.
+  // X/Z always follows outer(a)+3m; no changes to the terrain mesh.
+  const samples=2048,heights=Array.from({length:samples},(_,i)=>{
+    const a=i/samples*2*Math.PI,r=outer(a)+clearance;
+    return terrainY(lake.x+Math.cos(a)*r,lake.z+Math.sin(a)*r);
+  });
+  const eased=heights.map((_,i)=>{
+    let sum=0,total=0;for(let j=-4;j<=4;j++){const w=5-Math.abs(j);sum+=heights[(i+j+samples)%samples]*w;total+=w;}return sum/total;
+  });
+  const positionAt=a=>{
+    const r=outer(a)+clearance,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;
+    const f=((a/(2*Math.PI)%1+1)%1)*samples,i=Math.floor(f),blend=f-i;
+    return new T.Vector3(x,eased[i]*(1-blend)+eased[(i+1)%samples]*blend,z);
   };
-  const walk=(dt)=>{
-    const t=Math.min(.05,Math.max(0,dt));
-    const p=positionAt(a),p2=positionAt(a+.001);
-    const metresPerRadian=Math.max(.001,p.distanceTo(p2)*1000);
-    a=(a+t*speed/metresPerRadian)%(Math.PI*2);
-    const here=positionAt(a),next=positionAt(a+.001);
-    root.position.copy(here);
-    root.rotation.y=Math.atan2(next.x-here.x,next.z-here.z);
-    distance+=t*speed;
-    const mixer=model.userData.beverlyWalkMixer;
-    if(mixer)mixer.update(t);
+  const state={ready:true,speed,clearance,distance:0,angle,position:[0,0,0]};
+  const update=dt=>{
+    const seconds=Number.isFinite(dt)?Math.min(.1,Math.max(0,dt)):0;
+    const p=positionAt(angle),next=positionAt(angle+.0001);
+    const metresPerRadian=Math.max(.001,p.distanceTo(next)*10000);
+    angle=(angle+seconds*speed/metresPerRadian)%(2*Math.PI);
+    const here=positionAt(angle),ahead=positionAt(angle+.0001);
+    root.position.copy(here);root.rotation.y=Math.atan2(ahead.x-here.x,ahead.z-here.z);
+    distance+=seconds*speed;model.userData.beverlyWalkMixer?.update(seconds);
+    state.distance=distance;state.angle=angle;state.position=root.position.toArray();
   };
-  walk(0);
-  return {root,update:walk,dispose:()=>scene.remove(root)};
+  update(0);
+  return {root,state,update,dispose:()=>{model.userData.beverlyWalkMixer?.stopAllAction();root.removeFromParent();}};
 }
