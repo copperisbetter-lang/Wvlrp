@@ -13,6 +13,7 @@ export function installBeverlyArmSwing({THREE:T,model,speed=1.2}){
  const pick=key=>bones.find(b=>patterns[key].includes(normalize(b.name)));
  const joints={leftArm:pick('leftArm'),rightArm:pick('rightArm'),leftForearm:pick('leftForearm'),rightForearm:pick('rightForearm')};
  const detected=Object.entries(joints).filter(([,b])=>b).map(([k,b])=>k+':'+b.name);
+ const rest=new Map(Object.values(joints).filter(Boolean).map(b=>[b,b.quaternion.clone()]));
  let phase=0;
  // Walk-cycle phase follows actual shore speed, not render frame rate.
  const update=dt=>{
@@ -25,11 +26,11 @@ export function installBeverlyArmSwing({THREE:T,model,speed=1.2}){
     // lowers the upper arms from the stiff T-pose toward the hips.
     const drop=(side==='left'?-1:1)*.64;
     const swing=new T.Quaternion().setFromEuler(new T.Euler(stride*.30,0,drop,'XYZ'));
-    upper.quaternion.multiply(swing);
+    upper.quaternion.copy(rest.get(upper)).multiply(swing);
    }
    if(lower){
     const elbow=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),-.10-.12*Math.max(0,-stride));
-    lower.quaternion.multiply(elbow);
+    lower.quaternion.copy(rest.get(lower)).multiply(elbow);
    }
   }
  };
