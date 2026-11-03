@@ -1177,12 +1177,17 @@ async function understory(){for(const [file,label,count] of [['village-floor-fer
 // Preserve approved rock and non-tree fern ground cover, lake, controls, Mason and minimap.
 diag.assets.maples='disabled (tree-free preview)';diag.assets.pines='disabled (tree-free preview)';
 stones();understory();
-// Restore saved bass and flathead systems independently of approved lake geometry/water.
-diag.assets.bass='loading';diag.assets.flatheads='loading';
-const flatheadSystem=installStaceyFlatheads({T,scene,gltf,ASSET,CX,CY,CZ,inner,outer,ground,diagnostics:diag,rand});
-let bassSystem=null;
-installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
-window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem.count;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;}};
+// Fish are expensive on mobile: do not construct or download until first dive.
+diag.assets.bass='waiting for underwater entry';diag.assets.flatheads='waiting for underwater entry';
+let flatheadSystem=null,bassSystem=null,fishLoadStarted=false;
+function loadFishUnderwater(){
+ if(fishLoadStarted)return;fishLoadStarted=true;
+ diag.assets.bass='loading underwater';diag.assets.flatheads='loading underwater';
+ try{flatheadSystem=installStaceyFlatheads({T,scene,gltf,ASSET,CX,CY,CZ,inner,outer,ground,diagnostics:diag,rand});}
+ catch(error){diag.assets.flatheads='FAILED';diag.errors.push('Flatheads: '+String(error));}
+ installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
+}
+window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem?.count||0;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;},loadUnderwater:loadFishUnderwater};
 // Public Play Game launches Mason at Stacey Lake; preserve original fish and game physics.
 const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
 let beverlyNPC=null;
@@ -1335,7 +1340,8 @@ syncPlayerCamera();miniNav.draw(now);
   }
   cavernMaskState=insideCave;cavernMaskCount=cavernTreeMasks.length;
  }
- flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+flatheadSystem.count+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Beverly '+(beverlyNPC?'walking':diag.assets.Beverly)+' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+ if(depthMode==='dive'&&pos.y<CY)loadFishUnderwater();
+ if(flatheadSystem?.update)flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+(flatheadSystem?.count||0)+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Beverly '+(beverlyNPC?'walking':diag.assets.Beverly)+' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
