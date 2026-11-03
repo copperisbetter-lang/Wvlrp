@@ -9,7 +9,7 @@
 ## Exports (branch `feature/lily-2-to-5-site-dressed-20261103`)
 | Variant | Asset | Source clothing / meaning | Status |
 |---|---|---|---|
-| **Lily 2** | `Lily_2.glb` | Site-native pink floral `ankara_gown`, single-piece ankle gown with flutter sleeves, sandals; **NOT a confirmed sundress** | Candidate CI queued, pending export and owner visual review |
+| **Lily 2** | `Lily_2.glb` | Site-native pink floral `ankara_gown`, single-piece ankle gown with flutter sleeves, sandals; **NOT a confirmed sundress** | STRUCTURAL PASS; owner visual review pending; NOT an approved sundress |
 | **Lily 3** | `Lily_3.glb` | Site-native oversized T-shirt, cargo shorts, sneakers | Verified structural pass; pending visual review |
 | **Lily 4** | `Lily_4.glb` | Technical geometry/rig, no garment objects, untextured neutral skin | Verified structural pass; do not render an uncovered child |
 | **Lily 5** | `Lily_5.glb` | Site-native fatigue shirt, fatigue pants, boots | Verified structural pass; pending visual review |
@@ -18,7 +18,7 @@
 - Lily 3 SHA256: `e1b988e6509ebb91c2eb71621e363a3b684a25b62e93eb3f756bbfc15b18837e`, size 16,325,196.
 - Lily 4 SHA256: `a50727c3900f3cd2410c997c3850199e2af3b1f54aeccb190af87c1254e5ad24`, size 15,620,844; body 80,268 indices; zero garment meshes.
 - Lily 5 SHA256: `243074e4ad76ac80672c6f717b2eda435e1e19304758e4e4c9ebf81ec64d4147`, size 16,425,552.
-- Lily 2 checksum to fill **only** after successful export and QA.
+- Lily 2 SHA256: `9fe87b8c47f0a8cd6a2fa50c9eba5d04684c831d207172d5c24f3bc51471bcd6`, size 16,783,396; 69 bones, 77 animation clips, 1.22m final height, matching Lily 3/5 hair and iris texture hashes. `LILY_NATIVE_SITE_CLOTHING_QA.json` structural pass; owner visual QA still pending.
 - Model creation/verification reports: `LILY_NATIVE_SITE_CLOTHING_QA.json`, `LILY_4_TECH_QA.json`. Gown candidate pipeline: [Actions run 41680416469](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/41680416469).
 - Original Lily, archived recovery copies, and original older three outfits are **not** to be overwritten.
 
@@ -29,3 +29,9 @@
 - New models are **not in the game** until separately integrated and approved.
 - Owner rejected original cartoon garments and expects realistic site-fitted clothing. **One-piece gown is a trial only**; do not represent it as the requested genuine sundress without owner acceptance.
 - For any newly approved version, record material IDs, original source commit, SHA256, all movement/fit QA, GitHub Pages preview and a GitHub Issue #29 handoff entry.
+
+## 2026-11-03 12:17 EST automated verification
+- **Current export run:** [41680416469](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/41680416469) **completed successfully** on commit `349949e55e0b62227e4b73f830b5f1105a49f20e`. Earlier [41680383360](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/41680383360) failed because `Lily_2.glb` was absent when its QA step attempted to open it. That failure was superseded by the successful run.
+- All four GLBs exist on this isolated branch; Lily2, Lily3 and Lily5 hashes/bytes recorded in `LILY_NATIVE_SITE_CLOTHING_QA.json`; Lily4 SHA256 `a50727c3900f3cd2410c997c3850199e2af3b1f54aeccb190af87c1254e5ad24`, 15,620,844 bytes, zero garment objects. No game integration or original-master changes.
+- **Lily2 clothing:** original Ara `ankara_gown` pink floral one-piece gown with flutter sleeves, a trial candidate, **NOT a sundress or owner-approved outfit**. No homemade clothing.
+- [Original Pages publish run 41680026573](https://github.com/copperisbetter-lang/Wvlrp/actions/runs/41680026573) succeeded but predates Lily2 preview. Main viewer update commit `848e5d6a9139caf45411c71e60cc302419c17d3c` adds explicit **Lily2 floral gown TRIAL** button and restores **Lily4 skeleton and bounding box ONLY** (no visible child body mesh). Viewer URL: https://wvlrp.com/world-creator/character-previews/lily-20261103/viewer.html ; live availability and model rendering not independently browser-validated at this checkpoint. New deployment run must succeed before treating the update as published.
