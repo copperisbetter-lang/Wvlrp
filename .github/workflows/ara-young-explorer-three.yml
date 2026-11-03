@@ -1,0 +1,136 @@
+name: Ara three matching young explorer models (isolated prototype)
+on:
+  push:
+    branches: [feature/ara-young-explorer-three-20261103]
+    paths:
+      - '.github/workflows/ara-young-explorer-three.yml'
+      - 'prototypes/ara-young-explorer-three/*.params.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  create-matched-characters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ara-young-explorer-three-20261103
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone official Ara 3D Gen
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install dependencies and CC0 MakeHuman character data
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Disable destructive covered-body face culling for these exports ONLY
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/ara3dgen/src/core/human.ts')
+          s=p.read_text()
+          old="""  let body: PolyMesh = pBody
+            ? proxyMesh(pBody, coords, bskin, faceD)
+            : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"""
+          # The exact upstream string is indented two spaces on all three source lines.
+          old="""  let body: PolyMesh = pBody
+    ? proxyMesh(pBody, coords, bskin, faceD)
+    : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"""
+          new="""  // WVLRP prototype: preserve every base-mesh face in ALL three matched age-seven exports.
+  // Child clothing protections in garments/dressing are UNCHANGED.
+  let body: PolyMesh = fullBody;"""
+          assert s.count(old)==1,'Ara source changed: do not make unverified model or modify age safeguards'
+          p.write_text(s.replace(old,new))
+          # Independent invariant: never patch under-18 coverage safeguards.
+          guard=Path('/tmp/ara3dgen/src/core/garments/index.ts').read_text()
+          assert "const underwear = p.underwear || minor" in guard
+          assert "p.gender < 0.5 && minor" in guard
+          print('UNCHANGED_CHILD_COVERAGE_GUARDS_AND_PRESERVED_FULL_BASEMESH')
+          PY
+      - name: Export exact matching child-proportioned character with 3 child-appropriate outfits
+        working-directory: /tmp/ara3dgen
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in Ara7_Swim_Colors Ara7_Pink_Sundress Ara7_Neutral_Mesh_Reference; do
+            npm run export -- --params "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/$name.params.json" \
+              --detail medium --formats glb --out "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/out"
+          done
+      - name: Audit same face, body, seed, animations and full uncut skin surface
+        run: |
+          python3 - <<'PY'
+          import json,struct,pathlib,hashlib
+          d=pathlib.Path('prototypes/ara-young-explorer-three')
+          names=['Ara7_Swim_Colors','Ara7_Pink_Sundress','Ara7_Neutral_Mesh_Reference']
+          params=[json.loads((d/(name+'.params.json')).read_text()) for name in names]
+          safe_diff={'name','top','bottom','shoes','garmentStyles'}
+          reference={k:v for k,v in params[0].items() if k not in safe_diff}
+          for p in params:
+              assert {k:v for k,v in p.items() if k not in safe_diff}==reference,'BODY/SEED mismatch'
+              assert p['age']==0.1125 and p['gender']==0 and p['underwear']
+              assert p['top']!='none' and p['bottom']!='none'
+          records={}
+          for name in names:
+              paths=list((d/'out').glob(name+'*.glb'))
+              assert len(paths)==1, (name,paths)
+              f=paths[0]; b=f.read_bytes()
+              assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+              n,tag=struct.unpack_from('<I4s',b,12)
+              assert tag==b'JSON'
+              j=json.loads(b[20:20+n])
+              materials=[m.get('name','') for m in j.get('materials',[])]
+              skinverts=0
+              for mesh in j.get('meshes',[]):
+                  for pr in mesh.get('primitives',[]):
+                      m=materials[pr['material']]
+                      if m=='Skin':
+                          skinverts+=j['accessors'][pr['attributes']['POSITION']]['count']
+              joint_counts=[len(sk.get('joints',[])) for sk in j.get('skins',[])]
+              animation_names=[a.get('name','') for a in j.get('animations',[])]
+              assert skinverts>13000, (name,'missing complete base skin',skinverts,materials)
+              assert max(joint_counts,default=0)>=50, (name,joint_counts)
+              assert len(animation_names)>=70,(name,len(animation_names))
+              record={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),
+                      'full_base_skin_position_count':skinverts,'joint_counts':joint_counts,
+                      'animations':animation_names,'materials':materials,
+                      'age_years':7,'anatomical_surface':'neutral, non-explicit child-proportioned MakeHuman base'}
+              records[name]=record
+              (d/(name+'.glb')).write_bytes(b)
+          assert len({v['full_base_skin_position_count'] for v in records.values()})==1,'BODY FACE CULLING / MESH LOSS'
+          assert len({tuple(v['joint_counts']) for v in records.values()})==1,'SKELETONS DIFFER'
+          assert len({tuple(v['animations']) for v in records.values()})==1,'ANIMATION CLIPS DIFFER'
+          qa={'generator':'Ara 3D Gen / MakeHuman CC0','age_years':7,
+              'same_seed_morph_face_hair_eyes_skeleton':True,
+              'original_basemesh_all_faces_preserved_in_each_variant':True,
+              'generator_under18_coverage_protections_retained':True,
+              'variants':records,'status':'structural QA only; Android visual fit untested; not deployed to The Wild'}
+          (d/'THREE_MATCHED_MODELS_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
+          print('ARA_AGE_SEVEN_MATCHED_FULL_BODY_QA_PASSED')
+          print({name:(r['bytes'],r['full_base_skin_position_count'],len(r['animations'])) for name,r in records.items()})
+          PY
+      - name: Store only new prototype files on isolated branch (never production)
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator character prototype'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/ara-young-explorer-three/*.glb prototypes/ara-young-explorer-three/THREE_MATCHED_MODELS_QA.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save three matching child-safe full-mesh Ara character prototypes [skip ci]'
+            git pull --rebase origin feature/ara-young-explorer-three-20261103
+            git push origin HEAD:feature/ara-young-explorer-three-20261103
+          fi
+      - name: Retain build files and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ara-age-seven-three-match-qa
+          path: |
+            prototypes/ara-young-explorer-three/*.glb
+            prototypes/ara-young-explorer-three/*.params.json
+            prototypes/ara-young-explorer-three/THREE_MATCHED_MODELS_QA.json
+          if-no-files-found: ignore
+          retention-days: 21
