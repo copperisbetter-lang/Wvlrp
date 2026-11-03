@@ -1,0 +1,277 @@
+{
+  "project": "Bev USA Bikini",
+  "version": 27,
+  "units": "meters",
+  "coordinate_system": "Three.js world XYZ",
+  "note": "Each cup category is a clockwise or counterclockwise perimeter on the actual skin. Fit the new cup fabric flush to these points. Original cups are hidden while marking.",
+  "marks": [
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.12721,
+        1.19672,
+        0.11698
+      ],
+      "surface": [
+        -0.12493,
+        1.19752,
+        0.11762
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.11527,
+        1.17456,
+        0.14161
+      ],
+      "surface": [
+        -0.11359,
+        1.17635,
+        0.14115
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.09656,
+        1.16679,
+        0.15655
+      ],
+      "surface": [
+        -0.09562,
+        1.16845,
+        0.15494
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.06738,
+        1.17079,
+        0.16381
+      ],
+      "surface": [
+        -0.06793,
+        1.17274,
+        0.16234
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.06253,
+        1.1801,
+        0.17011
+      ],
+      "surface": [
+        -0.06305,
+        1.18084,
+        0.16778
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.0617,
+        1.20099,
+        0.17523
+      ],
+      "surface": [
+        -0.06232,
+        1.20106,
+        0.17282
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.05697,
+        1.23344,
+        0.16811
+      ],
+      "surface": [
+        -0.05737,
+        1.2326,
+        0.16579
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.06195,
+        1.26857,
+        0.1509
+      ],
+      "surface": [
+        -0.06197,
+        1.26735,
+        0.14872
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.06425,
+        1.29277,
+        0.13864
+      ],
+      "surface": [
+        -0.06398,
+        1.29159,
+        0.13645
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.12753,
+        1.2166,
+        0.14082
+      ],
+      "surface": [
+        -0.12531,
+        1.21672,
+        0.13968
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Left cup boundary",
+      "position": [
+        -0.12926,
+        1.20523,
+        0.13676
+      ],
+      "surface": [
+        -0.12692,
+        1.2053,
+        0.1359
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.06592,
+        1.19184,
+        0.17463
+      ],
+      "surface": [
+        0.06644,
+        1.19258,
+        0.1723
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.08708,
+        1.18835,
+        0.17401
+      ],
+      "surface": [
+        0.08666,
+        1.18915,
+        0.17168
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.10884,
+        1.19251,
+        0.16521
+      ],
+      "surface": [
+        0.10732,
+        1.19323,
+        0.16336
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.12505,
+        1.19963,
+        0.14512
+      ],
+      "surface": [
+        0.1229,
+        1.19961,
+        0.14383
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.12103,
+        1.23943,
+        0.14368
+      ],
+      "surface": [
+        0.11915,
+        1.23872,
+        0.14219
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.10366,
+        1.27806,
+        0.13605
+      ],
+      "surface": [
+        0.10268,
+        1.27694,
+        0.13404
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.06382,
+        1.2126,
+        0.17609
+      ],
+      "surface": [
+        0.06451,
+        1.21261,
+        0.17369
+      ],
+      "mesh": "base001"
+    },
+    {
+      "category": "Right cup boundary",
+      "position": [
+        0.05876,
+        1.19862,
+        0.17441
+      ],
+      "surface": [
+        0.05938,
+        1.19869,
+        0.17199
+      ],
+      "mesh": "base001"
+    }
+  ],
+  "created": "2026-11-03T03:34:29.308Z",
+  "checkpoint_note": "Exact owner-provided cup boundary markers. The newer approved USA V27 full model source/HTML was NOT available; do not publish or claim that these are installed cups. Older teal V27 Library model is a different garment/body surface (up to ~12mm mismatch on samples) and is reference only. Preserve approved bottoms and straps. Build cups flush to actual mesh base001 once exact latest source is available. A slim cloth clearance along local outward normals; retain boundary shape and do not reshape bust."
+}
