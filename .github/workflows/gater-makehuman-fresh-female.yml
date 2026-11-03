@@ -1,0 +1,88 @@
+name: WVLRP Fresh MakeHuman Female Reference
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gater-makehuman-fresh-female.yml'
+  push:
+    branches:
+      - 'gater/makehuman-fresh-round-fit-20261030'
+jobs:
+  build-fresh-female:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build untouched adult female from official MakeHuman CC0 source
+        shell: bash
+        run: |
+          python -m pip install --quiet numpy trimesh
+          mkdir -p output
+          cat > /tmp/build_fresh_mh.py <<'PY'
+          from pathlib import Path
+          import hashlib,json,urllib.request
+          import trimesh
+          BASE_URL = 'https://raw.githubusercontent.com/makehumancommunity/makehuman/master/makehuman/data/'
+          inputs = {
+            'base': '3dobjs/base.obj',
+            'caucasian': 'targets/macrodetails/caucasian-female-young.target',
+            'asian': 'targets/macrodetails/asian-female-young.target',
+            'african': 'targets/macrodetails/african-female-young.target',
+          }
+          raw={}
+          for key, path in inputs.items():
+              with urllib.request.urlopen(BASE_URL+path,timeout=90) as response:
+                  raw[key]=response.read()
+              assert len(raw[key])>100000, (key,'too small')
+          points=[]
+          faces=[]
+          for line in raw['base'].decode('utf-8').splitlines():
+              if line.startswith('v '):
+                  points.append([float(t) for t in line.split()[1:4]])
+              if line.startswith('f '):
+                  inds=[int(t.split('/')[0])-1 for t in line.split()[1:]]
+                  if inds and min(inds)>=0 and max(inds)<13380:
+                      faces.append(inds)
+          assert len(points)==19158,(len(points),'unexpected official vertex count')
+          for key in ('caucasian','asian','african'):
+              for line in raw[key].decode('utf-8').splitlines():
+                  if not line or line.startswith('#'):
+                      continue
+                  tok=line.split()
+                  if len(tok)<4:continue
+                  idx=int(tok[0])
+                  for j in range(3):
+                      points[idx][j]+=float(tok[j+1])/3.0
+          out=Path('output/MakeHuman_Fresh_Adult_Female_Uncut.obj')
+          with out.open('w') as f:
+              f.write('# CC0 MakeHuman official base + equal young adult female macro target weights\n')
+              for p in points[:13380]:
+                  f.write('v '+ ' '.join(format(v,'.8f') for v in p)+'\n')
+              for face in faces:
+                  f.write('f '+' '.join(str(i+1) for i in face)+'\n')
+          mesh=trimesh.load(str(out),force='mesh',process=False)
+          assert mesh.is_watertight,'source body is not closed'
+          assert len(mesh.vertices)==13380, 'source topology mismatch'
+          manifest={
+            'status':'FRESH_UNCUT_ADULT_FEMALE_REFERENCE_ONLY',
+            'source':'official MakeHuman CC0', 'original_vertices':len(points),
+            'clone_body_vertices':len(mesh.vertices),'clone_triangles':len(mesh.faces),
+            'watertight':mesh.is_watertight,'unit_scale_to_mm':100,
+            'axes':'X lateral; Y up; Z forward',
+            'morph_weights':{s:1/3 for s in ('caucasian','asian','african')},
+            'source_sha256':{key:hashlib.sha256(data).hexdigest() for key,data in raw.items()},
+            'obj_sha256':hashlib.sha256(out.read_bytes()).hexdigest(),
+            'bounds_native':mesh.bounds.tolist(),
+          }
+          Path('output/MakeHuman_Fresh_Adult_Female_Uncut.manifest.json').write_text(json.dumps(manifest,indent=2))
+          print(json.dumps(manifest,indent=2))
+          PY
+          python /tmp/build_fresh_mh.py
+      - name: Upload official source clone for local private fitting
+        uses: actions/upload-artifact@v4
+        with:
+          name: makehuman-fresh-female-uncut
+          path: output/*
+          retention-days: 2
