@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ara 7 • Three matching outfits</title>
+<title>Age 7 • corrected character and outfits</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}
 body{margin:0;background:#111b27;color:#f5f6fa;font:14px system-ui}
@@ -12,10 +12,10 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head><body>
-<header><h1>Young Explorer • matching Ara 3D models</h1>
-<p>Age-seven character, dusty blonde hair, green eyes. Same body and rig in each view; full body mesh preserved. All versions are age-appropriate.</p></header>
+<header><h1>Young Explorer • age 7 corrected model</h1>
+<p>Rebuilt age-seven character: shorter child proportions, actual dusty-blonde hair texture, light green eyes, a proper one-piece swimsuit, and simple outfits. Same complete body and rig in all three views.</p></header>
 <div id="canvas"></div>
-<footer><button data-name="Ara7_Swim_Colors" aria-pressed="true">Bright swim set</button>
+<footer><button data-name="Ara7_Swim_Colors" aria-pressed="true">One-piece swimsuit</button>
 <button data-name="Ara7_Pink_Sundress" aria-pressed="false">Pink sundress</button>
 <button data-name="Ara7_Neutral_Mesh_Reference" aria-pressed="false">Plain reference</button>
 <select id="clip"><option value="">Standing pose</option></select><button id="recenter">Recenter</button></footer>
@@ -24,7 +24,7 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-const dir='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/ara-young-explorer-three-20261103/prototypes/ara-young-explorer-three/';
+const dir='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/ara-young-explorer-correct-seven-20261103/prototypes/ara-young-explorer-three/';
 const panel=document.getElementById('canvas'),msg=document.getElementById('msg'),chooser=document.getElementById('clip');
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power',alpha:false});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -50,7 +50,7 @@ async function show(name){
   msg.textContent='Loading '+name.replaceAll('_',' ')+'…';
   if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
   chooser.innerHTML='<option value="">Standing pose</option>';
-  try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
+  try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb?version=age7-rebuild-20261103',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
   active=gltf.scene;scene.add(active);clips=gltf.animations||[];mixer=new THREE.AnimationMixer(active);
   for(const clip of clips.filter(c=>/^(Idle|Walk|Run|Wave|Young Explorer (Idle|Walk|Run|Wave))$/i.test(c.name))) {
     let o=document.createElement('option');o.value=clip.name;o.textContent=clip.name;chooser.appendChild(o);
