@@ -37,6 +37,7 @@ import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installBeverlyShorelineWalk} from './beverly-shoreline-npc.js?v=20261103';
+import {installGinaLocomotion} from './beverly-gina-locomotion.js?v=20261103b';
 import {installMasonPlayer} from './stacey-mason-player.js';
 import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
@@ -1193,6 +1194,11 @@ gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).h
  const mixer=new T.AnimationMixer(model);mixer.clipAction(clip).setLoop(T.LoopRepeat,Infinity).play();model.userData.beverlyWalkMixer=mixer;
  beverlyNPC=installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY:ground,lake:{x:CX,z:CZ}});
  window.beverlyShoreline=beverlyNPC;diag.assets.Beverly='walking shoreline';
+ // Transfer Gina's walk/run motion only; preserve the certified Beverly mesh.
+ // Existing approved walk remains active if transfer cannot be validated.
+ installGinaLocomotion({THREE:T,loader:gltf,model,mixer,baseClip:clip,onStatus:msg=>{diag.assets.Beverly=msg;}})
+ .then(result=>{window.beverlyGinaMotion=result;diag.assets.Beverly='Gina walk integrated ('+result.state.walkJoints+' joints)';})
+ .catch(error=>{diag.errors.push('Gina locomotion fallback: '+String(error?.message||error));diag.assets.Beverly='approved walk (Gina fallback)';});
 },undefined,error=>{diag.assets.Beverly='FAILED';diag.errors.push('Beverly: '+String(error?.message||error));});
 
 const playerAvatar='Mason';let chaseCamera=true;
