@@ -5,6 +5,7 @@ on:
       - feature/lily-2-to-5-site-dressed-20261103
     paths:
       - '.github/workflows/lily-site-native.yml'
+      - 'prototypes/ara-young-explorer-three/Lily_2.params.json'
       - 'prototypes/ara-young-explorer-three/Lily_3.params.json'
       - 'prototypes/ara-young-explorer-three/Lily_4.params.json'
       - 'prototypes/ara-young-explorer-three/Lily_5.params.json'
@@ -48,7 +49,7 @@ jobs:
           src=Path('/tmp/ara3dgen/src/core/garments')
           catalog=''.join(p.read_text() for p in src.glob('*.ts'))
           base=Path('prototypes/ara-young-explorer-three')
-          for name,top,bottom in (('Lily_3','oversized_tee','cargo_shorts'),('Lily_4','tank_top','cargo_shorts'),('Lily_5','fatigue_shirt','fatigue_pants')):
+          for name,top,bottom in (('Lily_2','ankara_gown','briefs'),('Lily_3','oversized_tee','cargo_shorts'),('Lily_4','tank_top','cargo_shorts'),('Lily_5','fatigue_shirt','fatigue_pants')):
               p=json.loads((base/(name+'.params.json')).read_text())
               assert p['age']==0.1125 and p['gender']==0 and p['underwear']
               assert p['hair']=='long01' and p['eyes']=='green'
@@ -62,7 +63,7 @@ jobs:
         working-directory: /tmp/ara3dgen
         run: |
           set -euo pipefail
-          for name in Lily_3 Lily_4 Lily_5; do
+          for name in Lily_2 Lily_3 Lily_4 Lily_5; do
             npm run export -- \
               --params "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/${name}.params.json" \
               --detail medium --formats glb \
@@ -78,13 +79,14 @@ jobs:
           set -euo pipefail
           git config user.name 'Gator Lily Native Export'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add prototypes/ara-young-explorer-three/Lily_3.glb \
+          git add prototypes/ara-young-explorer-three/Lily_2.glb \
+                  prototypes/ara-young-explorer-three/Lily_3.glb \
                   prototypes/ara-young-explorer-three/Lily_4.glb \
                   prototypes/ara-young-explorer-three/Lily_5.glb \
                   prototypes/ara-young-explorer-three/LILY_NATIVE_SITE_CLOTHING_QA.json \
                   prototypes/ara-young-explorer-three/LILY_4_TECH_QA.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Save rigged Lily 3, Lily 4 and Lily 5 with official Ara-fitted outfits [skip ci]'
+            git commit -m 'Save rigged Lily 2 3 4 5 with native fitted outfits and technical mesh [skip ci]'
             git pull --rebase origin feature/lily-2-to-5-site-dressed-20261103
             git push origin HEAD:feature/lily-2-to-5-site-dressed-20261103
           fi
