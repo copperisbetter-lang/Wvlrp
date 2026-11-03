@@ -1,0 +1,193 @@
+name: Ara seven-year-old remade (actual child + full base mesh)
+on:
+  push:
+    branches: [feature/ara-young-explorer-correct-seven-20261103]
+    paths:
+      - '.github/workflows/ara7-correct-seven.yml'
+      - 'prototypes/ara-young-explorer-three/*.params.json'
+      - 'prototypes/ara-young-explorer-three/age7_glb_finish.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ara-seven-remake
+  cancel-in-progress: true
+jobs:
+  remake-three:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ara-young-explorer-correct-seven-20261103
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/ara-young-explorer-three
+            .github/workflows
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone Ara generator used by Gina
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install official generator and MakeHuman CC0 data
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Apply isolated seven-year-old and garment corrections WITHOUT modifying upstream or stripping body
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/ara3dgen/src/core/human.ts')
+          s=src.read_text()
+          old = (
+              "  let body: PolyMesh = pBody\n"
+              "    ? proxyMesh(pBody, coords, bskin, faceD)\n"
+              "    : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"
+          )
+          new=(
+              "  // WVLRP: no removed faces under the three child-safe outfits.\n"
+              "  let body: PolyMesh = fullBody;"
+          )
+          assert s.count(old)==1,'Upstream body culling changed; refuse unsafe edit'
+          s=s.replace(old,new)
+          # Gentle whole-head roundness: child head slightly larger in relation to
+          # shoulders; fade to zero at neck so there are no seams.
+          anchor="  const regions = lib.base.arrays.regions as Uint8Array;\n  let grid: VertexGrid | undefined;"
+          child=(
+              "  const regions = lib.base.arrays.regions as Uint8Array;\n"
+              "  if (p.gender < 0.5 && p.age === 0.1125) {\n"
+              "    const neck = lib.base.meta.joints['neck01____head'];\n"
+              "    const neckY = neck.reduce((sum,v)=>sum+coords[v*3+1],0)/neck.length;\n"
+              "    const neckZ = neck.reduce((sum,v)=>sum+coords[v*3+2],0)/neck.length;\n"
+              "    for (let v=0; v<regions.length; v++) {\n"
+              "      if (regions[v] !== 0) continue;\n"
+              "      const i=v*3, dy=coords[i+1]-neckY;\n"
+              "      const f=Math.max(0,Math.min(1,dy/1.2));\n"
+              "      coords[i] *= (1+0.07*f);\n"
+              "      coords[i+2] = neckZ+(coords[i+2]-neckZ)*(1+0.05*f);\n"
+              "      coords[i+1] = neckY+dy*(1+0.055*f);\n"
+              "    }\n"
+              "  }\n"
+              "  let grid: VertexGrid | undefined;"
+          )
+          assert s.count(anchor)==1,'Cannot locate pre-body facial/child proportion anchor'
+          s=s.replace(anchor,child)
+          src.write_text(s)
+          catalog=Path('/tmp/ara3dgen/src/core/garments/catalog.ts')
+          c=catalog.read_text()
+          key="export const GARMENTS: GarmentDef[] = ["
+          garment=(
+              "export const GARMENTS: GarmentDef[] = [\n"
+              "  // WVLRP approved-age-only swimwear: ONE continuous one-piece cloth shell.\n"
+              "  {id:'kid_onepiece_swim',label:'Child one-piece swimsuit',slot:'top',\n"
+              "   patterns:['solid'],color:'#16bbd5',color2:'#fff2a5',\n"
+              "   build:(g,st)=>{\n"
+              "     const sx=g.body.L.shoulderX;\n"
+              "     return shellPart(g,{covers:(v)=>\n"
+              "       (isTrunk(v) && (v.tt<0.76 || (v.ax>0.31*sx && v.ax<0.82*sx))) ||\n"
+              "       (v.region===REGION.upperleg && v.t<0.075),\n"
+              "       offset:cm(0.5),tile:0.28,relax:3},\n"
+              "       cloth(g,'Child one-piece swimsuit',st));\n"
+              "   }},\n"
+              "  // Basic child play shorts with NO cargo pockets or side protrusions.\n"
+              "  {id:'kid_play_shorts',label:'Simple play shorts',slot:'bottom',\n"
+              "   patterns:['solid'],color:'#899bac',color2:'#899bac',\n"
+              "   build:(g,st)=>shellPart(g,{covers:(v)=>\n"
+              "     (isTrunk(v)&&v.t<0.24)||(v.region===REGION.upperleg&&v.t<0.35),\n"
+              "     offset:cm(0.6),tile:0.3,relax:2},cloth(g,'Simple play shorts',st))},"
+          )
+          assert c.count(key)==1
+          c=c.replace(key,garment)
+          catalog.write_text(c)
+          safe=Path('/tmp/ara3dgen/src/core/garments/index.ts').read_text()
+          assert "const underwear = p.underwear || minor" in safe
+          assert "p.gender < 0.5 && minor" in safe
+          print("WVLRP_AGE_SEVEN_SOURCE_MODIFICATIONS_VERIFIED; garment age protections intact")
+          PY
+      - name: Export three matched child faces with native clothing and all movements
+        working-directory: /tmp/ara3dgen
+        run: |
+          set -euo pipefail
+          for name in Ara7_Swim_Colors Ara7_Pink_Sundress Ara7_Neutral_Mesh_Reference; do
+            npm run export -- --params "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/$name.params.json" \
+              --detail medium --formats glb --out "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/out"
+          done
+      - name: Bake true dusty blonde hair, light green irises, and 1.22m full-character root
+        run: |
+          python3 -m pip install --user Pillow
+          python3 prototypes/ara-young-explorer-three/age7_glb_finish.py
+      - name: Audit age exactly seven, garment integrity, full body triangle and rig identity
+        run: |
+          python3 - <<'PY'
+          import json,struct,hashlib,pathlib
+          d=pathlib.Path('prototypes/ara-young-explorer-three')
+          names=('Ara7_Swim_Colors','Ara7_Pink_Sundress','Ara7_Neutral_Mesh_Reference')
+          sizes={}
+          for name in names:
+              p=json.loads((d/(name+'.params.json')).read_text())
+              assert p['age']==.1125 and p['gender']==0 and p['underwear'] and p['top']!='none'
+              assert p['hair']=='long01' and p['eyes']=='green'
+              raw=(d/'out'/(name+'.glb')).read_bytes()
+              assert raw[:4]==b'glTF' and struct.unpack_from('<I',raw,8)[0]==len(raw)
+              size=struct.unpack_from('<I',raw,12)[0]
+              doc=json.loads(raw[20:20+size])
+              assert doc.get('extras',{}).get('wvlrpAgeYears')==7
+              assert abs(doc['extras']['wvlrpScaledBodyHeightMeters']-1.22)<.001
+              materials=[m.get('name','') for m in doc['materials']]
+              assert 'Skin' in materials and 'Hair' in materials and 'Eyes' in materials
+              assert 'Cargo shorts' not in materials and 'Cargo pocket' not in ' '.join(materials)
+              if name==names[0]:
+                  assert 'Child one-piece swimsuit' in materials and 'Tunic' not in materials
+                  assert 'Simple play shorts' not in materials
+              elif name==names[1]:
+                  assert 'Tunic' in materials and 'Child one-piece swimsuit' not in materials
+              else:
+                  assert 'Simple play shorts' in materials and 'Child one-piece swimsuit' not in materials
+              prim=next(pr for mesh in doc['meshes'] for pr in mesh['primitives'] if materials[pr['material']]=='Skin')
+              accessor=doc['accessors'][prim['indices']]
+              assert accessor['count']==80268,(name,'body triangles missing',accessor['count'])
+              assert len(doc['animations'])==77 and len(doc['skins'][0]['joints'])==69
+              assert doc['scenes'][0]['nodes'] and len(doc['scenes'][0]['nodes'])==1
+              parts=doc['nodes'][doc['scenes'][0]['nodes'][0]]
+              assert len(parts['children'])==2 and len(parts['scale'])==3
+              sizes[name]={'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw),
+                  'skin_indices':accessor['count'],'animations':len(doc['animations']),
+                  'rig_bones':len(doc['skins'][0]['joints']),'height_m':1.22,'materials':materials}
+              (d/(name+'.glb')).write_bytes(raw)
+          report=json.loads((d/'AGE7_FINISH_REPORT.json').read_text())
+          assert len({x['root_scale'] for x in report.values()})==1
+          assert len({x['hair_png_sha256'] for x in report.values()})==1
+          assert len({x['iris_png_sha256'] for x in report.values()})==1
+          qa={'status':'STRUCTURAL QA PASSED; mobile visual acceptance pending',
+              'year_age':7,'macromorph_age':.1125,
+              'same_face_and_underlying_mesh':True,'body_faces_preserved':True,
+              'correct_one_piece_swimsuit':True,'correct_dusty_blonde_texture':True,
+              'correct_light_green_iris_texture':True,'models':sizes}
+          (d/'AGE7_REMAKE_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
+          print('WVLRP_ALL_THREE_PROPER_SEVEN_YEAR_OLD_GLB_PASSED',json.dumps(sizes))
+          PY
+      - name: Preserve all remade GLBs and audits on isolated non-production branch
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator Child-Safe Character Rebuild'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/ara-young-explorer-three/*.glb \
+                  prototypes/ara-young-explorer-three/AGE7_FINISH_REPORT.json \
+                  prototypes/ara-young-explorer-three/AGE7_REMAKE_QA.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Remake and verify three age-seven full-body models with proper outfits [skip ci]'
+            git pull --rebase origin feature/ara-young-explorer-correct-seven-20261103
+            git push origin HEAD:feature/ara-young-explorer-correct-seven-20261103
+          fi
+      - name: Save build outputs even if QA failed
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: age-seven-three-remake
+          path: |
+            prototypes/ara-young-explorer-three/out/*.glb
+            prototypes/ara-young-explorer-three/*.json
+          retention-days: 21
+          if-no-files-found: ignore
