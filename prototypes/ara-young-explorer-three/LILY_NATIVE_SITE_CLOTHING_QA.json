@@ -1,0 +1,42 @@
+{
+  "Lily_3": {
+    "status": "STRUCTURAL PASS; owner visual QA pending",
+    "sha256": "e1b988e6509ebb91c2eb71621e363a3b684a25b62e93eb3f756bbfc15b18837e",
+    "bytes": 16325196,
+    "body_indices": 80268,
+    "bones": 69,
+    "animations": 77,
+    "official_website_clothing": [
+      "Oversized tee",
+      "Cargo shorts"
+    ],
+    "finish": {
+      "raw_body_height_m": 1.23691,
+      "root_scale": 0.9863292,
+      "final_body_height_m": 1.22,
+      "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+      "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+      "bytes": 16325196
+    }
+  },
+  "Lily_5": {
+    "status": "STRUCTURAL PASS; owner visual QA pending",
+    "sha256": "243074e4ad76ac80672c6f717b2eda435e1e19304758e4e4c9ebf81ec64d4147",
+    "bytes": 16425552,
+    "body_indices": 80268,
+    "bones": 69,
+    "animations": 77,
+    "official_website_clothing": [
+      "Fatigue shirt",
+      "Fatigue pants"
+    ],
+    "finish": {
+      "raw_body_height_m": 1.23691,
+      "root_scale": 0.9863292,
+      "final_body_height_m": 1.22,
+      "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+      "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+      "bytes": 16425552
+    }
+  }
+}
