@@ -25,17 +25,40 @@ jobs:
             prototypes/ara-young-explorer-three
             .github/workflows
           persist-credentials: true
+      - name: Restore completed child-safe model exports from prior audit run
+        id: recover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p prototypes/ara-young-explorer-three/out /tmp/ara7-recover
+          if gh run download 41664724099 --repo "$GITHUB_REPOSITORY" --name age-seven-three-remake -D /tmp/ara7-recover; then
+            for model in Ara7_Swim_Colors Ara7_Pink_Sundress Ara7_Neutral_Mesh_Reference; do
+              test -s "/tmp/ara7-recover/out/$model.glb"
+              cp "/tmp/ara7-recover/out/$model.glb" "prototypes/ara-young-explorer-three/out/$model.glb"
+            done
+            cp /tmp/ara7-recover/AGE7_FINISH_REPORT.json prototypes/ara-young-explorer-three/AGE7_FINISH_REPORT.json
+            echo 'restored=true' >> "$GITHUB_OUTPUT"
+            echo 'Using already finished, age-seven dressed models; repair scale against indexed skin only.'
+          else
+            echo 'restored=false' >> "$GITHUB_OUTPUT"
+            echo 'Archive unavailable; building models from source instead.'
+          fi
       - uses: actions/setup-node@v4
+        if: steps.recover.outputs.restored != 'true'
         with:
           node-version: '22'
       - name: Clone Ara generator used by Gina
+        if: steps.recover.outputs.restored != 'true'
         run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
       - name: Install official generator and MakeHuman CC0 data
+        if: steps.recover.outputs.restored != 'true'
         working-directory: /tmp/ara3dgen
         run: |
           npm ci
           npm run setup-assets
       - name: Apply isolated seven-year-old and garment corrections WITHOUT modifying upstream or stripping body
+        if: steps.recover.outputs.restored != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -107,6 +130,7 @@ jobs:
           print("WVLRP_AGE_SEVEN_SOURCE_MODIFICATIONS_VERIFIED; garment age protections intact")
           PY
       - name: Export three matched child faces with native clothing and all movements
+        if: steps.recover.outputs.restored != 'true'
         working-directory: /tmp/ara3dgen
         run: |
           set -euo pipefail
@@ -115,9 +139,13 @@ jobs:
               --detail medium --formats glb --out "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/out"
           done
       - name: Bake true dusty blonde hair, light green irises, and 1.22m full-character root
+        if: steps.recover.outputs.restored != 'true'
         run: |
           python3 -m pip install --user Pillow
           python3 prototypes/ara-young-explorer-three/age7_glb_finish.py
+      - name: Correct recovered model height without touching hair, eyes, body, or outfits
+        if: steps.recover.outputs.restored == 'true'
+        run: python3 prototypes/ara-young-explorer-three/age7_repair_existing.py
       - name: Audit age exactly seven, garment integrity, full body triangle and rig identity
         run: |
           python3 - <<'PY'
