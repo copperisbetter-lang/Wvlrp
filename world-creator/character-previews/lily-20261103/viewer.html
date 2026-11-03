@@ -202,7 +202,7 @@ async function applyDressInspection(){
 }
 document.getElementById('removeDress').onclick=()=>{if(selectedName!=='Lily_2'||!active)return;dressRemoved=!dressRemoved;applyDressInspection();};
 async function show(name){
-  const rid=++requestId;selectedName=name;dressRemoved=false;document.getElementById('removeDress').disabled=name!=='Lily_2';document.getElementById('removeDress').setAttribute('aria-pressed','false');document.getElementById('removeDress').textContent='Remove dress • mesh QA';document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
+  const rid=++requestId;selectedName=name;dressRemoved=false;document.getElementById('removeDress').disabled=name!=='Lily_2';document.getElementById('removeDress').setAttribute('aria-pressed','false');document.getElementById('removeDress').textContent='Inspect body proportions';document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
   msg.textContent='Loading '+name.replaceAll('_',' ')+'…';
   clearInspection();if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
   chooser.innerHTML='<option value="">Standing pose</option>';
