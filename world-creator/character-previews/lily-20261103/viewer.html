@@ -4,7 +4,7 @@
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}
 body{margin:0;background:#111b27;color:#f5f6fa;font:14px system-ui}
-header{padding:10px 14px}h1{font-size:18px;margin:0 0 5px}p{margin:0;color:#bacada}
+header{padding:10px 14px}#removeDress{display:block;width:100%;margin:9px 0 4px;background:#146c85;border:2px solid #7be5f0;font-weight:750;min-height:48px}#removeDress:disabled{opacity:.55}h1{font-size:18px;margin:0 0 5px}p{margin:0;color:#bacada}
 #canvas{width:100%;height:calc(100dvh - 174px);min-height:300px;touch-action:none}
 footer{display:flex;flex-wrap:wrap;gap:8px;padding:9px 12px}
 button,select{font:inherit;color:white;background:#304556;border:1px solid #687f95;border-radius:7px;padding:9px 10px}
@@ -12,13 +12,13 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head><body>
-<header><h1>Lily 2–5 • build preview</h1>
+<header><h1>Lily 2–5 • build preview</h1><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button>
 <p>Lily 2 is a <strong>trial pink floral Ankara one-piece gown</strong> from the original Ara catalog, not an approved sundress. Lily 3: T-shirt/shorts. Lily 5: hiking clothes. Lily 4: safe technical skeleton and measurement box only. All visual approvals pending.</p></header>
 <div id="canvas"></div>
 <footer><button data-name="Lily_2" aria-pressed="false">Lily 2 • Floral gown TRIAL</button><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
 <button data-name="Lily_4" aria-pressed="false">Lily 4 • Technical rig</button>
 <button data-name="Lily_5" aria-pressed="false">Lily 5 • Hiking clothes</button>
-<select id="clip"><option value="">Standing pose</option></select><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button><button id="recenter">Recenter</button></footer>
+<select id="clip"><option value="">Standing pose</option></select><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="recenter">Recenter</button></footer>
 <div id="msg">Loading character…</div>
 <script type="module">
 import * as THREE from 'three';
@@ -103,5 +103,5 @@ async function show(name){
 }
 for(const b of document.querySelectorAll('[data-name]'))b.onclick=()=>show(b.dataset.name);
 function draw(){requestAnimationFrame(draw);const dt=Math.min(.07,clock.getDelta());if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera)}
-draw();show('Lily_3');
+draw();show('Lily_2');
 </script></body></html>
