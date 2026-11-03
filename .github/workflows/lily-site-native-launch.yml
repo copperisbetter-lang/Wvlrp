@@ -1,0 +1,91 @@
+name: Lily website-native dressed exports launch
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lily-site-native-launch.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: lily-site-native-dressed-20261103
+  cancel-in-progress: false
+jobs:
+  export-website-dressed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/lily-2-to-5-site-dressed-20261103
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/ara-young-explorer-three
+            .github/workflows
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download official Ara 3D Gen source (same generator as Gina)
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install official character generator and original MakeHuman assets
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Verify source outfit selection and child-safe params before generating
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path('/tmp/ara3dgen/src/core/garments')
+          catalog=''.join(p.read_text() for p in src.glob('*.ts'))
+          base=Path('prototypes/ara-young-explorer-three')
+          for name,top,bottom in (('Lily_3','oversized_tee','cargo_shorts'),('Lily_5','fatigue_shirt','fatigue_pants')):
+              p=json.loads((base/(name+'.params.json')).read_text())
+              assert p['age']==0.1125 and p['gender']==0 and p['underwear']
+              assert p['hair']=='long01' and p['eyes']=='green'
+              assert p['top']==top and p['bottom']==bottom
+              assert "id: '"+top+"'" in catalog and "id: '"+bottom+"'" in catalog
+              print('VERIFIED ORIGINAL ARA GARMENT CATALOG',name,top,bottom)
+          PY
+      - name: Preserve every body vertex and exactly approved Lily child proportions
+        run: python3 prototypes/ara-young-explorer-three/lily_site_native.py patch
+      - name: Official generator applies each built-in outfit BEFORE GLB export
+        working-directory: /tmp/ara3dgen
+        run: |
+          set -euo pipefail
+          for name in Lily_3 Lily_5; do
+            npm run export -- \
+              --params "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/${name}.params.json" \
+              --detail medium --formats glb \
+              --out "$GITHUB_WORKSPACE/prototypes/ara-young-explorer-three/out"
+          done
+      - name: Restore approved Lily hair color, iris and height; validate all game assets
+        run: |
+          python3 -m pip install --user Pillow
+          python3 prototypes/ara-young-explorer-three/lily_site_native.py finish
+      - name: Permanently save and hash website-native dressed exports
+        run: |
+          set -euo pipefail
+          git config user.name 'Gator Lily Native Export'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/ara-young-explorer-three/Lily_3.glb \
+                  prototypes/ara-young-explorer-three/Lily_5.glb \
+                  prototypes/ara-young-explorer-three/LILY_NATIVE_SITE_CLOTHING_QA.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save rigged Lily 3 and Lily 5 with official Ara-fitted outfits [skip ci]'
+            git pull --rebase origin feature/lily-2-to-5-site-dressed-20261103
+            git push origin HEAD:feature/lily-2-to-5-site-dressed-20261103
+          fi
+      - name: Save independent workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lily-site-native-dressed
+          path: |
+            prototypes/ara-young-explorer-three/out/Lily_*.glb
+            prototypes/ara-young-explorer-three/LILY_NATIVE_SITE_CLOTHING_QA.json
+          retention-days: 21
+          if-no-files-found: ignore
