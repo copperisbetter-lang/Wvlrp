@@ -25,38 +25,6 @@ function makeClip(T,sourceRoot,targetRoot,sourceClip,newName){
   }
   tracks.push(new T.QuaternionKeyframeTrack(to.name+'.quaternion',tr.times.slice(),values));
  }
- // Normalize unequal left/right thigh excursions conservatively.
- // This fixes the observed long-left/short-right step without altering
- // Beverly's mesh or using arbitrary per-leg rotation offsets.
- const thighs={};
- for(const tr of tracks){
-  const joint=tr.name.slice(0,-'.quaternion'.length);
-  const role=semantic(joint);
-  if(role!=='leftupleg'&&role!=='rightupleg')continue;
-  const bone=dst.find(b=>b.name===joint);if(!bone)continue;
-  const rest=bone.quaternion.clone(),inverse=rest.clone().invert(),pose=new T.Quaternion();
-  let peak=0;
-  for(let i=0;i<tr.values.length;i+=4){
-   pose.fromArray(tr.values,i);peak=Math.max(peak,2*Math.acos(Math.min(1,Math.abs(inverse.clone().multiply(pose).w))));
-  }
-  thighs[role]={tr,rest,peak};
- }
- if(thighs.leftupleg&&thighs.rightupleg){
-  const left=thighs.leftupleg,right=thighs.rightupleg;
-  const targetPeak=Math.min(left.peak,right.peak);
-  // Only reduce an excessive thigh swing, never amplify a weak leg into
-  // potential overextension or joint inversion.
-  for(const side of [left,right]){
-   const factor=side.peak>.01?Math.min(1,targetPeak/side.peak):1;
-   if(factor>.995)continue;
-   const pose=new T.Quaternion(),adjusted=new T.Quaternion();
-   for(let i=0;i<side.tr.values.length;i+=4){
-    pose.fromArray(side.tr.values,i);
-    adjusted.copy(side.rest).slerp(pose,factor).normalize();
-    adjusted.toArray(side.tr.values,i);
-   }
-  }
- }
  if(tracks.length<4)throw Error('Too few compatible joints for '+newName+': '+tracks.length);
  return {clip:new T.AnimationClip(newName,sourceClip.duration,tracks),jointCount:tracks.length};
 }
