@@ -1,0 +1,75 @@
+{
+  "status": "STRUCTURAL QA PASSED; mobile visual acceptance pending",
+  "year_age": 7,
+  "macromorph_age": 0.1125,
+  "same_face_and_underlying_mesh": true,
+  "body_faces_preserved": true,
+  "correct_one_piece_swimsuit": true,
+  "correct_dusty_blonde_texture": true,
+  "correct_light_green_iris_texture": true,
+  "models": {
+    "Ara7_Swim_Colors": {
+      "sha256": "46bd11d4bd40fc6932f67b7394e5c86e518a9a8ac44b9c7b10fc70e9c64c1d5d",
+      "bytes": 15753768,
+      "skin_indices": 80268,
+      "animations": 77,
+      "rig_bones": 69,
+      "height_m": 1.22,
+      "materials": [
+        "Skin",
+        "Skin details",
+        "Eyes",
+        "Eyebrows",
+        "Eyelashes",
+        "Teeth",
+        "Tongue",
+        "Briefs",
+        "Child one-piece swimsuit",
+        "Hair"
+      ]
+    },
+    "Ara7_Pink_Sundress": {
+      "sha256": "a73201b180aa7bc48e73213d57b4b5bf6ee2da9b5afb8da16476bcb12b599f9a",
+      "bytes": 16611240,
+      "skin_indices": 80268,
+      "animations": 77,
+      "rig_bones": 69,
+      "height_m": 1.22,
+      "materials": [
+        "Skin",
+        "Skin details",
+        "Eyes",
+        "Eyebrows",
+        "Eyelashes",
+        "Teeth",
+        "Tongue",
+        "Briefs",
+        "Tunic",
+        "Tunic",
+        "Sandal soles",
+        "Sandal straps",
+        "Hair"
+      ]
+    },
+    "Ara7_Neutral_Mesh_Reference": {
+      "sha256": "c37f5fb423c23c6b13a5b5f35b67b117835ab9396149d45a5d0bfc133f5db5c6",
+      "bytes": 15755856,
+      "skin_indices": 80268,
+      "animations": 77,
+      "rig_bones": 69,
+      "height_m": 1.22,
+      "materials": [
+        "Skin",
+        "Skin details",
+        "Eyes",
+        "Eyebrows",
+        "Eyelashes",
+        "Teeth",
+        "Tongue",
+        "Simple play shorts",
+        "Tank top",
+        "Hair"
+      ]
+    }
+  }
+}

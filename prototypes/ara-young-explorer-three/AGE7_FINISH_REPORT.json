@@ -1,0 +1,26 @@
+{
+  "Ara7_Swim_Colors": {
+    "raw_body_height_m": 1.23691,
+    "root_scale": 0.9863292,
+    "final_body_height_m": 1.22,
+    "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+    "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+    "bytes": 15753768
+  },
+  "Ara7_Pink_Sundress": {
+    "raw_body_height_m": 1.23691,
+    "root_scale": 0.9863292,
+    "final_body_height_m": 1.22,
+    "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+    "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+    "bytes": 16611240
+  },
+  "Ara7_Neutral_Mesh_Reference": {
+    "raw_body_height_m": 1.23691,
+    "root_scale": 0.9863292,
+    "final_body_height_m": 1.22,
+    "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+    "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+    "bytes": 15755856
+  }
+}
