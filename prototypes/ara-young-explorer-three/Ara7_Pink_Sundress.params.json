@@ -3,19 +3,24 @@
   "seed": 26110307,
   "gender": 0,
   "age": 0.1125,
-  "muscle": 0.32,
-  "weight": 0.45,
-  "height": 0.47,
-  "proportions": 0.5,
+  "muscle": 0.23,
+  "weight": 0.42,
+  "height": 0.04,
+  "proportions": 0.22,
   "african": 0,
   "asian": 0,
   "caucasian": 1,
   "breastSize": 0,
   "breastFirmness": 0.5,
   "modifiers": {
-    "head/head-oval": -0.12,
-    "cheek/cheek-volume": 0.14,
-    "chin/chin-width": -0.12
+    "head/head-scale-horiz": 0.25,
+    "head/head-scale-vert": 0.14,
+    "head/head-oval": -0.28,
+    "chin/chin-width": -0.38,
+    "chin/chin-prominent": -0.25,
+    "cheek/cheek-volume": 0.52,
+    "cheek/cheek-bones": -0.22,
+    "mouth/mouth-scale-horiz": -0.12
   },
   "skin": "auto",
   "skinTint": "#fffaf2",
@@ -23,8 +28,8 @@
   "eyebrows": "eyebrow001",
   "eyelashes": "eyelashes01",
   "hair": "long01",
-  "hairTint": "#ddc998",
-  "hairColor": "#c6ab74",
+  "hairTint": "#ffffff",
+  "hairColor": "#c8b67d",
   "facialHair": "none",
   "tattoos": [],
   "tattooInk": "#1c2128",
@@ -54,13 +59,13 @@
   "shoes": "sandals",
   "garmentStyles": {
     "tunic": {
-      "pattern": "ankara",
-      "color": "#fc8ab6",
-      "color2": "#f9e77e"
+      "pattern": "solid",
+      "color": "#f39ab6",
+      "color2": "#fbd7e2"
     },
     "briefs": {
       "pattern": "solid",
-      "color": "#fce3f1"
+      "color": "#f0bdd0"
     }
   }
 }
