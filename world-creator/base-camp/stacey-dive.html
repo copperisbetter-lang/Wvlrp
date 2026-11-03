@@ -37,7 +37,7 @@ import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installBeverlyShorelineWalk} from './beverly-shoreline-npc.js?v=20261103';
-import {installGinaLocomotion} from './beverly-gina-locomotion.js?v=20261103-stride2';
+import {installGinaLocomotion} from './beverly-gina-locomotion.js?v=20261103-shared';
 import {installBeverlyArmSwing} from './beverly-arm-swing.js?v=20261103d';
 import {installGinaBeachWalk} from './gina-beach-npc.js?v=20261103';
 import {installMasonPlayer} from './stacey-mason-player.js';
@@ -51,7 +51,7 @@ import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
 const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false,defaultAvatar:'Mason',defaultSpawn:'Stacey Lake south beach'};
 const status=document.querySelector('#status');window.addEventListener('error',e=>{diag.errors.push(e.message);status.textContent='Scene error: '+e.message});
 const mobile=matchMedia('(pointer:coarse)').matches;const scene=new T.Scene();scene.fog=new T.FogExp2(0xc0d7df,.00085);
-const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1:1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;document.body.prepend(renderer.domElement);
+const renderer=new T.WebGLRenderer({antialias:!mobile,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1:1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;document.body.prepend(renderer.domElement);
 renderer.debug.onShaderError=(gl,program,vs,fs)=>{diag.errors.push('Shader: '+gl.getProgramInfoLog(program)+' '+gl.getShaderInfoLog(vs)+' '+gl.getShaderInfoLog(fs));};const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.15,2400);const lightDir=new T.Vector3(-.48,.57,-.66).normalize();scene.add(new T.HemisphereLight(0xddefff,0x5b6741,1.5));const sun=new T.DirectionalLight(0xffedcb,2.8);sun.position.copy(lightDir).multiplyScalar(600);scene.add(sun);
 const sky=new Sky();sky.scale.setScalar(1800);sky.material.uniforms.turbidity.value=2.5;sky.material.uniforms.rayleigh.value=1.3;sky.material.uniforms.mieCoefficient.value=.003;sky.material.uniforms.mieDirectionalG.value=.83;sky.material.uniforms.sunPosition.value.copy(lightDir);scene.add(sky);
 let seed=61728;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);const CY=-5.5,CX=140,CZ=-240;
@@ -1191,6 +1191,16 @@ window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){retu
 // Public Play Game launches Mason at Stacey Lake; preserve original fish and game physics.
 const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
 let beverlyNPC=null;
+let beverlyForGina=null;
+let ginaSourceAsset=null;
+function connectGinaWalk(){
+ if(!beverlyForGina||!ginaSourceAsset)return;
+ const {model,mixer,clip}=beverlyForGina;
+ beverlyForGina=null;
+ installGinaLocomotion({THREE:T,loader:gltf,model,mixer,baseClip:clip,sourceAsset:ginaSourceAsset,onStatus:msg=>{diag.assets.Beverly=msg;}})
+ .then(result=>{window.beverlyGinaMotion=result;diag.assets.Beverly='Gina walk integrated ('+result.state.walkJoints+' joints)';})
+ .catch(error=>{diag.errors.push('Gina locomotion fallback: '+String(error?.message||error));diag.assets.Beverly='approved walk (Gina fallback)';});
+}
 diag.assets.Beverly='loading approved character';
 // Load the dressed game asset after the lake starts; no embedded editor or reconstruction on phones.
 gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).href,asset=>{
@@ -1202,17 +1212,14 @@ gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).h
  const arms=installBeverlyArmSwing({THREE:T,model,speed:1.2});model.userData.beverlyArmSwing=arms;diag.assets.Beverly='walking; arm bones '+arms.detected.join(',');
  beverlyNPC=installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY:ground,lake:{x:CX,z:CZ}});
  window.beverlyShoreline=beverlyNPC;diag.assets.Beverly='walking shoreline';
- // Transfer Gina's walk/run motion only; preserve the certified Beverly mesh.
- // Existing approved walk remains active if transfer cannot be validated.
- installGinaLocomotion({THREE:T,loader:gltf,model,mixer,baseClip:clip,onStatus:msg=>{diag.assets.Beverly=msg;}})
- .then(result=>{window.beverlyGinaMotion=result;diag.assets.Beverly='Gina walk integrated ('+result.state.walkJoints+' joints)';})
- .catch(error=>{diag.errors.push('Gina locomotion fallback: '+String(error?.message||error));diag.assets.Beverly='approved walk (Gina fallback)';});
+ beverlyForGina={model,mixer,clip};connectGinaWalk();
 },undefined,error=>{diag.assets.Beverly='FAILED';diag.errors.push('Beverly: '+String(error?.message||error));});
 
 let ginaBeachNPC=null;
 diag.assets.Gina='loading original gold bikini';
 const ginaIndicator=document.createElement('div');ginaIndicator.id='ginaIndicator';ginaIndicator.style.cssText='position:fixed;top:75px;left:12px;z-index:12;background:#173d40ee;color:#fff;border:1px solid #e9cf7e;padding:7px 9px;border-radius:7px;font:12px system-ui;max-width:70vw;pointer-events:none';ginaIndicator.textContent='Gina: loading gold bikini…';document.body.appendChild(ginaIndicator);
 gltf.load(new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb?v=20261103',import.meta.url).href,asset=>{
+ ginaSourceAsset=asset;connectGinaWalk();
  const model=asset.scene;model.name='Gina 6';
  const walk=asset.animations.find(a=>a.name==='Walk');
  if(!walk){diag.assets.Gina='FAILED: native Walk missing';ginaIndicator.textContent='Gina: animation missing';return;}
