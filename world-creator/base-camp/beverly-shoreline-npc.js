@@ -27,7 +27,7 @@ export function installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY,
     angle=(angle+seconds*speed/metresPerRadian)%(2*Math.PI);
     const here=positionAt(angle),ahead=positionAt(angle+.0001);
     root.position.copy(here);root.rotation.y=Math.atan2(ahead.x-here.x,ahead.z-here.z);
-    distance+=seconds*speed;model.userData.beverlyWalkMixer?.update(seconds);
+    distance+=seconds*speed;model.userData.beverlyWalkMixer?.update(seconds);model.userData.beverlyArmSwing?.update(seconds);
     state.distance=distance;state.angle=angle;state.position=root.position.toArray();
   };
   update(0);
