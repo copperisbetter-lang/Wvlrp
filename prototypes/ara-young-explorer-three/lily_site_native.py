@@ -4,8 +4,9 @@ import sys, json, hashlib, struct
 from pathlib import Path
 
 BASE=Path('prototypes/ara-young-explorer-three')
-NAMES=('Lily_3','Lily_5')
-MATERIALS={'Lily_3':('Oversized tee','Cargo shorts'),
+NAMES=('Lily_2','Lily_3','Lily_5')
+MATERIALS={'Lily_2':('Ankara gown','Flutter sleeves'),
+           'Lily_3':('Oversized tee','Cargo shorts'),
            'Lily_5':('Fatigue shirt','Fatigue pants')}
 UPSTREAM=Path('/tmp/ara3dgen/src/core/human.ts')
 
