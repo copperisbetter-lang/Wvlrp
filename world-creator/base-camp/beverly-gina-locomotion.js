@@ -28,9 +28,8 @@ function makeClip(T,sourceRoot,targetRoot,sourceClip,newName){
  if(tracks.length<4)throw Error('Too few compatible joints for '+newName+': '+tracks.length);
  return {clip:new T.AnimationClip(newName,sourceClip.duration,tracks),jointCount:tracks.length};
 }
-export async function installGinaLocomotion({THREE:T,loader,model,mixer,baseClip,onStatus}){
- const url=new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb',import.meta.url).href;
- const asset=await new Promise((resolve,reject)=>loader.load(url,resolve,undefined,reject));
+export async function installGinaLocomotion({THREE:T,loader,model,mixer,baseClip,onStatus,sourceAsset}){
+ const asset=sourceAsset || await new Promise((resolve,reject)=>loader.load(new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb',import.meta.url).href,resolve,undefined,reject));
  const walk=asset.animations.find(c=>c.name==='Walk'),run=asset.animations.find(c=>c.name==='Run');
  if(!walk||!run)throw Error('Gina Walk/Run clips missing');
  const a=makeClip(T,asset.scene,model,walk,'Beverly_Gina_Walk');
