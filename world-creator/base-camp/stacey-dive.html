@@ -1206,15 +1206,16 @@ gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).h
 
 let ginaBeachNPC=null;
 diag.assets.Gina='loading original gold bikini';
+const ginaIndicator=document.createElement('div');ginaIndicator.id='ginaIndicator';ginaIndicator.style.cssText='position:fixed;top:75px;left:12px;z-index:12;background:#173d40ee;color:#fff;border:1px solid #e9cf7e;padding:7px 9px;border-radius:7px;font:12px system-ui;max-width:70vw;pointer-events:none';ginaIndicator.textContent='Gina: loading gold bikini…';document.body.appendChild(ginaIndicator);
 gltf.load(new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb?v=20261103',import.meta.url).href,asset=>{
  const model=asset.scene;model.name='Gina 6';
  const walk=asset.animations.find(a=>a.name==='Walk');
- if(!walk){diag.assets.Gina='FAILED: native Walk missing';return;}
+ if(!walk){diag.assets.Gina='FAILED: native Walk missing';ginaIndicator.textContent='Gina: animation missing';return;}
  const mixer=new T.AnimationMixer(model);
  ginaBeachNPC=installGinaBeachWalk({THREE:T,scene,model,mixer,clip:walk,outer,terrainY:ground,lake:{x:CX,z:CZ}});
  window.ginaBeach=ginaBeachNPC;
- diag.assets.Gina='walking beach (native Walk)';
-},undefined,error=>{diag.assets.Gina='FAILED';diag.errors.push('Gina: '+String(error?.message||error));});
+ diag.assets.Gina='walking beach (native Walk)';ginaIndicator.textContent='Gina: loaded — walking near spawn beach';
+},undefined,error=>{diag.assets.Gina='FAILED';ginaIndicator.textContent='Gina failed to load: '+String(error?.message||error);diag.errors.push('Gina: '+String(error?.message||error));});
 
 const playerAvatar='Mason';let chaseCamera=true;
 window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-person':'first-person';},
