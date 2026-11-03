@@ -58,25 +58,41 @@ function applyDressInspection(){
  const btn=document.getElementById('removeDress');
  btn.disabled=selectedName!=='Lily_2';
  btn.setAttribute('aria-pressed',String(dressRemoved));
- btn.textContent=dressRemoved?'Restore dress':'Remove dress • mesh QA';
+ btn.textContent=dressRemoved?'Restore dress':'Remove dress • technical shape';
  if(!active||selectedName!=='Lily_2')return;
- active.traverse(o=>{
-   if(!o.isMesh)return;
-   const n=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material?.name||'')).toLowerCase();
-   const garment=/ankara|gown|flutter|dress|sandal|shoe/.test(n);
-   // Never display uncovered child body geometry. Inspect rig and bounding geometry instead.
-   o.visible=!dressRemoved;
- });
- const existing=active.getObjectByName('lilyDressInspection');
- if(existing){active.remove(existing);}
- if(dressRemoved){
-   const group=new THREE.Group();group.name='lilyDressInspection';
-   const bounds=new THREE.Box3().setFromObject(active);
-   const helper=new THREE.SkeletonHelper(active);helper.material.color.set(0xf4bd68);group.add(helper);
-   const box=new THREE.Box3Helper(bounds,0xf4bd68);group.add(box);
-   active.add(group);
-   msg.textContent='Dress hidden for technical inspection. Child body geometry remains hidden; skeleton and bounds shown. No model files changed.';
- }else{msg.textContent='Lily 2 gown trial restored.';}
+ const old=active.getObjectByName('lilyDressInspection');
+ if(old)active.remove(old);
+ if(!dressRemoved){
+   active.traverse(o=>{if(o.isMesh)o.visible=true;});
+   msg.textContent='Lily 2 gown trial restored.';return;
+ }
+ // Read model dimensions BEFORE hiding meshes; create a smooth, featureless
+ // opaque technical mannequin. The original child skin mesh stays hidden.
+ const bounds=new THREE.Box3().setFromObject(active);
+ const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+ active.traverse(o=>{if(o.isMesh)o.visible=false;});
+ const group=new THREE.Group();group.name='lilyDressInspection';
+ const mat=new THREE.MeshStandardMaterial({color:0x83b7c5,roughness:0.95,metalness:0,side:THREE.FrontSide});
+ const H=Math.max(size.y,0.01),cx=center.x,cz=center.z,base=bounds.min.y;
+ const width=Math.min(Math.max(size.x,H*0.24),H*0.54);
+ function oval(x,y,z,rx,ry,rz){
+   const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),mat);
+   mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);group.add(mesh);return mesh;
+ }
+ // Stylized neutral mannequin volumes, not exposed anatomical geometry.
+ oval(cx,base+H*.88,cz,width*.21,H*.105,width*.19);
+ oval(cx,base+H*.635,cz,width*.37,H*.195,width*.22);
+ oval(cx,base+H*.46,cz,width*.31,H*.11,width*.22);
+ for(const sign of [-1,1]){
+   oval(cx+sign*width*.46,base+H*.60,cz,width*.115,H*.17,width*.115);
+   oval(cx+sign*width*.48,base+H*.34,cz,width*.09,H*.115,width*.09);
+   oval(cx+sign*width*.16,base+H*.255,cz,width*.145,H*.20,width*.14);
+   oval(cx+sign*width*.16,base+H*.07,cz,width*.10,H*.09,width*.105);
+ }
+ const ground=new THREE.Box3Helper(bounds,0x6fe1e5);group.add(ground);
+ // The preview is static geometry for proportions only; never alters the GLB.
+ active.add(group);
+ msg.textContent='Dress removed in viewer. Solid opaque technical mannequin shows approximate overall proportions, not the underlying skin mesh or actual mesh holes. Original model unchanged.';
 }
 document.getElementById('removeDress').onclick=()=>{if(selectedName!=='Lily_2'||!active)return;dressRemoved=!dressRemoved;applyDressInspection();};
 async function show(name){
