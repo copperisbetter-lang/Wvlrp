@@ -38,6 +38,22 @@ jobs:
         run: |
           npm ci
           npm run setup-assets
+      - name: Verify source outfit selection and child-safe params before generating
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path('/tmp/ara3dgen/src/core/garments')
+          catalog=''.join(p.read_text() for p in src.glob('*.ts'))
+          base=Path('prototypes/ara-young-explorer-three')
+          for name,top,bottom in (('Lily_3','oversized_tee','cargo_shorts'),('Lily_5','fatigue_shirt','fatigue_pants')):
+              p=json.loads((base/(name+'.params.json')).read_text())
+              assert p['age']==0.1125 and p['gender']==0 and p['underwear']
+              assert p['hair']=='long01' and p['eyes']=='green'
+              assert p['top']==top and p['bottom']==bottom
+              assert "id: '"+top+"'" in catalog and "id: '"+bottom+"'" in catalog
+              print('VERIFIED ORIGINAL ARA GARMENT CATALOG',name,top,bottom)
+          PY
       - name: Preserve every body vertex and exactly approved Lily child proportions
         run: python3 prototypes/ara-young-explorer-three/lily_site_native.py patch
       - name: Official generator applies each built-in outfit BEFORE GLB export
