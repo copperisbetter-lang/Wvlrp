@@ -86,7 +86,17 @@ def finish(path):
         for pr in mesh.get("primitives",[])
         if doc["materials"][pr["material"]]["name"]=="Skin")
     pp=accessor(doc,dat,skin_primitive["attributes"]["POSITION"])
-    height=max(v[1] for v in pp)-min(v[1] for v in pp)
+    ia=doc["accessors"][skin_primitive["indices"]]
+    iv=doc["bufferViews"][ia["bufferView"]]
+    component={5121:"B",5123:"H",5125:"I"}[ia["componentType"]]
+    at=iv.get("byteOffset",0)+ia.get("byteOffset",0)
+    stride=iv.get("byteStride",struct.calcsize("<"+component))
+    body_ids={struct.unpack_from("<"+component,dat,at+i*stride)[0] for i in range(ia["count"])}
+    assert len(body_ids)==14517,"Body vertex set changed"
+    # GLB POSITION buffer includes clothing/shoes. ONLY the Skin primitive's
+    # referenced positions can establish identical naked basemesh height.
+    body_ys=[pp[i][1] for i in body_ids]
+    height=max(body_ys)-min(body_ys)
     assert 1.0<height<1.6,("Unexpected unscaled height",height)
     k=TARGET_METERS/height
     scene=doc["scenes"][doc.get("scene",0)]
