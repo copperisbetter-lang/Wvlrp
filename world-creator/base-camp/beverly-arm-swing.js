@@ -1,38 +1,36 @@
-// Beverly arm-swing correction for shoreline locomotion.
-// Applies after AnimationMixer.update(), so it works even if Gina's imported
-// tracks omit or fail to match shoulder bones. Does not alter any meshes.
-const normalize=n=>String(n).toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^(mixamorig|bip001|bip01|bip|bone)/,'');
-const patterns={
- leftArm:['leftarm','leftupperarm','upperarml','lupperarm','leftshoulderarm'],
- rightArm:['rightarm','rightupperarm','upperarmr','rupperarm','rightshoulderarm'],
- leftForearm:['leftforearm','leftlowerarm','forearml','lforearm'],
- rightForearm:['rightforearm','rightlowerarm','forearmr','rforearm']
-};
+// Correct Beverly's T-pose arms using her actual Mixamo skeleton geometry.
+// Model geometry, skin weights, clothes, and rest pose are not modified.
+// Call AFTER AnimationMixer.update, on every shoreline frame.
+const clean=n=>String(n).toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^(mixamorig|bip001|bip01|bip|bone)/,'');
 export function installBeverlyArmSwing({THREE:T,model,speed=1.2}){
  const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o)});
- const pick=key=>bones.find(b=>patterns[key].includes(normalize(b.name)));
- const joints={leftArm:pick('leftArm'),rightArm:pick('rightArm'),leftForearm:pick('leftForearm'),rightForearm:pick('rightForearm')};
- const detected=Object.entries(joints).filter(([,b])=>b).map(([k,b])=>k+':'+b.name);
- const rest=new Map(Object.values(joints).filter(Boolean).map(b=>[b,b.quaternion.clone()]));
+ const find=n=>bones.find(b=>clean(b.name)===n);
+ const sides=[['left',find('leftarm'),find('leftforearm')],['right',find('rightarm'),find('rightforearm')]];
+ const active=sides.filter(([,arm,forearm])=>arm&&forearm&&forearm.position.lengthSq()>.000001);
+ const down=new T.Vector3(0,-1,0),forward=new T.Vector3(0,0,1);
+ const qParent=new T.Quaternion(),qDelta=new T.Quaternion(),qSwing=new T.Quaternion();
+ const current=new T.Vector3(),desired=new T.Vector3(),axis=new T.Vector3();
  let phase=0;
- // Walk-cycle phase follows actual shore speed, not render frame rate.
  const update=dt=>{
   phase+=Math.max(0,Math.min(.1,dt))*Math.max(.2,speed)*Math.PI*1.55;
-  for(const [side,sign] of [['left',1],['right',-1]]){
-   const upper=joints[side+'Arm'],lower=joints[side+'Forearm'];
-   const stride=Math.sin(phase)*sign;
-   if(upper){
-    // Rotation about local X swings arms forward/back. A modest Z correction
-    // lowers the upper arms from the stiff T-pose toward the hips.
-    const drop=(side==='left'?-1:1)*.64;
-    const swing=new T.Quaternion().setFromEuler(new T.Euler(stride*.30,0,drop,'XYZ'));
-    upper.quaternion.copy(rest.get(upper)).multiply(swing);
-   }
-   if(lower){
-    const elbow=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),-.10-.12*Math.max(0,-stride));
-    lower.quaternion.copy(rest.get(lower)).multiply(elbow);
-   }
+  // Recompute from mixer-applied pose every frame, NEVER reset bones to T-pose.
+  model.updateWorldMatrix(true,true);
+  for(const [side,arm,forearm] of active){
+   // Forearm offset is the anatomical shoulder-to-elbow direction in arm space.
+   // Convert it into the shoulder-parent space using the animated arm rotation.
+   current.copy(forearm.position).normalize().applyQuaternion(arm.quaternion);
+   arm.parent.getWorldQuaternion(qParent);
+   desired.copy(down).applyQuaternion(qParent.invert()).normalize();
+   // Keep the elbow slightly away from the torso; avoid forced shoulder stretch.
+   const outward=side==='left'?-1:1;
+   desired.add(new T.Vector3(outward*.13,0,0).applyQuaternion(qParent)).normalize();
+   qDelta.setFromUnitVectors(current,desired);
+   arm.quaternion.premultiply(qDelta);
+   // Swing forward/back about a world lateral axis, expressed in parent space.
+   axis.set(1,0,0).applyQuaternion(qParent).normalize();
+   qSwing.setFromAxisAngle(axis,Math.sin(phase)*(side==='left'?1:-1)*.24);
+   arm.quaternion.premultiply(qSwing).normalize();
   }
  };
- return {update,detected};
+ return {update,detected:active.map(([side,arm,forearm])=>side+':'+arm.name+'>'+forearm.name)};
 }
