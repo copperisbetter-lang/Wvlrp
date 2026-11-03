@@ -18,7 +18,7 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 <footer><button data-name="Lily_2" aria-pressed="false">Lily 2 • Floral gown TRIAL</button><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
 <button data-name="Lily_4" aria-pressed="false">Lily 4 • Technical rig</button>
 <button data-name="Lily_5" aria-pressed="false">Lily 5 • Hiking clothes</button>
-<select id="clip"><option value="">Standing pose</option></select><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="recenter">Recenter</button></footer>
+<select id="clip"><option value="">Standing pose</option></select><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button><button id="recenter">Recenter</button></footer>
 <div id="msg">Loading character…</div>
 <script type="module">
 import * as THREE from 'three';
@@ -35,7 +35,7 @@ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=tr
 scene.add(new THREE.HemisphereLight(0xe9f7ff,0x647181,2.3));
 let light=new THREE.DirectionalLight(0xffffff,2.7);light.position.set(3,5,4);scene.add(light);
 const grid=new THREE.GridHelper(3,24,0x577185,0x314759);scene.add(grid);
-const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0;
+const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0,selectedName="",dressRemoved=false;
 function resize(){const w=panel.clientWidth,h=panel.clientHeight||320;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 new ResizeObserver(resize).observe(panel);resize();
 function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(active);
@@ -54,8 +54,33 @@ for(const side of ['front','side','back'])document.getElementById(side).onclick=
 function play(v){if(!mixer)return;mixer.stopAllAction();if(v){const clip=clips.find(x=>x.name===v);if(clip)mixer.clipAction(clip).reset().play();}}
 chooser.onchange=()=>play(chooser.value);
 function dispose(obj){obj.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m)continue;for(const k in m){const a=m[k];if(a?.isTexture)a.dispose();}m.dispose();}}});}
+function applyDressInspection(){
+ const btn=document.getElementById('removeDress');
+ btn.disabled=selectedName!=='Lily_2';
+ btn.setAttribute('aria-pressed',String(dressRemoved));
+ btn.textContent=dressRemoved?'Restore dress':'Remove dress • mesh QA';
+ if(!active||selectedName!=='Lily_2')return;
+ active.traverse(o=>{
+   if(!o.isMesh)return;
+   const n=(o.name+' '+(Array.isArray(o.material)?o.material.map(m=>m.name).join(' '):o.material?.name||'')).toLowerCase();
+   const garment=/ankara|gown|flutter|dress|sandal|shoe/.test(n);
+   // Never display uncovered child body geometry. Inspect rig and bounding geometry instead.
+   o.visible=!dressRemoved;
+ });
+ const existing=active.getObjectByName('lilyDressInspection');
+ if(existing){active.remove(existing);}
+ if(dressRemoved){
+   const group=new THREE.Group();group.name='lilyDressInspection';
+   const bounds=new THREE.Box3().setFromObject(active);
+   const helper=new THREE.SkeletonHelper(active);helper.material.color.set(0xf4bd68);group.add(helper);
+   const box=new THREE.Box3Helper(bounds,0xf4bd68);group.add(box);
+   active.add(group);
+   msg.textContent='Dress hidden for technical inspection. Child body geometry remains hidden; skeleton and bounds shown. No model files changed.';
+ }else{msg.textContent='Lily 2 gown trial restored.';}
+}
+document.getElementById('removeDress').onclick=()=>{if(selectedName!=='Lily_2'||!active)return;dressRemoved=!dressRemoved;applyDressInspection();};
 async function show(name){
-  const rid=++requestId;document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
+  const rid=++requestId;selectedName=name;dressRemoved=false;document.getElementById('removeDress').disabled=name!=='Lily_2';document.getElementById('removeDress').setAttribute('aria-pressed','false');document.getElementById('removeDress').textContent='Remove dress • mesh QA';document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
   msg.textContent='Loading '+name.replaceAll('_',' ')+'…';
   if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
   chooser.innerHTML='<option value="">Standing pose</option>';
