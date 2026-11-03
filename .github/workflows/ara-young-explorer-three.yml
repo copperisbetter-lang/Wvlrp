@@ -33,16 +33,16 @@ jobs:
           from pathlib import Path
           p=Path('/tmp/ara3dgen/src/core/human.ts')
           s=p.read_text()
-          old="""  let body: PolyMesh = pBody
-            ? proxyMesh(pBody, coords, bskin, faceD)
-            : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"""
-          # The exact upstream string is indented two spaces on all three source lines.
-          old="""  let body: PolyMesh = pBody
-    ? proxyMesh(pBody, coords, bskin, faceD)
-    : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"""
-          new="""  // WVLRP prototype: preserve every base-mesh face in ALL three matched age-seven exports.
-  // Child clothing protections in garments/dressing are UNCHANGED.
-  let body: PolyMesh = fullBody;"""
+          old = (
+              "  let body: PolyMesh = pBody\n"
+              "    ? proxyMesh(pBody, coords, bskin, faceD)\n"
+              "    : compact(fullBody, (f, c) => !(assetDel[c[0]] | assetDel[c[1]] | assetDel[c[2]] | assetDel[c[3]]) && !coveredFaces[f]);"
+          )
+          new = (
+              "  // WVLRP prototype: retain complete basemesh under child-safe clothing.\n"
+              "  // Under-18 clothing safeguards in garments/dressing stay unchanged.\n"
+              "  let body: PolyMesh = fullBody;"
+          )
           assert s.count(old)==1,'Ara source changed: do not make unverified model or modify age safeguards'
           p.write_text(s.replace(old,new))
           # Independent invariant: never patch under-18 coverage safeguards.
