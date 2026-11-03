@@ -1,4 +1,24 @@
 {
+  "Lily_2": {
+    "status": "STRUCTURAL PASS; owner visual QA pending",
+    "sha256": "9fe87b8c47f0a8cd6a2fa50c9eba5d04684c831d207172d5c24f3bc51471bcd6",
+    "bytes": 16783396,
+    "body_indices": 80268,
+    "bones": 69,
+    "animations": 77,
+    "official_website_clothing": [
+      "Ankara gown",
+      "Flutter sleeves"
+    ],
+    "finish": {
+      "raw_body_height_m": 1.23691,
+      "root_scale": 0.9863292,
+      "final_body_height_m": 1.22,
+      "hair_png_sha256": "753c318463b3875dbfdddac855904009793372034204a64d02768a830911f99b",
+      "iris_png_sha256": "792f153739e2e87dc1fb8f03853e959aa07fb82b466e2d644501b5a95e2ae796",
+      "bytes": 16783396
+    }
+  },
   "Lily_3": {
     "status": "STRUCTURAL PASS; owner visual QA pending",
     "sha256": "e1b988e6509ebb91c2eb71621e363a3b684a25b62e93eb3f756bbfc15b18837e",
