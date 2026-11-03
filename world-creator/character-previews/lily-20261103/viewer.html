@@ -12,7 +12,7 @@ button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head><body>
-<header><h1>Lily 2–5 • build preview</h1><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button>
+<header><h1>Lily 2–5 • build preview · QA build 72</h1><button id="removeDress" aria-pressed="false">Remove dress • mesh QA</button>
 <p>Lily 2 is a <strong>trial pink floral Ankara one-piece gown</strong> from the original Ara catalog, not an approved sundress. Lily 3: T-shirt/shorts. Lily 5: hiking clothes. Lily 4: safe technical skeleton and measurement box only. All visual approvals pending.</p></header>
 <div id="canvas"></div>
 <footer><button data-name="Lily_2" aria-pressed="false">Lily 2 • Floral gown TRIAL</button><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
@@ -35,7 +35,7 @@ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=tr
 scene.add(new THREE.HemisphereLight(0xe9f7ff,0x647181,2.3));
 let light=new THREE.DirectionalLight(0xffffff,2.7);light.position.set(3,5,4);scene.add(light);
 const grid=new THREE.GridHelper(3,24,0x577185,0x314759);scene.add(grid);
-const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0,selectedName="",dressRemoved=false;
+const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0,selectedName="",dressRemoved=false,inspectionModel=null;
 function resize(){const w=panel.clientWidth,h=panel.clientHeight||320;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 new ResizeObserver(resize).observe(panel);resize();
 function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(active);
@@ -54,51 +54,48 @@ for(const side of ['front','side','back'])document.getElementById(side).onclick=
 function play(v){if(!mixer)return;mixer.stopAllAction();if(v){const clip=clips.find(x=>x.name===v);if(clip)mixer.clipAction(clip).reset().play();}}
 chooser.onchange=()=>play(chooser.value);
 function dispose(obj){obj.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m)continue;for(const k in m){const a=m[k];if(a?.isTexture)a.dispose();}m.dispose();}}});}
+function clearInspection(){
+ if(inspectionModel){scene.remove(inspectionModel);inspectionModel.traverse(o=>{if(o.isMesh)o.geometry.dispose()});inspectionModel=null;}
+ if(active)active.visible=true;
+}
 function applyDressInspection(){
  const btn=document.getElementById('removeDress');
  btn.disabled=selectedName!=='Lily_2';
  btn.setAttribute('aria-pressed',String(dressRemoved));
- btn.textContent=dressRemoved?'Restore dress':'Remove dress • technical shape';
+ btn.textContent=dressRemoved?'Restore dress':'Remove dress • solid QA';
  if(!active||selectedName!=='Lily_2')return;
- const old=active.getObjectByName('lilyDressInspection');
- if(old)active.remove(old);
- if(!dressRemoved){
-   active.traverse(o=>{if(o.isMesh)o.visible=true;});
-   msg.textContent='Lily 2 gown trial restored.';return;
- }
- // Read model dimensions BEFORE hiding meshes; create a smooth, featureless
- // opaque technical mannequin. The original child skin mesh stays hidden.
+ clearInspection();
+ if(!dressRemoved){msg.textContent='Lily 2 gown restored · QA build 72';return;}
  const bounds=new THREE.Box3().setFromObject(active);
  const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
- active.traverse(o=>{if(o.isMesh)o.visible=false;});
- const group=new THREE.Group();group.name='lilyDressInspection';
- const mat=new THREE.MeshStandardMaterial({color:0x83b7c5,roughness:0.95,metalness:0,side:THREE.FrontSide});
- const H=Math.max(size.y,0.01),cx=center.x,cz=center.z,base=bounds.min.y;
- const width=Math.min(Math.max(size.x,H*0.24),H*0.54);
+ const H=Math.max(size.y,0.8),w=Math.min(Math.max(size.x,H*.26),H*.5),base=bounds.min.y;
+ // Scene-level mannequin, independent of imported GLB visibility, hierarchy and rig.
+ const group=new THREE.Group();group.name='lilySolidTechnicalQA72';
+ const material=new THREE.MeshStandardMaterial({color:0x70c8dd,roughness:.85,metalness:0,depthTest:true});
  function oval(x,y,z,rx,ry,rz){
-   const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),mat);
-   mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);group.add(mesh);return mesh;
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),material);
+  mesh.position.set(x,y,z);mesh.scale.set(rx,ry,rz);group.add(mesh);
  }
- // Stylized neutral mannequin volumes, not exposed anatomical geometry.
- oval(cx,base+H*.88,cz,width*.21,H*.105,width*.19);
- oval(cx,base+H*.635,cz,width*.37,H*.195,width*.22);
- oval(cx,base+H*.46,cz,width*.31,H*.11,width*.22);
- for(const sign of [-1,1]){
-   oval(cx+sign*width*.46,base+H*.60,cz,width*.115,H*.17,width*.115);
-   oval(cx+sign*width*.48,base+H*.34,cz,width*.09,H*.115,width*.09);
-   oval(cx+sign*width*.16,base+H*.255,cz,width*.145,H*.20,width*.14);
-   oval(cx+sign*width*.16,base+H*.07,cz,width*.10,H*.09,width*.105);
+ const x=center.x,z=center.z;
+ oval(x,base+H*.89,z,w*.22,H*.105,w*.21);
+ oval(x,base+H*.645,z,w*.37,H*.195,w*.23);
+ oval(x,base+H*.46,z,w*.30,H*.11,w*.22);
+ for(const side of [-1,1]){
+  oval(x+side*w*.47,base+H*.61,z,w*.115,H*.17,w*.12);
+  oval(x+side*w*.48,base+H*.35,z,w*.09,H*.115,w*.09);
+  oval(x+side*w*.17,base+H*.265,z,w*.14,H*.195,w*.14);
+  oval(x+side*w*.17,base+H*.08,z,w*.105,H*.09,w*.11);
  }
- const ground=new THREE.Box3Helper(bounds,0x6fe1e5);group.add(ground);
- // The preview is static geometry for proportions only; never alters the GLB.
- active.add(group);
- msg.textContent='Dress removed in viewer. Solid opaque technical mannequin shows approximate overall proportions, not the underlying skin mesh or actual mesh holes. Original model unchanged.';
+ inspectionModel=group;
+ active.visible=false;
+ scene.add(inspectionModel);
+ msg.textContent='QA build 72: SOLID BLUE TECHNICAL MANNEQUIN · approximate proportions only · no uncovered child geometry';
 }
 document.getElementById('removeDress').onclick=()=>{if(selectedName!=='Lily_2'||!active)return;dressRemoved=!dressRemoved;applyDressInspection();};
 async function show(name){
   const rid=++requestId;selectedName=name;dressRemoved=false;document.getElementById('removeDress').disabled=name!=='Lily_2';document.getElementById('removeDress').setAttribute('aria-pressed','false');document.getElementById('removeDress').textContent='Remove dress • mesh QA';document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
   msg.textContent='Loading '+name.replaceAll('_',' ')+'…';
-  if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
+  clearInspection();if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
   chooser.innerHTML='<option value="">Standing pose</option>';
   try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb?version=lily-new-build-20261103',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
   active=gltf.scene;scene.add(active);
