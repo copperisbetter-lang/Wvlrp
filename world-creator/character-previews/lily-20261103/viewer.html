@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lily 2–5 • 3D build inspection</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:#111b27;color:#f5f6fa;font:14px system-ui}
+header{padding:10px 14px}h1{font-size:18px;margin:0 0 5px}p{margin:0;color:#bacada}
+#canvas{width:100%;height:calc(100dvh - 174px);min-height:300px;touch-action:none}
+footer{display:flex;flex-wrap:wrap;gap:8px;padding:9px 12px}
+button,select{font:inherit;color:white;background:#304556;border:1px solid #687f95;border-radius:7px;padding:9px 10px}
+button[aria-pressed=true]{background:#136d83;border-color:#6fe1e5}#msg{padding:0 12px 10px;color:#cfe4e8}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body>
+<header><h1>Lily 3, 4 and 5 • build preview</h1>
+<p>Saved new Lily exports: 3 (T-shirt and shorts), 4 (technical rig/measurement reference), 5 (hiking outfit). All age-seven, dusty blonde, green eyes. Lily 2&#39;s real sundress is still being sourced. The technical model is displayed as a rig and measurement box, without rendering uncovered child geometry.</p></header>
+<div id="canvas"></div>
+<footer><button data-name="Lily_3" aria-pressed="true">Lily 3 • T-shirt + shorts</button>
+<button data-name="Lily_4" aria-pressed="false">Lily 4 • Technical rig</button>
+<button data-name="Lily_5" aria-pressed="false">Lily 5 • Hiking clothes</button>
+<select id="clip"><option value="">Standing pose</option></select><button id="recenter">Recenter</button></footer>
+<div id="msg">Loading character…</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const dir='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/lily-2-to-5-site-dressed-20261103/prototypes/ara-young-explorer-three/';
+const panel=document.getElementById('canvas'),msg=document.getElementById('msg'),chooser=document.getElementById('clip');
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power',alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;
+panel.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#182836');
+const camera=new THREE.PerspectiveCamera(39,1,.025,120);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.minDistance=.5;orbit.maxDistance=7;
+scene.add(new THREE.HemisphereLight(0xe9f7ff,0x647181,2.3));
+let light=new THREE.DirectionalLight(0xffffff,2.7);light.position.set(3,5,4);scene.add(light);
+const grid=new THREE.GridHelper(3,24,0x577185,0x314759);scene.add(grid);
+const loader=new GLTFLoader(),clock=new THREE.Clock();let active=null,mixer=null,clips=[],requestId=0;
+function resize(){const w=panel.clientWidth,h=panel.clientHeight||320;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+new ResizeObserver(resize).observe(panel);resize();
+function focus(){if(!active)return;const b=new THREE.Box3().setFromObject(active);
+const c=b.getCenter(new THREE.Vector3()),h=Math.max(.8,b.getSize(new THREE.Vector3()).y);
+orbit.target.copy(c);camera.position.set(c.x,c.y+h*.11,c.z+h*1.8);orbit.update();}
+document.getElementById('recenter').onclick=focus;
+function play(v){if(!mixer)return;mixer.stopAllAction();if(v){const clip=clips.find(x=>x.name===v);if(clip)mixer.clipAction(clip).reset().play();}}
+chooser.onchange=()=>play(chooser.value);
+function dispose(obj){obj.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material]){if(!m)continue;for(const k in m){const a=m[k];if(a?.isTexture)a.dispose();}m.dispose();}}});}
+async function show(name){
+  const rid=++requestId;document.querySelectorAll('[data-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.name===name)));
+  msg.textContent='Loading '+name.replaceAll('_',' ')+'…';
+  if(active){scene.remove(active);dispose(active);active=null;}if(mixer){mixer.stopAllAction();mixer=null;}
+  chooser.innerHTML='<option value="">Standing pose</option>';
+  try{const gltf=await new Promise((resolve,reject)=>loader.load(dir+name+'.glb?version=lily-new-build-20261103',resolve,undefined,reject));if(rid!==requestId){dispose(gltf.scene);return}
+  active=gltf.scene;scene.add(active);
+  // Keep the complete technical GLB in memory for rig inspection, but never render an uncovered child body.
+  if(name==='Lily_4') {
+    const bounds=new THREE.Box3().setFromObject(active);
+    active.traverse(o=>{if(o.isMesh)o.visible=false;});
+    const rig=new THREE.SkeletonHelper(active);rig.material.color.set(0x7bf1e4);active.add(rig);
+    const boundsHelper=new THREE.Box3Helper(bounds,0x7ab6e0);active.add(boundsHelper);
+  }
+  clips=gltf.animations||[];mixer=new THREE.AnimationMixer(active);
+  for(const clip of clips.filter(c=>/^(Idle|Walk|Run|Wave|Young Explorer (Idle|Walk|Run|Wave))$/i.test(c.name))) {
+    let o=document.createElement('option');o.value=clip.name;o.textContent=clip.name;chooser.appendChild(o);
+  }
+  focus();msg.textContent=name.replaceAll('_',' ')+' loaded · drag to rotate, pinch to zoom · '+clips.length+' animation clips available';
+  }catch(e){msg.textContent='Model not yet available or cannot load: '+(e?.message||String(e));}
+}
+for(const b of document.querySelectorAll('[data-name]'))b.onclick=()=>show(b.dataset.name);
+function draw(){requestAnimationFrame(draw);const dt=Math.min(.07,clock.getDelta());if(mixer)mixer.update(dt);orbit.update();renderer.render(scene,camera)}
+draw();show('Lily_3');
+</script></body></html>
