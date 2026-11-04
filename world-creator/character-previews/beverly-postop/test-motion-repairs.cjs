@@ -32,8 +32,11 @@ const assert=require('node:assert/strict');
  // Native chair motion at a measured seated phase (not a new source clip).
  await page.locator('#clip').selectOption({label:'Sit down (chair)'});
  await page.waitForTimeout(300);
+ console.log('NATIVE_BEFORE_SEEK',JSON.stringify(await page.evaluate(()=>window.beverlyNativeAnimationQA())));
  await page.locator('#scrub').evaluate(el=>{el.value='850';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ console.log('NATIVE_AFTER_SEEK',JSON.stringify(await page.evaluate(()=>window.beverlyNativeAnimationQA())));
  const chair=await check('Chair feet grounded','Sit down (chair)',{ankleMinY:[-.04,.24]});
+ console.log('NATIVE_AFTER_HOLD',JSON.stringify(await page.evaluate(()=>window.beverlyNativeAnimationQA())));
  assert.ok(Math.abs(chair.kneeWidthM-seat.kneeWidthM)>.045||Math.abs(chair.pelvisY-seat.pelvisY)>.065,'Chair animation is still displaying the previous frozen Sit Open pose');
  await page.locator('#clip').selectOption({label:'Carry walk'});
  const carry=await check('Carry stance width','Carry walk',{ankleWidthM:[.03,.20]});
