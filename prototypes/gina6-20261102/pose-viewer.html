@@ -138,12 +138,12 @@ function makeSlumpedCrawl(source){
  }
  update();
  let h=point('Hips');
- hips.position.y+=THREE.MathUtils.clamp(.54-h.y,-1.2,1.2);
+ hips.position.y+=THREE.MathUtils.clamp(.445-h.y,-1.2,1.2);
  update();h=point('Hips');
  // Shift the *whole torso* from the pelvis joint toward her hands.
  // Keep the rest of the spine continuous: no jackknife at Spine2/Neck.
  // A slight downward slope gives the desired relaxed/slumped crawl.
- steer('Hips','Spine',new THREE.Vector3(h.x,h.y+.04,h.z+.24),1);
+ steer('Hips','Spine',new THREE.Vector3(h.x,h.y+.10,h.z+.24),1);
  update();
  h=point('Hips');
  for(const side of ['Left','Right']){
@@ -182,7 +182,13 @@ function makeSlumpedCrawl(source){
  }
  update();
  const m=source.repairs.metrics();
+ const leftKnee=point('LeftLeg'),rightKnee=point('RightLeg');
+ const leftElbow=point('LeftForeArm'),rightElbow=point('RightForeArm');
  return {...m,pose:'gina-slumped-crawl',
+   kneeJointHeightsM:[leftKnee?.y,rightKnee?.y].map(x=>Number.isFinite(x)?+x.toFixed(5):null),
+   elbowJointHeightsM:[leftElbow?.y,rightElbow?.y].map(x=>Number.isFinite(x)?+x.toFixed(5):null),
+   kneeMaxY:Math.max(leftKnee?.y??-Infinity,rightKnee?.y??-Infinity),
+   elbowMaxY:Math.max(leftElbow?.y??-Infinity,rightElbow?.y??-Infinity),
    kneeBehindPelvisM:m.kneeMeanZ!=null&&m.pelvisZ!=null
      ?+(m.pelvisZ-m.kneeMeanZ).toFixed(5):null,
    torsoDeclineM:m.chestY!=null&&m.pelvisY!=null
