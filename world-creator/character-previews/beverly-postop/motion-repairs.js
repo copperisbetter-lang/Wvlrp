@@ -114,6 +114,12 @@ export function createBeverlyMotionRepairs({
       if(elbow)steerBoneTo(side+'ForeArm',side+'Hand',
         new THREE.Vector3(elbow.x+sign*.015,.077,elbow.z+.22),1);
     }
+    // A person supported on forearms normally lifts their gaze slightly
+    // rather than leaving the head pitched straight toward the floor.
+    // Make a moderate cervical extension only, without folding the torso.
+    const neck=world('Neck');
+    if(neck)steerBoneTo('Neck','Head',
+      new THREE.Vector3(neck.x,neck.y+.015,neck.z+.075),.48);
     update();
   }
   function sitLegsOpen(){
