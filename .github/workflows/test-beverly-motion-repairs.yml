@@ -45,6 +45,7 @@ jobs:
             /tmp/beverly-surface-*.png
             /tmp/beverly-patch-bias-*.png
             /tmp/beverly-kneel-patch-*.png
+            /tmp/beverly-patchtrim-*.png
             /tmp/beverly-surface-meshes.json
             /tmp/beverly-three-layer-geometry.json
             /tmp/beverly-fixed-elbows-knees-visual.png
