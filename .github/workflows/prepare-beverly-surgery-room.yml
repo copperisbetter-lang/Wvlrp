@@ -1,0 +1,105 @@
+name: Prepare isolated Beverly clone surgery room
+
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/prepare-beverly-surgery-room.yml
+      - prototypes/beverly-surgery/prepare_clone.py
+      - prototypes/beverly-surgery/setup_blender_room.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  surgery-prep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out approved game source from main without edits
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: original
+          filter: blob:none
+          sparse-checkout: |
+            world-creator/base-camp/beverly-asset
+          persist-credentials: false
+
+      - name: Check out isolated surgical scripts and native donor
+        uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+          path: staging
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/beverly-surgery
+            prototypes/test-bone-1
+          persist-credentials: false
+
+      - name: Reconstruct and verify byte-identical Beverly surgery clone
+        env:
+          BEVERLY_PARTS_DIR: original/world-creator/base-camp/beverly-asset
+          DONOR_FILE: staging/prototypes/test-bone-1/Test_Bone_1.glb
+          SURGERY_OUT: /tmp/beverly-surgery-room
+        run: |
+          python3 staging/prototypes/beverly-surgery/prepare_clone.py
+
+      - name: Restore existing official Blender tool cache when available
+        uses: actions/cache/restore@v4
+        with:
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+          path: /tmp/blender-4.2.0-linux-x64
+
+      - name: Make Blender available for actual editable surgical scene
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 --connect-timeout 30 'https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz' -o /tmp/blender-surgery.tar.xz
+            tar -xf /tmp/blender-surgery.tar.xz -C /tmp
+          fi
+          /tmp/blender-4.2.0-linux-x64/blender --version | head -3
+
+      - name: Create actual Blender clone and separate donor surgery room
+        env:
+          SURGERY_OUT: /tmp/beverly-surgery-room
+        run: |
+          set -euo pipefail
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender --background --factory-startup --python staging/prototypes/beverly-surgery/setup_blender_room.py 2>&1 | tee /tmp/surgery-setup.log
+          grep -F BEVERLY_SURGERY_ROOM_PREPARED /tmp/surgery-setup.log
+
+      - name: Independently check saved surgical files and source integrity
+        run: |
+          set -euo pipefail
+          test -s /tmp/beverly-surgery-room/Beverly_SURGERY_CLONE.glb
+          test -s /tmp/beverly-surgery-room/Test_Bone_1_SOURCE_DONOR.glb
+          test -s /tmp/beverly-surgery-room/Beverly_SURGERY_CLONE_ONLY.blend
+          test -s /tmp/beverly-surgery-room/Beverly_SURGERY_ROOM.blend
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('/tmp/beverly-surgery-room')
+          digest=hashlib.sha256((p/'Beverly_SURGERY_CLONE.glb').read_bytes()).hexdigest()
+          assert digest=='fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc'
+          q=json.loads((p/'Blender_Surgery_Room_QA.json').read_text())
+          assert any(x['joints']==52 for x in q['clone_armatures'])
+          assert any(x['joints']==69 for x in q['donor_armatures'])
+          assert not q['skeleton_transplanted'] and not q['meshes_modified']
+          print('SURGERY_ROOM_FINAL_QA_PASS',digest,q['blend_file_bytes'])
+          PY
+
+      - name: Preserve surgical clone and scene as Actions artifact only
+        uses: actions/upload-artifact@v4
+        with:
+          name: Beverly-TestBone1-SurgeryRoom-WORKING
+          path: |
+            /tmp/beverly-surgery-room/Beverly_SURGERY_CLONE.glb
+            /tmp/beverly-surgery-room/Test_Bone_1_SOURCE_DONOR.glb
+            /tmp/beverly-surgery-room/Beverly_SURGERY_CLONE_ONLY.blend
+            /tmp/beverly-surgery-room/Beverly_SURGERY_ROOM.blend
+            /tmp/beverly-surgery-room/Surgery_Room_Manifest.json
+            /tmp/beverly-surgery-room/Blender_Surgery_Room_QA.json
+          if-no-files-found: error
+          retention-days: 21
