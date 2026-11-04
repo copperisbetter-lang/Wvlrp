@@ -59,7 +59,7 @@ select,button{min-height:40px}
 </select></div>
 </div>
 <div id="btns">
-<button id="play">▶ Play</button><button id="restart">↺ Restart</button>
+<button id="walk">Walk</button><button id="run">Run</button><button id="play">▶ Play</button><button id="restart">↺ Restart</button>
 <button id="loop" aria-pressed="true">Loop ON</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="reset">Recenter</button>
 </div>
@@ -147,6 +147,9 @@ function choose(index){
  status.textContent="Beverly loaded · playing "+title(clips[index].name)+" · "+clips.length+" movements";
 }
 select.onchange=()=>choose(Number(select.value));
+function jumpToMotion(name){const i=clips.findIndex(c=>title(c.name).toLowerCase()===name);if(i>=0){select.value=String(i);choose(i)}}
+$('walk').onclick=()=>jumpToMotion('walk');
+$('run').onclick=()=>jumpToMotion('run');
 $('play').onclick=()=>{
  if(!action&&clips.length){choose(0);return}
  if(!action)return;
@@ -156,7 +159,7 @@ $('restart').onclick=()=>{if(action){action.reset().play();action.paused=false;p
 $('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
 $('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';mixer.update(0)};
 const loader=new GLTFLoader();
-loader.load('./Beverly_Postop_77.glb',gltf=>{
+loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
  model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
  // Keep real dressed Beverly meshes visible by default. Never replace with a skeleton-only placeholder.
  scene.add(model);model.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false}});
@@ -168,7 +171,9 @@ loader.load('./Beverly_Postop_77.glb',gltf=>{
  status.textContent='Model loaded, but expected 77 motions/69 bones/25+ meshes. Found '+clips.length+'/'+bones.size+'/'+meshes+'. Please report this.';
  }
  select.innerHTML='';
- clips.forEach((clip,i)=>{const op=document.createElement('option');op.value=String(i);op.textContent=(i+1)+'. '+title(clip.name);select.appendChild(op)});
+ const priority={'idle':0,'walk':1,'run':2,'wave':3,'sit idle (chair)':4,'stand up (chair)':5};
+ const order=clips.map((clip,i)=>i).sort((a,b)=>(priority[title(clips[a].name).toLowerCase()]??10)-(priority[title(clips[b].name).toLowerCase()]??10)||title(clips[a].name).localeCompare(title(clips[b].name)));
+ for(const i of order){const op=document.createElement('option');op.value=String(i);op.textContent=title(clips[i].name);select.appendChild(op)}
  select.disabled=false;$('count').textContent=clips.length+' of 77 available';
  mixer=new THREE.AnimationMixer(model);
  aim();
