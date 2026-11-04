@@ -137,6 +137,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
+import {createBeverlyMotionRepairs} from './motion-repairs.js?v=diagnostics-posefix-20261104-v1';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -334,7 +335,7 @@ $('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().durat
 
 // Gait V3: the donor action writes the raw pose each frame; only the PREVIEW
 // receives these world-space joint constraints. Certified game model unchanged.
-let gaitBones=null,lastPoseDiagnostics={};
+let gaitBones=null,lastPoseDiagnostics={},motionRepairs=null;
 const p3=()=>new THREE.Vector3();
 function bonePosition(name){
  const b=gaitBones?.[name];
@@ -428,45 +429,9 @@ function adjustAnkleWidth(widthMeters,strength){
  }
 }
 function applyInspectionPose(){
- if(!poseMode)return;
- const hip=gaitBones?.Hips;if(!hip)return;
- model.updateMatrixWorld(true);
- if(poseMode==='sit-open'){
-   const center=bonePosition('Hips');
-   // Preserve native sitting pelvis/spine and open knees through hip rotation.
-   steerChildX('LeftUpLeg','LeftLeg',center.x+.245,1);
-   steerChildX('RightUpLeg','RightLeg',center.x-.245,1);
-   steerChildX('LeftLeg','LeftFoot',center.x+.245,.75);
-   steerChildX('RightLeg','RightFoot',center.x-.245,.75);
- } else if(poseMode==='elbows-knees'){
-   // Native get-up pose supplies bent knees; anchor knees near a low floor,
-   // lean upper body forward and guide forearms toward ground support.
-   const lk=bonePosition('LeftLeg'),rk=bonePosition('RightLeg');
-   if(lk&&rk){
-     const kneeHeight=(lk.y+rk.y)/2;
-     hip.position.y+=THREE.MathUtils.clamp(.12-kneeHeight,-.65,.4);
-     hip.updateWorldMatrix(true,true);
-   }
-   const hips=bonePosition('Hips'),sp=gaitBones.Spine;
-   if(sp&&gaitBones.Spine2){
-     const p=bonePosition('Spine');
-     steerBoneTo('Spine','Spine2',new THREE.Vector3(p.x,p.y+.10,p.z+.40),.88);
-   }
-   for(const side of ['Left','Right']){
-     const sign=side==='Left'?1:-1,root=bonePosition('Hips');
-     if(!root)continue;
-     steerBoneTo(side+'Arm',side+'ForeArm',
-       new THREE.Vector3(root.x+sign*.25,.13,root.z+.52),1);
-     steerBoneTo(side+'ForeArm',side+'Hand',
-       new THREE.Vector3(root.x+sign*.28,.10,root.z+.77),.9);
-   }
- }
- model.updateMatrixWorld(true);
- const lk=bonePosition('LeftLeg'),rk=bonePosition('RightLeg');
- const le=bonePosition('LeftForeArm'),re=bonePosition('RightForeArm');
- lastPoseDiagnostics={pose:poseMode,kneeHeightM:lk&&rk?+(Math.min(lk.y,rk.y)).toFixed(4):null,
-    elbowsHeightM:le&&re?+(Math.min(le.y,re.y)).toFixed(4):null,
-    kneeGapM:lk&&rk?+Math.abs(lk.x-rk.x).toFixed(4):null};
+ if(!poseMode||!motionRepairs)return;
+ // Corrections target existing joints only, preserving skin/attachment weights.
+ lastPoseDiagnostics=motionRepairs.inspect(poseMode);
 }
 function refreshPoseWithGait(deltaSeconds){
  if(!mixer)return;
@@ -480,7 +445,12 @@ function applyWalkCorrection(){
  if(!model)return;
  if(poseMode){applyInspectionPose();return}
  const walking=activeMotionIs('Walk'),running=activeMotionIs('Run');
- if(!walking&&!running)return;
+ if(!walking&&!running){
+   // Other native motions get scoped corrections after mixer evaluates them.
+   motionRepairs?.clip(activeGaitName,action?.time??0,action?.getClip()?.duration??1);
+   model.updateMatrixWorld(true);
+   return;
+ }
  const arm=Number($('armFit').value)/100;
  adjustArms(arm);
  if(walking){
@@ -586,6 +556,14 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  select.disabled=false;$('count').textContent='79 (77 + 2 poses)';
  mixer=new THREE.AnimationMixer(model);
  initGaitBones();
+ motionRepairs=createBeverlyMotionRepairs({
+   THREE,model,bones:gaitBones,steerBoneTo,steerChildX,footRoll
+ });
+ window.beverlyMotionRepairQA=()=>({
+   sourceClip:activeGaitName,
+   inspectionPose:poseMode,
+   ...motionRepairs.metrics()
+ });
  poseDiagnostics?.ensureBones();
  aim();
  let suggested=clips.findIndex(c=>/^idle$/i.test(title(c.name)));
