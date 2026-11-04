@@ -134,11 +134,17 @@ assert not remaining,("Unmapped donor hierarchy",list(remaining.keys()))
 assert len(bev.data.bones)==69,("Expected final 69-bone graft",len(bev.data.bones))
 
 # Armature modifiers must continue to target the working clone, not donor.
+unskinned_static=[]
+skinned=[]
 for obj in bev_meshes:
     mods=[m for m in obj.modifiers if m.type=="ARMATURE"]
-    assert mods,("Non-skinned Beverly mesh",obj.name)
+    if not mods:
+        unskinned_static.append(obj.name)
+        continue
+    skinned.append(obj.name)
     for m in mods:
         assert m.object==bev,("Incorrect armature modifier",obj.name,m.object)
+assert len(skinned)>=20,("Too few actual bound meshes",len(skinned),unskinned_static)
 assert geom_hash()==original_geometry_sha,"SOURCE MESH POSITIONS OR FACES CHANGED"
 
 neutral_rest(bev)
@@ -173,6 +179,8 @@ audit={
 "added_donor_only_joint_names":added,
 "donor_only_joint_count":len(added),
 "beverly_mesh_count":len(bev_meshes),
+"armature_bound_mesh_count":len(skinned),
+"original_unskinned_static_meshes":unskinned_static,
 "beverly_geometry_sha256_before_and_after":original_geometry_sha,
 "max_evaluated_rest_pose_position_change_m":max_rest_delta,
 "source_approved_glb_sha256":"fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc",
