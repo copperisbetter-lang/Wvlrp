@@ -43,8 +43,9 @@ button[aria-pressed=true]{background:#168b82;border-color:#adf4e3}
 #top h1{font-size:13px}
 #top p{display:none}
 #status{font-size:10px;max-width:68vw;white-space:normal;padding:4px 7px}
-#quickbar{display:grid;grid-template-columns:1.1fr 1.15fr .7fr .7fr 1.65fr;gap:4px}
+#quickbar{display:grid;grid-template-columns:1.07fr 1.05fr .66fr .66fr 1.35fr 1.26fr;gap:4px}
 #quickbar button{font-size:10px;min-width:0;min-height:44px;padding:4px 2px;white-space:normal;line-height:1.12}
+#diagOpen{border-color:#5fd2e0;background:#1b4c68}
 #tools:not(.collapsed){max-height:73dvh}
 #controlsBody{max-height:calc(73dvh - 74px)}
 #hint{top:85px;right:10px;font-size:10px}
@@ -60,6 +61,19 @@ select,button{min-height:40px}
 #gaitTune input{width:100%;accent-color:#53c6af}
 #gaitState{font-size:11px;color:#9deacb;margin-top:5px}
 @media(max-width:500px){#gaitTune{gap:7px}}
+[hidden]{display:none!important}
+#diagPanel{position:fixed;z-index:9;top:calc(72px + env(safe-area-inset-top));bottom:calc(76px + env(safe-area-inset-bottom));left:8px;right:8px;margin:auto;max-width:610px;background:#102a3af7;border:1px solid #67b6cf;border-radius:12px;box-shadow:0 5px 32px #000c;display:flex;flex-direction:column;padding:12px;gap:9px;color:#ecf7fd}
+#diagHeader{display:flex;align-items:center;gap:8px;justify-content:space-between}
+#diagHeader h2{font-size:16px;margin:0}
+#diagClose{min-height:36px}
+#diagStatus{font-size:12px;color:#b5e9f1}
+#diagSelected{font-size:12px;font-weight:800;color:#b8e6f1}
+#diagLive{flex:1;min-height:120px;overflow:auto;background:#0c1f2c;border:1px solid #4a7686;border-radius:8px;font-family:ui-monospace,monospace;font-size:11px;white-space:pre-wrap;line-height:1.55;padding:10px;margin:0}
+#diagActions{display:flex;gap:7px}
+#diagActions button{flex:1;min-width:0;white-space:normal;font-size:12px;line-height:1.2}
+#diagCopy{background:#126c71;border-color:#8fece2}
+#diagHelp{font-size:11px;line-height:1.4;color:#a9d6e6;margin:0}
+#diagBadge{display:inline-block;color:#8af3d9;margin-left:3px;font-weight:900}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
@@ -77,6 +91,7 @@ select,button{min-height:40px}
 <button id="subjectUp" aria-label="Move Beverly higher in view">↑ Up</button>
 <button id="subjectDown" aria-label="Move Beverly lower in view">↓ Down</button>
 <button id="removeClothes" aria-pressed="false">Remove Clothes</button>
+<button id="diagOpen">Diagnostics <span id="diagBadge"></span></button>
 </div>
 <div id="controlsBody">
 <div id="mainrow">
@@ -104,10 +119,23 @@ select,button{min-height:40px}
 </div>
 <p style="font-size:11px;color:#abc3ce;margin:7px 0 0">77 donor animations + 2 experimental inspection poses. Gait and pose adjustments run only in this preview, not in the original game or certified Beverly model.</p>
 </details></div></div>
+<aside id="diagPanel" hidden aria-hidden="true" role="dialog" aria-label="Beverly complete skeleton pose diagnostics">
+<div id="diagHeader"><h2>Pose Diagnostics · Whole Body</h2><button id="diagClose">✕ Close</button></div>
+<div id="diagStatus" role="status">Preparing full 69-joint tracking…</div>
+<div id="diagSelected">Select a pose or animation</div>
+<pre id="diagLive">Every joint's positions, rotations, and movement during the transition into the pose will appear here.</pre>
+<div id="diagActions">
+<button id="diagCopy">Copy All — One Paste</button>
+<button id="diagSave">Save All JSON</button>
+</div>
+<p id="diagHelp">Auto-records the 69-bone skeleton when you select a pose: local/world XYZ positions, rotations, joint angles and the approach into that pose. Records are saved in this browser. Copy All produces one compressed block you can paste into ChatGPT; Save All JSON downloads the complete readable backup.</p>
+<button id="diagClear">Clear saved recordings…</button>
+</aside>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {BeverlyPoseDiagnostics} from './pose-diagnostics.js';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -131,6 +159,7 @@ orbit.screenSpacePanning=true;
 // Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
 orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
+let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
 const RUN_ANKLE_WIDTH=0.0762; // exactly 3 inches between foot/ankle centers in world X
 const WALK_ANKLE_WIDTH=0.090; // preview target for a natural narrow heel-to-toe walk
@@ -250,6 +279,7 @@ function updateGaitPanel(){
 }
 function choose(index){
  if(!mixer||!clips[index])return;
+ if(diagnosticsArmed)poseDiagnostics?.begin(title(clips[index].name),{selectionType:'animation',durationSeconds:Math.min(6,Math.max(2.5,clips[index].duration))});
  if(action)action.stop();
  poseMode=null;activeGaitName=title(clips[index].name);
  action=mixer.clipAction(clips[index]);action.reset().enabled=true;action.setEffectiveWeight(1);ensureLoop();action.play();
@@ -265,6 +295,7 @@ function choosePose(which){
  const baseName=which==='elbows-knees'?'Get up (from front)':'Sit idle (chair)';
  const clip=clips.find(c=>title(c.name)===baseName);
  if(!clip){status.textContent='Missing pose source '+baseName;return;}
+ if(diagnosticsArmed)poseDiagnostics?.begin(label,{selectionType:'inspection-pose',nativeSourceClip:baseName,poseMode:which,durationSeconds:2.5});
  if(action)action.stop();
  poseMode=which;activeGaitName=label;
  action=mixer.clipAction(clip);action.reset().enabled=true;action.setEffectiveWeight(1);action.play();
@@ -500,6 +531,23 @@ window.beverlyGaitQA=()=>{
           footSliderDisabled:$('footFit').disabled};
 };
 
+
+// Pose diagnostics hooks use the *actual* bones as displayed after gait and pose
+// corrections; recordings persist in browser IndexedDB and export in one paste.
+poseDiagnostics=new BeverlyPoseDiagnostics({
+ THREE,getModel:()=>model,
+ getInfo:()=>{
+   const dur=action?.getClip()?.duration||0;
+   return {label:activeGaitName,poseMode,clipTimeSeconds:action?.time??0,
+     actionDuration:dur,normalizedPhase:dur?+(action.time/dur).toFixed(5):0,
+     paused:!!action?.paused,armPercent:Number($('armFit').value),
+     footPercent:Number($('footFit').value),playbackSpeed:Number($('speed').value),
+     clothesHidden:swimwearHidden};
+ },
+ getGaitQA:()=>window.beverlyGaitQA?.()
+});
+window.beverlyDiagnosticsQA=()=>poseDiagnostics.getQA();
+
 const loader=new GLTFLoader();
 loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
  model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
@@ -536,9 +584,11 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  select.disabled=false;$('count').textContent='79 (77 + 2 poses)';
  mixer=new THREE.AnimationMixer(model);
  initGaitBones();
+ poseDiagnostics?.ensureBones();
  aim();
  let suggested=clips.findIndex(c=>/^idle$/i.test(title(c.name)));
  if(suggested<0)suggested=0;select.value=String(suggested);choose(suggested);
+ diagnosticsArmed=true;
  status.textContent='Beverly ready · '+(meshes-hiddenHelpers.length)+' visible body/outfit meshes · '+bones.size+' bones · '+clips.length+' movements';
 },p=>{
  if(p.total){const percent=Math.round(p.loaded/p.total*100);status.textContent='Loading Beverly’s full model… '+percent+'%'}
@@ -549,7 +599,7 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
 function frame(){
  requestAnimationFrame(frame);
  const dt=Math.min(.08,clock.getDelta());
- if(mixer){refreshPoseWithGait(dt*Number($('speed').value));if(action){
+ if(mixer){refreshPoseWithGait(dt*Number($('speed').value));poseDiagnostics?.tick(dt);if(action){
    const d=action.getClip().duration||1;
    const t=action.time;
    if(document.activeElement!==$('scrub'))$('scrub').value=String(Math.round(1000*t/d));
