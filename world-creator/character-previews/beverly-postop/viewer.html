@@ -76,7 +76,7 @@ select,button{min-height:40px}
 <button id="fullBody">Full Body</button>
 <button id="subjectUp" aria-label="Move Beverly higher in view">↑ Up</button>
 <button id="subjectDown" aria-label="Move Beverly lower in view">↓ Down</button>
-<button id="removeClothes" aria-pressed="false">Remove Swimwear</button>
+<button id="removeClothes" aria-pressed="false">Remove Clothes</button>
 </div>
 <div id="controlsBody">
 <div id="mainrow">
@@ -193,7 +193,7 @@ function setSwimwearHidden(hidden){
  swimwearHidden=!!hidden;
  for(const mesh of swimwearItems)mesh.visible=!swimwearHidden;
  $('removeClothes').setAttribute('aria-pressed',String(swimwearHidden));
- $('removeClothes').textContent=swimwearHidden?'Restore Swimwear':'Remove Swimwear';
+ $('removeClothes').textContent=swimwearHidden?'Restore Clothes':'Remove Clothes';
  $('removeClothes').title=swimwearHidden?'Restore approved fitted clothing':'Hide garment meshes; original body unchanged';
 }
 $('removeClothes').onclick=()=>setSwimwearHidden(!swimwearHidden);
