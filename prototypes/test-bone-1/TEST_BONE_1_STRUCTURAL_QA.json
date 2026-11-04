@@ -2,8 +2,8 @@
   "name": "Test Bone 1",
   "source": "native official Ara 3D Gen exporter",
   "source_Beverly_GLBSHA256": "fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc",
-  "glb_SHA256": "5264fd7088147b10e0dcb139c49fec0cbca6fe01bf6c42eaec066fdbdac95903",
-  "bytes": 12185576,
+  "glb_SHA256": "3ed5a22341a468d6e26016d5e530649c18ad3389c37f581ee3e4944cfe1282cb",
+  "bytes": 12185588,
   "skin_distinct_vertices": 11901,
   "skin_triangles": 22148,
   "skin_primitive_height_m": 1.4851372689008713,
@@ -77,16 +77,16 @@
   "height_difference_cm": 0.826,
   "skin_horizontal_contours_m": {
     "chest": {
-      "perimeter_m": 0.7805305504251282,
-      "width_m": 0.2528855730298836,
-      "depth_m": 0.19114224363327037,
-      "points": 101
+      "perimeter_m": 0.9766051029151922,
+      "width_m": 0.30607320008861644,
+      "depth_m": 0.23622134454573301,
+      "points": 145
     },
     "waist": {
-      "perimeter_m": 0.6542249222904757,
+      "perimeter_m": 0.6541027186714337,
       "width_m": 0.23711674884958522,
-      "depth_m": 0.16427882503807448,
-      "points": 89
+      "depth_m": 0.16438058858395618,
+      "points": 85
     },
     "hips": {
       "perimeter_m": 0.926912632744359,
@@ -96,8 +96,8 @@
     }
   },
   "horizontal_contour_difference_cm": {
-    "chest": -8.544,
-    "waist": -0.908,
+    "chest": 11.063,
+    "waist": -0.92,
     "hips": 0.539
   },
   "rig_joint_counts": [
