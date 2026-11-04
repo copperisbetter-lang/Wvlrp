@@ -178,7 +178,7 @@ $('play').onclick=()=>{
 };
 $('restart').onclick=()=>{if(action){action.reset().play();action.paused=false;paused=false;$('play').textContent='⏸ Pause'}};
 $('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
-$('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';mixer.update(0);applyWalkCorrection()};
+$('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';refreshPoseWithGait(0)};
 
 // Beverly walking correction V1. Only the PLAIN Walk clip is affected.
 // Correct 3-D child-bone directions in local shoulder/thigh joints instead of
@@ -222,6 +222,17 @@ function bendLimb(startName,endName,maxLateral,strength,maxForwardRatio){
   upper.quaternion.slerp(corrected,strength);
   upper.updateMatrixWorld(true);
 }
+function refreshPoseWithGait(deltaSeconds){
+  if(!mixer)return;
+  // Important: a paused AnimationAction does not reapply keyframes with mixer.update(0).
+  // Briefly unpause it for evaluation so sliders always compare ORIGINAL vs CORRECTED
+  // positions, without adding corrections on top of the previous frame.
+  const wasPaused=!!action?.paused;
+  if(wasPaused)action.paused=false;
+  mixer.update(wasPaused?0:deltaSeconds);
+  if(wasPaused)action.paused=true;
+  applyWalkCorrection();
+}
 function applyWalkCorrection(){
   if(!model||!walkSelected())return;
   const arm=Number($('armFit').value)/100;
@@ -240,7 +251,7 @@ function applyWalkCorrection(){
 for(const [id,readout] of [['armFit','armValue'],['footFit','footValue']]){
   $(id).oninput=()=>{
     $(readout).textContent=$(id).value+'%';
-    if(mixer){mixer.update(0);applyWalkCorrection();}
+    if(mixer)refreshPoseWithGait(0);
   };
 }
 window.beverlyGaitQA=()=>{
@@ -254,7 +265,11 @@ window.beverlyGaitQA=()=>{
     const p=gaitBones[a],q=gaitBones[b];
     if(p&&q)lateral[a]=+(q.getWorldPosition(new THREE.Vector3()).x-p.getWorldPosition(new THREE.Vector3()).x).toFixed(5);
   }
-  return {clip:action&&title(action.getClip().name),arms:Number($('armFit').value),legs:Number($('footFit').value),lateral};
+  const x=n=>gaitBones[n]?.getWorldPosition(new THREE.Vector3()).x||0;
+  return {clip:action&&title(action.getClip().name),arms:Number($('armFit').value),
+          legs:Number($('footFit').value),lateral,
+          elbowGap:+Math.abs(x('LeftForeArm')-x('RightForeArm')).toFixed(5),
+          ankleGap:+Math.abs(x('LeftFoot')-x('RightFoot')).toFixed(5)};
 };
 
 const loader=new GLTFLoader();
@@ -300,7 +315,7 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
 function frame(){
  requestAnimationFrame(frame);
  const dt=Math.min(.08,clock.getDelta());
- if(mixer){mixer.update(dt*Number($('speed').value));applyWalkCorrection();if(action){
+ if(mixer){refreshPoseWithGait(dt*Number($('speed').value));if(action){
    const d=action.getClip().duration||1;
    const t=action.time;
    if(document.activeElement!==$('scrub'))$('scrub').value=String(Math.round(1000*t/d));
