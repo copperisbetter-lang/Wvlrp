@@ -29,10 +29,24 @@ button[aria-pressed=true]{background:#168b82;border-color:#adf4e3}
 #speed{width:110px;accent-color:#50c5c1}
 #scrub{width:100%;margin-top:6px;accent-color:#50c5c1}
 #counter{font-size:11px;color:#d2e4ec;font-variant-numeric:tabular-nums;margin-top:4px;display:flex;justify-content:space-between}
+#quickbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#quickbar button{flex:1 1 auto;font-size:11px;min-height:40px}
+#quickbar #removeClothes{flex-grow:1.5;background:#235b62}
+#quickbar #removeClothes[aria-pressed=true]{background:#846b38;border-color:#ffda96}
+#controlsBody{max-height:min(67dvh,620px);overflow-y:auto;margin-top:8px;overscroll-behavior:contain}
+#tools.collapsed #controlsBody{display:none}
+#tools.collapsed{background:#0e2837d9}
+#toggleControls{min-width:82px}
 #hint{position:fixed;right:10px;top:12px;font-size:11px;color:#d7f1f1;background:#112b35b3;border-radius:6px;padding:6px 8px;z-index:2}
 @media(max-width:520px){
-#top h1{font-size:15px}
-#top p{font-size:10px;max-width:82vw}
+#top{max-width:72vw}
+#top h1{font-size:13px}
+#top p{display:none}
+#status{font-size:10px;max-width:68vw;white-space:normal;padding:4px 7px}
+#quickbar{display:grid;grid-template-columns:1.1fr 1.15fr .7fr .7fr 1.65fr;gap:4px}
+#quickbar button{font-size:10px;min-width:0;min-height:44px;padding:4px 2px;white-space:normal;line-height:1.12}
+#tools:not(.collapsed){max-height:73dvh}
+#controlsBody{max-height:calc(73dvh - 74px)}
 #hint{top:85px;right:10px;font-size:10px}
 #tools{padding:8px}
 #mainrow{grid-template-columns:minmax(0,1fr) 95px}
@@ -56,7 +70,15 @@ select,button{min-height:40px}
 <div id="status" role="status" aria-live="polite">Loading Beverly’s 3D model…</div>
 </div>
 <div id="hint">Drag to rotate · pinch to zoom</div>
-<div id="tools">
+<div id="tools" class="collapsed">
+<div id="quickbar" role="group" aria-label="Beverly viewer quick controls">
+<button id="toggleControls" aria-expanded="false">Controls ▴</button>
+<button id="fullBody">Full Body</button>
+<button id="subjectUp" aria-label="Move Beverly higher in view">↑ Up</button>
+<button id="subjectDown" aria-label="Move Beverly lower in view">↓ Down</button>
+<button id="removeClothes" aria-pressed="false">Remove Swimwear</button>
+</div>
+<div id="controlsBody">
 <div id="mainrow">
 <div><label for="clip">Movement — <span id="count">loading</span></label><select id="clip" aria-label="Choose one of Beverly's movements" disabled><option>Loading animations…</option></select></div>
 <div><label for="speed">Playback speed</label><select id="speed" aria-label="Playback speed">
@@ -81,7 +103,7 @@ select,button{min-height:40px}
 <button id="quality">Quality: balanced</button>
 </div>
 <p style="font-size:11px;color:#abc3ce;margin:7px 0 0">Experimental graft viewer. Animation availability is verified; natural walking and running still require visual approval. Original game Beverly is untouched.</p>
-</details></div>
+</details></div></div>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -104,7 +126,9 @@ const fill=new THREE.DirectionalLight(0xb6d9ff,1.7);fill.position.set(-3,3,-3);s
 const grid=new THREE.GridHelper(4,32,0x7b9bab,0x385164);scene.add(grid);
 const camera=new THREE.PerspectiveCamera(42,1,.01,150);
 const orbit=new OrbitControls(camera,renderer.domElement);
-orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=false;
+orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=true;
+orbit.screenSpacePanning=true;
+// Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
 orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
 function resize(){const w=panel.clientWidth||innerWidth,h=panel.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
@@ -135,6 +159,52 @@ function aim(side='front'){
 }
 for(const side of ['front','side','back'])$(side).onclick=()=>aim(side);
 $('reset').onclick=()=>aim();
+function setControlsExpanded(expanded){
+ $('tools').classList.toggle('collapsed',!expanded);
+ $('toggleControls').setAttribute('aria-expanded',String(expanded));
+ $('toggleControls').textContent=expanded?'Hide controls ▾':'Controls ▴';
+}
+$('toggleControls').onclick=()=>setControlsExpanded($('tools').classList.contains('collapsed'));
+$('fullBody').onclick=()=>{setControlsExpanded(false);aim('front');};
+function shiftSubject(up){
+ if(!model)return;
+ const height=(bodyBounds?.getSize(new THREE.Vector3()).y||1.7);
+ // Move CAMERA and target DOWN to shift the subject UP in frame.
+ const delta=height*.15*(up?-1:1);
+ orbit.target.y+=delta;
+ camera.position.y+=delta;
+ orbit.update();
+}
+$('subjectUp').onclick=()=>shiftSubject(true);
+$('subjectDown').onclick=()=>shiftSubject(false);
+let swimwearItems=[],swimwearHidden=false;
+function isSwimwearMesh(name){
+ // Only finished garments, never source anatomical/body meshes.
+ const n=name.replace(/^SURG_BEVERLY__/,'');
+ return /^Beverly fitted swimwear(?:\.\d+)?$/i.test(n)
+ || /^Gina_6_FITTED_GOLD_BIKINI_8$/i.test(n)
+ || /^(?:Left precise cup|Right precise cup|Left top owner route|Right top owner route)$/i.test(n)
+ || /^V19 connected (?:back|front)(?:Left|Right) hip strap$/i.test(n)
+ || /^V47 straight front cup-to-cup strap$/i.test(n)
+ || /^V51 continuous (?:left|right) cup-to-back strap$/i.test(n);
+}
+function setSwimwearHidden(hidden){
+ if(!model)return;
+ swimwearHidden=!!hidden;
+ for(const mesh of swimwearItems)mesh.visible=!swimwearHidden;
+ $('removeClothes').setAttribute('aria-pressed',String(swimwearHidden));
+ $('removeClothes').textContent=swimwearHidden?'Restore Swimwear':'Remove Swimwear';
+ $('removeClothes').title=swimwearHidden?'Restore approved fitted clothing':'Hide garment meshes; original body unchanged';
+}
+$('removeClothes').onclick=()=>setSwimwearHidden(!swimwearHidden);
+window.beverlyViewerQA=()=>({
+ controlsCollapsed:$('tools').classList.contains('collapsed'),
+ swimwearMeshes:swimwearItems.length,
+ swimwearHidden,visibleClothing:swimwearItems.filter(x=>x.visible).length,
+ fullBodyButton:!!$('fullBody'),panEnabled:orbit.enablePan,
+ clips:clips.length,liveModel:!!model
+});
+
 $('grid').onclick=()=>{
  grid.visible=!grid.visible;
  $('grid').setAttribute('aria-pressed',String(grid.visible));
@@ -288,6 +358,11 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
    if(helper)hiddenHelpers.push(o.name);
  });
  console.info('Beverly viewer: hidden unrelated loose helper props',hiddenHelpers);
+ swimwearItems=[];
+ model.traverse(o=>{if(o.isMesh&&isSwimwearMesh(o.name))swimwearItems.push(o)});
+ console.info('Beverly garment meshes available for hide/restore',swimwearItems.map(o=>o.name));
+ $('removeClothes').disabled=swimwearItems.length===0;
+ setSwimwearHidden(false);
  bodyBounds=bbox().clone();
  clips=gltf.animations||[];
  const bones=new Set();let meshes=0,skins=0;
