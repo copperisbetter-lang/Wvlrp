@@ -163,6 +163,16 @@ orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
 let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
+let preservedRigRest=new Map();
+function restoreRigRest(){
+ if(!model||!preservedRigRest.size)return;
+ model.traverse(o=>{
+   if(!o.isBone)return;
+   const rest=preservedRigRest.get(o.uuid);
+   if(rest){o.position.copy(rest.pos);o.quaternion.copy(rest.quat);o.scale.copy(rest.scale)}
+ });
+ model.updateMatrixWorld(true);
+}
 const RUN_ANKLE_WIDTH=0.0762; // exactly 3 inches between foot/ankle centers in world X
 const WALK_ANKLE_WIDTH=0.090; // preview target for a natural narrow heel-to-toe walk
 const customPoses=[{value:'pose:elbows-knees',label:'Elbows & Knees (pose)'},
@@ -283,6 +293,7 @@ function choose(index){
  if(!mixer||!clips[index])return;
  if(diagnosticsArmed)poseDiagnostics?.begin(title(clips[index].name),{selectionType:'animation',durationSeconds:Math.min(6,Math.max(2.5,clips[index].duration))});
  if(action)action.stop();
+ restoreRigRest();
  poseMode=null;activeGaitName=title(clips[index].name);
  action=mixer.clipAction(clips[index]);action.reset().enabled=true;action.setEffectiveWeight(1);ensureLoop();action.play();
  paused=false;action.paused=false;$('play').disabled=false;$('play').textContent='⏸ Pause';
@@ -312,6 +323,7 @@ function choosePose(which){
  if(!clip){status.textContent='Missing pose source '+baseName;return;}
  if(diagnosticsArmed)poseDiagnostics?.begin(label,{selectionType:'inspection-pose',nativeSourceClip:baseName,poseMode:which,durationSeconds:2.5});
  if(action)action.stop();
+ restoreRigRest();
  poseMode=which;activeGaitName=label;
  action=mixer.clipAction(clip);action.reset().enabled=true;action.setEffectiveWeight(1);action.play();
  seekNativeFrame(clip.duration*(which==='elbows-knees'?.28:.50),true);
@@ -566,6 +578,12 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  for(const i of order){const op=document.createElement('option');op.value=String(i);op.textContent=title(clips[i].name);select.appendChild(op)}
  for(const p of customPoses){const op=document.createElement('option');op.value=p.value;op.textContent=p.label;select.appendChild(op)}
  select.disabled=false;$('count').textContent='79 (77 + 2 poses)';
+ // This is a snapshot of the EXPERIMENTAL graft's immutable imported rig,
+ // captured before any preview animation or inspection-pose transforms.
+ preservedRigRest=new Map();
+ model.traverse(o=>{if(o.isBone)preservedRigRest.set(o.uuid,{
+   pos:o.position.clone(),quat:o.quaternion.clone(),scale:o.scale.clone()
+ })});
  mixer=new THREE.AnimationMixer(model);
  initGaitBones();
  motionRepairs=createBeverlyMotionRepairs({
