@@ -131,6 +131,18 @@ export function createBeverlyMotionRepairs({
       steerBoneTo(side+'Leg',side+'Foot',
         new THREE.Vector3(knee.x+sign*.023,.11,knee.z+.018),1);
     }
+    // Native donor seated clip lifts both arms above the head. Bring the
+    // upper arms to a comfortable, relaxed resting direction instead.
+    for(const side of ['Left','Right']){
+      const sign=side==='Left'?1:-1;
+      const shoulder=world(side+'Arm');
+      if(!shoulder)continue;
+      steerBoneTo(side+'Arm',side+'ForeArm',
+        new THREE.Vector3(shoulder.x+sign*.075,shoulder.y-.23,shoulder.z+.03),1);
+      const elbow=world(side+'ForeArm');
+      if(elbow)steerBoneTo(side+'ForeArm',side+'Hand',
+        new THREE.Vector3(elbow.x+sign*.015,elbow.y-.19,elbow.z+.055),1);
+    }
     update();
   }
   function chairFootContact(){
