@@ -30,7 +30,12 @@ export function createBeverlyMotionRepairs({
       ankleMinY:lf&&rf?n(Math.min(lf.y,rf.y)):null,
       kneeWidthM:lk&&rk?n(Math.abs(lk.x-rk.x)):null,
       ankleWidthM:lf&&rf?n(Math.abs(lf.x-rf.x)):null,
-      elbowMinY:le&&re?n(Math.min(le.y,re.y)):null
+      elbowMinY:le&&re?n(Math.min(le.y,re.y)):null,
+      pelvisAboveKneeM:hip&&lk&&rk?n(hip.y-Math.min(lk.y,rk.y)):null,
+      spineRestDeviationDeg:neutralSpine&&neutralSpine.get('Spine2')&&bones?.Spine2?
+        n(THREE.MathUtils.radToDeg(bones.Spine2.quaternion.angleTo(neutralSpine.get('Spine2')))):null,
+      neckRestDeviationDeg:neutralSpine&&neutralSpine.get('Neck')&&bones?.Neck?
+        n(THREE.MathUtils.radToDeg(bones.Neck.quaternion.angleTo(neutralSpine.get('Neck')))):null
     };
   };
   function aimToe(side){
@@ -40,70 +45,93 @@ export function createBeverlyMotionRepairs({
     steerBoneTo(side+'Foot',side+'ToeBase',
       new THREE.Vector3(a.x+sign*.015,.072,a.z+.12),.84);
   }
+  // Neutral anatomical spinal chain from the clone's ORIGINAL imported rest.
+  // Save and restore local rotations rather than bending vertebrae individually.
+  const neutralSpine=new Map();
+  for(const name of ['Spine','Spine1','Spine2','Neck','Head']){
+    if(bones?.[name])neutralSpine.set(name,bones[name].quaternion.clone());
+  }
+  function straightenSpine(){
+    for(const [name,q] of neutralSpine){
+      bones[name].quaternion.copy(q);
+    }
+    update();
+  }
   function elbowsAndKnees(){
     const hip=bones?.Hips;if(!hip)return;
     update();
+    // HINGE THROUGH THE PELVIS, rather than folding the upper spine:
+    // a slightly higher bottom and a sloping but STRAIGHT trunk.
     const old=world('Hips');
-    // Lower trunk so the FOREARMS actually approach the floor.
-    // Limb targets below are solved after moving the trunk.
-    hip.position.y+=clamp(.47-old.y,-.42,.42);
+    hip.position.y+=clamp(.565-old.y,-.7,.7);
+    straightenSpine();
+    let h=world('Hips');
+    steerBoneTo('Hips','Spine',
+      new THREE.Vector3(h.x,h.y-.125,h.z+.205),1);
     update();
-    const h=world('Hips'),sp=world('Spine');
-    // Point chest forward without touching the skin/attachment weights.
-    if(sp)steerBoneTo('Spine','Spine2',
-       new THREE.Vector3(sp.x,sp.y-.07,sp.z+.245),.96);
+    h=world('Hips');
     for(const side of ['Left','Right']){
       const sign=side==='Left'?1:-1;
+      // Replant each knee after the pelvis rotates, keeping each thigh
+      // attached to the EXISTING hip. No mesh/weights rebind.
       steerBoneTo(side+'UpLeg',side+'Leg',
-        new THREE.Vector3(h.x+sign*.14,.11,h.z+.29),1);
+        new THREE.Vector3(h.x+sign*.125,.135,h.z+.23),1);
       const knee=world(side+'Leg');
       if(knee){
-        // Fold shin BACK along the ground; previous native get-up pose
-        // pointed shins down through the floor (-0.27 m).
         steerBoneTo(side+'Leg',side+'Foot',
-          new THREE.Vector3(knee.x+sign*.012,.115,knee.z-.35),1);
+          new THREE.Vector3(knee.x+sign*.012,.105,knee.z-.35),1);
         aimToe(side);
       }
     }
-    // Keep knees near ground, correcting any residual native height offset.
+    // Keep the bottom raised relative to the grounded knees, without
+    // applying large pelvis shifts that would reintroduce clipping.
     update();
     const lk=world('LeftLeg'),rk=world('RightLeg');
     if(lk&&rk){
-      const delta=clamp(.092-Math.min(lk.y,rk.y),-.10,.11);
+      const delta=clamp(.115-Math.min(lk.y,rk.y),-.06,.07);
       hip.position.y+=delta;
       update();
     }
+    // On forearms and knees, the ELBOWS (not just the hands) carry
+    // weight. Extend upper arms down from the shoulders, palms forward.
     for(const side of ['Left','Right']){
-      const shoulder=world(side+'Arm'),sign=side==='Left'?1:-1;
+      const sign=side==='Left'?1:-1;
+      const shoulder=world(side+'Arm');
       if(!shoulder)continue;
       steerBoneTo(side+'Arm',side+'ForeArm',
-        new THREE.Vector3(shoulder.x+sign*.045,.16,shoulder.z+.16),1);
+        new THREE.Vector3(shoulder.x+sign*.025,.105,shoulder.z+.09),1);
       const elbow=world(side+'ForeArm');
       if(elbow)steerBoneTo(side+'ForeArm',side+'Hand',
-        new THREE.Vector3(elbow.x+sign*.02,.085,elbow.z+.17),1);
+        new THREE.Vector3(elbow.x+sign*.015,.077,elbow.z+.22),1);
     }
+    update();
   }
   function sitLegsOpen(){
     const hip=bones?.Hips;if(!hip)return;
     update();
     const old=world('Hips');
-    // Reset to seated pelvis height independently of prior selected pose.
-    hip.position.y+=clamp(.575-old.y,-.65,.55);
+    // Gentle anatomical sitting position, without forcing hips far
+    // apart and stretching the fitted pelvic attachment at the seams.
+    hip.position.y+=clamp(.535-old.y,-.7,.7);
+    straightenSpine();
+    const h=world('Hips');
+    // Upright trunk at the HIP hinge; no lumbar or cervical distortion.
+    steerBoneTo('Hips','Spine',
+      new THREE.Vector3(h.x,h.y+.18,h.z+.022),.92);
     update();
-    const h=world('Hips'),sp=world('Spine');
-    if(sp)steerBoneTo('Spine','Spine2',
-      new THREE.Vector3(sp.x,sp.y+.24,sp.z+.018),1);
+    const pelvis=world('Hips');
     for(const side of ['Left','Right']){
       const sign=side==='Left'?1:-1;
-      // Sitting thighs project forward with symmetric, naturally open knees.
+      // Mildly open seated knees; previous 0.53m force created
+      // unwanted deformation around hip/pelvic accessory joins.
       steerBoneTo(side+'UpLeg',side+'Leg',
-        new THREE.Vector3(h.x+sign*.235,.50,h.z+.33),1);
+        new THREE.Vector3(pelvis.x+sign*.185,.445,pelvis.z+.31),1);
       const knee=world(side+'Leg');
       if(!knee)continue;
       steerBoneTo(side+'Leg',side+'Foot',
-        new THREE.Vector3(knee.x+sign*.025,.115,knee.z+.02),1);
-      aimToe(side);
+        new THREE.Vector3(knee.x+sign*.023,.11,knee.z+.018),1);
     }
+    update();
   }
   function chairFootContact(){
     const hip=bones?.Hips,l=world('LeftFoot'),r=world('RightFoot');
