@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101d27">
+<title>Beverly · Post-Op Motion Lab · 77 Movements</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#0d1922;color:#eaf4fa;overflow:hidden}
+#view{position:fixed;inset:0;touch-action:none}
+#view canvas{display:block;outline:0}
+#top{position:fixed;left:10px;top:calc(8px + env(safe-area-inset-top));z-index:3;pointer-events:none;max-width:calc(100vw - 20px);text-shadow:0 2px 5px #000b}
+#top h1{margin:0;font-weight:800;font-size:17px;letter-spacing:.3px}
+#top p{margin:3px 0;font-size:12px;color:#d5e8ef}
+#status{display:inline-block;margin-top:5px;background:#0b252fd9;border:1px solid #7d9dbb88;border-radius:6px;padding:6px 9px;font-size:12px;max-width:95vw}
+#tools{position:fixed;left:9px;right:9px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;padding:10px;background:#102533eb;border:1px solid #799cb3a8;border-radius:12px;box-shadow:0 4px 18px #0008;max-width:720px;margin:auto}
+label{display:block;color:#cce3ef;font-size:11px;margin-bottom:4px;font-weight:750}
+#mainrow{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px}
+#clip{width:100%;font-size:14px;font-weight:700}
+select,button,input[type=search]{font:inherit;border:1px solid #658ca4;border-radius:8px;background:#294556;color:#f6fcff;min-height:43px;padding:7px;touch-action:manipulation}
+button{font-size:12px;font-weight:750;white-space:nowrap;cursor:pointer}
+button[aria-pressed=true]{background:#168b82;border-color:#adf4e3}
+#btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#btns button{flex:1 1 auto;min-height:38px}
+#advanced{margin-top:8px;border-top:1px solid #496678;padding-top:7px}
+#advanced summary{font-size:12px;cursor:pointer;color:#d0e2ed;font-weight:750}
+#advbody{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+#speed{width:110px;accent-color:#50c5c1}
+#scrub{width:100%;margin-top:6px;accent-color:#50c5c1}
+#counter{font-size:11px;color:#d2e4ec;font-variant-numeric:tabular-nums;margin-top:4px;display:flex;justify-content:space-between}
+#hint{position:fixed;right:10px;top:12px;font-size:11px;color:#d7f1f1;background:#112b35b3;border-radius:6px;padding:6px 8px;z-index:2}
+@media(max-width:520px){
+#top h1{font-size:15px}
+#top p{font-size:10px;max-width:82vw}
+#hint{top:85px;right:10px;font-size:10px}
+#tools{padding:8px}
+#mainrow{grid-template-columns:minmax(0,1fr) 95px}
+#clip{font-size:12px}
+select,button{min-height:40px}
+#btns{gap:4px}
+#btns button{font-size:11px;min-height:35px;padding:6px}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+</script></head><body>
+<div id="view" aria-label="Interactive three-dimensional Beverly model"></div>
+<div id="top"><h1>BEVERLY · POST-OP MOTION LAB</h1>
+<p>Actual certified-appearance Beverly surgery clone · 69-joint graft · all donor motions</p>
+<div id="status" role="status" aria-live="polite">Loading Beverly’s 3D model…</div>
+</div>
+<div id="hint">Drag to rotate · pinch to zoom</div>
+<div id="tools">
+<div id="mainrow">
+<div><label for="clip">Movement — <span id="count">loading</span></label><select id="clip" aria-label="Choose one of Beverly's movements" disabled><option>Loading animations…</option></select></div>
+<div><label for="speed">Playback speed</label><select id="speed" aria-label="Playback speed">
+<option value=".25">¼×</option><option value=".5">½×</option><option value="1" selected>1× normal</option><option value="1.5">1½×</option><option value="2">2×</option>
+</select></div>
+</div>
+<div id="btns">
+<button id="walk">Walk</button><button id="run">Run</button><button id="play">▶ Play</button><button id="restart">↺ Restart</button>
+<button id="loop" aria-pressed="true">Loop ON</button>
+<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="reset">Recenter</button>
+</div>
+<input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Scrub through selected movement">
+<div id="counter"><span id="clipname">Choose a movement above</span><span id="elapsed">0:00 / 0:00</span></div>
+<details id="advanced"><summary>Camera and inspection options</summary>
+<div id="advbody">
+<button id="bones" aria-pressed="false">Show skeleton</button>
+<button id="grid" aria-pressed="true">Grid ON</button>
+<button id="fullscreen">Full screen</button>
+<button id="quality">Quality: balanced</button>
+</div>
+<p style="font-size:11px;color:#abc3ce;margin:7px 0 0">Experimental graft viewer. Animation availability is verified; natural walking and running still require visual approval. Original game Beverly is untouched.</p>
+</details></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id);
+const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+let quality=1.2;
+function setQuality(){renderer.setPixelRatio(Math.min(devicePixelRatio||1,quality));resize()}
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setClearColor(0x162430,1);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+panel.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x162430);
+scene.add(new THREE.HemisphereLight(0xebf6ff,0x647585,2.5));
+const sun=new THREE.DirectionalLight(0xfff3e6,2.7);sun.position.set(2,5,4);scene.add(sun);
+const fill=new THREE.DirectionalLight(0xb6d9ff,1.7);fill.position.set(-3,3,-3);scene.add(fill);
+const grid=new THREE.GridHelper(4,32,0x7b9bab,0x385164);scene.add(grid);
+const camera=new THREE.PerspectiveCamera(42,1,.01,150);
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=false;
+orbit.minDistance=.35;orbit.maxDistance=12;
+let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
+function resize(){const w=panel.clientWidth||innerWidth,h=panel.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+addEventListener('resize',resize);resize();
+function bbox(){const b=new THREE.Box3().setFromObject(model);if(!b.isEmpty())return b;return bodyBounds}
+function aim(side='front'){
+ if(!model)return;
+ const b=bbox();const center=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
+ const height=Math.max(1,size.y),d=height*1.65;
+ orbit.target.copy(center);
+ if(side==='side')camera.position.set(center.x+d,center.y+height*.10,center.z);
+ else if(side==='back')camera.position.set(center.x,center.y+height*.10,center.z-d);
+ else camera.position.set(center.x,center.y+height*.10,center.z+d);
+ orbit.update();
+}
+for(const side of ['front','side','back'])$(side).onclick=()=>aim(side);
+$('reset').onclick=()=>aim();
+$('grid').onclick=()=>{
+ grid.visible=!grid.visible;
+ $('grid').setAttribute('aria-pressed',String(grid.visible));
+ $('grid').textContent=grid.visible?'Grid ON':'Grid OFF';
+};
+$('bones').onclick=()=>{
+ if(!model)return;
+ if(!skeleton){skeleton=new THREE.SkeletonHelper(model);skeleton.material.depthTest=false;skeleton.renderOrder=20;scene.add(skeleton);skeleton.visible=false}
+ skeleton.visible=!skeleton.visible;
+ $('bones').setAttribute('aria-pressed',String(skeleton.visible));
+ $('bones').textContent=skeleton.visible?'Hide skeleton':'Show skeleton';
+};
+$('fullscreen').onclick=()=>{
+ if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
+ else document.exitFullscreen?.().catch(()=>{});
+};
+$('quality').onclick=()=>{
+ qualityHigh=!qualityHigh;quality=qualityHigh?Math.min(2,devicePixelRatio||1):1.2;
+ setQuality();$('quality').textContent=qualityHigh?'Quality: high':'Quality: balanced';
+};
+function fmt(t){t=Math.max(0,t||0);let m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0')}
+function title(s){return s.replace(/^CLIP_\d+__/, '').replace(/^REVIEW_ONLY_TestBone1_/,'').replaceAll('_',' ').trim()}
+function ensureLoop(){if(action)action.setLoop(looping?THREE.LoopRepeat:THREE.LoopOnce,looping?Infinity:1);if(action)action.clampWhenFinished=!looping}
+function choose(index){
+ if(!mixer||!clips[index])return;
+ if(action)action.stop();
+ action=mixer.clipAction(clips[index]);action.reset().enabled=true;action.setEffectiveWeight(1);ensureLoop();action.play();
+ paused=false;action.paused=false;$('play').textContent='⏸ Pause';
+ $('clipname').textContent=title(clips[index].name);$('scrub').value='0';
+ $('elapsed').textContent='0:00 / '+fmt(clips[index].duration);
+ status.textContent="Beverly loaded · playing "+title(clips[index].name)+" · "+clips.length+" movements";
+}
+select.onchange=()=>choose(Number(select.value));
+function jumpToMotion(name){const i=clips.findIndex(c=>title(c.name).toLowerCase()===name);if(i>=0){select.value=String(i);choose(i)}}
+$('walk').onclick=()=>jumpToMotion('walk');
+$('run').onclick=()=>jumpToMotion('run');
+$('play').onclick=()=>{
+ if(!action&&clips.length){choose(0);return}
+ if(!action)return;
+ paused=!paused;action.paused=paused;$('play').textContent=paused?'▶ Play':'⏸ Pause';
+};
+$('restart').onclick=()=>{if(action){action.reset().play();action.paused=false;paused=false;$('play').textContent='⏸ Pause'}};
+$('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
+$('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';mixer.update(0)};
+const loader=new GLTFLoader();
+loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
+ model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
+ // Keep real dressed Beverly meshes visible by default. Never replace with a skeleton-only placeholder.
+ scene.add(model);model.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false}});
+ bodyBounds=bbox().clone();
+ clips=gltf.animations||[];
+ const bones=new Set();let meshes=0,skins=0;
+ model.traverse(o=>{if(o.isBone)bones.add(o.name);if(o.isMesh){meshes++;if(o.isSkinnedMesh)skins++}});
+ if(clips.length!==77||bones.size<69||meshes<25||skins<1){
+ status.textContent='Model loaded, but expected 77 motions/69 bones/25+ meshes. Found '+clips.length+'/'+bones.size+'/'+meshes+'. Please report this.';
+ }
+ select.innerHTML='';
+ const priority={'idle':0,'walk':1,'run':2,'wave':3,'sit idle (chair)':4,'stand up (chair)':5};
+ const order=clips.map((clip,i)=>i).sort((a,b)=>(priority[title(clips[a].name).toLowerCase()]??10)-(priority[title(clips[b].name).toLowerCase()]??10)||title(clips[a].name).localeCompare(title(clips[b].name)));
+ for(const i of order){const op=document.createElement('option');op.value=String(i);op.textContent=title(clips[i].name);select.appendChild(op)}
+ select.disabled=false;$('count').textContent=clips.length+' of 77 available';
+ mixer=new THREE.AnimationMixer(model);
+ aim();
+ let suggested=clips.findIndex(c=>/^idle$/i.test(title(c.name)));
+ if(suggested<0)suggested=0;select.value=String(suggested);choose(suggested);
+ status.textContent='Beverly ready · '+meshes+' visible meshes · '+bones.size+' bones · '+clips.length+' selectable motions';
+},p=>{
+ if(p.total){const percent=Math.round(p.loaded/p.total*100);status.textContent='Loading Beverly’s full model… '+percent+'%'}
+ else status.textContent='Loading Beverly’s full model… '+Math.round(p.loaded/1e6)+' MB';
+},error=>{
+ console.error(error);status.textContent='Viewer could not load Beverly_Postop_77.glb: '+(error?.message||'network error');
+});
+function frame(){
+ requestAnimationFrame(frame);
+ const dt=Math.min(.08,clock.getDelta());
+ if(mixer){mixer.update(dt*Number($('speed').value));if(action){
+   const d=action.getClip().duration||1;
+   const t=action.time;
+   if(document.activeElement!==$('scrub'))$('scrub').value=String(Math.round(1000*t/d));
+   $('elapsed').textContent=fmt(t)+' / '+fmt(d);
+ }}
+ orbit.update();renderer.render(scene,camera);
+}
+frame();
+</script>
+</body></html>
