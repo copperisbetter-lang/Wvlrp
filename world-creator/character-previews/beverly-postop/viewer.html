@@ -125,10 +125,11 @@ select,button{min-height:40px}
 <div id="diagSelected">Select a pose or animation</div>
 <pre id="diagLive">Every joint's positions, rotations, and movement during the transition into the pose will appear here.</pre>
 <div id="diagActions">
+<button id="diagCopyLatest">Copy This Pose</button>
 <button id="diagCopy">Copy All — One Paste</button>
 <button id="diagSave">Save All JSON</button>
 </div>
-<p id="diagHelp">Auto-records the 69-bone skeleton when you select a pose: local/world XYZ positions, rotations, joint angles and the approach into that pose. Records are saved in this browser. Copy All produces one compressed block you can paste into ChatGPT; Save All JSON downloads the complete readable backup.</p>
+<p id="diagHelp">Auto-records the 69-bone skeleton when you select a pose: local/world XYZ positions, rotations, joint angles and the approach into that pose. Records are saved in this browser. Copy This Pose copies every frame and joint from your latest pose in one paste. Copy All includes all recorded poses as one compressed block; Save All JSON downloads the complete readable backup.</p>
 <button id="diagClear">Clear saved recordings…</button>
 </aside>
 <script type="module">
