@@ -6,6 +6,7 @@ on:
       - .github/workflows/test-beverly-motion-repairs.yml
       - world-creator/character-previews/beverly-postop/motion-repairs.js
       - world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
+      - world-creator/character-previews/beverly-postop/test-surface.cjs
       - world-creator/character-previews/beverly-postop/viewer.html
   workflow_dispatch:
 permissions:
