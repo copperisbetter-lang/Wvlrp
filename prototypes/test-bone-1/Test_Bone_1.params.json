@@ -10,7 +10,7 @@
   "african": 0,
   "asian": 0,
   "caucasian": 1,
-  "breastSize": 0.66,
+  "breastSize": 1,
   "breastFirmness": 0.55,
   "modifiers": {
     "head/head-oval": -0.12,
