@@ -48,13 +48,27 @@ jobs:
           ids=[q[0] for q in read(body['indices'])]
           used=set(ids)
           ys=[xyz[i][1] for i in used]
-          low,high=min(ys),max(ys);height=high-low
+          low,high=min(ys),max(ys);skin_height=high-low
+          # The Ara Skin primitive is not the whole body: parts may be separate meshes.
+          full_lows=[];full_highs=[];by_material={}
+          for mesh in d['meshes']:
+              for q in mesh['primitives']:
+                  if 'POSITION' not in q.get('attributes',{}):continue
+                  coords=read(q['attributes']['POSITION'])
+                  here=set(int(i[0]) for i in read(q['indices'])) if 'indices' in q else range(len(coords))
+                  if not here:continue
+                  lo=min(coords[k][1] for k in here)
+                  hi=max(coords[k][1] for k in here)
+                  full_lows.append(lo);full_highs.append(hi)
+                  name=mat[q.get('material',0)]
+                  by_material.setdefault(name,[]).append({'min_y_m':lo,'max_y_m':hi,'indexed_vertices':len(here)})
+          height=max(full_highs)-min(full_lows)
           source_height=1.713543896243209
-          targets={'chest':(1.22/source_height,.8659706527970249),
-                   'waist':(1.14/source_height,.6633063721173167),
-                   'hips':(.94/source_height,.9215212753305468)}
+          targets={'chest':(1.22,.8659706527970249),
+                   'waist':(1.14,.6633063721173167),
+                   'hips':(.94,.9215212753305468)}
           def perimeter(f):
-              plane=low+f*height
+              plane=f
               edges=[]
               def k(p):return (round(p[0],5),round(p[1],5))
               for z in range(0,len(ids),3):
@@ -94,6 +108,7 @@ jobs:
              'source_Beverly_GLBSHA256':'fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc',
              'glb_SHA256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw),
              'skin_distinct_vertices':len(used),'skin_triangles':len(ids)//3,
+             'skin_primitive_height_m':skin_height,'material_bounds':by_material,
              'height_m':height,'target_height_m':source_height,
              'height_difference_cm':round(100*(height-source_height),3),
              'skin_horizontal_contours_m':contours,
