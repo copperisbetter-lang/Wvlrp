@@ -143,7 +143,7 @@ function makeSlumpedCrawl(source){
  // Shift the *whole torso* from the pelvis joint toward her hands.
  // Keep the rest of the spine continuous: no jackknife at Spine2/Neck.
  // A slight downward slope gives the desired relaxed/slumped crawl.
- steer('Hips','Spine',new THREE.Vector3(h.x,h.y-.09,h.z+.24),1);
+ steer('Hips','Spine',new THREE.Vector3(h.x,h.y+.005,h.z+.24),1);
  update();
  h=point('Hips');
  for(const side of ['Left','Right']){
