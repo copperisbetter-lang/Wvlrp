@@ -3,7 +3,8 @@
  * No bind matrices, skin weights, mesh vertices, clip keyframes, materials,
  * certified original or live Stacey Lake game are modified.
  * A fresh native donor pose is evaluated by the viewer every frame first.
- * Walk and Run are explicitly excluded; owner's slider versions are approved.
+ * Walk is excluded. Run only applies a LEFT hand/chest clearance guard
+ * requested by the owner; the right arm and approved gait sliders stay intact.
  */
 export function createBeverlyMotionRepairs({
   THREE,model,bones,steerBoneTo,steerChildX,footRoll
@@ -126,6 +127,44 @@ export function createBeverlyMotionRepairs({
     footRoll('RightFoot',.11*Math.sin(phase+Math.PI));
     // Arms deliberately stay in their carrying pose.
   }
+  // Run ONLY: donor's left wrist crosses the centerline on forward swing.
+  // This is world-X clearance against the chest, NOT an anatomy/mesh change.
+  // The right upper arm, forearm and wrist are never targets of this routine.
+  function runLeftHandClearance(){
+    update();
+    const chest=world('Spine2'),shoulder=world('LeftArm'),
+      elbow=world('LeftForeArm'),hand=world('LeftHand');
+    if(!chest||!shoulder||!elbow||!hand)return null;
+    const rightBefore=['RightArm','RightForeArm','RightHand'].map(world);
+    // Preserve the right-hand side, and keep the left wrist outside the
+    // torso/breast envelope throughout its forward and backward swing.
+    // Approx 17.5 cm from spine center, plus shoulder and elbow clearance.
+    const safeX=Math.max(chest.x+.175,shoulder.x+.055,elbow.x-.008);
+    const handBeforeX=hand.x;
+    if(handBeforeX<safeX){
+      // Rotate only LeftForeArm at its existing elbow.  Preserve the
+      // native swing's world-space Y/Z direction as far as possible.
+      for(let step=0;step<3;step++){
+        const current=world('LeftHand');
+        if(!current||current.x>=safeX-.003)break;
+        const target=current.clone();target.x+=safeX-current.x;
+        steerBoneTo('LeftForeArm','LeftHand',target,1);
+      }
+    }
+    update();
+    const after=world('LeftHand');
+    const rightAfter=['RightArm','RightForeArm','RightHand'].map(world);
+    const rightDelta=Math.max(0,...rightBefore.map((p,i)=>
+      p&&rightAfter[i]?p.distanceTo(rightAfter[i]):0));
+    return {
+      safeWristX:+safeX.toFixed(5),
+      leftWristBeforeX:+handBeforeX.toFixed(5),
+      leftWristAfterX:after?+after.x.toFixed(5):null,
+      chestCenterX:+chest.x.toFixed(5),
+      corrected:handBeforeX<safeX,
+      rightArmDeltaMeters:+rightDelta.toFixed(8)
+    };
+  }
   return {
     inspect(pose){
       if(pose==='elbows-knees')elbowsAndKnees();
@@ -138,6 +177,7 @@ export function createBeverlyMotionRepairs({
       if(name==='sit down (chair)')chairFootContact();
       else if(name==='carry walk')carryWalk(time,duration);
     },
-    metrics:metric
+    metrics:metric,
+    runLeftHandClearance
   };
 }
