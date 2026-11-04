@@ -23,6 +23,8 @@ export function createBeverlyMotionRepairs({
     const n=n=>Number.isFinite(n)?+n.toFixed(5):null;
     return {
       pelvisY:hip?n(hip.y):null,
+      pelvisZ:hip?n(hip.z):null,
+      kneeMeanZ:lk&&rk?n((lk.z+rk.z)/2):null,
       kneeMinY:lk&&rk?n(Math.min(lk.y,rk.y)):null,
       ankleMinY:lf&&rf?n(Math.min(lf.y,rf.y)):null,
       kneeWidthM:lk&&rk?n(Math.abs(lk.x-rk.x)):null,
