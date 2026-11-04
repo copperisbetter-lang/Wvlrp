@@ -1,0 +1,39 @@
+name: Inspect Beverly loose viewer props
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/audit-beverly-viewer-props.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/beverly-surgery/viewer-asset
+          persist-credentials: false
+      - run: |
+          python3 - <<'PY'
+          import json,struct
+          from pathlib import Path
+          p=Path('prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb')
+          b=p.read_bytes()
+          n=struct.unpack_from('<I',b,12)[0]
+          g=json.loads(b[20:20+n])
+          for i,node in enumerate(g['nodes']):
+            if 'mesh' not in node:continue
+            mesh=g['meshes'][node['mesh']]
+            prim=mesh['primitives']
+            bb=[]
+            for pr in prim:
+              ix=pr['attributes'].get('POSITION')
+              a=g['accessors'][ix]
+              bb.append({'min':a.get('min'), 'max':a.get('max'), 'vertices':a.get('count'), 'material':g['materials'][pr['material']]['name'] if 'material' in pr else 'none'})
+            print('BEVERLY_MESH',json.dumps({'node':node.get('name'),'mesh':mesh.get('name'),'skin':node.get('skin'),'primitives':bb}))
+          PY
