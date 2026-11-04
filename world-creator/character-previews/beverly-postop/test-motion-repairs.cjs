@@ -24,7 +24,7 @@ const assert=require('node:assert/strict');
  const walk=await check('owner-approved Walk','Walk',{ankleWidthM:[.05,.22]});
  await page.locator('#run').click();
  const run=await check('owner-approved Run','Run',{ankleWidthM:[.05,.10]});
- assert.ok(!page.locator('#armFit').isDisabled(),'Run arm slider must remain present');
+ assert.ok(!(await page.locator('#armFit').isDisabled()),'Run arm slider must remain present');
  await page.locator('#elbowsKnees').click();
  const kneel=await check('Knees above the floor','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.25]});
  await page.locator('#sitOpen').click();
@@ -32,7 +32,7 @@ const assert=require('node:assert/strict');
  // Native chair motion at a measured seated phase (not a new source clip).
  await page.locator('#clip').selectOption({label:'Sit down (chair)'});
  await page.waitForTimeout(300);
- await page.locator('#scrub').fill('850');
+ await page.locator('#scrub').evaluate(el=>{el.value='850';el.dispatchEvent(new Event('input',{bubbles:true}));});
  const chair=await check('Chair feet grounded','Sit down (chair)',{ankleMinY:[-.04,.24]});
  await page.locator('#clip').selectOption({label:'Carry walk'});
  const carry=await check('Carry stance width','Carry walk',{ankleWidthM:[.03,.20]});
