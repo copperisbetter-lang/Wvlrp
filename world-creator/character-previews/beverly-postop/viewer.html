@@ -661,6 +661,20 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
        meshes:window.beverlySurfaceQA()}},
      trimPatch(name){return patchTrimmer?.set(name)||{available:false}},
      patchTrimState(){return patchTrimmer?.state()||{available:false}},
+     textureDump(names=['SURG_BEVERLY__base001','SURG_BEVERLY__base001_1','SURG_BEVERLY__base001_2']){
+       const data={};
+       for(const name of names){
+         const o=surfaceMeshes.find(m=>m.name===name);
+         const tex=o?.material?.map,img=tex?.image;
+         if(!img){data[name]={error:'No GPU texture image'};continue}
+         const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;
+         const ctx=canvas.getContext('2d',{willReadFrequently:true});
+         if(!ctx){data[name]={error:'No 2D canvas'};continue}
+         ctx.drawImage(img,0,0);
+         data[name]={width:img.width,height:img.height,uri:canvas.toDataURL('image/png')};
+       }
+       return data;
+     },
      geometryDump(names=['SURG_BEVERLY__base001','SURG_BEVERLY__base001_1','SURG_BEVERLY__base001_2']){
        const collected={};
        for(const name of names){
