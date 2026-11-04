@@ -211,7 +211,7 @@ window.beverlyViewerQA=()=>({
  fullBodyButton:!!$('fullBody'),panEnabled:orbit.enablePan,
  cameraTargetY:+orbit.target.y.toFixed(5),
  clothesButtonText:$('removeClothes').textContent,
- clips:clips.length,liveModel:!!model
+ clips:clips.length,options:select.options.length,liveModel:!!model
 });
 
 $('grid').onclick=()=>{
@@ -487,10 +487,17 @@ window.beverlyGaitQA=()=>{
     if(p&&q)lateral[a]=+(q.getWorldPosition(new THREE.Vector3()).x-p.getWorldPosition(new THREE.Vector3()).x).toFixed(5);
   }
   const x=n=>gaitBones[n]?.getWorldPosition(new THREE.Vector3()).x||0;
-  return {clip:action&&title(action.getClip().name),arms:Number($('armFit').value),
-          legs:Number($('footFit').value),lateral,
+  const pos=n=>{const v=bonePosition(n);return v?{x:+v.x.toFixed(5),y:+v.y.toFixed(5),z:+v.z.toFixed(5)}:null};
+  return {clip:activeGaitName,sourceClip:action&&title(action.getClip().name),
+          poseMode,arms:Number($('armFit').value),legs:Number($('footFit').value),lateral,
           elbowGap:+Math.abs(x('LeftForeArm')-x('RightForeArm')).toFixed(5),
-          ankleGap:+Math.abs(x('LeftFoot')-x('RightFoot')).toFixed(5)};
+          ankleGap:+Math.abs(x('LeftFoot')-x('RightFoot')).toFixed(5),
+          heelToePitchRadians:{...lastRoll},
+          hips:pos('Hips'),ankleLeft:pos('LeftFoot'),ankleRight:pos('RightFoot'),
+          kneeLeft:pos('LeftLeg'),kneeRight:pos('RightLeg'),
+          elbowLeft:pos('LeftForeArm'),elbowRight:pos('RightForeArm'),
+          poseMetrics:{...lastPoseDiagnostics},controlsVisible:$('gaitTune').style.display!=='none',
+          footSliderDisabled:$('footFit').disabled};
 };
 
 const loader=new GLTFLoader();
