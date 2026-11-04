@@ -51,6 +51,7 @@ jobs:
             /tmp/beverly-three-layer-geometry.json
             /tmp/beverly-texture-*.png
             /tmp/beverly-fixed-elbows-knees-visual.png
+            /tmp/beverly-fixed-elbows-knees-rear.png
             /tmp/beverly-fixed-sit-legs-open-visual.png
           if-no-files-found: ignore
           retention-days: 7
