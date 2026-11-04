@@ -651,6 +651,37 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
      },
      state(){return {camera:camera.position.toArray(),target:orbit.target.toArray(),
        meshes:window.beverlySurfaceQA()}},
+     geometryDump(names=['SURG_BEVERLY__base001','SURG_BEVERLY__base001_1','SURG_BEVERLY__base001_2']){
+       const collected={};
+       for(const name of names){
+         const o=surfaceMeshes.find(m=>m.name===name);if(!o)continue;
+         o.updateMatrixWorld(true);if(o.isSkinnedMesh)o.skeleton.update();
+         const g=o.geometry,p=g.attributes.position,uv=g.attributes.uv,
+           joints=g.attributes.skinIndex,weights=g.attributes.skinWeight;
+         const verts=[],raw=[],uvs=[],influences=[];
+         for(let i=0;i<p.count;i++){
+           const v=new THREE.Vector3().fromBufferAttribute(p,i);
+           raw.push(+v.x.toFixed(6),+v.y.toFixed(6),+v.z.toFixed(6));
+           if(o.isSkinnedMesh)o.applyBoneTransform(i,v);
+           o.localToWorld(v);
+           verts.push(+v.x.toFixed(6),+v.y.toFixed(6),+v.z.toFixed(6));
+           if(uv)uvs.push(+uv.getX(i).toFixed(6),+uv.getY(i).toFixed(6));
+           if(joints&&weights){
+             influences.push(
+               joints.getX(i),joints.getY(i),joints.getZ(i),joints.getW(i),
+               +weights.getX(i).toFixed(6),+weights.getY(i).toFixed(6),
+               +weights.getZ(i).toFixed(6),+weights.getW(i).toFixed(6)
+             );
+           }
+         }
+         const idx=g.getIndex();
+         collected[name]={vertexCount:p.count,triangleCount:idx?idx.count/3:p.count/3,
+           worldPos:verts,rawPos:raw,uv:uvs,skin:influences,
+           skinBoneNames:o.isSkinnedMesh?o.skeleton.bones.map(b=>b.name):[],
+           index:idx?Array.from(idx.array):null};
+       }
+       return collected;
+     },
      samplePixel(x,y){
        const rect=renderer.domElement.getBoundingClientRect();
        return {x,y,width:rect.width,height:rect.height};
