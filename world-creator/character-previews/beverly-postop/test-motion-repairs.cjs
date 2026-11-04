@@ -72,9 +72,11 @@ const assert=require('node:assert/strict');
  console.log('BEVERLY_GAIT_PRESET_ISOLATION_PASS',JSON.stringify(await page.evaluate(()=>window.beverlyGaitPresetsQA())));
  assert.ok(!(await page.locator('#armFit').isDisabled()),'Run arm slider must remain present');
  await page.locator('#elbowsKnees').click();
- const kneel=await check('Knees above the floor','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.25]});
+ const kneel=await check('Hip-hinged elbows-and-knees','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.20],elbowMinY:[-.035,.16],pelvisAboveKneeM:[.37,.70],spineRestDeviationDeg:[0,4],neckRestDeviationDeg:[0,4]});
+ await page.screenshot({path:'/tmp/beverly-fixed-elbows-knees-visual.png'});
  await page.locator('#sitOpen').click();
- const seat=await check('Seated pose','Sit — Legs Open',{pelvisY:[.50,.70],ankleMinY:[-.035,.27],kneeWidthM:[.30,.70]});
+ const seat=await check('Pelvis-friendly sitting','Sit — Legs Open',{pelvisY:[.46,.70],ankleMinY:[-.035,.30],kneeWidthM:[.28,.52],spineRestDeviationDeg:[0,4],neckRestDeviationDeg:[0,4]});
+ await page.screenshot({path:'/tmp/beverly-fixed-sit-legs-open-visual.png'});
  // Native chair motion at a measured seated phase (not a new source clip).
  await page.locator('#clip').selectOption({label:'Sit down (chair)'});
  await page.waitForTimeout(300);
