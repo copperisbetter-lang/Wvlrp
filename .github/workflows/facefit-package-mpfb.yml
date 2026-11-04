@@ -1,0 +1,40 @@
+name: FaceFit test - package official MPFB extension
+on:
+  push:
+    branches:
+      - feature/facefit-mpfb-installer-20261104
+    paths:
+      - .github/workflows/facefit-package-mpfb.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-mpfb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Get official MPFB v2.0.18 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v2.0.18 https://github.com/makehumancommunity/mpfb2.git /tmp/facefit-mpfb-src
+          test -f /tmp/facefit-mpfb-src/src/mpfb/blender_manifest.toml
+          grep -E '^(id|version)\s*=' /tmp/facefit-mpfb-src/src/mpfb/blender_manifest.toml
+      - name: Package Blender extension and verify archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd /tmp/facefit-mpfb-src/src/mpfb && zip -qr "$GITHUB_WORKSPACE/mpfb-v2.0.18-official.zip" .)
+          test -s mpfb-v2.0.18-official.zip
+          unzip -tq mpfb-v2.0.18-official.zip
+          unzip -Z1 mpfb-v2.0.18-official.zip | grep -qx 'blender_manifest.toml'
+          sha256sum mpfb-v2.0.18-official.zip | tee MPFB_PACKAGE_SHA256.txt
+          du -h mpfb-v2.0.18-official.zip
+      - name: Save installer package (temporary, isolated)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MPFB-v2.0.18-official-zip
+          path: |
+            mpfb-v2.0.18-official.zip
+            MPFB_PACKAGE_SHA256.txt
+          retention-days: 7
