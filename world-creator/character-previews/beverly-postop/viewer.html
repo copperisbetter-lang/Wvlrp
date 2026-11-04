@@ -547,6 +547,7 @@ poseDiagnostics=new BeverlyPoseDiagnostics({
  getGaitQA:()=>window.beverlyGaitQA?.()
 });
 window.beverlyDiagnosticsQA=()=>poseDiagnostics.getQA();
+window.beverlyDiagnosticReport=()=>poseDiagnostics.getReport();
 
 const loader=new GLTFLoader();
 loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
