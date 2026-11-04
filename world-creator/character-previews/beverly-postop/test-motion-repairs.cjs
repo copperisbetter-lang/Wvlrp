@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl']});
  const page=await browser.newPage({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
- const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('requestfailed',r=>console.log('NETWORK_FAIL',r.url(),r.failure()?.errorText));
  const res=await page.goto('http://127.0.0.1:8765/world-creator/character-previews/beverly-postop/viewer.html?motion=qa-v1',{waitUntil:'domcontentloaded',timeout:50000});
  assert.equal(res.status(),200,'Viewer did not load locally');
  await page.waitForFunction(()=>typeof window.beverlyMotionRepairQA==='function'&&window.beverlyViewerQA?.().clips===77,{timeout:55000});
@@ -12,7 +12,7 @@ const assert=require('node:assert/strict');
  const data=[];
  async function check(label,expected,thresholds={}){
    await page.waitForTimeout(1300);
-   const m=await qa();data.push(m);
+   const m=await qa();data.push(m);console.log('MOTION_METRICS',label,JSON.stringify(m));
    assert.equal(m.sourceClip,expected,'Wrong source clip');
    for(const [name,[min,max]] of Object.entries(thresholds)){
      assert.ok(Number.isFinite(m[name])&&m[name]>=min&&m[name]<=max,
@@ -41,4 +41,4 @@ const assert=require('node:assert/strict');
  await page.screenshot({path:'/tmp/beverly-motion-repairs-mobile.png'});
  console.log('BEVERLY_NONAPPROVED_MOTION_QA_PASS '+JSON.stringify({motions:data,walkApprovedUntouched:true,runApprovedUntouched:true,attachmentWeightsUntouched:true}));
  await browser.close();
-})().catch(e=>{console.error(e);process.exitCode=1});
+})().catch(e=>{console.error('MOTION_QA_FAILED',e);process.exit(1)});
