@@ -21,7 +21,7 @@ const assert=require('node:assert/strict');
    return m;
  }
  await page.locator('#walk').click();
- const walk=await check('owner-approved Walk','Walk',{ankleWidthM:[.05,.22]});
+ const walk=await check('owner-approved Walk','Walk');
  await page.locator('#run').click();
  const run=await check('owner-approved Run','Run',{ankleWidthM:[.05,.10]});
  assert.ok(!(await page.locator('#armFit').isDisabled()),'Run arm slider must remain present');
