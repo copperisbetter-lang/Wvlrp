@@ -1,0 +1,712 @@
+{
+  "character": "Beverly POST-OP surgery clone / Certified approved dressed-game appearance",
+  "source": "Independent surgically grafted Beverly clone, NOT native Ara donor body",
+  "rig_joints": [
+    69
+  ],
+  "mesh_count": 31,
+  "motion_count": 77,
+  "motion_names": [
+    "CLIP_00__Drive boat (helm)",
+    "CLIP_01__Row boat",
+    "CLIP_02__Paddle kayak",
+    "CLIP_03__Paddle canoe",
+    "CLIP_04__Ride horse (trot)",
+    "CLIP_05__Ride motorcycle",
+    "CLIP_06__Ride bicycle",
+    "CLIP_07__Sit (passenger)",
+    "CLIP_08__Drive car",
+    "CLIP_09__Throw grenade",
+    "CLIP_10__Crouch walk (aiming)",
+    "CLIP_11__Crouch aim idle",
+    "CLIP_12__Rifle sprint",
+    "CLIP_13__Rifle run",
+    "CLIP_14__Rifle strafe right (aiming)",
+    "CLIP_15__Rifle strafe left (aiming)",
+    "CLIP_16__Rifle walk back (aiming)",
+    "CLIP_17__Rifle walk (aiming)",
+    "CLIP_18__Rifle reload",
+    "CLIP_19__Rifle fire (full auto)",
+    "CLIP_20__Rifle fire (single)",
+    "CLIP_21__Rifle aim idle",
+    "CLIP_22__Rifle idle (low ready)",
+    "CLIP_23__Sword block",
+    "CLIP_24__Sword slash",
+    "CLIP_25__Sword idle (guard)",
+    "CLIP_26__Pistol fire",
+    "CLIP_27__Pistol aim",
+    "CLIP_28__Pistol idle (low ready)",
+    "CLIP_29__Full turn 360\u00b0",
+    "CLIP_30__Turn right 90\u00b0",
+    "CLIP_31__Turn right 45\u00b0",
+    "CLIP_32__Turn left 90\u00b0",
+    "CLIP_33__Turn left 45\u00b0",
+    "CLIP_34__Sleep",
+    "CLIP_35__Lie down",
+    "CLIP_36__Stand up (chair)",
+    "CLIP_37__Sit idle (chair)",
+    "CLIP_38__Sit down (chair)",
+    "CLIP_39__Cry",
+    "CLIP_40__Talk",
+    "CLIP_41__Laugh",
+    "CLIP_42__Cheer",
+    "CLIP_43__Wave",
+    "CLIP_44__Carry walk",
+    "CLIP_45__Carry idle",
+    "CLIP_46__Push",
+    "CLIP_47__Open door",
+    "CLIP_48__Use / press",
+    "CLIP_49__Pick up (ground)",
+    "CLIP_50__Get up (from front)",
+    "CLIP_51__Get up (from back)",
+    "CLIP_52__Death (fall backward)",
+    "CLIP_53__Death (fall forward)",
+    "CLIP_54__Knockdown",
+    "CLIP_55__Hit from right",
+    "CLIP_56__Hit from left",
+    "CLIP_57__Hit from back",
+    "CLIP_58__Hit from front",
+    "CLIP_59__Hit reaction",
+    "CLIP_60__Low punch",
+    "CLIP_61__Punch",
+    "CLIP_62__Fall",
+    "CLIP_63__Running jump",
+    "CLIP_64__Jump land",
+    "CLIP_65__Jump (in air)",
+    "CLIP_66__Jump start",
+    "CLIP_67__Jump",
+    "CLIP_68__Strafe right",
+    "CLIP_69__Strafe left",
+    "CLIP_70__Walk backwards",
+    "CLIP_71__Run",
+    "CLIP_72__Model walk (catwalk)",
+    "CLIP_73__Slouch walk",
+    "CLIP_74__Walk",
+    "CLIP_75__Crouch idle",
+    "CLIP_76__Idle"
+  ],
+  "motion_details": [
+    {
+      "index": 0,
+      "name": "CLIP_00__Drive boat (helm)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Drive boat (helm)",
+      "source_action": "Drive boat (helm)_Armature"
+    },
+    {
+      "index": 1,
+      "name": "CLIP_01__Row boat",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Row boat",
+      "source_action": "Row boat_Armature"
+    },
+    {
+      "index": 2,
+      "name": "CLIP_02__Paddle kayak",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Paddle kayak",
+      "source_action": "Paddle kayak_Armature"
+    },
+    {
+      "index": 3,
+      "name": "CLIP_03__Paddle canoe",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Paddle canoe",
+      "source_action": "Paddle canoe_Armature"
+    },
+    {
+      "index": 4,
+      "name": "CLIP_04__Ride horse (trot)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Ride horse (trot)",
+      "source_action": "Ride horse (trot)_Armature"
+    },
+    {
+      "index": 5,
+      "name": "CLIP_05__Ride motorcycle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Ride motorcycle",
+      "source_action": "Ride motorcycle_Armature"
+    },
+    {
+      "index": 6,
+      "name": "CLIP_06__Ride bicycle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Ride bicycle",
+      "source_action": "Ride bicycle_Armature"
+    },
+    {
+      "index": 7,
+      "name": "CLIP_07__Sit (passenger)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sit (passenger)",
+      "source_action": "Sit (passenger)_Armature"
+    },
+    {
+      "index": 8,
+      "name": "CLIP_08__Drive car",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Drive car",
+      "source_action": "Drive car_Armature"
+    },
+    {
+      "index": 9,
+      "name": "CLIP_09__Throw grenade",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Throw grenade",
+      "source_action": "Throw grenade_Armature"
+    },
+    {
+      "index": 10,
+      "name": "CLIP_10__Crouch walk (aiming)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Crouch walk (aiming)",
+      "source_action": "Crouch walk (aiming)_Armature"
+    },
+    {
+      "index": 11,
+      "name": "CLIP_11__Crouch aim idle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Crouch aim idle",
+      "source_action": "Crouch aim idle_Armature"
+    },
+    {
+      "index": 12,
+      "name": "CLIP_12__Rifle sprint",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle sprint",
+      "source_action": "Rifle sprint_Armature"
+    },
+    {
+      "index": 13,
+      "name": "CLIP_13__Rifle run",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle run",
+      "source_action": "Rifle run_Armature"
+    },
+    {
+      "index": 14,
+      "name": "CLIP_14__Rifle strafe right (aiming)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle strafe right (aiming)",
+      "source_action": "Rifle strafe right (aiming)_Armature"
+    },
+    {
+      "index": 15,
+      "name": "CLIP_15__Rifle strafe left (aiming)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle strafe left (aiming)",
+      "source_action": "Rifle strafe left (aiming)_Armature"
+    },
+    {
+      "index": 16,
+      "name": "CLIP_16__Rifle walk back (aiming)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle walk back (aiming)",
+      "source_action": "Rifle walk back (aiming)_Armature"
+    },
+    {
+      "index": 17,
+      "name": "CLIP_17__Rifle walk (aiming)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle walk (aiming)",
+      "source_action": "Rifle walk (aiming)_Armature"
+    },
+    {
+      "index": 18,
+      "name": "CLIP_18__Rifle reload",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle reload",
+      "source_action": "Rifle reload_Armature"
+    },
+    {
+      "index": 19,
+      "name": "CLIP_19__Rifle fire (full auto)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle fire (full auto)",
+      "source_action": "Rifle fire (full auto)_Armature"
+    },
+    {
+      "index": 20,
+      "name": "CLIP_20__Rifle fire (single)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle fire (single)",
+      "source_action": "Rifle fire (single)_Armature"
+    },
+    {
+      "index": 21,
+      "name": "CLIP_21__Rifle aim idle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle aim idle",
+      "source_action": "Rifle aim idle_Armature"
+    },
+    {
+      "index": 22,
+      "name": "CLIP_22__Rifle idle (low ready)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Rifle idle (low ready)",
+      "source_action": "Rifle idle (low ready)_Armature"
+    },
+    {
+      "index": 23,
+      "name": "CLIP_23__Sword block",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sword block",
+      "source_action": "Sword block_Armature"
+    },
+    {
+      "index": 24,
+      "name": "CLIP_24__Sword slash",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sword slash",
+      "source_action": "Sword slash_Armature"
+    },
+    {
+      "index": 25,
+      "name": "CLIP_25__Sword idle (guard)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sword idle (guard)",
+      "source_action": "Sword idle (guard)_Armature"
+    },
+    {
+      "index": 26,
+      "name": "CLIP_26__Pistol fire",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Pistol fire",
+      "source_action": "Pistol fire_Armature"
+    },
+    {
+      "index": 27,
+      "name": "CLIP_27__Pistol aim",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Pistol aim",
+      "source_action": "Pistol aim_Armature"
+    },
+    {
+      "index": 28,
+      "name": "CLIP_28__Pistol idle (low ready)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Pistol idle (low ready)",
+      "source_action": "Pistol idle (low ready)_Armature"
+    },
+    {
+      "index": 29,
+      "name": "CLIP_29__Full turn 360\u00b0",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Full turn 360\u00b0",
+      "source_action": "Full turn 360\u00b0_Armature"
+    },
+    {
+      "index": 30,
+      "name": "CLIP_30__Turn right 90\u00b0",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Turn right 90\u00b0",
+      "source_action": "Turn right 90\u00b0_Armature"
+    },
+    {
+      "index": 31,
+      "name": "CLIP_31__Turn right 45\u00b0",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Turn right 45\u00b0",
+      "source_action": "Turn right 45\u00b0_Armature"
+    },
+    {
+      "index": 32,
+      "name": "CLIP_32__Turn left 90\u00b0",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Turn left 90\u00b0",
+      "source_action": "Turn left 90\u00b0_Armature"
+    },
+    {
+      "index": 33,
+      "name": "CLIP_33__Turn left 45\u00b0",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Turn left 45\u00b0",
+      "source_action": "Turn left 45\u00b0_Armature"
+    },
+    {
+      "index": 34,
+      "name": "CLIP_34__Sleep",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sleep",
+      "source_action": "Sleep_Armature"
+    },
+    {
+      "index": 35,
+      "name": "CLIP_35__Lie down",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Lie down",
+      "source_action": "Lie down_Armature"
+    },
+    {
+      "index": 36,
+      "name": "CLIP_36__Stand up (chair)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Stand up (chair)",
+      "source_action": "Stand up (chair)_Armature"
+    },
+    {
+      "index": 37,
+      "name": "CLIP_37__Sit idle (chair)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sit idle (chair)",
+      "source_action": "Sit idle (chair)_Armature"
+    },
+    {
+      "index": 38,
+      "name": "CLIP_38__Sit down (chair)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Sit down (chair)",
+      "source_action": "Sit down (chair)_Armature"
+    },
+    {
+      "index": 39,
+      "name": "CLIP_39__Cry",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Cry",
+      "source_action": "Cry_Armature"
+    },
+    {
+      "index": 40,
+      "name": "CLIP_40__Talk",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Talk",
+      "source_action": "Talk_Armature"
+    },
+    {
+      "index": 41,
+      "name": "CLIP_41__Laugh",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Laugh",
+      "source_action": "Laugh_Armature"
+    },
+    {
+      "index": 42,
+      "name": "CLIP_42__Cheer",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Cheer",
+      "source_action": "Cheer_Armature"
+    },
+    {
+      "index": 43,
+      "name": "CLIP_43__Wave",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Wave",
+      "source_action": "Wave_Armature"
+    },
+    {
+      "index": 44,
+      "name": "CLIP_44__Carry walk",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Carry walk",
+      "source_action": "Carry walk_Armature"
+    },
+    {
+      "index": 45,
+      "name": "CLIP_45__Carry idle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Carry idle",
+      "source_action": "Carry idle_Armature"
+    },
+    {
+      "index": 46,
+      "name": "CLIP_46__Push",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Push",
+      "source_action": "Push_Armature"
+    },
+    {
+      "index": 47,
+      "name": "CLIP_47__Open door",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Open door",
+      "source_action": "Open door_Armature"
+    },
+    {
+      "index": 48,
+      "name": "CLIP_48__Use / press",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Use / press",
+      "source_action": "Use / press_Armature"
+    },
+    {
+      "index": 49,
+      "name": "CLIP_49__Pick up (ground)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Pick up (ground)",
+      "source_action": "Pick up (ground)_Armature"
+    },
+    {
+      "index": 50,
+      "name": "CLIP_50__Get up (from front)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Get up (from front)",
+      "source_action": "Get up (from front)_Armature"
+    },
+    {
+      "index": 51,
+      "name": "CLIP_51__Get up (from back)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Get up (from back)",
+      "source_action": "Get up (from back)_Armature"
+    },
+    {
+      "index": 52,
+      "name": "CLIP_52__Death (fall backward)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Death (fall backward)",
+      "source_action": "Death (fall backward)_Armature"
+    },
+    {
+      "index": 53,
+      "name": "CLIP_53__Death (fall forward)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Death (fall forward)",
+      "source_action": "Death (fall forward)_Armature"
+    },
+    {
+      "index": 54,
+      "name": "CLIP_54__Knockdown",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Knockdown",
+      "source_action": "Knockdown_Armature"
+    },
+    {
+      "index": 55,
+      "name": "CLIP_55__Hit from right",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Hit from right",
+      "source_action": "Hit from right_Armature"
+    },
+    {
+      "index": 56,
+      "name": "CLIP_56__Hit from left",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Hit from left",
+      "source_action": "Hit from left_Armature"
+    },
+    {
+      "index": 57,
+      "name": "CLIP_57__Hit from back",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Hit from back",
+      "source_action": "Hit from back_Armature"
+    },
+    {
+      "index": 58,
+      "name": "CLIP_58__Hit from front",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Hit from front",
+      "source_action": "Hit from front_Armature"
+    },
+    {
+      "index": 59,
+      "name": "CLIP_59__Hit reaction",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Hit reaction",
+      "source_action": "Hit reaction_Armature"
+    },
+    {
+      "index": 60,
+      "name": "CLIP_60__Low punch",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Low punch",
+      "source_action": "Low punch_Armature"
+    },
+    {
+      "index": 61,
+      "name": "CLIP_61__Punch",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Punch",
+      "source_action": "Punch_Armature"
+    },
+    {
+      "index": 62,
+      "name": "CLIP_62__Fall",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Fall",
+      "source_action": "Fall_Armature"
+    },
+    {
+      "index": 63,
+      "name": "CLIP_63__Running jump",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Running jump",
+      "source_action": "Running jump_Armature"
+    },
+    {
+      "index": 64,
+      "name": "CLIP_64__Jump land",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Jump land",
+      "source_action": "Jump land_Armature"
+    },
+    {
+      "index": 65,
+      "name": "CLIP_65__Jump (in air)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Jump (in air)",
+      "source_action": "Jump (in air)_Armature"
+    },
+    {
+      "index": 66,
+      "name": "CLIP_66__Jump start",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Jump start",
+      "source_action": "Jump start_Armature"
+    },
+    {
+      "index": 67,
+      "name": "CLIP_67__Jump",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Jump",
+      "source_action": "Jump_Armature"
+    },
+    {
+      "index": 68,
+      "name": "CLIP_68__Strafe right",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Strafe right",
+      "source_action": "Strafe right_Armature"
+    },
+    {
+      "index": 69,
+      "name": "CLIP_69__Strafe left",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Strafe left",
+      "source_action": "Strafe left_Armature"
+    },
+    {
+      "index": 70,
+      "name": "CLIP_70__Walk backwards",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Walk backwards",
+      "source_action": "Walk backwards_Armature"
+    },
+    {
+      "index": 71,
+      "name": "CLIP_71__Run",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Run",
+      "source_action": "Run_Armature"
+    },
+    {
+      "index": 72,
+      "name": "CLIP_72__Model walk (catwalk)",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Model walk (catwalk)",
+      "source_action": "Model walk (catwalk)_Armature"
+    },
+    {
+      "index": 73,
+      "name": "CLIP_73__Slouch walk",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Slouch walk",
+      "source_action": "Slouch walk_Armature"
+    },
+    {
+      "index": 74,
+      "name": "CLIP_74__Walk",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Walk",
+      "source_action": "Walk_Armature"
+    },
+    {
+      "index": 75,
+      "name": "CLIP_75__Crouch idle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Crouch idle",
+      "source_action": "Crouch idle_Armature"
+    },
+    {
+      "index": 76,
+      "name": "CLIP_76__Idle",
+      "target_nodes": 69,
+      "channels": 207,
+      "source_track": "Idle",
+      "source_action": "Idle_Armature"
+    }
+  ],
+  "GLB_size_bytes": 23119632,
+  "GLB_SHA256": "8ca86d77b60de615de5af2177313846bdbd2edd8387a7dddb8d9b7933e1fda66",
+  "experimental": true,
+  "gait_visually_approved": false,
+  "game_or_master_modified": false,
+  "live_viewer_path": "world-creator/character-previews/beverly-postop/viewer.html"
+}
