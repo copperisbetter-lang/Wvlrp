@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101d27">
-<title>Beverly · Post-Op Motion Lab · 77 Movements · Clean Mesh</title>
+<title>Beverly · Post-Op Motion Lab · 79 Motions · Gait V3</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,Arial,sans-serif}
 *{box-sizing:border-box}
@@ -86,23 +86,23 @@ select,button{min-height:40px}
 </select></div>
 </div>
 <div id="btns">
-<button id="walk">Walk</button><button id="run">Run</button><button id="play">▶ Play</button><button id="restart">↺ Restart</button>
+<button id="walk">Walk</button><button id="run">Run</button><button id="elbowsKnees">Elbows &amp; Knees</button><button id="sitOpen">Sit — Legs Open</button><button id="play">▶ Play</button><button id="restart">↺ Restart</button>
 <button id="loop" aria-pressed="true">Loop ON</button>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="reset">Recenter</button>
 </div>
 <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Scrub through selected movement">
 <div id="counter"><span id="clipname">Choose a movement above</span><span id="elapsed">0:00 / 0:00</span></div>
 <div id="gaitTune">
-<div><label for="armFit">Walk · Arms closer <span id="armValue">90%</span></label><input id="armFit" type="range" min="0" max="100" step="5" value="90" aria-label="Strength of walking arm-swing correction"></div>
-<div><label for="footFit">Walk · Feet closer <span id="footValue">90%</span></label><input id="footFit" type="range" min="0" max="100" step="5" value="90" aria-label="Strength of walking foot-spacing correction"></div>
-</div><div id="gaitState">Walking corrections ready. They affect Walk only, not the other 76 animations.</div><details id="advanced"><summary>Camera and inspection options</summary>
+<div><label for="armFit"><span id="armLabel">Walk/Run · Arms closer</span> <span id="armValue">90%</span></label><input id="armFit" type="range" min="0" max="100" step="5" value="90" aria-label="Strength of walking arm-swing correction"></div>
+<div><label for="footFit"><span id="footLabel">Walk · Feet closer</span> <span id="footValue">90%</span></label><input id="footFit" type="range" min="0" max="100" step="5" value="90" aria-label="Strength of walking foot-spacing correction"></div>
+</div><div id="gaitState">Walk: heel-to-toe foot roll. Run: 3.0-inch foot-center spacing. Original animations preserved.</div><details id="advanced"><summary>Camera and inspection options</summary>
 <div id="advbody">
 <button id="bones" aria-pressed="false">Show skeleton</button>
 <button id="grid" aria-pressed="true">Grid ON</button>
 <button id="fullscreen">Full screen</button>
 <button id="quality">Quality: balanced</button>
 </div>
-<p style="font-size:11px;color:#abc3ce;margin:7px 0 0">Experimental graft viewer. Animation availability is verified; natural walking and running still require visual approval. Original game Beverly is untouched.</p>
+<p style="font-size:11px;color:#abc3ce;margin:7px 0 0">77 donor animations + 2 experimental inspection poses. Gait and pose adjustments run only in this preview, not in the original game or certified Beverly model.</p>
 </details></div></div>
 <script type="module">
 import * as THREE from 'three';
