@@ -137,7 +137,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
-import {createBeverlyMotionRepairs} from './motion-repairs.js?v=diagnostics-posefix-20261104-v1';
+import {createBeverlyMotionRepairs} from './motion-repairs.js?v=run-left-hand-clearance-20261104-v2';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -163,6 +163,36 @@ orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
 let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
+let lastRunHandQA=null;
+// Latest separately recorded Walk and Run settings from the owner diagnostics.
+// Screenshots were not present to independently verify exact final values.
+const PRESET_STORAGE_KEY='WVLRP_Beverly_Postop_Gait_Presets_v1';
+const gaitPresets={Walk:{arm:90,foot:90},Run:{arm:55,foot:100}};
+function loadGaitPresets(){
+ try{
+  const stored=JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY)||'null');
+  for(const name of ['Walk','Run'])for(const field of ['arm','foot']){
+   const val=stored?.[name]?.[field];
+   if(val===undefined)continue;
+   const n=Number(val);
+   if(Number.isFinite(n)&&n>=0&&n<=100)gaitPresets[name][field]=Math.round(n/5)*5;
+  }
+ }catch(e){console.warn('Beverly saved gait prefs unavailable',e)}
+ gaitPresets.Run.foot=100; // Run stance width is fixed at 3 inches.
+}
+function activateGaitPreset(name){
+ const p=gaitPresets[name];if(!p)return;
+ $('armFit').value=String(p.arm);$('footFit').value=String(p.foot);
+ $('armValue').textContent=p.arm+'%';$('footValue').textContent=p.foot+'%';
+}
+function rememberGaitPreset(name){
+ const p=gaitPresets[name];if(!p)return;
+ p.arm=Number($('armFit').value);
+ p.foot=name==='Run'?100:Number($('footFit').value);
+ try{localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(gaitPresets))}
+ catch(e){console.warn('Gait preference retained in current session',e)}
+}
+loadGaitPresets();
 let preservedRigRest=new Map();
 function restoreRigRest(){
  if(!model||!preservedRigRest.size)return;
@@ -295,6 +325,7 @@ function choose(index){
  if(action)action.stop();
  restoreRigRest();
  poseMode=null;activeGaitName=title(clips[index].name);
+ activateGaitPreset(activeGaitName);
  action=mixer.clipAction(clips[index]);action.reset().enabled=true;action.setEffectiveWeight(1);ensureLoop();action.play();
  paused=false;action.paused=false;$('play').disabled=false;$('play').textContent='⏸ Pause';
  $('clipname').textContent=activeGaitName;$('scrub').disabled=false;$('scrub').value='0';
@@ -468,6 +499,7 @@ function refreshPoseWithGait(deltaSeconds){
 function applyWalkCorrection(){
  if(!model)return;
  if(poseMode){applyInspectionPose();return}
+ lastRunHandQA=null;
  const walking=activeMotionIs('Walk'),running=activeMotionIs('Run');
  if(!walking&&!running){
    // Other native motions get scoped corrections after mixer evaluates them.
@@ -488,6 +520,8 @@ function applyWalkCorrection(){
    footRoll('LeftFoot',lastRoll.left);
    footRoll('RightFoot',lastRoll.right);
  }else{
+   // Preserve approved Run right arm; guard ONLY left wrist against chest.
+   lastRunHandQA=motionRepairs?.runLeftHandClearance()??null;
    // The runner's left/right ankle centers are constrained to exactly 3 in.
    // The feet slider is disabled in Run because this stance is not optional.
    adjustAnkleWidth(RUN_ANKLE_WIDTH,1);
@@ -498,9 +532,16 @@ function applyWalkCorrection(){
 for(const [id,readout] of [['armFit','armValue'],['footFit','footValue']]){
   $(id).oninput=()=>{
     $(readout).textContent=$(id).value+'%';
+    rememberGaitPreset(activeGaitName);
     if(mixer)refreshPoseWithGait(0);
   };
 }
+window.beverlyGaitPresetsQA=()=>({
+ savedWalk:{...gaitPresets.Walk},savedRun:{...gaitPresets.Run},
+ active:activeGaitName,
+ currentArms:Number($('armFit').value),currentFeet:Number($('footFit').value),
+ runHand:lastRunHandQA?{...lastRunHandQA}:null
+});
 window.beverlyGaitQA=()=>{
   if(!model||!gaitBones)return null;
   model.updateMatrixWorld(true);
@@ -518,7 +559,7 @@ window.beverlyGaitQA=()=>{
           poseMode,arms:Number($('armFit').value),legs:Number($('footFit').value),lateral,
           elbowGap:+Math.abs(x('LeftForeArm')-x('RightForeArm')).toFixed(5),
           ankleGap:+Math.abs(x('LeftFoot')-x('RightFoot')).toFixed(5),
-          heelToePitchRadians:{...lastRoll},
+          heelToePitchRadians:{...lastRoll},runLeftHand:lastRunHandQA?{...lastRunHandQA}:null,
           hips:pos('Hips'),ankleLeft:pos('LeftFoot'),ankleRight:pos('RightFoot'),
           kneeLeft:pos('LeftLeg'),kneeRight:pos('RightLeg'),
           elbowLeft:pos('LeftForeArm'),elbowRight:pos('RightForeArm'),
