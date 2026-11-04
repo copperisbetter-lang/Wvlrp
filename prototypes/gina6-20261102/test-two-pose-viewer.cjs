@@ -32,6 +32,15 @@ const assert=require('node:assert/strict');
        assert.ok(qa.metrics.headY>.18,'Gina head still near floor: '+JSON.stringify(qa.metrics));
        assert.ok(qa.metrics.elbowMinY<.20,'Gina elbows not grounded: '+JSON.stringify(qa.metrics));
        assert.ok(qa.metrics.kneeMinY<.23,'Gina knees not grounded: '+JSON.stringify(qa.metrics));
+       for(const [name,heights,maximum] of [
+         ['knees',qa.metrics.kneeJointHeightsM,.125],
+         ['elbows',qa.metrics.elbowJointHeightsM,.115]
+       ]){
+         assert.ok(Array.isArray(heights)&&heights.length===2&&heights.every(Number.isFinite),
+           name+' bilateral joint measurements unavailable');
+         assert.ok(heights.every(h=>h>=.005&&h<=maximum),
+           name+' both sides must touch/support ground, not float or penetrate: '+JSON.stringify(qa.metrics));
+       }
        assert.ok(qa.metrics.headY>.18,'Head may not be embedded in floor');
        assert.ok(qa.metrics.headAboveElbowsM>.12,'Head must stay above elbow line');
        assert.ok(qa.metrics.kneeBehindPelvisM>.025,'Knees must be BEHIND the hips, not folded ahead: '+JSON.stringify(qa.metrics));
