@@ -31,7 +31,7 @@ jobs:
           n,t=struct.unpack_from('<I4s',raw,12)
           assert t==b'JSON'
           d=json.loads(raw[20:20+n])
-          off=28+n
+          off=20+n
           assert raw[off+4:off+8]==b'BIN\x00'
           off+=8
           a=d['accessors'];v=d['bufferViews']
