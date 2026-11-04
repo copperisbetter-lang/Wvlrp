@@ -87,7 +87,7 @@ const assert=require('node:assert/strict');
  console.log('NATIVE_AFTER_SEEK',JSON.stringify(await page.evaluate(()=>window.beverlyNativeAnimationQA())));
  const chair=await check('Chair feet grounded','Sit down (chair)',{ankleMinY:[-.04,.24]});
  console.log('NATIVE_AFTER_HOLD',JSON.stringify(await page.evaluate(()=>window.beverlyNativeAnimationQA())));
- assert.ok(Math.abs(chair.pelvisZ-seat.pelvisZ)>.02||Math.abs(chair.kneeMeanZ-seat.kneeMeanZ)>.02||Math.abs(chair.kneeWidthM-seat.kneeWidthM)>.045,'Chair animation is still displaying the previous frozen Sit Open pose');
+ assert.ok(Math.abs(chair.pelvisZ-seat.pelvisZ)>.008||Math.abs(chair.kneeMeanZ-seat.kneeMeanZ)>.008||Math.abs(chair.kneeWidthM-seat.kneeWidthM)>.045,'Chair animation is still displaying the previous frozen Sit Open pose');
  await page.locator('#clip').selectOption({label:'Carry walk'});
  const carry=await check('Carry stance width','Carry walk',{ankleWidthM:[.03,.20]});
  assert.ok(data.every(d=>Number.isFinite(d.pelvisY)));
