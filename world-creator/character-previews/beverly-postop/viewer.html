@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101d27">
-<title>Beverly · Post-Op Motion Lab · 77 Movements</title>
+<title>Beverly · Post-Op Motion Lab · 77 Movements · Clean Mesh</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,Arial,sans-serif}
 *{box-sizing:border-box}
@@ -162,7 +162,18 @@ const loader=new GLTFLoader();
 loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
  model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
  // Keep real dressed Beverly meshes visible by default. Never replace with a skeleton-only placeholder.
- scene.add(model);model.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false}});
+ scene.add(model);
+ // The certified Beverly GLB also contains a loose, non-skinned low-poly Icosphere
+ // staging prop. It is NOT a body or clothing mesh. Never force it visible.
+ let hiddenHelpers=[];
+ model.traverse(o=>{
+   if(!o.isMesh)return;
+   const helper=/^(?:SURG_BEVERLY__)?Icosphere(?:\\.\\d+)?$/i.test(o.name);
+   o.visible=!helper;
+   o.frustumCulled=false;
+   if(helper)hiddenHelpers.push(o.name);
+ });
+ console.info('Beverly viewer: hidden unrelated loose helper props',hiddenHelpers);
  bodyBounds=bbox().clone();
  clips=gltf.animations||[];
  const bones=new Set();let meshes=0,skins=0;
@@ -179,7 +190,7 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  aim();
  let suggested=clips.findIndex(c=>/^idle$/i.test(title(c.name)));
  if(suggested<0)suggested=0;select.value=String(suggested);choose(suggested);
- status.textContent='Beverly ready · '+meshes+' visible meshes · '+bones.size+' bones · '+clips.length+' selectable motions';
+ status.textContent='Beverly ready · '+(meshes-hiddenHelpers.length)+' visible body/outfit meshes · '+bones.size+' bones · '+clips.length+' movements';
 },p=>{
  if(p.total){const percent=Math.round(p.loaded/p.total*100);status.textContent='Loading Beverly’s full model… '+percent+'%'}
  else status.textContent='Loading Beverly’s full model… '+Math.round(p.loaded/1e6)+' MB';
