@@ -14,7 +14,14 @@ const assert=require('node:assert/strict');
    const p=window.beverlyMotionRepairQA();
    return p.inspectionPose==='elbows-knees'&&p.headY!==null&&p.elbowMinY!==null;
  },{timeout:15000});
- await page.waitForTimeout(1300);
+ // Diagnostic pose has an intentional animated transition; source clip name
+ // changes first, but joint transforms settle only at 'in-pose' frame stage.
+ await page.waitForFunction(()=>{
+   const sessions=window.beverlyDiagnosticReport?.()?.sessions;
+   const last=sessions?.at(-1);
+   return last?.label==='Elbows & Knees'&&last.frames?.some(f=>f.stage==='in-pose');
+ },{timeout:30000});
+ await page.waitForTimeout(300);
  const p=await page.evaluate(()=>window.beverlyMotionRepairQA());
  console.log('BEVERLY_KNEEL_POSE_MEASURED',JSON.stringify(p));
  // ALWAYS capture independent visual evidence before assertions.
