@@ -137,7 +137,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
-import {createBeverlyMotionRepairs} from './motion-repairs.js?v=hip-hinge-kneel-seated-20261104-v3';
+import {createBeverlyMotionRepairs} from './motion-repairs.js?v=hip-hinge-seated-arm-relax-20261104-v4';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -154,7 +154,7 @@ scene.add(new THREE.HemisphereLight(0xebf6ff,0x647585,2.5));
 const sun=new THREE.DirectionalLight(0xfff3e6,2.7);sun.position.set(2,5,4);scene.add(sun);
 const fill=new THREE.DirectionalLight(0xb6d9ff,1.7);fill.position.set(-3,3,-3);scene.add(fill);
 const grid=new THREE.GridHelper(4,32,0x7b9bab,0x385164);scene.add(grid);
-const camera=new THREE.PerspectiveCamera(42,1,.01,150);
+const camera=new THREE.PerspectiveCamera(42,1,.04,60); // improve depth precision near overlapping skinned surfaces
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=true;
 orbit.screenSpacePanning=true;
