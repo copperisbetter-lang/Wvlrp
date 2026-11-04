@@ -179,14 +179,15 @@ $('subjectUp').onclick=()=>shiftSubject(true);
 $('subjectDown').onclick=()=>shiftSubject(false);
 let swimwearItems=[],swimwearHidden=false;
 function isSwimwearMesh(name){
- // Only finished garments, never source anatomical/body meshes.
- const n=name.replace(/^SURG_BEVERLY__/,'');
- return /^Beverly fitted swimwear(?:\.\d+)?$/i.test(n)
- || /^Gina_6_FITTED_GOLD_BIKINI_8$/i.test(n)
- || /^(?:Left precise cup|Right precise cup|Left top owner route|Right top owner route)$/i.test(n)
- || /^V19 connected (?:back|front)(?:Left|Right) hip strap$/i.test(n)
- || /^V47 straight front cup-to-cup strap$/i.test(n)
- || /^V51 continuous (?:left|right) cup-to-back strap$/i.test(n);
+ // GLTFLoader normalizes spaces and periods in Blender object names to underscores.
+ // Compare alphanumeric words so approved fitted clothing is recognized both ways.
+ const n=name.replace(/^SURG_BEVERLY__/i,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
+ return /^beverly fitted swimwear(?: [0-9]+)?$/.test(n)
+ || n==='gina 6 fitted gold bikini 8'
+ || ['left precise cup','right precise cup','left top owner route','right top owner route'].includes(n)
+ || /^v19 connected (?:back|front)(?:left|right) hip strap$/.test(n)
+ || n==='v47 straight front cup to cup strap'
+ || /^v51 continuous (?:left|right) cup to back strap$/.test(n);
 }
 function setSwimwearHidden(hidden){
  if(!model)return;
@@ -200,6 +201,7 @@ $('removeClothes').onclick=()=>setSwimwearHidden(!swimwearHidden);
 window.beverlyViewerQA=()=>({
  controlsCollapsed:$('tools').classList.contains('collapsed'),
  swimwearMeshes:swimwearItems.length,
+ swimwearMeshNames:swimwearItems.map(x=>x.name),
  swimwearHidden,visibleClothing:swimwearItems.filter(x=>x.visible).length,
  fullBodyButton:!!$('fullBody'),panEnabled:orbit.enablePan,
  cameraTargetY:+orbit.target.y.toFixed(5),
