@@ -137,7 +137,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
-import {createBeverlyMotionRepairs} from './motion-repairs.js?v=run-left-hand-clearance-20261104-v2';
+import {createBeverlyMotionRepairs} from './motion-repairs.js?v=hip-hinge-kneel-seated-20261104-v3';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -159,7 +159,7 @@ const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=true;
 orbit.screenSpacePanning=true;
 // Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
-orbit.minDistance=.35;orbit.maxDistance=12;
+orbit.minDistance=.50;orbit.maxDistance=12; // prevent camera penetrating 3D surface at close zoom
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
 let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
@@ -399,7 +399,7 @@ function bonePosition(name){
 function initGaitBones(){
  const all={};
  model.traverse(o=>{if(o.isBone)all[o.name]=o});
- const names=['Hips','Spine','Spine1','Spine2',
+ const names=['Hips','Spine','Spine1','Spine2','Neck','Head',
    'LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand',
    'LeftUpLeg','LeftLeg','LeftFoot','LeftToeBase',
    'RightUpLeg','RightLeg','RightFoot','RightToeBase'];
