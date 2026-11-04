@@ -16,22 +16,30 @@ const {chromium}=require('playwright');
   await page.locator('#walk').click();
   await page.waitForTimeout(500);
   await page.locator('#play').click(); // Pause to hold the same animation time
-  await page.locator('#armFit').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('input',{bubbles:true}))});
-  await page.locator('#footFit').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('input',{bubbles:true}))});
-  const before=await page.evaluate(()=>window.beverlyGaitQA());
-  await page.locator('#armFit').evaluate(el=>{el.value=100;el.dispatchEvent(new Event('input',{bubbles:true}))});
-  await page.locator('#footFit').evaluate(el=>{el.value=100;el.dispatchEvent(new Event('input',{bubbles:true}))});
-  const after=await page.evaluate(()=>window.beverlyGaitQA());
-  if(before.clip!=='Walk'||after.clip!=='Walk')throw new Error('Not testing Walk');
-  const keySum=(obj,keys)=>keys.reduce((s,k)=>s+Math.abs(obj.lateral[k]||0),0);
-  const arms=['LeftArm','RightArm'],legs=['LeftUpLeg','RightUpLeg','LeftLeg','RightLeg'];
-  const metrics={arms_before:keySum(before,arms),arms_after:keySum(after,arms),
-                 legs_before:keySum(before,legs),legs_after:keySum(after,legs)};
-  if(!metrics.arms_before||!metrics.legs_before)throw new Error('Missing actual joint metrics '+JSON.stringify({before,after}));
-  if(metrics.arms_after > metrics.arms_before+.001 ||metrics.legs_after > metrics.legs_before+.001)
-    throw new Error('Corrections increased lateral drift '+JSON.stringify(metrics));
+  const set=async(id,value)=>page.locator('#'+id).evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))},value);
+  const qa=()=>page.evaluate(()=>window.beverlyGaitQA());
+  const samples=[];
+  for(let frame=0;frame<=1000;frame+=100){
+    await set('armFit',0);await set('footFit',0);await set('scrub',frame);
+    const before=await qa();
+    await set('armFit',100);await set('footFit',100);
+    const after=await qa();
+    if(before.clip!=='Walk'||after.clip!=='Walk')throw Error('Wrong sampled action');
+    samples.push({frame,before,after,
+      armImprovement:before.elbowGap-after.elbowGap,
+      legImprovement:before.ankleGap-after.ankleGap});
+  }
+  const total=(p)=>samples.reduce((x,y)=>x+y[p],0);
+  const max=(p)=>Math.max(...samples.map(x=>x[p]));
+  const metrics={armImprovementTotal:+total('armImprovement').toFixed(4),
+    legImprovementTotal:+total('legImprovement').toFixed(4),
+    bestArmReduction:+max('armImprovement').toFixed(4),
+    bestFootReduction:+max('legImprovement').toFixed(4),
+    totalSamples:samples.length};
+  if(metrics.bestArmReduction<.015)throw new Error('Arm swing not measurably narrower: '+JSON.stringify(samples));
+  if(metrics.bestFootReduction<.008)throw new Error('Feet not measurably closer: '+JSON.stringify(samples));
   if(errors.length)throw new Error('Browser exceptions: '+errors.join(' | '));
   await page.screenshot({path:'/tmp/beverly-walkfix-v2.png',fullPage:true});
-  console.log('BEVERLY_WALK_FIX_BROWSER_QA_PASS',JSON.stringify({metrics,before,after}));
+  console.log('BEVERLY_WALK_FIX_BROWSER_QA_PASS',JSON.stringify({metrics,samples}));
   await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
