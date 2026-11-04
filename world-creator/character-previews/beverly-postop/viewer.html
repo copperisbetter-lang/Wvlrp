@@ -202,6 +202,8 @@ window.beverlyViewerQA=()=>({
  swimwearMeshes:swimwearItems.length,
  swimwearHidden,visibleClothing:swimwearItems.filter(x=>x.visible).length,
  fullBodyButton:!!$('fullBody'),panEnabled:orbit.enablePan,
+ cameraTargetY:+orbit.target.y.toFixed(5),
+ clothesButtonText:$('removeClothes').textContent,
  clips:clips.length,liveModel:!!model
 });
 
