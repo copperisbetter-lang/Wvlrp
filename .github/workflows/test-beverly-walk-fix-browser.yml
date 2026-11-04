@@ -1,0 +1,35 @@
+name: Verify Beverly Walk gait correction in mobile Chrome
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/test-beverly-walk-fix-browser.yml
+      - prototypes/beverly-surgery/verify-walk-fix.cjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/beverly-surgery/verify-walk-fix.cjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - run: node prototypes/beverly-surgery/verify-walk-fix.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Beverly-Walk-Gait-Android-VisualQA
+          path: /tmp/beverly-walkfix-v2.png
+          if-no-files-found: ignore
+          retention-days: 7
