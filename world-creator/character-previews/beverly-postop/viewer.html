@@ -138,6 +138,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
 import {createBeverlyMotionRepairs} from './motion-repairs.js?v=hip-hinge-seated-arm-relax-20261104-v4';
+import {createBeverlyPatchTrim} from './patch-trim-experiment.js?v=patch-edge-trims-20261104-1';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -160,7 +161,7 @@ orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=true;
 orbit.screenSpacePanning=true;
 // Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
 orbit.minDistance=.50;orbit.maxDistance=12; // prevent camera penetrating 3D surface at close zoom
-let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
+let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false,patchTrimmer=null;
 let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
 let lastRunHandQA=null;
@@ -588,6 +589,13 @@ window.beverlyDiagnosticReport=()=>poseDiagnostics.getReport();
 const loader=new GLTFLoader();
 loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb',gltf=>{
  model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
+ // Experimental clone only: opt-in patch seam trimming, never change GLB.
+ patchTrimmer=createBeverlyPatchTrim(model,THREE);
+ const requestedTrim=new URLSearchParams(location.search).get('patchtrim');
+ if(requestedTrim==='light'||requestedTrim==='medium')
+   console.info('Beverly non-destructive transition seam experiment',
+     patchTrimmer.set(requestedTrim));
+ window.beverlyPatchTrimQA=()=>patchTrimmer?.state()||{available:false};
  // Keep real dressed Beverly meshes visible by default. Never replace with a skeleton-only placeholder.
  scene.add(model);
  // The certified Beverly GLB also contains a loose, non-skinned low-poly Icosphere
@@ -651,6 +659,8 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
      },
      state(){return {camera:camera.position.toArray(),target:orbit.target.toArray(),
        meshes:window.beverlySurfaceQA()}},
+     trimPatch(name){return patchTrimmer?.set(name)||{available:false}},
+     patchTrimState(){return patchTrimmer?.state()||{available:false}},
      geometryDump(names=['SURG_BEVERLY__base001','SURG_BEVERLY__base001_1','SURG_BEVERLY__base001_2']){
        const collected={};
        for(const name of names){
