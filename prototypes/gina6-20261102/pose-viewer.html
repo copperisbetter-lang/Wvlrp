@@ -123,54 +123,89 @@ function restore(source){
  source.model.updateMatrixWorld(true);source.activeAction=null;
 }
 function nameOf(clip){return clip.name.replace(/^CLIP_\d+__/,'').replaceAll('_',' ').trim()}
+// Gina-specific *slumped crawl*: build from her natural standing pose,
+// not "Get up (from front)" (which is face-down/inverted mid-recovery).
+// No GLB, geometry, clip keyframe, skinning or garment data are modified.
+function makeSlumpedCrawl(source){
+ const b=source.bones,steer=source.helper.steerBoneTo,point=name=>b[name]?.getWorldPosition(vec());
+ const update=()=>source.model.updateMatrixWorld(true);
+ const hips=b.Hips;
+ if(!hips)throw Error('Gina Hips bone missing');
+ // Restore original neutral spinal/neck chain before posing the pelvis.
+ for(const name of ['Spine','Spine1','Spine2','Neck','Head']){
+   const bone=b[name],rest=bone&&source.rest.get(bone.uuid);
+   if(rest)bone.quaternion.copy(rest.rotation);
+ }
+ update();
+ let h=point('Hips');
+ hips.position.y+=THREE.MathUtils.clamp(.54-h.y,-1.2,1.2);
+ update();h=point('Hips');
+ // Shift the *whole torso* from the pelvis joint toward her hands.
+ // Keep the rest of the spine continuous: no jackknife at Spine2/Neck.
+ // A slight downward slope gives the desired relaxed/slumped crawl.
+ steer('Hips','Spine',new THREE.Vector3(h.x,h.y-.09,h.z+.24),1);
+ update();
+ h=point('Hips');
+ for(const side of ['Left','Right']){
+   const sign=side==='Left'?1:-1;
+   // Knees BEHIND the pelvis, rather than +0.24 m ahead as in the
+   // previous accidentally inverted recovery pose.
+   steer(side+'UpLeg',side+'Leg',
+     new THREE.Vector3(h.x+sign*.155,.09,h.z-.12),1);
+   const knee=point(side+'Leg');
+   if(knee){
+     steer(side+'Leg',side+'Foot',
+       new THREE.Vector3(knee.x+sign*.018,.075,knee.z-.29),1);
+     const foot=point(side+'Foot');
+     if(foot)steer(side+'Foot',side+'ToeBase',
+       new THREE.Vector3(foot.x+sign*.014,.075,foot.z-.11),.75);
+   }
+ }
+ update();
+ // Elbows land below and just ahead of the shoulders. Forearms extend
+ // FORWARD along the floor; shoulders stay lower than the raised pelvis.
+ for(const side of ['Left','Right']){
+   const sign=side==='Left'?1:-1,shoulder=point(side+'Arm');
+   if(!shoulder)continue;
+   steer(side+'Arm',side+'ForeArm',
+     new THREE.Vector3(shoulder.x+sign*.06,.045,shoulder.z+.10),1);
+   const elbow=point(side+'ForeArm');
+   if(elbow)steer(side+'ForeArm',side+'Hand',
+     new THREE.Vector3(elbow.x+sign*.025,.075,elbow.z+.24),1);
+ }
+ update();
+ // Keep Gina's head in line with her back rather than pushing it under.
+ // Only adjust neck if needed; avoid an exaggerated upward neck break.
+ const neck=point('Neck'),head=point('Head');
+ if(neck&&head&&head.y<.22){
+   steer('Neck','Head',new THREE.Vector3(neck.x,neck.y+.035,neck.z+.105),.48);
+ }
+ update();
+ const m=source.repairs.metrics();
+ return {...m,pose:'gina-slumped-crawl',
+   kneeBehindPelvisM:m.kneeMeanZ!=null&&m.pelvisZ!=null
+     ?+(m.pelvisZ-m.kneeMeanZ).toFixed(5):null,
+   torsoDeclineM:m.chestY!=null&&m.pelvisY!=null
+     ?+(m.pelvisY-m.chestY).toFixed(5):null};
+}
 function applyPose(source,which){
  restore(source);
  if(which==='stand'){
    currentMetrics=source.repairs.metrics();return;
  }
- const clipName=which==='kneel'?'Get up (from front)':'Sit idle (chair)';
+ // Sit keeps its own native chair animation, which was structurally usable.
+ // The crawl must NEVER start from the floor-recovery clip.
+ const clipName=which==='kneel'?'Idle':'Sit idle (chair)';
  const clip=source.clips.find(c=>nameOf(c).toLowerCase()===clipName.toLowerCase());
  if(!clip)throw Error('Gina is missing native source animation: '+clipName);
- const time=clip.duration*(which==='kneel'?.28:.5);
  const action=source.mixer.clipAction(clip);
  action.reset().setEffectiveWeight(1).play();
- source.mixer.setTime(Math.max(.001,time));
+ source.mixer.setTime(Math.max(.001,clip.duration*(which==='kneel'?.35:.5)));
  action.paused=true;source.activeAction=action;
  source.model.updateMatrixWorld(true);
- currentMetrics=source.repairs.inspect(which==='kneel'?'elbows-knees':'sit-open');
- if(which==='kneel'){
-   // The donor proportions place Gina's head almost against the ground
-   // using Beverly's earlier hip targets. Re-aim the torso with Gina's
-   // actual bones, then replant knees and forearms; preserve the meshes.
-   const world=name=>source.bones[name]?.getWorldPosition(vec());
-   const hips=world('Hips');
-   if(hips){
-     helperForGina(source).steerBoneTo('Hips','Spine',
-       new THREE.Vector3(hips.x,hips.y+.075,hips.z+.215),.96);
-     source.model.updateMatrixWorld(true);
-     const h=world('Hips');
-     for(const side of ['Left','Right']){
-       const sign=side==='Left'?1:-1;
-       helperForGina(source).steerBoneTo(side+'UpLeg',side+'Leg',
-         new THREE.Vector3(h.x+sign*.125,.145,h.z+.24),1);
-       const knee=world(side+'Leg');
-       if(knee)helperForGina(source).steerBoneTo(side+'Leg',side+'Foot',
-         new THREE.Vector3(knee.x+sign*.015,.105,knee.z-.32),1);
-     }
-     for(const side of ['Left','Right']){
-       const sign=side==='Left'?1:-1,shoulder=world(side+'Arm');
-       if(!shoulder)continue;
-       helperForGina(source).steerBoneTo(side+'Arm',side+'ForeArm',
-         new THREE.Vector3(shoulder.x+sign*.025,.115,shoulder.z+.12),1);
-       const elbow=world(side+'ForeArm');
-       if(elbow)helperForGina(source).steerBoneTo(side+'ForeArm',side+'Hand',
-         new THREE.Vector3(elbow.x+sign*.02,.085,elbow.z+.18),1);
-     }
-     source.model.updateMatrixWorld(true);
-     currentMetrics=source.repairs.metrics();
-   }
- }
-
+ currentMetrics=which==='kneel'
+   ?makeSlumpedCrawl(source)
+   :source.repairs.inspect('sit-open');
 }
 function status(){
  const source=sources[active];if(!source)return;
