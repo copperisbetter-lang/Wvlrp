@@ -25,6 +25,17 @@ const fs=require('node:fs');
   Object.entries(geo).map(([k,v])=>[k,{vertices:v.vertexCount,triangles:v.triangleCount,
    skinned:v.skin.length>0,indexed:!!v.index}])
  )));
+ // Compare original and cleaned JOIN TEXTURE with identical mesh and camera.
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.trimPatch('original'));
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.31,.63,.71));
+ for(const [label,clean] of [['original',false],['clean',true]]){
+   const state=await page.evaluate(v=>window.beverlySurfaceProbeControl.cleanJoinTexture(v),clean);
+   console.log('BEVERLY_CLEAN_JOIN_TEXTURE',label,JSON.stringify(state));
+   if(state?.available!==true||state?.current!==(clean?'clean':'original'))throw Error('Clean texture state mismatch');
+   await page.waitForTimeout(200);
+   await page.screenshot({path:'/tmp/beverly-cleanjoin-'+label+'-standing.png'});
+ }
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cleanJoinTexture(false));
  // Compare exact same model, camera and material with only patch triangles changed.
  await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.31,.63,.71));
  for(const variant of ['original','light','medium']){
@@ -48,6 +59,13 @@ const fs=require('node:fs');
    await page.screenshot({path:'/tmp/beverly-patchtrim-'+variant+'-kneel.png'});
  }
  await page.evaluate(()=>window.beverlySurfaceProbeControl.trimPatch('original'));
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(.58,.49,.64,.68));
+ for(const [label,clean] of [['original',false],['clean',true]]){
+   await page.evaluate(v=>window.beverlySurfaceProbeControl.cleanJoinTexture(v),clean);
+   await page.waitForTimeout(200);
+   await page.screenshot({path:'/tmp/beverly-cleanjoin-'+label+'-kneel.png'});
+ }
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cleanJoinTexture(false));
  await page.locator('#toggleControls').click();
  await page.locator('#walk').click();
  await page.locator('#toggleControls').click();
