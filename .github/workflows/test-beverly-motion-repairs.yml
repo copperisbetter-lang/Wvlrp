@@ -43,6 +43,7 @@ jobs:
             /tmp/beverly-motion-repairs-mobile.png
             /tmp/beverly-surface-*.png
             /tmp/beverly-patch-bias-*.png
+            /tmp/beverly-kneel-patch-*.png
             /tmp/beverly-surface-meshes.json
             /tmp/beverly-fixed-elbows-knees-visual.png
             /tmp/beverly-fixed-sit-legs-open-visual.png
