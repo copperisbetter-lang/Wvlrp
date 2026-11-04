@@ -1,0 +1,118 @@
+name: Audit Test Bone 1 donor dimensions and animations
+on:
+  push:
+    branches: ['feature/ara-young-explorer-three-20261103']
+    paths:
+      - '.github/workflows/audit-test-bone-1.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ara-young-explorer-three-20261103
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/test-bone-1
+            .github/workflows
+          persist-credentials: true
+      - name: Audit the actual official native exported GLB
+        run: |
+          python3 - <<'PY'
+          import struct,json,hashlib,math
+          from pathlib import Path
+          p=Path('prototypes/test-bone-1/Test_Bone_1.glb')
+          raw=p.read_bytes()
+          assert raw[:4]==b'glTF' and struct.unpack_from('<I',raw,8)[0]==len(raw)
+          n,t=struct.unpack_from('<I4s',raw,12)
+          assert t==b'JSON'
+          d=json.loads(raw[20:20+n])
+          off=28+n
+          assert raw[off+4:off+8]==b'BIN\x00'
+          off+=8
+          a=d['accessors'];v=d['bufferViews']
+          mat=[m.get('name','') for m in d['materials']]
+          body=next((q for mesh in d['meshes'] for q in mesh['primitives'] if mat[q.get('material',0)]=='Skin'),None)
+          assert body is not None,'No original Ara Skin primitive'
+          def read(i):
+              x=a[i];w=v[x['bufferView']]
+              k=x['componentType'];c={'SCALAR':1,'VEC3':3}[x['type']]
+              f,z={5121:('B',1),5123:('H',2),5125:('I',4),5126:('f',4)}[k]
+              s=w.get('byteStride',z*c);b=off+w.get('byteOffset',0)+x.get('byteOffset',0)
+              return [struct.unpack_from('<'+f*c,raw,b+j*s) for j in range(x['count'])]
+          xyz=read(body['attributes']['POSITION'])
+          ids=[q[0] for q in read(body['indices'])]
+          used=set(ids)
+          ys=[xyz[i][1] for i in used]
+          low,high=min(ys),max(ys);height=high-low
+          source_height=1.713543896243209
+          targets={'chest':(1.22/source_height,.8659706527970249),
+                   'waist':(1.14/source_height,.6633063721173167),
+                   'hips':(.94/source_height,.9215212753305468)}
+          def perimeter(f):
+              plane=low+f*height
+              edges=[]
+              def k(p):return (round(p[0],5),round(p[1],5))
+              for z in range(0,len(ids),3):
+                  tri=[xyz[ids[z]],xyz[ids[z+1]],xyz[ids[z+2]]]
+                  points=[]
+                  for i in range(3):
+                      u,w=tri[i],tri[(i+1)%3]
+                      if (u[1]<plane<w[1]) or (w[1]<plane<u[1]):
+                          t=(plane-u[1])/(w[1]-u[1])
+                          points.append((u[0]+t*(w[0]-u[0]),u[2]+t*(w[2]-u[2])))
+                  if len(points)==2 and all(abs(x)<.32 and abs(z)<.45 for x,z in points):
+                      edges.append(points)
+              graph={}
+              for j,(u,w) in enumerate(edges):
+                  graph.setdefault(k(u),[]).append(j)
+                  graph.setdefault(k(w),[]).append(j)
+              visited=set();results=[]
+              for j,(start,end) in enumerate(edges):
+                  if j in visited:continue
+                  visited.add(j);total=math.dist(start,end);pts=[start,end];cur=end
+                  for _ in range(30000):
+                      links=[h for h in graph.get(k(cur),[]) if h not in visited]
+                      if not links:break
+                      h=links[0];u,w=edges[h];nxt=w if k(u)==k(cur) else u
+                      visited.add(h);total+=math.dist(cur,nxt);pts.append(nxt);cur=nxt
+                  xs=[x for x,z in pts];zs=[z for x,z in pts]
+                  if len(pts)>20 and math.dist(start,cur)<.0002 and abs((min(xs)+max(xs))/2)<.1 and .35<total<2:
+                      results.append({'perimeter_m':total,'width_m':max(xs)-min(xs),
+                                      'depth_m':max(zs)-min(zs),'points':len(pts)})
+              return max(results,key=lambda x:x['perimeter_m']) if results else None
+          contours={key:perimeter(f) for key,(f,_) in targets.items()}
+          differences={key:(round(100*(contours[key]['perimeter_m']-target),3) if contours[key] else None)
+                       for key,(_,target) in targets.items()}
+          rigs=[len(s.get('joints',[])) for s in d.get('skins',[])]
+          animations=[s.get('name','') for s in d.get('animations',[])]
+          result={'name':'Test Bone 1','source':'native official Ara 3D Gen exporter',
+             'source_Beverly_GLBSHA256':'fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc',
+             'glb_SHA256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw),
+             'skin_distinct_vertices':len(used),'skin_triangles':len(ids)//3,
+             'height_m':height,'target_height_m':source_height,
+             'height_difference_cm':round(100*(height-source_height),3),
+             'skin_horizontal_contours_m':contours,
+             'horizontal_contour_difference_cm':differences,
+             'rig_joint_counts':rigs,'animation_count':len(animations),'animation_names':animations,
+             'structural_rig_pass':69 in rigs and len(animations)==77,
+             'limits':'Ara uses a distinct native body topology. Exact geometric/face likeness and skeleton transplant are not demonstrated by this export.'}
+          q=Path('prototypes/test-bone-1/TEST_BONE_1_STRUCTURAL_QA.json')
+          q.write_text(json.dumps(result,indent=2)+'\n')
+          print('DONOR_AUDIT',json.dumps({k:result[k] for k in ['height_m','height_difference_cm','skin_distinct_vertices','rig_joint_counts','animation_count','skin_horizontal_contours_m','horizontal_contour_difference_cm','structural_rig_pass']}))
+          assert result['structural_rig_pass']
+          PY
+      - name: Persist measurements independently from binary
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/test-bone-1/TEST_BONE_1_STRUCTURAL_QA.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save verified Test Bone 1 skeleton and geometry audit [skip ci]'
+            git pull --rebase origin feature/ara-young-explorer-three-20261103
+            git push origin HEAD:feature/ara-young-explorer-three-20261103
+          fi
