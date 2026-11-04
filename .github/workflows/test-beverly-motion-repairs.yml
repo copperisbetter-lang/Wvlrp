@@ -36,6 +36,9 @@ jobs:
         if: always()
         with:
           name: Beverly-nonapproved-motion-repairs-QA
-          path: /tmp/beverly-motion-repairs-mobile.png
+          path: |
+            /tmp/beverly-motion-repairs-mobile.png
+            /tmp/beverly-fixed-elbows-knees-visual.png
+            /tmp/beverly-fixed-sit-legs-open-visual.png
           if-no-files-found: ignore
           retention-days: 7
