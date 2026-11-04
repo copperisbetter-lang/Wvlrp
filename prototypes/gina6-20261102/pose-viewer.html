@@ -141,7 +141,7 @@ function applyPose(source,which){
 function status(){
  const source=sources[active];if(!source)return;
  const m=currentMetrics||source.repairs.metrics();
- $('status').textContent='Gina 6 · '+(active==='bikini'?'gold bikini':'neutral')+' · '+(mode==='kneel'?'Elbows & Knees':mode==='sit'?'Sit — Legs Open':'Standing')+' · '+Object.keys(source.rest).length+' bones · '+source.clips.length+' motions';
+ $('status').textContent='Gina 6 · '+(active==='bikini'?'gold bikini':'neutral')+' · '+(mode==='kneel'?'Elbows & Knees':mode==='sit'?'Sit — Legs Open':'Standing')+' · '+source.rest.size+' bones · '+source.clips.length+' motions';
  const n=v=>Number.isFinite(v)?v.toFixed(3)+' m':'—';
  $('diagnostics').textContent='Hip '+n(m.pelvisY)+' · Knee '+n(m.kneeMinY)+' · Elbow '+n(m.elbowMinY)+'\nHead '+n(m.headY)+' · Knee width '+n(m.kneeWidthM)+' · ankle '+n(m.ankleMinY);
  for(const [id,pressed] of [['kneel',mode==='kneel'],['sit',mode==='sit'],['stand',mode==='stand'],['bikini',active==='bikini'],['neutral',active==='neutral']]){
@@ -199,7 +199,7 @@ $('collapse').onclick=()=>{
  $('collapse').setAttribute('aria-expanded',String(!collapsed));
 };
 window.ginaPoseQA=()=>({ready:!!sources[active],selected:active,pose:mode,
- modelsLoaded:Object.keys(sources),boneCount:sources[active]?Object.keys(sources[active].rest).length:0,
+ modelsLoaded:Object.keys(sources),boneCount:sources[active]?sources[active].rest.size:0,
  clipCount:sources[active]?.clips.length||0,
  metrics:currentMetrics?{...currentMetrics}:null,
  camera:camera.position.toArray(),target:orbit.target.toArray()});
