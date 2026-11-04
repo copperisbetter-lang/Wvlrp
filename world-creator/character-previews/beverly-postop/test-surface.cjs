@@ -45,6 +45,21 @@ const fs=require('node:fs');
    await page.screenshot({path:'/tmp/beverly-patch-bias-'+factor+'-'+units+'.png'});
  }
  await page.evaluate(()=>window.beverlySurfaceProbeControl.restorePatchMaterial());
+
+ // Does the joint-driven patch also distort in a deep hip fold?
+ await page.locator('#elbowsKnees').click();
+ await page.waitForTimeout(1800);
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(1.45,.55,.35,.62));
+ await page.waitForTimeout(350);
+ await page.screenshot({path:'/tmp/beverly-kneel-patch-on.png'});
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.hideNames(['SURG_BEVERLY__base001_1']));
+ await page.waitForTimeout(200);
+ await page.screenshot({path:'/tmp/beverly-kneel-patch-hidden.png'});
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.restore());
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.patchDepthBias(100,100));
+ await page.waitForTimeout(200);
+ await page.screenshot({path:'/tmp/beverly-kneel-patch-depth100.png'});
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.restorePatchMaterial());
  const names=meshes.map(x=>x.name);
  const candidates=names.filter(n=>/base|body|skin|flat|round|att|pelv|vag|thigh|pant|brief|seam/i.test(n));
  console.log('BEVERLY_SURFACE_CANDIDATES '+JSON.stringify(candidates));
