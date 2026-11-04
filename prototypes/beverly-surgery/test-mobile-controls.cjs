@@ -3,7 +3,7 @@ const {chromium}=require('playwright');
   const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-webgl']});
   const page=await browser.newPage({viewport:{width:412,height:915},deviceScaleFactor:1,isMobile:true,hasTouch:true});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-  const url='https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html?v=mobile-controls-20261103-v4';
+  const url='https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html?v=mobile-controls-20261103-v5';
   let ok=false;
   for(let i=0;i<9;i++){
     const res=await page.goto(url+'&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
