@@ -14,6 +14,11 @@ const assert=require('node:assert/strict');
  const mesh=await page.evaluate(()=>window.beverlySurfaceQA().filter(m=>/^SURG_BEVERLY__base001(_[12])?$/.test(m.name)).map(({name,skinned,triangles,sizeM})=>({name,skinned,triangles,sizeM})));
  console.log('BENT_LAYER_MESH_IDENTIFIERS',JSON.stringify(mesh));
  await page.locator('#toggleControls').click();
+ // Match the owner's screenshots: the UI shows RESTORE CLOTHES,
+ // therefore the approved fitted clothing is hidden.
+ await page.locator('#removeClothes').click();
+ assert.equal((await page.evaluate(()=>window.beverlyViewerQA())).swimwearHidden,true,
+   'Owner screenshot comparison must run with clothing hidden');
  await page.locator('#elbowsKnees').click();
  await page.waitForFunction(()=>{
    const last=window.beverlyDiagnosticReport?.()?.sessions?.at(-1);
