@@ -1,0 +1,52 @@
+name: FaceFit test - package Python dependencies and photo model
+on:
+  push:
+    branches:
+      - feature/facefit-mpfb-installer-20261104
+    paths:
+      - .github/workflows/facefit-package-dependencies.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-facefit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Prepare Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download FaceFit source and pinned stable MediaPipe wheels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          mkdir -p bundle/wheels bundle/models
+          git clone --depth 1 https://github.com/VGCLUB/facefit-mpfb.git /tmp/facefit-upstream
+          (cd /tmp/facefit-upstream && git rev-parse HEAD) | tee bundle/facefit-upstream-commit.txt
+          tar -czf bundle/facefit-source.tar.gz -C /tmp/facefit-upstream .
+          python -m pip download --only-binary=:all: -d bundle/wheels \
+            'mediapipe==0.10.35' 'mcp>=1.2,<2' 'numpy' 'scipy' 'pillow' \
+            'opencv-python-headless' 'onnxruntime'
+          curl --fail --location --retry 3 --connect-timeout 30 \
+            'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task' \
+            -o bundle/models/face_landmarker.task
+          test -s bundle/models/face_landmarker.task
+          python - <<'PY'
+          import hashlib, pathlib
+          with open('bundle/SHA256SUMS','w') as f:
+              for p in sorted(pathlib.Path('bundle').rglob('*')):
+                  if p.is_file() and p.name != 'SHA256SUMS':
+                      f.write(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to("bundle")}\n')
+          print('WHEELS',len(list(pathlib.Path('bundle/wheels').glob('*.whl'))))
+          print('MODEL_BYTES',pathlib.Path('bundle/models/face_landmarker.task').stat().st_size)
+          PY
+          du -sh bundle
+      - name: Archive FaceFit dependencies for isolated ChatGPT container
+        uses: actions/upload-artifact@v4
+        with:
+          name: FaceFit-Python313-wheelhouse-source-face-landmarker
+          path: bundle/
+          retention-days: 7
+          compression-level: 6
