@@ -56,6 +56,7 @@ export class BeverlyPoseDiagnostics{
   $('diagOpen').onclick=()=>this.openPanel();
   $('diagClose').onclick=()=>this.closePanel();
   $('diagCopy').onclick=()=>this.copyAll();
+  $('diagCopyLatest').onclick=()=>this.copyLatest();
   $('diagSave').onclick=()=>this.saveJSON();
   $('diagClear').onclick=async()=>{
    if(!confirm('Delete ALL saved Beverly pose recordings from this browser? Export JSON first if you need a backup.'))return;
@@ -227,13 +228,22 @@ export class BeverlyPoseDiagnostics{
   };
  }
  async copyAll(){
+  await this.copyReport(this.getReport(),'diagCopy','all saved poses');
+ }
+ async copyLatest(){
+  const latest=this.active||this.latest||this.sessions.at(-1);
+  if(!latest){this.currentStatus='Choose a pose first, then tap Copy This Pose';this.updateUI();return}
+  const report=this.getReport();
+  report.sessions=[latest];
+  await this.copyReport(report,'diagCopyLatest','the selected pose');
+ }
+ async copyReport(report,buttonId,description){
   const $=id=>document.getElementById(id);
-  $('diagCopy').disabled=true;
-  this.currentStatus='Preparing one-paste report for clipboard…';this.updateUI();
+  $(buttonId).disabled=true;
+  this.currentStatus='Preparing one-paste '+description+' report…';this.updateUI();
   try{
    await this.readyPromise;
    if(this.active)await this.persist(this.active);
-   const report=this.getReport();
    const str=JSON.stringify(report);
    let out;
    if(typeof CompressionStream==='function'){
@@ -253,9 +263,9 @@ export class BeverlyPoseDiagnostics{
     copied=document.execCommand('copy');tmp.remove();
    }
    if(!copied)throw Error('Clipboard permission unavailable. Use Save All JSON instead.');
-   this.currentStatus='COPIED '+this.sessions.length+' pose recordings ('+out.length+' characters). Paste ONCE into this chat.';
+   this.currentStatus='COPIED '+report.sessions.length+' pose recording(s) ('+out.length+' characters). Paste ONCE into this chat.';
   }catch(e){this.currentStatus='Copy failed: '+e.message+' — use Save All JSON';console.error(e)}
-  $('diagCopy').disabled=false;this.updateUI();
+  $(buttonId).disabled=false;this.updateUI();
  }
  async saveJSON(){
   await this.readyPromise;
