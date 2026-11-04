@@ -6,33 +6,99 @@
   "bytes": 12185576,
   "skin_distinct_vertices": 11901,
   "skin_triangles": 22148,
-  "height_m": 1.4851372689008713,
+  "skin_primitive_height_m": 1.4851372689008713,
+  "material_bounds": {
+    "Skin": [
+      {
+        "min_y_m": 0.22642607986927032,
+        "max_y_m": 1.7115633487701416,
+        "indexed_vertices": 11901
+      }
+    ],
+    "Skin details": [
+      {
+        "min_y_m": 1.5190649032592773,
+        "max_y_m": 1.5751057863235474,
+        "indexed_vertices": 578
+      }
+    ],
+    "Eyes": [
+      {
+        "min_y_m": 1.5819865465164185,
+        "max_y_m": 1.6144163608551025,
+        "indexed_vertices": 552
+      }
+    ],
+    "Eyebrows": [
+      {
+        "min_y_m": 1.601151943206787,
+        "max_y_m": 1.6148627996444702,
+        "indexed_vertices": 126
+      }
+    ],
+    "Eyelashes": [
+      {
+        "min_y_m": 1.588234305381775,
+        "max_y_m": 1.6057637929916382,
+        "indexed_vertices": 250
+      }
+    ],
+    "Teeth": [
+      {
+        "min_y_m": 1.5041606426239014,
+        "max_y_m": 1.5540332794189453,
+        "indexed_vertices": 4712
+      }
+    ],
+    "Tongue": [
+      {
+        "min_y_m": 1.5176985263824463,
+        "max_y_m": 1.5451948642730713,
+        "indexed_vertices": 264
+      }
+    ],
+    "Shoes": [
+      {
+        "min_y_m": 0.0,
+        "max_y_m": 0.23391108214855194,
+        "indexed_vertices": 1904
+      }
+    ],
+    "Hair": [
+      {
+        "min_y_m": 0.9819337129592896,
+        "max_y_m": 1.7217997312545776,
+        "indexed_vertices": 3314
+      }
+    ]
+  },
+  "height_m": 1.7217997312545776,
   "target_height_m": 1.713543896243209,
-  "height_difference_cm": -22.841,
+  "height_difference_cm": 0.826,
   "skin_horizontal_contours_m": {
     "chest": {
-      "perimeter_m": 0.8573982869701001,
-      "width_m": 0.2864778331170475,
-      "depth_m": 0.20935886973291895,
-      "points": 123
-    },
-    "waist": {
-      "perimeter_m": 0.7545104330614719,
-      "width_m": 0.2507553391109397,
-      "depth_m": 0.1840638186977402,
+      "perimeter_m": 0.7805305504251282,
+      "width_m": 0.2528855730298836,
+      "depth_m": 0.19114224363327037,
       "points": 101
     },
+    "waist": {
+      "perimeter_m": 0.6542249222904757,
+      "width_m": 0.23711674884958522,
+      "depth_m": 0.16427882503807448,
+      "points": 89
+    },
     "hips": {
-      "perimeter_m": 0.7511976116921785,
-      "width_m": 0.28153874013816205,
-      "depth_m": 0.17978843805840083,
-      "points": 93
+      "perimeter_m": 0.926912632744359,
+      "width_m": 0.33356318298917303,
+      "depth_m": 0.21465435194509788,
+      "points": 92
     }
   },
   "horizontal_contour_difference_cm": {
-    "chest": -0.857,
-    "waist": 9.12,
-    "hips": -17.032
+    "chest": -8.544,
+    "waist": -0.908,
+    "hips": 0.539
   },
   "rig_joint_counts": [
     69
