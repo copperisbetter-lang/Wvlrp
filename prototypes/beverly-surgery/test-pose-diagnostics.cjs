@@ -10,7 +10,7 @@ const assert=require('node:assert/strict');
  const base='https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html';
  let loaded=false;
  for(let i=0;i<10;i++){
-  const resp=await page.goto(base+'?diag=full69v2&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
+  const resp=await page.goto(base+'?diag=full69v3&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
   if(resp?.status()!==200)continue;
   try{await page.waitForFunction(()=>typeof window.beverlyDiagnosticReport==='function'&&window.beverlyDiagnosticsQA?.().ready===true&&window.beverlyViewerQA?.().options===79,{timeout:15000});loaded=true;break}
   catch(e){await page.waitForTimeout(4000)}
@@ -18,9 +18,13 @@ const assert=require('node:assert/strict');
  assert.ok(loaded,'New diagnostic viewer 79 poses + 69 bones must load: '+await page.locator('#status').textContent());
  const qa=()=>page.evaluate(()=>window.beverlyDiagnosticsQA());
  const report=()=>page.evaluate(()=>window.beverlyDiagnosticReport());
+ const waitComplete=async label=>page.waitForFunction(name=>{
+   const sess=window.beverlyDiagnosticReport?.()?.sessions?.at(-1);
+   return sess?.label===name&&sess?.complete===true;
+ },label,{timeout:30000});
  await page.locator('#toggleControls').click();
  await page.locator('#walk').click();
- await page.waitForTimeout(3300);
+ await waitComplete('Walk');
  let q=await qa();assert.ok(q.sessionCount>=1,'No Walk session saved');
  let r=await report(),walk=r.sessions[r.sessions.length-1];
  assert.equal(walk.label,'Walk');
@@ -34,13 +38,13 @@ const assert=require('node:assert/strict');
   'Missing full world/local joint poses');
  assert.ok(typeof f.bodyMetrics.ankleCenterWidthM==='number','Missing measured stance width');
  await page.locator('#run').click();
- await page.waitForTimeout(3300);
+ await waitComplete('Run');
  q=await qa();assert.ok(q.sessionCount>=2,'Run not captured');
  await page.locator('#elbowsKnees').click();
- await page.waitForTimeout(2900);
+ await waitComplete('Elbows & Knees');
  q=await qa();assert.ok(q.sessionCount>=3,'Elbows Knees inspection pose not captured');
  await page.locator('#sitOpen').click();
- await page.waitForTimeout(2900);
+ await waitComplete('Sit — Legs Open');
  q=await qa();assert.ok(q.sessionCount>=4,'Sit Legs Open inspection pose not captured');
  await page.locator('#diagOpen').click();
  assert.equal(await page.locator('#diagPanel').isVisible(),true);
