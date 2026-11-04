@@ -31,6 +31,8 @@ export function createBeverlyMotionRepairs({
       kneeWidthM:lk&&rk?n(Math.abs(lk.x-rk.x)):null,
       ankleWidthM:lf&&rf?n(Math.abs(lf.x-rf.x)):null,
       elbowMinY:le&&re?n(Math.min(le.y,re.y)):null,
+      leftWristVsShoulderY:world('LeftHand')&&world('LeftArm')?n(world('LeftHand').y-world('LeftArm').y):null,
+      rightWristVsShoulderY:world('RightHand')&&world('RightArm')?n(world('RightHand').y-world('RightArm').y):null,
       pelvisAboveKneeM:hip&&lk&&rk?n(hip.y-Math.min(lk.y,rk.y)):null,
       spineRestDeviationDeg:neutralSpine&&neutralSpine.get('Spine2')&&bones?.Spine2?
         n(THREE.MathUtils.radToDeg(bones.Spine2.quaternion.angleTo(neutralSpine.get('Spine2')))):null,
