@@ -101,15 +101,28 @@ orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
 function resize(){const w=panel.clientWidth||innerWidth,h=panel.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 addEventListener('resize',resize);resize();
-function bbox(){const b=new THREE.Box3().setFromObject(model);if(!b.isEmpty())return b;return bodyBounds}
+function bbox(){
+ const b=new THREE.Box3();
+ // Ignore hidden prop meshes when framing the model. Three.js Box3.setFromObject
+ // includes invisible children, so it would still count the giant Icosphere.
+ if(!model)return bodyBounds;
+ model.updateMatrixWorld(true);
+ model.traverse(o=>{if(o.isMesh && o.visible)b.union(new THREE.Box3().setFromObject(o))});
+ return b.isEmpty()?bodyBounds:b;
+}
 function aim(side='front'){
  if(!model)return;
  const b=bbox();const center=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
- const height=Math.max(1,size.y),d=height*1.65;
- orbit.target.copy(center);
- if(side==='side')camera.position.set(center.x+d,center.y+height*.10,center.z);
- else if(side==='back')camera.position.set(center.x,center.y+height*.10,center.z-d);
- else camera.position.set(center.x,center.y+height*.10,center.z+d);
+ const height=Math.max(1,size.y);
+ // Phones have a top status panel and bottom movement controls.
+ // Frame Beverly in the unobstructed area between them.
+ const mobile=innerWidth<640;
+ const d=height*(mobile?3.15:1.95);
+ const sight=center.clone();sight.y-=height*(mobile?.15:0);
+ orbit.target.copy(sight);
+ if(side==='side')camera.position.set(center.x+d,sight.y+height*.07,center.z);
+ else if(side==='back')camera.position.set(center.x,sight.y+height*.07,center.z-d);
+ else camera.position.set(center.x,sight.y+height*.07,center.z+d);
  orbit.update();
 }
 for(const side of ['front','side','back'])$(side).onclick=()=>aim(side);
