@@ -10,9 +10,9 @@ const assert=require('node:assert/strict');
  const base='https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html';
  let loaded=false;
  for(let i=0;i<10;i++){
-  const resp=await page.goto(base+'?diag=full69v3&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
+  const resp=await page.goto(base+'?diag=full69v4&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
   if(resp?.status()!==200)continue;
-  try{await page.waitForFunction(()=>typeof window.beverlyDiagnosticReport==='function'&&window.beverlyDiagnosticsQA?.().ready===true&&window.beverlyViewerQA?.().options===79,{timeout:15000});loaded=true;break}
+  try{await page.waitForFunction(()=>typeof window.beverlyDiagnosticReport==='function'&&!!document.getElementById('diagCopyLatest')&&window.beverlyDiagnosticsQA?.().ready===true&&window.beverlyViewerQA?.().options===79,{timeout:15000});loaded=true;break}
   catch(e){await page.waitForTimeout(4000)}
  }
  assert.ok(loaded,'New diagnostic viewer 79 poses + 69 bones must load: '+await page.locator('#status').textContent());
@@ -61,6 +61,15 @@ const assert=require('node:assert/strict');
  assert.ok(parsed.sessions.length>=4);
  assert.ok(parsed.sessions.every(s=>s.frames.length>=10&&s.jointHierarchy.length===69),'Incomplete report');
  assert.ok(parsed.sessions.every(s=>s.frames.every(f=>Object.keys(f.joints).length===69)),'Missing full joint frame');
+ await page.locator('#diagCopyLatest').click();
+ await page.waitForTimeout(350);
+ const latestCopied=await page.evaluate(()=>navigator.clipboard.readText());
+ assert.ok(latestCopied.startsWith(prefix),'Copy This Pose did not use one-paste format');
+ const latest=JSON.parse(zlib.gunzipSync(Buffer.from(latestCopied.slice(prefix.length),'base64')).toString('utf8'));
+ assert.equal(latest.sessions.length,1);
+ assert.equal(latest.sessions[0].label,'Sit — Legs Open');
+ assert.ok(latest.sessions[0].frames.every(f=>Object.keys(f.joints).length===69),'Copy This Pose lost joint readings');
+ assert.ok(latestCopied.length<copied.length,'Copy This Pose must be smaller than full history');
  const downloadPromise=page.waitForEvent('download');
  await page.locator('#diagSave').click();
  const download=await downloadPromise;
@@ -77,7 +86,7 @@ const assert=require('node:assert/strict');
  console.log('BEVERLY_DIAG_COPY_ALL_QA_PASS',JSON.stringify({
    totalSessions:parsed.sessions.length,frames:parsed.sessions.map(s=>({label:s.label,frames:s.frames.length})),
    skeletonJoints:69,firstStage:walk.frames[0].stage,
-   compressedCopyChars:copied.length,downloadedJSONBytes:fs.statSync(path).size,
+   compressedCopyChars:copied.length,latestPoseCopyChars:latestCopied.length,downloadedJSONBytes:fs.statSync(path).size,
    persistedAfterReload:q.sessionCount,storageReady:q.storageReady
  }));
  await browser.close();
