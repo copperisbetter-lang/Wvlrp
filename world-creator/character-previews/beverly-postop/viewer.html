@@ -601,6 +601,45 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
    if(helper)hiddenHelpers.push(o.name);
  });
  console.info('Beverly viewer: hidden unrelated loose helper props',hiddenHelpers);
+ // Surface forensics: read-only diagnostics by default. Temporary
+ // mesh visibility and camera controls are available ONLY with ?surfaceprobe=1.
+ const surfaceMeshes=[];model.traverse(o=>{if(o.isMesh)surfaceMeshes.push(o)});
+ const originalSurfaceVisibility=new Map(surfaceMeshes.map(o=>[o.uuid,o.visible]));
+ window.beverlySurfaceQA=()=>surfaceMeshes.map(o=>{
+   const mats=Array.isArray(o.material)?o.material:[o.material];
+   const v=new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3());
+   return {name:o.name,uuid:o.uuid,visible:o.visible,skinned:!!o.isSkinnedMesh,
+     triangles:o.geometry?.index?o.geometry.index.count/3:o.geometry?.attributes?.position?.count/3,
+     sizeM:v.toArray().map(n=>+n.toFixed(4)),
+     materials:mats.map(m=>({name:m?.name,color:m?.color?.getHexString(),
+       map:m?.map?.name??null,hasMap:!!m?.map,normalMap:!!m?.normalMap,
+       alphaMap:!!m?.alphaMap,transparent:!!m?.transparent,
+       opacity:m?.opacity,depthWrite:m?.depthWrite,depthTest:m?.depthTest,
+       side:m?.side,roughness:m?.roughness}))
+   };
+ });
+ if(new URLSearchParams(location.search).get('surfaceprobe')==='1'){
+   window.beverlySurfaceProbeControl={
+     showOnly(names){
+       const keys=Array.isArray(names)?names:[names];
+       surfaceMeshes.forEach(o=>{o.visible=keys.some(s=>o.name.includes(s))});
+     },
+     hideNames(names){
+       const keys=Array.isArray(names)?names:[names];
+       surfaceMeshes.forEach(o=>{if(keys.some(s=>o.name.includes(s)))o.visible=false});
+     },
+     restore(){surfaceMeshes.forEach(o=>{o.visible=originalSurfaceVisibility.get(o.uuid)??false})},
+     cameraView(x,y,z,targetY=.73){
+       orbit.target.set(0,targetY,0);camera.position.set(x,y,z);orbit.update();
+     },
+     state(){return {camera:camera.position.toArray(),target:orbit.target.toArray(),
+       meshes:window.beverlySurfaceQA()}},
+     samplePixel(x,y){
+       const rect=renderer.domElement.getBoundingClientRect();
+       return {x,y,width:rect.width,height:rect.height};
+     }
+   };
+ }
  swimwearItems=[];
  model.traverse(o=>{if(o.isMesh&&isSwimwearMesh(o.name))swimwearItems.push(o)});
  console.info('Beverly garment meshes available for hide/restore',swimwearItems.map(o=>o.name));
