@@ -37,6 +37,14 @@ const fs=require('node:fs');
   await page.screenshot({path:'/tmp/beverly-surface-'+label+'-without-attachment.png'});
   await page.evaluate(()=>window.beverlySurfaceProbeControl.restore());
  }
+
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.31,.63,.71));
+ for(const [factor,units] of [[0,0],[10,10],[100,100],[1000,1000],[-10,-10]]){
+   await page.evaluate(([f,u])=>window.beverlySurfaceProbeControl.patchDepthBias(f,u),[factor,units]);
+   await page.waitForTimeout(180);
+   await page.screenshot({path:'/tmp/beverly-patch-bias-'+factor+'-'+units+'.png'});
+ }
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.restorePatchMaterial());
  const names=meshes.map(x=>x.name);
  const candidates=names.filter(n=>/base|body|skin|flat|round|att|pelv|vag|thigh|pant|brief|seam/i.test(n));
  console.log('BEVERLY_SURFACE_CANDIDATES '+JSON.stringify(candidates));
