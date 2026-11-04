@@ -139,6 +139,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
 import {createBeverlyMotionRepairs} from './motion-repairs.js?v=hip-hinge-seated-arm-relax-20261104-v4';
 import {createBeverlyPatchTrim} from './patch-trim-experiment.js?v=patch-edge-trims-20261104-1';
+import {createBeverlyJoinTextureFix} from './patch-texture-fix.js?v=clean-dark-join-lines-v1';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -161,7 +162,7 @@ orbit.enableDamping=true;orbit.dampingFactor=.07;orbit.enablePan=true;
 orbit.screenSpacePanning=true;
 // Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
 orbit.minDistance=.50;orbit.maxDistance=12; // prevent camera penetrating 3D surface at close zoom
-let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false,patchTrimmer=null;
+let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false,patchTrimmer=null,joinTextureFix=null;
 let poseDiagnostics=null,diagnosticsArmed=false;
 let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
 let lastRunHandQA=null;
@@ -591,6 +592,10 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  model=gltf.scene;model.name='POSTOP_BEVERLY_69_BONES';
  // Experimental clone only: opt-in patch seam trimming, never change GLB.
  patchTrimmer=createBeverlyPatchTrim(model,THREE);
+ joinTextureFix=createBeverlyJoinTextureFix(THREE,model);
+ if(new URLSearchParams(location.search).get('cleanjoin')==='1')
+   console.info('Beverly clone-only join texture repair',joinTextureFix.apply());
+ window.beverlyTextureFixQA=()=>joinTextureFix?.state()||{available:false};
  const requestedTrim=new URLSearchParams(location.search).get('patchtrim');
  if(requestedTrim==='light'||requestedTrim==='medium')
    console.info('Beverly non-destructive transition seam experiment',
@@ -660,6 +665,8 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
      state(){return {camera:camera.position.toArray(),target:orbit.target.toArray(),
        meshes:window.beverlySurfaceQA()}},
      trimPatch(name){return patchTrimmer?.set(name)||{available:false}},
+     cleanJoinTexture(enabled=true){return enabled?joinTextureFix?.apply():joinTextureFix?.restore()},
+     cleanJoinState(){return joinTextureFix?.state()||{available:false}},
      patchTrimState(){return patchTrimmer?.state()||{available:false}},
      textureDump(names=['SURG_BEVERLY__base001','SURG_BEVERLY__base001_1','SURG_BEVERLY__base001_2']){
        const data={};
