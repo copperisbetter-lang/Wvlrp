@@ -112,9 +112,9 @@ function makeSource(gltf){
    }
  };
  const repairs=createBeverlyMotionRepairs({THREE,model,bones,...helper});
- return {model,mixer,clips:gltf.animations,bones,rest,repairs,activeAction:null};
+ return {model,mixer,clips:gltf.animations,bones,rest,repairs,helper,activeAction:null};
 }
-function restore(source){
+function helperForGina(source){return source.helper}\nfunction restore(source){
  source.mixer.stopAllAction();
  source.model.traverse(o=>{if(!o.isBone)return;
    const state=source.rest.get(o.uuid);if(state){o.position.copy(state.position);o.quaternion.copy(state.rotation);o.scale.copy(state.scale)}
@@ -137,6 +137,39 @@ function applyPose(source,which){
  action.paused=true;source.activeAction=action;
  source.model.updateMatrixWorld(true);
  currentMetrics=source.repairs.inspect(which==='kneel'?'elbows-knees':'sit-open');
+ if(which==='kneel'){
+   // The donor proportions place Gina's head almost against the ground
+   // using Beverly's earlier hip targets. Re-aim the torso with Gina's
+   // actual bones, then replant knees and forearms; preserve the meshes.
+   const world=name=>source.bones[name]?.getWorldPosition(vec());
+   const hips=world('Hips');
+   if(hips){
+     helperForGina(source).steerBoneTo('Hips','Spine',
+       new THREE.Vector3(hips.x,hips.y+.075,hips.z+.215),.96);
+     source.model.updateMatrixWorld(true);
+     const h=world('Hips');
+     for(const side of ['Left','Right']){
+       const sign=side==='Left'?1:-1;
+       helperForGina(source).steerBoneTo(side+'UpLeg',side+'Leg',
+         new THREE.Vector3(h.x+sign*.125,.145,h.z+.24),1);
+       const knee=world(side+'Leg');
+       if(knee)helperForGina(source).steerBoneTo(side+'Leg',side+'Foot',
+         new THREE.Vector3(knee.x+sign*.015,.105,knee.z-.32),1);
+     }
+     for(const side of ['Left','Right']){
+       const sign=side==='Left'?1:-1,shoulder=world(side+'Arm');
+       if(!shoulder)continue;
+       helperForGina(source).steerBoneTo(side+'Arm',side+'ForeArm',
+         new THREE.Vector3(shoulder.x+sign*.025,.115,shoulder.z+.12),1);
+       const elbow=world(side+'ForeArm');
+       if(elbow)helperForGina(source).steerBoneTo(side+'ForeArm',side+'Hand',
+         new THREE.Vector3(elbow.x+sign*.02,.085,elbow.z+.18),1);
+     }
+     source.model.updateMatrixWorld(true);
+     currentMetrics=source.repairs.metrics();
+   }
+ }
+
 }
 function status(){
  const source=sources[active];if(!source)return;
@@ -151,13 +184,20 @@ function status(){
 function frameCamera(type='auto'){
  const source=sources[active];if(!source)return;
  source.model.updateMatrixWorld(true);
- const bounds=new THREE.Box3().setFromObject(source.model),center=bounds.getCenter(vec());
- const size=bounds.getSize(vec()),h=Math.max(size.y,.6),span=Math.max(size.x,size.z,h*.7);
- const distance=Math.max(1.30,span*2.2);
+ const hips=source.bones.Hips?.getWorldPosition(vec());
+ const head=source.bones.Head?.getWorldPosition(vec());
+ const bounds=new THREE.Box3().setFromObject(source.model);
+ const center=bounds.getCenter(vec()),size=bounds.getSize(vec());
+ if(hips&&head&&mode!=='stand'){
+   center.x=(hips.x+head.x)/2;
+   center.y=mode==='kneel'?.40:.56;
+   center.z=(hips.z+head.z)/2;
+ }
+ const distance=mode==='kneel'?1.95:mode==='sit'?2.18:Math.max(2.10,size.y*1.35);
  const view=type==='auto'?(mode==='kneel'?'side':'front'):type;
- orbit.target.copy(center);
- const dirs={front:[0,.14,1],back:[0,.14,-1],side:[1,.20,0]};
+ const dirs={front:[0,.07,1],back:[0,.07,-1],side:[1,.14,0]};
  const d=dirs[view]||dirs.front;
+ orbit.target.copy(center);
  camera.position.copy(center).add(new THREE.Vector3(d[0]*distance,d[1]*distance,d[2]*distance));
  camera.near=.04;camera.far=80;camera.updateProjectionMatrix();orbit.update();
 }
