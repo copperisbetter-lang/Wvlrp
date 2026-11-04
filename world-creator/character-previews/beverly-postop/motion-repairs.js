@@ -72,11 +72,11 @@ export function createBeverlyMotionRepairs({
     // HINGE THROUGH THE PELVIS, rather than folding the upper spine:
     // a slightly higher bottom and a sloping but STRAIGHT trunk.
     const old=world('Hips');
-    hip.position.y+=clamp(.655-old.y,-.7,.7);
+    hip.position.y+=clamp(.555-old.y,-.7,.7);
     straightenSpine();
     let h=world('Hips');
     steerBoneTo('Hips','Spine',
-      new THREE.Vector3(h.x,h.y+.014,h.z+.225),1);
+      new THREE.Vector3(h.x,h.y-.105,h.z+.225),1);
     update();
     h=world('Hips');
     for(const side of ['Left','Right']){
@@ -97,7 +97,7 @@ export function createBeverlyMotionRepairs({
     update();
     const lk=world('LeftLeg'),rk=world('RightLeg');
     if(lk&&rk){
-      const delta=clamp(.115-Math.min(lk.y,rk.y),-.04,.04);
+      const delta=clamp(.145-Math.min(lk.y,rk.y),-.025,.025);
       hip.position.y+=delta;
       update();
     }
