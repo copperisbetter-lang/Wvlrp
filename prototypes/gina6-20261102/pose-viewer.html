@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11212d">
+<title>Gina 6 • Elbows & Knees / Sit — Legs Open • Inspection Viewer</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#101e29;color:#f0f8fa;overflow:hidden}
+#viewport{position:fixed;inset:0;touch-action:none}#viewport canvas{display:block}
+#titlebar{position:fixed;top:calc(8px + env(safe-area-inset-top));left:11px;right:10px;pointer-events:none;text-shadow:0 1px 3px #000a}
+h1{margin:0;font-size:16px;letter-spacing:.2px}
+#status{display:inline-block;background:#0a2a38df;padding:6px 9px;border:1px solid #648b9f;border-radius:7px;font-size:12px;margin-top:6px;max-width:90vw}
+#note{font-size:11px;color:#c0d8e6;margin-top:5px;max-width:340px}
+#actions{position:fixed;bottom:calc(8px + env(safe-area-inset-bottom));left:9px;right:9px;z-index:4;padding:9px;border:1px solid #688fa2;border-radius:12px;background:#102735ee;max-width:720px;margin:auto;box-shadow:0 6px 18px #0008}
+#poseBtns,#cameraBtns,#modelBtns{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+button{font:700 12px system-ui;padding:9px 8px;border:1px solid #6b96ae;background:#28495b;color:white;border-radius:8px;min-height:40px;cursor:pointer}
+button:disabled{opacity:.5}
+button[aria-pressed=true]{background:#147e74;border-color:#a6f9e9}
+#poseBtns button{flex:1 1 125px}#modelBtns button{flex:1 1 140px}
+#cameraBtns button{flex:1 1 70px}
+#diagnostics{font:11px ui-monospace,monospace;color:#c9dee6;white-space:pre-wrap;margin:5px 3px 0;line-height:1.35}
+#collapse{min-height:34px;width:100%;text-align:left;font-size:11px}
+#panelBody{max-height:55dvh;overflow-y:auto}
+#actions.collapsed #panelBody{display:none}
+#viewportHint{position:fixed;right:11px;top:88px;background:#102c36b0;color:#c3e5ed;font-size:11px;padding:6px 8px;border-radius:6px}
+@media(max-width:520px){h1{font-size:14px}#status{font-size:11px}button{font-size:11px;padding:7px 5px}#note{max-width:70vw}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body>
+<div id="viewport" aria-label="Gina 6 interactive 3D inspection"></div>
+<div id="titlebar"><h1>GINA 6 · TWO-POSE INSPECTION LAB</h1>
+<div id="status" role="status">Loading Gina 6 gold-bikini model…</div>
+<div id="note">Uses Gina's saved 69-joint rig and 77 native animations. Experimental poses; source GLBs unchanged.</div>
+</div>
+<div id="viewportHint">Drag to rotate · pinch to zoom</div>
+<div id="actions">
+<button id="collapse" aria-expanded="true">Controls ▾</button>
+<div id="panelBody">
+<div id="poseBtns">
+<button id="kneel" aria-pressed="false">Elbows &amp; Knees</button>
+<button id="sit" aria-pressed="false">Sit — Legs Open</button>
+<button id="stand" aria-pressed="true">Standing / Reset</button>
+</div>
+<div id="modelBtns">
+<button id="bikini" aria-pressed="true">Gold bikini</button>
+<button id="neutral" aria-pressed="false">Neutral model</button>
+</div>
+<div id="cameraBtns">
+<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="recenter">Recenter</button>
+</div>
+<div id="diagnostics">Pose: standing · waiting for Gina model</div>
+</div></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {createBeverlyMotionRepairs} from '../../world-creator/character-previews/beverly-postop/motion-repairs.js?v=shared-pose-reference-20261104';
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x142735);
+const camera=new THREE.PerspectiveCamera(40,1,.04,80);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+$('viewport').appendChild(renderer.domElement);
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping=true;orbit.enablePan=true;orbit.minDistance=.42;orbit.maxDistance=12;
+scene.add(new THREE.HemisphereLight(0xe8f5ff,0x344457,2.45));
+const sun=new THREE.DirectionalLight(0xffedd9,3);sun.position.set(2.7,5.1,3.4);scene.add(sun);
+const rim=new THREE.DirectionalLight(0xd6eaff,1.2);rim.position.set(-2.5,2,-2);scene.add(rim);
+const grid=new THREE.GridHelper(5,20,0x4c667d,0x264352);grid.position.y=-.005;scene.add(grid);
+const gltfLoader=new GLTFLoader();
+const sourceFiles={bikini:'./Gina_6_FITTED_GOLD_BIKINI.glb',neutral:'./Gina_6_UNCLOTHED_NATIVE.glb'};
+const sources={};let active='bikini',mode='stand',loading=null,currentMetrics=null;
+function resize(){const w=$('viewport').clientWidth,h=$('viewport').clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe($('viewport'));
+const vec=()=>new THREE.Vector3();
+function makeSource(gltf){
+ const model=gltf.scene;
+ const mixer=new THREE.AnimationMixer(model),bones={},rest=new Map();
+ model.traverse(o=>{
+   if(o.isBone){bones[o.name]=o;rest.set(o.uuid,{position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone()})}
+ });
+ const helper={
+   steerBoneTo(parentName,childName,worldTarget,strength=1){
+     const bone=bones[parentName],child=bones[childName];
+     if(!bone||!child)return false;
+     model.updateMatrixWorld(true);
+     const from=bone.getWorldPosition(vec()),to=child.getWorldPosition(vec());
+     const dir=to.sub(from),want=worldTarget.clone().sub(from);
+     if(dir.length()<.02||want.length()<.02)return false;
+     const worldQ=new THREE.Quaternion().setFromUnitVectors(dir.normalize(),want.normalize());
+     const parentQ=bone.parent.getWorldQuaternion(new THREE.Quaternion());
+     const localQ=parentQ.clone().invert().multiply(worldQ).multiply(parentQ);
+     bone.quaternion.slerp(localQ.multiply(bone.quaternion.clone()).normalize(),THREE.MathUtils.clamp(strength,0,1));
+     bone.updateWorldMatrix(true,true);return true;
+   },
+   steerChildX(parentName,childName,targetX,strength=1){
+     const p=bones[parentName],c=bones[childName];if(!p||!c)return false;
+     model.updateMatrixWorld(true);
+     const a=p.getWorldPosition(vec()),b=c.getWorldPosition(vec()),delta=b.clone().sub(a),len=delta.length();
+     if(len<.04)return false;
+     const dx=THREE.MathUtils.clamp(targetX-a.x,-len*.85,len*.85);
+     const dz=THREE.MathUtils.clamp(delta.z,-len*.7,len*.7);
+     return helper.steerBoneTo(parentName,childName,new THREE.Vector3(a.x+dx,a.y-Math.sqrt(Math.max(.0001,len*len-dx*dx-dz*dz)),a.z+dz),strength);
+   },
+   footRoll(name,radians){
+     const b=bones[name];if(!b)return;
+     const parent=b.parent.getWorldQuaternion(new THREE.Quaternion());
+     b.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0).applyQuaternion(parent.invert()),radians)).normalize();
+     b.updateWorldMatrix(true,true);
+   }
+ };
+ const repairs=createBeverlyMotionRepairs({THREE,model,bones,...helper});
+ return {model,mixer,clips:gltf.animations,bones,rest,repairs,activeAction:null};
+}
+function restore(source){
+ source.mixer.stopAllAction();
+ source.model.traverse(o=>{if(!o.isBone)return;
+   const state=source.rest.get(o.uuid);if(state){o.position.copy(state.position);o.quaternion.copy(state.rotation);o.scale.copy(state.scale)}
+ });
+ source.model.updateMatrixWorld(true);source.activeAction=null;
+}
+function nameOf(clip){return clip.name.replace(/^CLIP_\d+__/,'').replaceAll('_',' ').trim()}
+function applyPose(source,which){
+ restore(source);
+ if(which==='stand'){
+   currentMetrics=source.repairs.metrics();return;
+ }
+ const clipName=which==='kneel'?'Get up (from front)':'Sit idle (chair)';
+ const clip=source.clips.find(c=>nameOf(c).toLowerCase()===clipName.toLowerCase());
+ if(!clip)throw Error('Gina is missing native source animation: '+clipName);
+ const time=clip.duration*(which==='kneel'?.28:.5);
+ const action=source.mixer.clipAction(clip);
+ action.reset().setEffectiveWeight(1).play();
+ source.mixer.setTime(Math.max(.001,time));
+ action.paused=true;source.activeAction=action;
+ source.model.updateMatrixWorld(true);
+ currentMetrics=source.repairs.inspect(which==='kneel'?'elbows-knees':'sit-open');
+}
+function status(){
+ const source=sources[active];if(!source)return;
+ const m=currentMetrics||source.repairs.metrics();
+ $('status').textContent='Gina 6 · '+(active==='bikini'?'gold bikini':'neutral')+' · '+(mode==='kneel'?'Elbows & Knees':mode==='sit'?'Sit — Legs Open':'Standing')+' · '+Object.keys(source.rest).length+' bones · '+source.clips.length+' motions';
+ const n=v=>Number.isFinite(v)?v.toFixed(3)+' m':'—';
+ $('diagnostics').textContent='Hip '+n(m.pelvisY)+' · Knee '+n(m.kneeMinY)+' · Elbow '+n(m.elbowMinY)+'\nHead '+n(m.headY)+' · Knee width '+n(m.kneeWidthM)+' · ankle '+n(m.ankleMinY);
+ for(const [id,pressed] of [['kneel',mode==='kneel'],['sit',mode==='sit'],['stand',mode==='stand'],['bikini',active==='bikini'],['neutral',active==='neutral']]){
+   $(id).setAttribute('aria-pressed',String(pressed));
+ }
+}
+function frameCamera(type='auto'){
+ const source=sources[active];if(!source)return;
+ source.model.updateMatrixWorld(true);
+ const bounds=new THREE.Box3().setFromObject(source.model),center=bounds.getCenter(vec());
+ const size=bounds.getSize(vec()),h=Math.max(size.y,.6),span=Math.max(size.x,size.z,h*.7);
+ const distance=Math.max(1.30,span*2.2);
+ const view=type==='auto'?(mode==='kneel'?'side':'front'):type;
+ orbit.target.copy(center);
+ const dirs={front:[0,.14,1],back:[0,.14,-1],side:[1,.20,0]};
+ const d=dirs[view]||dirs.front;
+ camera.position.copy(center).add(new THREE.Vector3(d[0]*distance,d[1]*distance,d[2]*distance));
+ camera.near=.04;camera.far=80;camera.updateProjectionMatrix();orbit.update();
+}
+async function load(kind){
+ if(sources[kind])return sources[kind];
+ if(!loading){loading=kind;$('status').textContent='Loading Gina '+(kind==='bikini'?'gold bikini':'neutral body')+'…'}
+ const file=sourceFiles[kind];
+ try {
+   const gltf=await new Promise((resolve,reject)=>gltfLoader.load(file,resolve,undefined,reject));
+   sources[kind]=makeSource(gltf);
+   sources[kind].model.visible=false;scene.add(sources[kind].model);
+   return sources[kind];
+ } finally {loading=null}
+}
+async function select(kind){
+ for(const id of ['bikini','neutral','kneel','sit','stand'])$(id).disabled=true;
+ try {
+   const newSource=await load(kind);
+   for(const [id,entry] of Object.entries(sources))entry.model.visible=id===kind;
+   active=kind;applyPose(newSource,mode);status();frameCamera();
+ }catch(e){console.error(e);$('status').textContent='Gina model/pose load failed: '+e.message}
+ finally{for(const id of ['bikini','neutral','kneel','sit','stand'])$(id).disabled=false}
+}
+function setPose(which){
+ const source=sources[active];if(!source)return;
+ try{mode=which;applyPose(source,mode);status();frameCamera()}
+ catch(e){console.error(e);$('status').textContent='Pose unavailable: '+e.message}
+}
+$('kneel').onclick=()=>setPose('kneel');
+$('sit').onclick=()=>setPose('sit');
+$('stand').onclick=()=>setPose('stand');
+$('bikini').onclick=()=>select('bikini');
+$('neutral').onclick=()=>select('neutral');
+for(const id of ['front','side','back'])$(id).onclick=()=>frameCamera(id);
+$('recenter').onclick=()=>frameCamera('auto');
+$('collapse').onclick=()=>{
+ const collapsed=$('actions').classList.toggle('collapsed');
+ $('collapse').textContent=collapsed?'Controls ▴':'Controls ▾';
+ $('collapse').setAttribute('aria-expanded',String(!collapsed));
+};
+window.ginaPoseQA=()=>({ready:!!sources[active],selected:active,pose:mode,
+ modelsLoaded:Object.keys(sources),boneCount:sources[active]?Object.keys(sources[active].rest).length:0,
+ clipCount:sources[active]?.clips.length||0,
+ metrics:currentMetrics?{...currentMetrics}:null,
+ camera:camera.position.toArray(),target:orbit.target.toArray()});
+function animate(){requestAnimationFrame(animate);orbit.update();renderer.render(scene,camera)}
+resize();animate();select('bikini');
+</script></body></html>
