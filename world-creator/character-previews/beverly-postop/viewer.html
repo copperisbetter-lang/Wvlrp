@@ -131,6 +131,11 @@ orbit.screenSpacePanning=true;
 // Mobile: one finger rotates, two fingers drag to pan and pinch zoom.
 orbit.minDistance=.35;orbit.maxDistance=12;
 let model=null,mixer=null,clips=[],action=null,paused=false,looping=true,bodyBounds=null,skeleton=null,qualityHigh=false;
+let poseMode=null, activeGaitName='Idle', lastRoll={left:0,right:0};
+const RUN_ANKLE_WIDTH=0.0762; // exactly 3 inches between foot/ankle centers in world X
+const WALK_ANKLE_WIDTH=0.090; // preview target for a natural narrow heel-to-toe walk
+const customPoses=[{value:'pose:elbows-knees',label:'Elbows & Knees (pose)'},
+                   {value:'pose:sit-open',label:'Sit — Legs Open (pose)'}];
 function resize(){const w=panel.clientWidth||innerWidth,h=panel.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 addEventListener('resize',resize);resize();
 function bbox(){
@@ -232,25 +237,66 @@ $('quality').onclick=()=>{
 function fmt(t){t=Math.max(0,t||0);let m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+String(s).padStart(2,'0')}
 function title(s){return s.replace(/^CLIP_\d+__/, '').replace(/^REVIEW_ONLY_TestBone1_/,'').replaceAll('_',' ').trim()}
 function ensureLoop(){if(action)action.setLoop(looping?THREE.LoopRepeat:THREE.LoopOnce,looping?Infinity:1);if(action)action.clampWhenFinished=!looping}
+function updateGaitPanel(){
+ const walk=activeGaitName==='Walk',run=activeGaitName==='Run';
+ $('gaitTune').style.display=(walk||run)?'grid':'none';
+ $('gaitState').style.display=(walk||run)?'block':'none';
+ $('footFit').disabled=run;
+ $('armLabel').textContent=run?'Run · Arms closer':'Walk · Arms closer';
+ $('footLabel').textContent=run?'Run · Feet fixed at 3.00 in':'Walk · Feet closer';
+ $('gaitState').textContent=run
+    ?'Run stance: feet/ankles target 3.00 inches (7.62 cm) apart. Arms slider stays active.'
+    :'Walk: alternating heel-to-toe foot roll, narrower ankle track. Sliders work while walking.';
+}
 function choose(index){
  if(!mixer||!clips[index])return;
  if(action)action.stop();
+ poseMode=null;activeGaitName=title(clips[index].name);
  action=mixer.clipAction(clips[index]);action.reset().enabled=true;action.setEffectiveWeight(1);ensureLoop();action.play();
- paused=false;action.paused=false;$('play').textContent='⏸ Pause';
- $('clipname').textContent=title(clips[index].name);$('scrub').value='0';
+ paused=false;action.paused=false;$('play').disabled=false;$('play').textContent='⏸ Pause';
+ $('clipname').textContent=activeGaitName;$('scrub').disabled=false;$('scrub').value='0';
  $('elapsed').textContent='0:00 / '+fmt(clips[index].duration);
- status.textContent="Beverly loaded · playing "+title(clips[index].name)+" · "+clips.length+" movements";
+ updateGaitPanel();
+ status.textContent="Beverly · "+activeGaitName+" · 77 source animations + 2 inspection poses";
 }
-select.onchange=()=>choose(Number(select.value));
+function choosePose(which){
+ if(!mixer)return;
+ const label=which==='elbows-knees'?'Elbows & Knees':'Sit — Legs Open';
+ const baseName=which==='elbows-knees'?'Get up (from front)':'Sit idle (chair)';
+ const clip=clips.find(c=>title(c.name)===baseName);
+ if(!clip){status.textContent='Missing pose source '+baseName;return;}
+ if(action)action.stop();
+ poseMode=which;activeGaitName=label;
+ action=mixer.clipAction(clip);action.reset().enabled=true;action.setEffectiveWeight(1);action.play();
+ action.time=clip.duration*(which==='elbows-knees'?.28:.50);
+ action.paused=true;paused=true;
+ $('play').disabled=true;$('play').textContent='Pose • Hold';
+ $('scrub').disabled=true;$('scrub').value=String(Math.round(action.time/clip.duration*1000));
+ $('clipname').textContent=label;$('elapsed').textContent='Inspection pose';
+ select.value='pose:'+which;
+ updateGaitPanel();
+ refreshPoseWithGait(0);
+ status.textContent='Beverly · '+label+' · experimental rig inspection pose';
+}
+select.onchange=()=>{
+ if(select.value.startsWith('pose:'))choosePose(select.value.slice(5));
+ else choose(Number(select.value));
+};
 function jumpToMotion(name){const i=clips.findIndex(c=>title(c.name).toLowerCase()===name);if(i>=0){select.value=String(i);choose(i)}}
 $('walk').onclick=()=>jumpToMotion('walk');
 $('run').onclick=()=>jumpToMotion('run');
+$('elbowsKnees').onclick=()=>choosePose('elbows-knees');
+$('sitOpen').onclick=()=>choosePose('sit-open');
 $('play').onclick=()=>{
+ if(poseMode)return;
  if(!action&&clips.length){choose(0);return}
  if(!action)return;
  paused=!paused;action.paused=paused;$('play').textContent=paused?'▶ Play':'⏸ Pause';
 };
-$('restart').onclick=()=>{if(action){action.reset().play();action.paused=false;paused=false;$('play').textContent='⏸ Pause'}};
+$('restart').onclick=()=>{
+ if(poseMode){choosePose(poseMode);return;}
+ if(action){action.reset().play();action.paused=false;paused=false;$('play').textContent='⏸ Pause'}
+};
 $('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
 $('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';refreshPoseWithGait(0)};
 
@@ -378,7 +424,8 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  const priority={'idle':0,'walk':1,'run':2,'wave':3,'sit idle (chair)':4,'stand up (chair)':5};
  const order=clips.map((clip,i)=>i).sort((a,b)=>(priority[title(clips[a].name).toLowerCase()]??10)-(priority[title(clips[b].name).toLowerCase()]??10)||title(clips[a].name).localeCompare(title(clips[b].name)));
  for(const i of order){const op=document.createElement('option');op.value=String(i);op.textContent=title(clips[i].name);select.appendChild(op)}
- select.disabled=false;$('count').textContent=clips.length+' of 77 available';
+ for(const p of customPoses){const op=document.createElement('option');op.value=p.value;op.textContent=p.label;select.appendChild(op)}
+ select.disabled=false;$('count').textContent='79 (77 + 2 poses)';
  mixer=new THREE.AnimationMixer(model);
  initGaitBones();
  aim();
