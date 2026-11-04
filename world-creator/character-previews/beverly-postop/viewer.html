@@ -571,6 +571,17 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  motionRepairs=createBeverlyMotionRepairs({
    THREE,model,bones:gaitBones,steerBoneTo,steerChildX,footRoll
  });
+ window.beverlyNativeAnimationQA=()=>({
+   selected:activeGaitName,
+   actionTime:action?.time,
+   clipDuration:action?.getClip()?.duration,
+   clipTracks:action?.getClip()?.tracks?.length,
+   firstTrack:action?.getClip()?.tracks?.[0]?.name,
+   actionEnabled:action?.enabled,paused:action?.paused,
+   effectiveWeight:action?.getEffectiveWeight(),
+   effectiveTimeScale:action?.getEffectiveTimeScale(),
+   mixerTime:mixer?.time
+ });
  window.beverlyMotionRepairQA=()=>({
    sourceClip:activeGaitName,
    inspectionPose:poseMode,
