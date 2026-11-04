@@ -9,6 +9,14 @@ const fs=require('node:fs');
  if(resp.status()!==200)throw Error('viewer status '+resp.status());
  await page.waitForFunction(()=>!!window.beverlySurfaceProbeControl&&window.beverlySurfaceQA?.()?.length>=25,{timeout:55000});
  const meshes=await page.evaluate(()=>window.beverlySurfaceQA());
+ // Controlled source dump: these are separate, existing skinned geometries.
+ // Saves coordinates and influences for OFFLINE overlap analysis, not edit.
+ const geo=await page.evaluate(()=>window.beverlySurfaceProbeControl.geometryDump());
+ fs.writeFileSync('/tmp/beverly-three-layer-geometry.json',JSON.stringify(geo));
+ console.log('BEVERLY_GEOM_DUMP '+JSON.stringify(Object.fromEntries(
+  Object.entries(geo).map(([k,v])=>[k,{vertices:v.vertexCount,triangles:v.triangleCount,
+   skinned:v.skin.length>0,indexed:!!v.index}])
+ ))));
  console.log('BEVERLY_SURFACE_MESHES '+JSON.stringify(meshes));
  fs.writeFileSync('/tmp/beverly-surface-meshes.json',JSON.stringify(meshes,null,2));
  await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.58,.8,.72));
