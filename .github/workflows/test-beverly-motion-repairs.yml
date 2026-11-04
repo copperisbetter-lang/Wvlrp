@@ -1,0 +1,41 @@
+name: QA Beverly post-op motion repairs (preview only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/test-beverly-motion-repairs.yml
+      - world-creator/character-previews/beverly-postop/motion-repairs.js
+      - world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
+      - world-creator/character-previews/beverly-postop/viewer.html
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-motion-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            world-creator/character-previews/beverly-postop
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser and actual 3D skeletal model
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test 69-bone clone using local patched viewer and native 77 animations
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/wvlrp-beverly-http.log 2>&1 &
+          sleep 2
+          node world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
+      - name: Store Android-sized visual snapshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Beverly-nonapproved-motion-repairs-QA
+          path: /tmp/beverly-motion-repairs-mobile.png
+          if-no-files-found: ignore
+          retention-days: 7
