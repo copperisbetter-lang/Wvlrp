@@ -300,73 +300,174 @@ $('restart').onclick=()=>{
 $('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
 $('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';refreshPoseWithGait(0)};
 
-// Beverly walking correction V1. Only the PLAIN Walk clip is affected.
-// Correct 3-D child-bone directions in local shoulder/thigh joints instead of
-// altering the original model. World Z stride/swing is retained.
-let gaitBones=null;
-const gaitWorldA=new THREE.Vector3(),gaitWorldB=new THREE.Vector3();
-function initGaitBones(){
-  const all={};
-  model.traverse(o=>{if(o.isBone)all[o.name]=o});
-  const names=['LeftArm','LeftForeArm','RightArm','RightForeArm',
-               'LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
-  gaitBones=Object.fromEntries(names.map(name=>[name,all[name]||null]));
-  const missing=names.filter(n=>!gaitBones[n]);
-  $('gaitState').textContent=missing.length
-      ?'Walk correction unavailable; missing rig joints: '+missing.join(', ')
-      :'Walk correction active: arms stay down and feet stay closer. Slide to compare.';
+// Gait V3: the donor action writes the raw pose each frame; only the PREVIEW
+// receives these world-space joint constraints. Certified game model unchanged.
+let gaitBones=null,lastPoseDiagnostics={};
+const p3=()=>new THREE.Vector3();
+function bonePosition(name){
+ const b=gaitBones?.[name];
+ return b?b.getWorldPosition(p3()):null;
 }
-function walkSelected(){return !!action && title(action.getClip().name).toLowerCase()==='walk'}
-function bendLimb(startName,endName,maxLateral,strength,maxForwardRatio){
-  if(!gaitBones||!gaitBones[startName]||!gaitBones[endName]||strength<=0)return;
-  const upper=gaitBones[startName],tip=gaitBones[endName];
-  // Read the pose produced by the animation mixer on this frame.
-  model.updateMatrixWorld(true);
-  upper.getWorldPosition(gaitWorldA);
-  tip.getWorldPosition(gaitWorldB);
-  const current=gaitWorldB.clone().sub(gaitWorldA);
-  const len=current.length();
-  if(len<0.04||!Number.isFinite(len))return;
-  const newX=THREE.MathUtils.clamp(current.x,-maxLateral,maxLateral);
-  const maxForward=len*maxForwardRatio;
-  const newZ=THREE.MathUtils.clamp(current.z,-maxForward,maxForward);
-  // For ordinary walking, elbows, knees and ankles must be below their parent joint.
-  const newY=-Math.sqrt(Math.max(0.001,len*len-newX*newX-newZ*newZ));
-  const target=new THREE.Vector3(newX,newY,newZ).normalize();
-  const old=current.multiplyScalar(1/len);
-  const deltaWorld=new THREE.Quaternion().setFromUnitVectors(old,target);
-  const parentQ=upper.parent.getWorldQuaternion(new THREE.Quaternion());
-  const invParentQ=parentQ.clone().invert();
-  const localCorrection=invParentQ.multiply(deltaWorld).multiply(parentQ);
-  const corrected=localCorrection.multiply(upper.quaternion.clone()).normalize();
-  upper.quaternion.slerp(corrected,strength);
-  upper.updateMatrixWorld(true);
+function initGaitBones(){
+ const all={};
+ model.traverse(o=>{if(o.isBone)all[o.name]=o});
+ const names=['Hips','Spine','Spine1','Spine2',
+   'LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand',
+   'LeftUpLeg','LeftLeg','LeftFoot','LeftToeBase',
+   'RightUpLeg','RightLeg','RightFoot','RightToeBase'];
+ gaitBones=Object.fromEntries(names.map(n=>[n,all[n]||null]));
+ const must=['Hips','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand',
+   'LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
+ const missing=must.filter(n=>!gaitBones[n]);
+ $('gaitState').textContent=missing.length
+  ?'Rig targets missing: '+missing.join(', ')
+  :'Gait rig ready · arms and feet sliders operate on Walk. Run ankle width fixed at 3 in.';
+}
+function activeMotionIs(name){return !poseMode&&activeGaitName===name}
+// Rotate a parent's armature bone to guide its descendant toward a world-space
+// position; this changes bone rotation, not mesh vertices, bind positions, or root.
+function steerBoneTo(parentName,childName,worldTarget,strength=1){
+ const bone=gaitBones?.[parentName],child=gaitBones?.[childName];
+ if(!bone||!child||strength<=0)return false;
+ model.updateMatrixWorld(true);
+ const from=bone.getWorldPosition(p3()),to=child.getWorldPosition(p3());
+ const current=to.sub(from),desired=worldTarget.clone().sub(from);
+ if(current.length()<.02||desired.length()<.02)return false;
+ const qWorld=new THREE.Quaternion().setFromUnitVectors(current.normalize(),desired.normalize());
+ const parentWorldQ=bone.parent.getWorldQuaternion(new THREE.Quaternion());
+ const qLocal=parentWorldQ.clone().invert().multiply(qWorld).multiply(parentWorldQ);
+ const newRot=qLocal.multiply(bone.quaternion.clone()).normalize();
+ bone.quaternion.slerp(newRot,THREE.MathUtils.clamp(strength,0,1));
+ bone.updateWorldMatrix(true,true);
+ return true;
+}
+// Place a knee, ankle, elbow or wrist at a desired world X while retaining
+// the source animation's forward/back (Z) travel and bone-segment length.
+function steerChildX(parentName,childName,targetX,strength=1){
+ const bone=gaitBones?.[parentName],child=gaitBones?.[childName];
+ if(!bone||!child||strength<=0)return false;
+ model.updateMatrixWorld(true);
+ const p=bone.getWorldPosition(p3()),q=child.getWorldPosition(p3());
+ const d=q.clone().sub(p),len=d.length();
+ if(len<.04)return false;
+ let dx=THREE.MathUtils.clamp(targetX-p.x,-len*.85,len*.85);
+ let dz=THREE.MathUtils.clamp(d.z,-Math.sqrt(Math.max(.0001,len*len-dx*dx))*.9,
+                                          Math.sqrt(Math.max(.0001,len*len-dx*dx))*.9);
+ const y=p.y-Math.sqrt(Math.max(.0001,len*len-dx*dx-dz*dz));
+ return steerBoneTo(parentName,childName,new THREE.Vector3(p.x+dx,y,p.z+dz),strength);
+}
+// World X tilt about the ankle creates a visible rolling contact through
+// heel strike, mid-stance, and toe-off; opposite leg is half a cycle behind.
+function footRoll(name,radians){
+ const foot=gaitBones?.[name];
+ if(!foot||Math.abs(radians)<1e-5)return;
+ const worldParentQ=foot.parent.getWorldQuaternion(new THREE.Quaternion());
+ const localAxis=new THREE.Vector3(1,0,0).applyQuaternion(worldParentQ.clone().invert());
+ foot.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(localAxis,radians)).normalize();
+ foot.updateWorldMatrix(true,true);
+}
+function adjustArms(amount){
+ const pelvis=bonePosition('Hips');if(!pelvis)return;
+ for(const side of ['Left','Right']){
+   const sign=side==='Left'?1:-1;
+   const a=bonePosition(side+'Arm'),e=bonePosition(side+'ForeArm');
+   if(!a||!e)continue;
+   // At 100% the elbow hangs ~1 cm outside the shoulder instead of flaring.
+   const goal=a.x+sign*.012;
+   steerChildX(side+'Arm',side+'ForeArm',goal,amount);
+   const elbow=bonePosition(side+'ForeArm');
+   if(elbow)steerChildX(side+'ForeArm',side+'Hand',elbow.x+sign*.008,amount*.84);
+ }
+}
+function adjustAnkleWidth(widthMeters,strength){
+ if(strength<=0)return;
+ model.updateMatrixWorld(true);
+ const hips=bonePosition('Hips');
+ if(!hips)return;
+ for(const side of ['Left','Right']){
+   const sign=side==='Left'?1:-1;
+   const foot=bonePosition(side+'Foot');
+   if(!foot)continue;
+   const goal=hips.x+sign*widthMeters/2;
+   // Blend target from the actual source foot position; at 100% absolute
+   // foot-center width is 7.62 cm (Run) or 9 cm (Walk).
+   const footX=THREE.MathUtils.lerp(foot.x,goal,strength);
+   steerChildX(side+'UpLeg',side+'Foot',footX,1);
+ }
+}
+function applyInspectionPose(){
+ if(!poseMode)return;
+ const hip=gaitBones?.Hips;if(!hip)return;
+ model.updateMatrixWorld(true);
+ if(poseMode==='sit-open'){
+   const center=bonePosition('Hips');
+   // Preserve native sitting pelvis/spine and open knees through hip rotation.
+   steerChildX('LeftUpLeg','LeftLeg',center.x+.245,1);
+   steerChildX('RightUpLeg','RightLeg',center.x-.245,1);
+   steerChildX('LeftLeg','LeftFoot',center.x+.245,.75);
+   steerChildX('RightLeg','RightFoot',center.x-.245,.75);
+ } else if(poseMode==='elbows-knees'){
+   // Native get-up pose supplies bent knees; anchor knees near a low floor,
+   // lean upper body forward and guide forearms toward ground support.
+   const lk=bonePosition('LeftLeg'),rk=bonePosition('RightLeg');
+   if(lk&&rk){
+     const kneeHeight=(lk.y+rk.y)/2;
+     hip.position.y+=THREE.MathUtils.clamp(.12-kneeHeight,-.65,.4);
+     hip.updateWorldMatrix(true,true);
+   }
+   const hips=bonePosition('Hips'),sp=gaitBones.Spine;
+   if(sp&&gaitBones.Spine2){
+     const p=bonePosition('Spine');
+     steerBoneTo('Spine','Spine2',new THREE.Vector3(p.x,p.y+.10,p.z+.40),.88);
+   }
+   for(const side of ['Left','Right']){
+     const sign=side==='Left'?1:-1,root=bonePosition('Hips');
+     if(!root)continue;
+     steerBoneTo(side+'Arm',side+'ForeArm',
+       new THREE.Vector3(root.x+sign*.25,.13,root.z+.52),1);
+     steerBoneTo(side+'ForeArm',side+'Hand',
+       new THREE.Vector3(root.x+sign*.28,.10,root.z+.77),.9);
+   }
+ }
+ model.updateMatrixWorld(true);
+ const lk=bonePosition('LeftLeg'),rk=bonePosition('RightLeg');
+ const le=bonePosition('LeftForeArm'),re=bonePosition('RightForeArm');
+ lastPoseDiagnostics={pose:poseMode,kneeHeightM:lk&&rk?+(Math.min(lk.y,rk.y)).toFixed(4):null,
+    elbowsHeightM:le&&re?+(Math.min(le.y,re.y)).toFixed(4):null,
+    kneeGapM:lk&&rk?+Math.abs(lk.x-rk.x).toFixed(4):null};
 }
 function refreshPoseWithGait(deltaSeconds){
-  if(!mixer)return;
-  // Important: a paused AnimationAction does not reapply keyframes with mixer.update(0).
-  // Briefly unpause it for evaluation so sliders always compare ORIGINAL vs CORRECTED
-  // positions, without adding corrections on top of the previous frame.
-  const wasPaused=!!action?.paused;
-  if(wasPaused)action.paused=false;
-  mixer.update(wasPaused?0:deltaSeconds);
-  if(wasPaused)action.paused=true;
-  applyWalkCorrection();
+ if(!mixer)return;
+ const wasPaused=!!action?.paused;
+ if(wasPaused)action.paused=false;
+ mixer.update(wasPaused?0:deltaSeconds);
+ if(wasPaused)action.paused=true;
+ applyWalkCorrection();
 }
 function applyWalkCorrection(){
-  if(!model||!walkSelected())return;
-  const arm=Number($('armFit').value)/100;
-  const legs=Number($('footFit').value)/100;
-  // Original upper arms ~26cm. 7cm lateral drift permits ordinary arm swing,
-  // but not the horizontal windmill pose caused by the donor rest-pose mismatch.
-  bendLimb('LeftArm','LeftForeArm',0.075,arm,0.70);
-  bendLimb('RightArm','RightForeArm',0.075,arm,0.70);
-  // Keep the normal fore-aft stride. Narrow *lateral* thigh and calf splay only.
-  bendLimb('LeftUpLeg','LeftLeg',0.032,legs,0.78);
-  bendLimb('RightUpLeg','RightLeg',0.032,legs,0.78);
-  bendLimb('LeftLeg','LeftFoot',0.020,legs,0.76);
-  bendLimb('RightLeg','RightFoot',0.020,legs,0.76);
-  model.updateMatrixWorld(true);
+ if(!model)return;
+ if(poseMode){applyInspectionPose();return}
+ const walking=activeMotionIs('Walk'),running=activeMotionIs('Run');
+ if(!walking&&!running)return;
+ const arm=Number($('armFit').value)/100;
+ adjustArms(arm);
+ if(walking){
+   const legs=Number($('footFit').value)/100;
+   adjustAnkleWidth(WALK_ANKLE_WIDTH,legs);
+   const t=action?.time||0,d=action?.getClip()?.duration||1;
+   const phase=(t/d)*Math.PI*2;
+   // Smooth alternating contact; landing heel first and rolling through toe-off.
+   lastRoll.left=.20*Math.sin(phase)+.05*Math.sin(phase*2);
+   lastRoll.right=.20*Math.sin(phase+Math.PI)+.05*Math.sin(phase*2);
+   footRoll('LeftFoot',lastRoll.left);
+   footRoll('RightFoot',lastRoll.right);
+ }else{
+   // The runner's left/right ankle centers are constrained to exactly 3 in.
+   // The feet slider is disabled in Run because this stance is not optional.
+   adjustAnkleWidth(RUN_ANKLE_WIDTH,1);
+   lastRoll.left=lastRoll.right=0;
+ }
+ model.updateMatrixWorld(true);
 }
 for(const [id,readout] of [['armFit','armValue'],['footFit','footValue']]){
   $(id).oninput=()=>{
