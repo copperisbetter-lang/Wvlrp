@@ -143,7 +143,7 @@ function makeSlumpedCrawl(source){
  // Shift the *whole torso* from the pelvis joint toward her hands.
  // Keep the rest of the spine continuous: no jackknife at Spine2/Neck.
  // A slight downward slope gives the desired relaxed/slumped crawl.
- steer('Hips','Spine',new THREE.Vector3(h.x,h.y+.005,h.z+.24),1);
+ steer('Hips','Spine',new THREE.Vector3(h.x,h.y+.04,h.z+.24),1);
  update();
  h=point('Hips');
  for(const side of ['Left','Right']){
@@ -220,18 +220,32 @@ function status(){
 function frameCamera(type='auto'){
  const source=sources[active];if(!source)return;
  source.model.updateMatrixWorld(true);
- const hips=source.bones.Hips?.getWorldPosition(vec());
- const head=source.bones.Head?.getWorldPosition(vec());
+ const joint=name=>source.bones[name]?.getWorldPosition(vec());
+ const hip=joint('Hips');
+ const head=joint('Head');
  const bounds=new THREE.Box3().setFromObject(source.model);
  const center=bounds.getCenter(vec()),size=bounds.getSize(vec());
- if(hips&&head&&mode!=='stand'){
-   center.x=(hips.x+head.x)/2;
-   center.y=mode==='kneel'?.40:.56;
-   center.z=(hips.z+head.z)/2;
- }
- const distance=mode==='kneel'?1.95:mode==='sit'?2.18:Math.max(2.10,size.y*1.35);
  const view=type==='auto'?(mode==='kneel'?'side':'front'):type;
- const dirs={front:[0,.07,1],back:[0,.07,-1],side:[1,.14,0]};
+ // A crawling figure extends mostly in depth (head -> heels). On a
+ // portrait phone the horizontal FOV is narrow, so the original 1.95 m
+ // side camera cut her entire head and hips out of the picture.
+ const crawling=mode==='kneel';
+ const FOV=crawling?57:40;
+ if(camera.fov!==FOV){camera.fov=FOV;camera.updateProjectionMatrix()}
+ if(crawling){
+   const ends=['Head','LeftFoot','RightFoot','LeftHand','RightHand']
+     .map(joint).filter(Boolean);
+   if(hip)ends.push(hip);
+   if(ends.length){
+     const zmin=Math.min(...ends.map(v=>v.z)),zmax=Math.max(...ends.map(v=>v.z));
+     center.set(hip?.x||0,.35,(zmin+zmax)/2);
+   }
+ }else if(hip&&head&&mode!=='stand'){
+   center.x=(hip.x+head.x)/2;center.y=.56;center.z=(hip.z+head.z)/2;
+ }
+ const distance=crawling?(view==='side'?3.6:2.55):
+   mode==='sit'?2.18:Math.max(2.10,size.y*1.35);
+ const dirs={front:[0,.07,1],back:[0,.10,-1],side:[1,.10,0]};
  const d=dirs[view]||dirs.front;
  orbit.target.copy(center);
  camera.position.copy(center).add(new THREE.Vector3(d[0]*distance,d[1]*distance,d[2]*distance));
