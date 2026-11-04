@@ -10,9 +10,9 @@ const assert=require('node:assert/strict');
  const base='https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html';
  let loaded=false;
  for(let i=0;i<10;i++){
-  const resp=await page.goto(base+'?diag=full69v4&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
+  const resp=await page.goto(base+'?diag=full69v5&attempt='+i,{waitUntil:'domcontentloaded',timeout:40000});
   if(resp?.status()!==200)continue;
-  try{await page.waitForFunction(()=>typeof window.beverlyDiagnosticReport==='function'&&!!document.getElementById('diagCopyLatest')&&window.beverlyDiagnosticsQA?.().ready===true&&window.beverlyViewerQA?.().options===79,{timeout:15000});loaded=true;break}
+  try{await page.waitForFunction(()=>typeof window.beverlyDiagnosticReport==='function'&&typeof document.getElementById('diagCopyLatest')?.onclick==='function'&&window.beverlyDiagnosticsQA?.().ready===true&&window.beverlyViewerQA?.().options===79,{timeout:15000});loaded=true;break}
   catch(e){await page.waitForTimeout(4000)}
  }
  assert.ok(loaded,'New diagnostic viewer 79 poses + 69 bones must load: '+await page.locator('#status').textContent());
