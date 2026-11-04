@@ -1,0 +1,35 @@
+name: Audit Beverly walking bone names
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/audit-beverly-walk-bones.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/beverly-surgery/viewer-asset
+      - run: |
+          python3 - <<'PY'
+          import json,struct
+          b=open('prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb','rb').read()
+          n=struct.unpack_from('<I',b,12)[0];g=json.loads(b[20:20+n])
+          children={child:parent for parent,node in enumerate(g['nodes']) for child in node.get('children',[])}
+          targets=['Hips','LeftShoulder','LeftArm','LeftForeArm','LeftHand','RightShoulder','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot']
+          for i,node in enumerate(g['nodes']):
+            name=node.get('name','')
+            if any(name.endswith(x) for x in targets):
+              p=children.get(i)
+              print('GAIT_BONE',json.dumps({'name':name,'index':i,'parent':g['nodes'][p].get('name') if p is not None else None,'t':node.get('translation'),'q':node.get('rotation')}))
+          for a in g['animations']:
+            if 'Walk' in a.get('name','') and 'Rifle' not in a.get('name','') and 'Crouch' not in a.get('name',''):
+              print('GAIT_CLIP',a['name'],'channels',len(a['channels']))
+          PY
