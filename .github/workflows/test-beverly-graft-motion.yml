@@ -1,0 +1,81 @@
+name: Test grafted Beverly Walk and Run motions
+
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/test-beverly-graft-motion.yml
+      - prototypes/beverly-surgery/test_donor_motion.py
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  test-motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/beverly-surgery
+          persist-credentials: false
+
+      - name: Recover certified surgery clone and successful 69-joint graft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/beverly-surgery-room
+          gh run download 41750701862 -R copperisbetter-lang/Wvlrp \
+            -n Beverly-TestBone1-Graft-Trial-PRIVATE -D /tmp/beverly-surgery-room
+          test -s /tmp/beverly-surgery-room/Beverly_TestBone1_GRAFT_TRIAL.blend
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/beverly-surgery-room/Beverly_TestBone1_GRAFT_QA.json')
+          d=json.loads(p.read_text())
+          assert d['clone_69_joint_skeleton']==69
+          assert d['max_evaluated_rest_pose_position_change_m']==0
+          print('RECOVERED_PASSED_GRAFT',d['clone_69_joint_skeleton'],len(d['matched_old_to_donor_names']))
+          PY
+
+      - uses: actions/cache/restore@v4
+        with:
+          key: wvlrp-character-tools-blender420-mpfb2018-assets-v1
+          path: /tmp/blender-4.2.0-linux-x64
+
+      - name: Prepare Blender
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1-mesa-dri libxkbcommon0 libxi6 libxxf86vm1 libxfixes3 libsm6 libice6 xvfb
+          if [ ! -x /tmp/blender-4.2.0-linux-x64/blender ]; then
+            curl -fL --retry 4 https://download.blender.org/release/Blender4.2/blender-4.2.0-linux-x64.tar.xz -o /tmp/blender-surgery.tar.xz
+            tar -xf /tmp/blender-surgery.tar.xz -C /tmp
+          fi
+
+      - name: Evaluate native donor Walk and Run on Beverly graft
+        env:
+          SURGERY_OUT: /tmp/beverly-surgery-room
+        run: |
+          set -euo pipefail
+          xvfb-run -a /tmp/blender-4.2.0-linux-x64/blender \
+            --background --factory-startup --python \
+            prototypes/beverly-surgery/test_donor_motion.py 2>&1 | tee /tmp/motion-qa.log
+          grep -F BEVERLY_MOTION_SMOKE_PASS /tmp/motion-qa.log
+          test -s /tmp/beverly-surgery-room/Beverly_TestBone1_WALK_RUN_REVIEW.blend
+          test -s /tmp/beverly-surgery-room/Beverly_TestBone1_MOTION_QA.json
+
+      - name: Preserve separate motion review scene and grounded QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Beverly-TestBone1-WalkRun-Review-PRIVATE
+          path: |
+            /tmp/beverly-surgery-room/Beverly_TestBone1_WALK_RUN_REVIEW.blend
+            /tmp/beverly-surgery-room/Beverly_TestBone1_MOTION_QA.json
+          if-no-files-found: error
+          retention-days: 21
