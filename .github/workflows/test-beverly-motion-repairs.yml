@@ -31,6 +31,8 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/wvlrp-beverly-http.log 2>&1 &
           sleep 2
           node world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
+      - name: Inspect Beverly pelvis/inner-thigh mesh overlap and materials
+        run: node world-creator/character-previews/beverly-postop/test-surface.cjs
       - name: Store Android-sized visual snapshot
         uses: actions/upload-artifact@v4
         if: always()
@@ -38,6 +40,8 @@ jobs:
           name: Beverly-nonapproved-motion-repairs-QA
           path: |
             /tmp/beverly-motion-repairs-mobile.png
+            /tmp/beverly-surface-*.png
+            /tmp/beverly-surface-meshes.json
             /tmp/beverly-fixed-elbows-knees-visual.png
             /tmp/beverly-fixed-sit-legs-open-visual.png
           if-no-files-found: ignore
