@@ -21,6 +21,7 @@ const assert=require('node:assert/strict');
      },expected,{timeout:25000});
    }
    const m=await qa();data.push(m);console.log('MOTION_METRICS',label,JSON.stringify(m));
+   if(expected==='Elbows & Knees')await page.screenshot({path:'/tmp/beverly-kneeling-before-assert.png'});
    assert.equal(m.sourceClip,expected,'Wrong source clip');
    for(const [name,[min,max]] of Object.entries(thresholds)){
      assert.ok(Number.isFinite(m[name])&&m[name]>=min&&m[name]<=max,
