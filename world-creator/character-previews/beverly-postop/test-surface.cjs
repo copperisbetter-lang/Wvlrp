@@ -47,6 +47,7 @@ const fs=require('node:fs');
  await page.evaluate(()=>window.beverlySurfaceProbeControl.restorePatchMaterial());
 
  // Does the joint-driven patch also distort in a deep hip fold?
+ await page.locator('#toggleControls').click();
  await page.locator('#elbowsKnees').click();
  await page.waitForTimeout(1800);
  await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(1.45,.55,.35,.62));
