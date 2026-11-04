@@ -629,6 +629,23 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
        surfaceMeshes.forEach(o=>{if(keys.some(s=>o.name.includes(s)))o.visible=false});
      },
      restore(){surfaceMeshes.forEach(o=>{o.visible=originalSurfaceVisibility.get(o.uuid)??false})},
+     patchDepthBias(factor=0,units=0){
+       const patch=surfaceMeshes.find(o=>o.name==='SURG_BEVERLY__base001_1');
+       if(!patch)return false;
+       if(!patch.userData.surfaceOriginalMaterial)patch.userData.surfaceOriginalMaterial=patch.material;
+       if(patch.material===patch.userData.surfaceOriginalMaterial)
+         patch.material=patch.material.clone();
+       patch.material.polygonOffset=!!(factor||units);
+       patch.material.polygonOffsetFactor=factor;
+       patch.material.polygonOffsetUnits=units;
+       patch.material.needsUpdate=true;
+       return true;
+     },
+     restorePatchMaterial(){
+       const patch=surfaceMeshes.find(o=>o.name==='SURG_BEVERLY__base001_1');
+       if(patch?.userData.surfaceOriginalMaterial)
+         patch.material=patch.userData.surfaceOriginalMaterial;
+     },
      cameraView(x,y,z,targetY=.73){
        orbit.target.set(0,targetY,0);camera.position.set(x,y,z);orbit.update();
      },
