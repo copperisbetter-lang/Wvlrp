@@ -1,4 +1,5 @@
 name: Audit Test Bone 1 donor dimensions and animations
+# Recheck official donor export with breast-size maximum for chest-fit comparison.
 on:
   push:
     branches: ['feature/ara-young-explorer-three-20261103']
