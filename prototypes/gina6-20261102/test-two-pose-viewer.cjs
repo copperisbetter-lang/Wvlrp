@@ -32,6 +32,16 @@ const assert=require('node:assert/strict');
        assert.ok(qa.metrics.headY>.18,'Gina head still near floor: '+JSON.stringify(qa.metrics));
        assert.ok(qa.metrics.elbowMinY<.20,'Gina elbows not grounded: '+JSON.stringify(qa.metrics));
        assert.ok(qa.metrics.kneeMinY<.23,'Gina knees not grounded: '+JSON.stringify(qa.metrics));
+       assert.ok(qa.metrics.headY>.18,'Head may not be embedded in floor');
+       assert.ok(qa.metrics.headAboveElbowsM>.12,'Head must stay above elbow line');
+       assert.ok(qa.metrics.kneeBehindPelvisM>.025,'Knees must be BEHIND the hips, not folded ahead: '+JSON.stringify(qa.metrics));
+       assert.ok(qa.metrics.torsoDeclineM>.035&&qa.metrics.torsoDeclineM<.36,
+         'Natural low torso slope missing: '+JSON.stringify(qa.metrics));
+       await page.locator('#side').click();
+       await page.screenshot({path:'/tmp/Gina6-'+garment+'-slumped-crawl-side-mobile.png'});
+       await page.locator('#back').click();
+       await page.screenshot({path:'/tmp/Gina6-'+garment+'-slumped-crawl-rear-mobile.png'});
+       await page.locator('#front').click();
      }
      await page.screenshot({path:'/tmp/Gina6-'+garment+'-'+pose+'-mobile.png'});
      results[garment+':'+pose]=qa.metrics;
