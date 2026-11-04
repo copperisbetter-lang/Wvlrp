@@ -18,6 +18,25 @@ const fs=require('node:fs');
  await page.waitForTimeout(200);
  await page.screenshot({path:'/tmp/beverly-surface-hidden-accessories.png'});
  await page.evaluate(()=>window.beverlySurfaceProbeControl.restore());
+ // Match owner's under-hip camera view at several elevations and isolate
+ // the exact join patch versus the body and approved attachment.
+ for(const [label,eyeY,targetY,dist] of [
+  ['under-view',.31,.71,.63],
+  ['upper-hip',.43,.73,.64],
+  ['below-hip',.20,.76,.64]
+ ]){
+  await page.evaluate(([y,ty,z])=>window.beverlySurfaceProbeControl.cameraView(0,y,z,ty),[eyeY,targetY,dist]);
+  await page.waitForTimeout(250);
+  await page.screenshot({path:'/tmp/beverly-surface-'+label+'-all.png'});
+  await page.evaluate(()=>window.beverlySurfaceProbeControl.hideNames(['SURG_BEVERLY__base001_1']));
+  await page.waitForTimeout(150);
+  await page.screenshot({path:'/tmp/beverly-surface-'+label+'-without-transition.png'});
+  await page.evaluate(()=>window.beverlySurfaceProbeControl.restore());
+  await page.evaluate(()=>window.beverlySurfaceProbeControl.hideNames(['SURG_BEVERLY__base001_2']));
+  await page.waitForTimeout(150);
+  await page.screenshot({path:'/tmp/beverly-surface-'+label+'-without-attachment.png'});
+  await page.evaluate(()=>window.beverlySurfaceProbeControl.restore());
+ }
  const names=meshes.map(x=>x.name);
  const candidates=names.filter(n=>/base|body|skin|flat|round|att|pelv|vag|thigh|pant|brief|seam/i.test(n));
  console.log('BEVERLY_SURFACE_CANDIDATES '+JSON.stringify(candidates));
