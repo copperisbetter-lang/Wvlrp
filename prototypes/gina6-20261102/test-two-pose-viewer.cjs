@@ -28,6 +28,11 @@ const assert=require('node:assert/strict');
      assert.ok(Number.isFinite(qa.metrics.kneeWidthM),'No knees');
      assert.ok(Number.isFinite(qa.metrics.headY),'No head');
      assert.ok(qa.metrics.kneeWidthM>0,'Collapsed knees');
+     if(pose==='kneel'){
+       assert.ok(qa.metrics.headY>.18,'Gina head still near floor: '+JSON.stringify(qa.metrics));
+       assert.ok(qa.metrics.elbowMinY<.20,'Gina elbows not grounded: '+JSON.stringify(qa.metrics));
+       assert.ok(qa.metrics.kneeMinY<.23,'Gina knees not grounded: '+JSON.stringify(qa.metrics));
+     }
      await page.screenshot({path:'/tmp/Gina6-'+garment+'-'+pose+'-mobile.png'});
      results[garment+':'+pose]=qa.metrics;
    }
