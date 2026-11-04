@@ -25,6 +25,7 @@ const {chromium}=require('playwright');
     await set('armFit',100);await set('footFit',100);
     const after=await qa();
     if(before.clip!=='Walk'||after.clip!=='Walk')throw Error('Wrong sampled action');
+    if(![before.elbowGap,before.ankleGap,after.elbowGap,after.ankleGap].every(Number.isFinite))throw new Error('Browser served stale gait QA '+JSON.stringify({before,after}));
     samples.push({frame,before,after,
       armImprovement:before.elbowGap-after.elbowGap,
       legImprovement:before.ankleGap-after.ankleGap});
@@ -36,6 +37,7 @@ const {chromium}=require('playwright');
     bestArmReduction:+max('armImprovement').toFixed(4),
     bestFootReduction:+max('legImprovement').toFixed(4),
     totalSamples:samples.length};
+  if(![metrics.bestArmReduction,metrics.bestFootReduction].every(Number.isFinite))throw new Error('No finite gait metrics');
   if(metrics.bestArmReduction<.015)throw new Error('Arm swing not measurably narrower: '+JSON.stringify(samples));
   if(metrics.bestFootReduction<.008)throw new Error('Feet not measurably closer: '+JSON.stringify(samples));
   if(errors.length)throw new Error('Browser exceptions: '+errors.join(' | '));
