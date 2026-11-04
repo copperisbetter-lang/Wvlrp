@@ -12,6 +12,14 @@ const assert=require('node:assert/strict');
  const data=[];
  async function check(label,expected,thresholds={}){
    await page.waitForTimeout(1300);
+   // Diagnostic transition uses 0.8s of ANIMATION time (not wall time).
+   // Software WebGL can run slowly; wait for the actual pose to settle.
+   if(expected==='Elbows & Knees'||expected==='Sit — Legs Open'){
+     await page.waitForFunction(name=>{
+       const last=window.beverlyDiagnosticReport?.()?.sessions?.at(-1);
+       return last?.label===name && last.frames.some(f=>f.stage==='in-pose');
+     },expected,{timeout:25000});
+   }
    const m=await qa();data.push(m);console.log('MOTION_METRICS',label,JSON.stringify(m));
    assert.equal(m.sourceClip,expected,'Wrong source clip');
    for(const [name,[min,max]] of Object.entries(thresholds)){
