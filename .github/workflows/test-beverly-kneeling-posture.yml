@@ -1,0 +1,41 @@
+name: QA Beverly kneeling posture and camera framing
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/test-beverly-kneeling-posture.yml
+      - world-creator/character-previews/beverly-postop/motion-repairs.js
+      - world-creator/character-previews/beverly-postop/viewer.html
+      - world-creator/character-previews/beverly-postop/test-kneeling-inspection.cjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  kneeling-posture-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            world-creator/character-previews/beverly-postop
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install mobile Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate actual 69-bone kneeling rig and 77-clip viewer
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/beverly-http.log 2>&1 &
+          sleep 2
+          node world-creator/character-previews/beverly-postop/test-kneeling-inspection.cjs
+      - name: Save real rendered side/rear evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Beverly-kneeling-visual-side-rear
+          path: /tmp/beverly-kneel-*-framed.png
+          retention-days: 7
+          if-no-files-found: ignore
