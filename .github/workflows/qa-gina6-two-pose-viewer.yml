@@ -1,0 +1,41 @@
+name: QA Gina 6 two-pose viewer on mobile
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-gina6-two-pose-viewer.yml
+      - prototypes/gina6-20261102/pose-viewer.html
+      - prototypes/gina6-20261102/test-two-pose-viewer.cjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gina6-two-poses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            prototypes/gina6-20261102
+            world-creator/character-previews/beverly-postop/motion-repairs.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test actual Gina 6 models, 69 joints, 77 motions, 2 inspection poses
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/gina-pose-server.log 2>&1 &
+          sleep 2
+          node prototypes/gina6-20261102/test-two-pose-viewer.cjs
+      - name: Archive the four actual posed mobile views
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gina6-bikini-neutral-kneeling-sitting-visual
+          path: /tmp/Gina6-*-mobile.png
+          if-no-files-found: ignore
+          retention-days: 7
