@@ -21,9 +21,47 @@ const assert=require('node:assert/strict');
    return m;
  }
  await page.locator('#walk').click();
+ const walkPreset=await page.evaluate(()=>window.beverlyGaitPresetsQA());
+ assert.deepEqual(walkPreset.savedWalk,{arm:90,foot:90},'Recorded Walk sliders must be preserved as 90/90');
+ assert.equal(walkPreset.currentArms,90);
+ assert.equal(walkPreset.currentFeet,90);
  const walk=await check('owner-approved Walk','Walk');
  await page.locator('#run').click();
+ const runPreset=await page.evaluate(()=>window.beverlyGaitPresetsQA());
+ assert.deepEqual(runPreset.savedRun,{arm:55,foot:100},'Recorded Run sliders must be preserved independently as 55/100');
+ assert.equal(runPreset.currentArms,55);
  const run=await check('owner-approved Run','Run',{ankleWidthM:[.05,.10]});
+ // Sample the ACTUAL 69-bone native Run cycle. Only left wrist is corrected.
+ const guardSamples=[];
+ for(const phase of [.05,.15,.25,.35,.45,.55,.65,.75,.85,.95]){
+   await page.locator('#scrub').evaluate((el,p)=>{
+     el.value=String(Math.round(p*1000));
+     el.dispatchEvent(new Event('input',{bubbles:true}));
+   },phase);
+   await page.waitForTimeout(70);
+   const state=await page.evaluate(()=>window.beverlyGaitPresetsQA());
+   const g=state.runHand;
+   assert.ok(g?.leftWristAfterX!==null,'Run left hand QA missing at phase '+phase);
+   assert.ok(g.rightArmDeltaMeters<=.000001,'Right arm modified at phase '+phase+': '+JSON.stringify(g));
+   assert.ok(g.leftWristAfterX>=g.safeWristX-.016,'Left wrist still crosses chest at phase '+phase+': '+JSON.stringify(g));
+   guardSamples.push({phase,...g});
+ }
+ assert.ok(guardSamples.some(g=>g.corrected),'Guard never activated; test failed to reproduce strike');
+ console.log('BEVERLY_RUN_LEFT_ONLY_GUARD',JSON.stringify(guardSamples));
+ // Changing Run must not contaminate Walk; changing Walk must not touch Run.
+ await page.locator('#walk').click();
+ await page.locator('#armFit').evaluate(el=>{el.value='45';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.locator('#footFit').evaluate(el=>{el.value='100';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.locator('#run').click();
+ const runAgain=await page.evaluate(()=>window.beverlyGaitPresetsQA());
+ assert.equal(runAgain.currentArms,55,'Walk slider changed Run');
+ await page.locator('#walk').click();
+ const walkAgain=await page.evaluate(()=>window.beverlyGaitPresetsQA());
+ assert.deepEqual(walkAgain.savedWalk,{arm:45,foot:100},'Walk lost its independent slider settings');
+ // Restore the approved diagnostic baseline for this QA browser.
+ await page.locator('#armFit').evaluate(el=>{el.value='90';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.locator('#footFit').evaluate(el=>{el.value='90';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ console.log('BEVERLY_GAIT_PRESET_ISOLATION_PASS',JSON.stringify(await page.evaluate(()=>window.beverlyGaitPresetsQA())));
  assert.ok(!(await page.locator('#armFit').isDisabled()),'Run arm slider must remain present');
  await page.locator('#elbowsKnees').click();
  const kneel=await check('Knees above the floor','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.25]});
