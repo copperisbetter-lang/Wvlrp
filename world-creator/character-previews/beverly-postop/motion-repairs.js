@@ -24,6 +24,13 @@ export function createBeverlyMotionRepairs({
     const n=n=>Number.isFinite(n)?+n.toFixed(5):null;
     return {
       pelvisY:hip?n(hip.y):null,
+      headY:world('Head')?n(world('Head').y):null,
+      headZ:world('Head')?n(world('Head').z):null,
+      neckY:world('Neck')?n(world('Neck').y):null,
+      chestY:world('Spine2')?n(world('Spine2').y):null,
+      chestZ:world('Spine2')?n(world('Spine2').z):null,
+      shoulderMinY:world('LeftArm')&&world('RightArm')?n(Math.min(world('LeftArm').y,world('RightArm').y)):null,
+      headAbovePelvisM:hip&&world('Head')?n(world('Head').y-hip.y):null,
       pelvisZ:hip?n(hip.z):null,
       kneeMeanZ:lk&&rk?n((lk.z+rk.z)/2):null,
       kneeMinY:lk&&rk?n(Math.min(lk.y,rk.y)):null,
@@ -65,11 +72,11 @@ export function createBeverlyMotionRepairs({
     // HINGE THROUGH THE PELVIS, rather than folding the upper spine:
     // a slightly higher bottom and a sloping but STRAIGHT trunk.
     const old=world('Hips');
-    hip.position.y+=clamp(.565-old.y,-.7,.7);
+    hip.position.y+=clamp(.655-old.y,-.7,.7);
     straightenSpine();
     let h=world('Hips');
     steerBoneTo('Hips','Spine',
-      new THREE.Vector3(h.x,h.y-.125,h.z+.205),1);
+      new THREE.Vector3(h.x,h.y+.014,h.z+.225),1);
     update();
     h=world('Hips');
     for(const side of ['Left','Right']){
@@ -90,7 +97,7 @@ export function createBeverlyMotionRepairs({
     update();
     const lk=world('LeftLeg'),rk=world('RightLeg');
     if(lk&&rk){
-      const delta=clamp(.115-Math.min(lk.y,rk.y),-.06,.07);
+      const delta=clamp(.115-Math.min(lk.y,rk.y),-.04,.04);
       hip.position.y+=delta;
       update();
     }
