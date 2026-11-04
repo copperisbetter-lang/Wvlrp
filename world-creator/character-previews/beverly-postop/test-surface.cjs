@@ -13,6 +13,14 @@ const fs=require('node:fs');
  // Saves coordinates and influences for OFFLINE overlap analysis, not edit.
  const geo=await page.evaluate(()=>window.beverlySurfaceProbeControl.geometryDump());
  fs.writeFileSync('/tmp/beverly-three-layer-geometry.json',JSON.stringify(geo));
+ const tx=await page.evaluate(()=>window.beverlySurfaceProbeControl.textureDump());
+ for(const [name,dat] of Object.entries(tx)){
+   const filename='/tmp/beverly-texture-'+name.replace(/[^a-z0-9_-]/gi,'_')+'.png';
+   if(dat.uri){
+     fs.writeFileSync(filename,Buffer.from(dat.uri.slice(dat.uri.indexOf(',')+1),'base64'));
+     console.log('BEVERLY_TEXTURE',name,dat.width,dat.height,filename);
+   }else console.log('BEVERLY_TEXTURE_ERROR',name,JSON.stringify(dat));
+ }
  console.log('BEVERLY_GEOM_DUMP '+JSON.stringify(Object.fromEntries(
   Object.entries(geo).map(([k,v])=>[k,{vertices:v.vertexCount,triangles:v.triangleCount,
    skinned:v.skin.length>0,indexed:!!v.index}])
