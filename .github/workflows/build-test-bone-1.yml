@@ -1,0 +1,52 @@
+name: Build Test Bone 1 from official Ara 3D Gen
+on:
+  push:
+    branches: ['feature/ara-young-explorer-three-20261103']
+    paths:
+      - '.github/workflows/build-test-bone-1.yml'
+      - 'prototypes/test-bone-1/Test_Bone_1.params.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  test-bone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ara-young-explorer-three-20261103
+          filter: blob:none
+          sparse-checkout: |
+            prototypes/test-bone-1
+            .github/workflows
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Get same official Ara 3D Gen source used for Gina
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install official generator and MakeHuman system assets
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Create adult donor using native website generator
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm run export -- --params "$GITHUB_WORKSPACE/prototypes/test-bone-1/Test_Bone_1.params.json" --detail medium --formats glb --out "$GITHUB_WORKSPACE/prototypes/test-bone-1/out"
+      - name: Save original Ara GLB into isolated test folder
+        run: |
+          test -s prototypes/test-bone-1/out/Test_Bone_1.glb
+          cp prototypes/test-bone-1/out/Test_Bone_1.glb prototypes/test-bone-1/Test_Bone_1.glb
+          sha256sum prototypes/test-bone-1/Test_Bone_1.glb
+      - name: Commit isolated website-generated donor
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add prototypes/test-bone-1/Test_Bone_1.glb
+          if ! git diff --cached --quiet; then
+            git commit -m 'Save separate native Ara Test Bone 1 adult rig donor [skip ci]'
+            git pull --rebase origin feature/ara-young-explorer-three-20261103
+            git push origin HEAD:feature/ara-young-explorer-three-20261103
+          fi
