@@ -114,7 +114,8 @@ function makeSource(gltf){
  const repairs=createBeverlyMotionRepairs({THREE,model,bones,...helper});
  return {model,mixer,clips:gltf.animations,bones,rest,repairs,helper,activeAction:null};
 }
-function helperForGina(source){return source.helper}\nfunction restore(source){
+function helperForGina(source){return source.helper}
+function restore(source){
  source.mixer.stopAllAction();
  source.model.traverse(o=>{if(!o.isBone)return;
    const state=source.rest.get(o.uuid);if(state){o.position.copy(state.position);o.quaternion.copy(state.rotation);o.scale.copy(state.scale)}
