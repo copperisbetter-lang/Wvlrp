@@ -136,7 +136,7 @@ select,button{min-height:40px}
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {BeverlyPoseDiagnostics} from './pose-diagnostics.js';
+import {BeverlyPoseDiagnostics} from './pose-diagnostics.js?v=copy-latest-v2';
 const $=id=>document.getElementById(id);
 const panel=$('view'),status=$('status'),select=$('clip'),clock=new THREE.Clock();
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
