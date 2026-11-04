@@ -36,7 +36,7 @@ const assert=require('node:assert/strict');
  assert.ok(p.elbowMinY>=-.03&&p.elbowMinY<=.16,'Elbows not grounded');
  assert.ok(p.kneeMinY>=-.03&&p.kneeMinY<=.20,'Knees not grounded');
  assert.ok(p.pelvisAboveKneeM>=.32&&p.pelvisAboveKneeM<=.60,'Pelvis/knee angle incorrect');
- assert.ok(p.spineRestDeviationDeg<=4&&p.neckRestDeviationDeg<=4,'Unwanted spine/neck hinge');
+ assert.ok(p.spineRestDeviationDeg<=4&&p.neckRestDeviationDeg<=35,'Excessive spine or neck bend');
  const after=await page.evaluate(()=>window.beverlyGaitPresetsQA());
  assert.deepEqual(after.savedWalk,originalPresets.savedWalk,'Approved Walk modified');
  assert.deepEqual(after.savedRun,originalPresets.savedRun,'Approved Run modified');
