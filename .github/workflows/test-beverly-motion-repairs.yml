@@ -27,13 +27,14 @@ jobs:
         run: |
           npm install --no-save --package-lock=false playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Test 69-bone clone using local patched viewer and native 77 animations
+      - name: Start local viewer server
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/wvlrp-beverly-http.log 2>&1 &
           sleep 2
-          node world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
       - name: Inspect Beverly pelvis/inner-thigh mesh overlap and materials
         run: node world-creator/character-previews/beverly-postop/test-surface.cjs
+      - name: Test 69-bone clone using local patched viewer and native 77 animations
+        run: node world-creator/character-previews/beverly-postop/test-motion-repairs.cjs
       - name: Store Android-sized visual snapshot
         uses: actions/upload-artifact@v4
         if: always()
