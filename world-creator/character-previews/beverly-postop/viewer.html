@@ -168,7 +168,7 @@ loader.load('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature
  let hiddenHelpers=[];
  model.traverse(o=>{
    if(!o.isMesh)return;
-   const helper=/^(?:SURG_BEVERLY__)?Icosphere(?:\\.\\d+)?$/i.test(o.name);
+   const helper=/^(?:SURG_BEVERLY__)?Icosphere(?:\.\d+)?$/i.test(o.name);
    o.visible=!helper;
    o.frustumCulled=false;
    if(helper)hiddenHelpers.push(o.name);
