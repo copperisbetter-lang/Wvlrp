@@ -291,6 +291,19 @@ function choose(index){
  updateGaitPanel();
  status.textContent="Beverly · "+activeGaitName+" · 77 source animations + 2 inspection poses";
 }
+// Evaluate native clip at the requested absolute time. Merely assigning
+// action.time while paused can leave the previously selected pose visible.
+function seekNativeFrame(seconds,hold=true){
+ if(!action||!mixer)return;
+ const duration=action.getClip().duration||0;
+ const t=THREE.MathUtils.clamp(seconds,0,Math.max(0,duration-1e-6));
+ action.reset();action.enabled=true;action.setEffectiveWeight(1);action.play();
+ action.paused=false;
+ mixer.setTime(t);
+ action.time=t;
+ action.paused=hold;
+ paused=hold;
+}
 function choosePose(which){
  if(!mixer)return;
  const label=which==='elbows-knees'?'Elbows & Knees':'Sit — Legs Open';
@@ -301,8 +314,7 @@ function choosePose(which){
  if(action)action.stop();
  poseMode=which;activeGaitName=label;
  action=mixer.clipAction(clip);action.reset().enabled=true;action.setEffectiveWeight(1);action.play();
- action.time=clip.duration*(which==='elbows-knees'?.28:.50);
- action.paused=true;paused=true;
+ seekNativeFrame(clip.duration*(which==='elbows-knees'?.28:.50),true);
  $('play').disabled=true;$('play').textContent='Pose • Hold';
  $('scrub').disabled=true;$('scrub').value=String(Math.round(action.time/clip.duration*1000));
  $('clipname').textContent=label;$('elapsed').textContent='Inspection pose';
@@ -331,7 +343,7 @@ $('restart').onclick=()=>{
  if(action){action.reset().play();action.paused=false;paused=false;$('play').textContent='⏸ Pause'}
 };
 $('loop').onclick=()=>{looping=!looping;ensureLoop();$('loop').setAttribute('aria-pressed',String(looping));$('loop').textContent=looping?'Loop ON':'Loop OFF'};
-$('scrub').oninput=()=>{if(!action||!mixer)return;const d=action.getClip().duration;action.time=d*Number($('scrub').value)/1000;action.paused=true;paused=true;$('play').textContent='▶ Play';refreshPoseWithGait(0)};
+$('scrub').oninput=()=>{if(!action||!mixer||poseMode)return;const d=action.getClip().duration;seekNativeFrame(d*Number($('scrub').value)/1000,true);$('play').textContent='▶ Play';refreshPoseWithGait(0)};
 
 // Gait V3: the donor action writes the raw pose each frame; only the PREVIEW
 // receives these world-space joint constraints. Certified game model unchanged.
