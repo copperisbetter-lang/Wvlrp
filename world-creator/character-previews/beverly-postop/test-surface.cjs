@@ -17,6 +17,32 @@ const fs=require('node:fs');
   Object.entries(geo).map(([k,v])=>[k,{vertices:v.vertexCount,triangles:v.triangleCount,
    skinned:v.skin.length>0,indexed:!!v.index}])
  )));
+ // Compare exact same model, camera and material with only patch triangles changed.
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.31,.63,.71));
+ for(const variant of ['original','light','medium']){
+   const r=await page.evaluate(n=>window.beverlySurfaceProbeControl.trimPatch(n),variant);
+   console.log('BEVERLY_PATCH_TRIM_STANDING',variant,JSON.stringify(r));
+   if(variant==='light'&&r.removed!==402)throw Error('Light trim signature mismatch '+JSON.stringify(r));
+   if(variant==='medium'&&r.removed!==918)throw Error('Medium trim signature mismatch '+JSON.stringify(r));
+   await page.waitForTimeout(180);
+   await page.screenshot({path:'/tmp/beverly-patchtrim-'+variant+'-standing.png'});
+ }
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.trimPatch('original'));
+ await page.locator('#toggleControls').click();
+ await page.locator('#elbowsKnees').click();
+ await page.waitForTimeout(1900);
+ await page.locator('#toggleControls').click(); // Collapse UI for actual body comparison
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(.58,.49,.64,.68));
+ for(const variant of ['original','light','medium']){
+   const r=await page.evaluate(n=>window.beverlySurfaceProbeControl.trimPatch(n),variant);
+   console.log('BEVERLY_PATCH_TRIM_KNEEL',variant,JSON.stringify(r));
+   await page.waitForTimeout(180);
+   await page.screenshot({path:'/tmp/beverly-patchtrim-'+variant+'-kneel.png'});
+ }
+ await page.evaluate(()=>window.beverlySurfaceProbeControl.trimPatch('original'));
+ await page.locator('#toggleControls').click();
+ await page.locator('#walk').click();
+ await page.locator('#toggleControls').click();
  console.log('BEVERLY_SURFACE_MESHES '+JSON.stringify(meshes));
  fs.writeFileSync('/tmp/beverly-surface-meshes.json',JSON.stringify(meshes,null,2));
  await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.58,.8,.72));
