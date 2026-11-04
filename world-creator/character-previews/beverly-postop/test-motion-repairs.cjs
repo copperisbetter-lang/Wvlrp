@@ -73,7 +73,7 @@ const assert=require('node:assert/strict');
  console.log('BEVERLY_GAIT_PRESET_ISOLATION_PASS',JSON.stringify(await page.evaluate(()=>window.beverlyGaitPresetsQA())));
  assert.ok(!(await page.locator('#armFit').isDisabled()),'Run arm slider must remain present');
  await page.locator('#elbowsKnees').click();
- const kneel=await check('Hip-hinged elbows-and-knees','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.20],elbowMinY:[-.035,.16],pelvisAboveKneeM:[.40,.80],spineRestDeviationDeg:[0,4],neckRestDeviationDeg:[0,4],headY:[.28,1.0],headAbovePelvisM:[-.16,.48],chestY:[.29,1.0]});
+ const kneel=await check('Hip-hinged elbows-and-knees','Elbows & Knees',{ankleMinY:[-.035,.30],kneeMinY:[-.035,.20],elbowMinY:[-.035,.16],pelvisAboveKneeM:[.32,.60],spineRestDeviationDeg:[0,4],neckRestDeviationDeg:[0,4],headY:[.23,.85],headAbovePelvisM:[-.40,-.05],headAboveElbowsM:[.16,.60],chestY:[.30,.75]});
  await page.locator('#side').click();
  await page.screenshot({path:'/tmp/beverly-fixed-elbows-knees-visual.png'});
  await page.locator('#back').click();
