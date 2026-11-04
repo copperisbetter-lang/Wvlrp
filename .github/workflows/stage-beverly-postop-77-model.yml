@@ -1,0 +1,48 @@
+name: Stage Beverly postoperative 77 motion GLB on isolated viewer branch
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/stage-beverly-postop-77-model.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  stage-verified-glb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/beverly-surgery-room-20261104
+      - name: Retrieve verified model artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/postop
+          gh run download 41752084465 -R copperisbetter-lang/Wvlrp -n Beverly-Postop-77-Verified-Viewer-GLB -D /tmp/postop
+          python3 - <<'PY'
+          import hashlib,struct,json
+          from pathlib import Path
+          p=Path('/tmp/postop')
+          b=(p/'Beverly_Postop_77.glb').read_bytes()
+          m=json.loads((p/'Beverly_Postop_77_QA.json').read_text())
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          assert hashlib.sha256(b).hexdigest()==m['GLB_SHA256']
+          assert m['motion_count']==77 and 69 in m['rig_joints'] and m['mesh_count']==31
+          print('STAGED_POSTOP_MODEL_VERIFIED',len(b))
+          PY
+      - name: Commit 23MB viewer asset in ISOLATED branch only
+        run: |
+          set -euo pipefail
+          mkdir -p prototypes/beverly-surgery/viewer-asset
+          cp /tmp/postop/Beverly_Postop_77.glb prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb
+          cp /tmp/postop/Beverly_Postop_77_QA.json prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77_QA.json
+          git config user.name "wvlrp-postop-test[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77_QA.json
+          git commit -m "Preserve verified Beverly 77-motion viewer GLB on isolated test branch"
+          git push origin HEAD:feature/beverly-surgery-room-20261104
