@@ -366,6 +366,9 @@ function choosePose(which){
  select.value='pose:'+which;
  updateGaitPanel();
  refreshPoseWithGait(0);
+ // Pose changes previously retained the standing-height camera target.
+ // Recenter to the evaluated crouched/seated body; drag/orbit remains free.
+ aim(which==='elbows-knees'?'side':'front');
  status.textContent='Beverly · '+label+' · experimental rig inspection pose';
 }
 select.onchange=()=>{
