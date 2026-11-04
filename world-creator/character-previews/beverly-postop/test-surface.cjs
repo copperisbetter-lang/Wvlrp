@@ -16,7 +16,7 @@ const fs=require('node:fs');
  console.log('BEVERLY_GEOM_DUMP '+JSON.stringify(Object.fromEntries(
   Object.entries(geo).map(([k,v])=>[k,{vertices:v.vertexCount,triangles:v.triangleCount,
    skinned:v.skin.length>0,indexed:!!v.index}])
- ))));
+ )));
  console.log('BEVERLY_SURFACE_MESHES '+JSON.stringify(meshes));
  fs.writeFileSync('/tmp/beverly-surface-meshes.json',JSON.stringify(meshes,null,2));
  await page.evaluate(()=>window.beverlySurfaceProbeControl.cameraView(0,.58,.8,.72));
