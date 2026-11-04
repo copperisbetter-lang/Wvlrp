@@ -1,0 +1,32 @@
+name: Check Beverly post-op viewer public links
+on:
+  push:
+    branches: [feature/beverly-surgery-room-20261104]
+    paths:
+      - .github/workflows/check-beverly-viewer-links.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm viewer HTML is served publicly
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-delay 5 --silent --show-error https://wvlrp.com/world-creator/character-previews/beverly-postop/viewer.html -o /tmp/beverly-viewer.html
+          grep -F "BEVERLY" /tmp/beverly-viewer.html
+          grep -F "Beverly_Postop_77.glb" /tmp/beverly-viewer.html
+          echo BEVERLY_VIEWER_HTTP_200
+      - name: Confirm animation GLB is downloadable
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 4 --retry-delay 5 --silent --show-error https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/beverly-surgery-room-20261104/prototypes/beverly-surgery/viewer-asset/Beverly_Postop_77.glb -o /tmp/Beverly_Postop_77.glb
+          python3 - <<'PY'
+          import struct,hashlib
+          p='/tmp/Beverly_Postop_77.glb'
+          b=open(p,'rb').read()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          assert hashlib.sha256(b).hexdigest()=='8ca86d77b60de615de5af2177313846bdbd2edd8387a7dddb8d9b7933e1fda66'
+          print('BEVERLY_MODEL_HTTP_200_VERIFIED',len(b))
+          PY
