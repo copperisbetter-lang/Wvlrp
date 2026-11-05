@@ -11,6 +11,9 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: hair-motion-lab
+          sparse-checkout-cone-mode: true
       - name: Check all public hair data pieces
         run: |
           python3 - <<'PY'
