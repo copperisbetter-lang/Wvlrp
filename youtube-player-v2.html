@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1b16">
+<meta name="robots" content="noindex,nofollow">
+<title>Autoplay Test V2 | WVLRP</title>
+<link rel="stylesheet" href="public-site.css?v=20261008-newsite">
+<style>
+body{background:#0e1b16}
+.test-layout{max-width:1000px;margin:0 auto;padding:9px 14px 65px}
+.test-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0 10px}
+.test-title h1{font:normal clamp(20px,4vw,30px) Georgia,serif;margin:0}
+.test-title span{color:#e5c68c;font-size:11px;letter-spacing:.08em}
+.test-stage{background:#020605;border:1px solid #627660;border-radius:9px;overflow:hidden}
+.yt-surface{position:relative;aspect-ratio:16/9;background:#000;min-height:205px}
+#startup{position:absolute;inset:0;display:grid;place-content:center;text-align:center;background:#10271d;color:#f2eee3;padding:18px;gap:7px}
+#startup .big{color:#ddc38d;font:normal 23px Georgia,serif}
+#startup .number{font:700 42px system-ui,sans-serif;color:#fff;line-height:1.1}
+#startup .small{font-size:12px;color:#ccdccf}
+#startup[hidden]{display:none}
+#youtube-player{width:100%;height:100%;position:absolute;inset:0}
+#youtube-player[hidden]{display:none}
+#youtube-player iframe{width:100%;height:100%;border:0;display:block}
+#player-feedback{margin:0;padding:11px 15px;background:#14291e;font-size:12px;line-height:1.45;color:#d7e2d6}
+#player-feedback b{color:#e3c993}
+.test-note{font-size:13px;line-height:1.5;color:#cfdccb;padding:13px 1px;margin:0}
+.test-note strong{color:#f2d69e}
+.test-settings{background:#172a21;border:1px solid #53664f;border-radius:8px;margin:14px 0 0;padding:15px}
+.test-settings label{font-size:13px;font-weight:700;display:block;margin-bottom:7px}
+.test-row{display:flex;gap:8px;flex-wrap:wrap}
+.test-row input{flex:1 1 210px;min-width:0;background:#081a12;border:1px solid #8ea696;color:#fff;font-size:16px;border-radius:5px;padding:10px}
+.test-row button{background:#e3c68f;border:0;border-radius:5px;color:#17241a;font-weight:750;font-size:13px;padding:10px 17px;cursor:pointer}
+.help{font-size:12px;color:#b8cbbb;margin:8px 0 0;line-height:1.45}
+.help a{color:#e5c68c}
+#tap-start{display:none;margin-top:8px;border:1px solid #e3c68f;background:#263b2e;color:#e6d5a9;padding:10px 14px;border-radius:5px;font-size:13px;cursor:pointer}
+#tap-start.visible{display:block}
+.simple-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 8px;max-width:1000px;margin:0 auto}
+.simple-nav .brand{gap:9px}
+.simple-nav .mark{width:34px;height:34px;font-size:18px}
+.simple-nav .brand b{font-size:18px}
+.simple-nav .brand small{font-size:8px}
+.simple-nav>a:last-child{font-size:12px;color:#ddc38d}
+@media(max-width:500px){.simple-nav .brand b{font-size:17px}.test-layout{padding-top:3px}.yt-surface{min-height:205px}.test-title{padding-top:0}.test-title span{font-size:10px}.test-title h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="simple-nav">
+ <a href="index.html" class="brand" aria-label="WVLRP homepage"><span class="mark" aria-hidden="true">W</span><span><b>WVLRP</b><small>West Virginia Live Research Project</small></span></a>
+ <a href="east-bank.html">Back to East Bank</a>
+</div>
+<main class="test-layout">
+ <div class="test-title"><h1>YouTube Player Test</h1><span>V2 · AUTO-START TEST</span></div>
+ <section class="test-stage" aria-label="Experimental YouTube video player">
+  <div class="yt-surface" id="surface">
+   <div id="startup" role="status" aria-live="polite">
+    <div class="big">WVLRP · Preparing camera</div>
+    <div class="number" id="seconds">5</div>
+    <div class="small">Video will appear after five seconds</div>
+   </div>
+   <div id="youtube-player" hidden></div>
+  </div>
+  <p id="player-feedback"><b>Starting:</b> Five-second WVLRP loading screen, then muted YouTube autoplay. You can turn sound on in the player.</p>
+ </section>
+ <button type="button" id="tap-start">Tap to start video if autoplay was blocked</button>
+ <p class="test-note"><strong>Test footage only:</strong> Cornell Lab Bird Cams sample, not a WVLRP camera. This page does not modify East Bank, West Bank, or any live feed. YouTube branding and controls are left intact.</p>
+ <section class="test-settings">
+  <label for="video-url">Try another YouTube video or livestream</label>
+  <div class="test-row"><input id="video-url" type="url" placeholder="https://www.youtube.com/live/..." autocomplete="off" inputmode="url"><button id="change-video" type="button">Test video</button></div>
+  <p class="help" id="test-status">A new video resets the five-second countdown. The test link is unlisted from WVLRP navigation.</p>
+  <p class="help"><a id="youtube-source" href="https://www.youtube.com/live/x10vL6_47Dw" target="_blank" rel="noopener">Open the sample directly on YouTube</a> if YouTube won't allow it to embed.</p>
+ </section>
+ <p class="help">Chrome and YouTube can prevent autoplay under some conditions. The player must be visible, and automatic video must initially be muted. We cannot force playback or remove YouTube branding.</p>
+</main>
+<script>
+(function(){
+ "use strict";
+ var defaultId="x10vL6_47Dw";
+ var currentId=defaultId;
+ var activePlayer=null;
+ var delayed=null;
+ var counter=null;
+ var fallbackTimer=null;
+ var waitingForAPI=false;
+ var apiReady=!!(window.YT&&window.YT.Player);
+ var startup=document.getElementById("startup");
+ var surface=document.getElementById("surface");
+ var seconds=document.getElementById("seconds");
+ var root=document.getElementById("youtube-player");
+ var feedback=document.getElementById("player-feedback");
+ var source=document.getElementById("youtube-source");
+ var tap=document.getElementById("tap-start");
+ var field=document.getElementById("video-url");
+ var status=document.getElementById("test-status");
+ function videoId(raw){
+   raw=String(raw||"").trim();
+   if(/^[A-Za-z0-9_-]{11}$/.test(raw))return raw;
+   var url;try{url=new URL(raw)}catch(e){return null}
+   var host=url.hostname.toLowerCase(),parts=url.pathname.split("/").filter(Boolean),id=null;
+   if(["youtube.com","www.youtube.com","m.youtube.com","www.youtube-nocookie.com","youtube-nocookie.com"].includes(host)){
+      id=url.pathname==="/watch"?url.searchParams.get("v"):(["live","embed","shorts"].includes(parts[0])?parts[1]:null);
+   }else if(["youtu.be","www.youtu.be"].includes(host))id=parts[0];
+   return id&&/^[A-Za-z0-9_-]{11}$/.test(id)?id:null;
+ }
+ function message(s){feedback.textContent=s}
+ function cleanup(){
+   clearTimeout(delayed);clearInterval(counter);clearTimeout(fallbackTimer);
+   if(activePlayer&&typeof activePlayer.destroy==="function"){try{activePlayer.destroy()}catch(e){}}
+   activePlayer=null;root.replaceChildren();root.hidden=true;startup.hidden=false;tap.classList.remove("visible");waitingForAPI=false;
+ }
+ function plainFallback(){
+    if(!waitingForAPI)return;
+    waitingForAPI=false;
+    root.replaceChildren();
+    var iframe=document.createElement("iframe");
+    iframe.title="YouTube wildlife sample video player";
+    iframe.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";
+    iframe.allowFullscreen=true;
+    iframe.referrerPolicy="strict-origin-when-cross-origin";
+    iframe.src="https://www.youtube.com/embed/"+encodeURIComponent(currentId)+"?autoplay=1&mute=1&playsinline=1&controls=1&rel=0";
+    root.appendChild(iframe);
+    message("YouTube player shown. Muted autoplay requested; if Chrome blocks it, tap Play in the video.");
+    tap.classList.add("visible");
+ }
+ function createPlayer(){
+   if(!waitingForAPI)return;
+   if(!apiReady){
+      fallbackTimer=setTimeout(plainFallback,3000);
+      return;
+   }
+   waitingForAPI=false;
+   try{
+     activePlayer=new YT.Player(root,{width:"100%",height:"100%",videoId:currentId,
+       playerVars:{autoplay:1,mute:1,playsinline:1,controls:1,rel:0,origin:location.origin},
+       events:{
+         onReady:function(evt){evt.target.mute();evt.target.playVideo();message("Player loaded. Attempting muted autoplay…");},
+         onStateChange:function(evt){if(evt.data===YT.PlayerState.PLAYING){message("Playing automatically with sound muted. Turn sound on in YouTube's controls.");tap.classList.remove("visible")}},
+         onAutoplayBlocked:function(){message("Chrome or YouTube blocked autoplay. Tap Play to start the video.");tap.classList.add("visible")},
+         onError:function(evt){message("YouTube returned video error "+evt.data+". This sample may have ended or prevented embedding. Try another video.");tap.classList.add("visible")}
+       }
+     });
+     // An explicit fallback is available even when the API never emits autoplay-blocked.
+     tap.classList.add("visible");
+   }catch(e){waitingForAPI=true;plainFallback()}
+ }
+ function begin(){
+    startup.hidden=true;root.hidden=false;surface.setAttribute("aria-busy","false");
+    waitingForAPI=true;message("Five-second wait finished. Opening YouTube and requesting muted autoplay…");
+    createPlayer();
+ }
+ function schedule(id){
+    cleanup();currentId=id;source.href="https://www.youtube.com/watch?v="+encodeURIComponent(id);
+    surface.setAttribute("aria-busy","true");seconds.textContent="5";
+    var n=5;
+    message("Preparing WVLRP player. Video will appear after five seconds and try to autoplay without sound.");
+    counter=setInterval(function(){n=Math.max(0,n-1);seconds.textContent=String(n);if(n===0)clearInterval(counter)},1000);
+    delayed=setTimeout(begin,5000);
+ }
+ window.onYouTubeIframeAPIReady=function(){apiReady=true;if(waitingForAPI){clearTimeout(fallbackTimer);createPlayer()}};
+ var apiScript=document.createElement("script");apiScript.src="https://www.youtube.com/iframe_api";apiScript.async=true;document.head.appendChild(apiScript);
+ document.getElementById("change-video").addEventListener("click",function(){
+   var id=videoId(field.value);
+   if(!id){status.textContent="That isn't a supported YouTube video link. Please paste the full YouTube address.";return}
+   status.textContent="New video selected. Starting the five-second WVLRP splash again.";schedule(id);
+ });
+ field.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();document.getElementById("change-video").click()}});
+ tap.addEventListener("click",function(){
+    if(activePlayer&&typeof activePlayer.playVideo==="function"){activePlayer.mute();activePlayer.playVideo()}
+    else {var f=root.querySelector("iframe");if(f){f.focus();message("If playback hasn't started, tap Play inside the YouTube video itself.")}}
+ });
+ schedule(defaultId);
+})();
+</script>
+</body>
+</html>
