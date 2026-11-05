@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1b16">
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Unlisted WVLRP YouTube embedded player evaluation.">
+<title>YouTube Player Test · WVLRP</title>
+<link rel="stylesheet" href="public-site.css?v=20261008-newsite">
+<style>
+.preview-note{border:1px solid #817751;background:#332e1c;color:#f5eac9;padding:13px 17px;border-radius:7px;font-size:13px;margin:10px 0 22px}
+.preview-note strong{color:#ffe4a4}
+.demo-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;background:#193426;border-bottom:1px solid #3f5547}
+.demo-head b{font-size:13px;letter-spacing:.055em}
+.demo-head span{font-size:12px;color:#c7dac8}
+.yt-box{width:100%;aspect-ratio:16/9;background:#000;position:relative}
+.yt-box iframe{display:block;width:100%;height:100%;border:0}
+.test-label{font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.test-controls{display:flex;flex-direction:column;gap:11px;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:20px;margin-top:22px}
+.test-controls label{font-size:13px;font-weight:700}
+.test-row{display:flex;gap:10px;flex-wrap:wrap}
+.test-row input{min-width:0;flex:1 1 240px;font-size:16px;color:#fff;background:#0e1b16;border:1px solid #8b9b91;border-radius:5px;padding:12px}
+.test-row button{padding:11px 17px;border-radius:5px;border:1px solid var(--gold);background:var(--gold);color:#14251b;font-weight:700;cursor:pointer}
+.test-row button:active{transform:translateY(1px)}
+#status{font-size:13px;color:#cad7cd;min-height:22px;margin:0}
+.sample-note{margin:0;color:#c9d7ca;font-size:13px}
+.sample-note a{color:var(--gold)}
+.rules{border-top:1px solid var(--line);margin-top:23px;padding-top:20px;color:#c8d9ca;font-size:14px}
+.rules strong{color:#fff}
+@media(max-width:750px){.camera-heading{padding-top:26px}.camera-heading h1{font-size:40px}.test-controls{padding:15px}.demo-head{padding:10px 12px}.yt-box{min-height:0}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="brand" aria-label="WVLRP homepage"><span class="mark" aria-hidden="true">W</span><span><b>WVLRP</b><small>West Virginia Live Research Project</small></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="index.html">Home</a><a href="east-bank.html">East Bank</a><a href="west-bank.html">West Bank</a><a href="the-roost.html">The Roost</a><a href="sponsors.html">Partnerships</a></nav>
+</header>
+<main>
+ <section class="camera-heading">
+  <span class="eyebrow">WVLRP · Private technology evaluation</span>
+  <h1>YouTube Player Test</h1>
+  <p class="lead">A real YouTube embed, surrounded by the same WVLRP styling as our camera pages. Try the player and decide how the branding looks on your phone.</p>
+ </section>
+ <div class="preview-note"><strong>PREVIEW ONLY.</strong> The footage below is an independent third-party sample, <strong>not</strong> an East Bank or West Bank camera. This page does not replace any existing WVLRP broadcast.</div>
+ <section class="video-panel" aria-label="YouTube video player demonstration">
+  <div class="demo-head"><b>WVLRP · Player comparison</b><span>Sample camera: Cornell Lab Bird Cams</span></div>
+  <div class="yt-box">
+   <iframe id="yt-frame"
+    src="https://www.youtube-nocookie.com/embed/x10vL6_47Dw?playsinline=1&amp;rel=0"
+    title="YouTube preview, Cornell Lab Bird Cams third-party sample"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen loading="eager"></iframe>
+  </div>
+  <div class="player-bar"><small>YouTube embed · This test shows YouTube's actual playback interface</small><a id="open-source" href="https://www.youtube.com/watch?v=x10vL6_47Dw" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--gold)">Open source video in YouTube ↗</a></div>
+ </section>
+ <section class="test-controls" aria-label="Try another YouTube video">
+  <div class="test-label">Try your own YouTube video</div>
+  <label for="yt-url">Paste a YouTube video or live-stream link</label>
+  <div class="test-row"><input type="url" id="yt-url" inputmode="url" placeholder="https://www.youtube.com/live/..." autocomplete="off"><button id="load-video" type="button">Load into player</button></div>
+  <p id="status" aria-live="polite">The preview starts with a Cornell Lab wildlife camera example. Playback depends on the source still being live and allowing embeds.</p>
+  <p class="sample-note">Source: <a href="https://www.allaboutbirds.org/cams/cornell-lab-feederwatch/" target="_blank" rel="noopener">Cornell Lab Bird Cams</a>. This source is for demonstrating player appearance only. WVLRP is not affiliated with Cornell Lab.</p>
+ </section>
+ <div class="rules"><strong>Important:</strong> YouTube may display its logo, channel identity, and ads inside this player. We are deliberately not hiding, cropping or covering its controls. Changing videos here does not change any live WVLRP camera stream.</div>
+ <section class="camera-details">
+  <div><span class="eyebrow">Side-by-side assessment</span><h2>How does YouTube fit our design?</h2><p class="muted">Compare this page with <a href="east-bank.html" style="color:var(--gold)">the normal East Bank player</a>. Our own surrounding page, navigation, and sponsor space stay WVLRP-branded; the video area itself is under YouTube's control.</p></div>
+  <aside class="aside"><span class="eyebrow">Site navigation</span><p><a href="east-bank.html">Return to the live East Bank camera →</a></p><p><a href="index.html">Back to WVLRP home →</a></p></aside>
+ </section>
+</main>
+<footer><span>© WVLRP · West Virginia Live Research Project</span><nav aria-label="Footer links"><a href="index.html">Home</a><a href="east-bank.html">East Bank</a><a href="west-bank.html">West Bank</a></nav><span>We do it live.</span></footer>
+<script>
+(function(){
+  "use strict";
+  var input=document.getElementById("yt-url");
+  var status=document.getElementById("status");
+  var frame=document.getElementById("yt-frame");
+  var source=document.getElementById("open-source");
+  function extractId(raw){
+    raw=String(raw||"").trim();
+    if(/^[a-zA-Z0-9_-]{11}$/.test(raw))return raw;
+    var u;
+    try{u=new URL(raw)}catch(_){return null}
+    var host=u.hostname.toLowerCase();
+    var id=null;
+    if(host==="youtube.com"||host==="www.youtube.com"||host==="m.youtube.com"||host==="music.youtube.com"||host==="youtube-nocookie.com"||host==="www.youtube-nocookie.com"){
+      if(u.pathname==="/watch")id=u.searchParams.get("v");
+      else {var parts=u.pathname.split("/").filter(Boolean);if(["live","embed","shorts"].includes(parts[0]))id=parts[1]}
+    }else if(host==="youtu.be"||host==="www.youtu.be"){id=u.pathname.split("/").filter(Boolean)[0]}
+    return id&&/^[a-zA-Z0-9_-]{11}$/.test(id)?id:null;
+  }
+  function load(){
+    var id=extractId(input.value);
+    if(!id){status.textContent="That link doesn't look like a YouTube video or live-stream URL. Try a youtube.com/live/... or youtube.com/watch?v=... link.";return}
+    frame.src="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)+"?playsinline=1&rel=0";
+    source.href="https://www.youtube.com/watch?v="+encodeURIComponent(id);
+    frame.title="YouTube player demonstration of the selected video";
+    status.textContent="Loaded. Tap the player to watch. If YouTube blocks embedding or the broadcast has ended, open the video directly on YouTube.";
+  }
+  document.getElementById("load-video").addEventListener("click",load);
+  input.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();load()}});
+})();
+</script>
+</body>
+</html>
