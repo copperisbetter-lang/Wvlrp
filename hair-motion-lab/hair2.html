@@ -56,7 +56,7 @@ footer{font-size:11px;color:#a7becb;line-height:1.45}
 <body>
 <header><b>THE WILD · HAIR2 PONYTAIL</b><small>Real uploaded FBX hair cards • two detail levels • mobile motion test</small></header>
 <main>
-<div id="stage"><canvas id="scene"></canvas><div class="overlay"><strong id="status">Loading actual Hair2…</strong><small id="detail">Original downloaded hairstyle, not a generic substitute</small></div><div id="stats">Preparing viewer…</div><div id="help">Drag to turn • Pinch to zoom</div></div>
+<div id="stage"><canvas id="scene"></canvas><div class="overlay"><strong id="status">Loading actual Hair2…</strong><small id="detail">Original downloaded hairstyle, not a generic substitute</small></div><div id="stats">Preparing viewer…</div><div id="motionBadge" style="position:absolute;left:12px;bottom:47px;background:#194a46e8;border:1px solid #63bda9;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:bold">Ponytail swing: loading…</div><div id="help">Drag to turn • Pinch to zoom</div></div>
 <aside>
 <section>
 <h2>Original Hair2 mesh</h2>
@@ -74,10 +74,10 @@ footer{font-size:11px;color:#a7becb;line-height:1.45}
 </section>
 <section>
 <h2>Test added hair sway</h2>
-<p class="notice"><b>Important:</b> This is SIMULATED sway applied to the actual Hair2 mesh. It does not prove the downloaded hair has physics.</p>
-<label for="sway">Tip movement <output id="swayOut">40%</output></label><input id="sway" type="range" min="0" max="100" value="40" step="5">
-<button id="whip">Quick head turn + ponytail whip</button>
-<p id="swayInfo">Switch sway to 0% to see the original rigid hair cards.</p>
+<p class="notice"><b>Important:</b> This is SIMULATED sway applied to the actual Hair2 mesh. It does not prove the downloaded hair has physics. The original FBX has no native animation.</p>
+<label for="sway">Tip movement <output id="swayOut">75%</output></label><input id="sway" type="range" min="0" max="100" value="75" step="5">
+<button id="whip">SWING TEST · Quick head turn + ponytail whip</button>
+<p id="swayInfo">Visible motion TEST: simulated ponytail sway is ON. Switch to 0% to see the original rigid cards.</p>
 </section>
 <section><h2>What to look for</h2><p>Which detail level looks more realistic on your Samsung? Does the ponytail move smoothly or clip into the head? This neutral test head is not Beverly or Gina. Hair-card texturing here is preliminary because the uploaded ZIP doesn't contain a dedicated cutout-opacity atlas.</p></section>
 <footer>Assets: owner-uploaded WhiteCap Female Ponytail Messy Wavy original LOD1 and LOD2 FBX hair cards, exported for viewer only. No changes to approved character masters or live game. <a style="color:#91d6f8" href="https://www.fab.com/listings/a3425afb-5801-455e-a6a1-e27632d493db">Source listing</a>.</footer>
@@ -104,7 +104,7 @@ const head=shape(new THREE.SphereGeometry(1,32,20),skin,0,.25,0,.23,.315,.23);
 shape(new THREE.SphereGeometry(1,20,14),skin,0,.23,.227,.048,.069,.064);
 shape(new THREE.CylinderGeometry(.1,.14,.27,24),skin,0,-.15,0,1,1,1);
 shape(new THREE.SphereGeometry(1,32,14),new THREE.MeshStandardMaterial({color:0x758ca0}),0,-.33,0,.47,.17,.3);
-let hair=null,segments=[],colors=[],selected='lod1',token=0;
+let hair=null,segments=[],colors=[],selected='lod1',token=0,lastTipCm=0;
 const meta={lod1:{triangles:18000,segments:11},lod2:{triangles:11524,segments:8}};
 async function dataFor(lod){
  const chunks=window.Hair2Chunks[lod];
@@ -156,6 +156,7 @@ async function load(lod){
 document.getElementById('lod').onchange=e=>load(e.target.value);
 document.getElementById('color').onchange=colorize;
 let turn=true,walk=true,paused=false,phase=0,whipStart=-100,prev=performance.now(),frames=0,start=performance.now();
+window.hair2MotionDebug=()=>({selected,tipCm:lastTipCm,scale:hair?.scale.x||0,segments:segments.length,headAngle:rig.rotation.y,simulatedAmount:Number(sway.value)});
 function setbutton(id,active,on,off){const b=document.getElementById(id);b.textContent=active?on:off;b.setAttribute('aria-pressed',String(active))}
 document.getElementById('turn').onclick=()=>{turn=!turn;setbutton('turn',turn,'Turn ON','Turn OFF')};
 document.getElementById('walk').onclick=()=>{walk=!walk;setbutton('walk',walk,'Walk bounce ON','Walk bounce OFF')};
@@ -175,18 +176,28 @@ function frame(now){
  rig.rotation.z=(turn?.09*Math.sin(phase*.9):0)+whip*.1;
  rig.position.y=walk?.035*Math.sin(phase*8):0;
  const amount=Number(sway.value)/100;
+ let tipCm=0;
+ const inverseScale=1/Math.max(.00001,hair?.scale.x||1);
  for(const s of segments){
    const a=s.pos.array,b=s.arr,h=Math.max(0.00001,s.max-s.min);
    if(amount===0){if(s.modified){a.set(b);s.pos.needsUpdate=true;s.modified=false}continue}
    for(let i=0;i<a.length;i+=3){
      const t=Math.max(0,Math.min(1,(s.max-b[i+1])/h));
-     const weight=Math.pow(t,2.4);
-     a[i]=b[i]+(Math.sin(phase*3.2+t*4)*.6+whip*2.3)*weight*amount;
+     const weight=Math.pow(t,1.9);
+     // Crucial unit correction: imported FBX coordinates are centimeters, viewer meters.
+     // Convert visible simulated swing (up to ~13 cm at free tips) back to source units.
+     const swayM=(Math.sin(phase*2.5-t*2)*.13 + whip*.12)*weight*amount;
+     const depthM=Math.cos(phase*2.3-t*2.4)*.038*weight*amount;
+     a[i]=b[i]+swayM*inverseScale;
      a[i+1]=b[i+1];
-     a[i+2]=b[i+2]+Math.cos(phase*2.9+t*3)*weight*amount*.2;
+     a[i+2]=b[i+2]+depthM*inverseScale;
+     tipCm=Math.max(tipCm,Math.abs(swayM)*100);
    }
    s.modified=true;s.pos.needsUpdate=true;
  }
+ lastTipCm=tipCm;
+ const badge=document.getElementById('motionBadge');
+ if(hair)badge.textContent=amount>0?'SIMULATED ponytail swing · '+tipCm.toFixed(1)+' cm':'Original hair: rigid (0 cm)';
  controls.update();renderer.render(scene,camera);frames++;
  if(now-start>1200){stats.textContent=(selected==='lod1'?'LOD1 18,000':'LOD2 11,524')+' triangles · '+Math.round(frames*1000/(now-start))+' FPS';frames=0;start=now}
 }
