@@ -81,6 +81,6 @@ jobs:
             console.log('SECOND_MODEL_RESULT',JSON.stringify(second));
             if(second.selected!=='pocolov' || second.pieces!==19 || !second.heading.includes('Pocolov Hair 06 loaded'))process.exitCode=1;
             await browser.close();
-            if(values.pieces!==10 || !values.canvas || !values.heading.includes('Real hairstyle loaded') || values.wind!=='0.8' || !values.deflection.includes('Simulated tip deflection') || errors.some(e=>e.includes('Canvas frames identical')))process.exitCode=1;
+            if(values.pieces!==10 || !values.canvas || !values.heading.includes('Realistic Brown loaded') || values.wind!=='0.8' || !values.deflection.includes('Simulated tip deflection') || errors.some(e=>e.includes('Canvas frames identical')))process.exitCode=1;
           })().catch(e=>{console.log('BROWSER_FATAL',String(e));process.exitCode=1})
           JS
