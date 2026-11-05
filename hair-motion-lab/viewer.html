@@ -30,7 +30,7 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 @media(max-width:780px){main{display:block}.stage{height:56dvh;min-height:330px;max-height:560px}aside{border-left:none;border-top:1px solid #344454;padding:12px 12px 24px}header b{font-size:16px}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
-<script>window.HairChunks=[];</script>
+<script>window.HairChunks=[];window.PocolovChunks=[];</script>
 <script src="./hair-data/piece00.js"></script>
 <script src="./hair-data/piece01.js"></script>
 <script src="./hair-data/piece02.js"></script>
@@ -41,6 +41,25 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 <script src="./hair-data/piece07.js"></script>
 <script src="./hair-data/piece08.js"></script>
 <script src="./hair-data/piece09.js"></script>
+<script src="./pocolov-data/piece00.js"></script>
+<script src="./pocolov-data/piece01.js"></script>
+<script src="./pocolov-data/piece02.js"></script>
+<script src="./pocolov-data/piece03.js"></script>
+<script src="./pocolov-data/piece04.js"></script>
+<script src="./pocolov-data/piece05.js"></script>
+<script src="./pocolov-data/piece06.js"></script>
+<script src="./pocolov-data/piece07.js"></script>
+<script src="./pocolov-data/piece08.js"></script>
+<script src="./pocolov-data/piece09.js"></script>
+<script src="./pocolov-data/piece10.js"></script>
+<script src="./pocolov-data/piece11.js"></script>
+<script src="./pocolov-data/piece12.js"></script>
+<script src="./pocolov-data/piece13.js"></script>
+<script src="./pocolov-data/piece14.js"></script>
+<script src="./pocolov-data/piece15.js"></script>
+<script src="./pocolov-data/piece16.js"></script>
+<script src="./pocolov-data/piece17.js"></script>
+<script src="./pocolov-data/piece18.js"></script>
 </head>
 <body>
 <header><div class="top"><div><b>THE WILD · HAIR MOTION LAB</b><small>Isolated 3D test • original uploaded hair geometry • phone-friendly</small></div><div class="pill">Preview only</div></div></header>
@@ -50,8 +69,8 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 <div id="performance">Model: loading · FPS: —</div><div id="motionOverlay" style="position:absolute;top:104px;left:14px;padding:7px 10px;color:#ffe9b0;background:#3d2a0cdd;border:1px solid #ab8b45;border-radius:9px;font-size:12px">SIMULATED hair sway: ACTIVE</div><div id="orbitHint">Drag to rotate · Pinch to zoom</div></div>
 <aside>
 <section><h2>Real hair asset</h2>
-<label for="modelSelect">Hair model <span>1 uploaded model</span></label>
-<select id="modelSelect"><option value="brown">Realistic Brown • 4,134 tris</option></select>
+<label for="modelSelect">Hair model <span>2 uploaded models</span></label>
+<select id="modelSelect"><option value="brown">Realistic Brown • 4,134 tris</option><option value="pocolov">Pocolov Hair 06 • 7,938 tris</option></select>
 <label for="colorSelect">Color preview <span>same geometry</span></label>
 <select id="colorSelect"><option value="original">Original brown</option><option value="blonde">Blonde tint test</option><option value="auburn">Auburn tint test</option><option value="dark">Dark brown tint test</option></select>
 <div class="status" id="nativeLabel">Native animation: checking…</div>
@@ -68,7 +87,7 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 </section>
 <section><h2>What to check</h2>
 <small class="hint">Does the hair follow head turns? Does the shape remain intact while bouncing? Does the crown intersect the test head? Does performance stay smooth? Styling and alignment are preliminary; this is a generic test bust, not Beverly or Gina.</small></section>
-<footer>Model: <a href="https://sketchfab.com/3d-models/realistic-brown-3d-hair-game-ready-c00848897b7f46da803d20dbc8f19861" target="_blank" rel="noopener">Realistic Brown 3D Hair — Game Ready</a> by Cinemorph (CC BY). Uploaded to project GitHub release Hair; 3,340 vertices / 4,134 triangles. No original rig or animations. No changes to approved characters or game.</footer>
+<footer>Models: <a href="https://sketchfab.com/3d-models/realistic-brown-3d-hair-game-ready-c00848897b7f46da803d20dbc8f19861" target="_blank" rel="noopener">Realistic Brown Hair</a> by Cinemorph (CC BY) and Pocolov Hair 06 from the owner-uploaded asset. Both are unrigged; simulated sway is for preview only. No changes to the live game or approved characters.</footer>
 </aside>
 </main>
 <script type="module">
@@ -93,35 +112,50 @@ const neck=new THREE.Mesh(new THREE.CylinderGeometry(.11,.14,.28,20),bustmat);ne
 const shoulders=new THREE.Mesh(new THREE.SphereGeometry(1,32,16),new THREE.MeshStandardMaterial({color:0x778fa2,roughness:.92}));shoulders.scale.set(.46,.18,.28);shoulders.position.set(0,-.31,0);rig.add(shoulders);
 const nose=new THREE.Mesh(new THREE.SphereGeometry(1,14,9),bustmat);nose.scale.set(.055,.08,.075);nose.position.set(0,.28,.247);rig.add(nose);
 let hairModel=null;
-const originals=[],hairMaterials=[];
+let originals=[],hairMaterials=[];
+let currentHair='brown';
 const statusHeading=document.getElementById('statusHeading'),statusText=document.getElementById('statusText'),nativeLabel=document.getElementById('nativeLabel');
 const setStatus=(h,t)=>{statusHeading.textContent=h;statusText.textContent=t};
-try{
-  if(window.HairChunks.length!==10)throw Error('Not all mesh data pieces loaded ('+window.HairChunks.length+'/10).');
-  const b64=window.HairChunks.join('');
+const hairData={
+ brown:{name:'Realistic Brown',tris:4134,segments:window.HairChunks,expected:10},
+ pocolov:{name:'Pocolov Hair 06',tris:7938,segments:window.PocolovChunks,expected:19}
+};
+function loadHair(id){
+ const info=hairData[id];currentHair=id;
+ setStatus('Loading '+info.name+'…','Using original uploaded mesh; no original hair animation.');
+ if(hairModel){rig.remove(hairModel);hairModel=null;}
+ originals=[];hairMaterials=[];
+ try{
+  if(info.segments.length!==info.expected)throw Error('Missing model pieces ('+info.segments.length+'/'+info.expected+')');
+  const b64=info.segments.join('');
   const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
   const loader=new GLTFLoader();
   loader.parse(bytes.buffer,'',gltf=>{
     hairModel=gltf.scene;
-    const bbox=new THREE.Box3().setFromObject(hairModel);const dims=bbox.getSize(new THREE.Vector3());const center=bbox.getCenter(new THREE.Vector3());
-    if(dims.y<=0)throw Error('Invalid model dimensions');
-    const scale=.83/dims.y;
+    const bounds=new THREE.Box3().setFromObject(hairModel);
+    const dims=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
+    if(dims.y<=0)throw Error('Invalid hairstyle dimensions');
+    const height=id==='brown'?.83:.68;
+    const scale=height/dims.y;
     hairModel.scale.setScalar(scale);
-    hairModel.position.set(-center.x*scale, .56-center.y*scale, -center.z*scale);
+    hairModel.position.set(-center.x*scale,(id==='brown'?.56:.53)-center.y*scale,-center.z*scale);
     hairModel.traverse(o=>{
       if(!o.isMesh)return;
-      o.material=o.material.clone();o.material.side=THREE.DoubleSide;
-      if('roughness' in o.material)o.material.roughness=Math.max(.35,o.material.roughness||.5);
-      hairMaterials.push({mat:o.material,color:o.material.color?o.material.color.clone():null});
-      const geom=o.geometry=o.geometry.clone(), pos=geom.attributes.position;
+      if(Array.isArray(o.material)){o.material=o.material.map(m=>m.clone());for(const m of o.material){m.side=THREE.DoubleSide;hairMaterials.push({mat:m,color:m.color?m.color.clone():null})}}
+      else{ o.material=o.material.clone();o.material.side=THREE.DoubleSide;hairMaterials.push({mat:o.material,color:o.material.color?o.material.color.clone():null});}
+      const geom=o.geometry=o.geometry.clone(),pos=geom.attributes.position;
       geom.computeBoundingBox();
       originals.push({pos,base:Float32Array.from(pos.array),miny:geom.boundingBox.min.y,maxy:geom.boundingBox.max.y});
     });
     rig.add(hairModel);
-    nativeLabel.textContent='Original hair: 0 skins · 0 animations · NO native hair motion';
-    setStatus('Real hairstyle loaded','Visible sway is ON for demonstration; this is a simulation, NOT native hair physics.');
-  },e=>{setStatus('Model could not load',String(e));nativeLabel.textContent='No mesh loaded.'});
-}catch(e){setStatus('Loading issue',e.message);nativeLabel.textContent='No mesh loaded.'}
+    document.getElementById('colorSelect').dispatchEvent(new Event('change'));
+    nativeLabel.textContent=info.name+': NO original hair bones or animation clips';
+    setStatus(info.name+' loaded','Select the other hairstyle above to compare. Sway slider adds simulated movement only.');
+  },e=>setStatus('Model load failed',String(e)));
+ }catch(e){setStatus('Model load failed',e.message)}
+}
+document.getElementById('modelSelect').onchange=e=>loadHair(e.target.value);
+loadHair('brown');
 let turning=true,walking=true,paused=false,phase=0,last=performance.now(),frames=0,frameWindow=performance.now(),whipStart=-100,headWhip=0,tipMeters=0;
 const turnBtn=document.getElementById('turnBtn'),walkBtn=document.getElementById('walkBtn'),pauseBtn=document.getElementById('pauseBtn'),wind=document.getElementById('wind'),speed=document.getElementById('headSpeed');
 function toggle(btn,v,on,off){btn.setAttribute('aria-pressed',String(v));btn.textContent=v?on:off}
@@ -166,7 +200,7 @@ for(const g of originals){
 }
 document.getElementById('motionReadout').textContent=amt>0?'Simulated tip deflection: '+(tipMotion*(hairModel?.scale.x||0)*100).toFixed(1)+' cm · Swing is added, not native':'0%: Original rigid hairstyle, no independent motion';
 controls.update();renderer.render(scene,camera);
-if(now-frameWindow>1300){document.getElementById('performance').textContent='Brown hair: 4,134 tris · FPS: '+Math.round(frames*1000/(now-frameWindow));frames=0;frameWindow=now}
+if(now-frameWindow>1300){document.getElementById('performance').textContent=hairData[currentHair].name+': '+hairData[currentHair].tris.toLocaleString()+' tris · FPS: '+Math.round(frames*1000/(now-frameWindow));frames=0;frameWindow=now}
 }requestAnimationFrame(animate);
 </script>
 </body></html>
