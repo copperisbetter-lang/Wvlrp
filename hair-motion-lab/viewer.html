@@ -47,7 +47,7 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 <main>
 <div class="stage"><canvas id="canvas"></canvas>
 <div class="floating"><b id="statusHeading">Loading real hair mesh…</b><p id="statusText">Please wait for the 3D model.</p></div>
-<div id="performance">Model: loading · FPS: —</div><div id="orbitHint">Drag to rotate · Pinch to zoom</div></div>
+<div id="performance">Model: loading · FPS: —</div><div id="motionOverlay" style="position:absolute;top:104px;left:14px;padding:7px 10px;color:#ffe9b0;background:#3d2a0cdd;border:1px solid #ab8b45;border-radius:9px;font-size:12px">SIMULATED hair sway: ACTIVE</div><div id="orbitHint">Drag to rotate · Pinch to zoom</div></div>
 <aside>
 <section><h2>Real hair asset</h2>
 <label for="modelSelect">Hair model <span>1 uploaded model</span></label>
@@ -62,8 +62,8 @@ a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
 <div class="twocol"><button id="pauseBtn" aria-pressed="false">Pause motion</button><button id="resetBtn">Reset view</button></div>
 </section>
 <section><h2>Optional wind simulation</h2>
-<small class="hint warning">This is added TEST motion, not movement supplied by the hair asset. Turn it off to judge the original mesh.</small>
-<label for="wind">Simulated hair-tip sway <span id="windValue">OFF</span></label><input id="wind" type="range" min="0" max="1" step=".05" value="0">
+<small class="hint warning">This is added TEST motion, not movement supplied by the hair asset. Turn it down to 0% to judge the original mesh. The hair file does NOT contain its own physics.</small>
+<label for="wind">Simulated hair-tip sway <span id="windValue">80%</span></label><input id="wind" type="range" min="0" max="1" step=".05" value=".8"><button id="whipBtn" style="margin-top:10px;background:#3c654f">Quick head turn + hair whip</button><div class="status warning" id="motionReadout">Starting simulated sway…</div>
 <small class="hint">Head rotation moves the whole hair object. The wind option bends mesh vertices to preview how a future hair physics solution might look; it does not prove this download has built-in physics.</small>
 </section>
 <section><h2>What to check</h2>
@@ -119,17 +119,18 @@ try{
     });
     rig.add(hairModel);
     nativeLabel.textContent='Original hair: 0 skins · 0 animations · NO native hair motion';
-    setStatus('Real hairstyle loaded','Head motion follows the test rig. Wind is OFF by default.');
+    setStatus('Real hairstyle loaded','Visible sway is ON for demonstration; this is a simulation, NOT native hair physics.');
   },e=>{setStatus('Model could not load',String(e));nativeLabel.textContent='No mesh loaded.'});
 }catch(e){setStatus('Loading issue',e.message);nativeLabel.textContent='No mesh loaded.'}
-let turning=true,walking=true,paused=false,phase=0,last=performance.now(),frames=0,frameWindow=performance.now();
+let turning=true,walking=true,paused=false,phase=0,last=performance.now(),frames=0,frameWindow=performance.now(),whipStart=-100,headWhip=0,tipMeters=0;
 const turnBtn=document.getElementById('turnBtn'),walkBtn=document.getElementById('walkBtn'),pauseBtn=document.getElementById('pauseBtn'),wind=document.getElementById('wind'),speed=document.getElementById('headSpeed');
 function toggle(btn,v,on,off){btn.setAttribute('aria-pressed',String(v));btn.textContent=v?on:off}
 turnBtn.onclick=()=>{turning=!turning;toggle(turnBtn,turning,'Head turn ON','Head turn OFF')};
 walkBtn.onclick=()=>{walking=!walking;toggle(walkBtn,walking,'Walk bounce ON','Walk bounce OFF')};
 pauseBtn.onclick=()=>{paused=!paused;toggle(pauseBtn,paused,'Resume motion','Pause motion')};
 document.getElementById('resetBtn').onclick=()=>{camera.position.set(0,.38,2.35);controls.target.set(0,.38,0);controls.update()};
-wind.oninput=()=>document.getElementById('windValue').textContent=(+wind.value>0?(+wind.value*100).toFixed(0)+'%':'OFF');
+wind.oninput=()=>{document.getElementById('windValue').textContent=(+wind.value>0?(+wind.value*100).toFixed(0)+'%':'OFF');document.getElementById('motionOverlay').textContent=+wind.value>0?'SIMULATED hair sway: ACTIVE':'NATIVE hair motion: NONE';};
+document.getElementById('whipBtn').onclick=()=>{whipStart=phase;paused=false;toggle(pauseBtn,false,'Pause motion','Pause motion');};
 speed.oninput=()=>document.getElementById('speedValue').textContent=(+speed.value).toFixed(1)+'×';
 document.getElementById('colorSelect').onchange=e=>{
 const colors={original:null,blonde:'#cba85e',auburn:'#873c28',dark:'#3a291e'};
@@ -140,22 +141,30 @@ function animate(now){
 requestAnimationFrame(animate);
 const dt=Math.min(.055,(now-last)/1000);last=now;frames++;
 if(!paused)phase+=dt*(+speed.value);
-rig.rotation.y=turning?.54*Math.sin(phase*1.4):0;
-rig.rotation.z=turning?.08*Math.sin(phase*.9):0;
-rig.position.y=walking?.041*Math.sin(phase*10):0;
+const whipAge=phase-whipStart;
+headWhip=whipAge>=0&&whipAge<3?Math.sin(whipAge*8)*Math.exp(-whipAge*1.1)*.85:0;
+rig.rotation.y=(turning?.75*Math.sin(phase*1.2):0)+headWhip;
+rig.rotation.z=(turning?.14*Math.sin(phase*.8):0)+(headWhip*.22);
+rig.position.y=walking?.072*Math.sin(phase*8):0;
 const amt=+wind.value;
+let tipMotion=0;
 for(const g of originals){
  const arr=g.pos.array,b=g.base,h=Math.max(0.00001,g.maxy-g.miny);
  if(amt===0){if(g.active){arr.set(b);g.pos.needsUpdate=true;g.active=false}continue}
  for(let i=0;i<arr.length;i+=3){
   const frac=Math.min(1,Math.max(0,(b[i+1]-g.miny)/h));
-  const tip=Math.pow(1-frac,1.8);
-  arr[i]=b[i]+amt*.6*tip*Math.sin(phase*2.7+frac*4.5);
+  const tip=Math.pow(1-frac,1.55);
+  // The source has no native hair rig: this ONLY previews an optional deforming effect.
+  const lateral=(Math.sin(phase*2.8+frac*2.0)*1.55+headWhip*1.8)*amt*tip;
+  const foreaft=Math.cos(phase*2.15+frac*1.8)*amt*tip*.38;
+  arr[i]=b[i]+lateral;
   arr[i+1]=b[i+1];
-  arr[i+2]=b[i+2]+amt*.2*tip*Math.cos(phase*2.3+frac*2);
+  arr[i+2]=b[i+2]+foreaft;
+  tipMotion=Math.max(tipMotion,Math.abs(lateral));
  }
  g.active=true;g.pos.needsUpdate=true;
 }
+document.getElementById('motionReadout').textContent=amt>0?'Simulated tip deflection: '+(tipMotion*(hairModel?.scale.x||0)*100).toFixed(1)+' cm · Swing is added, not native':'0%: Original rigid hairstyle, no independent motion';
 controls.update();renderer.render(scene,camera);
 if(now-frameWindow>1300){document.getElementById('performance').textContent='Brown hair: 4,134 tris · FPS: '+Math.round(frames*1000/(now-frameWindow));frames=0;frameWindow=now}
 }requestAnimationFrame(animate);
