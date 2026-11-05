@@ -1,0 +1,64 @@
+name: Verify Hair Motion Preview
+on:
+  push:
+    branches: [hair-motion-lab-20261104]
+    paths: [.github/workflows/verify-hair-motion-lab.yml]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check all public hair data pieces
+        run: |
+          python3 - <<'PY'
+          import pathlib,re,base64,struct
+          files=sorted(pathlib.Path('hair-motion-lab/hair-data').glob('piece*.js'))
+          assert len(files)==10, len(files)
+          s=''.join(re.search(r'push\("([A-Za-z0-9+/=]+)"\)',f.read_text()).group(1) for f in files)
+          b=base64.b64decode(s)
+          assert b[:4]==b'glTF'
+          assert struct.unpack_from('<I',b,8)[0]==len(b)
+          assert len(b)==429388
+          print('CHECK VERIFIED: 10 segments, 429388 bytes, valid GLB header')
+          PY
+      - name: Check preview web endpoint
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          urls=[
+            'https://raw.githack.com/copperisbetter-lang/Wvlrp/hair-motion-lab-20261104/hair-motion-lab/viewer.html',
+            'https://raw.githack.com/copperisbetter-lang/Wvlrp/hair-motion-lab-20261104/hair-motion-lab/hair-data/piece00.js']
+          for u in urls:
+            try:
+              req=urllib.request.Request(u,headers={'User-Agent':'HairMotionLab/1.0'})
+              with urllib.request.urlopen(req,timeout=25) as r:
+                data=r.read(100)
+                print('URL',r.status,'content-type',r.headers.get('Content-Type'),'first-bytes',data[:65],'url',u)
+                assert r.status==200 and len(data)>40
+            except Exception as e:
+              print('WEB PREVIEW CHECK ERROR:',str(e))
+              raise
+          PY
+      - name: Install headless browser test framework
+        run: npm install --no-save playwright-core
+      - name: Run 3D viewer smoke test
+        run: |
+          python3 -m http.server 8777 --bind 127.0.0.1 >/tmp/hairserver.log 2>&1 &
+          node <<'JS'
+          const { chromium }=require('playwright-core');
+          (async()=>{
+            const chrome='/usr/bin/google-chrome';
+            const browser=await chromium.launch({executablePath:chrome,headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+            const page=await browser.newPage({viewport:{width:390,height:780},deviceScaleFactor:1});
+            const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            await page.goto('http://127.0.0.1:8777/hair-motion-lab/viewer.html');
+            await page.waitForTimeout(9000);
+            const values=await page.evaluate(()=>({heading:document.getElementById('statusHeading').textContent,detail:document.getElementById('statusText').textContent,model:document.getElementById('nativeLabel').textContent,canvas:!!document.querySelector('canvas'),pieces:window.HairChunks?.length||0}));
+            console.log('BROWSER_RESULT',JSON.stringify(values));console.log('ERRORS',errors.slice(0,10));
+            await browser.close();
+            if(values.pieces!==10 || !values.canvas || !values.heading.includes('Real hairstyle loaded'))process.exitCode=1;
+          })().catch(e=>{console.log('BROWSER_FATAL',String(e));process.exitCode=1})
+          JS
