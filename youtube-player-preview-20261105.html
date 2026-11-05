@@ -16,6 +16,11 @@
 .demo-head span{font-size:12px;color:#c7dac8}
 .yt-box{width:100%;aspect-ratio:16/9;background:#000;position:relative}
 .yt-box iframe{display:block;width:100%;height:100%;border:0}
+.yt-box iframe[hidden]{display:none}
+.yt-wait{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;padding:20px;text-align:center;background:#020705;color:#e9f3e8}
+.yt-wait[hidden]{display:none}
+.yt-wait strong{font:normal 26px Georgia,serif;color:var(--gold)}
+.yt-wait span{font-size:13px;color:#d2dfd1}
 .test-label{font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
 .test-controls{display:flex;flex-direction:column;gap:11px;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:20px;margin-top:22px}
 .test-controls label{font-size:13px;font-weight:700}
@@ -45,9 +50,13 @@
  <div class="preview-note"><strong>PREVIEW ONLY.</strong> The footage below is an independent third-party sample, <strong>not</strong> an East Bank or West Bank camera. This page does not replace any existing WVLRP broadcast.</div>
  <section class="video-panel" aria-label="YouTube video player demonstration">
   <div class="demo-head"><b>WVLRP · Player comparison</b><span>Sample camera: Cornell Lab Bird Cams</span></div>
-  <div class="yt-box">
-   <iframe id="yt-frame"
-    src="https://www.youtube-nocookie.com/embed/x10vL6_47Dw?playsinline=1&amp;rel=0"
+  <div class="yt-box" id="yt-box" aria-busy="true">
+   <div class="yt-wait" id="yt-wait" role="status">
+    <strong>WVLRP · Preparing player</strong>
+    <span>Video starts automatically in <b id="yt-countdown">5</b> seconds · Sound muted</span>
+   </div>
+   <iframe id="yt-frame" hidden
+    src="about:blank"
     title="YouTube preview, Cornell Lab Bird Cams third-party sample"
     referrerpolicy="strict-origin-when-cross-origin"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -59,10 +68,10 @@
   <div class="test-label">Try your own YouTube video</div>
   <label for="yt-url">Paste a YouTube video or live-stream link</label>
   <div class="test-row"><input type="url" id="yt-url" inputmode="url" placeholder="https://www.youtube.com/live/..." autocomplete="off"><button id="load-video" type="button">Load into player</button></div>
-  <p id="status" aria-live="polite">The preview starts with a Cornell Lab wildlife camera example. Playback depends on the source still being live and allowing embeds.</p>
+  <p id="status" aria-live="polite">The player is waiting five seconds before opening. Autoplay will be requested with sound muted.</p>
   <p class="sample-note">Source: <a href="https://www.allaboutbirds.org/cams/cornell-lab-feederwatch/" target="_blank" rel="noopener">Cornell Lab Bird Cams</a>. This source is for demonstrating player appearance only. WVLRP is not affiliated with Cornell Lab.</p>
  </section>
- <div class="rules"><strong>Important:</strong> YouTube may display its logo, channel identity, and ads inside this player. We are deliberately not hiding, cropping or covering its controls. Changing videos here does not change any live WVLRP camera stream.</div>
+ <div class="rules"><strong>Important:</strong> Playback is requested automatically after five seconds with audio muted, subject to browser autoplay rules. YouTube may display its logo, channel identity, and ads inside this player. We are deliberately not hiding, cropping or covering its controls. Changing videos here does not change any live WVLRP camera stream.</div>
  <section class="camera-details">
   <div><span class="eyebrow">Side-by-side assessment</span><h2>How does YouTube fit our design?</h2><p class="muted">Compare this page with <a href="east-bank.html" style="color:var(--gold)">the normal East Bank player</a>. Our own surrounding page, navigation, and sponsor space stay WVLRP-branded; the video area itself is under YouTube's control.</p></div>
   <aside class="aside"><span class="eyebrow">Site navigation</span><p><a href="east-bank.html">Return to the live East Bank camera →</a></p><p><a href="index.html">Back to WVLRP home →</a></p></aside>
@@ -76,6 +85,35 @@
   var status=document.getElementById("status");
   var frame=document.getElementById("yt-frame");
   var source=document.getElementById("open-source");
+  var box=document.getElementById("yt-box");
+  var wait=document.getElementById("yt-wait");
+  var countdown=document.getElementById("yt-countdown");
+  var pendingTimer=null;
+  var countdownTimer=null;
+  function showAfterFiveSeconds(id){
+    // Never mask or crop a playing YouTube player. Do not load it until the wait finishes.
+    clearTimeout(pendingTimer);
+    clearInterval(countdownTimer);
+    frame.hidden=true;
+    frame.src="about:blank";
+    wait.hidden=false;
+    box.setAttribute("aria-busy","true");
+    countdown.textContent="5";
+    var seconds=5;
+    countdownTimer=setInterval(function(){
+      seconds=Math.max(0,seconds-1);
+      countdown.textContent=String(seconds);
+      if(seconds===0)clearInterval(countdownTimer);
+    },1000);
+    status.textContent="Waiting five seconds, then requesting muted autoplay. On some phones you may still need to tap Play.";
+    pendingTimer=setTimeout(function(){
+      frame.src="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)+"?autoplay=1&mute=1&playsinline=1&rel=0";
+      frame.hidden=false;
+      wait.hidden=true;
+      box.setAttribute("aria-busy","false");
+      status.textContent="Muted autoplay requested. If it doesn't start, tap Play. YouTube branding and ads remain under YouTube's control.";
+    },5000);
+  }
   function extractId(raw){
     raw=String(raw||"").trim();
     if(/^[a-zA-Z0-9_-]{11}$/.test(raw))return raw;
@@ -92,11 +130,12 @@
   function load(){
     var id=extractId(input.value);
     if(!id){status.textContent="That link doesn't look like a YouTube video or live-stream URL. Try a youtube.com/live/... or youtube.com/watch?v=... link.";return}
-    frame.src="https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)+"?playsinline=1&rel=0";
+    showAfterFiveSeconds(id);
     source.href="https://www.youtube.com/watch?v="+encodeURIComponent(id);
     frame.title="YouTube player demonstration of the selected video";
-    status.textContent="Loaded. Tap the player to watch. If YouTube blocks embedding or the broadcast has ended, open the video directly on YouTube.";
+    // A new URL resets the five-second wait.
   }
+  showAfterFiveSeconds("x10vL6_47Dw");
   document.getElementById("load-video").addEventListener("click",load);
   input.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();load()}});
 })();
