@@ -1,0 +1,67 @@
+name: Verify Real Hair2 Ponytail Viewer
+on:
+  push:
+    branches: [hair-motion-lab-20261104]
+    paths: [.github/workflows/verify-hair2-viewer.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: hair-motion-lab
+      - name: Verify all 19 authentic compressed Hair2 segments
+        run: |
+          python3 - <<'PY'
+          import re,base64,gzip,pathlib,hashlib
+          for lod,n,sha,size in [
+            (1,11,'04a193b3e39f79e66517bfd56d40b745e64f600cf590c056dbec96f63d8f42fd',720680),
+            (2,8,'ad5fa96e6fb908ecab251129da8b297337460a4300a1a6a5ac85dbfc33935fdd',478944)]:
+              chunks=[]
+              for i in range(n):
+                  p=pathlib.Path('hair-motion-lab/hair2-data')/('lod%d-piece%02d.js'%(lod,i))
+                  s=p.read_text();m=re.search(r'push\("([A-Za-z0-9+/=]+)"\)',s)
+                  assert m,p
+                  chunks.append(m.group(1))
+              data=gzip.decompress(base64.b64decode(''.join(chunks)))
+              assert len(data)==size and hashlib.sha256(data).hexdigest()==sha
+              assert data[:4]==b'glTF'
+              print('HAIR2_TRANSFER_OK',lod,len(data),len(chunks))
+          PY
+      - name: Check real browser URL and dependencies
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          base='https://raw.githack.com/copperisbetter-lang/Wvlrp/hair-motion-lab-20261104/hair-motion-lab'
+          for path in ['/hair2.html','/hair2-data/lod1-piece00.js','/hair2-data/lod2-piece00.js']:
+              with urllib.request.urlopen(base+path,timeout=22) as r:
+                  data=r.read(80)
+                  print('PREVIEW_ENDPOINT',path,r.status,r.headers.get('Content-Type'),data[:35])
+                  assert r.status==200
+          PY
+      - name: Install browser automation
+        run: npm install --no-save playwright-core
+      - name: Open viewer at mobile size, switch both real hairstyles
+        run: |
+          python3 -m http.server 8777 --bind 127.0.0.1 >/tmp/hair2-server.log 2>&1 &
+          node <<'JS'
+          const {chromium}=require('playwright-core');
+          (async()=>{
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+            const page=await browser.newPage({viewport:{width:393,height:790},deviceScaleFactor:1});
+            const errors=[];page.on('pageerror',x=>errors.push(String(x)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            await page.goto('http://127.0.0.1:8777/hair-motion-lab/hair2.html',{waitUntil:'domcontentloaded'});
+            await page.waitForTimeout(12000);
+            const first=await page.evaluate(()=>({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent,segments:window.Hair2Chunks.lod1.length}));
+            console.log('HAIR2_LOD1',JSON.stringify(first));
+            await page.selectOption('#lod','lod2');
+            await page.waitForTimeout(5500);
+            const second=await page.evaluate(()=>({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent,segments:window.Hair2Chunks.lod2.length}));
+            console.log('HAIR2_LOD2',JSON.stringify(second)); console.log('PAGE_ERRORS',errors.slice(0,12));
+            await browser.close();
+            if(!first.status.includes('Real Hair2 LOD1 loaded')||!second.status.includes('Real Hair2 LOD2 loaded'))process.exitCode=1;
+          })().catch(e=>{console.log('BROWSER_FATAL',String(e));process.exitCode=1})
+          JS
