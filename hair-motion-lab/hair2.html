@@ -145,9 +145,9 @@ async function load(lod){
    const g=o.geometry=o.geometry.clone();
    g.computeBoundingBox();
    const p=g.attributes.position;
-   segments.push({pos:p,arr:Float32Array.from(p.array),min:g.boundingBox.min.y,max:g.boundingBox.max.y,modified:false});
+   segments.push({mesh:o,pos:p,arr:Float32Array.from(p.array),min:g.boundingBox.min.y,max:g.boundingBox.max.y,modified:false});
   });
-  rig.add(hair);colorize();
+  rig.add(hair);hair.updateMatrixWorld(true);for(const s of segments)s.effectiveScale=Math.max(.000001,s.mesh.getWorldScale(new THREE.Vector3()).x);colorize();
   status.textContent='Real Hair2 '+lod.toUpperCase()+' loaded';
   detail.textContent=meta[lod].triangles.toLocaleString()+' original FBX triangles · scroll below for motion controls';
   document.getElementById('modelInfo').textContent=meta[lod].triangles.toLocaleString()+' hair-card triangles • 0 native bones • 0 animation clips.';
@@ -156,7 +156,7 @@ async function load(lod){
 document.getElementById('lod').onchange=e=>load(e.target.value);
 document.getElementById('color').onchange=colorize;
 let turn=true,walk=true,paused=false,phase=0,whipStart=-100,prev=performance.now(),frames=0,start=performance.now();
-window.hair2MotionDebug=()=>({selected,tipCm:lastTipCm,scale:hair?.scale.x||0,segments:segments.length,headAngle:rig.rotation.y,simulatedAmount:Number(sway.value)});
+window.hair2MotionDebug=()=>({selected,tipCm:lastTipCm,scale:hair?.scale.x||0,segments:segments.length,localWorldScale:segments[0]?.effectiveScale||null,headAngle:rig.rotation.y,simulatedAmount:Number(sway.value)});
 function setbutton(id,active,on,off){const b=document.getElementById(id);b.textContent=active?on:off;b.setAttribute('aria-pressed',String(active))}
 document.getElementById('turn').onclick=()=>{turn=!turn;setbutton('turn',turn,'Turn ON','Turn OFF')};
 document.getElementById('walk').onclick=()=>{walk=!walk;setbutton('walk',walk,'Walk bounce ON','Walk bounce OFF')};
@@ -177,8 +177,8 @@ function frame(now){
  rig.position.y=walk?.035*Math.sin(phase*8):0;
  const amount=Number(sway.value)/100;
  let tipCm=0;
- const inverseScale=1/Math.max(.00001,hair?.scale.x||1);
  for(const s of segments){
+   const inverseScale=1/(s.effectiveScale||Math.max(.00001,hair?.scale.x||1));
    const a=s.pos.array,b=s.arr,h=Math.max(0.00001,s.max-s.min);
    if(amount===0){if(s.modified){a.set(b);s.pos.needsUpdate=true;s.modified=false}continue}
    for(let i=0;i<a.length;i+=3){
