@@ -2,7 +2,10 @@ name: Verify Hair Motion Preview
 on:
   push:
     branches: [hair-motion-lab-20261104]
-    paths: [.github/workflows/verify-hair-motion-lab.yml]
+    paths:
+      - .github/workflows/verify-hair-motion-lab.yml
+      - hair-motion-lab/viewer.html
+      - hair-motion-lab/hair-data/**
 permissions:
   contents: read
 jobs:
@@ -59,9 +62,15 @@ jobs:
             const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
             await page.goto('http://127.0.0.1:8777/hair-motion-lab/viewer.html');
             await page.waitForTimeout(9000);
-            const values=await page.evaluate(()=>({heading:document.getElementById('statusHeading').textContent,detail:document.getElementById('statusText').textContent,model:document.getElementById('nativeLabel').textContent,canvas:!!document.querySelector('canvas'),pieces:window.HairChunks?.length||0}));
+            const values=await page.evaluate(()=>({heading:document.getElementById('statusHeading').textContent,detail:document.getElementById('statusText').textContent,model:document.getElementById('nativeLabel').textContent,canvas:!!document.querySelector('canvas'),pieces:window.HairChunks?.length||0,wind:document.getElementById('wind').value,deflection:document.getElementById('motionReadout').textContent}));
+            const crypto=require('crypto');const cv=page.locator('canvas');
+            const before=crypto.createHash('sha256').update(await cv.screenshot()).digest('hex');
+            await page.waitForTimeout(1400);
+            const after=crypto.createHash('sha256').update(await cv.screenshot()).digest('hex');
+            console.log('MOTION_VISUAL_CHECK',JSON.stringify({changed:before!==after,first:before.slice(0,12),second:after.slice(0,12)}));
+            if(before===after)errors.push('Canvas frames identical; animation not visible');
             console.log('BROWSER_RESULT',JSON.stringify(values));console.log('ERRORS',errors.slice(0,10));
             await browser.close();
-            if(values.pieces!==10 || !values.canvas || !values.heading.includes('Real hairstyle loaded'))process.exitCode=1;
+            if(values.pieces!==10 || !values.canvas || !values.heading.includes('Real hairstyle loaded') || values.wind!=='0.8' || !values.deflection.includes('Simulated tip deflection') || errors.some(e=>e.includes('Canvas frames identical')))process.exitCode=1;
           })().catch(e=>{console.log('BROWSER_FATAL',String(e));process.exitCode=1})
           JS
