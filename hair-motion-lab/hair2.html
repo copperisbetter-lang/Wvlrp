@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1823">
+<title>The Wild • REAL Hair2 Ponytail Test</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#101b27;color:#eff5f9;font:14px system-ui,Arial,sans-serif}
+header{padding:13px 15px;background:#142234;border-bottom:1px solid #354a5f}
+header b{font-size:18px}header small{display:block;font-size:11px;color:#a8becc;margin-top:3px}
+main{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 310px}
+#stage{height:calc(100dvh - 70px);min-height:460px;position:relative;background:radial-gradient(ellipse at 50% 38%,#425466,#17293a 55%,#0a1522 96%);overflow:hidden}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+.overlay{position:absolute;left:12px;top:12px;background:#091a2cda;border:1px solid #455f74;border-radius:11px;padding:9px 11px;max-width:80%;line-height:1.4}
+.overlay strong{display:block;font-size:14px}
+.overlay small{display:block;color:#b3cad9;font-size:11px}
+#stats{position:absolute;left:12px;bottom:12px;background:#0b1a29d9;padding:6px 9px;border-radius:7px;font-size:12px}
+#help{position:absolute;bottom:12px;right:12px;background:#0b1a29d9;padding:6px 9px;border-radius:7px;font-size:11px}
+aside{padding:13px;background:#172637;border-left:1px solid #354a5f;display:flex;flex-direction:column;gap:12px}
+section{border:1px solid #344c61;border-radius:12px;background:#1a2c3f;padding:13px}
+h2{font-size:15px;margin:0 0 9px}label{display:flex;justify-content:space-between;gap:7px;margin:11px 0 7px;font-size:12px;color:#d2e0e9}
+label output{color:#9fe0cc}
+select,button,input{width:100%}select,button{color:#f1f6f8;background:#2a4054;border:1px solid #50708b;border-radius:8px;font-size:13px;padding:10px}
+input[type=range]{accent-color:#63dab1}
+button{cursor:pointer;font-weight:bold}
+button[aria-pressed=true]{background:#21614f;border-color:#65dab0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+p{margin:8px 0;font-size:12px;line-height:1.5;color:#c5d4df}
+.notice{color:#ffdfa1}
+footer{font-size:11px;color:#a7becb;line-height:1.45}
+@media(max-width:790px){main{display:block}#stage{height:56dvh;min-height:320px;max-height:555px}aside{border-left:0;border-top:1px solid #354a5f;padding:12px 12px 22px}header b{font-size:16px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+<script>window.Hair2Chunks={lod1:[],lod2:[]};</script>
+<script src="./hair2-data/lod1-piece00.js"></script>
+<script src="./hair2-data/lod1-piece01.js"></script>
+<script src="./hair2-data/lod1-piece02.js"></script>
+<script src="./hair2-data/lod1-piece03.js"></script>
+<script src="./hair2-data/lod1-piece04.js"></script>
+<script src="./hair2-data/lod1-piece05.js"></script>
+<script src="./hair2-data/lod1-piece06.js"></script>
+<script src="./hair2-data/lod1-piece07.js"></script>
+<script src="./hair2-data/lod1-piece08.js"></script>
+<script src="./hair2-data/lod1-piece09.js"></script>
+<script src="./hair2-data/lod1-piece10.js"></script>
+<script src="./hair2-data/lod2-piece00.js"></script>
+<script src="./hair2-data/lod2-piece01.js"></script>
+<script src="./hair2-data/lod2-piece02.js"></script>
+<script src="./hair2-data/lod2-piece03.js"></script>
+<script src="./hair2-data/lod2-piece04.js"></script>
+<script src="./hair2-data/lod2-piece05.js"></script>
+<script src="./hair2-data/lod2-piece06.js"></script>
+<script src="./hair2-data/lod2-piece07.js"></script>
+</head>
+<body>
+<header><b>THE WILD · HAIR2 PONYTAIL</b><small>Real uploaded FBX hair cards • two detail levels • mobile motion test</small></header>
+<main>
+<div id="stage"><canvas id="scene"></canvas><div class="overlay"><strong id="status">Loading actual Hair2…</strong><small id="detail">Original downloaded hairstyle, not a generic substitute</small></div><div id="stats">Preparing viewer…</div><div id="help">Drag to turn • Pinch to zoom</div></div>
+<aside>
+<section>
+<h2>Original Hair2 mesh</h2>
+<label for="lod">Choose detail <output>2 genuine FBX versions</output></label>
+<select id="lod"><option value="lod1">Hair2 Ponytail • LOD1 · 18,000 triangles</option><option value="lod2">Hair2 Ponytail • LOD2 · 11,524 triangles</option></select>
+<label for="color">Hair color preview <output>trial tint</output></label>
+<select id="color"><option value="brown">Natural brown</option><option value="blonde">Blonde</option><option value="auburn">Auburn</option><option value="black">Dark</option></select>
+<p id="modelInfo">The source has hair cards and UVs, but no native hair rig or animation clips.</p>
+</section>
+<section>
+<h2>Head movement</h2>
+<div class="row"><button id="turn" aria-pressed="true">Turn ON</button><button id="walk" aria-pressed="true">Walk bounce ON</button></div>
+<label for="speed">Speed <output id="speedOut">1.0×</output></label><input type="range" id="speed" min="0" max="2.5" step="0.1" value="1">
+<div class="row"><button id="pause" aria-pressed="false">Pause</button><button id="reset">Reset view</button></div>
+</section>
+<section>
+<h2>Test added hair sway</h2>
+<p class="notice"><b>Important:</b> This is SIMULATED sway applied to the actual Hair2 mesh. It does not prove the downloaded hair has physics.</p>
+<label for="sway">Tip movement <output id="swayOut">40%</output></label><input id="sway" type="range" min="0" max="100" value="40" step="5">
+<button id="whip">Quick head turn + ponytail whip</button>
+<p id="swayInfo">Switch sway to 0% to see the original rigid hair cards.</p>
+</section>
+<section><h2>What to look for</h2><p>Which detail level looks more realistic on your Samsung? Does the ponytail move smoothly or clip into the head? This neutral test head is not Beverly or Gina. Hair-card texturing here is preliminary because the uploaded ZIP doesn't contain a dedicated cutout-opacity atlas.</p></section>
+<footer>Assets: owner-uploaded WhiteCap Female Ponytail Messy Wavy original LOD1 and LOD2 FBX hair cards, exported for viewer only. No changes to approved character masters or live game. <a style="color:#91d6f8" href="https://www.fab.com/listings/a3425afb-5801-455e-a6a1-e27632d493db">Source listing</a>.</footer>
+</aside>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const stage=document.getElementById('stage'),canvas=document.getElementById('scene'),status=document.getElementById('status'),detail=document.getElementById('detail'),stats=document.getElementById('stats');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(36,1,.015,60);
+camera.position.set(0,.35,2.2);
+const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.target.set(0,.26,0);controls.minDistance=.75;controls.maxDistance=4;controls.update();
+scene.add(new THREE.HemisphereLight(0xdfedff,0x71808c,2.2));
+const light=new THREE.DirectionalLight(0xfff5e8,2.6);light.position.set(-1.5,3,2.6);scene.add(light);
+const rim=new THREE.DirectionalLight(0xa8d9fe,1.8);rim.position.set(1.5,1,-2);scene.add(rim);
+const rig=new THREE.Group();scene.add(rig);
+const skin=new THREE.MeshStandardMaterial({color:0xb6b8ba,roughness:.84});
+function shape(g,m,x,y,z,sx,sy,sz){let o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);rig.add(o);return o}
+const head=shape(new THREE.SphereGeometry(1,32,20),skin,0,.25,0,.23,.315,.23);
+shape(new THREE.SphereGeometry(1,20,14),skin,0,.23,.227,.048,.069,.064);
+shape(new THREE.CylinderGeometry(.1,.14,.27,24),skin,0,-.15,0,1,1,1);
+shape(new THREE.SphereGeometry(1,32,14),new THREE.MeshStandardMaterial({color:0x758ca0}),0,-.33,0,.47,.17,.3);
+let hair=null,segments=[],colors=[],selected='lod1',token=0;
+const meta={lod1:{triangles:18000,segments:11},lod2:{triangles:11524,segments:8}};
+async function dataFor(lod){
+ const chunks=window.Hair2Chunks[lod];
+ if(chunks.length!==meta[lod].segments)throw new Error('Hair2 files missing: '+chunks.length+'/'+meta[lod].segments);
+ const bytes=Uint8Array.from(atob(chunks.join('')),c=>c.charCodeAt(0));
+ if(typeof DecompressionStream==='undefined')throw new Error('This browser needs gzip decompression support');
+ const raw=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+ return raw;
+}
+function colorize(){
+ const colorsByName={brown:0x6f4931,blonde:0xc79b55,auburn:0x8b412e,black:0x302923};
+ const c=new THREE.Color(colorsByName[document.getElementById('color').value]);
+ for(const m of colors){m.color.copy(c)}
+}
+async function load(lod){
+ const mine=++token;
+ selected=lod;status.textContent='Loading Hair2 '+lod.toUpperCase()+'…';detail.textContent='Loading original high-detail ponytail hair cards';
+ try{
+  const bytes=await dataFor(lod);
+  const parsed=await new Promise((resolve,reject)=>new GLTFLoader().parse(bytes,'',resolve,reject));
+  if(mine!==token)return;
+  if(hair){rig.remove(hair);hair=null}
+  segments=[];colors=[];
+  hair=parsed.scene;
+  const box=new THREE.Box3().setFromObject(hair);
+  const dim=box.getSize(new THREE.Vector3()),ctr=box.getCenter(new THREE.Vector3());
+  if(!Number.isFinite(dim.y)||dim.y<=0)throw new Error('Invalid hair geometry');
+  const scale=.78/dim.y;
+  hair.scale.setScalar(scale);hair.position.set(-ctr.x*scale,.47-ctr.y*scale,-ctr.z*scale);
+  hair.traverse(o=>{
+   if(!o.isMesh)return;
+   o.frustumCulled=false;
+   let ms=Array.isArray(o.material)?o.material:[o.material];
+   ms=ms.map(mat=>{
+     const m=mat.clone();m.side=THREE.DoubleSide;m.roughness=.83;m.transparent=false;m.depthWrite=true;colors.push(m);return m;
+   });
+   o.material=Array.isArray(o.material)?ms:ms[0];
+   const g=o.geometry=o.geometry.clone();
+   g.computeBoundingBox();
+   const p=g.attributes.position;
+   segments.push({pos:p,arr:Float32Array.from(p.array),min:g.boundingBox.min.y,max:g.boundingBox.max.y,modified:false});
+  });
+  rig.add(hair);colorize();
+  status.textContent='Real Hair2 '+lod.toUpperCase()+' loaded';
+  detail.textContent=meta[lod].triangles.toLocaleString()+' original FBX triangles · scroll below for motion controls';
+  document.getElementById('modelInfo').textContent=meta[lod].triangles.toLocaleString()+' hair-card triangles • 0 native bones • 0 animation clips.';
+ }catch(e){status.textContent='Hair2 loading failed';detail.textContent=String(e);console.error(e)}
+}
+document.getElementById('lod').onchange=e=>load(e.target.value);
+document.getElementById('color').onchange=colorize;
+let turn=true,walk=true,paused=false,phase=0,whipStart=-100,prev=performance.now(),frames=0,start=performance.now();
+function setbutton(id,active,on,off){const b=document.getElementById(id);b.textContent=active?on:off;b.setAttribute('aria-pressed',String(active))}
+document.getElementById('turn').onclick=()=>{turn=!turn;setbutton('turn',turn,'Turn ON','Turn OFF')};
+document.getElementById('walk').onclick=()=>{walk=!walk;setbutton('walk',walk,'Walk bounce ON','Walk bounce OFF')};
+document.getElementById('pause').onclick=()=>{paused=!paused;setbutton('pause',paused,'Resume','Pause')};
+document.getElementById('reset').onclick=()=>{camera.position.set(0,.35,2.2);controls.target.set(0,.26,0);controls.update()};
+document.getElementById('whip').onclick=()=>{whipStart=phase;paused=false;setbutton('pause',false,'Pause','Pause')};
+const speed=document.getElementById('speed'),sway=document.getElementById('sway');
+speed.oninput=()=>document.getElementById('speedOut').textContent=(+speed.value).toFixed(1)+'×';
+sway.oninput=()=>{document.getElementById('swayOut').textContent=sway.value+'%';document.getElementById('swayInfo').textContent=+sway.value===0?'Rigid original mesh: no separate hair physics':'SIMULATED independent tip sway on original Hair2 cards'};
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();
+function frame(now){
+ requestAnimationFrame(frame);const dt=Math.min(.04,(now-prev)/1000);prev=now;
+ if(!paused)phase+=dt*(+speed.value);
+ const age=phase-whipStart,whip=age>=0&&age<2.8?Math.sin(age*7.5)*Math.exp(-age*1.05)*.9:0;
+ rig.rotation.y=(turn?.52*Math.sin(phase*1.3):0)+whip;
+ rig.rotation.z=(turn?.09*Math.sin(phase*.9):0)+whip*.1;
+ rig.position.y=walk?.035*Math.sin(phase*8):0;
+ const amount=Number(sway.value)/100;
+ for(const s of segments){
+   const a=s.pos.array,b=s.arr,h=Math.max(0.00001,s.max-s.min);
+   if(amount===0){if(s.modified){a.set(b);s.pos.needsUpdate=true;s.modified=false}continue}
+   for(let i=0;i<a.length;i+=3){
+     const t=Math.max(0,Math.min(1,(s.max-b[i+1])/h));
+     const weight=Math.pow(t,2.4);
+     a[i]=b[i]+(Math.sin(phase*3.2+t*4)*.6+whip*2.3)*weight*amount;
+     a[i+1]=b[i+1];
+     a[i+2]=b[i+2]+Math.cos(phase*2.9+t*3)*weight*amount*.2;
+   }
+   s.modified=true;s.pos.needsUpdate=true;
+ }
+ controls.update();renderer.render(scene,camera);frames++;
+ if(now-start>1200){stats.textContent=(selected==='lod1'?'LOD1 18,000':'LOD2 11,524')+' triangles · '+Math.round(frames*1000/(now-start))+' FPS';frames=0;start=now}
+}
+load('lod1');requestAnimationFrame(frame);
+</script>
+</body></html>
