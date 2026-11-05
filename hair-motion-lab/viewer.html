@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101821">
+<title>The Wild • Hair Motion Lab</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#e9edf4;background:#101821}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh}header{padding:13px 16px 9px;border-bottom:1px solid #344454;background:#121d2a}header .top{display:flex;gap:10px;align-items:center;justify-content:space-between}
+header b{font-size:18px;letter-spacing:.2px}header small{display:block;color:#9eb1c0;font-size:11px;margin-top:3px}
+.pill{font-size:11px;font-weight:600;color:#a6d5bc;border:1px solid #376b57;border-radius:20px;padding:6px 9px;white-space:nowrap}
+main{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 310px;min-height:calc(100dvh - 67px)}
+.stage{position:relative;min-height:450px;max-height:calc(100dvh - 70px);overflow:hidden;background:radial-gradient(ellipse at center 38%,#354456 0,#131e2b 66%,#0b121d 100%)}
+#canvas{display:block;width:100%;height:100%;touch-action:none}
+.floating{position:absolute;left:14px;top:14px;max-width:min(260px,66%);background:#0b1524d9;border:1px solid #344454;border-radius:12px;padding:10px 12px;font-size:12px}
+.floating b{display:block;font-size:13px;margin-bottom:3px}
+.floating p{margin:0;color:#a4b4c1;line-height:1.35}
+#performance{position:absolute;bottom:14px;left:14px;color:#ceddea;font-size:12px;background:#0b1625cc;padding:7px 10px;border-radius:9px}
+#orbitHint{position:absolute;bottom:14px;right:14px;color:#b3c0cd;font-size:11px;background:#0c1824c4;padding:7px 9px;border-radius:9px}
+aside{padding:14px;background:#141f2e;border-left:1px solid #344454;display:flex;flex-direction:column;gap:11px}
+h2{font-size:14px;margin:0 0 7px;font-weight:750}section{padding:12px;border:1px solid #304253;border-radius:12px;background:#192738}label{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin:10px 0 6px;color:#cedbe6}label span{color:#91cddc}
+select,input[type=range],button{width:100%}select,button{border:1px solid #3b5062;border-radius:9px;color:#eff7fc;background:#25384b;padding:10px;font-size:13px}button{cursor:pointer;font-weight:600}
+button[aria-pressed=true]{border-color:#4fae8e;background:#235342}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input[type=range]{accent-color:#65c4a2}
+small.hint{font-size:11px;line-height:1.5;color:#a9b9c8;display:block}
+.status{color:#bce0d2;font-size:12px;line-height:1.45;margin-top:8px}
+.warning{color:#ffdb9b}
+a{color:#8fc8ff}footer{font-size:10px;color:#91a5b7;line-height:1.45}
+@media(max-width:780px){main{display:block}.stage{height:56dvh;min-height:330px;max-height:560px}aside{border-left:none;border-top:1px solid #344454;padding:12px 12px 24px}header b{font-size:16px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+<script>window.HairChunks=[];</script>
+<script src="./hair-data/piece00.js"></script>
+<script src="./hair-data/piece01.js"></script>
+<script src="./hair-data/piece02.js"></script>
+<script src="./hair-data/piece03.js"></script>
+<script src="./hair-data/piece04.js"></script>
+<script src="./hair-data/piece05.js"></script>
+<script src="./hair-data/piece06.js"></script>
+<script src="./hair-data/piece07.js"></script>
+<script src="./hair-data/piece08.js"></script>
+<script src="./hair-data/piece09.js"></script>
+</head>
+<body>
+<header><div class="top"><div><b>THE WILD · HAIR MOTION LAB</b><small>Isolated 3D test • original uploaded hair geometry • phone-friendly</small></div><div class="pill">Preview only</div></div></header>
+<main>
+<div class="stage"><canvas id="canvas"></canvas>
+<div class="floating"><b id="statusHeading">Loading real hair mesh…</b><p id="statusText">Please wait for the 3D model.</p></div>
+<div id="performance">Model: loading · FPS: —</div><div id="orbitHint">Drag to rotate · Pinch to zoom</div></div>
+<aside>
+<section><h2>Real hair asset</h2>
+<label for="modelSelect">Hair model <span>1 uploaded model</span></label>
+<select id="modelSelect"><option value="brown">Realistic Brown • 4,134 tris</option></select>
+<label for="colorSelect">Color preview <span>same geometry</span></label>
+<select id="colorSelect"><option value="original">Original brown</option><option value="blonde">Blonde tint test</option><option value="auburn">Auburn tint test</option><option value="dark">Dark brown tint test</option></select>
+<div class="status" id="nativeLabel">Native animation: checking…</div>
+</section>
+<section><h2>Movement checks</h2>
+<div class="twocol"><button id="turnBtn" aria-pressed="true">Head turn ON</button><button id="walkBtn" aria-pressed="true">Walk bounce ON</button></div>
+<label for="headSpeed">Movement speed <span id="speedValue">1.0×</span></label><input id="headSpeed" type="range" min="0" max="2.5" value="1" step=".1">
+<div class="twocol"><button id="pauseBtn" aria-pressed="false">Pause motion</button><button id="resetBtn">Reset view</button></div>
+</section>
+<section><h2>Optional wind simulation</h2>
+<small class="hint warning">This is added TEST motion, not movement supplied by the hair asset. Turn it off to judge the original mesh.</small>
+<label for="wind">Simulated hair-tip sway <span id="windValue">OFF</span></label><input id="wind" type="range" min="0" max="1" step=".05" value="0">
+<small class="hint">Head rotation moves the whole hair object. The wind option bends mesh vertices to preview how a future hair physics solution might look; it does not prove this download has built-in physics.</small>
+</section>
+<section><h2>What to check</h2>
+<small class="hint">Does the hair follow head turns? Does the shape remain intact while bouncing? Does the crown intersect the test head? Does performance stay smooth? Styling and alignment are preliminary; this is a generic test bust, not Beverly or Gina.</small></section>
+<footer>Model: <a href="https://sketchfab.com/3d-models/realistic-brown-3d-hair-game-ready-c00848897b7f46da803d20dbc8f19861" target="_blank" rel="noopener">Realistic Brown 3D Hair — Game Ready</a> by Cinemorph (CC BY). Uploaded to project GitHub release Hair; 3,340 vertices / 4,134 triangles. No original rig or animations. No changes to approved characters or game.</footer>
+</aside>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const canvas=document.getElementById('canvas'), stage=canvas.parentElement;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,1,.01,100);
+camera.position.set(0,.38,2.35);
+const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.07;controls.target.set(0,.38,0);controls.minDistance=.9;controls.maxDistance=4.5;controls.maxPolarAngle=Math.PI*.92;controls.update();
+scene.add(new THREE.HemisphereLight(0xdcecff,0x496078,2));
+const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(-1.6,3,3);scene.add(key);
+const rim=new THREE.DirectionalLight(0x9fd4ff,1.35);rim.position.set(1.8,1,-2);scene.add(rim);
+const rig=new THREE.Group();scene.add(rig);
+const bustmat=new THREE.MeshStandardMaterial({color:0xaebac6,roughness:.88});
+const head=new THREE.Mesh(new THREE.SphereGeometry(1,32,20),bustmat);head.scale.set(.255,.34,.24);head.position.set(0,.3,0);rig.add(head);
+const neck=new THREE.Mesh(new THREE.CylinderGeometry(.11,.14,.28,20),bustmat);neck.position.set(0,-.11,0);rig.add(neck);
+const shoulders=new THREE.Mesh(new THREE.SphereGeometry(1,32,16),new THREE.MeshStandardMaterial({color:0x778fa2,roughness:.92}));shoulders.scale.set(.46,.18,.28);shoulders.position.set(0,-.31,0);rig.add(shoulders);
+const nose=new THREE.Mesh(new THREE.SphereGeometry(1,14,9),bustmat);nose.scale.set(.055,.08,.075);nose.position.set(0,.28,.247);rig.add(nose);
+let hairModel=null;
+const originals=[],hairMaterials=[];
+const statusHeading=document.getElementById('statusHeading'),statusText=document.getElementById('statusText'),nativeLabel=document.getElementById('nativeLabel');
+const setStatus=(h,t)=>{statusHeading.textContent=h;statusText.textContent=t};
+try{
+  if(window.HairChunks.length!==10)throw Error('Not all mesh data pieces loaded ('+window.HairChunks.length+'/10).');
+  const b64=window.HairChunks.join('');
+  const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
+  const loader=new GLTFLoader();
+  loader.parse(bytes.buffer,'',gltf=>{
+    hairModel=gltf.scene;
+    const bbox=new THREE.Box3().setFromObject(hairModel);const dims=bbox.getSize(new THREE.Vector3());const center=bbox.getCenter(new THREE.Vector3());
+    if(dims.y<=0)throw Error('Invalid model dimensions');
+    const scale=.83/dims.y;
+    hairModel.scale.setScalar(scale);
+    hairModel.position.set(-center.x*scale, .56-center.y*scale, -center.z*scale);
+    hairModel.traverse(o=>{
+      if(!o.isMesh)return;
+      o.material=o.material.clone();o.material.side=THREE.DoubleSide;
+      if('roughness' in o.material)o.material.roughness=Math.max(.35,o.material.roughness||.5);
+      hairMaterials.push({mat:o.material,color:o.material.color?o.material.color.clone():null});
+      const geom=o.geometry=o.geometry.clone(), pos=geom.attributes.position;
+      geom.computeBoundingBox();
+      originals.push({pos,base:Float32Array.from(pos.array),miny:geom.boundingBox.min.y,maxy:geom.boundingBox.max.y});
+    });
+    rig.add(hairModel);
+    nativeLabel.textContent='Original hair: 0 skins · 0 animations · NO native hair motion';
+    setStatus('Real hairstyle loaded','Head motion follows the test rig. Wind is OFF by default.');
+  },e=>{setStatus('Model could not load',String(e));nativeLabel.textContent='No mesh loaded.'});
+}catch(e){setStatus('Loading issue',e.message);nativeLabel.textContent='No mesh loaded.'}
+let turning=true,walking=true,paused=false,phase=0,last=performance.now(),frames=0,frameWindow=performance.now();
+const turnBtn=document.getElementById('turnBtn'),walkBtn=document.getElementById('walkBtn'),pauseBtn=document.getElementById('pauseBtn'),wind=document.getElementById('wind'),speed=document.getElementById('headSpeed');
+function toggle(btn,v,on,off){btn.setAttribute('aria-pressed',String(v));btn.textContent=v?on:off}
+turnBtn.onclick=()=>{turning=!turning;toggle(turnBtn,turning,'Head turn ON','Head turn OFF')};
+walkBtn.onclick=()=>{walking=!walking;toggle(walkBtn,walking,'Walk bounce ON','Walk bounce OFF')};
+pauseBtn.onclick=()=>{paused=!paused;toggle(pauseBtn,paused,'Resume motion','Pause motion')};
+document.getElementById('resetBtn').onclick=()=>{camera.position.set(0,.38,2.35);controls.target.set(0,.38,0);controls.update()};
+wind.oninput=()=>document.getElementById('windValue').textContent=(+wind.value>0?(+wind.value*100).toFixed(0)+'%':'OFF');
+speed.oninput=()=>document.getElementById('speedValue').textContent=(+speed.value).toFixed(1)+'×';
+document.getElementById('colorSelect').onchange=e=>{
+const colors={original:null,blonde:'#cba85e',auburn:'#873c28',dark:'#3a291e'};
+const c=colors[e.target.value];for(const h of hairMaterials){if(h.color&&h.mat.color){h.mat.color.copy(c?new THREE.Color(c):h.color)}}
+};
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(stage);resize();
+function animate(now){
+requestAnimationFrame(animate);
+const dt=Math.min(.055,(now-last)/1000);last=now;frames++;
+if(!paused)phase+=dt*(+speed.value);
+rig.rotation.y=turning?.54*Math.sin(phase*1.4):0;
+rig.rotation.z=turning?.08*Math.sin(phase*.9):0;
+rig.position.y=walking?.041*Math.sin(phase*10):0;
+const amt=+wind.value;
+for(const g of originals){
+ const arr=g.pos.array,b=g.base,h=Math.max(0.00001,g.maxy-g.miny);
+ if(amt===0){if(g.active){arr.set(b);g.pos.needsUpdate=true;g.active=false}continue}
+ for(let i=0;i<arr.length;i+=3){
+  const frac=Math.min(1,Math.max(0,(b[i+1]-g.miny)/h));
+  const tip=Math.pow(1-frac,1.8);
+  arr[i]=b[i]+amt*.6*tip*Math.sin(phase*2.7+frac*4.5);
+  arr[i+1]=b[i+1];
+  arr[i+2]=b[i+2]+amt*.2*tip*Math.cos(phase*2.3+frac*2);
+ }
+ g.active=true;g.pos.needsUpdate=true;
+}
+controls.update();renderer.render(scene,camera);
+if(now-frameWindow>1300){document.getElementById('performance').textContent='Brown hair: 4,134 tris · FPS: '+Math.round(frames*1000/(now-frameWindow));frames=0;frameWindow=now}
+}requestAnimationFrame(animate);
+</script>
+</body></html>
