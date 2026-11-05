@@ -2,7 +2,7 @@ name: Verify Real Hair2 Ponytail Viewer
 on:
   push:
     branches: [hair-motion-lab-20261104]
-    paths: [.github/workflows/verify-hair2-viewer.yml]
+    paths: [.github/workflows/verify-hair2-viewer.yml, hair-motion-lab/hair2.html]
 permissions:
   contents: read
 jobs:
@@ -59,6 +59,18 @@ jobs:
             await page.waitForTimeout(12000);
             const first=await page.evaluate(()=>({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent,segments:window.Hair2Chunks.lod1.length}));
             console.log('HAIR2_LOD1',JSON.stringify(first));
+            const moving=await page.evaluate(()=>window.hair2MotionDebug?.());
+            console.log('HAIR2_MOTION_ACTIVE',JSON.stringify(moving));
+            await page.evaluate(()=>{const s=document.getElementById('sway');s.value='0';s.dispatchEvent(new Event('input',{bubbles:true}));});
+            await page.waitForTimeout(350);
+            const rigid=await page.evaluate(()=>window.hair2MotionDebug?.());
+            console.log('HAIR2_MOTION_OFF',JSON.stringify(rigid));
+            await page.evaluate(()=>{const s=document.getElementById('sway');s.value='100';s.dispatchEvent(new Event('input',{bubbles:true}));});
+            await page.click('#whip');
+            await page.waitForTimeout(350);
+            const whip=await page.evaluate(()=>window.hair2MotionDebug?.());
+            console.log('HAIR2_MOTION_WHIP',JSON.stringify(whip));
+            if(!moving||moving.tipCm<3||!rigid||rigid.tipCm>0.01||!whip||whip.tipCm<3)process.exitCode=1;
             await page.selectOption('#lod','lod2');
             await page.waitForTimeout(5500);
             const second=await page.evaluate(()=>({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent,segments:window.Hair2Chunks.lod2.length}));
