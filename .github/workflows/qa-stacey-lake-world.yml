@@ -8,6 +8,8 @@ on:
       - 'world-creator/worlds/index.html'
       - 'world-creator/tests/stacey-lake-world.test.mjs'
       - '.github/workflows/qa-stacey-lake-world.yml'
+      - 'world-creator/base-camp/stacey-lake-fps-diagnostic.html'
+      - 'world-creator/tests/stacey-lake-fps-diagnostic.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -22,4 +24,4 @@ jobs:
         with:
           node-version: '22'
       - name: Check world boundaries, geometry and JavaScript
-        run: node --test world-creator/tests/stacey-lake-world.test.mjs
+        run: node --test world-creator/tests/stacey-lake-world.test.mjs world-creator/tests/stacey-lake-fps-diagnostic.test.mjs
