@@ -101,5 +101,5 @@ test('real frame time controls FPS and prevents player movement slowing at 5 FPS
   assert.match(newGame,/renderer\.render\(scene,camera\);count\+=elapsed;frames\+\+/);
   assert.doesNotMatch(newGame,/renderer\.render\(scene,camera\);count\+=dt/);
   const actualFrame=0.2,moveSpeed=4.2;
-  assert.equal(moveSpeed*Math.min(0.2,actualFrame),0.84);
+  assert.ok(Math.abs(moveSpeed*Math.min(0.2,actualFrame)-0.84)<1e-9);
 });
