@@ -17,12 +17,12 @@ test('approved realistic water and terrain kept unchanged',()=>{
   'water.material.fragmentShader=',
   "installCanyonV6();",
   "water.material.depthWrite=false",
-  'Beverly-approved-dressed.glb',
   'Gina_6_FITTED_GOLD_BIKINI.glb'
  ]) {
   assert.ok(original.includes(text),'reference missing '+text);
   assert.ok(diagnostic.includes(text),'diagnostic missing '+text);
  }
+ assert.ok(diagnostic.includes('Beverly-approved-dressed.glb'),'manual-only Beverly diagnostic preserved');
  assert.doesNotMatch(diagnostic,/reflectionRate|renderLakeReflection|worldQuality/);
 });
 
