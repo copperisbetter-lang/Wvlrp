@@ -1302,6 +1302,7 @@ function setInspectLock(enabled){
   miniNav.cancel('Inspection camera locked');
   keys.clear();mx=my=0;nub.style.transform='';
   inspectAzimuth=yaw;inspectElevation=.20;inspectDistance=3.2;
+  looking=null;
  }else{
   inspectFrozen=false;ginaPlayer.setFrozen(false);
   if(ginaPlayer.state.mode==='POSE'){ginaPlayer.setPose('stand');ginaAnimationSelect.value='';}
@@ -1310,12 +1311,13 @@ function setInspectLock(enabled){
  b.textContent=inspectLock?'UNLOCK INSPECT':'LOCK INSPECT';
  b.setAttribute('aria-pressed',String(inspectLock));
  b.classList.toggle('inspect-pressed',inspectLock);
+ document.querySelector('#hint').textContent=inspectLock?'INSPECT: drag to orbit · pinch to zoom · UNLOCK to walk':'Tap map to walk · joystick to steer · drag to look';
  document.getElementById('inspectFreeze').setAttribute('aria-pressed',String(inspectFrozen));
  syncPlayerCamera();
 }
 document.getElementById('inspectLock').onclick=()=>setInspectLock(!inspectLock);
-document.getElementById('inspectZoomIn').onclick=()=>{setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*.78,.65,8);syncPlayerCamera();};
-document.getElementById('inspectZoomOut').onclick=()=>{setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*1.25,.65,8);syncPlayerCamera();};
+document.getElementById('inspectZoomIn').onclick=()=>{if(!inspectLock)setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*.78,.65,8);syncPlayerCamera();};
+document.getElementById('inspectZoomOut').onclick=()=>{if(!inspectLock)setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*1.25,.65,8);syncPlayerCamera();};
 document.getElementById('inspectFreeze').onclick=()=>{
  if(!inspectLock)setInspectLock(true);
  inspectFrozen=!inspectFrozen;ginaPlayer.setFrozen(inspectFrozen);
