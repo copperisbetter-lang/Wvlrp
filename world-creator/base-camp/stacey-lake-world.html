@@ -40,9 +40,6 @@ import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
-import {installBeverlyShorelineWalk} from './beverly-shoreline-npc.js?v=20261103';
-import {installGinaLocomotion} from './beverly-gina-locomotion.js?v=20261103-shared';
-import {installBeverlyArmSwing} from './beverly-arm-swing.js?v=20261103d';
 import {installGinaBeachWalk} from './gina-beach-npc.js?v=20261103';
 import {installMasonPlayer} from './stacey-mason-player.js';
 import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
@@ -1195,36 +1192,13 @@ function loadFishUnderwater(){
 window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem?.count||0;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;},loadUnderwater:loadFishUnderwater};
 // Public Play Game launches Mason at Stacey Lake; preserve original fish and game physics.
 const masonPlayer=installMasonPlayer({T,GLTFLoader,scene,diagnostics:diag});
-let beverlyNPC=null;
-let beverlyForGina=null;
-let ginaSourceAsset=null;
-function connectGinaWalk(){
- if(!beverlyForGina||!ginaSourceAsset)return;
- const {model,mixer,clip}=beverlyForGina;
- beverlyForGina=null;
- installGinaLocomotion({THREE:T,loader:gltf,model,mixer,baseClip:clip,sourceAsset:ginaSourceAsset,onStatus:msg=>{diag.assets.Beverly=msg;}})
- .then(result=>{window.beverlyGinaMotion=result;diag.assets.Beverly='Gina walk integrated ('+result.state.walkJoints+' joints)';})
- .catch(error=>{diag.errors.push('Gina locomotion fallback: '+String(error?.message||error));diag.assets.Beverly='approved walk (Gina fallback)';});
-}
-diag.assets.Beverly='loading approved character';
-// Load the dressed game asset after the lake starts; no embedded editor or reconstruction on phones.
-gltf.load(new URL('./Beverly-approved-dressed.glb?v=20261103',import.meta.url).href,asset=>{
- const model=asset.scene;model.name='Beverly';
- const clip=asset.animations.find(a=>a.name==='Beverly_Shoreline_Walk');
- if(!clip){diag.assets.Beverly='FAILED';diag.errors.push('Beverly walk animation missing');return;}
- model.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
- const mixer=new T.AnimationMixer(model);mixer.clipAction(clip).setLoop(T.LoopRepeat,Infinity).play();model.userData.beverlyWalkMixer=mixer;
- const arms=installBeverlyArmSwing({THREE:T,model,speed:1.2});model.userData.beverlyArmSwing=arms;diag.assets.Beverly='walking; arm bones '+arms.detected.join(',');
- beverlyNPC=installBeverlyShorelineWalk({THREE:T,scene,model,outer,terrainY:ground,lake:{x:CX,z:CZ}});
- window.beverlyShoreline=beverlyNPC;diag.assets.Beverly='walking shoreline';
- beverlyForGina={model,mixer,clip};connectGinaWalk();
-},undefined,error=>{diag.assets.Beverly='FAILED';diag.errors.push('Beverly: '+String(error?.message||error));});
+// Beverly is offstage at owner's request (2026-11-05). Certified master and GLB remain archived.
+diag.assets.Beverly='offstage (owner requested removal)';
 
 let ginaBeachNPC=null;
 diag.assets.Gina='loading original gold bikini';
 const ginaIndicator=document.createElement('div');ginaIndicator.id='ginaIndicator';ginaIndicator.style.cssText='position:fixed;top:75px;left:12px;z-index:12;background:#173d40ee;color:#fff;border:1px solid #e9cf7e;padding:7px 9px;border-radius:7px;font:12px system-ui;max-width:70vw;pointer-events:none';ginaIndicator.textContent='Gina: loading gold bikini…';document.body.appendChild(ginaIndicator);
 gltf.load(new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb?v=20261103',import.meta.url).href,asset=>{
- ginaSourceAsset=asset;connectGinaWalk();
  const model=asset.scene;model.name='Gina 6';
  const walk=asset.animations.find(a=>a.name==='Walk');
  if(!walk){diag.assets.Gina='FAILED: native Walk missing';ginaIndicator.textContent='Gina: animation missing';return;}
@@ -1318,7 +1292,7 @@ document.querySelector('#dive').onclick=dive;document.querySelector('#surface').
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 document.getElementById('stopWalk').onclick=()=>miniNav.cancel('Walking stopped');
 const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
- let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);beverlyNPC?.update(dt);ginaBeachNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
+ let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);ginaBeachNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?8.6:4.2),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
 if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
 const autoWalk=miniNav.step(dt,moveSpeed);
 if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
@@ -1354,6 +1328,6 @@ syncPlayerCamera();miniNav.draw(now);
  }
  if(depthMode==='dive'&&pos.y<CY)loadFishUnderwater();
  if(flatheadSystem?.update)flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
-  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+(flatheadSystem?.count||0)+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Beverly '+(beverlyNPC?'walking':diag.assets.Beverly)+' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
+  renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+(flatheadSystem?.count||0)+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(masonPlayer.state.ready?'Mason':masonPlayer.state.error?'Mason failed':'loading Mason')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
 window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
