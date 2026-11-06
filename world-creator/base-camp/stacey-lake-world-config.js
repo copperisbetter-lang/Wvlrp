@@ -27,14 +27,16 @@ export function staceyLakeProfile(mobile=false,memoryGB=4){
   return Object.freeze({
     mobile:!!mobile,
     constrained,
-    terrainAngles:mobile?256:384,
-    terrainRings:mobile?120:150,
-    waterAngles:mobile?256:384,
-    waterRings:mobile?64:96,
-    dprStart:mobile?(constrained?.82:.92):1.35,
-    dprMin:mobile?.68:1,
-    dprMax:mobile?(constrained?.98:1.1):1.6,
+    terrainAngles:mobile?(constrained?192:224):384,
+    terrainRings:mobile?(constrained?104:112):150,
+    waterAngles:mobile?(constrained?160:192):384,
+    waterRings:mobile?(constrained?48:56):96,
+    dprStart:mobile?(constrained?.65:.73):1.35,
+    dprMin:mobile?(constrained?.45:.52):1,
+    dprMax:mobile?(constrained?.85:.95):1.6,
     fishLoading:'underwater-only',
+    reflectionEvery:mobile?(constrained?5:4):1,
+    reflectionTextureSize:mobile?128:512,
     targetFPS:mobile?30:50
   });
 }
@@ -59,8 +61,8 @@ export function createStaceyLakeQualityController(renderer,profile,deviceDpr=1){
     observe(fps,dt=1){
       if(mode!=='auto'||!Number.isFinite(fps)||fps<=0)return current;
       seconds+=Math.min(3,Math.max(.2,dt));
-      if(fps<23){low++;high=0;}
-      else if(fps>37){high++;low=0;}
+      if(fps<25){low++;high=0;}
+      else if(fps>38){high++;low=0;}
       else {low=Math.max(0,low-1);high=Math.max(0,high-1);}
       if(seconds-lastChange<4)return current;
       if(low>=2 && current>min+.02){apply(current-.10);low=0;lastChange=seconds;}
