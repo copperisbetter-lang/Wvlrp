@@ -110,6 +110,12 @@ jobs:
         run: |
           cat world-creator/base-camp/beverly-asset/Beverly.glb.b64.part* | base64 --decode > world-creator/base-camp/Beverly-approved-dressed.glb
           echo 'fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc  world-creator/base-camp/Beverly-approved-dressed.glb' | sha256sum --check
+      - name: Confirm Stacey FPS diagnostic is included in the published files
+        run: |
+          set -euo pipefail
+          test -s world-creator/base-camp/stacey-lake-fps-diagnostic.html
+          grep -q 'fpsProbe' world-creator/base-camp/stacey-lake-fps-diagnostic.html
+          echo "Diagnostic file is present before the Pages archive is uploaded."
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
@@ -139,4 +145,7 @@ jobs:
           grep -qi '<html' /tmp/wvlrp-home-live.html
           grep -qi 'WVLRP' /tmp/wvlrp-home-live.html
           echo "Production WVLRP homepage responding successfully."
+          curl -fSL --retry 6 --retry-delay 5 --retry-all-errors -H 'Cache-Control: no-cache' "$base/world-creator/base-camp/stacey-lake-fps-diagnostic.html?deploy=${GITHUB_SHA}" -o /tmp/stacey-diagnostic-live.html
+          grep -q 'fpsProbe' /tmp/stacey-diagnostic-live.html
+          echo "Stacey Lake FPS diagnostic is now responding from the published website."
 
