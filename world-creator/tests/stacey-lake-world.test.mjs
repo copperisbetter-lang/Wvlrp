@@ -116,12 +116,29 @@ test('LOCK inspection, orbit, pinch zoom, and both Gina rig poses are available'
 test('joystick movement rotates player body separately from look camera',()=>{
   for(const page of [original,separate]){
     assert.match(page,/let playerHeading=0/);
-    assert.match(page,/const desired=Math\.atan2\(dx,-dz\)/);
+    assert.match(page,/const desired=Math\.atan2\(-dx,-dz\)/);
     assert.match(page,/Math\.sin\(desired-playerHeading\)/);
     assert.match(page,/ginaPlayer\.update\(\{eye:pos,yaw:playerHeading/);
     assert.match(page,/const playerMoving=!inspectLock/);
     assert.match(page,/ginaBeachNPC=installGinaBeachWalk/);
     assert.doesNotMatch(page,/masonPlayer\.update|installMasonPlayer/);
+  }
+});
+
+test('Gina clone faces left and right along actual joystick travel, not opposite',()=>{
+  // Game motion uses world (dx,dz). Gina's GLB faces local +Z, and the
+  // player controller adds PI to body heading; both must cancel correctly.
+  const player=readFileSync(path.join(root,'../base-camp/stacey-gina-player.js'),'utf8');
+  assert.match(player,/carrier\.rotation\.set\(0,Math\.PI\+yaw,0\)/);
+  const worldForward=(dx,dz)=>{
+    const heading=Math.atan2(-dx,-dz);
+    const rotation=Math.PI+heading;
+    return {x:Math.sin(rotation),z:Math.cos(rotation)};
+  };
+  for(const [dx,dz] of [[1,0],[-1,0],[0,-1],[0,1],[1,-1],[-1,-1]]){
+    const facing=worldForward(dx,dz),norm=Math.hypot(dx,dz);
+    assert.ok(Math.abs(facing.x-dx/norm)<1e-10,"X facing wrong for "+dx+","+dz);
+    assert.ok(Math.abs(facing.z-dz/norm)<1e-10,"Z facing wrong for "+dx+","+dz);
   }
 });
 
