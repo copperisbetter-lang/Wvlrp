@@ -12,6 +12,8 @@
 #actionConsole button{min-height:41px;padding:5px 3px;font-size:11px;font-weight:750;line-height:1.17}
 #actionConsole button[aria-pressed="true"]{background:#356f5a;outline:2px solid #def6d8}
 #actionConsole #viewMode{white-space:pre-line}
+#actionConsole button.inspect-pressed{outline:2px solid #f3d98d;background:#3e6356}
+#actionConsole #inspectLock{font-weight:900}
 #actionConsole .animMenuLabel{grid-column:1/-1;color:#fff;font:700 10px system-ui;display:block;padding:4px 0}
 #playerAnimation{display:block;width:100%;margin-top:5px;background:#183f39;color:#fff;border:1px solid #b5d2c2;border-radius:6px;padding:7px 4px;font:11px system-ui}
 #joystickToggle{position:fixed;bottom:152px;left:25px;z-index:8;padding:7px 9px;font-size:10px;font-weight:800}
@@ -25,6 +27,13 @@
 <button id="actionDive" type="button" aria-pressed="false">DIVE</button>
 <button id="actionSit" type="button" aria-pressed="false">SIT</button>
 <button id="viewMode" type="button" aria-pressed="true" aria-label="Third-person camera; tap to switch to first-person" title="Switch camera">3RD PERSON</button>
+<button id="inspectLock" type="button" aria-pressed="false">LOCK INSPECT</button>
+<button id="inspectFreeze" type="button" aria-pressed="false">FREEZE POSE</button>
+<button id="inspectZoomIn" type="button">ZOOM +</button>
+<button id="inspectZoomOut" type="button">ZOOM −</button>
+<button id="inspectElbows" type="button">ELBOWS &amp; KNEES</button>
+<button id="inspectSitOpen" type="button">SIT · LEGS OPEN</button>
+<button id="inspectStand" type="button">STAND / RESET</button>
 <button id="shore" type="button">BEACH</button>
 <button id="canyon" type="button">CANYON</button>
 <button id="dive" type="button">DIVE DOWN</button>
@@ -40,7 +49,7 @@ import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installGinaBeachWalk} from './gina-beach-npc.js?v=20261103';
-import {installGinaPlayer} from './stacey-gina-player.js?v=20261105-1';
+import {installGinaPlayer} from './stacey-gina-player.js?v=20261105-gait2';
 import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
@@ -1213,9 +1222,12 @@ gltf.load(new URL('../../prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb
 },undefined,error=>{diag.assets.Gina='FAILED';ginaIndicator.textContent='Gina failed to load: '+String(error?.message||error);diag.errors.push('Gina: '+String(error?.message||error));});
 
 const playerAvatar='Gina 6 (player clone)';let chaseCamera=true;
+let inspectLock=false,inspectFrozen=false,inspectDistance=3.2,inspectAzimuth=0,inspectElevation=.20;
+let playerHeading=0;
 window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-person':'first-person';},
  get ginaReady(){return ginaPlayer.state.ready;},get ginaError(){return ginaPlayer.state.error;},
- get animations(){return ginaPlayer.state.clips.slice();},get activeAnimation(){return ginaPlayer.state.current;}};
+ get animations(){return ginaPlayer.state.clips.slice();},get activeAnimation(){return ginaPlayer.state.current;},
+ get locked(){return inspectLock;},get bodyHeading(){return playerHeading;}};
 let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
@@ -1251,7 +1263,15 @@ const viewButton=document.querySelector('#viewMode');
 // Move the camera immediately when tapped, not only on the next render frame.
 // This keeps first-/third-person responsive on slower mobile phones.
 function syncPlayerCamera(){
- if(chaseCamera){
+ if(chaseCamera&&inspectLock){
+  const targetY=pos.y-.67;
+  const horizontal=inspectDistance*Math.cos(inspectElevation);
+  const x=pos.x+Math.sin(inspectAzimuth)*horizontal;
+  const z=pos.z+Math.cos(inspectAzimuth)*horizontal;
+  const y=targetY+Math.sin(inspectElevation)*inspectDistance;
+  camera.position.set(x,Math.max(ground(x,z)+.30,y),z);
+  camera.lookAt(pos.x,targetY,pos.z);
+ }else if(chaseCamera){
   const distance=depthMode==='dive'?2.6:4.4;
   const followX=pos.x+Math.sin(yaw)*distance,followZ=pos.z+Math.cos(yaw)*distance;
   const followY=pos.y+(depthMode==='dive'?-.2:1.05)-Math.sin(pitch)*2.0;
@@ -1263,6 +1283,7 @@ function syncPlayerCamera(){
  }
 }
 viewButton.onclick=()=>{
+ if(inspectLock)setInspectLock(false);
  chaseCamera=!chaseCamera;
  viewButton.textContent=chaseCamera?'3RD\nPERSON':'1ST\nPERSON';
  viewButton.setAttribute('aria-pressed',String(chaseCamera));
@@ -1270,6 +1291,51 @@ viewButton.onclick=()=>{
  ginaPlayer.carrier.visible=chaseCamera;
  syncPlayerCamera();
 };
+function setInspectLock(enabled){
+ inspectLock=Boolean(enabled);
+ if(inspectLock){
+  if(!chaseCamera){
+   chaseCamera=true;
+   viewButton.textContent='3RD\nPERSON';
+   viewButton.setAttribute('aria-pressed','true');
+   viewButton.setAttribute('aria-label','Third-person camera; tap to switch to first-person');
+  }
+  miniNav.cancel('Inspection camera locked');
+  keys.clear();mx=my=0;moving=null;nub.style.transform='';
+  inspectAzimuth=yaw;inspectElevation=.20;inspectDistance=3.2;
+  looking=null;
+ }else{
+  inspectFrozen=false;ginaPlayer.setFrozen(false);
+  if(ginaPlayer.state.mode==='POSE'){ginaPlayer.setPose('stand');ginaAnimationSelect.value='';}
+ }
+ const b=document.getElementById('inspectLock');
+ b.textContent=inspectLock?'UNLOCK INSPECT':'LOCK INSPECT';
+ b.setAttribute('aria-pressed',String(inspectLock));
+ b.classList.toggle('inspect-pressed',inspectLock);
+ document.querySelector('#hint').textContent=inspectLock?'INSPECT: drag to orbit · pinch to zoom · UNLOCK to walk':'Tap map to walk · joystick to steer · drag to look';
+ document.getElementById('inspectFreeze').setAttribute('aria-pressed',String(inspectFrozen));
+ syncPlayerCamera();
+}
+document.getElementById('inspectLock').onclick=()=>setInspectLock(!inspectLock);
+document.getElementById('inspectZoomIn').onclick=()=>{if(!inspectLock)setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*.78,.65,8);syncPlayerCamera();};
+document.getElementById('inspectZoomOut').onclick=()=>{if(!inspectLock)setInspectLock(true);inspectDistance=T.MathUtils.clamp(inspectDistance*1.25,.65,8);syncPlayerCamera();};
+document.getElementById('inspectFreeze').onclick=()=>{
+ if(!inspectLock)setInspectLock(true);
+ inspectFrozen=!inspectFrozen;ginaPlayer.setFrozen(inspectFrozen);
+ const b=document.getElementById('inspectFreeze');b.setAttribute('aria-pressed',String(inspectFrozen));
+ b.textContent=inspectFrozen?'RESUME POSE':'FREEZE POSE';
+};
+function showInspectionPose(name){
+ if(!inspectLock)setInspectLock(true);
+ if(ginaPlayer.setPose(name)){
+  ginaAnimationSelect.value='';
+  inspectFrozen=false;
+  const b=document.getElementById('inspectFreeze');b.setAttribute('aria-pressed','false');b.textContent='FREEZE POSE';
+ }
+}
+document.getElementById('inspectElbows').onclick=()=>showInspectionPose('elbows-knees');
+document.getElementById('inspectSitOpen').onclick=()=>showInspectionPose('sit-open');
+document.getElementById('inspectStand').onclick=()=>showInspectionPose('stand');
 beach();
  if(new URLSearchParams(location.search).get('spawn')==='lake'){
    // Explicit homepage entry point: standing on the approved Stacey Lake beach.
@@ -1293,13 +1359,42 @@ beach();
   yaw=Math.PI/2;pitch=-.08;
  }
  document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
-document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;look.onpointerdown=e=>{if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId)};look.onpointermove=e=>{if(e.pointerId!==looking)return;yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY};look.onpointerup=look.onpointercancel=()=>looking=null;
-const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
+document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;
+const inspectPointers=new Map();
+look.onpointerdown=e=>{
+ if(inspectLock){
+  inspectPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  look.setPointerCapture(e.pointerId);return;
+ }
+ if(looking!==null)return;looking=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(e.pointerId);
+};
+look.onpointermove=e=>{
+ if(inspectLock){
+  const before=inspectPointers.get(e.pointerId);if(!before)return;
+  if(inspectPointers.size===1){
+   inspectAzimuth-=(e.clientX-before.x)*.008;
+   inspectElevation=T.MathUtils.clamp(inspectElevation+(e.clientY-before.y)*.006,-.9,1.3);
+  }else if(inspectPointers.size===2){
+   const pair=[...inspectPointers.entries()],other=pair.find(([id])=>id!==e.pointerId)?.[1];
+   if(other){
+    const oldDistance=Math.hypot(before.x-other.x,before.y-other.y);
+    const newDistance=Math.hypot(e.clientX-other.x,e.clientY-other.y);
+    if(oldDistance>5&&newDistance>5)inspectDistance=T.MathUtils.clamp(inspectDistance*oldDistance/newDistance,.65,8);
+   }
+  }
+  inspectPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  syncPlayerCamera();return;
+ }
+ if(e.pointerId!==looking)return;
+ yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY;
+};
+look.onpointerup=look.onpointercancel=e=>{inspectPointers.delete(e.pointerId);if(e.pointerId===looking)looking=null;};
+const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{if(inspectLock)return;moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 document.getElementById('stopWalk').onclick=()=>miniNav.cancel('Walking stopped');
 const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
- let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);ginaBeachNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?3.8:1.25),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
+ let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);ginaBeachNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=inspectLock?0:mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=inspectLock?0:my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=inspectLock?0:aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?3.8:1.25),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
 if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
-const autoWalk=miniNav.step(dt,moveSpeed);
+const autoWalk=inspectLock?{walking:false}:miniNav.step(dt,moveSpeed);
 if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
 const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
 if(aerial){
@@ -1313,10 +1408,17 @@ if(!aerial&&depthMode!=='dive'){
  pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
 }
 const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks the cloned Gina player; first-person remains available in caves.
-const playerMoving=(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
-ginaPlayer.update({eye:pos,yaw,dt,walking:playerMoving,running:isRunning,
- sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive',
- sideways:xx,backwards:yy>0.15,visible:chaseCamera});
+const playerMoving=!inspectLock&&(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
+if(playerMoving){
+ const dx=pos.x-oldX,dz=pos.z-oldZ;
+ if(Math.hypot(dx,dz)>.0005){
+  const desired=Math.atan2(dx,-dz);
+  const turn=Math.atan2(Math.sin(desired-playerHeading),Math.cos(desired-playerHeading));
+  playerHeading+=turn*Math.min(1,dt*14);
+ }else if(autoWalk.walking){playerHeading=autoWalk.yaw;}
+}
+ginaPlayer.update({eye:pos,yaw:playerHeading,dt,walking:playerMoving,running:isRunning,
+ sitting:isSitting,flying:aerial,swimming:swim,diving:depthMode==='dive',visible:chaseCamera});
 // First-person view must not look through the player's own face. Keep the avatar
 // visible in third-person, even when it finishes loading after a mode switch.
 ginaPlayer.carrier.visible=chaseCamera;

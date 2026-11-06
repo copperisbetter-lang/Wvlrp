@@ -70,9 +70,65 @@ test('playable Gina is an isolated clone with all 77 source animations, beach Gi
   assert.match(player,/const clips=new Map\(\)/);
   assert.match(player,/asset\.animations\.map\(clip=>clip\.name\)/);
   assert.match(player,/play\('Idle'\)/);
-  assert.match(player,/target='Run'/);
-  assert.match(player,/target='Walk'/);
+  assert.match(player,/target=running\?'Run':'Walk'/);
   assert.match(player,/carrier\.visible=visible/);
+});
+
+test('Gina stops walking when stationary, with feet tracking near toe-to-heel',()=>{
+  const player=readFileSync(path.join(root,'../base-camp/stacey-gina-player.js'),'utf8');
+  const inspector=readFileSync(path.join(root,'../base-camp/stacey-gina-inspection.js'),'utf8');
+  assert.match(player,/if\(clip\.name==='Idle'\)/);
+  assert.match(player,/next\.paused=true/);
+  assert.match(player,/let target='Idle'/);
+  assert.match(player,/else if\(!flying&&!swimming&&!diving&&walking\)target=running\?'Run':'Walk'/);
+  assert.match(player,/if\(state\.mode==='POSE'\|\|state\.frozen\)return/);
+  assert.match(player,/rig\.narrowGait\(\)/);
+  assert.match(inspector,/function narrowGait\(\)/);
+  assert.match(inspector,/const want=sign\*\.063/);
+  assert.match(inspector,/const want=sign\*\.051/);
+  assert.match(inspector,/steerBoneTo\(side\+'UpLeg',side\+'Leg'/);
+  assert.match(inspector,/steerBoneTo\(side\+'Leg',side\+'Foot'/);
+});
+
+test('LOCK inspection, orbit, pinch zoom, and both Gina rig poses are available',()=>{
+  const player=readFileSync(path.join(root,'../base-camp/stacey-gina-player.js'),'utf8');
+  const inspector=readFileSync(path.join(root,'../base-camp/stacey-gina-inspection.js'),'utf8');
+  for(const page of [original,separate]){
+    for(const id of ['inspectLock','inspectFreeze','inspectZoomIn','inspectZoomOut','inspectElbows','inspectSitOpen','inspectStand']){
+      assert.ok(page.includes('id="'+id+'"'),id);
+    }
+    assert.match(page,/function setInspectLock\(enabled\)/);
+    assert.match(page,/const autoWalk=inspectLock\?\{walking:false\}:miniNav\.step/);
+    assert.match(page,/const xx=inspectLock\?0:/);
+    assert.match(page,/if\(chaseCamera&&inspectLock\)/);
+    assert.match(page,/inspectPointers\.size===2/);
+    assert.match(page,/oldDistance\/newDistance/);
+    assert.match(page,/showInspectionPose\('elbows-knees'\)/);
+    assert.match(page,/showInspectionPose\('sit-open'\)/);
+    assert.match(page,/ginaPlayer\.setFrozen\(inspectFrozen\)/);
+  }
+  assert.match(player,/function setPose\(which\)/);
+  assert.match(inspector,/createBeverlyMotionRepairs/);
+  assert.match(inspector,/function ginaElbowsAndKnees\(\)/);
+  assert.match(inspector,/repairs\.inspect\('sit-open'\)/);
+});
+
+test('joystick movement rotates player body separately from look camera',()=>{
+  for(const page of [original,separate]){
+    assert.match(page,/let playerHeading=0/);
+    assert.match(page,/const desired=Math\.atan2\(dx,-dz\)/);
+    assert.match(page,/Math\.sin\(desired-playerHeading\)/);
+    assert.match(page,/ginaPlayer\.update\(\{eye:pos,yaw:playerHeading/);
+    assert.match(page,/const playerMoving=!inspectLock/);
+    assert.match(page,/ginaBeachNPC=installGinaBeachWalk/);
+    assert.doesNotMatch(page,/masonPlayer\.update|installMasonPlayer/);
+  }
+});
+
+test('Gina clone pose rig parses as a separate non-destructive module',()=>{
+  const file=readFileSync(path.join(root,'../base-camp/stacey-gina-inspection.js'),'utf8');
+  const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:file,encoding:'utf8'});
+  assert.equal(parsed.status,0,parsed.stderr);
 });
 
 test('new Gina player module parses as JavaScript without needing a game browser',()=>{
