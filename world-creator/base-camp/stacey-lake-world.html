@@ -1417,7 +1417,8 @@ const playerMoving=!inspectLock&&(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isS
 if(playerMoving){
  const dx=pos.x-oldX,dz=pos.z-oldZ;
  if(Math.hypot(dx,dz)>.0005){
-  const desired=Math.atan2(dx,-dz);
+  // Gina's native +Z front is offset by PI in her player controller; negate X so left/right face travel.
+  const desired=Math.atan2(-dx,-dz);
   const turn=Math.atan2(Math.sin(desired-playerHeading),Math.cos(desired-playerHeading));
   playerHeading+=turn*Math.min(1,dt*14);
  }else if(autoWalk.walking){playerHeading=autoWalk.yaw;}
