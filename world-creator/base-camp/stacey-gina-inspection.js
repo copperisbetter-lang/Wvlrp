@@ -8,7 +8,7 @@ export function createGinaInspectionRig({THREE:T,model,carrier,mixer,clips}){
    bones[o.name]=o;
    rest.set(o.uuid,{position:o.position.clone(),quaternion:o.quaternion.clone(),scale:o.scale.clone()});
  }});
- const update=()=>model.updateMatrixWorld(true);
+ const update=()=>carrier.updateMatrixWorld(true); // apply latest player heading before bone-world targets
  const point=name=>bones[name]?.getWorldPosition(vec());
  function steerBoneTo(parentName,childName,target,strength=1){
   const bone=bones[parentName],child=bones[childName];
