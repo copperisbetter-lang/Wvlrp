@@ -49,7 +49,7 @@ import {Sky} from 'three/addons/objects/Sky.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {installBass} from './stacey-bass.js';
 import {installGinaBeachWalk} from './gina-beach-npc.js?v=20261103';
-import {installGinaPlayer} from './stacey-gina-player.js?v=20261105-1';
+import {installGinaPlayer} from './stacey-gina-player.js?v=20261105-gait2';
 import {installStaceyTapMinimap} from './stacey-tap-minimap.js';
 import {installStaceyFlatheads} from './stacey-flatheads-restored.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
@@ -1298,9 +1298,10 @@ function setInspectLock(enabled){
    chaseCamera=true;
    viewButton.textContent='3RD\nPERSON';
    viewButton.setAttribute('aria-pressed','true');
+   viewButton.setAttribute('aria-label','Third-person camera; tap to switch to first-person');
   }
   miniNav.cancel('Inspection camera locked');
-  keys.clear();mx=my=0;nub.style.transform='';
+  keys.clear();mx=my=0;moving=null;nub.style.transform='';
   inspectAzimuth=yaw;inspectElevation=.20;inspectDistance=3.2;
   looking=null;
  }else{
