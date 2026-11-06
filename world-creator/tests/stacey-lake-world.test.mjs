@@ -30,7 +30,7 @@ test('lake bounds, approved scene, water reflections and dive-only fish are rest
   for(const marker of [
     'Gina_6_FITTED_GOLD_BIKINI.glb',
     'installCanyonV6()',
-    'installMasonPlayer',
+    'installGinaPlayer',
     'installStaceyFlatheads',
     "if(depthMode==='dive'&&pos.y<CY)loadFishUnderwater()",
     'staceyWaterfall'
@@ -46,6 +46,39 @@ test('Beverly no longer spawns while Gina retains native Walk',()=>{
     assert.match(page,/ginaBeachNPC=installGinaBeachWalk/);
     assert.match(page,/ginaBeachNPC\?\.update\(dt\)/);
   }
+});
+
+test('playable Gina is an isolated clone with all 77 source animations, beach Gina untouched',()=>{
+  const player=readFileSync(path.join(root,'../base-camp/stacey-gina-player.js'),'utf8');
+  const native=JSON.parse(readFileSync(path.join(root,'../../prototypes/gina6-20261102/Gina_6_NATIVE_BIKINI_QA.json'),'utf8'));
+  assert.equal(native.clothed.animation_count,77);
+  for(const name of ['Idle','Walk','Run','Walk backwards','Strafe left','Strafe right','Sit idle (chair)']){
+    assert.ok(native.clothed.animation_names.includes(name),name);
+  }
+  for(const page of [original,separate]){
+    assert.doesNotMatch(page,/installMasonPlayer|masonPlayer\.update|staceyMason/);
+    assert.match(page,/import \{installGinaPlayer\}/);
+    assert.match(page,/ginaPlayer\.attach\(asset\)/);
+    assert.match(page,/ginaPlayer\.update\(/);
+    assert.match(page,/GINA PLAYER · 77 ANIMATIONS/);
+    assert.match(page,/ginaAnimationSelect\.onchange=/);
+    assert.match(page,/ginaBeachNPC=installGinaBeachWalk/);
+    assert.match(page,/ginaBeachNPC\?\.update\(dt\)/);
+  }
+  assert.match(player,/cloneSkinned\(asset\.scene\)/);
+  assert.match(player,/new T\.AnimationMixer\(model\)/);
+  assert.match(player,/const clips=new Map\(\)/);
+  assert.match(player,/asset\.animations\.map\(clip=>clip\.name\)/);
+  assert.match(player,/play\('Idle'\)/);
+  assert.match(player,/target='Run'/);
+  assert.match(player,/target='Walk'/);
+  assert.match(player,/carrier\.visible=visible/);
+});
+
+test('new Gina player module parses as JavaScript without needing a game browser',()=>{
+  const module=readFileSync(path.join(root,'../base-camp/stacey-gina-player.js'),'utf8');
+  const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:module,encoding:'utf8'});
+  assert.equal(parsed.status,0,parsed.stderr);
 });
 
 test('separate world has its own selectable entry and an exit to world hub',()=>{
