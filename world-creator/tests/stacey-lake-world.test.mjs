@@ -70,8 +70,7 @@ test('playable Gina is an isolated clone with all 77 source animations, beach Gi
   assert.match(player,/const clips=new Map\(\)/);
   assert.match(player,/asset\.animations\.map\(clip=>clip\.name\)/);
   assert.match(player,/play\('Idle'\)/);
-  assert.match(player,/target='Run'/);
-  assert.match(player,/target='Walk'/);
+  assert.match(player,/target=running\?'Run':'Walk'/);
   assert.match(player,/carrier\.visible=visible/);
 });
 
