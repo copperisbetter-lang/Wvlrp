@@ -1,0 +1,25 @@
+name: QA Stacey Lake Independent World
+
+on:
+  pull_request:
+    paths:
+      - 'world-creator/base-camp/stacey-lake-world.html'
+      - 'world-creator/base-camp/stacey-lake-world-config.js'
+      - 'world-creator/worlds/index.html'
+      - 'world-creator/tests/stacey-lake-world.test.mjs'
+      - '.github/workflows/qa-stacey-lake-world.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lake-world-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check world boundaries, geometry and JavaScript
+        run: node --test world-creator/tests/stacey-lake-world.test.mjs
