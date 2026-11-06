@@ -75,3 +75,31 @@ test('Stacey Lake inline JavaScript parses as a module',()=>{
   const parsed=spawnSync(process.execPath,['--input-type=module','--check'],{input:match[1],encoding:'utf8'});
   assert.equal(parsed.status,0,parsed.stderr);
 });
+
+
+test('low-power profile limits lake reflection redraws and GPU pixel pressure',()=>{
+  const phone=staceyLakeProfile(true,4),tablet=staceyLakeProfile(true,8),desktop=staceyLakeProfile(false,8);
+  assert.equal(phone.reflectionEvery,5);
+  assert.equal(tablet.reflectionEvery,4);
+  assert.equal(desktop.reflectionEvery,1);
+  assert.equal(phone.reflectionTextureSize,128);
+  assert.ok(phone.dprStart<=0.7);
+  assert.ok(phone.dprMin<phone.dprStart);
+  assert.ok(phone.terrainAngles<256 && phone.waterAngles<256);
+  assert.ok(desktop.dprStart>1);
+  assert.match(newGame,/renderLakeReflection=water\.onBeforeRender/);
+  assert.match(newGame,/reflectionFrame\+\+%reflectionRate/);
+  assert.match(newGame,/textureWidth:profile\.reflectionTextureSize/);
+  assert.match(newGame,/reflectionRate=high\?1:profile\.reflectionEvery/);
+});
+
+test('real frame time controls FPS and prevents player movement slowing at 5 FPS',()=>{
+  // Before the fix, count+=dt used capped 50ms even if a frame took 200ms,
+  // falsely showing at least 20 FPS and slowing walking to quarter speed.
+  assert.match(newGame,/const elapsed=Math\.min\(1,Math\.max\(0,\(now-last\)\/1000\)\)/);
+  assert.match(newGame,/const dt=Math\.min\(\.2,elapsed\)/);
+  assert.match(newGame,/renderer\.render\(scene,camera\);count\+=elapsed;frames\+\+/);
+  assert.doesNotMatch(newGame,/renderer\.render\(scene,camera\);count\+=dt/);
+  const actualFrame=0.2,moveSpeed=4.2;
+  assert.equal(moveSpeed*Math.min(0.2,actualFrame),0.84);
+});
