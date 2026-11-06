@@ -28,7 +28,6 @@ test('lake bounds, approved scene, water reflections and dive-only fish are rest
   assert.match(separate,/Water\.js planar reflection/);
   assert.doesNotMatch(separate,/reflectionRate|renderLakeReflection|worldQuality|profile\.terrainAngles|profile\.waterAngles/);
   for(const marker of [
-    'Beverly-approved-dressed.glb',
     'Gina_6_FITTED_GOLD_BIKINI.glb',
     'installCanyonV6()',
     'installMasonPlayer',
@@ -36,6 +35,17 @@ test('lake bounds, approved scene, water reflections and dive-only fish are rest
     "if(depthMode==='dive'&&pos.y<CY)loadFishUnderwater()",
     'staceyWaterfall'
   ]) assert.ok(separate.includes(marker),marker);
+});
+
+test('Beverly no longer spawns while Gina retains native Walk',()=>{
+  for(const page of [original,separate]){
+    assert.doesNotMatch(page,/Beverly-approved-dressed\.glb|installBeverlyShorelineWalk|installBeverlyArmSwing|connectGinaWalk/);
+    assert.match(page,/diag\.assets\.Beverly='offstage \(owner requested removal\)'/);
+    assert.match(page,/Gina_6_FITTED_GOLD_BIKINI\.glb/);
+    assert.match(page,/asset\.animations\.find\(a=>a\.name==='Walk'\)/);
+    assert.match(page,/ginaBeachNPC=installGinaBeachWalk/);
+    assert.match(page,/ginaBeachNPC\?\.update\(dt\)/);
+  }
 });
 
 test('separate world has its own selectable entry and an exit to world hub',()=>{
