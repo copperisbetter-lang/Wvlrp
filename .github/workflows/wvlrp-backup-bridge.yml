@@ -1,0 +1,38 @@
+name: WVLRP Backup Bridge
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'GitHub issue containing already-uploaded file attachments'
+        required: true
+        default: '29'
+      max_file_mb:
+        description: 'Maximum attachment size in MB (GitHub repository files must be under 100 MB)'
+        required: true
+        default: '90'
+permissions:
+  contents: write
+  issues: read
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Recover GitHub issue attachments into repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_ISSUE: ${{ inputs.issue_number }}
+          MAX_FILE_MB: ${{ inputs.max_file_mb }}
+        run: python scripts/github_backup_bridge.py
+      - name: Commit saved assets and checksums
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add backups/
+          if ! git diff --cached --quiet; then
+            git commit -m "Backup GitHub issue attachments and checksums"
+            git push
+          fi
