@@ -1,5 +1,5 @@
-// The Wild / Stacey Lake — isolated distant forest panorama ring.
-// PHOTO ASSET (published in feature branch): ../../assets/stacey-forest-360-skyless.webp
+// The Wild / Stacey Lake — isolated owner-selected distant Appalachian mountain panorama ring.
+// PHOTO ASSET (published in feature branch): ../../assets/stacey-mountains-distant-360.webp
 // The source MUST be a 2:1 equirectangular RGBA panorama with the photographic
 // sky removed to alpha; the real Three.js Sky remains a separate live object.
 // Install this behind existing terrain, not as a replacement for lake geometry.
@@ -8,7 +8,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
   radius = 850, mobile = false, diagnostics = null,
 } = {}) {
   const status = {
-    state: 'loading', asset: '../../assets/stacey-forest-360-skyless.webp',
+    state: 'loading', asset: '../../assets/stacey-mountains-distant-360.webp',
     radius, sky: 'separate dynamic Three.js Sky',
     collisions: false, geometry: 'inward-facing spherical backdrop',
   };
@@ -52,7 +52,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
       new THREE.SphereGeometry(radius, mobile ? 48 : 64, mobile ? 24 : 32),
       material
     );
-    ring.name = 'Stacey Lake skyless Appalachian 360 forest backdrop';
+    ring.name = 'Stacey Lake distant Appalachian 360 mountain backdrop';
     ring.position.set(centerX, centerY + 11, centerZ);
     ring.frustumCulled = false;
     ring.renderOrder = 50; // Over painted Sky, behind depth-writing terrain.
@@ -64,7 +64,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
     status.center = [ring.position.x, ring.position.y, ring.position.z];
     status.ring = ring;
     status.loadedFrom = source;
-    if (diagnostics) diagnostics.assets['forest 360 wrap'] = 'READY (photo alpha)';
+    if (diagnostics) diagnostics.assets['forest 360 wrap'] = 'READY (distant mountain photo / transparent sky)';
   }, undefined, error => {
     // Never break working lake if artwork has not been published to the repo.
     status.state = 'missing asset';
