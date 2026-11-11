@@ -206,6 +206,13 @@ const loader=new T.TextureLoader();const manager=new T.LoadingManager();
 function texture(url,key){const t=loader.load(url,()=>{diag.assets[key]='ready'},undefined,e=>{diag.assets[key]='FAILED';diag.errors.push(key+' failed')});t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
 const sand=texture('https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_beach_01/aerial_beach_01_diff_1k.jpg','sand');
 const soil=texture('https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_floor/forest_floor_diff_1k.jpg','forest floor');
+// Owner-selected second grass option: natural rugged meadow (tiled, seam-corrected).
+// A/B: grass=off restores the old soil color; the original beach stays sand.
+const ruggedGrassEnabled=new URLSearchParams(location.search).get('grass')!=='off';
+const ruggedGrass=ruggedGrassEnabled
+ ? texture('../../assets/stacey-rugged-meadow-grass-v1.webp','rugged grass')
+ : soil;
+if(ruggedGrassEnabled)ruggedGrass.anisotropy=mobile?2:4;
 // Scoured bedrock beneath the final creek run and into the lake: shared tiny
 // texture for the shore terrain and a real, slightly raised stone channel mesh.
 // Deterministic and self-contained: no extra network requests on mobile.
@@ -255,11 +262,12 @@ const cavernTerrainClip=[
 ].join('\n');
 const mat=new T.MeshStandardMaterial({roughness:.98,side:T.DoubleSide});
 mat.onBeforeCompile=s=>{
- s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.uniforms.creekBedrockMap={value:creekBedrockMap};
+ s.uniforms.sandMap={value:sand};s.uniforms.soilMap={value:soil};s.uniforms.grassMap={value:ruggedGrass};s.uniforms.grassEnabled={value:ruggedGrassEnabled?1:0};s.uniforms.creekBedrockMap={value:creekBedrockMap};
  s.vertexShader='varying vec3 vGround;\n'.replace('\n','\n')+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGround=position;'.replace('\n','\n'));
- s.fragmentShader='uniform sampler2D sandMap;uniform sampler2D soilMap;uniform sampler2D creekBedrockMap;varying vec3 vGround;\n'.replace('\n','\n')
+ s.fragmentShader='uniform sampler2D sandMap;uniform sampler2D soilMap;uniform sampler2D grassMap;uniform float grassEnabled;uniform sampler2D creekBedrockMap;varying vec3 vGround;\n'.replace('\n','\n')
   +s.fragmentShader.replace('#include <map_fragment>',`vec3 sandC=texture2D(sandMap,vGround.xz*.15).rgb;
  vec3 soilC=texture2D(soilMap,vGround.xz*.12).rgb;
+ vec3 grassC=texture2D(grassMap,vGround.xz*.22).rgb;
  float r=length(vGround.xz-vec2(140.,-240.));
  float a=atan(vGround.z+240.,vGround.x-140.);
  float o=113.797805566*(1.+.038*sin(a*5.)+.022*cos(a*9.));
@@ -267,8 +275,12 @@ mat.onBeforeCompile=s=>{
  float beach=1.-smoothstep(7.,22.,r-o);
  float island=1.-smoothstep(ir-10.,ir-3.,r);
  float n=sin(vGround.x*.33)*sin(vGround.z*.25);
- float forest=max(smoothstep(12.+n*2.,25.,r-o),island*.8);
- vec3 c=mix(sandC,soilC*vec3(.60,.88,.48),forest);
+ // Keep the first ~6m of shore sandy; beyond it patch into grassy hillside.
+ float forest=max(smoothstep(6.+n*2.,17.,r-o),island*.8);
+ float grassBreakup=.5+.5*sin(vGround.x*.17+vGround.z*.11)*sin(vGround.z*.23-vGround.x*.13);
+ vec3 ruggedGrassC=grassC*vec3(1.03,1.06,.97)*(.88+.20*grassBreakup);
+ vec3 hillsideC=mix(soilC*vec3(.60,.88,.48),ruggedGrassC,grassEnabled);
+ vec3 c=mix(sandC,hillsideC,forest);
  // Narrow, irregular bedrock channel fans out at the creek's lake entry.
  // Keep the rest of Stacey's beach unchanged.
  float creekT=(vGround.x-8.7057)/22.0000;
