@@ -36,6 +36,13 @@ export function installStaceyForest360Wrap(THREE, scene, {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    // OWNER PHONE QA: this panorama's ridge begins below image row 0.5.
+    // An unshifted equirect maps that ridge below the sphere equator,
+    // concealed by real lake terrain. Shift image content upward by
+    // ~0.16 of the vertical UV range, retaining transparent sky at zenith.
+    // No terrain, camera or existing photograph pixels are changed.
+    texture.offset.y = -0.16;
+    status.verticalUVShift = -0.16;
     texture.anisotropy = mobile ? 1 : 4;
     texture.generateMipmaps = true;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -64,6 +71,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
     status.center = [ring.position.x, ring.position.y, ring.position.z];
     status.ring = ring;
     status.loadedFrom = source;
+    status.mapping = 'raised ridgeline above horizon';
     if (diagnostics) diagnostics.assets['forest 360 wrap'] = 'READY (distant mountain photo / transparent sky)';
   }, undefined, error => {
     // Never break working lake if artwork has not been published to the repo.
