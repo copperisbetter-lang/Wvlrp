@@ -32,4 +32,6 @@ test('wrap stays noncolliding and A/B photo-disable remains available', () => {
   assert.match(source, /nonColliding = true/);
   assert.match(source, /transparent: true/);
   assert.match(source, /new THREE\.SphereGeometry/);
+  assert.match(source, /texture\.offset\.y\s*=\s*-0\.16/,
+    'mountain ridge must be raised above the spherical image equator');
 });
