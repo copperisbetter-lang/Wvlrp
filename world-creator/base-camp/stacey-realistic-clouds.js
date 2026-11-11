@@ -110,7 +110,7 @@ export function installStaceyRealisticClouds(THREE, scene, {
     ' vec3 litColor=cloudTint*mix(vec3(0.72,0.76,0.82),vec3(1.0),shade);',
     ' gl_FragColor=vec4(litColor,alpha);',
     '}',
-  ].join('\\n').replace(/__STEPS__/g, String(STEPS))
+  ].join('\n').replace(/__STEPS__/g, String(STEPS))
                .replace(/__OCTAVES__/g, String(OCTAVES));
 
   const vertexShader = [
