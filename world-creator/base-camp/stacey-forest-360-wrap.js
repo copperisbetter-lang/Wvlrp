@@ -7,8 +7,15 @@ export function installStaceyForest360Wrap(THREE, scene, {
   centerX = 140, centerY = -5.5, centerZ = -240,
   radius = 850, mobile = false, diagnostics = null,
 } = {}) {
+  // Default to the higher-quality mobile-compatible texture; ?mountains=low
+  // allows an apples-to-apples performance comparison with the old 69 KB image.
+  const prefersLow = typeof location !== 'undefined' &&
+      new URLSearchParams(location.search).get('mountains') === 'low';
   const status = {
-    state: 'loading', asset: '../../assets/stacey-mountains-distant-360.webp',
+    state: 'loading',
+    asset: prefersLow ? '../../assets/stacey-mountains-distant-360.webp' :
+      '../../assets/stacey-mountains-distant-360-hd.webp',
+    textureQuality: prefersLow ? 'low (1280x640)' : 'upscaled 4K (4096x2048)',
     radius, sky: 'separate dynamic Three.js Sky',
     collisions: false, geometry: 'inward-facing spherical backdrop',
   };
@@ -72,7 +79,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
     status.ring = ring;
     status.loadedFrom = source;
     status.mapping = 'raised ridgeline above horizon';
-    if (diagnostics) diagnostics.assets['forest 360 wrap'] = 'READY (distant mountain photo / transparent sky)';
+    if (diagnostics) diagnostics.assets['forest 360 wrap'] = 'READY ' + width + 'x' + height + ' (sky transparent)';
   }, undefined, error => {
     // Never break working lake if artwork has not been published to the repo.
     status.state = 'missing asset';
