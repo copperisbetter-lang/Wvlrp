@@ -41,10 +41,18 @@ jobs:
                   if not isinstance(mesh,trimesh.Trimesh): continue
                   parts.extend(mesh.split(only_watertight=False))
               assert parts, 'No mesh components found'
-              parts.sort(key=lambda m: len(m.faces),reverse=True)
-              main=parts[0]
+              parts.sort(key=lambda m: m.centroid[0])
+              main=parts[0]  # leftmost head in the original OBJ coordinate system
               assert len(main.faces)>100, 'Main face component too small'
+              assert len(parts) == 3, f'Expected three sample heads, got {len(parts)}'
+              print('Component centroids:',[p.centroid.tolist() for p in parts])
               print('Components:',[(len(p.vertices),len(p.faces)) for p in parts], 'keeping largest')
+              assert main.visual.kind in ('texture', 'vertex'), f'No valid face appearance data: {main.visual.kind}'
+              if main.visual.kind == 'texture':
+                  uv=main.visual.uv
+                  assert uv is not None and len(uv)==len(main.vertices), 'Missing or mismatched UV coordinates'
+                  assert np.isfinite(uv).all(), 'Nonfinite texture UVs'
+                  print('UV bounds:',uv.min(axis=0),uv.max(axis=0))
               scene=trimesh.Scene(main)
               dest=pathlib.Path('/tmp/converted')/f'3ddfa-sample-{i}.glb'
               dest.write_bytes(scene.export(file_type='glb'))
@@ -63,9 +71,9 @@ jobs:
       - name: Publish model into mobile web viewer
         run: |
           mkdir -p world-creator/assets
-          cp /tmp/converted/3ddfa-sample-0.glb world-creator/assets/3ddfa-build10.glb
+          cp /tmp/converted/3ddfa-sample-0.glb world-creator/assets/3ddfa-build11-sample.glb
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add world-creator/assets/3ddfa-build10.glb
-          git commit -m "Publish successful 3DDFA build 10 head for browser viewer" || exit 0
+          git commit -m "Publish isolated Emma sample head build 11" || exit 0
           git push
