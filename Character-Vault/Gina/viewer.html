@@ -15,10 +15,10 @@ button:active{background:#3e697f}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
 </head>
 <body>
-<header><h1>GINA • 3 FOOT BIKINI CLONE</h1><p>Independent copy of the original fitted gold bikini, original 69-joint rig and 77 animations. Full-size Gina unchanged.</p></header>
+<header><h1>GINA • 3 FOOT BIKINI CLONE</h1><p>Independent copy of the original fitted gold bikini, original 69-joint rig and 77 animations. Full-size Gina unchanged. Default walking animation: Slouch walk (carefree). Original Walk remains in the animation menu.</p></header>
 <div id="view"></div>
 <nav>
-<button data-clip="Idle">Idle</button><button data-clip="Walk">Walk</button><button data-clip="Run">Run</button>
+<button data-clip="Idle">Idle</button><button data-clip="Slouch walk">Carefree Walk</button><button data-clip="Run">Run</button>
 <select id="clips" aria-label="Animation"><option value="">Choose animation…</option></select>
 <button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
 </nav>
@@ -75,7 +75,7 @@ function accept(g){
  if(Math.abs(actualHeight-.9144)>.005){status.textContent='Height calibration needs verification: '+actualHeight.toFixed(4)+' m';return;}
  mixer=new THREE.AnimationMixer(model);clips=g.animations||[];
  for(const c of clips){const opt=document.createElement('option');opt.value=c.name;opt.textContent=c.name;document.getElementById('clips').appendChild(opt);}
- pointView('front');play('Idle');window.gina3ft={model,mixer,clips,actualHeight};
+ pointView('front');play('Slouch walk');window.gina3ft={model,mixer,clips,actualHeight,defaultWalk:'Slouch walk'};
 }
 const clock=new THREE.Clock();
 function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);controls.update();renderer.render(scene,camera);}
