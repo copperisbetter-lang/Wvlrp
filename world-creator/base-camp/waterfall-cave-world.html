@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Wild — Waterfall Cave World (Entry Test)</title>
+<style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#101815;color:#f2f1e5;font:14px system-ui,sans-serif;touch-action:none}
+canvas{display:block}#bar{position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:4;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}
+#bar div{max-width:62%;background:#101c19bb;border-radius:8px;padding:8px 10px;text-shadow:0 1px 2px #000}
+#bar strong{display:block}small{color:#ddd8c8;font-size:11px}
+button{touch-action:none;background:#234a43ee;border:1px solid #bfd6c9;border-radius:9px;color:white;padding:11px;font:700 13px system-ui;cursor:pointer}
+#bar button{pointer-events:auto}#pad{position:fixed;left:20px;bottom:calc(22px + env(safe-area-inset-bottom));width:142px;height:142px;z-index:5}
+#pad button{position:absolute;width:45px;height:45px;background:#244841bb}#up{left:49px;top:0}#down{left:49px;bottom:0}#left{left:0;top:49px}#right{right:0;top:49px}
+#hint{position:fixed;right:10px;bottom:28px;max-width:52%;text-align:right;font-size:11px;color:#e0e4da;text-shadow:0 2px 5px #000;pointer-events:none}
+#fatal{position:fixed;inset:15% 10%;display:none;z-index:9;background:#321c1cdd;padding:30px;border-radius:12px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
+</head><body>
+<div id="bar"><div><strong>THE WILD · WATERFALL CAVE</strong><small>Separate world — entrance exploration test. The full quest is not built yet.</small></div>
+<button id="exit" aria-label="Return to Stacey Lake">RETURN TO LAKE</button></div>
+<div id="pad"><button id="up">▲</button><button id="down">▼</button><button id="left">◀</button><button id="right">▶</button></div>
+<div id="hint">Drag anywhere to look · Use arrows to walk. This world loads separately from Stacey Lake.</div>
+<div id="fatal" role="alert"></div>
+<script type="module">
+import * as THREE from 'three';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x101713);scene.fog=new THREE.FogExp2(0x121915,.035);
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;
+document.body.prepend(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(67,innerWidth/innerHeight,.10,90);
+camera.position.set(0,1.55,6.2);let yaw=0,pitch=-.08;
+scene.add(new THREE.HemisphereLight(0xc2d0b8,0x36342b,.9));
+const torch1=new THREE.PointLight(0xffb76d,36,14,2);torch1.position.set(2.8,3,0);scene.add(torch1);
+const torch2=new THREE.PointLight(0xa8dee4,26,18,2);torch2.position.set(-2.8,3,-18);scene.add(torch2);
+const stone=new THREE.MeshStandardMaterial({color:0x494e44,roughness:1,flatShading:true,side:THREE.DoubleSide});
+const stoneLight=new THREE.MeshStandardMaterial({color:0x73746a,roughness:1,flatShading:true});
+const earth=new THREE.MeshStandardMaterial({color:0x393a32,roughness:1,side:THREE.DoubleSide});
+function add(geo,mat,x,y,z,rx=0,ry=0,rz=0){
+ const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.rotation.set(rx,ry,rz);scene.add(m);return m;
+}
+// Completely independent room/entry, no old 84m Stacey Lake chamber is copied.
+add(new THREE.PlaneGeometry(12,50,1,1),earth,0,-.06,-12.0,-Math.PI/2);
+const wallGeo=new THREE.BoxGeometry(1.5,4.6,3.4);
+for(let i=0;i<16;i++){
+ const z=8.0-i*2.5;
+ const shift=.17*Math.sin(i*2.2);
+ const left=add(wallGeo,stone,-4.25+shift,2.15,z,0,.14*Math.sin(i),0);
+ const right=add(wallGeo,stone,4.25+shift,2.15,z,0,-.12*Math.sin(i*.75),0);
+ add(new THREE.BoxGeometry(9.5,1.2,3.4),stone,0,4.30+.24*Math.sin(i),z);
+ if(i%3===0){
+   const rock=add(new THREE.DodecahedronGeometry(1,0),stoneLight,(-1)**i*3.3,.6,z-.4,0,i*.4,0);
+   rock.scale.set(1.18,.62,.90);
+ }
+}
+// Entrance at the positive Z end, deeper cavern transition stub at negative Z.
+const openingMat=new THREE.MeshBasicMaterial({color:0x090e0d,side:THREE.DoubleSide});
+const farther=add(new THREE.CircleGeometry(2.8,36),openingMat,0,2.0,-32.3);
+farther.name='Unbuilt quest continuation — no second world loaded';
+const warmMat=new THREE.MeshBasicMaterial({color:0xd4a666});
+for(const [x,y,z] of [[-2.6,2.5,-6.8],[2.5,2.4,-22.8]])add(new THREE.SphereGeometry(.13,12,9),warmMat,x,y,z);
+const controls=new Set(),keys=new Set();
+for(const [id,value] of [['up','up'],['down','down'],['left','left'],['right','right']]){
+ const btn=document.getElementById(id);
+ const stop=e=>{controls.delete(value);if(e)try{btn.releasePointerCapture(e.pointerId)}catch{}};
+ btn.onpointerdown=e=>{e.preventDefault();controls.add(value);btn.setPointerCapture(e.pointerId)};
+ btn.onpointerup=stop;btn.onpointercancel=stop;btn.onlostpointercapture=()=>controls.delete(value);
+}
+addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
+let lookId=null,lookX=0,lookY=0;
+renderer.domElement.addEventListener('pointerdown',e=>{lookId=e.pointerId;lookX=e.clientX;lookY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
+renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId!==lookId)return;
+ yaw-=(e.clientX-lookX)*.0035;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-lookY)*.0035,-.9,.9);
+ lookX=e.clientX;lookY=e.clientY;
+});
+renderer.domElement.addEventListener('pointerup',()=>lookId=null);
+document.getElementById('exit').onclick=()=>location.assign(new URL('./stacey-dive.html?spawn=cave&grass=on&clouds=on',location.href).href);
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;
+ const forward=Number(controls.has('up')||keys.has('KeyW'))-Number(controls.has('down')||keys.has('KeyS'));
+ const side=Number(controls.has('right')||keys.has('KeyD'))-Number(controls.has('left')||keys.has('KeyA'));
+ const speed=2.2*dt;
+ camera.position.x=THREE.MathUtils.clamp(camera.position.x+(Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed,-2.8,2.8);
+ camera.position.z=THREE.MathUtils.clamp(camera.position.z+(-Math.cos(yaw)*forward+Math.sin(yaw)*side)*speed,-29.5,7.0);
+ camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);renderer.render(scene,camera);
+}requestAnimationFrame(loop);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+addEventListener('error',e=>{const m=document.getElementById('fatal');m.style.display='block';m.textContent='Cave scene error: '+e.message});
+</script></body></html>
