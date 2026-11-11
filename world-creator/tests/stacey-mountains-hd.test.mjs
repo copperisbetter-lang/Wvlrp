@@ -19,9 +19,9 @@ test('higher-quality mountain image is 4K with real alpha channel',()=>{
 
 test('old low-res photo remains intact and 4K loader supports low fallback',()=>{
   assert.equal(low.length,69474);
-  assert.match(loader,/stacey-mountains-distant-360-hd\\.webp/);
-  assert.match(loader,/get\\('mountains'\\) === 'low'/);
-  assert.match(loader,/texture\\.offset\\.y\\s*=\\s*-0\\.16/);
+  assert.match(loader,/stacey-mountains-distant-360-hd\.webp/);
+  assert.match(loader,/get\('mountains'\) === 'low'/);
+  assert.match(loader,/texture\.offset\.y\s*=\s*-0\.16/);
   assert.match(loader,/nonColliding = true/);
-  assert.doesNotMatch(loader,/stacey-forest-360-skyless\\.webp/);
+  assert.doesNotMatch(loader,/stacey-forest-360-skyless\.webp/);
 });
