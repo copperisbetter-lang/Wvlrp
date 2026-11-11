@@ -56,6 +56,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
 import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
+import {installStaceyForest360Wrap} from './stacey-forest-360-wrap.js';
 // One complete scene: no dependency on any experimental lake code or terrain module.
 const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false,defaultAvatar:'Gina 6 (player clone)',defaultSpawn:'Stacey Lake south beach'};
 const status=document.querySelector('#status');window.addEventListener('error',e=>{diag.errors.push(e.message);status.textContent='Scene error: '+e.message});
@@ -64,6 +65,9 @@ const renderer=new T.WebGLRenderer({antialias:!mobile,powerPreference:'high-perf
 renderer.debug.onShaderError=(gl,program,vs,fs)=>{diag.errors.push('Shader: '+gl.getProgramInfoLog(program)+' '+gl.getShaderInfoLog(vs)+' '+gl.getShaderInfoLog(fs));};const camera=new T.PerspectiveCamera(65,innerWidth/innerHeight,.15,2400);const lightDir=new T.Vector3(-.48,.57,-.66).normalize();scene.add(new T.HemisphereLight(0xddefff,0x5b6741,1.5));const sun=new T.DirectionalLight(0xffedcb,2.8);sun.position.copy(lightDir).multiplyScalar(600);scene.add(sun);
 const sky=new Sky();sky.scale.setScalar(1800);sky.material.uniforms.turbidity.value=2.5;sky.material.uniforms.rayleigh.value=1.3;sky.material.uniforms.mieCoefficient.value=.003;sky.material.uniforms.mieDirectionalG.value=.83;sky.material.uniforms.sunPosition.value.copy(lightDir);scene.add(sky);
 let seed=61728;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}const smooth=(a,b,x)=>T.MathUtils.smoothstep(x,a,b);const CY=-5.5,CX=140,CZ=-240;
+// Distant 360 photo ring; never substitutes the live Sky or existing lake surface.
+// Safe if the skyless panorama image has not yet been uploaded to assets/.
+const staceyForest360=installStaceyForest360Wrap(T,scene,{centerX:CX,centerY:CY,centerZ:CZ,mobile,diagnostics:diag});
 function outer(a){return 113.797805566*(1+.038*Math.sin(a*5)+.022*Math.cos(a*9))}function inner(a){return 22*(1+.1*Math.sin(a*5+.6)+.06*Math.cos(a*8))}
 function baseGround(x,z){const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz),a=Math.atan2(dz,dx),ir=inner(a),o=outer(a);if(r<ir-7)return CY+1.3+2.1*(1-smooth(0,ir-7,r));if(r<ir+12)return T.MathUtils.lerp(CY+1.3,CY-3,smooth(ir-7,ir+12,r));if(r<o-20)return CY-8+Math.sin(x*.09)*Math.cos(z*.08)*.4;if(r<o)return T.MathUtils.lerp(CY-8,CY+.035,smooth(o-20,o,r));const d=r-o;
 // Far north shoreline: replace the rounded hill with a ravine and vertical rock escarpment.
