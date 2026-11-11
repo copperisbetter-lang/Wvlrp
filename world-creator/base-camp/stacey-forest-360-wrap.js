@@ -1,5 +1,5 @@
 // The Wild / Stacey Lake — isolated distant forest panorama ring.
-// PHOTO ASSET REQUIRED: ../../assets/stacey-forest-360-skyless.png
+// PHOTO ASSET (published in feature branch): ../../assets/stacey-forest-360-skyless.webp
 // The source MUST be a 2:1 equirectangular RGBA panorama with the photographic
 // sky removed to alpha; the real Three.js Sky remains a separate live object.
 // Install this behind existing terrain, not as a replacement for lake geometry.
@@ -8,7 +8,7 @@ export function installStaceyForest360Wrap(THREE, scene, {
   radius = 850, mobile = false, diagnostics = null,
 } = {}) {
   const status = {
-    state: 'loading', asset: '../../assets/stacey-forest-360-skyless.png',
+    state: 'loading', asset: '../../assets/stacey-forest-360-skyless.webp',
     radius, sky: 'separate dynamic Three.js Sky',
     collisions: false, geometry: 'inward-facing spherical backdrop',
   };
