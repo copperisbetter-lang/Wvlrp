@@ -91,26 +91,24 @@ if(d<13.716)return CY+.035+d*.035;const ridge=CY+.515+14*smooth(14,85,d)+19*smoo
 const fallShore=CX-outer(Math.PI),pondX=fallShore-26,pondY=CY+1.4;
 // One walk-height opening in the center of the 7.62-meter-separated waterfalls.
 const hiddenCave={x:fallShore-51+19.55,z:CZ,floor:CY+1.65,halfWidth:1.32,
- innerEnd:fallShore-51+19.55-52,outerEnd:fallShore-51+19.55+7.5,
+ innerEnd:fallShore-51+19.55-7.5,outerEnd:fallShore-51+19.55+7.5,
  chamberX:fallShore-51+19.55-84,chamberR:42};
 function isHiddenCaveOpening(x,z,feet){
- // Preserve the one entrance between falls; the tunnel opens into a room
- // below the hillside. Upper photo-cliff surface remains solid and walkable.
+ // Keep only the short crawl-in throat on the Stacey side of the transition.
+ // The separate cave world owns the rest of the underground environment.
  const insideHeight=feet>=hiddenCave.floor-2&&feet<hiddenCave.floor+3.15;
  if(!insideHeight)return false;
  const tunnel=x>=hiddenCave.innerEnd&&x<=hiddenCave.outerEnd&&
    Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth;
- const dx=x-hiddenCave.chamberX,dz=z-hiddenCave.z;
- const dome=dx*dx+dz*dz<(hiddenCave.chamberR-1.1)**2;
- return tunnel||dome;
+ return tunnel;
 }
 function hiddenCaveFloor(x){
  return hiddenCave.floor-1.1*smooth(hiddenCave.x+1.2,hiddenCave.outerEnd,x);
 }
 window.staceyHiddenCave={centerX:hiddenCave.x,centerZ:hiddenCave.z,
  floor:hiddenCave.floor,width:2*hiddenCave.halfWidth,
- length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:true,
- chamber:{x:hiddenCave.chamberX,z:hiddenCave.z,radius:hiddenCave.chamberR}};
+ length:hiddenCave.outerEnd-hiddenCave.innerEnd,lockedBeyond:false,
+ chamber:null,destination:'waterfall-cave-world.html'};
 // Surface vegetation still renders everywhere above ground. Inside the
 // cavern, conceal only trees whose trunks or crowns overlap its excavated
 // footprint; saved matrices are restored upon leaving the cave.
@@ -118,18 +116,15 @@ const cavernTreeMasks=[];
 let cavernMaskState=null,cavernMaskCount=-1;
 const hiddenTreeMatrix=new T.Matrix4().makeScale(.00001,.00001,.00001);
 function overHiddenCave(x,z,reach=0){
- const dx=x-hiddenCave.chamberX,dz=z-hiddenCave.z,r=hiddenCave.chamberR+reach;
- return dx*dx+dz*dz<r*r||
- (x>hiddenCave.innerEnd-reach&&x<hiddenCave.outerEnd+reach&&
- Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth+reach);
+ return x>hiddenCave.innerEnd-reach&&x<hiddenCave.outerEnd+reach&&
+ Math.abs(z-hiddenCave.z)<hiddenCave.halfWidth+reach;
 }
 function cameraInsideHiddenCave(p){
  return p.y<hiddenCave.floor+6.2&&overHiddenCave(p.x,p.z,1.8);
 }
 function creekCenter(t){return CZ+Math.sin(t*Math.PI*2)*1.8;}
-// V10: The 84-meter domed room is INSIDE a natural continuous MOUNTAIN.
-// Exterior terrain, vegetation and walking all share this height function.
-// The existing V9 clip hides exterior rock only from inside the hollow.
+// Preserve pre-existing natural rock contour shaping around the headwaters.
+// No 84m underground chamber mesh is built in this compact scene.
 function protectedMountain(x,z){
  const room=1-smooth(43,66,Math.hypot(x-hiddenCave.chamberX,z-CZ));
  const tunnel=smooth(-70,-60,x)*(1-smooth(-12,-6,x))*(1-smooth(8,18,Math.abs(z-CZ)));
@@ -743,12 +738,6 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
        'if(hiddenDoorWorld.x>'+(hiddenCave.innerEnd-.5).toFixed(2)+
          ' && hiddenDoorWorld.x<'+(hiddenCave.outerEnd-1.7).toFixed(2)+
          ' && doorY>-.20 && doorY<2.7 && doorZ<doorHalf)discard;',
-        // Remove only photo-rock fragments INTERSECTING the internal chamber
-        // volume, safely behind the front photo face. Other photo pixels stay.
-        'float chamberDX=hiddenDoorWorld.x-('+hiddenCave.chamberX.toFixed(2)+');',
-        'float chamberR2=chamberDX*chamberDX+doorZ*doorZ;',
-        'if(hiddenDoorWorld.x<'+(hiddenCave.x-3.5).toFixed(2)+' && chamberR2<'+((hiddenCave.chamberR-1.0)**2).toFixed(2)+
-          ' && doorY>-.3 && doorY<35.0)discard;'
       ].join('\n');
       shader.fragmentShader='varying vec3 hiddenDoorWorld;\n'+shader.fragmentShader.replace(
        '#include <alphatest_fragment>','#include <alphatest_fragment>\n'+doorwayMask);
