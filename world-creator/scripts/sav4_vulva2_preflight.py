@@ -18,7 +18,15 @@ def inspect_compatibility(body):
     bounds={axis: {"indices": [int(v[0]),int(v[1])], "reference":float(v[2])}
             for axis,v in proxy["bounding_box"].items()}
     required=ids|{i for item in bounds.values() for i in item["indices"]}
+    face_count=len(data["mesh"]["faces"])
+    malformed_fits=sum(1 for row in fit if len(row)!=3 or len(row[0])!=3 or len(row[1])!=3 or len(row[2])!=3)
+    weight_errors=sum(1 for row in fit if len(row)==3 and len(row[1])==3 and abs(sum(row[1])-1.0)>0.025)
     result={
+        "fitting_rows_well_formed":malformed_fits==0,
+        "fitting_weights_valid":weight_errors==0,
+        "fitting_row_errors":malformed_fits,
+        "fitting_weight_errors":weight_errors,
+        "source_mesh_nonempty":face_count>0,
         "source":proxy["name"],
         "source_mesh":proxy["base_mesh"],
         "source_fitting_points":len(fit),
@@ -30,7 +38,7 @@ def inspect_compatibility(body):
         "compatible":False,
         "warning":"Index-range alone does not establish identical hm08 vertex topology. Do not attach or export until topology and exterior fit are verified."
     }
-    if result["indices_in_range"]:
+    if result["indices_in_range"] and result["fitting_rows_well_formed"] and result["fitting_weights_valid"] and result["source_mesh_nonempty"]:
         import math
         from mathutils import Vector
         axis_map={"x":0,"y":2,"z":1}
@@ -40,6 +48,8 @@ def inspect_compatibility(body):
             scales[axis]=abs((vertices[hi].co[axis_map[axis]]-vertices[lo].co[axis_map[axis]])/item["reference"])
         result["measured_scales"]=scales
         result["scale_plausible"]=all(math.isfinite(v) and .025<v<.25 for v in scales.values())
+        result["ready_for_topology_review"]=result["scale_plausible"]
+        result["next_step"]="Compare hm08 topology fingerprint and inspect exterior fit before attaching to SAV4"
     return result
 
 if __name__=="__main__":
