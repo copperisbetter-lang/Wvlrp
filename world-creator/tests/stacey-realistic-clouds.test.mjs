@@ -47,6 +47,8 @@ test('only opt-in ?clouds=on creates the cloud scene layer',()=>{
   assert.equal(on.objects.length,1);
   assert.equal(on.clouds.status.samples,3);
   assert.match(on.objects[0].material.fragmentShader,/noise3/);
+  assert.ok(on.objects[0].material.fragmentShader.includes('\n'), 'GLSL shader must contain actual newlines');
+  assert.ok(!on.objects[0].material.fragmentShader.includes('\\n'), 'GLSL shader must not contain literal backslash-n pairs');
   assert.equal(on.objects[0].userData.nonColliding,true);
   on.clouds.dispose();
   assert.equal(on.objects.length,0);
