@@ -1,0 +1,45 @@
+name: Stacey compact beach + cave transition checks
+on:
+  push:
+    branches:
+      - feature/stacey-compact-waterfall-transition-20261111
+    paths:
+      - 'world-creator/base-camp/stacey-dive.html'
+      - 'world-creator/base-camp/stacey-compact-world.js'
+      - 'world-creator/base-camp/stacey-tap-minimap.js'
+      - 'world-creator/base-camp/waterfall-cave-world.html'
+      - 'world-creator/tests/stacey-compact-world.test.mjs'
+      - '.github/workflows/stacey-compact-world.yml'
+  workflow_dispatch:
+
+jobs:
+  compact-scene-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate compact world module syntax
+        run: node --check world-creator/base-camp/stacey-compact-world.js
+      - name: Validate minimap module syntax
+        run: node --check world-creator/base-camp/stacey-tap-minimap.js
+      - name: Check inline game and cave JavaScript syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          for(const file of ['world-creator/base-camp/stacey-dive.html','world-creator/base-camp/waterfall-cave-world.html']) {
+            const html=fs.readFileSync(file,'utf8');
+            const match=html.match(/<script type="module">([\s\S]*?)<\/script>/);
+            if(!match) throw Error('No module in '+file);
+            const out='/tmp/'+file.split('/').pop()+'.mjs';
+            fs.writeFileSync(out,match[1]);
+            console.log(out);
+          }
+          NODE
+          node --check /tmp/stacey-dive.html.mjs
+          node --check /tmp/waterfall-cave-world.html.mjs
+      - name: Verify compact terrain, cave transition and preserved scenery
+        run: node --test world-creator/tests/stacey-compact-world.test.mjs
