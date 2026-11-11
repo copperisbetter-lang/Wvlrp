@@ -58,6 +58,7 @@ import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
 import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
 import {installStaceyForest360Wrap} from './stacey-forest-360-wrap.js';
 import {installStaceyRealisticClouds} from './stacey-realistic-clouds.js';
+import {staceyWorldRadius,staceyWithinWorld,keepStaceyInside,nearWaterfallCave} from './stacey-compact-world.js';
 // One complete scene: no dependency on any experimental lake code or terrain module.
 const diag=window.staceyDiagnostics={errors:[],assets:{},trees:0,rocks:0,reflection:'actual scene',grade:'3.5% over 45ft',approved:false,defaultAvatar:'Gina 6 (player clone)',defaultSpawn:'Stacey Lake south beach'};
 const status=document.querySelector('#status');window.addEventListener('error',e=>{diag.errors.push(e.message);status.textContent='Scene error: '+e.message});
@@ -324,14 +325,16 @@ mat.onBeforeCompile=s=>{
    '#include <alphatest_fragment>\n'+cavernTerrainClip);
 };
 // Dense shoreline geometry resolves shallow beaches without a coarse world-grid seam.
-const N=384,R=150,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){const r=i/R*340;for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
+// Compact lake: 152m outer land edge on normal banks, 190m at west waterfall.
+// Keep nearly the same local triangle density but stop generating faraway terrain.
+const N=384,R=96,positions=[],uvs=[],ids=[];for(let i=0;i<=R;i++){for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,r=i/R*staceyWorldRadius(a),x=CX+Math.cos(a)*r,z=CZ+Math.sin(a)*r;positions.push(x,ground(x,z),z);uvs.push(x/10,z/10)}}for(let i=0;i<R;i++)for(let j=0;j<N;j++){const k=i*(N+1)+j;ids.push(k,k+1,k+N+1,k+1,k+N+2,k+N+1)}const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(positions,3));terrainGeo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));terrainGeo.setIndex(ids);terrainGeo.computeVertexNormals();scene.add(new T.Mesh(terrainGeo,mat));
 // A path overlay 2cm above analytic ground was invisible where the drawn
 // terrain's larger triangles crossed ABOVE the overlay. Use those exact triangles
 // to place photographs just above visible terrain, keeping collisions unchanged.
 function photoVisibleGround(x,z){
  const dx=x-CX,dz=z-CZ,r=Math.hypot(dx,dz);
  const a=(Math.atan2(dz,dx)+Math.PI*2)%(Math.PI*2);
- const ri=Math.min(R-1,Math.max(0,Math.floor(r/340*R)));
+ const ri=Math.min(R-1,Math.max(0,Math.floor(r/staceyWorldRadius(a)*R)));
  const ai=Math.min(N-1,Math.max(0,Math.floor(a/(2*Math.PI)*N)));
  const k=ri*(N+1)+ai,p=terrainGeo.attributes.position;
  function tri(i,j,l){
@@ -455,207 +458,27 @@ purpleTrails.install(T,scene,photoVisibleGround,soil,new URLSearchParams(locatio
   ledgePose.scale.set(2.4+rand()*1.8,.6+rand()*.55,5.9+rand()*.8);
   ledgePose.rotation.set(0,(rand()-.5)*.08,(rand()-.5)*.05);ledgePose.updateMatrix();ledges.setMatrixAt(i,ledgePose.matrix);
  }group.add(ledges);legacyCliffParts.push(ledges);
- // Quest-locked cave portal: visible between the two falls but intentionally sealed.
- // This is an exterior facade, NOT an accessible passage before Dark and Damp.
- const portal=new T.Group();portal.name='Dark and Damp — sealed cave entrance';group.add(portal);
- const caveX=wallX+19.55,caveY=CY+7.3,caveZ=CZ;
- const black=new T.MeshStandardMaterial({color:0x101a18,roughness:1,side:T.DoubleSide});
- const throat=new T.Mesh(new T.CircleGeometry(5.1,32),black);
- throat.rotation.y=Math.PI/2;throat.scale.set(1,1.13,1);throat.position.set(caveX+.08,caveY,caveZ);portal.add(throat);
- const rimMat=new T.MeshStandardMaterial({color:0x626a63,roughness:1,flatShading:true});
- // A naturally irregular stone rim surrounding the dark cave mouth.
- for(let i=0;i<20;i++){const angle=i*Math.PI*2/20,radius=5.4+Math.sin(i*2.7)*.6;
-  const k=new T.Mesh(new T.DodecahedronGeometry(1,0),rimMat);
-  k.position.set(caveX+.45+Math.sin(i*4.3)*.25,caveY+Math.sin(angle)*radius,caveZ+Math.cos(angle)*radius);
-  k.scale.set(.85+rand()*.75,1.1+rand()*.8,1.1+rand()*.75);k.rotation.set(rand(),rand(),rand());portal.add(k);
+ // The waterfall cave is a portal to a SEPARATE world. Keep only the visible
+ // shallow crawl-in entrance here, not the old underground chamber or corridors.
+ const portal=new T.Group();portal.name='Waterfall cave — separate-world entrance';group.add(portal);
+ const caveX=hiddenCave.x,caveY=hiddenCave.floor+1.27,caveZ=CZ;
+ const black=new T.MeshBasicMaterial({color:0x101714,side:T.DoubleSide});
+ const throat=new T.Mesh(new T.CircleGeometry(1.44,28),black);
+ throat.rotation.y=Math.PI/2;throat.scale.set(1,1.12,1);
+ throat.position.set(caveX+.07,caveY,caveZ);portal.add(throat);
+ const rimMat=new T.MeshStandardMaterial({color:0x525b53,roughness:1,flatShading:true});
+ for(let i=0;i<15;i++){
+   const angle=i*Math.PI*2/15,radius=1.64+.10*Math.sin(i*3.7);
+   const stone=new T.Mesh(new T.DodecahedronGeometry(1),rimMat);
+   stone.position.set(caveX+.18,caveY+Math.sin(angle)*radius,caveZ+Math.cos(angle)*radius);
+   stone.scale.set(.25+rand()*.21,.24+rand()*.21,.25+rand()*.19);
+   stone.rotation.set(rand(),rand(),rand());portal.add(stone);
  }
- const sealStone=new T.Mesh(new T.DodecahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x747b72,roughness:1,flatShading:true}));
- sealStone.name='Quest seal boulder — Dark and Damp';sealStone.scale.set(3.4,4.55,4.2);
- sealStone.position.set(caveX+1.4,caveY-.65,caveZ);sealStone.rotation.set(.2,.25,-.1);portal.add(sealStone);
- // Quest manager may change this flag later; default always stays locked.
- window.staceyCave={locked:true,entrance:portal,seal:sealStone,quest:'Dark and Damp',secondTunnel:'one-way underwater exit beneath island'};
- // Underground structures remain hidden until quest access; the outer portal is always visible.
- const subterranean=new T.Group();subterranean.name='Dark and Damp — tunnel 1, ballroom and submerged tunnel 2';scene.add(subterranean);
- const caveRock=new T.MeshStandardMaterial({color:0x494f48,roughness:1,flatShading:true,side:T.DoubleSide});
- const floorRock=new T.MeshStandardMaterial({color:0x535b52,roughness:1,flatShading:true,side:T.DoubleSide});
- function rockPassage(a,b,radius,segments=16){
-  const diff=new T.Vector3().subVectors(b,a),mid=new T.Vector3().addVectors(a,b).multiplyScalar(.5);
-  const pipe=new T.Mesh(new T.CylinderGeometry(radius,radius, diff.length(),segments,1,true),caveRock);
-  pipe.position.copy(mid);pipe.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),diff.clone().normalize());subterranean.add(pipe);
-  // Ceiling and sides form a readable stone-lined corridor; individual chambers use separate mesh.
-  return pipe;
- }
- // Tunnel 1 gently descends inland from west cliff; cavern rests below the outer hill.
- const caveMouth=new T.Vector3(caveX-2,caveY-.5,caveZ);
- const bend=new T.Vector3(caveX-25,CY-3,CZ-5);
- const hall=new T.Vector3(caveX-63,CY-16,CZ-4);
- rockPassage(caveMouth,bend,3.7);rockPassage(bend,hall,4.8);
- const ballroom=new T.Mesh(new T.SphereGeometry(20,24,14),caveRock);
- ballroom.name='Underground ballroom cavern';ballroom.position.copy(hall);ballroom.scale.set(1.35,.76,1);subterranean.add(ballroom);
- const hallFloor=new T.Mesh(new T.CylinderGeometry(17,18,1,24),floorRock);hallFloor.position.set(hall.x,hall.y-11.6,hall.z);subterranean.add(hallFloor);
- // Deep pool at the cavern end, separate from lake water plane.
- const darkWater=new T.Mesh(new T.CircleGeometry(8,24),new T.MeshPhysicalMaterial({color:0x126375,roughness:.18,metalness:.06,transparent:true,opacity:.8,side:T.DoubleSide}));
- darkWater.rotation.x=-Math.PI/2;darkWater.position.set(hall.x+16,hall.y-9.8,hall.z);darkWater.name='Ballroom escape pool';subterranean.add(darkWater);
- // Underwater tunnel 2 follows an isolated submerged route from pool to below island slope.
- const exitPos=new T.Vector3(CX-inner(0)-8,CY-7.6,CZ+4);
- const course=[new T.Vector3(hall.x+16,hall.y-12,hall.z),new T.Vector3(westShore-12,CY-20,CZ-4),new T.Vector3(CX-68,CY-24,CZ-16),new T.Vector3(CX-24,CY-17,CZ-12),exitPos];
- const line=new T.CatmullRomCurve3(course);
- const tube=new T.Mesh(new T.TubeGeometry(line,66,2.35,9,false),caveRock);tube.name='Tunnel 2 — underwater one-way escape';subterranean.add(tube);
- // Distinguishable exit aperture below island, invisible before quest.
- const exitRing=new T.Mesh(new T.TorusGeometry(2.6,.7,7,12),floorRock);exitRing.position.copy(exitPos);exitRing.rotation.y=Math.PI/2;subterranean.add(exitRing);
- subterranean.visible=false;
- window.staceyUnderground={group:subterranean,entrance:caveMouth,ballroom:hall,pool:darkWater,exit:exitPos,questLocked:true,tunnel2OneWay:true,
-   setQuestCompleted(complete){this.questLocked=!complete;subterranean.visible=!!complete;sealStone.visible=!complete;window.staceyCave.locked=!complete;}};
- // A tunnel leading to a monumental excavated cavern, separate from Dark and Damp.
- const vestibule=new T.Group();
- vestibule.name='Secret cave vestibule — hidden between the waterfalls';scene.add(vestibule);
- const floorMat=new T.MeshStandardMaterial({color:0x555d51,roughness:1,side:T.DoubleSide});
- const caveLen=hiddenCave.outerEnd-hiddenCave.innerEnd;
- // Keep the rock floor inside the cliff rather than jutting out over the pond.
- const visibleFloorEnd=hiddenCave.x+1.2;
- // Stop tunnel ceiling when it reaches the great chamber; it must not form
- // a hanging tube inside the domed room or overlap the main hall flooring.
- const passageStart=hiddenCave.chamberX+hiddenCave.chamberR-1.0;
- const visibleFloorLen=visibleFloorEnd-passageStart;
- const floor=new T.Mesh(new T.BoxGeometry(visibleFloorLen,.25,hiddenCave.halfWidth*2.3),floorMat);
- floor.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor-.16,hiddenCave.z);
- floor.name='Hidden cave stone floor';vestibule.add(floor);
- const shellLen=visibleFloorEnd-passageStart;
- const shell=new T.Mesh(new T.CylinderGeometry(1.79,1.73,shellLen,24,1,true),
-   new T.MeshStandardMaterial({color:0x404940,roughness:1,side:T.BackSide,flatShading:false}));
- shell.rotation.z=Math.PI/2;
- shell.position.set((passageStart+visibleFloorEnd)/2,hiddenCave.floor+1.12,hiddenCave.z);
- shell.name='Interior stone tunnel roof and side walls';vestibule.add(shell);
-
- // V8: a vast, truly excavated hall, set farther under the mountain.
- // 84m / 276ft diameter, domed ~32m / 105ft above its solid walkable floor.
- const domeR=hiddenCave.chamberR,domeX=hiddenCave.chamberX,domeY=hiddenCave.floor;
- const wallHeight=8,capHeight=24,wallSkirt=.65;
- const chamber=new T.Group();
- chamber.name='Massive excavated domed cavern — 84m diameter';vestibule.add(chamber);
- const rockyMap=creekBedrockMap.clone();rockyMap.repeat.set(5,3);
- rockyMap.needsUpdate=true;
- const rockMat=new T.MeshStandardMaterial({
-   map:rockyMap,color:0xc7c9bb,roughness:1,metalness:0,side:T.BackSide,
-   vertexColors:true,flatShading:false,emissive:0x1b201a,emissiveIntensity:.42
- });
- const floorMatHuge=new T.MeshStandardMaterial({
-   map:creekBedrockMap,color:0xb5b8a9,roughness:1,metalness:0,
-   side:T.DoubleSide,vertexColors:true
- });
- const vertShade=(x,y,z)=>{
-   const n=.5+.23*Math.sin(x*.16+z*.2)*Math.cos(z*.13-y*.22)
-     +.13*Math.sin(x*.63-z*.4+y*.18)+.08*Math.sin(z*.83+x*.37);
-   const c=new T.Color(0x8b9185);c.multiplyScalar(T.MathUtils.clamp(n+.55,.53,1.3));
-   return c;
- };
- const assignColors=geo=>{
-   const pos=geo.getAttribute('position'),rgb=new Float32Array(pos.count*3);
-   for(let i=0;i<pos.count;i++){
-     const c=vertShade(pos.getX(i),pos.getY(i),pos.getZ(i));
-     rgb[i*3]=c.r;rgb[i*3+1]=c.g;rgb[i*3+2]=c.b;
-   }
-   geo.setAttribute('color',new T.BufferAttribute(rgb,3));
- };
- // Irregular solid stone floor, 16 concentric rings (not a flat giant triangle fan).
- const floorCoords=[],floorColors=[],floorUV=[],floorIndices=[],rings=16,faces=96;
- for(let j=0;j<=rings;j++){
-   const radius=(domeR+1.15)*j/rings;
-   for(let i=0;i<=faces;i++){
-     const a=2*Math.PI*i/faces;
-     const x=radius*Math.cos(a),z=radius*Math.sin(a);
-     const ripple=.07*Math.sin(x*.32+z*.23)*Math.cos(z*.21-x*.12);
-     floorCoords.push(x,ripple,z);
-     floorUV.push(x*.055+.5,z*.055+.5);
-     const color=vertShade(x,0,z);
-     floorColors.push(color.r,color.g,color.b);
-     if(j<rings&&i<faces){
-       const p=j*(faces+1)+i,q=p+faces+1;
-       floorIndices.push(p,q,p+1,q,q+1,p+1);
-     }
-   }
- }
- const hugeFloorGeo=new T.BufferGeometry();
- hugeFloorGeo.setAttribute('position',new T.Float32BufferAttribute(floorCoords,3));
- hugeFloorGeo.setAttribute('uv',new T.Float32BufferAttribute(floorUV,2));
- hugeFloorGeo.setAttribute('color',new T.Float32BufferAttribute(floorColors,3));
- hugeFloorGeo.setIndex(floorIndices);hugeFloorGeo.computeVertexNormals();
- const chamberFloor=new T.Mesh(hugeFloorGeo,floorMatHuge);
- chamberFloor.position.set(domeX,domeY-.08,hiddenCave.z);
- chamberFloor.name='Massive domed hall excavated bedrock walking floor';chamber.add(chamberFloor);
- // Smooth 96-section rocky walls. Only a narrow +X slot is left for the corridor.
- const entryAngle=3.55/domeR;
- const sideWallGeom=new T.CylinderGeometry(domeR,domeR,wallHeight+wallSkirt,96,12,true,
-    Math.PI/2+entryAngle/2,2*Math.PI-entryAngle);
- const wallVerts=sideWallGeom.getAttribute('position');
- for(let i=0;i<wallVerts.count;i++){
-   const x=wallVerts.getX(i),y=wallVerts.getY(i),z=wallVerts.getZ(i);
-   const ang=Math.atan2(x,z);
-   const bulge=.28*Math.sin(ang*9+y*.33)+.14*Math.sin(ang*22-y*.62);
-   const radial=1+bulge/domeR;
-   wallVerts.setXYZ(i,x*radial,y,z*radial);
- }
- wallVerts.needsUpdate=true;sideWallGeom.computeVertexNormals();assignColors(sideWallGeom);
- const sidewall=new T.Mesh(sideWallGeom,rockMat);
- sidewall.position.set(domeX,domeY+(wallHeight-wallSkirt)/2,hiddenCave.z);
- sidewall.name='Cut-away massive domed hall rounded inner walls';chamber.add(sidewall);
- // 96x44 gently weathered dome: high smooth arch, not the dark faceted shell in V7.
- const canopyGeometry=new T.SphereGeometry(domeR,96,44,0,Math.PI*2,0,Math.PI/2);
- const canopyPos=canopyGeometry.getAttribute('position');
- for(let i=0;i<canopyPos.count;i++){
-   const x=canopyPos.getX(i),y=canopyPos.getY(i),z=canopyPos.getZ(i);
-   const ripple=.28*Math.sin(x*.27+z*.17)+.19*Math.cos(x*.54-z*.4);
-   // Rock rim extends below and outside the top wall without moving the apex.
-   const rim=1-T.MathUtils.smoothstep(y,0,2.2);
-   const rad=1+(ripple+.55*rim)/domeR;
-   canopyPos.setXYZ(i,x*rad,y*(capHeight/domeR)+ripple*.21-.55*rim,z*rad);
- }
- canopyPos.needsUpdate=true;canopyGeometry.computeVertexNormals();
- assignColors(canopyGeometry);
- const dome=new T.Mesh(canopyGeometry,rockMat);
- dome.position.set(domeX,domeY+wallHeight,hiddenCave.z);
- dome.name='Vast raised arched bedrock dome ceiling';chamber.add(dome);
- // Cheap unshadowed area lighting, with some bounce to preserve phone FPS.
- const amber=new T.PointLight(0xffdfb0,3.0,93,1.1);
- amber.position.set(domeX+4,domeY+18,hiddenCave.z+4);chamber.add(amber);
- const coolFill=new T.PointLight(0xbfd5cb,1.4,70,1.1);
- coolFill.position.set(domeX-20,domeY+11,hiddenCave.z-12);chamber.add(coolFill);
- const edgeRocks=new T.InstancedMesh(new T.DodecahedronGeometry(1,0),
-   new T.MeshStandardMaterial({color:0x686e62,roughness:1,flatShading:true}),110);
- const stonePose=new T.Object3D();
- for(let i=0;i<110;i++){
-   const a=i*2.3999632,rad=domeR-2.2-.6*Math.sin(i*1.7);
-   stonePose.position.set(domeX+Math.cos(a)*rad,domeY+.3+(i%7)*.15,
-     hiddenCave.z+Math.sin(a)*rad);
-   stonePose.rotation.set(.19*i,.6*i,.27*i);
-   stonePose.scale.set(.35+(i%4)*.26,.36+(i%5)*.30,.46+(i%3)*.27);
-   stonePose.updateMatrix();edgeRocks.setMatrixAt(i,stonePose.matrix);
- }
- edgeRocks.computeBoundingSphere();edgeRocks.name='Weathered rock fragments around cavern edge';
- chamber.add(edgeRocks);
- // Deeper quest passage remains closed until Dark and Damp is unlocked.
- const backWall=new T.Mesh(new T.BoxGeometry(1.0,4.5,3.2),
-   new T.MeshStandardMaterial({color:0x3b423a,roughness:1,side:T.DoubleSide}));
- backWall.position.set(domeX-domeR+1.0,domeY+2.25,hiddenCave.z);
- backWall.name='Sealed future Dark and Damp cavern exit';chamber.add(backWall);
- window.staceyHiddenCave.chamberGroup=chamber;
- const rubble=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),
-   new T.MeshStandardMaterial({color:0x61685c,roughness:1,flatShading:true}),12);
- const pose=new T.Object3D();
- for(let k=0;k<12;k++){
-  const side=k%2?-1:1;
-  pose.position.set(hiddenCave.x+(k<6?1.1:-1.2)+(k%3)*.5,
-   hiddenCave.floor+.2+(k%3)*.48,hiddenCave.z+side*(hiddenCave.halfWidth+.35));
-  pose.scale.set(.4+(k%3)*.22,.35+(k%4)*.17,.43+(k%3)*.13);
-  pose.rotation.set(k*.27,k*.65,k*.23);pose.updateMatrix();rubble.setMatrixAt(k,pose.matrix);
- }
- rubble.computeBoundingSphere();rubble.name='Concealed entrance rubble';vestibule.add(rubble);
- window.staceyHiddenCave.vestibule=vestibule;
- diag.assets['secret cave']='V9 sealed massive 84m cavern; over-cavern trees concealed inside only; quest locked';
-
- diag.assets['tunnels']='underground geometry staged, Dark and Damp locked';
-
- diag.assets['cave entrance']='visible, boulder sealed — quest locked';
+ // The entire cave quest and any interior geometry load in waterfall-cave-world.html.
+ window.staceyCave={locked:false,entrance:portal,destination:'waterfall-cave-world.html',mode:'cross-world',crawlRequired:true};
+ window.staceyHiddenCave.vestibule=null;window.staceyHiddenCave.chamberGroup=null;
+ diag.assets['cave entrance']='short crawl-in portal / separate cave world';
+ diag.assets['underground chamber']='removed from Stacey Lake for performance';
 
  // Broken rock terraces and boulders hide the planar silhouette.
  for(let i=0;i<85;i++){const z=CZ+(rand()-.5)*102,v=rand(),y=CY+2+v*30;
@@ -1248,7 +1071,19 @@ window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-
  get ginaReady(){return ginaPlayer.state.ready;},get ginaError(){return ginaPlayer.state.error;},
  get animations(){return ginaPlayer.state.clips.slice();},get activeAnimation(){return ginaPlayer.state.current;},
  get locked(){return inspectLock;},get bodyHeading(){return playerHeading;}};
-let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
+let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;
+const cavePortalButton=document.createElement('button');
+cavePortalButton.id='staceyCrawlToWorld';
+cavePortalButton.textContent='CRAWL INTO WATERFALL CAVE';
+cavePortalButton.style.cssText='position:fixed;z-index:15;bottom:18%;left:50%;transform:translateX(-50%);padding:14px 18px;background:#173c36ee;border:2px solid #d5ead1;border-radius:10px;color:#fff;font:700 14px system-ui;display:none;cursor:pointer;max-width:88vw';
+document.body.append(cavePortalButton);
+let caveTransitionStarted=false;
+cavePortalButton.onclick=()=>{
+ if(caveTransitionStarted||aerial||!nearWaterfallCave(pos.x,pos.z,hiddenCave.outerEnd+1,hiddenCave.z,10))return;
+ caveTransitionStarted=true;
+ cavePortalButton.textContent='ENTERING CAVE WORLD…';
+ location.assign(new URL('./waterfall-cave-world.html?from=stacey',location.href).href);
+};const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],worldBoundary:(x,z)=>staceyWithinWorld(x,z,CX,CZ),worldRange:190,canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
  const active={actionRun:isRunning&&!isSitting&&!aerial,actionFly:aerial,actionSwim:inLake&&!aerial&&depthMode==='surface',actionDive:inLake&&!aerial&&depthMode==='dive',actionSit:isSitting};
@@ -1373,9 +1208,9 @@ beach();
    yaw=camera.rotation.y;pitch=camera.rotation.x;
    diag.assets['Trail walk-start']='on lake spur photo surface';
   }
-  if(new URLSearchParams(location.search).get('spawn')==='dome'){
+  if(new URLSearchParams(location.search).get('spawn')==='cave'){
   aerial=false;depthMode='surface';
-  pos.set(hiddenCave.chamberX,hiddenCave.floor+1.7,hiddenCave.z);
+  pos.set(hiddenCave.outerEnd+5,ground(hiddenCave.outerEnd+5,hiddenCave.z)+1.7,hiddenCave.z);
   yaw=Math.PI/2;pitch=-.08;
  }
  document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
@@ -1416,7 +1251,7 @@ const joystickToggle=document.getElementById('joystickToggle');joystickToggle.on
 if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
 const autoWalk=inspectLock?{walking:false}:miniNav.step(dt,moveSpeed);
 if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
-const r=Math.hypot(pos.x-CX,pos.z-CZ);if(r>338){pos.x=CX+(pos.x-CX)*338/r;pos.z=CZ+(pos.z-CZ)*338/r}let bed=ground(pos.x,pos.z);
+keepStaceyInside(pos,CX,CZ);let bed=ground(pos.x,pos.z);
 if(aerial){
  // Joystick flies in the looking direction; tilt up to climb, tilt down to descend.
  // Space/Control provide extra climb/descent on desktop.
@@ -1425,7 +1260,7 @@ if(aerial){
 }
 if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-(isSitting?1.05:1.7));
- pos.x=contact.x;pos.z=contact.z;bed=contact.floor;
+ pos.x=contact.x;pos.z=contact.z;keepStaceyInside(pos,CX,CZ);bed=ground(pos.x,pos.z);
 }
 const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks the cloned Gina player; first-person remains available in caves.
 const playerMoving=!inspectLock&&(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
@@ -1444,6 +1279,7 @@ ginaPlayer.update({eye:pos,yaw:playerHeading,dt,walking:playerMoving,running:isR
 // visible in third-person, even when it finishes loading after a mode switch.
 ginaPlayer.carrier.visible=chaseCamera;
 syncPlayerCamera();miniNav.draw(now);
+cavePortalButton.style.display=(!caveTransitionStarted&&!aerial&&depthMode==='surface'&&nearWaterfallCave(pos.x,pos.z,hiddenCave.outerEnd+1,hiddenCave.z,10))?'block':'none';
  // Do not upload any per-instance matrices every frame; only on camera
  // chamber transitions or when another async vegetation GLB finishes.
  const insideCave=cameraInsideHiddenCave(pos);
