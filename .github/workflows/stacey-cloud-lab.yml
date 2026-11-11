@@ -1,0 +1,26 @@
+name: Stacey Lake cloud lab smoke test
+on:
+  push:
+    branches:
+      - feature/stacey-realistic-cloud-lab-20261111
+    paths:
+      - 'world-creator/base-camp/stacey-realistic-clouds.js'
+      - 'world-creator/base-camp/stacey-dive.html'
+      - 'world-creator/tests/stacey-realistic-clouds.test.mjs'
+      - '.github/workflows/stacey-cloud-lab.yml'
+  workflow_dispatch:
+
+jobs:
+  cloud-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check real cloud module JavaScript syntax
+        run: node --check world-creator/base-camp/stacey-realistic-clouds.js
+      - name: Test demo-object removal and integration
+        run: node --test world-creator/tests/stacey-realistic-clouds.test.mjs
