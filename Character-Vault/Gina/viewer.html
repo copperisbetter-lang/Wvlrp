@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gina 3FT — Fitted Gold Bikini | Character Preview</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#101c28;color:#f1f7fc;font-family:system-ui,sans-serif}
+header{padding:12px 14px 8px}h1{font-size:1.2rem;margin:0 0 5px}p{font-size:.85rem;color:#a6c5d1;margin:3px 0}
+#view{height:calc(100dvh - 215px);min-height:270px;touch-action:none;width:100%}
+nav{padding:10px;display:flex;gap:7px;flex-wrap:wrap}
+button,select{background:#254457;border:1px solid #69909f;color:white;border-radius:9px;padding:10px;font-size:14px}
+button:active{background:#3e697f}
+#state{padding:0 13px 14px;color:#bcdde1;font-size:13px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head>
+<body>
+<header><h1>GINA • 3 FOOT BIKINI CLONE</h1><p>Independent copy of the original fitted gold bikini, original 69-joint rig and 77 animations. Full-size Gina unchanged.</p></header>
+<div id="view"></div>
+<nav>
+<button data-clip="Idle">Idle</button><button data-clip="Walk">Walk</button><button data-clip="Run">Run</button>
+<select id="clips" aria-label="Animation"><option value="">Choose animation…</option></select>
+<button id="front">Front</button><button id="side">Side</button><button id="back">Back</button>
+</nav>
+<div id="state" aria-live="polite">Loading Gina's actual 3D model…</div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const host=document.getElementById('view'),status=document.getElementById('state');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x162836);
+scene.add(new THREE.HemisphereLight(0xe9f4ff,0x37465b,2.6));
+const light=new THREE.DirectionalLight(0xffffff,3.2);light.position.set(1.7,4,4);scene.add(light);
+const camera=new THREE.PerspectiveCamera(36,1,0.015,30);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));
+host.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,.47,0);
+const grid=new THREE.GridHelper(2,16,0x567078,0x304354);scene.add(grid);
+let mixer=null,clips=[],model=null,action=null,lastBox=null;
+function resize(){const w=host.clientWidth||320,h=host.clientHeight||400;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(host);
+function pointView(v){
+ if(!lastBox)return;
+ const center=lastBox.getCenter(new THREE.Vector3()),size=lastBox.getSize(new THREE.Vector3());
+ controls.target.copy(center);const d=Math.max(size.y*2.15,1.65);
+ camera.position.copy(center).add(new THREE.Vector3(v==='side'?d:0,size.y*.11,v==='back'?-d:v==='side'?0:d));controls.update();
+}
+function play(name){
+ if(!mixer)return;const c=clips.find(x=>x.name===name);if(!c)return;
+ if(action)action.fadeOut(.17);action=mixer.clipAction(c);action.reset().fadeIn(.17).play();
+ status.textContent='Gina 3 ft (36 in / 0.9144 m) • fitted gold bikini • '+clips.length+' animations • playing '+name;
+}
+for(const b of document.querySelectorAll('[data-clip]'))b.onclick=()=>play(b.dataset.clip);
+for(const v of ['front','side','back'])document.getElementById(v).onclick=()=>pointView(v);
+document.getElementById('clips').onchange=e=>play(e.target.value);
+const loader=new GLTFLoader();
+loader.load('./Gina_3FT_FITTED_GOLD_BIKINI.glb',accept,undefined,e=>{
+ status.textContent='Scaled GLB unavailable; loading preserved fitted-bikini copy…';
+ loader.load('./Gina_3FT_FITTED_GOLD_BIKINI_original_copy.glb',accept,undefined,e2=>{
+  status.textContent='Unable to open Gina asset: '+String(e2?.message||e2);
+ });
+});
+function accept(g){
+ model=g.scene;scene.add(model);
+ model.updateMatrixWorld(true);
+ let box=new THREE.Box3().setFromObject(model),oldHeight=box.getSize(new THREE.Vector3()).y;
+ if(!(oldHeight>.25&&oldHeight<4)){status.textContent='Unexpected source height: '+oldHeight;return;}
+ // Exact visual safety calibration, also protects if a source (rather than baked GLB) was loaded.
+ let scale=.9144/oldHeight;
+ model.scale.multiplyScalar(scale);model.position.y-=box.min.y*scale;
+ model.updateMatrixWorld(true);
+ lastBox=new THREE.Box3().setFromObject(model);
+ const actualHeight=lastBox.getSize(new THREE.Vector3()).y;
+ if(Math.abs(actualHeight-.9144)>.005){status.textContent='Height calibration needs verification: '+actualHeight.toFixed(4)+' m';return;}
+ mixer=new THREE.AnimationMixer(model);clips=g.animations||[];
+ for(const c of clips){const opt=document.createElement('option');opt.value=c.name;opt.textContent=c.name;document.getElementById('clips').appendChild(opt);}
+ pointView('front');play('Idle');window.gina3ft={model,mixer,clips,actualHeight};
+}
+const clock=new THREE.Clock();
+function tick(){requestAnimationFrame(tick);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);controls.update();renderer.render(scene,camera);}
+resize();tick();
+</script></body></html>

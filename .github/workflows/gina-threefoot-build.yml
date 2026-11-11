@@ -1,0 +1,25 @@
+name: Gina 3-foot fitted-bikini GLB isolated build
+on:
+  push:
+    branches:
+      - feature/gina-3ft-bikini-20261110
+    paths:
+      - Character-Vault/Gina/build_gina_3ft.py
+      - .github/workflows/gina-threefoot-build.yml
+permissions:
+  contents: write
+jobs:
+  build-gina:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Scale preserved Gina 6 bikini GLB without changing the binary geometry, textures, rig or animation
+        run: python3 Character-Vault/Gina/build_gina_3ft.py
+      - name: Commit only the new clone asset to this isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Character-Vault/Gina/Gina_3FT_FITTED_GOLD_BIKINI.glb
+          git diff --cached --quiet || (git commit -m "Build precisely scaled 0.9144 m Gina bikini GLB with intact skeleton and animations" && git push origin HEAD:feature/gina-3ft-bikini-20261110)
