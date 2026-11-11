@@ -1,7 +1,7 @@
 // WVLRP The Wild / Stacey Lake: touch minimap and terrain-aware Mason walk routing.
 // Isolated UI/navigation module. This does not modify scenery, model or physics.
 // An unreachable destination is refused, never teleported to.
-export function installStaceyTapMinimap({pos, getYaw, ground, cliffContact, solidCliffStep, CX, CY, CZ, trails, canAutoWalk}) {
+export function installStaceyTapMinimap({pos, getYaw, ground, cliffContact, solidCliffStep, CX, CY, CZ, trails, canAutoWalk, worldBoundary=null, worldRange=340}) {
   const map=document.createElement('section');
   map.id='staceyMiniMap';
   map.setAttribute('aria-label','Interactive walking minimap');
@@ -12,9 +12,9 @@ export function installStaceyTapMinimap({pos, getYaw, ground, cliffContact, soli
   document.head.append(style);
   const canvas=map.querySelector('#staceyMapCanvas'),g=canvas.getContext('2d');
   const notice=map.querySelector('#staceyMapNotice'),zoom=map.querySelector('#staceyMapZoom');
-  const ranges=[45,100,340];let rangeIndex=1,lastPaint=-Infinity;
+  const ranges=[45,100,worldRange];let rangeIndex=1,lastPaint=-Infinity;
   let route=[],target=null,manualCancel=false;
-  const bound=(x,z)=>Math.hypot(x-CX,z-CZ)<=336;
+  const bound=(x,z)=>worldBoundary?worldBoundary(x,z):Math.hypot(x-CX,z-CZ)<=336;
   function standable(x,z) {
     if(!bound(x,z))return false;
     const h=ground(x,z);
