@@ -1,0 +1,17 @@
+{
+  "character_name": "Gina 3FT",
+  "original_source": "prototypes/gina6-20261102/Gina_6_FITTED_GOLD_BIKINI.glb",
+  "independent_model": "Character-Vault/Gina/Gina_3FT_FITTED_GOLD_BIKINI.glb",
+  "height_m": 0.9144,
+  "animation_aliases": {
+    "idle": "Idle",
+    "walk": "Slouch walk",
+    "run": "Run",
+    "original_walk_available": "Walk"
+  },
+  "animation_count_preserved": 77,
+  "rig_joints_preserved": 69,
+  "outfit": "Original gold bikini fitted to source",
+  "face_morph_plan": "Await owner reference photo. SickleYield 200 Free Morphs is for Genesis 9, not directly compatible with original 3d-gen Gina 6 mesh/rig. Face photo only a sculpt reference until an actual conversion/face-transfer pipeline and geometry QA exists.",
+  "scope": "Isolated branch only. Do not modify original Gina or deploy production without owner review."
+}
