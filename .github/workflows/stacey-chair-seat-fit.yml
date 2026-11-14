@@ -1,8 +1,8 @@
-name: Stacey Chair Hip Alignment Smoke Test
+name: Stacey Chair Cushion Fit Smoke Test
 on:
   push:
     branches:
-      - fix/stacey-chair-seat-alignment-20261113
+      - fix/stacey-chair-cushion-size-20261113
     paths:
       - world-creator/base-camp/stacey-dive.html
       - world-creator/base-camp/stacey-click-to-sit-chair.js
