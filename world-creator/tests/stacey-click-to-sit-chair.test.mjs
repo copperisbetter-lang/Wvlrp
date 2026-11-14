@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const game=readFileSync(new URL('../base-camp/stacey-dive.html',import.meta.url),'utf8');
+const chair=readFileSync(new URL('../base-camp/stacey-click-to-sit-chair.js',import.meta.url),'utf8');
+assert.match(game,/installStaceyLakeChair/);
+assert.match(game,/chair\.picked\(camera/);
+assert.match(game,/miniNav\.choose\(chair\.seat\.x,chair\.seat\.z\)/);
+assert.match(game,/isSitting=true;playerHeading=chair\.yaw/);
+assert.match(game,/chairWalk && !miniNav\.active/);
+assert.match(chair,/rotation\.y=Math\.PI/);
+assert.match(chair,/assets\/stacey\/folding-camp-chair\.glb/);
+assert.match(chair,/temporary silhouette ONLY/);
+console.log('PASS Stacey Lake camping chair click-to-walk-to-sit integration source assertions');
