@@ -1,0 +1,33 @@
+name: Stacey Chair Targeted Smoke Check
+on:
+  push:
+    branches:
+      - feature/stacey-camp-chair-click-to-sit-20261113
+    paths:
+      - .github/workflows/stacey-chair-smoke.yml
+      - world-creator/base-camp/stacey-dive.html
+      - world-creator/base-camp/stacey-click-to-sit-chair.js
+      - world-creator/tests/stacey-click-to-sit-chair.test.mjs
+      - world-creator/assets/stacey/folding-camp-chair.glb
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check chair integration JavaScript syntax
+        run: node --check world-creator/base-camp/stacey-click-to-sit-chair.js
+      - name: Validate player chair interaction hooks
+        run: node --test world-creator/tests/stacey-click-to-sit-chair.test.mjs
+      - name: Verify actual owner-supplied GLB SHA-256 and byte count
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' '64cbbcb74f79fb60126cf01f71451d0c498df8f0120fe3842fb5f4211954b3ac' 'world-creator/assets/stacey/folding-camp-chair.glb' | sha256sum -c -
+          test "$(stat -c%s world-creator/assets/stacey/folding-camp-chair.glb)" -eq 6935984
+          echo 'PASS owner-original chair GLB exact match'
