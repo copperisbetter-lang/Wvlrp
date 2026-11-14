@@ -1,0 +1,44 @@
+name: Import exact CC0 Stacey Lake chair model
+on:
+  push:
+    branches:
+      - feature/stacey-camp-chair-click-to-sit-20261113
+    paths:
+      - .github/workflows/stacey-chair-asset-import.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-verified-chair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out isolated Stacey chair feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/stacey-camp-chair-click-to-sit-20261113
+          persist-credentials: true
+      - name: Download original Innerscene CC0 chair and verify against owner-uploaded GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/assets/stacey
+          curl -fL --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 120 \
+            'https://files.innerscene.com/library/folding-camp-chair-a2499db5/f5f20eb831e7b7465940/folding-camp-chair.glb' \
+            -o world-creator/assets/stacey/folding-camp-chair.glb
+          printf '%s  %s\n' \
+            '64cbbcb74f79fb60126cf01f71451d0c498df8f0120fe3842fb5f4211954b3ac' \
+            'world-creator/assets/stacey/folding-camp-chair.glb' | sha256sum -c -
+          test "$(stat -c%s world-creator/assets/stacey/folding-camp-chair.glb)" -eq 6935984
+      - name: Store model on isolated branch (never main or live)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/stacey/folding-camp-chair.glb
+          if git diff --cached --quiet; then
+            echo 'Verified model was already present'
+          else
+            git commit -m 'Store checksum-verified original CC0 camping-chair GLB for Stacey Lake'
+            git push origin HEAD:feature/stacey-camp-chair-click-to-sit-20261113
+          fi
