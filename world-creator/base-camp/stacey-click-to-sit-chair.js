@@ -6,8 +6,12 @@ export function installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnost
   chair.name='Stacey Lake lake-facing camp chair · click to sit';
   chair.position.set(x,y,z);
   chair.rotation.y=Math.PI; // Native chair faces +Z; here it faces lakeward (-Z).
+  // Doug's front/side phone QA: original armrests are too wide and the chair tall.
+  // Scale the actual GLB and standby TOGETHER; never resize Gina or her skeleton.
+  const fitScale={x:0.86,y:0.94,z:0.92};
+  chair.scale.set(fitScale.x,fitScale.y,fitScale.z);
   scene.add(chair);
-  const state={x,z,y,ready:false,source:'loading',facing:'lake / -Z',seatHeight:0.45};
+  const state={x,z,y,ready:false,source:'loading',facing:'lake / -Z',seatHeight:0.45*fitScale.y,fitScale};
   const note=diagnostics?.assets||{};
   note['Stacey sit chair']='loading original CC0 GLB';
 
@@ -39,6 +43,8 @@ export function installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnost
     new T.MeshBasicMaterial({visible:false,depthWrite:false}));
   target.name='Camp chair touch target';
   target.position.set(0,0.62,0);
+  // Compensate target geometry for parent shrink so taps are not harder on Android.
+  target.scale.set(1/fitScale.x,1/fitScale.y,1/fitScale.z);
   chair.add(target);
   const raycaster=new T.Raycaster(),cursor=new T.Vector2();
   function picked(camera,clientX,clientY,viewportWidth,viewportHeight) {
@@ -70,12 +76,12 @@ export function installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnost
       if(diagnostics)diagnostics.errors.push('Chair GLB original failed to load');
     });
   });
-  // Actual Innerscene cushion is ~0.41-0.45m high, x centered and z near zero;
-  // pelvis joint should rest ~0.10m above that fabric, slightly rear of center.
-  // Native Gina 'Sit idle (chair)' moves Hips relative to her root, so the
-  // player controller aligns this TARGET TO THE ANIMATED HIPS each frame.
+  // Screenshot fit V2: seat is too high and Gina's backside floats above fabric.
+  // Lower the animated pelvis target by ~0.108m IN WORLD after the chair shrinks;
+  // place it 3cm farther back locally. The hips are now nearly cushion height.
+  // Native 'Sit idle (chair)' stays intact; controller follows the animated hips.
   chair.updateMatrixWorld(true);
-  const pelvis=chair.localToWorld(new T.Vector3(0,0.55,-0.07));
+  const pelvis=chair.localToWorld(new T.Vector3(0,0.47,-0.10));
   const seatPose={x:pelvis.x,y:pelvis.y,z:pelvis.z};
   state.seatPose=seatPose;
   return {state,chair,picked,seat:{x,z},seatPose,yaw:0};
