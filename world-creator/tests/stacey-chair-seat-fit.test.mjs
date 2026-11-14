@@ -9,10 +9,10 @@ const chair=readFileSync(new URL('stacey-click-to-sit-chair.js',src),'utf8');
 const gina=readFileSync(new URL('stacey-gina-player.js',src),'utf8');
 const game=readFileSync(new URL('stacey-dive.html',src),'utf8');
 test('chair uses physical seat geometry and a world-space pelvis anchor',()=>{
- assert.match(chair,/chair\\.localToWorld\\(new T\\.Vector3\\(0,0\\.47,-0\\.10\\)\\)/);
- assert.match(chair,/chair\\.scale\\.set\\(fitScale\\.x,fitScale\\.y,fitScale\\.z\\)/);
- assert.match(chair,/target\\.scale\\.set\\(1\\/fitScale\\.x,1\\/fitScale\\.y,1\\/fitScale\\.z\\)/);
- assert.match(chair,/const fitScale=\\{x:0\\.86,y:0\\.94,z:0\\.92\\}/);
+ assert.ok(chair.includes('chair.localToWorld(new T.Vector3(0,0.47,-0.10))'));
+ assert.ok(chair.includes('chair.scale.set(fitScale.x,fitScale.y,fitScale.z)'));
+ assert.ok(chair.includes('target.scale.set(1/fitScale.x,1/fitScale.y,1/fitScale.z)'));
+ assert.ok(chair.includes('const fitScale={x:0.86,y:0.94,z:0.92}'));
  // Verify actual world-space drop from the prior owner-screened pelvis target.
  assert.ok(Math.abs((0.55-0.47*0.94)-0.1082)<1e-8);
  assert.ok(0.86<1 && 0.92<1 && 0.94<1);
