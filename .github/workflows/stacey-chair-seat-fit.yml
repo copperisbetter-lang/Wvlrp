@@ -1,0 +1,33 @@
+name: Stacey Chair Hip Alignment Smoke Test
+on:
+  push:
+    branches:
+      - fix/stacey-chair-seat-alignment-20261113
+    paths:
+      - world-creator/base-camp/stacey-dive.html
+      - world-creator/base-camp/stacey-click-to-sit-chair.js
+      - world-creator/base-camp/stacey-gina-player.js
+      - world-creator/tests/stacey-click-to-sit-chair.test.mjs
+      - world-creator/tests/stacey-chair-seat-fit.test.mjs
+      - .github/workflows/stacey-chair-seat-fit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seat-fit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate click-to-sit and hip-to-cushion anchors
+        run: |
+          node --test tests/stacey-chair-seat-fit.test.mjs
+          node --test tests/stacey-click-to-sit-chair.test.mjs
+          node --test tests/stacey-mobile-lite.test.mjs
+        working-directory: world-creator
+      - name: Verify original CC0 chair binary has not changed
+        shell: bash
+        run: |
+          printf '%s  %s\n' '64cbbcb74f79fb60126cf01f71451d0c498df8f0120fe3842fb5f4211954b3ac' 'world-creator/assets/stacey/folding-camp-chair.glb' | sha256sum -c -
