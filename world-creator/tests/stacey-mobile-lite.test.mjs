@@ -28,6 +28,8 @@ test('Lite lake remains visible without expensive Water.js reflection',()=>{
   assert.match(html,/if\(!mobileLite\)\{/);
   assert.match(html,/if\(water\.material\.uniforms\?\.time\)/);
   assert.match(html,/scene\.add\(water\)/);
+  assert.match(html,/if\(!mobileLite\)installCanyonV6\(\)/);
+  assert.match(html,/const normals=mobileLite\?null:loader\.load/);
 });
 test('Chair, 360 mountains, sky and safe walking are preserved',()=>{
   for(const token of ['installStaceyLakeChair','installStaceyForest360Wrap','installStaceyRealisticClouds',
