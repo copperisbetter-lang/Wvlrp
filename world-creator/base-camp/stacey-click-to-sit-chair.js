@@ -70,5 +70,13 @@ export function installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnost
       if(diagnostics)diagnostics.errors.push('Chair GLB original failed to load');
     });
   });
-  return {state,chair,picked,seat:{x,z},yaw:0};
+  // Actual Innerscene cushion is ~0.41-0.45m high, x centered and z near zero;
+  // pelvis joint should rest ~0.10m above that fabric, slightly rear of center.
+  // Native Gina 'Sit idle (chair)' moves Hips relative to her root, so the
+  // player controller aligns this TARGET TO THE ANIMATED HIPS each frame.
+  chair.updateMatrixWorld(true);
+  const pelvis=chair.localToWorld(new T.Vector3(0,0.55,-0.07));
+  const seatPose={x:pelvis.x,y:pelvis.y,z:pelvis.z};
+  state.seatPose=seatPose;
+  return {state,chair,picked,seat:{x,z},seatPose,yaw:0};
 }
