@@ -50,7 +50,7 @@ export function installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnost
     return raycaster.intersectObject(target,false).length>0;
   }
   // Prefer the real binary stored in the branch; external source is last-resort preview only.
-  const local=new URL('../../assets/stacey/folding-camp-chair.glb',import.meta.url).href;
+  const local=new URL('../assets/stacey/folding-camp-chair.glb',import.meta.url).href;
   const external='https://files.innerscene.com/library/folding-camp-chair-a2499db5/f5f20eb831e7b7465940/folding-camp-chair.glb';
   function installAsset(asset,from){
     const model=asset.scene;
