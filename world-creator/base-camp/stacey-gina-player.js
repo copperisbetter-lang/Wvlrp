@@ -12,6 +12,9 @@ export function installGinaPlayer({THREE:T,scene,diagnostics,onClips}){
  info['Playable Gina clone']='waiting for Gina source asset';
  let model=null,mixer=null,currentAction=null,manual=null,rig=null;
  const clips=new Map();
+ // Chair-specific hip alignment: keep Gina's native animation and unmodified rig.
+ // Avoid hard-coded root offsets, because 'Sit idle (chair)' translates the pelvis.
+ const seatOffset=new T.Vector3(),hipWorld=new T.Vector3();
 
  function play(name){
   if(!state.ready||state.mode==='POSE'||name===state.current)return;
@@ -82,10 +85,12 @@ export function installGinaPlayer({THREE:T,scene,diagnostics,onClips}){
   state.frozen=Boolean(value);
   return state.frozen;
  }
- function update({eye,yaw,dt,walking,running,sitting,flying,swimming,diving,visible=true}){
+ function update({eye,yaw,dt,walking,running,sitting,flying,swimming,diving,visible=true,seatTarget=null}){
   if(!state.ready)return;
   const height=diving?1.4:swimming?1:sitting?1.05:1.7;
-  carrier.position.set(eye.x,eye.y-height,eye.z);
+  const anchorChair=Boolean(sitting&&seatTarget&&rig?.bones?.Hips);
+  if(!anchorChair)seatOffset.set(0,0,0);
+  carrier.position.set(eye.x+seatOffset.x,eye.y-height+seatOffset.y,eye.z+seatOffset.z);
   // yaw is the independent BODY HEADING, no longer the camera look direction.
   carrier.rotation.set(0,Math.PI+yaw,0);
   carrier.visible=visible;
@@ -95,6 +100,24 @@ export function installGinaPlayer({THREE:T,scene,diagnostics,onClips}){
   else if(!flying&&!swimming&&!diving&&walking)target=running?'Run':'Walk';
   play(manual||target);
   mixer.update(Math.max(0,Math.min(.05,dt)));
+  if(anchorChair){
+   // Compute the ACTUAL animated Hips joint after mixer evaluation, rather than
+   // pretending the model origin is at the character's seated backside.
+   carrier.updateMatrixWorld(true);
+   rig.bones.Hips.getWorldPosition(hipWorld);
+   const k=Math.min(1,Math.max(0,dt)*13);
+   seatOffset.x+=T.MathUtils.clamp(seatTarget.x-hipWorld.x,-1.25,1.25)*k;
+   seatOffset.y+=T.MathUtils.clamp(seatTarget.y-hipWorld.y,-1.25,1.25)*k;
+   seatOffset.z+=T.MathUtils.clamp(seatTarget.z-hipWorld.z,-1.25,1.25)*k;
+   carrier.position.set(eye.x+seatOffset.x,eye.y-height+seatOffset.y,eye.z+seatOffset.z);
+   carrier.updateMatrixWorld(true);
+   if(diagnostics)diagnostics.chairSeatPose={
+    target:[seatTarget.x,seatTarget.y,seatTarget.z],
+    animatedHips:[hipWorld.x,hipWorld.y,hipWorld.z],
+    appliedOffset:[seatOffset.x,seatOffset.y,seatOffset.z],
+    clip:state.current
+   };
+  }
   // Repair only the player clone; beach Gina and native clip keyframes stay untouched.
   if((state.current==='Walk'||state.current==='Run')&&walking&&!swimming&&!diving)rig.narrowGait();
  }
