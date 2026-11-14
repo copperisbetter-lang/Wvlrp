@@ -40,5 +40,9 @@ jobs:
             echo 'Verified model was already present'
           else
             git commit -m 'Store checksum-verified original CC0 camping-chair GLB for Stacey Lake'
+            # Other scoped changes may have landed while this runner downloaded the GLB.
+            # Rebase the asset-only commit on the current branch; never force push.
+            git fetch origin feature/stacey-camp-chair-click-to-sit-20261113
+            git rebase origin/feature/stacey-camp-chair-click-to-sit-20261113
             git push origin HEAD:feature/stacey-camp-chair-click-to-sit-20261113
           fi
