@@ -5,7 +5,8 @@ const chair=readFileSync(new URL('../base-camp/stacey-click-to-sit-chair.js',imp
 assert.match(game,/installStaceyLakeChair/);
 assert.match(game,/chair\.picked\(camera/);
 assert.match(game,/miniNav\.choose\(chair\.seat\.x,chair\.seat\.z\)/);
-assert.match(game,/isSitting=true;playerHeading=chair\.yaw/);
+assert.match(game,/isSitting=true;chairSeated=true;playerHeading=chair\.yaw/);
+assert.match(game,/seatTarget:chairSeated\?chair\.seatPose:null/);
 assert.match(game,/chairWalk && !miniNav\.active/);
 assert.match(chair,/rotation\.y=Math\.PI/);
 assert.match(chair,/assets\/stacey\/folding-camp-chair\.glb/);
