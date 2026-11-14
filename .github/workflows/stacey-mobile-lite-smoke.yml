@@ -1,0 +1,28 @@
+name: Stacey Mobile Lite Targeted Check
+on:
+  push:
+    branches:
+      - fix/stacey-mobile-lite-20261113
+    paths:
+      - world-creator/base-camp/stacey-dive.html
+      - world-creator/tests/stacey-mobile-lite.test.mjs
+      - .github/workflows/stacey-mobile-lite-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and regression tests for mobile lite
+        run: |
+          node --test tests/stacey-mobile-lite.test.mjs
+          node --test tests/stacey-click-to-sit-chair.test.mjs
+        working-directory: world-creator
+      - name: Check exact uploaded chair GLB remains intact
+        run: |
+          printf '%s  %s\n' '64cbbcb74f79fb60126cf01f71451d0c498df8f0120fe3842fb5f4211954b3ac' 'world-creator/assets/stacey/folding-camp-chair.glb' | sha256sum -c -
