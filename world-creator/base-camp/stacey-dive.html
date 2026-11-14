@@ -57,6 +57,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {addStaceySpringV12} from './stacey-spring-bedrock-v12.js';
 import {createStaceyPurpleTrails} from './stacey-purple-main-lake-spur.js';
 import {installStaceyForest360Wrap} from './stacey-forest-360-wrap.js';
+import {installStaceyLakeChair} from './stacey-click-to-sit-chair.js';
 import {installStaceyRealisticClouds} from './stacey-realistic-clouds.js';
 import {staceyWorldRadius,staceyWithinWorld,keepStaceyInside,nearWaterfallCave} from './stacey-compact-world.js';
 // One complete scene: no dependency on any experimental lake code or terrain module.
@@ -1029,6 +1030,9 @@ function loadFishUnderwater(){
  installBass({T,GLTFLoader,scene,CX,CZ,CY,outer,inner,diagnostics:diag}).then(system=>{bassSystem=system;}).catch(error=>{diag.assets.bass='FAILED';diag.errors.push('Bass GLB: '+String(error));});
 }
 window.staceyFish={get bass(){return bassSystem?.count||0;},get flatheads(){return flatheadSystem?.count||0;},get bassStatus(){return diag.assets.bass;},get catfishStatus(){return diag.assets.flatheads;},loadUnderwater:loadFishUnderwater};
+// Owner-supplied camping chair, placed on the south shore facing the lake.
+const chair=installStaceyLakeChair({T,scene,gltf,ground,CX,CZ,outer,diagnostics:diag});
+window.staceyChair=chair.state;
 // Player is an independent skinned clone of Gina's already loaded GLB.
 const ginaAnimationSelect=document.getElementById('playerAnimation');
 const ginaPlayer=installGinaPlayer({THREE:T,scene,diagnostics:diag,onClips:names=>{
@@ -1060,7 +1064,7 @@ window.staceyPlayable={avatar:playerAvatar,get view(){return chaseCamera?'third-
  get ginaReady(){return ginaPlayer.state.ready;},get ginaError(){return ginaPlayer.state.error;},
  get animations(){return ginaPlayer.state.clips.slice();},get activeAnimation(){return ginaPlayer.state.current;},
  get locked(){return inspectLock;},get bodyHeading(){return playerHeading;}};
-let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0;
+let aerial=false,isRunning=false,isSitting=false,yaw=0,pitch=-.04,depthMode="surface";const pos=new T.Vector3(CX,CY+2.1,CZ+outer(Math.PI/2)+8);let mx=0,my=0,chairWalk=false;
 const cavePortalButton=document.createElement('button');
 cavePortalButton.id='staceyCrawlToWorld';
 cavePortalButton.textContent='CRAWL INTO WATERFALL CAVE';
@@ -1073,13 +1077,27 @@ cavePortalButton.onclick=()=>{
  cavePortalButton.textContent='ENTERING CAVE WORLD…';
  location.assign(new URL('./waterfall-cave-world.html?from=stacey',location.href).href);
 };const keys=new Set();const miniNav=installStaceyTapMinimap({pos,getYaw:()=>yaw,ground,cliffContact,solidCliffStep,CX,CY,CZ,trails:[purpleTrails.main.samples,purpleTrails.spur.samples],worldBoundary:(x,z)=>staceyWithinWorld(x,z,CX,CZ),worldRange:190,canAutoWalk:()=>!isSitting&&!aerial&&depthMode==='surface'});addEventListener('keydown',e=>keys.add(e.code));addEventListener('keyup',e=>keys.delete(e.code));
+function chairSelect(){
+  if(inspectLock)return;
+  if(!ginaPlayer.state.ready){diag.assets['Stacey chair action']='Waiting for player avatar';return;}
+  if(aerial || depthMode!=='surface' || ground(pos.x,pos.z)<CY-.55){
+    diag.assets['Stacey chair action']='Must be on dry ground to walk to chair';return;
+  }
+  if(isSitting){isSitting=false;pos.y=ground(pos.x,pos.z)+1.7;}
+  chairWalk=false;isRunning=false;miniNav.cancel('Chair requested');
+  if(miniNav.choose(chair.seat.x,chair.seat.z)){
+    chairWalk=true;
+    diag.assets['Stacey chair action']='Walking to camp chair';
+  }else diag.assets['Stacey chair action']='No safe route to chair';
+  syncActions();
+}
 function syncActions(){
  const inLake=ground(pos.x,pos.z)<CY-.55;
  const active={actionRun:isRunning&&!isSitting&&!aerial,actionFly:aerial,actionSwim:inLake&&!aerial&&depthMode==='surface',actionDive:inLake&&!aerial&&depthMode==='dive',actionSit:isSitting};
  for(const [id,selected] of Object.entries(active))document.getElementById(id).setAttribute('aria-pressed',String(selected));
  document.getElementById('actionSit').textContent=isSitting?'STAND':'SIT';
 }
-function beach(){miniNav.cancel("Returned to beach");depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
+function beach(){chairWalk=false;miniNav.cancel("Returned to beach");depthMode="surface";aerial=false;isSitting=false;pos.set(CX,ground(CX,CZ+outer(Math.PI/2)+8)+1.7,CZ+outer(Math.PI/2)+8);yaw=0;pitch=-.04;syncActions()}
 function swim(){miniNav.cancel('Swimming manually');aerial=false;isRunning=false;isSitting=false;depthMode='surface';
  // From dry land, enter the lake at a safe shallow-water point by the spawn beach.
  if(ground(pos.x,pos.z)>=CY-.55){pos.set(CX,CY+.65,CZ+outer(Math.PI/2)-9);yaw=0;pitch=-.04}
@@ -1091,13 +1109,13 @@ function toggleFly(){miniNav.cancel('Flying manually');aerial=!aerial;isRunning=
  pos.y=aerial?Math.max(pos.y,ground(pos.x,pos.z)+6,CY+7):ground(pos.x,pos.z)+1.7;
  syncActions();
 }
-function toggleSit(){miniNav.cancel('Resting');const sitNext=!isSitting;
+function toggleSit(){chairWalk=false;miniNav.cancel('Resting');const sitNext=!isSitting;
  if(sitNext&&(aerial||ground(pos.x,pos.z)<CY-.55))beach();
  aerial=false;depthMode='surface';isRunning=false;isSitting=sitNext;
  pos.y=ground(pos.x,pos.z)+(isSitting?1.05:1.7);
  syncActions();
 }
-function toggleRun(){isRunning=!isRunning;isSitting=false;syncActions()}
+function toggleRun(){chairWalk=false;miniNav.cancel('Running manually');isRunning=!isRunning;isSitting=false;syncActions()}
 document.querySelector('#actionRun').onclick=toggleRun;
 document.querySelector('#actionFly').onclick=toggleFly;
 document.querySelector('#actionSwim').onclick=swim;
@@ -1205,7 +1223,9 @@ beach();
  document.querySelector('#shore').onclick=beach;document.querySelector('#canyon').onclick=()=>{miniNav.cancel('Moved to canyon');aerial=false;isSitting=false;depthMode='surface';pos.set(CX-outer(Math.PI)+8,CY+1.7,CZ);yaw=Math.PI/2;pitch=.17;syncActions()};document.querySelector('#air').onclick=()=>{miniNav.cancel('Aerial camera');aerial=!aerial;isSitting=false;depthMode='surface';if(aerial){pos.set(CX+165,CY+145,CZ+195);camera.position.copy(pos);camera.rotation.order='YXZ';camera.lookAt(CX,CY,CZ);yaw=camera.rotation.y;pitch=camera.rotation.x}else beach();syncActions()};let high=false;document.querySelector('#quality').onclick=()=>{high=!high;renderer.setPixelRatio(high?Math.min(devicePixelRatio,1.8):1);document.querySelector('#quality').textContent=high?'Quality: high':'Quality: normal'};
 document.querySelector('#dive').onclick=dive;document.querySelector('#surface').onclick=surface;const look=document.querySelector('#look');let looking=null,lx=0,ly=0;
 const inspectPointers=new Map();
+let chairTouchStart=null;
 look.onpointerdown=e=>{
+  chairTouchStart=inspectLock?null:{id:e.pointerId,x:e.clientX,y:e.clientY};
  if(inspectLock){
   inspectPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   look.setPointerCapture(e.pointerId);return;
@@ -1232,12 +1252,20 @@ look.onpointermove=e=>{
  if(e.pointerId!==looking)return;
  yaw-=(e.clientX-lx)*.003;pitch=T.MathUtils.clamp(pitch-(e.clientY-ly)*.003,-1.4,1.4);lx=e.clientX;ly=e.clientY;
 };
-look.onpointerup=look.onpointercancel=e=>{inspectPointers.delete(e.pointerId);if(e.pointerId===looking)looking=null;};
+look.onpointerup=look.onpointercancel=e=>{
+  const tapped=e.type==='pointerup'&&chairTouchStart&&chairTouchStart.id===e.pointerId&&
+    Math.hypot(e.clientX-chairTouchStart.x,e.clientY-chairTouchStart.y)<10;
+  if(tapped&&chair.picked(camera,e.clientX,e.clientY,innerWidth,innerHeight))chairSelect();
+  if(e.pointerId===chairTouchStart?.id)chairTouchStart=null;
+  inspectPointers.delete(e.pointerId);if(e.pointerId===looking)looking=null;
+ };
 const pad=document.querySelector('#pad'),nub=document.querySelector('#nub');let moving=null;function padMove(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-55,y=e.clientY-r.top-55,k=38/Math.max(38,Math.hypot(x,y));mx=x*k/38;my=y*k/38;nub.style.transform=`translate(${mx*38}px,${my*38}px)`}pad.onpointerdown=e=>{if(inspectLock)return;moving=e.pointerId;pad.setPointerCapture(e.pointerId);padMove(e)};pad.onpointermove=e=>{if(e.pointerId===moving)padMove(e)};pad.onpointerup=pad.onpointercancel=()=>{moving=null;mx=my=0;nub.style.transform=''};addEventListener('blur',()=>{keys.clear();mx=my=0;looking=moving=null});
 document.getElementById('stopWalk').onclick=()=>miniNav.cancel('Walking stopped');
 const joystickToggle=document.getElementById('joystickToggle');joystickToggle.onclick=()=>{const enabled=!pad.classList.toggle('padHidden');joystickToggle.setAttribute('aria-pressed',String(enabled));joystickToggle.textContent=enabled?'JOYSTICK ON':'JOYSTICK OFF';if(!enabled){mx=my=0;moving=null;nub.style.transform='';}};
  let last=performance.now(),count=0,frames=0,fps=0;const start=last;function frame(now){if(!window.staceyPause)requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;window.staceyWaterfall?.update(now*.001);ginaBeachNPC?.update(dt);water.material.uniforms.time.value=(now-start)/1000*.26;const xx=inspectLock?0:mx+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),yy=inspectLock?0:my+(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),moveSpeed=inspectLock?0:aerial?14:isSitting?0:((isRunning||keys.has('ShiftLeft')||keys.has('ShiftRight'))?3.8:1.25),spd=dt*moveSpeed;const oldX=pos.x,oldZ=pos.z;
-if(Math.hypot(xx,yy)>.10)miniNav.cancel('Joystick steering');
+if(Math.hypot(xx,yy)>.10){chairWalk=false;miniNav.cancel('Joystick steering');}
+ if(chairWalk&&(aerial||depthMode!=='surface'||inspectLock))chairWalk=false;
+ if(chairWalk&&miniNav.target&&Math.hypot(miniNav.target.x-chair.seat.x,miniNav.target.z-chair.seat.z)>.25)chairWalk=false;
 const autoWalk=inspectLock?{walking:false}:miniNav.step(dt,moveSpeed);
 if(autoWalk.walking){yaw=autoWalk.yaw;}else{pos.x+=(Math.cos(yaw)*xx+Math.sin(yaw)*yy)*spd;pos.z+=(-Math.sin(yaw)*xx+Math.cos(yaw)*yy)*spd;}
 keepStaceyInside(pos,CX,CZ);let bed=ground(pos.x,pos.z);
@@ -1251,7 +1279,18 @@ if(!aerial&&depthMode!=='dive'){
  const contact=solidCliffStep(oldX,oldZ,pos.x,pos.z,pos.y-(isSitting?1.05:1.7));
  pos.x=contact.x;pos.z=contact.z;keepStaceyInside(pos,CX,CZ);bed=ground(pos.x,pos.z);
 }
-const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks the cloned Gina player; first-person remains available in caves.
+// Walk all the way to the chair before switching to Gina's native seated idle.
+ if(chairWalk && !miniNav.active){
+   const distance=Math.hypot(pos.x-chair.seat.x,pos.z-chair.seat.z);
+   if(distance<0.72 && !aerial && bed>=CY-.55 && ginaPlayer.state.ready){
+     pos.x=chair.seat.x;pos.z=chair.seat.z;
+     bed=ground(pos.x,pos.z);
+     isSitting=true;playerHeading=chair.yaw;yaw=chair.yaw;pitch=-.04;
+     isRunning=false;diag.assets['Stacey chair action']='Sitting in lake-facing camp chair';
+   }else diag.assets['Stacey chair action']='Chair walk interrupted or blocked';
+   chairWalk=false;
+ }
+ const swim=bed<CY-.55;if(!aerial){if(swim&&depthMode==='dive'){pos.y=Math.min(CY-1.1,bed+1.7)}else{pos.y=swim?CY+.65:bed+(isSitting?1.05:1.7)}} // Camera tracks the cloned Gina player; first-person remains available in caves.
 const playerMoving=!inspectLock&&(Math.hypot(xx,yy)>.10||autoWalk.walking)&&!isSitting;
 if(playerMoving){
  const dx=pos.x-oldX,dz=pos.z-oldZ;
@@ -1284,5 +1323,5 @@ cavePortalButton.style.display=(!caveTransitionStarted&&!aerial&&depthMode==='su
  if(flatheadSystem?.update)flatheadSystem.update((now-start)/1000,dt,pos);if(bassSystem?.update)bassSystem.update(dt,pos);
   staceyCloudTest.update((now-start)/1000,camera,lightDir);
   renderer.render(scene,camera);count+=dt;frames++;if(count>1){fps=Math.round(frames/count);count=frames=0;diag.fps=fps;status.textContent=(aerial?'Flying':isSitting?'Sitting':swim?(depthMode==='dive'?'Underwater':'Swimming'):isRunning?'Running':'Shore')+' · '+fps+' FPS · '+diag.trees+' trees · '+diag.rocks+' rocks · '+(bassSystem?.count||0)+' bass · '+(flatheadSystem?.count||0)+' flatheads'+(diag.errors.length?' · '+diag.errors.join('; '):' · '+'Tree-free lake ready');status.textContent+=(diag.assets['Canyon V6']==='loading'?' · Loading V6':diag.assets['Canyon V6']?.startsWith('loaded')?' · V6':' · Canyon fallback');syncActions();status.textContent+=' · Avatar '+(ginaPlayer.state.ready?'Gina clone':ginaPlayer.state.error?'Gina clone failed':'loading Gina clone')+' · Trail photo '+(window.staceyTrailPhoto?.state||'loading')+' · Falls V10 · Bedrock V2 · Banks V3 · Creek V12 · Sealed Dome V9 · Mountain + Headwater V11 · Photo Spring V12 · Woodland 360 Trails';diag.draws=renderer.info.render.calls;diag.triangles=renderer.info.render.triangles;diag.frame=true}}
-window.staceyDebug={scene,camera,renderer};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+window.staceyDebug={scene,camera,renderer,chair};requestAnimationFrame(frame);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
