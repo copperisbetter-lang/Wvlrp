@@ -145,7 +145,9 @@ def execute(write):
         if should_skip(path):
             continue
         method, raw = plan(path)
-        notice_path = path if method == "inline" else path + SIDECAR_SUFFIX
+        notice_path = path if method == "inline" else ((
+            "copyright-sidecars/" + path if path.startswith(".github/workflows/")
+            else path) + SIDECAR_SUFFIX)
         if method == "inline":
             wanted = stamp(path, raw)
             if write and wanted != raw and write_if_changed(ROOT / path, wanted):
