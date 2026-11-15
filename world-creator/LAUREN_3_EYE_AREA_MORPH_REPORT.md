@@ -1,4 +1,3 @@
-<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Lauren 3 — eye-area soft-tissue morph: real 3D geometry
 
 This is a vertex-level edit to **Lauren 3's original 38,365-vertex GLB**, not an image-based concept or an overlay.
