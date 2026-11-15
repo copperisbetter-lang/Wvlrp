@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Lauren 3 — actual eye rig + smooth 3D orbital morph.
 // Intact source GLB is NEVER rewritten. Laura 2.5 remains a separate frozen copy.
 import * as THREE from 'three';

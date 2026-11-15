@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Jenny's first quest: The Woodland Discovery Trail.
  * Pure quest state; no placeholder avatar, no premature NPC spawning.
  * The world should activate this only when the finished Jenny GLB and animation

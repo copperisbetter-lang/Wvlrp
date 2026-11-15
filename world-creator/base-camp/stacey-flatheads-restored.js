@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // WVLRP Stacey Lake: port of owner-approved 70-flathead catfish school.
 // Spawning, weights, and lakebed cruising match APPROVED-G3-CATFISH-2026-10-24.md.
 // Mesh deformation runs only near the player to protect mobile FPS.

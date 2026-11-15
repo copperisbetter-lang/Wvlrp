@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # SAV 4 realistic 3D wardrobe — production specification
 
 SAV 4 is an adult (18), 5 ft 6 in, slender/petite character. Garments must be independent mesh assets, not primitive cylinders or painted skin materials.

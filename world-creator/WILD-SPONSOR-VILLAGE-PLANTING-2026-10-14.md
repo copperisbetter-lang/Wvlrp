@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # The Wild — 3-acre Village Grove: build-ready planting blueprint
 Date: 14 October 2026 | Status: **PLANNED — NOT YET PLANTED IN LIVE 3D WORLD**
 

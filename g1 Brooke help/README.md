@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # G1 Brooke help
 
 Upload Tripo screenshots of Jackie's head and body as references for Gater 1's Brooke reconstruction.

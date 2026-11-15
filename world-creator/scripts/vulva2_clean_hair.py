@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Clean independent long-blonde adult hairstyle for MakeHuman inspection.
 Never use the stock long01 cape: its fitted front panels can cover the face and chest.
 The geometry is built from actual skull/eye landmarks and skinned to Head.

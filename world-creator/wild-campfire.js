@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild's permanent shared village fire ring and rustic log seating.
  * Real walkable 3D objects, not a static photo. The flame animates for the

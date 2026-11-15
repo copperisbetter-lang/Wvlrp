@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # SAV 4 — Laura reference, two-view measurement sheet (2026-10-18)
 
 Images supplied in conversation: 5458.jpg (1536×864, three-quarter frontal), 5459.jpg (1536×831, left-facing profile). Images not yet uploaded to repository.

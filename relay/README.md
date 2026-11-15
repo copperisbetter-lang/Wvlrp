@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # WVLRP East Bank Live Relay
 
 This folder runs a lightweight MediaMTX relay that pulls one RTSP stream from the East Bank camera and exposes browser-safe HLS/WebRTC outputs for the WVLRP website.

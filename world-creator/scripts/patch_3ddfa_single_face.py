@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Patch upstream 3DDFA_V2 demo.py to reconstruct exactly ONE detected face.
 
 Upstream demo uses all detected FaceBoxes; sample Emma photo contains three.

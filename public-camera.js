@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{'use strict';const s=document.querySelector('[data-stream]');if(!s)return;const v=s.querySelector('video'),msg=s.querySelector('.video-state'),badge=s.querySelector('.feed-badge'),label=s.querySelector('.feed-badge span'),retryBtn=document.getElementById('retryStream');const url=s.dataset.stream;let hls=null,timer=null,loading=false,lastProgress=Date.now(),retryCount=0;
 function setStatus(text,on){msg.textContent=text;msg.classList.toggle('hidden',!!on);badge.classList.toggle('live',!!on);label.textContent=on?'LIVE':'CONNECTING'}
 function destroy(){if(hls){try{hls.destroy()}catch(e){}hls=null}v.pause();v.removeAttribute('src');v.load()}

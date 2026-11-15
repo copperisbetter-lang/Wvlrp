@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Single 3D hardwood specimen immediately north of girls cabin door. */
 export function installDoorTree(B,scene,y=0){
  const root=new B.TransformNode("GIRLS CABIN DOOR TREE — 3D HARDWOOD",scene);

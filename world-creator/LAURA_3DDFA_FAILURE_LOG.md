@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Laura 2 — 3DDFA_V2 free CPU reconstruction failure register
 
 Keep this alongside the workflow so future reruns do not repeat solved failures. Source: GitHub Actions run logs for `.github/workflows/test-laura-free-3ddfa.yml`. **Successful OBJ export confirmed in run #10.**

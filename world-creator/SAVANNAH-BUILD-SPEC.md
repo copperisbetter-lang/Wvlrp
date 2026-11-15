@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Savannah — independent adult character build contract
 
 Status: NEW CHARACTER / NOT YET BUILT OR APPROVED. Preserve Riley Top Shelf and all other characters unchanged.

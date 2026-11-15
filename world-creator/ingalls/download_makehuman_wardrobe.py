@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Download official MakeHuman packs and stage licensed candidate clothing.
 Run in CI; each archive comes from a hyperlink on the official pack page.
 Do not silently invent URLs or mark an asset fitted to any character.

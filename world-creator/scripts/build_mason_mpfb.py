@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP Mason MPFB nude anatomical trial. Separate new adult game avatar.
 Uses MPFB CC0 anatomy/skin, cropped dark brown hair, and Mixamo skeleton.
 No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requires visual QA.

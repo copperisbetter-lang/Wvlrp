@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Align a tree's rendered geometry to the terrain after all transforms.
 export function groundTree(root, heightAt, x, z, burial=0.12) {
   const meshes=root.getChildMeshes(false).filter(m=>m.getTotalVertices?.()>0 && m.isEnabled() && m.isVisible);

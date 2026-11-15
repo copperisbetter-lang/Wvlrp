@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* The Wild Photo-to-3D Workshop v0.1
  * Real, meter-scaled, walkable mesh reconstruction guided by one or more photos.
  * This is NOT automatic volumetric reconstruction or a panorama viewer.

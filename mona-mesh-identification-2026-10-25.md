@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Mona mesh identification — 2026-10-25
 
 User-confirmed visual toggle mapping, reading screenshot from bottom upward (1 = last item):

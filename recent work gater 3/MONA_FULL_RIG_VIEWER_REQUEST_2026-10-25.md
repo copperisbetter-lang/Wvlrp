@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Gater 3 — Mona full rig and deformation viewer assignment (2026-10-25)
 
 Requested by user for work AFTER the Linux Blender files and ORIGINAL Mona.blend have been uploaded and are accessible. Do not claim assets uploaded before verification. Preserve Mona.blend unchanged; work on copies. Coordinate per WVLRP Rule 29 before deployment.

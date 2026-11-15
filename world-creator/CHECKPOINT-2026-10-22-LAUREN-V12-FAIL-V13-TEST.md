@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Lauren 3 visual quality checkpoint — October 22, 2026
 
 ## Observations from phone screenshots of v12 (not approved)

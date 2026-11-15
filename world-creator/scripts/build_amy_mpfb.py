@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP Amy MPFB nude anatomical trial. Separate new adult game avatar.
 Uses free MPFB body morph system, CC0 stock skin + long red hair, Mixamo rig.
 No clothing/proxy outfit. Does not replace Riley, Chrissy, or world data. Requires visual QA.

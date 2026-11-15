@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Stacey V11 — Wide incoming mountain stream, two smaller outgoing feeds
 Date: October 28, 2026
 Status: **ISOLATED STAGING ONLY — Android aerial/canyon QA needed**

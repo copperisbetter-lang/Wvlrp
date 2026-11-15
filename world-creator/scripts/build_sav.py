@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Sav: first independent 56-bone rigged Blender prototype. Not final sculpt."""
 import bpy, math
 from pathlib import Path

@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Stacey Lake V12: dry photo-rock spring installation, isolated from lake and path code.
 // CC0 photographic texture references: Poly Haven (rock_face_03 and rock_06).
 // Rendering uses original in-game flowing water, never water baked into a texture.

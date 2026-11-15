@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Gator 3: mobile-conscious animated lake surface, inspired by the approved Stacey Lake panorama.
 // Independent of trails and campsites. Geometry, shore, spawn and movement remain untouched.
 export function installStaceyWater(THREE,water){

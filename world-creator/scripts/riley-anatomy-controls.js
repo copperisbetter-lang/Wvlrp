@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* WVLRP Riley reversible anatomical fitting controls.
    Viewer-only, deforming the existing MakeHuman Vulva 1 vertices.
    Real lips are sculpted from the source surface; the clitoris/hood need

@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """CAR 3.5C: transfer CAR2's fitted Vulva2 mesh onto CAR3 and use CAR3 skin material.
 This is an isolated fit/material test. Original assets are never overwritten.
 """

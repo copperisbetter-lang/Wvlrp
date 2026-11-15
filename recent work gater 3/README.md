@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # RECENT WORK — GATER 3
 
 Owner: Gater 3 (Stacey Lake). Last updated: 2026-10-23 20:06–20:30 EDT (approximate; exact commit timestamps in GitHub history).

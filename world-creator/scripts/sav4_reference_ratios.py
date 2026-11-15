@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Generate auditable SAV4 reference ratios from the two stored movie stills.
 
 These are projected 2D measurements, not true 3D facial dimensions.

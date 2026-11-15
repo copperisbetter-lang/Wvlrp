@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Recent work — Laura/Brooke recovery, 2026-10-24 00:55 ET
 
 ## User correction — highest priority

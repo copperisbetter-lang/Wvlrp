@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build Laura's standalone *first-pass* head GLB with Blender.
 Photo-derived design notes: references/sav4-face-reference-2026-10-18.md.
 The source images are perspective/partly occluded; this is a reviewable approximation,

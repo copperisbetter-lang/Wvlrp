@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # OLD VIEWERS — STACEY LAKE
 
 ARCHIVE ONLY. These are not the current approved viewer. Never send one as the current lake.

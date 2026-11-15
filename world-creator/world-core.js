@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import {COMMUNITY_SITES} from "./wild-reference-layout.js?v=woodland-reference-20261013-v1";
 /**
  * WVLRP World Creator — reproducible terrain, connected trail network, and editor data.

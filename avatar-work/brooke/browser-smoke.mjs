@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Browser smoke test: verifies that the head actually renders, morphs and exports.
 // Run with Playwright installed: node avatar-work/brooke/browser-smoke.mjs
 import { chromium } from 'playwright';

@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Gator-to-Gator — WVLRP Production Outage / Crisis Handoff
 Date: 2026-10-22 (Eastern). Priority: P0 — restore production website before avatar work.
 Repository: https://github.com/copperisbetter-lang/Wvlrp

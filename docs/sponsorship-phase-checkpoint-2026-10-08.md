@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # WVLRP — Sponsorship phase checkpoint (October 8, 2026)
 
 **Status:** WVLRP is in the **sponsorship and partnership development phase**. The project **has soft-launched only** and **has NOT had its full public launch**. This distinction must be clearly disclosed to **every prospective sponsor**, in outreach, presentation pages, decks, and proposals. Do not imply the site is fully publicly launched, that a partnership has been signed, or that future audiences/views are guaranteed.

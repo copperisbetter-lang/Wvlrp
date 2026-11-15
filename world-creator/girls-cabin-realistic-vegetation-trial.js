@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** The Wild: zero-cost realistic vegetation trial, restricted to Hearthside girls' cabin. 
  * Staging manifest only: external models are NOT yet bundled or enabled.
  * World units are metres. 29 feet = 8.8392 metres.

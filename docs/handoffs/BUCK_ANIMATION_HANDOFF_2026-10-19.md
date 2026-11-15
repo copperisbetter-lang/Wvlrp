@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Gator-to-Gator: Whitetail Buck Animation Handoff
 **Date:** 2026-10-19  
 **Project:** WVLRP / The Wild  

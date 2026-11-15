@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Brooke MPFB anatomical base, non-destructive starting point.
 Requires world-creator/assets/morph-head-clone.glb from approved MPFB extraction.
 No claim of photo-matched likeness: face fitting is a separate gated stage.

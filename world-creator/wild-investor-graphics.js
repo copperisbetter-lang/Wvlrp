@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild / Hearthside investor visual pass.
  * Purely local deterministic art assets: bark grain, fallen-leaf litter,

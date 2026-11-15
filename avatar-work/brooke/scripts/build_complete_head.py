@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build a closed photo-derived head shell from a 3DDFA face patch.
 This is a geometry-completion candidate, not a verified likeness or anatomical fit.
 Usage: blender -b --python build_complete_head.py -- face.obj output.glb

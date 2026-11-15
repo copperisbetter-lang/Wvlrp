@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Caitlyn latest automated builder result
 
 Source GitHub SHA: `71bc1887a708116273edecc2c0d605fab183504a`

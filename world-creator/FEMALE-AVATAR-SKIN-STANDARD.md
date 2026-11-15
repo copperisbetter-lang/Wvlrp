@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # The Wild — Reusable female-avatar skin standard
 
 Saved 2026-10-11. This document captures the **working source configuration** used for Caitlyn's improved skin and the shared reusable MPFB texture workflow. It is for **future avatar creators**, not a request to change the appearance of existing characters.

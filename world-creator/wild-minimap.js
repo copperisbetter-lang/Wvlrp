@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import {REBUILD_CLEARINGS,REBUILD_PATHS} from "./wild-rebuild-layout.js";
 export function installWildMinimap(camera){
  const el=document.createElement("div");el.id="wildMiniMap";el.setAttribute("aria-label","60 metre circular surroundings map with compass");

@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP clean reset: independent adult female 18 with authentic fitted Vulva2.
 Rebuild from a NEW MakeHuman human. No baked dresses, no old hair curtain.
 Do not touch Carol, Charles or the prior diagnostic Vulva2 model.

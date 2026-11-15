@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Import a privately generated KeenTools OBJ ZIP into Blender and export a review GLB.
 Run: blender --background --python import_laura_keentools_head.py -- /private/head.zip /private/laura-head-review.glb
 This is a HEAD REVIEW ONLY, not a MakeHuman topology transfer or body replacement.

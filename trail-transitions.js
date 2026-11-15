@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{
   const TRANSITION_SPEED=1.3216;
   const activeAudio=new Set();

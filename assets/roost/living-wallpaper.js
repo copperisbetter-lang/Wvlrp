@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{const poster=document.querySelector('.poster'),wrap=document.querySelector('.poster-wrap');if(!poster||!wrap)return;
 const LAT=38.37,LON=-81.63,TZ='America/New_York',RIDGE=22,seasonLayer=document.getElementById('seasonLayer'),weatherLayer=document.getElementById('weatherLayer'),oldSun=document.getElementById('solarSun'),oldMoon=document.getElementById('lunarMoon'),sun=document.createElement('button'),moon=document.createElement('button'),stage=document.getElementById('chickenStage'),sky=document.createElement('div'),stars=document.createElement('div'),haze=document.createElement('div');
 wrap.querySelectorAll('.living-sky,.living-stars,.living-haze,.living-sun-v2,.living-moon-v2').forEach(e=>e.remove());

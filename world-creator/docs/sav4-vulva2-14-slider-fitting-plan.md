@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # SAV4 / Vulva 2 — Manual Fitting Viewer Specification (2026-10-19)
 
 Status: APPROVED PLAN, NOT IMPLEMENTED. Dedicated Vulva 2 work is separate from SAV4 face morph workflow. Implement next session.

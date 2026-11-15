@@ -1,3 +1,4 @@
+/* Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. */
 [hidden]{display:none!important}
 :root{color-scheme:dark;--bg:#08120f;--card:#10231d;--border:#34493f;--text:#f1f0e4;--muted:#aec0b2;--gold:#e2bb72;--green:#256e53}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}

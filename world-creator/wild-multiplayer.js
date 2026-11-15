@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * Optional public beta multiplayer, independent from resident NPCs and
  * the World Creator. A same-room peer's position is rendered as a lightweight

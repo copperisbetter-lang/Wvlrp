@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // WVLRP Stacey Lake — V14 original Woodland Trail PHOTO-surface.
 // Use the real rocky path in the CENTER of the owner's approved 360 panorama.
 // Native autumn colours, square photographic texels, feathered trail edges.

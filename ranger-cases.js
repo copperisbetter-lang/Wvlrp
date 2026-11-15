@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{'use strict';
 const KEY='wvlrpFieldCases2', read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch{return {}}};
 const s=Object.assign({accepted:[],clues:[],done:[],firstVisit:new Date().toISOString(),watch:0,nightDate:'',daySearch:0},read());

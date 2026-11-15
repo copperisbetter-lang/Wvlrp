@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Beverly — morning handoff (2026-11-04)
 
 **Status:** Work paused at owner's request. The owner is tired and wants to inspect Beverly in the morning. **Do not overwrite the approved Beverly master, change the attachment geometry/skin weights, or promote an experimental trim.** Continue coordination in [Issue 29](https://github.com/copperisbetter-lang/Wvlrp/issues/29).

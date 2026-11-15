@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Standalone Vulva2 skin preview, following the CAR3.5A material-only experiment.
 No changes to CAR2 or CAR3. Do not install into a character in this stage.
 """

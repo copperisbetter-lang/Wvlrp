@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Preserve MakeHuman's real CC0 UV skin diffuse map in exported WVLRP avatars.
 
 The previous standalone color materials covered the face's lips, eyelids,

@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Lauren 3 v8 — curved inner-corner lids and matched real 3D orbital rig.
 // Intact source GLB is NEVER rewritten. Laura 2.5 remains a separate frozen copy.
 import * as THREE from 'three';

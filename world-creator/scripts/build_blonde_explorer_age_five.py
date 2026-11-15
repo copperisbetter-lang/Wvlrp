@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build a separate five-year-old explorer using the existing continuous MakeHuman pipeline.
 Run with Blender Python after the same MPFB/MakeHuman dependencies as build_young_explorer_real.py.
 Never modifies Jenny or Penny assets.

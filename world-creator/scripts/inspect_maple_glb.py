@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Inspect original maple GLB without modifying it. Print scene hierarchy and mesh bounds."""
 import json,struct,pathlib,collections
 p=pathlib.Path("world-creator/assets/maple_trees_optimized_single_upload.glb")

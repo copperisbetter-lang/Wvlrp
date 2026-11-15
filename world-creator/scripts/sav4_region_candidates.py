@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Analyze SAV4 Blender face CSV without inventing verified vertex IDs.
 
 Run: python3 world-creator/scripts/sav4_region_candidates.py face-vertices.csv

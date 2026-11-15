@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild: photo-guided Ranger Station #2 (2026-10-15).
  * Actual Babylon meshes, PBR building surfaces and furnished continuous interior.

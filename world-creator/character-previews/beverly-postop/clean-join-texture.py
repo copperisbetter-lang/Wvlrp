@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Non-destructive facial/body texture atlas cleanup for Beverly's separate join patch.
 Targets two painted dark U-like streaks in a 1024x1024 join texture.
 NEVER changes geometry, skin weights, certified GLB, or attachment texture.

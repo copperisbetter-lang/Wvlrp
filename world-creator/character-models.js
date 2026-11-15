@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // WVLRP wildlife-only preview geometry.
 // Human blob/procedural mannequin builder is retired. People require actual GLB models.
 // One palette per preview refresh keeps materials shared across large herds.

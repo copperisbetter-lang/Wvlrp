@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """CAR 3.5B: install the proven CAR 3.5A body-skin material on CAR 3's fitted attachment.
 Never overwrite the CAR 3 source model.
 """

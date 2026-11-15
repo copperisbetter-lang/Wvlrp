@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Riley is a temporary adult character shape/pose prototype, not a photo-scanned
 // likeness or a rigged production character. All geometry is real 3D and orbitable.
 // Intentionally independent of the existing Ranger Station NPC and other people.

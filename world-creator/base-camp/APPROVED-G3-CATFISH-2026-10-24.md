@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # APPROVED — Stacey Lake catfish (Gater 3)
 
 Approved by project owner on 2026-10-24: "They are fine for now, lock that in and save it as approved."

@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # The Wild — Location Planning Checkpoint (October 13, 2026)
 
 **Status: PLANNING ONLY — DO NOT BUILD, SPAWN, OR MOVE ANY GAME OBJECT WITHOUT EXPLICIT USER APPROVAL.**

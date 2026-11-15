@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Add licensed MakeHuman Vulva 1 as a reversible, skin-matched test overlay.
 Riley Top Shelf base GLB stays untouched. Blender 3/4 compatible.
 This is an experimental fit, not an anatomically verified seamless integration.

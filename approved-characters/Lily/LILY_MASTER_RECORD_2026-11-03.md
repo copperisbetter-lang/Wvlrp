@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # LILY — saved/approved-for-now character record (2026-11-03)
 
 **Owner designation:** Lily, Jenny's friend. **Age exactly seven**, visually approved as "good enough for now." Keep exact originals intact; clone before refinements. **Do not confuse with the earlier rejected older-looking brunette prototype.**

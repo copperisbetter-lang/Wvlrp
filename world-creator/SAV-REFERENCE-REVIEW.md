@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Sav reference intake and modeling QA — 2026-10-12
 
 These nine user-uploaded images are **general adult female body/pose references**, NOT photographs of Sav and NOT a definitive character likeness. Do not copy any individual's identity, face, or exact body onto Sav.

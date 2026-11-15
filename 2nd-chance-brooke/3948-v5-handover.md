@@ -1,2 +1,3 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Brooke 3948 V5 — 2026-10-25
 User approved V4 appearance ('Looks good, keep moving'). V4 preserved. V5 viewer: /3948-calibrated-face-v5.html. Adds left/right smile corner sliders, left/right experimental blink sliders, crown state preserved during expression updates. Original source model 3948-3d.glb unchanged; V3 and V4 remain unchanged. Commit 6946a1c34a4b01a18ea6314f03b18eb35dafb3b7. Blink is approximate based on eye coordinates, not rigged eyelid anatomy. Requires phone visual test. G3 handles Mona, not Brooke.

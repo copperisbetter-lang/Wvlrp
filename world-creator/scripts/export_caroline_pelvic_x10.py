@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Temporary adult Carol pelvic ×10 exaggeration for mesh location diagnosis.
 
 Export a SECOND GLB; leave the normal Carol inspection GLB and saved source untouched.

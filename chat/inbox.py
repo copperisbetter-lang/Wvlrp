@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 from typing import Optional
 from fastapi import Header, HTTPException, Query
 from pydantic import BaseModel, Field

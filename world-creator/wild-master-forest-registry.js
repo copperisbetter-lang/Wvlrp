@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** The Wild: verified downloaded HD tree source registry.
  * Shares source IDs with the installed PBR asset manifest.
  * Weights are target shares of planted trees, NOT acreage.

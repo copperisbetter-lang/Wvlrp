@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Subtle, reversible-by-checkpoint orbital/under-eye morph on Lauren 3's real GLB.
 Only modifies eye-area POSITION.Z values in Lauren 3. No photo/image output.
 Laura 2.5 is a permanently untouched backup, and colors/indices never change.

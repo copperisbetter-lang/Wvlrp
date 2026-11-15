@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build Laura head as a separate GLB; preserve original MakeHuman assets."""
 import bpy, bmesh, math
 from pathlib import Path

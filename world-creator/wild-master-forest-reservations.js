@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Permanent, deterministic forest exclusions for The Wild.
  * All distances are metres. Shared by future HD species scatterers.
  * Does not instantiate geometry or interfere with terrain streaming.

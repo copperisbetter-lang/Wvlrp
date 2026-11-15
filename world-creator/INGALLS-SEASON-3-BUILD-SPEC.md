@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # The Wild — Ingalls family, Season 3 (1976–77)
 
 Status: **reference and build acceptance specification; no finished GLBs yet.** These are separate NPCs, not reskins of Jenny, Penny, or the five-year-old explorer.

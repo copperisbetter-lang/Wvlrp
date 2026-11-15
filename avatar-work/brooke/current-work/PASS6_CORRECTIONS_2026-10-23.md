@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Brooke 1.1 — Pass 6 correction specification
 
 Status: planned, NOT built or verified. Preserve Sophie 1, Brooke 1.0 and Pass 5.

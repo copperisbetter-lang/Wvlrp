@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild 2 Base Camp: mobile-budget phototextured Appalachian-style forest floor.
  * True GLB meshes from the existing CC0 Poly Haven library; no polygon stand-ins.

@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Wildlife Workshop — The Wild
 
 GitHub Actions can now **download**, **open in Blender**, **inspect geometry/rigging**, and **render four reference views** of each existing wildlife model.

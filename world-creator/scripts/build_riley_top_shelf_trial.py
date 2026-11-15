@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP Riley sculpted body: CC0 human sculpt + preserved Riley face + pose rig.
 Reference intent: approved front/left-profile/back turnarounds, neutral base outfit.
 Images guide proportions, not automatic 3D reconstruction. Do NOT reuse the

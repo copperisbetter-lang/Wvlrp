@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Carol's adult pelvic detail: C0-anchored, reversible licensed topology.
 
 C0 is the low, front-facing central pelvic landmark, NEVER an inner-thigh

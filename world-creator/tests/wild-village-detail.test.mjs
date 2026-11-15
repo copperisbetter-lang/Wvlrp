@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import {strict as assert} from "node:assert";
 import test from "node:test";
 import {COMMUNITY_SITES,VILLAGE_CLEARING} from "../wild-reference-layout.js";

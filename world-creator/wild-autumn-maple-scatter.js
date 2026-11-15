@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import {FOREST_SPECIES_TARGETS} from "./wild-master-forest-registry.js";
 import {groundTree} from "./wild-hd-tree-ground.js";
 import {mayPlantTree} from "./wild-master-forest-reservations.js";

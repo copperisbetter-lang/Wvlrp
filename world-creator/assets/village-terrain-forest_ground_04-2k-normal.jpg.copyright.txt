@@ -1,0 +1,11 @@
+Copyright file notice for: world-creator/assets/village-terrain-forest_ground_04-2k-normal.jpg
+
+Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
+
+IMPORTANT: This is a project-wide rights/attribution notice, NOT an assertion
+that WVLRP owns all elements or has exclusive rights to this file. If this
+file contains a third-party model, texture, photo, library, font, character
+base, or other licensed component, that creator's rights and actual license
+control the underlying work. Any original WVLRP modifications remain subject
+to their own copyright. Do not remove existing license or attribution files.
+Original file bytes have not been changed by this sidecar.

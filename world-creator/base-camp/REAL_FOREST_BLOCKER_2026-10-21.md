@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # The Wild 2 / Base Camp — REAL FOREST NOT COMPLETE
 Date: 2026-10-21
 Status: BLOCKED ON VERIFIED REAL TREE ASSETS AND PHONE VISUAL QA. Do NOT mark forest approved or photorealistic.
