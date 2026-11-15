@@ -1,10 +1,10 @@
 Riley sculpted-body build report
-source_commit: 71bc1887a708116273edecc2c0d605fab183504a
+source_commit: 1e428daa6ce6c64212740abcdae1424d26955aa7
 result: success
-checked_utc: 2026-11-08T02:20:17Z
+checked_utc: 2026-11-15T03:42:38Z
 last_blender_log_lines:
   nodes=mat.node_tree.nodes if mat.use_nodes and mat.node_tree else []
-/home/runner/work/Wvlrp/Wvlrp/world-creator/scripts/build_riley_rigged.py:421: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+/home/runner/work/Wvlrp/Wvlrp/world-creator/scripts/build_riley_rigged.py:422: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
   skin.use_nodes=True
 RILEY_SCULPT_DONOR [('Avery | anatomical body', 70985, 'Avery | anatomical body.rig'), ('Icosphere', 42, '')]
 RILEY_TARGETED_NECK_RIM Avery | anatomical body 112 total_open_edges 27928
@@ -21,43 +21,43 @@ RILEY_LONG_HAIR_SURFACE 7330 6720 curtain_columns 64 curtain_rows 42 face_locks 
 RILEY_NECK_JOIN_DIAGNOSTIC body_z 1.4219 face_z 1.4403 gap 0.0184 body_outline (-0.0, 0.0736, 0.1097, 0.0364) face_outline (0.0179, 0.0147, 0.048, 0.055)
 RILEY_NECK_BRIDGE 576 512
 ERROR Draco mesh compression is not available because library could not be found at /usr/lib/blender/scripts/addons_core/io_scene_gltf2/libextern_draco.so
-02:20:05 | INFO: Starting glTF 2.0 export
-02:20:05 | INFO: Extracting primitive: eyebrow006
-02:20:05 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: eyelashes01
-02:20:05 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: low-poly
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: bob01
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: Riley layered hair surface
-02:20:05 | INFO: Primitives created: 4
-02:20:05 | INFO: Extracting primitive: base.002
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: Riley neck skin bridge geometry
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: base
-02:20:05 | INFO: Primitives created: 1
-02:20:05 | INFO: Extracting primitive: teeth_base
-02:20:05 | INFO: Primitives created: 1
-02:20:06 | INFO: Finished glTF 2.0 export in 0.7631633281707764 s
+03:42:21 | INFO: Starting glTF 2.0 export
+03:42:21 | INFO: Extracting primitive: eyebrow006
+03:42:21 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+03:42:21 | INFO: Primitives created: 1
+03:42:21 | INFO: Extracting primitive: eyelashes01
+03:42:21 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+03:42:21 | INFO: Primitives created: 1
+03:42:21 | INFO: Extracting primitive: low-poly
+03:42:21 | INFO: Primitives created: 1
+03:42:21 | INFO: Extracting primitive: bob01
+03:42:21 | INFO: Primitives created: 1
+03:42:21 | INFO: Extracting primitive: Riley layered hair surface
+03:42:21 | INFO: Primitives created: 4
+03:42:21 | INFO: Extracting primitive: base.002
+03:42:22 | INFO: Primitives created: 1
+03:42:22 | INFO: Extracting primitive: Riley neck skin bridge geometry
+03:42:22 | INFO: Primitives created: 1
+03:42:22 | INFO: Extracting primitive: base
+03:42:22 | INFO: Primitives created: 1
+03:42:22 | INFO: Extracting primitive: teeth_base
+03:42:22 | INFO: Primitives created: 1
+03:42:22 | INFO: Finished glTF 2.0 export in 1.2421200275421143 s
 
 RILEY_RIG_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-rigged-v1.glb 10804936 bones 29 body_vertices 36004 facial_parts 5 height_cm 170 bust_cm 112 waist_cm 70 hip_cm 88
 Blender 5.0.1
 
 Blender quit
 last_preview_render_lines:
-02:20:11 | INFO: Blender create Mesh node eyelashes01
-02:20:11 | INFO: Blender create Mesh node female_casualsuit01
-02:20:11 | INFO: Blender create Mesh node low-poly
-02:20:11 | INFO: Blender create Mesh node base
-02:20:11 | INFO: Blender create Mesh node shoes05
-02:20:11 | INFO: Blender create Mesh node teeth_base
-02:20:11 | INFO: glTF import finished in 0.05s
-00:04.569  render           | Saved: '/home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-front.png'
-00:04.684  render           | Saved: '/home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-right.png'
+03:42:33 | INFO: Blender create Mesh node eyelashes01
+03:42:33 | INFO: Blender create Mesh node female_casualsuit01
+03:42:33 | INFO: Blender create Mesh node low-poly
+03:42:33 | INFO: Blender create Mesh node base
+03:42:33 | INFO: Blender create Mesh node shoes05
+03:42:33 | INFO: Blender create Mesh node teeth_base
+03:42:33 | INFO: glTF import finished in 0.09s
+00:08.099  render           | Saved: '/home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-front.png'
+00:08.301  render           | Saved: '/home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-qa/source-skin-right.png'
 RILEY_ORIGINAL_SOURCE_MESH bob01 vertices 2929 height 0.25
 RILEY_ORIGINAL_SOURCE_MESH eyebrow006 vertices 124 height 0.012
 RILEY_ORIGINAL_SOURCE_MESH eyelashes01 vertices 250 height 0.016
