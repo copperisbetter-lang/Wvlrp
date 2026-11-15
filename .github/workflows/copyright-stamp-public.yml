@@ -1,6 +1,6 @@
 # Copyright © 2026 WVLRP / The Wild. All rights reserved in original project work.
 # Existing third-party rights and license notices continue to govern their materials.
-name: Copyright audit & per-file notices (PUBLIC repository only)
+name: Copyright audit & per-file notices (public, workflow-safe)
 on:
   push:
     branches: [feature/public-copyright-notices-20261114]
