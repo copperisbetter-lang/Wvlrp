@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Validate a Brooke GLB exported from Blender: one connected head skin mesh.
 Run inside Blender: blender -b --python avatar-work/brooke/mesh-validation.py -- path/to/brooke.glb
 Does not modify the source GLB or Laura files.

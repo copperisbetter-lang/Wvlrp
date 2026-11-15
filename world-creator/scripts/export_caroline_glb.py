@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Export ONLY Caroline's validated inspection copy. No duplicated source heads.
 Reject missing facial diffuse textures, body skin, skeletal animations and rigs.
 The exported GLB is a QA artifact; public character approval is separate.

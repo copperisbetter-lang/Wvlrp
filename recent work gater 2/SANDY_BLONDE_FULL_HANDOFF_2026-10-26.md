@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Gater 2 — Sandy Blonde full continuity handoff (2026-10-26)
 
 **This is the authoritative GitHub quick recovery index.** The much more detailed 15 KB handoff was also saved in ChatGPT Library `/Recent/SandyBlonde_G2_Full_Recent_Handoff_2026-10-26.md`; accompanying reference image and both physics ZIPs are preserved in `/Recent`.

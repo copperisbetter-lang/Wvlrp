@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """QA orthographic front, right-side, and rear renders of exported Riley GLB.
 These PNGs are build artifacts, not AI approximations of the character.
 """

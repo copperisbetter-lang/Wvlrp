@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Inspect SAV4 GLB geometry and materials without Blender or MPFB."""
 import json,struct,pathlib
 p=pathlib.Path(__file__).resolve().parents[1]/"assets/sav4-realistic.glb"

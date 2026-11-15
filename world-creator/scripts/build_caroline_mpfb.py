@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Caroline Ingalls adult MPFB build entry point.
 Creates a new adult female MPFB source, verifies complete continuous base topology,
 uses the licensed MakeHuman skin, and deliberately keeps publication disabled until

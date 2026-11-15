@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """The Wild Avatar Forge processing API.
 Run on a GPU host with: pip install -r requirements.txt
 Set FORGE_TOKEN and FORGE_WORKDIR. No photo is uploaded to WVLRP web hosting.

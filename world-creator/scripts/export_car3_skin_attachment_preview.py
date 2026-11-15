@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build a standalone CAR3 skin-material inspection GLB without modifying CAR3.
 Run after build_car3_vulva1.py:
  blender -b -t 2 --python world-creator/scripts/export_car3_skin_attachment_preview.py

@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Independent adult inspection motion tests. Skeletal poses require visual QA.
 Every advertised motion is an actual exported glTF clip, never a simulated UI action.
 The rig remains centered; avoid the known Mixamo root-translation scale problem.

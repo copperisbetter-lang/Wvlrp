@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // WVLRP The Wild / Stacey Lake: touch minimap and terrain-aware Mason walk routing.
 // Isolated UI/navigation module. This does not modify scenery, model or physics.
 // An unreachable destination is refused, never teleported to.

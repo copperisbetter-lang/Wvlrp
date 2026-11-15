@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Lauren 3 v13: conformal eyes; correct full-face depth, iris and corner fit, keep original facial shell.
 // Non-destructive browser rig. Approved Laura 2.5 and original GLB remain untouched.
 import * as THREE from 'three';

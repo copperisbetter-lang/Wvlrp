@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Adapted from Luminous Lake (c) 2026 Bles Software, MIT License.
 // Source: https://github.com/stas4000/luminous-lake/blob/main/src/sim/waves.js
 export function waveAmplitude(calmness){const c=Math.max(0,Math.min(1,calmness));return .58*(1-c)+.02;}

@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import os, json, time, hmac, hashlib, secrets, base64, re
 from datetime import date
 from typing import Optional

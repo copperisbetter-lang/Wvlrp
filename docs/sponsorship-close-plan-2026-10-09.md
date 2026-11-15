@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # WVLRP — Friday, October 9, 2026: Two-Sponsor Push
 
 **Established by owner Thursday, October 8, 2026.** The immediate goal for Friday is to make serious progress toward **at least TWO signed/paying sponsorships: ONE larger sponsor and ONE affordable local mom-and-pop sponsor.** This is a target, not a guarantee that prospects will accept. No sponsorship should be marked sold until acceptance, terms, and payment are confirmed.

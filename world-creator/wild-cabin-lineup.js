@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild: eight licensed textured 3D comparison candidates.
  * Public CC0/CC BY files may be served from WVLRP after verification.

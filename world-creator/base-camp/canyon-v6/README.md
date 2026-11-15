@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Stacey Lake — approved Canyon V6 game integration
 
 The owner-approved photorealistic Canyon V6 from the 2026-10-27 conversation is installed in this **isolated lake game branch**; production `main` is unchanged.

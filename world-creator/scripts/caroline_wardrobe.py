@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Small fitted period-garment starter set for the Caroline adult rig.
 Each named garment is a REAL skinned export mesh with its own material.
 Prototype garment fit must be reviewed in the live viewer before signoff.

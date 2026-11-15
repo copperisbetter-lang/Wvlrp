@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Laura 2.5 saved; Lauren 3 working clone (2026-10-21)
 
 The current cleaned 3D facial mesh from `laura-2-face-viewer.html` was approved as the version to preserve. Two **independent** sets of model assets and viewers were created.

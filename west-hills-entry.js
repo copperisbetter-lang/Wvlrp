@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* Entry sign fixed to the West Hills side path beside the deer.
    Anchored to a spherical bearing, not the visitor's screen. */
 (()=>{

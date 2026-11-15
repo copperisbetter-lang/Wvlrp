@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP Chrissy MPFB trial (reference-guided, NOT automatic photo reconstruction).
 Uses free MPFB body morph system, CC0 stock skin + hair, Mixamo compatible rig.
 Does not replace the existing Riley character or world data. Generated result requires human QA.

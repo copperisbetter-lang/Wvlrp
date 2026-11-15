@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Stage 2 Laura 2: preserve the complete clone and export real MPFB face targets.
 No procedural vertex sculpting. Never edit Sophie 1 or SAV4.
 This is a staging scaffold: requires verified MPFB targets and rig-compatible

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 set -euo pipefail
 # Run on an Oracle Ubuntu VM as an ordinary sudo-enabled user.
 # Clones the existing WVLRP repository and runs the private Avatar Forge API.

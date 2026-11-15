@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Validate Brooke prototype GLB in Blender: blender -b --python avatar-work/brooke/validate_build.py -- path/to/head.glb"""
 import bpy, bmesh, sys
 args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []

@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Skeletal trial motions for the Caroline Ingalls adult MPFB rig.
 Derived from the grounded pose solver used by Caitlyn. All exports require visual QA.
 Do not replace missing animation clips with decorative viewer buttons.

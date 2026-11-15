@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild — Appalachian Ranger Lodge, inspired by WVLRP's approved
  * Community 360 Ranger Station (assets/community-clearing-v1.webp).

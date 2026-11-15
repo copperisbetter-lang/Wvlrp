@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Mason: default playable adult avatar for The Wild's Stacey Lake entry.
 // Loads the original MPFB GLB; creates an isolated skinned dark-denim shorts
 // garment using the same V8 waist/hem dimensions and bone-weight interpolation.

@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * Native WV forest renderer. No spherical crowns, no cylinder-and-ball trees.
  * Procedural woody branch frames, layered leaf/needle cards and batched GPU

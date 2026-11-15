@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** SAV4 lakeside resident: 55 minutes seated, 5 minutes strolling per wall-clock hour. */
 export async function installSav4LakesideResident(B,scene,{height}={}){
  const root=new B.TransformNode("sav4-lakeside-resident",scene);

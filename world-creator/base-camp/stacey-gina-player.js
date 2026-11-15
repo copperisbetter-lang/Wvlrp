@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Stacey Lake: controllable cloned Gina 6. The beach NPC keeps its original Walk.
 // The source GLB is fetched once; each clone has its own skinned bones and mixer.
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';

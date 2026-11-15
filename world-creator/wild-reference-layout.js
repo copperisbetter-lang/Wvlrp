@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild — approved 13 October 2026 woodland and community reference layout.
  * World X / Z are metres from Hearthside Cabin (0,0). These markers are the

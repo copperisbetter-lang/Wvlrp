@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Walk The Wild: real downloaded Poly Haven tree model inspection line.
  * One of each verified local GLB, beginning 35 m north of Hearthside Cabin.
  * Load on approach to protect Android memory; preserve all existing world assets.

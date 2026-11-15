@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Download verified CC0 Poly Haven 2K PBR material sets for The Wild.
 
 Uses the official API rather than guessing CDN URLs. This script is safe to

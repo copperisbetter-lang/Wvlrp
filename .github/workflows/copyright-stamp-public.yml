@@ -1,0 +1,48 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project work.
+# Existing third-party rights and license notices continue to govern their materials.
+name: Copyright audit & per-file notices (external workflow notices)
+on:
+  push:
+    branches: [feature/public-copyright-notices-20261114]
+    paths:
+      - .github/workflows/copyright-stamp-public.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  notices:
+    if: github.repository == 'copperisbetter-lang/Wvlrp'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout ONLY existing PUBLIC WVLRP repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+          submodules: false
+          persist-credentials: true
+      - name: Stamp supported text; add binary rights sidecars; enumerate every tracked file
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/apply_project_copyright.py --write
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          python3 .github/scripts/apply_project_copyright.py --check
+          git diff --cached --stat | tail -45
+          if ! git diff --cached --quiet; then
+            git commit -m 'Apply WVLRP original-work copyright notices to all public tracked files'
+            git push origin HEAD:feature/public-copyright-notices-20261114
+          fi
+      - name: Explicit privacy and licensing guardrails
+        run: |
+          set -euo pipefail
+          test -f COPYRIGHT.md
+          test -f COPYRIGHT_FILE_MANIFEST.tsv
+          grep -q 'Third-party assets and prior rights' COPYRIGHT_FILE_MANIFEST.tsv || test -s COPYRIGHT_FILE_MANIFEST.tsv
+          if git ls-files | grep -E 'Dad_G9_Stage14_NativeG9_Lower_Neck_Weight_Fit|Dad_G9_Stage3_Lowered_18mm_Working|Dad_Stage13_Clean_Bare_Neck_NO_CONNECTOR'; then
+            echo 'STOP: private Dad model found in public file list'
+            exit 1
+          fi
+          echo 'PUBLIC_COPYRIGHT_NOTICE_COVERAGE_VERIFIED; NO PRIVATE DAD MODEL PUBLISHED'

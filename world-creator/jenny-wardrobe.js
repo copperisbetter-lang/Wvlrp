@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* Young Explorer outfit fitting and safe motion controls for the actual rigged 3D character.
    Does not replace skin, face, hairstyle, shoes, or the character skeleton. */
 (function () {

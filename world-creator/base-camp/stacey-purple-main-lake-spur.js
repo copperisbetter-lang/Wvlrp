@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // WVLRP The Wild — owner's Oct 28 Stacey Lake path sketch.
 // Continuously connected ridge THROUGH-trail and a separate branching lake spur.
 // Isolated staging only. Coordinates in Stacey scene world metres, not pixels.

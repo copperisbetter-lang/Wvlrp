@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Brooke 3948 — V4 handover (2026-10-25)
 
 Owner: Gater working on Brooke head; G3 works on Mona, separate workstream.

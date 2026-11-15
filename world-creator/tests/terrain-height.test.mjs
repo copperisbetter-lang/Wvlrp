@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import test from "node:test";
 import assert from "node:assert/strict";
 import {makeGroundHeightSampler} from "../terrain-height.js";

@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # WVLRP — Tier 4: Exclusive Sitewide & Game/Quest Presentation Sponsor
 
 **Decision recorded:** October 8, 2026. **Status:** Proposed sponsorship inventory, NOT awarded or sold. WVLRP is **soft-launched, not yet publicly launched**.

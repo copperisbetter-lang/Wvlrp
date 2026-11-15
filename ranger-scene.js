@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* Shared spherical viewer for the station and its approach. */
 (()=>{
 const config=window.RANGER_SCENE,c=document.querySelector('#scene'),g=c.getContext('webgl',{alpha:false}),message=document.querySelector('#sceneMessage');

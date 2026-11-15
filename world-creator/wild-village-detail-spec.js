@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild — 75 m DIAMETER woodland-detail installation around the village.
  * The radius is 37.5 m, never 75 m. Keeps the three buildings, fire circle,

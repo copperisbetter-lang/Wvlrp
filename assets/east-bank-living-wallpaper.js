@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{const hero=document.querySelector('.hero');if(!hero)return;
 const TZ='America/New_York',LAT=38.37,LON=-81.63,clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 hero.querySelectorAll('.eb-sky,.eb-stars,.eb-haze,.eb-land-light,.eb-horizon-glow,.eb-reflection,.eb-sun,.eb-moon').forEach(e=>e.remove());

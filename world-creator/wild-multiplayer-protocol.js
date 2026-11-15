@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * Pure validation for anonymous Game Beta Test position packets.
  * Never accept names, markup or executable data from remote browsers.

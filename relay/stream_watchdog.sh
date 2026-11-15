@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 # WVLRP stream watchdog: guard the exact working HLS path.
 set -u
 BASE="http://127.0.0.1:8891"

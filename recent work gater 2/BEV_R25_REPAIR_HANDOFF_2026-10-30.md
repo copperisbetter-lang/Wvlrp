@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Bev R25 — pose deformation repair handoff (October 30, 2026)
 
 **Status:** Experimental repair built and reviewed using VTK offscreen geometry renders; requires user phone review, NOT deployed, NOT master-approved. Preserve R15 standing source.

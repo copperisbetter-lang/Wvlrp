@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Clone-only Beverly U-shaped dark join-stroke texture repair.
  * Only changes the clone's separate transition PATCH texture.
  * Source GLB, mesh, bones, skin weights and attachment are never edited.

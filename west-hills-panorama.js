@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /* West Hills: build a distinct 4096x2048 equirectangular junction from the
    existing local HD woodland photography. All drawing occurs in the browser;
    this keeps the woodland texture crisp without adding external image requests. */

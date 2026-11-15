@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """KeenTools Cloud Laura 2 reconstruction. Run only with consent and an API key.
 Never commit reference photographs, keys, or generated identifiable head meshes to a public repository.
 Usage: KEENTOOLS_API_KEY=... python reconstruct_laura_keentools.py --photos /private/a.jpg /private/b.jpg /private/c.jpg --out /private/laura2-head.zip

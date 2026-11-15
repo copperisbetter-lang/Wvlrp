@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build separate SAV4 garment GLBs from the actual body mesh in Blender.
 Run: blender -b --python world-creator/scripts/build_sav4_wardrobe.py
 Requires world-creator/assets/sav4-realistic.glb. Garments are static fit prototypes;

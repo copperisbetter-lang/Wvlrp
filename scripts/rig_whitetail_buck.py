@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Experimental automatic quadruped armature for the uploaded whitetail buck.
 Run: blender -b -P scripts/rig_whitetail_buck.py -- INPUT.glb OUTPUT.glb
 Does not overwrite the original; inspect deformation before game integration.

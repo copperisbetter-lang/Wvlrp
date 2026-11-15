@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // First approved Base Camp trail: lake shore to nearest empty inland campsite clearing.
 // Fences and mossy rocks are actual 3D geometry; the path is a terrain-following walkable surface.
 // Uses the exact user-approved trail PNG. Build a continuous ground-only composite at a length-scaled resolution, without repeating the full perspective image.

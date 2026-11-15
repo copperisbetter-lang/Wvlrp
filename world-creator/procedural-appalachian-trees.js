@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Procedural Appalachian tree test for Babylon.js. No GLB downloads.
 // Usage: const grove = window.WVLRPTrees.plant(scene, new BABYLON.Vector3(x,y,z));
 // Call grove.dispose() to remove.

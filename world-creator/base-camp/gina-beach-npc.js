@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Gina 6: original gold-bikini character, original native Walk animation.
 // Independent NPC near Stacey Lake beach; does not modify Beverly.
 export function installGinaBeachWalk({THREE:T,scene,model,mixer,clip,outer,terrainY,lake}){

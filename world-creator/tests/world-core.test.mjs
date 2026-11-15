@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 import test from "node:test";
 import { resetToWildCabin } from "../world-core.js";
 import { NATIVE_TREES,NATIVE_EVERGREENS,riverY,riverLevel,terrainHeight,waterAt,creekPath,treesInArea,supplementalTreesInArea } from "../wild-nature.js";

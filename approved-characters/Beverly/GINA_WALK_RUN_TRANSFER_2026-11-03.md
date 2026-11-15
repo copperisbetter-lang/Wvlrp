@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Gina 6 walk/run -> Beverly: animation transfer audit
 Date: 2026-11-03
 Status: SOURCE LOCATED; NOT YET RETARGETED OR DEPLOYED.

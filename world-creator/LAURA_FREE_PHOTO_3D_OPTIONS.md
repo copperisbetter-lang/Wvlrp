@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Free photo-to-3D options for Laura 2
 
 Recorded 2026-10-21. No paid API or subscription required for the selected first experiment.

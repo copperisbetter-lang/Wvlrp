@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Riley MAX-size anatomical trial — October 12, 2026
 
 User request: replace the current coarse vulva on adult **Riley** trial with a more detailed version, and initially set **every functional size control to maximum**. Avoid maxing placement or rotation, which would push the attachment away from the intended fit.

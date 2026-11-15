@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Character Render Build Failure Register
 
 Purpose: prevent recurring failures across **every** WVLRP character (Brooke, Laura, Sophie, and future avatars). Before creating or editing any character rendering workflow, review this file and apply the preflight checklist. Append an entry for each failed workflow run, with a link to the actual GitHub Actions log. Never guess a cause; distinguish root causes from cascading symptoms. A proposed fix is not verified until a later run passes.

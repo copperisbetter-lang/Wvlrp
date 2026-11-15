@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Crystal 1 Test — approved Genesis 8 visual baseline
 
 Status: APPROVED visual baseline by owner; static, not yet animated or fully rigged.

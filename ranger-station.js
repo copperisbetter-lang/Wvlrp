@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 (()=>{
 const $=s=>document.querySelector(s),dialog=$('#detail'),body=$('#detailBody'),title=$('#detailTitle');let returnFocus=null,muted=false;
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}},read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};

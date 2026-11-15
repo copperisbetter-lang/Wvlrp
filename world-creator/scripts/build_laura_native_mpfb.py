@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Native MPFB Laura head build. Never edit protected original avatars."""
 import bpy, sys, zipfile, shutil, re
 from pathlib import Path

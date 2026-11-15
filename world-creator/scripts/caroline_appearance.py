@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Adult Caroline Ingalls reference-body proportions and Season 3 updo.
 Applied to her own MPFB copy, never Jenny's or another actor's model.
 The preview hairstyle is procedural trial art, NOT a certified likeness.

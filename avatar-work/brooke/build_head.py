@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Brooke neutral head prototype. Run with Blender 4.x:
 blender -b --python avatar-work/brooke/build_head.py
 Produces avatar-work/brooke/brooke-head-prototype.glb.

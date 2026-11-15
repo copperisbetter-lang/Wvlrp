@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build an articulated, featureless adult Riley mannequin from CC0 source meshes.
 This changes the standalone test figure only, not the deer or saved game world.
 All new geometry is original, generated here; the underlying model remains licensed CC0.

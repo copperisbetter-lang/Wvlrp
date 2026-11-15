@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Split verified Acer trees from Ground_Checker_0, retaining GLB binary materials."""
 import json,struct,pathlib,copy,sys
 src=pathlib.Path("world-creator/assets/maple_trees_optimized_single_upload.glb")

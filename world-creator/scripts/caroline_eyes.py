@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Restore Carolyn's natural blue irises on the ORIGINAL MPFB eyeballs.
 
 Do NOT attach separate blue iris discs. Those overlays left a second visible

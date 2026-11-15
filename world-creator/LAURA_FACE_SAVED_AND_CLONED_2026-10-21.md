@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Laura face checkpoint and Laura 2 working clone — 2026-10-21
 
 The mobile viewer source was `laura-3d-viewer.html` and 10 base64-encoded parts at `world-creator/assets/laura-3d/face.part00.b64` through `face.part09.b64` as of the source commit.

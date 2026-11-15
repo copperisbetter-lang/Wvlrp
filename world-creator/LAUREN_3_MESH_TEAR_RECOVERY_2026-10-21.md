@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # Lauren 3 recovery after eye sculpt — 2026-10-21
 
 User screenshot showed large horizontal strips across the 3D face after the eye-area sculpt. This is a **FAILED** experiment visually, even though the script's numerical validation passed.

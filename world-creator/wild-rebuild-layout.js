@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /**
  * The Wild — first greenfield rebuild. All coordinates are game metres.
  * THIS DATA is separate from permanent NPCs and the Hearthside cabin models.

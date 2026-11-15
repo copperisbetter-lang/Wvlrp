@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Read-only SAV4/Vulva2 source compatibility preflight.
 
 This script deliberately does not alter SAV4 or export anatomy.

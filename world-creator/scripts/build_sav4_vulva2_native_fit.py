@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Build SAV 4 as a separate adult MPFB character (no SAV 3 geometry).
 Run: blender -b -t 2 --python world-creator/scripts/build_sav4_mpfb.py
 Requires existing WVLRP Blender MPFB extension and /tmp/mh-system.zip.

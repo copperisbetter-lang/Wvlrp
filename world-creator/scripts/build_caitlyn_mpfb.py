@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """WVLRP Caitlyn MPFB avatar with optional sundress. Separate new adult game avatar.
 Uses MPFB CC0 anatomy/skin, real ash-platinum wavy hair, and Mixamo skeleton.
 Separate non-destructive temporary dress. Does not change other avatars. Requires visual QA.

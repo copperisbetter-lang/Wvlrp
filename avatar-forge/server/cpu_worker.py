@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """CPU-only parametric humanoid GLB worker for Avatar Forge.
 This is a procedural baseline, NOT photo reconstruction. Reference images are
 used for an averaged skin tone; anatomy and rigging are approximate.

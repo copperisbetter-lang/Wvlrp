@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Isolated Sav adult MakeHuman Vulva1 mesh-fitting QA. Never changes the original Sav GLB.
 Uses Thomas Larsson's original MakeHuman Vulva1 vertices/faces/UVs already
 retained under world-creator/assets/riley-vulva1-source.json (AGPL-3).

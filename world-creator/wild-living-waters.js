@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Animated lake water adapted for Babylon.js; preserves streamed terrain and existing lake sites. */
 export function installWildWaters(B,scene,{height,getPosition,seed=1}){
  const sites=[{x:-165,z:-180,rx:72,rz:52},{x:410,z:-340,rx:95,rz:72}];

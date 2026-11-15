@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Bake the visually approved V21 SAV4 viewer corrections into a GLB.
 Uses only mesh attributes: never modifies vertex positions, triangles or rig.
 """

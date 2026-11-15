@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 /** Weeping willow landmark, 30 m due north of Hearthside cabin (0,0). */
 export function installGirlsCabinWillow(B,scene,groundY=0){
  const root=new B.TransformNode("girls-cabin-willow-30m-north",scene);

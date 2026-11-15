@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Recover files already attached to a GitHub issue into repository backups.
 No phone download/upload required after the file has been attached to GitHub.
 Runs inside GitHub Actions with GITHUB_TOKEN. Never logs token or file contents.

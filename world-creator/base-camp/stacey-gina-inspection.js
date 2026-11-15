@@ -1,3 +1,4 @@
+// Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 // Gina-clone-only joint steering and inspection poses.
 // Adapted from the existing Gina two-pose lab: original meshes, weights, GLB and beach NPC unchanged.
 import {createBeverlyMotionRepairs} from '../character-previews/beverly-postop/motion-repairs.js';

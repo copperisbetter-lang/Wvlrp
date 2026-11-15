@@ -1,3 +1,4 @@
+# Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md.
 """Extract reusable example head from the existing MPFB Sha GLB.
 Original source avatar remains untouched. Outputs two identical head GLBs.
 The cut is an approximate neck crop, NOT a photo-fitted Laura likeness.

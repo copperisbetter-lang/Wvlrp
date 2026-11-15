@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # 2nd Chance Brooke — 3948 session (2026-10-25)
 
 Original: repository root `3948-3d.glb` (preserve unchanged). User uploaded the same model into this chat.

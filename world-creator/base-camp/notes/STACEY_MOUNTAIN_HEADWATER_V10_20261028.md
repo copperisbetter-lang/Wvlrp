@@ -1,3 +1,4 @@
+<!-- Copyright © 2026 WVLRP / The Wild. All rights reserved in original project-created material only. Third-party assets and prior rights remain subject to their respective licenses. See /COPYRIGHT.md. -->
 # STACEY V10 — OWNER DRAWN BLUE MOUNTAIN AND ONE SPLIT HEADWATER
 Date: October 28, 2026 (2:33–2:50 PM EDT)
 Status: **ISOLATED STAGING ONLY / NOT DEPLOYED / PHONE QA PENDING**
