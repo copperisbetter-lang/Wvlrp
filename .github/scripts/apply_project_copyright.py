@@ -62,8 +62,8 @@ def should_skip(path):
 
 def license_sensitive(path):
     # Do not modify existing explicit third-party attribution or licenses.
-    return bool(re.search(r"(?:^|/)(?:licen[sc]e|third[-_ ]party|attribution|credits)(?:[./_-]|$)",
-                          path, flags=re.IGNORECASE))
+    return bool(re.search(r"(licen[sc]e|third[-_ ]party|attribution|credits)",
+                          Path(path).name, flags=re.IGNORECASE))
 
 def plan(path):
     src = ROOT / path
