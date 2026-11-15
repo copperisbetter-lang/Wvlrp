@@ -66,6 +66,10 @@ def license_sensitive(path):
                           Path(path).name, flags=re.IGNORECASE))
 
 def plan(path):
+    # GitHub Actions GITHUB_TOKEN cannot update existing workflow files without
+    # workflow permission; instead attach companion notices without changing YAML.
+    if path.startswith(".github/workflows/"):
+        return "sidecar", None
     src = ROOT / path
     if not src.is_file() or src.is_symlink():
         return "sidecar", None
