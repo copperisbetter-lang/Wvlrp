@@ -38,6 +38,7 @@ jobs:
           import time
           url='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116/the-wild-custom-mesh-v4-viewer.html'
           opts=Options()
+          opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
           opts.add_argument('--headless=new')
           opts.add_argument('--no-sandbox')
           opts.add_argument('--disable-dev-shm-usage')
@@ -50,7 +51,7 @@ jobs:
           try:
             driver.set_page_load_timeout(120)
             driver.get(url)
-            status=WebDriverWait(driver,110,poll_frequency=2).until(
+            status=WebDriverWait(driver,50,poll_frequency=2).until(
               lambda d:d.find_element(By.ID,'status').text
                 if 'V4 mesh ready' in d.find_element(By.ID,'status').text else False)
             print('V4_MOBILE_WEBGL_REAL_RENDER_READY:',status,flush=True)
@@ -64,6 +65,12 @@ jobs:
             assert driver.find_element(By.ID,'inner').text=='Inner close'
             print('V4_WEBGL_AND_INDEPENDENT_CONTROLS_PASS',flush=True)
             driver.save_screenshot('/tmp/v4-mobile-browser.png')
+          except Exception as err:
+            print('V4_BROWSER_FAILURE',str(err),flush=True)
+            print('V4_BROWSER_STATUS',driver.find_element(By.ID,'status').text,flush=True)
+            print('V4_BROWSER_CONSOLE',driver.get_log('browser')[-20:],flush=True)
+            driver.save_screenshot('/tmp/v4-mobile-browser.png')
+            raise
           finally:
             driver.quit()
           PY
