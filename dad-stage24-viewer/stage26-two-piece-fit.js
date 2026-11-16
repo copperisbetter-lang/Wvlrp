@@ -2,12 +2,19 @@
 // Uses the preexisting encrypted original scan + native 138-bone G9 from the protected GLB.
 // Only the G9 neck primitive is clipped; the photographed head/shoulder scan is untouched.
 import {recoverActualOriginalG9ShortNeck} from './stage28-recover-original-g9-neck.js';
+// GLTFLoader may produce indexed ORIGINAL meshes and NON-indexed restored meshes.
+export function countMeshTriangles(geometry) {
+  const count=geometry?.index?.count ?? geometry?.getAttribute?.('position')?.count;
+  if(!Number.isInteger(count)||count<3||count%3!==0)
+    throw Error('Invalid triangulated mesh vertex/index count: '+String(count));
+  return count/3;
+}
 export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
   const found=[];
   gltf.scene.traverse(o=>{
     if(!o.isMesh || !o.geometry?.getAttribute('position')) return;
     const assoc=gltf.parser.associations?.get(o)||{};
-    found.push({mesh:o,assoc,faceCount:(o.geometry.index?.count||o.geometry.getAttribute('position').count)/3});
+    found.push({mesh:o,assoc,faceCount:countMeshTriangles(o.geometry)});
   });
   let scanned=found.filter(r=>r.assoc.meshes===0);
   let body=found.filter(r=>r.assoc.meshes===1);
@@ -56,7 +63,7 @@ export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
     mesh.visible=false;
     cutReport.push({mesh:mesh.name,action:'restore ORIGINAL 972 native G9 neck triangles; hide 609-triangle damaged Stage24 cut' });
   }
-  body.push({mesh:recoveredStump.mesh,assoc:{meshes:1,primitives:-1},faceCount:recoveredStump.mesh.geometry.index.count/3});
+  body.push({mesh:recoveredStump.mesh,assoc:{meshes:1,primitives:-1},faceCount:countMeshTriangles(recoveredStump.mesh.geometry)});
   // Preserve source positions, UVs, photographic materials, rig and source skeleton.
   if(scanned.some((r,i)=>r.mesh.geometry.getAttribute('position').count!==originalScanVerts[i])) {
     throw Error('Original Dad scan changed unexpectedly.');
