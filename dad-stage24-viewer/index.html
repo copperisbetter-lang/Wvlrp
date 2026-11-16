@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<title>Dad Stage24 — 3D viewer</title>
+<title>Dad Stage25 — Measured Scan Boundary 3D Fit Trial</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0e1b2b;color:#f1f6fd;font:15px system-ui,-apple-system,Arial,sans-serif}
 header{padding:12px 14px;background:#111f31;border-bottom:1px solid #34465e}
@@ -16,14 +16,15 @@ button{background:#28415c;border:1px solid #58748e;border-radius:9px;color:#fff;
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
 </head><body>
-<header><h1>Dad — Stage 24 original shoulder scan fit</h1><small>Touch to rotate · Pinch to zoom · Two fingers to pan · Private encrypted 3D model</small></header>
+<header><h1>Dad — Stage 25 measured boundary fit trial</h1><small>Touch to rotate · Pinch to zoom · Two fingers to pan · Original Dad and G9 model preserved</small><small id="fit-summary" aria-live="polite">Measuring original Dad scan and G9 boundary…</small></header>
 <div id="view"><div id="status" role="status">Opening Dad's 3D model…</div></div>
 <div class="controls">
 <button id="front">Front</button><button id="right">Dad's right</button><button id="back">Back</button><button id="left">Left</button>
 <button id="face">Face</button><button id="shoulder">Shoulder</button><button id="full">Full body</button><button id="reset">Reset</button>
 </div>
-<div class="foot">Stage 24 cut-to-fit trial. Dad's scanned face and shoulders preserved; seam is not yet welded or approved.</div>
+<div class="foot"><button id="toggle-fit" style="width:100%;margin-bottom:5px" disabled>Compare measured bridge OFF / ON</button>Measured Stage 25 bridge trial, not a final weld or owner-approved model. No original Dad scan or G9 triangles modified. Older Stage 24 viewer remains preserved on its own branch.</div>
 <script type="module">
+import {buildMeasuredEdgeBridge} from './measured-fit-stage25.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -72,6 +73,20 @@ try{
  show('Rendering Dad…');
  const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(raw,'',res,rej));
  scene.add(gltf.scene);
+ const fitSummary=document.querySelector('#fit-summary');
+ try{
+   const trial=buildMeasuredEdgeBridge(gltf,THREE);
+   window.__DAD_STAGE25_STATS=trial.stats;
+   window.__DAD_STAGE25_FIT_LOADED=true;
+   fitSummary.textContent='Measured '+trial.stats.scan_edges_measured+' Dad boundary edges; connected '+trial.stats.actual_contact_edges_connected+' local G9 edges; mean bridge '+trial.stats.contact_mean_mm+' mm. Not yet welded.';
+   const toggle=document.querySelector('#toggle-fit');toggle.disabled=false;
+   toggle.textContent='Compare: measured bridge ON (tap to hide)';
+   toggle.onclick=()=>{trial.bridge.visible=!trial.bridge.visible;toggle.textContent=trial.bridge.visible?'Compare: measured bridge ON (tap to hide)':'Compare: original Stage 24 gaps (tap to show bridge)'};
+ }catch(fitError){
+   window.__DAD_STAGE25_FIT_LOADED=false;
+   window.__DAD_STAGE25_FIT_ERROR=String(fitError);
+   fitSummary.textContent='Measured fit unavailable: '+String(fitError.message||fitError)+' — original Stage 24 shown.';
+ }
  const box=new THREE.Box3().setFromObject(gltf.scene);
  const mid=box.getCenter(new THREE.Vector3());
  const height=Math.max(.75,box.max.y-box.min.y);
