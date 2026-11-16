@@ -157,3 +157,9 @@ export function recoverActualOriginalG9ShortNeck(raw,oldNeckMesh,measuredShoulde
     noFabricatedTube:true
   };
 }
+
+// Public automated fixture uses a synthetic 972-face GLB, never Dad's private scan.
+export function inspectPreservedOriginalNeckIndicesForQA(raw,geometry){
+  const old=locateOriginalNeckIndices(raw,geometry);
+  return {accessor:old.index,triangleCount:old.indices.length/3,largestVertexIndex:old.max};
+}
