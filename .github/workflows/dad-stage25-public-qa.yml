@@ -1,0 +1,49 @@
+name: Dad Stage25 public viewer syntax and safety QA
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/dad-stage25-measured-boundary-20261115
+    paths:
+      - .github/workflows/dad-stage25-public-qa.yml
+      - dad-stage24-viewer/index.html
+      - dad-stage24-viewer/measured-fit-stage25.js
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate measured bridge module compiles
+        run: node --check dad-stage24-viewer/measured-fit-stage25.js
+      - name: Validate actual inline viewer module syntax and model protection
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          root=pathlib.Path('dad-stage24-viewer')
+          html=(root/'index.html').read_text()
+          matches=re.findall(r'<script type="module">([\s\S]+?)</script>',html)
+          assert len(matches)==1
+          pathlib.Path('/tmp/dad25_inline.mjs').write_text(matches[0])
+          assert 'buildMeasuredEdgeBridge(gltf,THREE)' in html
+          assert 'window.__DAD_STAGE25_STATS' in html
+          assert (root/'measured-fit-stage25.js').exists()
+          assert not list(root.glob('*.glb'))
+          assert not list(root.glob('*.glb.enc'))
+          assert not re.search(r'[0-9a-f]{64}', html), 'Secret-length hexadecimal literal found in HTML'
+          print('Public viewer contains encrypted chunks only; no 64-hex secret in source.')
+          PY
+          node --check /tmp/dad25_inline.mjs
+      - name: Confirm actual encrypted model is still retained
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('dad-stage24-viewer')
+          x=json.loads((p/'manifest.json').read_text())
+          assert x['model_protected_with_AES_256_GCM'] is True
+          chunks=sorted(p.glob('chunk-*.txt'))
+          assert len(chunks)==x['count']==23
+          print('Encrypted chunks valid by manifest count:', len(chunks))
+          PY
