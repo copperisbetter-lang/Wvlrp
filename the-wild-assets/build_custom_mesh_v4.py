@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFilter
 import trimesh
 from scipy.ndimage import gaussian_filter
 
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 ASSETS=ROOT/"the-wild-assets"
 SOURCE=ROOT/"the-wild-custom-mesh-v3-viewer.html"
 OUTPUT=ROOT/"the-wild-custom-mesh-v4-viewer.html"
