@@ -11,7 +11,7 @@ const status=document.querySelector('#status');
 try {
 const paths=Array.from({length:13},(_,i)=>'the-wild-assets/character-v4-part-'+String(i+1).padStart(2,'0')+'.txt');
 const chunks=await Promise.all(paths.map(async(p,i)=>{const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw new Error('Missing mesh data '+(i+1)+' / '+paths.length+' (HTTP '+r.status+')');const s=await r.text();status.textContent='Loading mesh data: '+(i+1)+' / '+paths.length;return s;}));
-const b64=chunks.join('');if(b64.length!==7737804)throw new Error('Mesh incomplete: '+b64.length);
+const b64=chunks.join('');if(b64.length!==7699816)throw new Error('Mesh incomplete: '+b64.length);
 const raw=atob(b64);
 const bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
 const bdv=new DataView(bytes.buffer);if(bdv.getUint32(0,true)!==0x46546c67)throw new Error('Not a GLB file');
@@ -51,7 +51,7 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(1.15,Math.m
 for(let b of document.querySelectorAll('[data-view]'))b.addEventListener('click',()=>{angle=Number(b.dataset.view)*Math.PI/180;elev=0;zoom=3.35;focusY=.86;spinning=false;});
 document.querySelector('#zoomin').onclick=()=>zoom=Math.max(1.15,zoom*.82);
 document.querySelector('#zoomout').onclick=()=>zoom=Math.min(6,zoom*1.22);
-document.querySelector('#under').onclick=()=>{angle=0;elev=.63;zoom=2.45;focusY=.79;spinning=false;};
+document.querySelector('#under').onclick=()=>{angle=0;elev=-.52;zoom=2.75;focusY=.81;spinning=false;};
 document.querySelector('#outer').onclick=()=>{outerOpen=outerOpen?0:1;document.querySelector('#outer').textContent=outerOpen?'Outer close':'Outer folds';};
 document.querySelector('#inner').onclick=()=>{innerOpen=innerOpen?0:1;document.querySelector('#inner').textContent=innerOpen?'Inner close':'Inner folds';};
 document.querySelector('#spin').onclick=()=>{spinning=!spinning;document.querySelector('#spin').textContent=spinning?'Stop':'Spin';};
