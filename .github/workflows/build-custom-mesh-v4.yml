@@ -1,0 +1,85 @@
+name: Build The Wild independently meshed Custom Character V4
+on:
+  push:
+    branches:
+      - feature/custom-mesh-v4-rebuild-20261116
+    paths:
+      - the-wild-assets/build_custom_mesh_v4.py
+      - .github/workflows/build-custom-mesh-v4.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: custom-mesh-v4-build
+  cancel-in-progress: false
+jobs:
+  rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify original V3 assets are intact
+        run: |
+          test -f the-wild-custom-mesh-v3-viewer.html
+          for n in $(seq -w 1 10); do test -s "the-wild-assets/character-v3-part-$n.txt"; done
+          python -m py_compile the-wild-assets/build_custom_mesh_v4.py
+      - name: Install dedicated reconstruction dependencies
+        run: python -m pip install "numpy>=1.26,<3" "pillow>=10,<13" "scipy>=1.11,<2" "trimesh>=4.6,<5"
+      - name: Build actual V4 GLB and one-tap mobile viewer
+        run: |
+          set -o pipefail
+          python the-wild-assets/build_custom_mesh_v4.py | tee /tmp/the-wild-custom-mesh-v4-build.log
+          grep CUSTOM_MESH_V4_BUILD_SUCCESS /tmp/the-wild-custom-mesh-v4-build.log
+      - name: Validate viewer script, geometry and manifest
+        run: |
+          python - <<'PY'
+          import json,re,glob,base64,hashlib
+          from pathlib import Path
+          m=json.loads(Path("the-wild-assets/character-v4-manifest.json").read_text())
+          assert m["meshes"]==17 and m["triangles"]>166302
+          p=sorted(glob.glob("the-wild-assets/character-v4-part-*.txt"))
+          assert len(p)==m["chunks"]
+          blob=base64.b64decode("".join(Path(x).read_text() for x in p),validate=True)
+          assert hashlib.sha256(blob).hexdigest()==m["v4_sha256"]
+          h=Path("the-wild-custom-mesh-v4-viewer.html").read_text()
+          assert "character-v4-part-" in h and "LABIA_MINORA" in h and "LABIA_MAJORA" in h
+          assert "custom-mesh-v3" not in h
+          found=re.search(r'<script type="module">([\s\S]*?)</script>',h)
+          assert found, "Viewer JS missing"
+          Path("/tmp/the-wild-custom-v4.mjs").write_text(found.group(1))
+          print("CUSTOM_MESH_V4_SOURCE_VALID",len(p),m["triangles"],len(blob))
+          PY
+          node --check /tmp/the-wild-custom-v4.mjs
+      - name: Commit only new V4 artifacts; preserve all V3 files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add the-wild-assets/character-v4-part-*.txt the-wild-assets/character-v4-manifest.json the-wild-custom-mesh-v4-viewer.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish V4 genuinely revised GLB and four independent anatomical mesh sections'
+            git pull --rebase origin feature/custom-mesh-v4-rebuild-20261116
+            git push origin HEAD:feature/custom-mesh-v4-rebuild-20261116
+          fi
+      - name: Probe external one-tap viewer hosting
+        continue-on-error: true
+        run: |
+          url='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116/the-wild-custom-mesh-v4-viewer.html'
+          echo "$url"
+          curl -fsSL --retry 4 --retry-all-errors --retry-delay 8 --max-time 35 "$url" -o /tmp/v4-external.html
+          grep -q 'character-v4-part-' /tmp/v4-external.html
+          echo 'V4_ONE_TAP_HTML_SERVED'
+      - name: Build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-wild-custom-v4-build-evidence
+          path: |
+            /tmp/the-wild-custom-mesh-v4-build.log
+            the-wild-assets/character-v4-manifest.json
+            the-wild-custom-mesh-v4-viewer.html
+          if-no-files-found: ignore
