@@ -63,6 +63,14 @@ def skin_atlas(original):
     coverage=np.asarray(mask,dtype=np.float32)/255.
     alpha=gaussian_filter(coverage,sigma=13.0)
     alpha=np.clip((alpha-.04)/.92,0.,1.)[:,:,None]
+    # The V3 atlas includes pale/grey staircase-shaped pixels under the pelvis
+    # and on the shins. Those are the photo-cutout backdrop, not skin tissue.
+    # Beyond the pelvis, discard neutral/grey pixels even inside photo polygons.
+    red_gap=rgb[:,:,0]-rgb[:,:,1]
+    yellow_gap=rgb[:,:,1]-rgb[:,:,2]
+    warm=np.clip((red_gap-10.)/13.,0.,1.)*np.clip((yellow_gap-3.)/9.,0.,1.)
+    transition=np.clip((np.arange(h,dtype=np.float32)-645.)/95.,0.,1.)[:,None]
+    alpha=alpha*(1.-transition[:,:,None]+transition[:,:,None]*warm[:,:,None])
     rng=np.random.default_rng(20261116)
     noise=rng.normal(0,1,(h,w)).astype(np.float32)
     low=gaussian_filter(noise,sigma=15.0)
@@ -143,7 +151,7 @@ def patch_viewer(source, new_count, b64len, tris, sha):
     v=v.replace("0,-.86,-zoom,1]);",
                 "0,-focusY*cv,-zoom-focusY*sv,1]);")
     v=v.replace("document.querySelector('#spin').onclick",
-        "document.querySelector('#under').onclick=()=>{angle=0;elev=.63;zoom=2.45;focusY=.79;spinning=false;};\n"
+        "document.querySelector('#under').onclick=()=>{angle=0;elev=-.52;zoom=2.75;focusY=.81;spinning=false;};\n"
         "document.querySelector('#outer').onclick=()=>{outerOpen=outerOpen?0:1;document.querySelector('#outer').textContent=outerOpen?'Outer close':'Outer folds';};\n"
         "document.querySelector('#inner').onclick=()=>{innerOpen=innerOpen?0:1;document.querySelector('#inner').textContent=innerOpen?'Inner close':'Inner folds';};\n"
         "document.querySelector('#spin').onclick")
