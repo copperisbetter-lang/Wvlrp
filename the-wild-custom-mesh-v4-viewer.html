@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#101925"><title>The Wild — Custom Mesh V4 | Live Viewer</title>
+<style>
+*{box-sizing:border-box}html,body{padding:0;margin:0;width:100%;height:100%;overflow:hidden;background:#101925;color:#eef5ff;font-family:system-ui,Arial,sans-serif}#gl{display:block;width:100vw;height:100dvh;touch-action:none;background:radial-gradient(ellipse at 50% 45%,#4a5762 0%,#293440 48%,#0c1621 100%)}#top{position:fixed;top:env(safe-area-inset-top);left:6px;right:6px;border:1px solid #65778a;border-radius:12px;background:#122033ee;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:auto}h1{font-size:16px;line-height:20px;margin:0 0 2px}small{font-size:11px;color:#c7d7eb}#status{display:block;font-size:11px;color:#c2e3da;margin-top:4px;max-width:260px}.btn{border:1px solid #748cab;background:#294867;color:white;border-radius:9px;padding:11px 13px;font-size:14px;cursor:pointer}#controls{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:6px;right:6px;display:flex;flex-wrap:wrap;gap:5px;justify-content:center}#controls .btn{font-size:13px;padding:10px 9px}#help{position:fixed;top:103px;left:5px;right:5px;text-align:center;color:#ccd8ea;font-size:12px;pointer-events:none;text-shadow:0 1px 3px black}</style></head>
+<body><canvas id="gl"></canvas>
+<div id="top"><div><h1>THE WILD — Custom Mesh</h1><small>Custom V4 · 169,838 triangles · saved model</small><span id="status">Loading 3D character…</span></div><button class="btn" id="save">Save GLB</button></div>
+<div id="help">Drag to rotate · pinch to zoom · V4 independent anatomy</div><div id="controls"><button class="btn" data-view="0">Front</button><button class="btn" data-view="-90">Left</button><button class="btn" data-view="180">Back</button><button class="btn" data-view="90">Right</button><button class="btn" id="zoomout">−</button><button class="btn" id="zoomin">+</button><button class="btn" id="under">Under</button><button class="btn" id="outer">Outer folds</button><button class="btn" id="inner">Inner folds</button><button class="btn" id="spin">Spin</button></div>
+<script id="glbdata" type="application/octet-stream"></script><script type="module">
+'use strict';
+const status=document.querySelector('#status');
+try {
+const paths=Array.from({length:13},(_,i)=>'the-wild-assets/character-v4-part-'+String(i+1).padStart(2,'0')+'.txt');
+const chunks=await Promise.all(paths.map(async(p,i)=>{const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw new Error('Missing mesh data '+(i+1)+' / '+paths.length+' (HTTP '+r.status+')');const s=await r.text();status.textContent='Loading mesh data: '+(i+1)+' / '+paths.length;return s;}));
+const b64=chunks.join('');if(b64.length!==7737804)throw new Error('Mesh incomplete: '+b64.length);
+const raw=atob(b64);
+const bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+const bdv=new DataView(bytes.buffer);if(bdv.getUint32(0,true)!==0x46546c67)throw new Error('Not a GLB file');
+let p=12,j=null,binStart=0;
+while(p+8<=bytes.length){let len=bdv.getUint32(p,true),kind=bdv.getUint32(p+4,true);p+=8;
+if(kind===0x4e4f534a)j=JSON.parse(new TextDecoder().decode(bytes.subarray(p,p+len)));
+if(kind===0x004e4942)binStart=p;p+=len;}
+if(!j||!binStart)throw new Error('Missing GLB data');
+function acc(id){const a=j.accessors[id],v=j.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type];const types={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};const c=types[a.componentType];if(!c)throw new Error('Unsupported accessor');let o=binStart+(v.byteOffset||0)+(a.byteOffset||0);let size=a.count*n;let b=bytes.buffer.slice(o,o+size*c.BYTES_PER_ELEMENT);return {a:a,data:new c(b),n:n};}
+const canvas=document.querySelector('#gl');const gl=canvas.getContext('webgl2',{alpha:false,antialias:true,preserveDrawingBuffer:false})||canvas.getContext('webgl',{alpha:false,antialias:true});if(!gl)throw new Error('WebGL unavailable: open this file in Chrome');
+const is2=typeof WebGL2RenderingContext!=='undefined'&&gl instanceof WebGL2RenderingContext;
+if(!is2&&!gl.getExtension('OES_element_index_uint'))throw new Error('Your browser does not support 32-bit mesh indices');
+const vs=`attribute vec3 p;attribute vec3 n;attribute vec2 uv;attribute vec4 c;uniform mat4 mat;uniform mat3 rot;uniform float opening;uniform float side;varying vec3 vn;varying vec2 vt;varying vec4 vc;void main(){gl_Position=mat*vec4(p+vec3(side*opening*0.008,0.,0.),1.0);vn=rot*n;vt=uv;vc=c;}`;
+const fs=`precision mediump float;uniform sampler2D tex;uniform float usetex;varying vec3 vn;varying vec2 vt;varying vec4 vc;void main(){vec3 base=mix(vc.rgb,texture2D(tex,vt).rgb,usetex);vec3 nn=normalize(vn);float d=max(dot(nn,normalize(vec3(-0.35,0.9,0.7))),0.0);float light=0.64+0.38*d;gl_FragColor=vec4(base*light,1.0);}`;
+function shader(type,s){let x=gl.createShader(type);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(x));return x;}
+const pg=gl.createProgram();gl.attachShader(pg,shader(gl.VERTEX_SHADER,vs));gl.attachShader(pg,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pg);if(!gl.getProgramParameter(pg,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pg));gl.useProgram(pg);
+const loc={p:gl.getAttribLocation(pg,'p'),n:gl.getAttribLocation(pg,'n'),uv:gl.getAttribLocation(pg,'uv'),c:gl.getAttribLocation(pg,'c'),mat:gl.getUniformLocation(pg,'mat'),rot:gl.getUniformLocation(pg,'rot'),tex:gl.getUniformLocation(pg,'tex'),usetex:gl.getUniformLocation(pg,'usetex'),opening:gl.getUniformLocation(pg,'opening'),side:gl.getUniformLocation(pg,'side')};
+function normals(P,I){let o=new Float32Array(P.length);for(let i=0;i<I.length;i+=3){let a=I[i]*3,b=I[i+1]*3,c=I[i+2]*3;let ax=P[b]-P[a],ay=P[b+1]-P[a+1],az=P[b+2]-P[a+2],bx=P[c]-P[a],by=P[c+1]-P[a+1],bz=P[c+2]-P[a+2];let nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;for(let k of [a,b,c]){o[k]+=nx;o[k+1]+=ny;o[k+2]+=nz;}}for(let i=0;i<o.length;i+=3){let m=Math.hypot(o[i],o[i+1],o[i+2])||1;o[i]/=m;o[i+1]/=m;o[i+2]/=m;}return o;}
+function buffer(data,target){const h=gl.createBuffer();gl.bindBuffer(target,h);gl.bufferData(target,data,gl.STATIC_DRAW);return h;}
+function config(locid,buf,width,type=gl.FLOAT,norm=false){if(locid<0)return;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.enableVertexAttribArray(locid);gl.vertexAttribPointer(locid,width,type,norm,0,0);}
+const mesh=[];
+for(const item of j.meshes){for(let prim of item.primitives){const P=acc(prim.attributes.POSITION).data,I=acc(prim.indices).data;const N=('NORMAL' in prim.attributes)?acc(prim.attributes.NORMAL).data:normals(P,I);
+const T=('TEXCOORD_0' in prim.attributes)?acc(prim.attributes.TEXCOORD_0).data:null;
+let C=('COLOR_0' in prim.attributes)?acc(prim.attributes.COLOR_0):null;
+mesh.push({name:item.name||'',pv:buffer(P,gl.ARRAY_BUFFER),nv:buffer(N,gl.ARRAY_BUFFER),tv:T?buffer(T,gl.ARRAY_BUFFER):null,cv:C?buffer(C.data,gl.ARRAY_BUFFER):null,cc:C?C.a.componentType:0,ci:C?C.n:0,cn:C?!!C.a.normalized:false,ii:buffer(I,gl.ELEMENT_ARRAY_BUFFER),len:I.length,it:I instanceof Uint32Array?gl.UNSIGNED_INT:I instanceof Uint16Array?gl.UNSIGNED_SHORT:gl.UNSIGNED_BYTE,tex:!!T});}}
+let tex=gl.createTexture();gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([242,204,187,255]));
+const img=j.images&&j.images[0];if(img){let v=j.bufferViews[img.bufferView];let data=bytes.slice(binStart+(v.byteOffset||0),binStart+(v.byteOffset||0)+v.byteLength);let blob=new Blob([data],{type:img.mimeType||'image/png'});let u=URL.createObjectURL(blob);let im=new Image();im.onload=()=>{gl.bindTexture(gl.TEXTURE_2D,tex);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);URL.revokeObjectURL(u);};im.onerror=()=>{status.textContent='Mesh loaded; texture unavailable';};im.src=u;}
+gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.clearColor(.07,.11,.16,1);
+function mul(a,b){let r=new Float32Array(16);for(let i=0;i<4;i++)for(let k=0;k<4;k++)for(let h=0;h<4;h++)r[i*4+k]+=a[h*4+k]*b[i*4+h];return r;}
+function persp(fovy,aspect,near,far){let f=1/Math.tan(fovy/2),o=new Float32Array(16);o[0]=f/aspect;o[5]=f;o[10]=(far+near)/(near-far);o[11]=-1;o[14]=2*far*near/(near-far);return o;}
+let angle=0,elev=0,zoom=3.35,spinning=false,last=0,outerOpen=0,innerOpen=0;
+const touches=new Map();let lastPinch=0;
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,[e.clientX,e.clientY]);});
+canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;let old=touches.get(e.pointerId);touches.set(e.pointerId,[e.clientX,e.clientY]);if(touches.size===1){angle+=(e.clientX-old[0])*.010;elev=Math.max(-.42,Math.min(.42,elev+(e.clientY-old[1])*.004));spinning=false;}if(touches.size===2){let [a,b]=[...touches.values()];let d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(lastPinch)zoom=Math.max(1.15,Math.min(6,zoom*lastPinch/d));lastPinch=d;}});
+for(let ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{touches.delete(e.pointerId);lastPinch=0;});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(1.15,Math.min(6,zoom*(e.deltaY>0?1.1:.9)));},{passive:false});
+for(let b of document.querySelectorAll('[data-view]'))b.addEventListener('click',()=>{angle=Number(b.dataset.view)*Math.PI/180;elev=0;zoom=3.35;spinning=false;});
+document.querySelector('#zoomin').onclick=()=>zoom=Math.max(1.15,zoom*.82);
+document.querySelector('#zoomout').onclick=()=>zoom=Math.min(6,zoom*1.22);
+document.querySelector('#under').onclick=()=>{angle=0;elev=.68;zoom=1.35;spinning=false;};
+document.querySelector('#outer').onclick=()=>{outerOpen=outerOpen?0:1;document.querySelector('#outer').textContent=outerOpen?'Outer close':'Outer folds';};
+document.querySelector('#inner').onclick=()=>{innerOpen=innerOpen?0:1;document.querySelector('#inner').textContent=innerOpen?'Inner close':'Inner folds';};
+document.querySelector('#spin').onclick=()=>{spinning=!spinning;document.querySelector('#spin').textContent=spinning?'Stop':'Spin';};
+document.querySelector('#save').onclick=()=>{let blob=new Blob([bytes],{type:'model/gltf-binary'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='The_Wild_Custom_Character_V4.glb';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000);};
+function render(t){requestAnimationFrame(render);if(spinning&&last)angle+=(t-last)*.00015;last=t;let w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,1.7);if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);gl.viewport(0,0,canvas.width,canvas.height);}gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let cc=Math.cos(angle),ss=Math.sin(angle),cv=Math.cos(elev),sv=Math.sin(elev);const R=new Float32Array([cc,sv*ss,-cv*ss,0,cv,sv,-ss,sv*cc,cv*cc]);let mm=new Float32Array([cc,sv*ss,-cv*ss,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+// rotate object in place, then center at y=.86, move back by zoom
+mm.set([cc,sv*ss,-cv*ss,0,0,cv,sv,0,ss,-sv*cc,cv*cc,0,0,-.86,-zoom,1]);
+let mat=mul(persp(35*Math.PI/180,w/Math.max(h,1),.04,30),mm);gl.uniformMatrix4fv(loc.mat,false,mat);gl.uniformMatrix3fv(loc.rot,false,R);gl.uniform1i(loc.tex,0);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
+for(let m of mesh){config(loc.p,m.pv,3);config(loc.n,m.nv,3);if(m.tv)config(loc.uv,m.tv,2);else{gl.disableVertexAttribArray(loc.uv);gl.vertexAttrib2f(loc.uv,0,0);}if(m.cv)config(loc.c,m.cv,m.ci,m.cc===5126?gl.FLOAT:m.cc===5121?gl.UNSIGNED_BYTE:gl.UNSIGNED_SHORT,m.cn);else{gl.disableVertexAttribArray(loc.c);gl.vertexAttrib4f(loc.c,1,1,1,1);}gl.uniform1f(loc.usetex,m.tex?1:0);const side=m.name.endsWith('_L')?-1:1;const a=m.name.includes('LABIA_MAJORA')?outerOpen:m.name.includes('LABIA_MINORA')?innerOpen:0;gl.uniform1f(loc.side,side);gl.uniform1f(loc.opening,a);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.ii);gl.drawElements(gl.TRIANGLES,m.len,m.it,0);}}
+requestAnimationFrame(render);status.textContent='V4 mesh ready · model SHA256 69ef41356b · drag to rotate';
+}catch(err){status.textContent='Viewer error: '+String(err.message||err);console.error(err)}
+</script></body></html>

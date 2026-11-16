@@ -1,0 +1,21 @@
+{
+  "source": "V3 / 166302 triangles, 13 meshes, original unchanged",
+  "original_sha256": "dcc7c34af7e84e16dcbeaac03c1148b5c0b7e8663d4993a8923cd075ae335251",
+  "v4_sha256": "69ef41356bbcf70b195b345852e280d748e30e5fbc9a38fb49cfd7605221bd6a",
+  "v4_bytes": 5803352,
+  "base64_chars": 7737804,
+  "chunks": 13,
+  "meshes": 17,
+  "triangles": 169838,
+  "breast_sculpt_max_m": 0.009638692974774654,
+  "photo_coverage_average": 0.32232606410980225,
+  "source_images_preserved": "Facial/front chest reference core; other photo islands feathered into reconstructed skin",
+  "independent_meshes": [
+    "LABIA_MAJORA_L",
+    "LABIA_MAJORA_R",
+    "LABIA_MINORA_L",
+    "LABIA_MINORA_R"
+  ],
+  "status": "engineering candidate; owner visual/fit approval still required",
+  "original_unchanged": true
+}
