@@ -1,0 +1,62 @@
+name: Dad Stage26 public head/body touch viewer QA
+on:
+  push:
+    branches: [feature/dad-stage26-two-piece-touch-fit-20261116]
+    paths:
+      - dad-stage24-viewer/stage26-two-piece-viewer.html
+      - dad-stage24-viewer/stage26-two-piece-fit.js
+      - .github/workflows/dad-stage26-touch-viewer-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check independent head/body geometry script
+        run: node --check dad-stage24-viewer/stage26-two-piece-fit.js
+      - name: Check actual viewer code and owner controls
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('dad-stage24-viewer')
+          html=(p/'stage26-two-piece-viewer.html').read_text()
+          x=re.findall(r'<script type="module">([\s\S]*?)</script>',html)
+          assert len(x)==1,'Expected one viewer module'
+          Path('/tmp/stage26_viewer_check.mjs').write_text(x[0])
+          for label in ('move-head','rotate-head','move-body','rotate-body','head-smaller','head-larger','body-smaller','body-larger','head-coords','body-coords','copy-fit','save-fit','load-fit'):
+              assert label in html, f'Missing owner control: {label}'
+          for name in ('headPivot','bodyPivot','clipNeckToPlane','shoulderYs','bindMode'):
+              assert name in (p/'stage26-two-piece-fit.js').read_text(),f'Missing geometry operation: {name}'
+          assert 'AES_256_GCM' in html
+          assert not any(p.glob('*.glb')),'Plaintext GLB forbidden in public'
+          assert not re.search(r'[0-9a-f]{64}',html),'Do not embed access key in public HTML'
+          chunks=list(p.glob('chunk-*.txt'))
+          assert len(chunks)==23,'Expected encrypted model chunks'
+          print('Stage26 source protections + controls pass, private 3D model remains encrypted',flush=True)
+          PY
+          node --check /tmp/stage26_viewer_check.mjs
+      - name: Check encrypted manifest unchanged
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('dad-stage24-viewer/manifest.json')
+          d=json.loads(p.read_text())
+          assert d['model_protected_with_AES_256_GCM'] is True
+          assert d['count']==23
+          assert d['original_model_sha256']=='8c5adbed840c1ac9ebc83af945cf593716d562980c8a715a16d7bec0c1f97464'
+          print('Original encrypted model unchanged')
+          PY
+      - name: Verify public HTTPS immutable viewer and JS MIME/content
+        run: |
+          set -euo pipefail
+          ROOT='https://raw.githack.com/copperisbetter-lang/Wvlrp/4aff6fce1cdad5a2984c55f5149c1bac919cda5d/dad-stage24-viewer'
+          curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$ROOT/stage26-two-piece-viewer.html" -o /tmp/stage26_public.html
+          curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$ROOT/stage26-two-piece-fit.js" -o /tmp/stage26_public.js
+          grep -q 'Dad Stage26' /tmp/stage26_public.html
+          grep -q 'prepareTwoPieceFit' /tmp/stage26_public.js
+          node --check /tmp/stage26_public.js
+          echo 'External HTTPS viewer and runtime JS both served'
