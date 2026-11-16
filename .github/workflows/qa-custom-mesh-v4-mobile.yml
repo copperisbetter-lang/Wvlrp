@@ -18,11 +18,12 @@ jobs:
         run: |
           set -euo pipefail
           root='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116'
-          curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v4-viewer.html" -o /tmp/v4.html
-          grep -q 'Array.from({length:13}' /tmp/v4.html
+          mkdir -p /tmp/v4-www/the-wild-assets
+          curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v4-viewer.html" -o /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
+          grep -q 'Array.from({length:13}' /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
           for n in $(seq -w 1 13); do
-            curl --retry 3 --retry-delay 3 --retry-all-errors -fsSL "$root/the-wild-assets/character-v4-part-$n.txt" -o "/tmp/v4-$n.txt"
-            test "$(wc -c <"/tmp/v4-$n.txt")" -gt 100000
+            curl --retry 3 --retry-delay 3 --retry-all-errors -fsSL "$root/the-wild-assets/character-v4-part-$n.txt" -o "/tmp/v4-www/the-wild-assets/character-v4-part-$n.txt"
+            test "$(wc -c <"/tmp/v4-www/the-wild-assets/character-v4-part-$n.txt")" -gt 100000
           done
           echo 'ALL_V4_13_PARTS_HTTPS_200'
       - name: Install phone-sized browser automation
@@ -30,13 +31,15 @@ jobs:
       - name: Actual WebGL rendering and touch-control smoke test
         shell: bash
         run: |
+          (cd /tmp/v4-www && nohup python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/v4-server.log 2>&1 &)
+          sleep 1
           cat > /tmp/phone_v4.py <<'PY'
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
           from selenium.webdriver.chrome.options import Options
           import time
-          url='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116/the-wild-custom-mesh-v4-viewer.html'
+          url='http://127.0.0.1:8765/the-wild-custom-mesh-v4-viewer.html'
           opts=Options()
           opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
           opts.add_argument('--headless=new')
@@ -51,6 +54,7 @@ jobs:
           try:
             driver.set_page_load_timeout(120)
             driver.get(url)
+            print('V4_BROWSER_PAGE',driver.current_url,driver.title,len(driver.page_source),flush=True)
             status=WebDriverWait(driver,50,poll_frequency=2).until(
               lambda d:d.find_element(By.ID,'status').text
                 if 'V4 mesh ready' in d.find_element(By.ID,'status').text else False)
@@ -67,7 +71,7 @@ jobs:
             driver.save_screenshot('/tmp/v4-mobile-browser.png')
           except Exception as err:
             print('V4_BROWSER_FAILURE',str(err),flush=True)
-            print('V4_BROWSER_STATUS',driver.find_element(By.ID,'status').text,flush=True)
+            print('V4_BROWSER_STATUS_OR_SOURCE', driver.execute_script("return document.querySelector('#status')?.textContent || document.body?.innerText.slice(0,600)"),flush=True)
             print('V4_BROWSER_CONSOLE',driver.get_log('browser')[-20:],flush=True)
             driver.save_screenshot('/tmp/v4-mobile-browser.png')
             raise
