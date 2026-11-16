@@ -1,0 +1,97 @@
+name: QA one-tap Custom Mesh V5 on phone-sized browser
+on:
+  push:
+    branches:
+      - feature/custom-mesh-v5-surface-repair-20261116
+    paths:
+      - .github/workflows/qa-custom-mesh-v5-mobile.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phone-webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Check actual live HTML and 13 external model parts
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='https://raw.githack.com/copperisbetter-lang/Wvlrp/${{ github.sha }}'
+          mkdir -p /tmp/v5-www/the-wild-assets
+          curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v5-viewer.html" -o /tmp/v5-www/the-wild-custom-mesh-v5-viewer.html
+          grep -q 'Array.from({length:13}' /tmp/v5-www/the-wild-custom-mesh-v5-viewer.html
+          grep -q 'elev=-.52' /tmp/v5-www/the-wild-custom-mesh-v5-viewer.html
+          for n in $(seq -w 1 13); do
+            curl --retry 3 --retry-delay 3 --retry-all-errors -fsSL "$root/the-wild-assets/character-v5-part-$n.txt" -o "/tmp/v5-www/the-wild-assets/character-v5-part-$n.txt"
+            test "$(wc -c <"/tmp/v5-www/the-wild-assets/character-v5-part-$n.txt")" -gt 100000
+          done
+          echo 'ALL_V5_13_PARTS_HTTPS_200'
+      - name: Install phone-sized browser automation
+        run: python3 -m pip install selenium
+      - name: Actual WebGL rendering and touch-control smoke test
+        shell: bash
+        run: |
+          (cd /tmp/v5-www && nohup python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/v5-server.log 2>&1 &)
+          sleep 1
+          cat > /tmp/phone_v5.py <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.chrome.options import Options
+          import time
+          url='http://127.0.0.1:8765/the-wild-custom-mesh-v5-viewer.html'
+          opts=Options()
+          opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          opts.add_argument('--enable-webgl')
+          opts.add_argument('--use-angle=swiftshader')
+          opts.add_argument('--enable-unsafe-swiftshader')
+          opts.add_argument('--window-size=420,900')
+          opts.add_experimental_option('mobileEmulation',{'deviceMetrics':{'width':360,'height':800,'pixelRatio':2},'userAgent':'Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131 Mobile Safari/537.36'})
+          driver=webdriver.Chrome(options=opts)
+          try:
+            driver.set_page_load_timeout(120)
+            driver.get(url)
+            print('V5_BROWSER_PAGE',driver.current_url,driver.title,len(driver.page_source),flush=True)
+            status=WebDriverWait(driver,50,poll_frequency=2).until(
+              lambda d:d.find_element(By.ID,'status').text
+                if 'V5 mesh ready' in d.find_element(By.ID,'status').text else False)
+            print('V5_MOBILE_WEBGL_REAL_RENDER_READY:',status,flush=True)
+            assert '169,838' in driver.find_element(By.ID,'top').text
+            assert driver.execute_script("return !!document.querySelector('#gl').getContext('webgl2') || !!document.querySelector('#gl').getContext('webgl')") is True
+            driver.save_screenshot('/tmp/v5-mobile-default.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='180']").click()
+            time.sleep(.5)
+            driver.save_screenshot('/tmp/v5-mobile-back.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='-90']").click()
+            time.sleep(.5)
+            driver.save_screenshot('/tmp/v5-mobile-side.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='0']").click()
+            for control in ('under','outer','inner','spin'):
+              driver.find_element(By.ID,control).click()
+              time.sleep(.4)
+              print('V5_PHONE_CONTROL_OK',control,flush=True)
+              if control=='under':driver.save_screenshot('/tmp/v5-mobile-under.png')
+            assert driver.find_element(By.ID,'outer').text=='Outer close'
+            assert driver.find_element(By.ID,'inner').text=='Inner close'
+            print('V5_WEBGL_AND_INDEPENDENT_CONTROLS_PASS',flush=True)
+            driver.save_screenshot('/tmp/v5-mobile-browser.png')
+          except Exception as err:
+            print('V5_BROWSER_FAILURE',str(err),flush=True)
+            print('V5_BROWSER_STATUS_OR_SOURCE', driver.execute_script("return document.querySelector('#status')?.textContent || document.body?.innerText.slice(0,600)"),flush=True)
+            print('V5_BROWSER_CONSOLE',driver.get_log('browser')[-20:],flush=True)
+            driver.save_screenshot('/tmp/v5-mobile-browser.png')
+            raise
+          finally:
+            driver.quit()
+          PY
+          python3 /tmp/phone_v5.py
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: custom-mesh-v5-phone-webgl-qa
+          path: /tmp/v5-mobile-*.png
+          if-no-files-found: ignore
