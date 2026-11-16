@@ -61,10 +61,12 @@ jobs:
             print('V4_MOBILE_WEBGL_REAL_RENDER_READY:',status,flush=True)
             assert '169,838' in driver.find_element(By.ID,'top').text
             assert driver.execute_script("return !!document.querySelector('#gl').getContext('webgl2') || !!document.querySelector('#gl').getContext('webgl')") is True
+            driver.save_screenshot('/tmp/v4-mobile-default.png')
             for control in ('under','outer','inner','spin'):
               driver.find_element(By.ID,control).click()
               time.sleep(.4)
               print('V4_PHONE_CONTROL_OK',control,flush=True)
+              if control=='under':driver.save_screenshot('/tmp/v4-mobile-under.png')
             assert driver.find_element(By.ID,'outer').text=='Outer close'
             assert driver.find_element(By.ID,'inner').text=='Inner close'
             print('V4_WEBGL_AND_INDEPENDENT_CONTROLS_PASS',flush=True)
@@ -83,5 +85,5 @@ jobs:
         if: always()
         with:
           name: custom-mesh-v4-phone-webgl-qa
-          path: /tmp/v4-mobile-browser.png
+          path: /tmp/v4-mobile-*.png
           if-no-files-found: ignore
