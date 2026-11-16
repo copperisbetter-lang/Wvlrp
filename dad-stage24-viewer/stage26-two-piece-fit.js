@@ -49,9 +49,12 @@ export function prepareTwoPieceFit(gltf, THREE) {
   // atlas UVs and skeletal weights; this stays on the BODY, not the Dad scan.
   const recoveredStump=makeShortNativeNeckStump(neck[0].mesh,topShoulder,THREE);
   const cutReport=[];
+  // Original Stage24 index-cut fragment is jagged/overcut: hide those fragments
+  // instead of cutting MORE of the native body. The reconstructed short neck
+  // stump sits in the same shoulder opening and forms the fitting target.
   for(const {mesh} of neck) {
-    const stats=clipNeckToPlane(mesh,cutY,THREE);
-    cutReport.push({mesh:mesh.name,...stats});
+    mesh.visible=false;
+    cutReport.push({mesh:mesh.name,action:'hide rejected Stage24 overcut fragments; no additional neck triangles deleted'});
   }
   body.push({mesh:recoveredStump.mesh,assoc:{meshes:1,primitives:-1},faceCount:recoveredStump.mesh.geometry.index.count/3});
   // Preserve source positions, UVs, photographic materials, rig and source skeleton.
