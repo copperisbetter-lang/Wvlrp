@@ -11,7 +11,7 @@ permissions:
   contents: write
 concurrency:
   group: custom-mesh-v4-build
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   rebuild:
     runs-on: ubuntu-24.04
@@ -20,6 +20,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            the-wild-assets
+            the-wild-custom-mesh-v3-viewer.html
+            .github/workflows/build-custom-mesh-v4.yml
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
