@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {countMeshTriangles} from './stage26-two-piece-fit.js';
+const indexed = {index:{count:609*3},getAttribute(name){return name==='position'?{count:2300}:null}};
+const restored = {index:null,getAttribute(name){return name==='position'?{count:480}:null}};
+const zeroIndices = {index:{count:0},getAttribute(name){return name==='position'?{count:0}:null}};
+assert.equal(countMeshTriangles(indexed),609);
+assert.equal(countMeshTriangles(restored),160);
+assert.throws(()=>countMeshTriangles(zeroIndices),/Invalid triangulated mesh/);
+assert.throws(()=>countMeshTriangles({index:null,getAttribute(){return null}}),/Invalid triangulated mesh/);
+console.log('PASS: indexed G9 original counts AND restored non-indexed native neck triangles with null index.');
