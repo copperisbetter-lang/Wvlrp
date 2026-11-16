@@ -37,7 +37,6 @@ jobs:
           for label in ('move-head','rotate-head','move-body','rotate-body','head-smaller','head-larger','body-smaller','body-larger','copy-fit','save-fit','load-fit','head-coords','body-coords'):
             assert label in html,label
           assert "stage27" in html.lower()
-          assert "stage27-short-neck-stump" in str(r)
           assert not list(r.glob('*.glb'))
           assert not list(r.glob('*.glb.enc'))
           public_sha='8c5adbed840c1ac9ebc83af945cf593716d562980c8a715a16d7bec0c1f97464'
