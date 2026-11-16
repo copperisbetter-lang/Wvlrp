@@ -164,10 +164,16 @@ def main():
     assert len(scene.geometry)==13, "V3 mesh section count changed"
     # Texture overhaul: keep original photo details but eliminate the rectangular
     # projection slabs/fan extrapolation which show up on the thighs and underside.
-    photo=body.visual.material.image
-    assert photo is not None
+    mat=body.visual.material
+    photo=getattr(mat,'baseColorTexture',None)
+    if photo is None:
+        photo=getattr(mat,'image',None)
+    assert photo is not None, 'Original V3 photograph atlas was not loaded'
     clean,coverage,synthetic=skin_atlas(photo)
-    body.visual.material.image=clean
+    if hasattr(mat,'baseColorTexture'):
+        mat.baseColorTexture=clean
+    else:
+        mat.image=clean
     # Conservative body sculpt: refine breast projection without altering face,
     # hips, height, thigh proportions, front texture or root alignment.
     pts=body.vertices.copy()
