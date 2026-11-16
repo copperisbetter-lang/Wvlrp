@@ -21,6 +21,7 @@ jobs:
           mkdir -p /tmp/v4-www/the-wild-assets
           curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v4-viewer.html" -o /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
           grep -q 'Array.from({length:13}' /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
+          grep -q 'elev=-.52' /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
           for n in $(seq -w 1 13); do
             curl --retry 3 --retry-delay 3 --retry-all-errors -fsSL "$root/the-wild-assets/character-v4-part-$n.txt" -o "/tmp/v4-www/the-wild-assets/character-v4-part-$n.txt"
             test "$(wc -c <"/tmp/v4-www/the-wild-assets/character-v4-part-$n.txt")" -gt 100000
