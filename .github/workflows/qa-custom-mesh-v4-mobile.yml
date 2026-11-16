@@ -17,7 +17,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          root='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116'
+          root='https://raw.githack.com/copperisbetter-lang/Wvlrp/${{ github.sha }}'
           mkdir -p /tmp/v4-www/the-wild-assets
           curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v4-viewer.html" -o /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
           grep -q 'Array.from({length:13}' /tmp/v4-www/the-wild-custom-mesh-v4-viewer.html
