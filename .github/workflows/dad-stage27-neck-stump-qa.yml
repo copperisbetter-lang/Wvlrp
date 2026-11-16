@@ -1,0 +1,62 @@
+name: Dad Stage27 restored short neck stump public QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/dad-stage27-short-neck-stump-20261116]
+    paths:
+      - dad-stage24-viewer/stage27-restore-neck-stump.js
+      - dad-stage24-viewer/stage26-two-piece-fit.js
+      - dad-stage24-viewer/stage27-short-neck-stump-viewer.html
+      - .github/workflows/dad-stage27-neck-stump-qa.yml
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check short stump, cut script and viewer JavaScript
+        run: |
+          node --check dad-stage24-viewer/stage27-restore-neck-stump.js
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          r=Path('dad-stage24-viewer')
+          html=(r/'stage27-short-neck-stump-viewer.html').read_text()
+          m=re.findall(r'<script type="module">([\s\S]+?)</script>',html)
+          assert len(m)==1
+          Path('/tmp/dad27-inline.mjs').write_text(m[0])
+          src=(r/'stage26-two-piece-fit.js').read_text()
+          stub=(r/'stage27-restore-neck-stump.js').read_text()
+          assert "import {makeShortNativeNeckStump}" in src
+          assert "recoveredStump=makeShortNativeNeckStump" in src
+          assert "body.push({mesh:recoveredStump.mesh" in src
+          assert "source vertex" in stub.lower()
+          for label in ('move-head','rotate-head','move-body','rotate-body','head-smaller','head-larger','body-smaller','body-larger','copy-fit','save-fit','load-fit','head-coords','body-coords'):
+            assert label in html,label
+          assert "stage27" in html.lower()
+          assert "stage27-short-neck-stump" in str(r)
+          assert not list(r.glob('*.glb'))
+          assert not list(r.glob('*.glb.enc'))
+          public_sha='8c5adbed840c1ac9ebc83af945cf593716d562980c8a715a16d7bec0c1f97464'
+          assert not re.search(r'[0-9a-f]{64}',html.replace(public_sha,'')), 'Access key may be embedded!'
+          d=json.loads((r/'manifest.json').read_text())
+          assert d['model_protected_with_AES_256_GCM'] and len(list(r.glob('chunk-*.txt')))==d['count']==23
+          print('Stage27 viewer controls, separate body/scan, rebuilt neck, encrypted asset validations pass')
+          PY
+          node --check /tmp/dad27-inline.mjs
+      - name: Check external browser-hosted Stage27 HTML and modules
+        run: |
+          set -euo pipefail
+          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/87c97043c7b7a76255013edbe4634844a6e312fb/dad-stage24-viewer'
+          curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage27-short-neck-stump-viewer.html" -o /tmp/dad27hosted.html
+          curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage27-restore-neck-stump.js" -o /tmp/dad27hosted.js
+          curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage26-two-piece-fit.js" -o /tmp/dad27body.js
+          grep -q 'Dad Stage27' /tmp/dad27hosted.html
+          grep -q 'makeShortNativeNeckStump' /tmp/dad27hosted.js
+          grep -q 'makeShortNativeNeckStump' /tmp/dad27body.js
+          node --check /tmp/dad27hosted.js
+          node --check /tmp/dad27body.js
+          echo 'Live external host files served, syntax verified'
