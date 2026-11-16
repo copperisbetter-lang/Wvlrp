@@ -49,7 +49,7 @@ jobs:
       - name: Check external browser-hosted Stage27 HTML and modules
         run: |
           set -euo pipefail
-          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/87c97043c7b7a76255013edbe4634844a6e312fb/dad-stage24-viewer'
+          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/725c31035f9994fa8bf06b6ac4bdacdc2d579149/dad-stage24-viewer'
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage27-short-neck-stump-viewer.html" -o /tmp/dad27hosted.html
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage27-restore-neck-stump.js" -o /tmp/dad27hosted.js
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage26-two-piece-fit.js" -o /tmp/dad27body.js
