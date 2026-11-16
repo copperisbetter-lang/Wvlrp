@@ -1,12 +1,13 @@
 name: Dad Stage28 genuine G9 neck recovery QA (public)
 on:
   push:
-    branches: [feature/dad-stage28-native-neck-restore-20261116]
+    branches: [fix/dad-stage28-runtime-null-count-20261116]
     paths:
       - dad-stage24-viewer/stage28-recover-original-g9-neck.js
       - dad-stage24-viewer/stage28-real-g9-neck-touch-viewer.html
       - dad-stage24-viewer/stage26-two-piece-fit.js
       - dad-stage24-viewer/stage28-native-neck-fixture.mjs
+      - dad-stage24-viewer/stage28-runtime-count-fixture.mjs
       - .github/workflows/dad-stage28-original-neck-public-qa.yml
   workflow_dispatch:
 permissions:
@@ -50,10 +51,13 @@ jobs:
         run: |
           cp dad-stage24-viewer/stage28-recover-original-g9-neck.js /tmp/g9restore.mjs
           node dad-stage24-viewer/stage28-native-neck-fixture.mjs
+      - name: Reproduce and prevent actual Stage28 Android null index.count crash
+        run: |
+          node dad-stage24-viewer/stage28-runtime-count-fixture.mjs
       - name: Verify actual external HTTPS viewer and JS files
         run: |
           set -euo pipefail
-          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/72dbc30061f8357e355b1807e7cd1ee3a6a81c8d/dad-stage24-viewer'
+          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/ac77600d4a22dab4eb32a36818a018b87f16a193/dad-stage24-viewer'
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage28-real-g9-neck-touch-viewer.html" -o /tmp/dad28-remote.html
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage28-recover-original-g9-neck.js" -o /tmp/dad28-neck.js
           curl -fLsS --retry 3 --retry-delay 2 --max-time 60 "$BASE/stage26-two-piece-fit.js" -o /tmp/dad28-fitter.js
