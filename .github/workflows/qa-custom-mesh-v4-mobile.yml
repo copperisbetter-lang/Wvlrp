@@ -63,6 +63,13 @@ jobs:
             assert '169,838' in driver.find_element(By.ID,'top').text
             assert driver.execute_script("return !!document.querySelector('#gl').getContext('webgl2') || !!document.querySelector('#gl').getContext('webgl')") is True
             driver.save_screenshot('/tmp/v4-mobile-default.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='180']").click()
+            time.sleep(.5)
+            driver.save_screenshot('/tmp/v4-mobile-back.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='-90']").click()
+            time.sleep(.5)
+            driver.save_screenshot('/tmp/v4-mobile-side.png')
+            driver.find_element(By.CSS_SELECTOR,"[data-view='0']").click()
             for control in ('under','outer','inner','spin'):
               driver.find_element(By.ID,control).click()
               time.sleep(.4)
