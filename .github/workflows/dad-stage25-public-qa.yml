@@ -36,6 +36,16 @@ jobs:
           print('Public viewer contains encrypted chunks only; no 64-hex secret in source.')
           PY
           node --check /tmp/dad25_inline.mjs
+      - name: Confirm external one-click HTML and measured module are served as JS/HTML
+        run: |
+          set -euo pipefail
+          BASE='https://raw.githack.com/copperisbetter-lang/Wvlrp/bcd9e8d0670897fb8a4d9d337adcf079cfcddb08/dad-stage24-viewer'
+          curl -fsSL --retry 3 --retry-delay 2 --max-time 45 "$BASE/index.html" -o /tmp/dad25_remote.html
+          curl -fsSL --retry 3 --retry-delay 2 --max-time 45 "$BASE/measured-fit-stage25.js" -o /tmp/dad25_remote.js
+          grep -q 'buildMeasuredEdgeBridge' /tmp/dad25_remote.html
+          grep -q 'scan_edges_measured' /tmp/dad25_remote.js
+          node --check /tmp/dad25_remote.js
+          echo 'Actual external hosted files verified.'
       - name: Confirm actual encrypted model is still retained
         run: |
           python3 - <<'PY'
