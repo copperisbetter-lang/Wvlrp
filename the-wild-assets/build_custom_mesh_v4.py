@@ -123,6 +123,7 @@ def patch_viewer(source, new_count, b64len, tris, sha):
     v=v.replace("Array.from({length:10}","Array.from({length:%d}"%new_count)
     v=v.replace("b64.length!==5822232","b64.length!==%d"%b64len)
     v=v.replace("The_Wild_Custom_Character.glb","The_Wild_Custom_Character_V4.glb")
+    v=v.replace("#help{position:fixed;top:103px;","#help{position:fixed;top:144px;")
     v=v.replace("Drag to rotate · pinch or use +/- to zoom",
                 "Drag to rotate · pinch to zoom · V4 independent anatomy")
     v=v.replace('<button class="btn" id="spin">Spin</button>',
@@ -136,9 +137,13 @@ def patch_viewer(source, new_count, b64len, tris, sha):
     v=v.replace("mesh.push({pv:buffer(P,gl.ARRAY_BUFFER)",
                 "mesh.push({name:item.name||'',pv:buffer(P,gl.ARRAY_BUFFER)")
     v=v.replace("let angle=0,elev=0,zoom=3.35,spinning=false,last=0;",
-                "let angle=0,elev=0,zoom=3.35,spinning=false,last=0,outerOpen=0,innerOpen=0;")
+                "let angle=0,elev=0,zoom=3.35,focusY=.86,spinning=false,last=0,outerOpen=0,innerOpen=0;")
+    v=v.replace("elev=0;zoom=3.35;spinning=false;",
+                "elev=0;zoom=3.35;focusY=.86;spinning=false;")
+    v=v.replace("0,-.86,-zoom,1]);",
+                "0,-focusY*cv,-zoom-focusY*sv,1]);")
     v=v.replace("document.querySelector('#spin').onclick",
-        "document.querySelector('#under').onclick=()=>{angle=0;elev=.68;zoom=1.35;spinning=false;};\n"
+        "document.querySelector('#under').onclick=()=>{angle=0;elev=.63;zoom=2.45;focusY=.79;spinning=false;};\n"
         "document.querySelector('#outer').onclick=()=>{outerOpen=outerOpen?0:1;document.querySelector('#outer').textContent=outerOpen?'Outer close':'Outer folds';};\n"
         "document.querySelector('#inner').onclick=()=>{innerOpen=innerOpen?0:1;document.querySelector('#inner').textContent=innerOpen?'Inner close':'Inner folds';};\n"
         "document.querySelector('#spin').onclick")
@@ -150,7 +155,7 @@ def patch_viewer(source, new_count, b64len, tris, sha):
     assert "character-v3-part-" not in v and ("b64.length!==%d"%b64len) in v
     assert "LABIA_MINORA" in v and "LABIA_MAJORA" in v
     return v.replace("3D mesh ready — drag to rotate",
-                     "V4 mesh ready · model SHA256 %s · drag to rotate"%sha[:10])
+                     "V4 mesh ready · %s triangles"%format(tris,","))
 
 def main():
     original=get_original()
