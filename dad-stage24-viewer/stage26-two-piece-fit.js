@@ -1,8 +1,8 @@
 // Dad Stage26 — independent manual fitting, not a merge.
 // Uses the preexisting encrypted original scan + native 138-bone G9 from the protected GLB.
 // Only the G9 neck primitive is clipped; the photographed head/shoulder scan is untouched.
-import {makeShortNativeNeckStump} from './stage27-restore-neck-stump.js';
-export function prepareTwoPieceFit(gltf, THREE) {
+import {recoverActualOriginalG9ShortNeck} from './stage28-recover-original-g9-neck.js';
+export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
   const found=[];
   gltf.scene.traverse(o=>{
     if(!o.isMesh || !o.geometry?.getAttribute('position')) return;
@@ -43,18 +43,18 @@ export function prepareTwoPieceFit(gltf, THREE) {
   if(shoulderYs.length<15) throw Error('Too few actual G9 shoulder measurements; neck cut aborted.');
   shoulderYs.sort((a,b)=>a-b);
   const topShoulder=shoulderYs[Math.floor(.96*(shoulderYs.length-1))];
-  const cutY=Math.min(1.54,Math.max(1.47,topShoulder+.012)); // ~12 mm above actual shoulder surface
-  // Stage24 removed G9 neck triangles but retained their ORIGINAL vertex data.
-  // Restore a short G9 neck fitting stump from original native vertex positions,
-  // atlas UVs and skeletal weights; this stays on the BODY, not the Dad scan.
-  const recoveredStump=makeShortNativeNeckStump(neck[0].mesh,topShoulder,THREE);
+  // Stage24 destroyed the original G9 neck INDEX reference, not its original
+  // index buffer. Recover the authentic 972 native neck faces from the encrypted
+  // model itself; clip the real mesh only 15 mm above actual shoulder height.
+  const recoveredStump=recoverActualOriginalG9ShortNeck(protectedModelRaw,neck[0].mesh,topShoulder,THREE);
+  const cutY=recoveredStump.cutoffY;
   const cutReport=[];
   // Original Stage24 index-cut fragment is jagged/overcut: hide those fragments
   // instead of cutting MORE of the native body. The reconstructed short neck
   // stump sits in the same shoulder opening and forms the fitting target.
   for(const {mesh} of neck) {
     mesh.visible=false;
-    cutReport.push({mesh:mesh.name,action:'hide rejected Stage24 overcut fragments; no additional neck triangles deleted'});
+    cutReport.push({mesh:mesh.name,action:'restore ORIGINAL 972 native G9 neck triangles; hide 609-triangle damaged Stage24 cut' });
   }
   body.push({mesh:recoveredStump.mesh,assoc:{meshes:1,primitives:-1},faceCount:recoveredStump.mesh.geometry.index.count/3});
   // Preserve source positions, UVs, photographic materials, rig and source skeleton.
@@ -77,6 +77,12 @@ export function prepareTwoPieceFit(gltf, THREE) {
   for(const r of scanned){if(r.mesh.isSkinnedMesh)r.mesh.bindMode='detached';headPivot.attach(r.mesh);}
   for(const r of body){if(r.mesh.isSkinnedMesh)r.mesh.bindMode='detached';bodyPivot.attach(r.mesh);}
   headPivot.updateMatrixWorld(true);bodyPivot.updateMatrixWorld(true);
+  // Stage27 started Dad's head in mid-air. Move its entire unmodified scan
+  // downward so the lowest real scanned neck/shoulder point just overlaps
+  // the 15mm G9 stump. This is an editable starting fit, NOT welding.
+  const defaultHeadOffsetY=Math.max(-.20,Math.min(.02,(cutY-.010)-scanBox.min.y));
+  headPivot.position.y+=defaultHeadOffsetY;
+  headPivot.updateMatrixWorld(true);
   const defaults={
     head:{position:headPivot.position.toArray(),rotation:[0,0,0],scale:1},
     body:{position:bodyPivot.position.toArray(),rotation:[0,0,0],scale:1}
@@ -87,6 +93,7 @@ export function prepareTwoPieceFit(gltf, THREE) {
     cutoffY:cutY,cutHeightMM:(cutY-topShoulder)*1000,
     cutReport,
     restoredNeck:recoveredStump,
+    defaultHeadLoweringMM:-defaultHeadOffsetY*1000,
     originalDadScanUnchanged:true,
     bothPartsSeparate:true,
     noBridgeOrWeld:true,
