@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Dad Stage27 · Head and Body Touch Fit</title>
+<style>
+:root{color-scheme:dark;--bg:#101a28;--panel:#1a2c40;--line:#41546a;--txt:#f1f5fc;--secondary:#b9c9db;--active:#2867a3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:13px system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:7px 12px;background:#18293e;border-bottom:1px solid var(--line)}
+h1{font-size:16px;margin:0;font-weight:750}header small{display:block;color:var(--secondary);font-size:11px;margin-top:2px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 276px;height:calc(100dvh - 48px);min-height:280px}
+#view{position:relative;background:#132136;min-width:0;height:100%;overflow:hidden;touch-action:none}
+#view canvas{width:100%;height:100%;display:block;touch-action:none}
+#status{position:absolute;left:10px;right:10px;top:10px;border-radius:8px;background:#101d2be6;border:1px solid #53708f;padding:8px;text-align:center;z-index:5;line-height:1.45}
+#hint{position:absolute;left:9px;bottom:9px;pointer-events:none;background:#0b1722c7;border-radius:6px;padding:5px 7px;font-size:11px;color:#d4e7ff;max-width:98%}
+aside{overflow:auto;overscroll-behavior:contain;background:#17283a;padding:8px 10px 20px;border-left:1px solid var(--line)}
+section{border-bottom:1px solid #394e63;padding:6px 0 9px}h2{font-size:12px;color:#d8e6f8;margin:0 0 6px}
+.buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.buttons.triple{grid-template-columns:repeat(3,minmax(0,1fr))}
+button{background:#293f55;color:#fff;border:1px solid #56728d;border-radius:7px;min-height:35px;padding:6px 5px;font:600 12px system-ui;cursor:pointer;touch-action:manipulation}
+button.active{background:var(--active);border-color:#9dc8ff;box-shadow:inset 0 0 0 1px #acd5ff}
+button:focus-visible{outline:2px solid #fff}button:disabled{opacity:.4}
+.small{font-size:11px;color:var(--secondary);line-height:1.4;margin:5px 0 0}
+.readout{font:11px/1.65 ui-monospace,Consolas,monospace;color:#c5edff;white-space:pre-wrap;overflow-wrap:anywhere;background:#0c1a2b;padding:6px;border-radius:5px;margin:4px 0}
+#msg{color:#ffd5a2;font-size:11px;min-height:12px;margin-top:6px}
+@media (orientation:portrait){header{min-height:50px}main{display:flex;flex-direction:column;height:auto}#view{height:55dvh;min-height:290px}aside{height:auto;border-left:0;border-top:1px solid var(--line)}}
+@media (orientation:landscape) and (max-height:450px){header{padding:5px 9px}main{height:calc(100dvh - 39px)}aside{width:252px;padding:6px}main{grid-template-columns:minmax(0,1fr) 252px}button{min-height:33px}section{padding:4px 0 7px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+</head><body>
+<header><div><h1>Dad — short-neck-stump finger fitting</h1><small>Genesis 9 RESTORED SHORT NECK STUMP + Dad's separate original head</small></div><small id="header-state">Stage 26 · not joined</small></header>
+<main>
+<div id="view"><div id="status" role="status">Loading encrypted Dad model…</div><div id="hint">Drag to move head · Two fingers to zoom/pan · Select Rotate to turn an entire piece</div></div>
+<aside>
+<section><h2>Touch mode — select, then drag with one finger</h2>
+<div class="buttons">
+<button data-mode="move-head" class="active">Move Head</button><button data-mode="rotate-head">Rotate Head</button>
+<button data-mode="move-body">Move Body</button><button data-mode="rotate-body">Rotate Body</button>
+<button data-mode="orbit" style="grid-column:span 2">Rotate Camera</button>
+</div><div class="small">Two fingers pinch to zoom in every mode. No sliders. <button id="fine" style="min-height:26px;padding:3px 5px">Fine touch OFF</button></div>
+</section>
+<section><h2>Separate size buttons</h2>
+<div class="buttons"><button id="head-smaller">Head −</button><button id="head-larger">Head +</button><button id="body-smaller">Body −</button><button id="body-larger">Body +</button></div>
+</section>
+<section><h2>Precise front/back adjustments — 5 mm steps</h2>
+<div class="buttons"><button id="head-back">Head Z −</button><button id="head-front">Head Z +</button><button id="body-back">Body Z −</button><button id="body-front">Body Z +</button></div>
+</section>
+<section><h2>View / inspection</h2>
+<div class="buttons triple"><button id="front">Front</button><button id="right">Right</button><button id="back">Back</button><button id="left">Left</button><button id="face">Head</button><button id="full">Full</button></div>
+</section>
+<section><h2>Live exact fit coordinates · meters / degrees</h2>
+<div id="head-coords" class="readout">Head: loading...</div>
+<div id="body-coords" class="readout">Body: loading...</div>
+<div class="buttons"><button id="copy-fit">Copy coordinates</button><button id="save-fit">Save fit</button><button id="load-fit">Restore saved</button><button id="reset-parts">Reset pieces</button></div>
+<div id="msg" role="status"></div></section>
+<section><h2>Real cut details</h2><div id="cut-details" class="small">Measuring original G9 shoulder…</div>
+<div class="small">The two pieces remain SEPARATE. Genesis 9 has a newly reconstructed short fitting stump from original neck vertices, because Stage 24 removed its neck triangles. No head-to-body stitch, no changes to Dad's original scan. Your saved fit numbers are the instructions for later assembly.</div></section>
+</aside></main>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {prepareTwoPieceFit} from './stage26-two-piece-fit.js';
+const view=document.querySelector('#view'),status=document.querySelector('#status'),msg=document.querySelector('#msg');
+const hint=document.querySelector('#hint');
+window.__DAD_STAGE26_READY=false;window.__DAD_STAGE26_ERROR='';window.__DAD_STAGE26_STATS=null;
+let fit=null,renderer,camera,scene,mode='move-head',fine=false;
+let camYaw=0,camPitch=.03,camDistance=1.65,camTarget=new THREE.Vector3(0,1.47,0);
+let pointerMap=new Map(),oldPinch=0,oldMid=null;
+const rad2deg=180/Math.PI,deg2rad=Math.PI/180,storageKey='dad_stage27_head_body_exact_fit_v1';
+const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+function setStatus(s){status.style.display='block';status.textContent=s;}
+function say(s){msg.textContent=s;}
+function cameraUpdate(){const c=Math.cos(camPitch);camera.position.set(camTarget.x+camDistance*Math.sin(camYaw)*c,camTarget.y+camDistance*Math.sin(camPitch),camTarget.z+camDistance*Math.cos(camYaw)*c);camera.lookAt(camTarget);}
+function precise(t){return Number(t.toFixed(6));}
+function snapshot(g){return {position_m:{x:precise(g.position.x),y:precise(g.position.y),z:precise(g.position.z)},rotation_deg:{x:precise(g.rotation.x*rad2deg),y:precise(g.rotation.y*rad2deg),z:precise(g.rotation.z*rad2deg)},scale:precise(g.scale.x)};}
+function getFit(){return {schema:'dad-stage27-head-body-fit-v1',units:{position:'meters',rotation:'degrees',scale:'uniform'},model_origin_sha256:'8c5adbed840c1ac9ebc83af945cf593716d562980c8a715a16d7bec0c1f97464',geometry:{two_separate_pieces:true,gen9_neck_cut_height_m:precise(fit.cutoffY),height_above_measured_shoulder_mm:precise(fit.cutHeightMM),restored_neck_top_radii_mm:{x:precise(fit.restoredNeck.neckTopRadiusXMM),z:precise(fit.restoredNeck.neckTopRadiusZMM)}},head:snapshot(fit.headPivot),body:snapshot(fit.bodyPivot),recorded_at:new Date().toISOString()};}
+function fmt(o,name){const p=o.position_m,r=o.rotation_deg;return name+'   SCALE '+o.scale.toFixed(4)+'\nXYZ  '+p.x.toFixed(4)+'  '+p.y.toFixed(4)+'  '+p.z.toFixed(4)+'\nROT° '+r.x.toFixed(2)+'  '+r.y.toFixed(2)+'  '+r.z.toFixed(2);}
+function updateReadout(){if(!fit)return;document.querySelector('#head-coords').textContent=fmt(snapshot(fit.headPivot),'HEAD');document.querySelector('#body-coords').textContent=fmt(snapshot(fit.bodyPivot),'BODY');}
+function applyState(g,s){if(!s?.position_m||!s.rotation_deg||!Number.isFinite(s.scale)||s.scale<.1||s.scale>4)throw Error('Saved fit values invalid');const p=s.position_m,r=s.rotation_deg;
+ if(![p.x,p.y,p.z,r.x,r.y,r.z].every(Number.isFinite))throw Error('Invalid fit coordinates');
+ g.position.set(p.x,p.y,p.z);g.rotation.set(r.x*deg2rad,r.y*deg2rad,r.z*deg2rad,'YXZ');g.scale.setScalar(s.scale);g.updateMatrixWorld(true);
+}
+function resetPieces(){for(const [type,g] of [['head',fit.headPivot],['body',fit.bodyPivot]]){const x=fit.defaults[type];g.position.fromArray(x.position);g.rotation.set(0,0,0,'YXZ');g.scale.setScalar(1)}updateReadout();say('Separate pieces returned to original alignment.');}
+function selectMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));hint.textContent=({ 'move-head':'One-finger drag MOVES Dad’s head', 'rotate-head':'One-finger drag ROTATES Dad’s head','move-body':'One-finger drag MOVES Genesis 9 body','rotate-body':'One-finger drag ROTATES Genesis 9 body','orbit':'One-finger drag rotates the CAMERA'}[m])+' · two fingers to zoom';}
+function getCurrent(){return mode.endsWith('head')?fit.headPivot:fit.bodyPivot;}
+function rotateDrag(target,dx,dy){const k=fine?.0018:.006;target.rotation.y+=dx*k;target.rotation.x=clamp(target.rotation.x+dy*k,-Math.PI/2,Math.PI/2);}
+function translateDrag(target,dx,dy){const scale=2*camDistance*Math.tan(camera.fov*Math.PI/360)/Math.max(view.clientHeight,150)*(fine?.22:1);
+ const r=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+ const u=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
+ target.position.addScaledVector(r,dx*scale).addScaledVector(u,-dy*scale);}
+function cameraPreset(side){
+ camPitch=.02;camYaw=side==='back'?Math.PI:side==='right'?Math.PI/2:side==='left'?-Math.PI/2:0;
+ camTarget=side==='head'?fit.headPivot.position.clone().add(new THREE.Vector3(0,.12,0)):new THREE.Vector3(0,1.47,0);
+ camDistance=side==='head'?.65:side==='full'?2.9:1.6;cameraUpdate();
+}
+function onPointerDown(e){
+ if(!fit)return;view.setPointerCapture(e.pointerId);pointerMap.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pointerMap.size===2){const v=[...pointerMap.values()];oldPinch=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y);oldMid={x:(v[0].x+v[1].x)/2,y:(v[0].y+v[1].y)/2};}
+ e.preventDefault();
+}
+function onPointerMove(e){
+ if(!fit||!pointerMap.has(e.pointerId))return;
+ const prior=pointerMap.get(e.pointerId),dx=e.clientX-prior.x,dy=e.clientY-prior.y;
+ pointerMap.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pointerMap.size>=2){
+   const v=[...pointerMap.values()],dist=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y);
+   const mid={x:(v[0].x+v[1].x)/2,y:(v[0].y+v[1].y)/2};
+   if(oldPinch>3&&dist>3)camDistance=clamp(camDistance*oldPinch/dist,.18,6);
+   if(oldMid){const scale=2*camDistance*Math.tan(camera.fov*Math.PI/360)/Math.max(view.clientHeight,150);
+     camTarget.addScaledVector(new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion),-(mid.x-oldMid.x)*scale);
+     camTarget.addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion),(mid.y-oldMid.y)*scale);}
+   oldPinch=dist;oldMid=mid;cameraUpdate();
+ }else if(pointerMap.size===1){
+   if(mode==='orbit'){camYaw-=dx*.008;camPitch=clamp(camPitch+dy*.006,-1.35,1.35);cameraUpdate();}
+   else{const obj=getCurrent();if(mode.startsWith('rotate'))rotateDrag(obj,dx,dy);else translateDrag(obj,dx,dy);obj.updateMatrixWorld(true);updateReadout();}
+ }
+ e.preventDefault();
+}
+function endPointer(e){pointerMap.delete(e.pointerId);if(pointerMap.size<2){oldPinch=0;oldMid=null}}
+async function start(){
+ try{
+  const fragment=location.hash.slice(1).trim();
+  if(!/^[a-fA-F0-9]{64}$/.test(fragment))throw Error('Private access key missing. Open the complete viewer link.');
+  const key=Uint8Array.from(fragment.match(/../g),h=>parseInt(h,16));
+  const response=await fetch('./manifest.json',{cache:'no-store'});
+  if(!response.ok)throw Error('Encrypted manifest HTTP '+response.status);
+  const manifest=await response.json();
+  if(manifest.model_protected_with_AES_256_GCM!==true||manifest.count>200||manifest.count<1)throw Error('Invalid encrypted model manifest.');
+  const encrypted=new Uint8Array(manifest.ciphertext_bytes);let count=0;
+  for(let start=0;start<manifest.count;start+=5){
+    const ids=Array.from({length:Math.min(5,manifest.count-start)},(_,j)=>start+j);
+    const blocks=await Promise.all(ids.map(async i=>{
+      const res=await fetch('./chunk-'+String(i).padStart(3,'0')+'.txt');if(!res.ok)throw Error('Model segment missing: '+i);return res.text();
+    }));
+    for(const b of blocks){const bytes=Uint8Array.from(atob(b),c=>c.charCodeAt(0));encrypted.set(bytes,count);count+=bytes.length;}
+    setStatus('Loading Dad’s original mesh '+Math.min(start+5,manifest.count)+'/'+manifest.count);
+  }
+  if(count!==encrypted.length)throw Error('Encrypted model incomplete');
+  const aes=await crypto.subtle.importKey('raw',key,{name:'AES-GCM'},false,['decrypt']);
+  const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:encrypted.subarray(0,12)},aes,encrypted.subarray(12));
+  scene=new THREE.Scene();scene.background=new THREE.Color('#142239');
+  camera=new THREE.PerspectiveCamera(38,1,.005,100);
+  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+  view.insertBefore(renderer.domElement,hint);
+  scene.add(new THREE.HemisphereLight(0xf5f8ff,0x55677c,2.15));
+  const light=new THREE.DirectionalLight(0xffffff,2.25);light.position.set(2,5,4);scene.add(light);
+  const fill=new THREE.DirectionalLight(0xeaf2ff,1.1);fill.position.set(-3,3,-2);scene.add(fill);
+  setStatus('Separating the original head from Genesis 9…');
+  const gltf=await new Promise((resolve,reject)=>new GLTFLoader().parse(raw,'',resolve,reject));
+  scene.add(gltf.scene);
+  fit=prepareTwoPieceFit(gltf,THREE);
+  window.__DAD_STAGE26_STATS={cutoffY:fit.cutoffY,measuredShoulderY:fit.actualShoulderY,cutHeightMM:fit.cutHeightMM,cutReport:fit.cutReport,restoredNeck:{aboveShoulderMM:fit.restoredNeck.stumpAboveShoulderMM,topXMM:fit.restoredNeck.neckTopRadiusXMM,topZMM:fit.restoredNeck.neckTopRadiusZMM,sourceG9NeckVertexCount:fit.restoredNeck.sourceNeckVerticesAvailable},scanTriangles:fit.scanTriangles,bodyPrimitiveCount:fit.bodyPrimitiveCount,independentParts:true,scanPreserved:fit.originalDadScanUnchanged};
+  document.querySelector('#cut-details').textContent='Short G9 neck stump RESTORED from retained original Genesis 9 skin/rig vertices. Height '+fit.restoredNeck.stumpAboveShoulderMM.toFixed(1)+' mm above measured shoulder; top width '+(fit.restoredNeck.neckTopRadiusXMM*2).toFixed(1)+' mm across; closed top. Dad scan unchanged. No weld.';
+  let bones=0;gltf.scene.traverse(o=>{if(o.isBone)bones++;});
+  window.__DAD_STAGE26_BONES=bones;
+  cameraPreset('front');updateReadout();
+  const resize=()=>{const w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);cameraUpdate();};
+  new ResizeObserver(resize).observe(view);resize();
+  view.addEventListener('pointerdown',onPointerDown);
+  view.addEventListener('pointermove',onPointerMove);
+  view.addEventListener('pointerup',endPointer);view.addEventListener('pointercancel',endPointer);
+  view.addEventListener('wheel',e=>{camDistance=clamp(camDistance*(e.deltaY>0?1.12:.89),.18,6);cameraUpdate();e.preventDefault()},{passive:false});
+  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>selectMode(b.dataset.mode)));
+  document.querySelector('#fine').onclick=()=>{fine=!fine;document.querySelector('#fine').textContent='Fine touch '+(fine?'ON':'OFF');};
+  const adjustScale=(g,dir)=>{const val=clamp(g.scale.x*(dir>0?1.015:1/1.015),.3,2.5);g.scale.setScalar(val);updateReadout();};
+  document.querySelector('#head-smaller').onclick=()=>adjustScale(fit.headPivot,-1);
+  document.querySelector('#head-larger').onclick=()=>adjustScale(fit.headPivot,1);
+  document.querySelector('#body-smaller').onclick=()=>adjustScale(fit.bodyPivot,-1);
+  document.querySelector('#body-larger').onclick=()=>adjustScale(fit.bodyPivot,1);
+  for(const [id,obj,sign] of [['head-back',fit.headPivot,-1],['head-front',fit.headPivot,1],['body-back',fit.bodyPivot,-1],['body-front',fit.bodyPivot,1]]){
+    document.getElementById(id).onclick=()=>{obj.position.z+=.005*sign;updateReadout();};
+  }
+  for(const side of ['front','right','back','left','face','full'])document.getElementById(side).onclick=()=>cameraPreset(side==='face'?'head':side);
+  document.querySelector('#reset-parts').onclick=resetPieces;
+  document.querySelector('#save-fit').onclick=()=>{try{localStorage.setItem(storageKey,JSON.stringify(getFit()));say('Saved exact head and body coordinates on this device.')}catch(e){say('Saving unavailable: '+e.message)}};
+  document.querySelector('#load-fit').onclick=()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');if(!saved)throw Error('No fit saved on this device.');applyState(fit.headPivot,saved.head);applyState(fit.bodyPivot,saved.body);updateReadout();say('Saved head/body coordinates restored.')}catch(e){say('Restore failed: '+e.message)}};
+  document.querySelector('#copy-fit').onclick=async()=>{
+    const str=JSON.stringify(getFit(),null,2);
+    try{
+      if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(str);
+      else {const txt=document.createElement('textarea');txt.value=str;document.body.append(txt);txt.select();if(!document.execCommand('copy'))throw Error('Clipboard blocked');txt.remove();}
+      say('Copied both complete X/Y/Z, rotations and scales.');
+    }catch(e){
+      say('Clipboard blocked. Select and copy the coordinates above.');
+    }
+  };
+  setStatus('');status.style.display='none';
+  window.__DAD_STAGE26_READY=true;
+  const loop=()=>{requestAnimationFrame(loop);renderer.render(scene,camera);};loop();
+ }catch(e){window.__DAD_STAGE26_ERROR=String(e);setStatus('Viewer error: '+String(e.message||e));}
+}
+start();
+</script></body></html>
