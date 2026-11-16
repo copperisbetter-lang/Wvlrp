@@ -1,6 +1,7 @@
 // Dad Stage26 — independent manual fitting, not a merge.
 // Uses the preexisting encrypted original scan + native 138-bone G9 from the protected GLB.
 // Only the G9 neck primitive is clipped; the photographed head/shoulder scan is untouched.
+import {makeShortNativeNeckStump} from './stage27-restore-neck-stump.js';
 export function prepareTwoPieceFit(gltf, THREE) {
   const found=[];
   gltf.scene.traverse(o=>{
@@ -43,11 +44,16 @@ export function prepareTwoPieceFit(gltf, THREE) {
   shoulderYs.sort((a,b)=>a-b);
   const topShoulder=shoulderYs[Math.floor(.96*(shoulderYs.length-1))];
   const cutY=Math.min(1.54,Math.max(1.47,topShoulder+.012)); // ~12 mm above actual shoulder surface
+  // Stage24 removed G9 neck triangles but retained their ORIGINAL vertex data.
+  // Restore a short G9 neck fitting stump from original native vertex positions,
+  // atlas UVs and skeletal weights; this stays on the BODY, not the Dad scan.
+  const recoveredStump=makeShortNativeNeckStump(neck[0].mesh,topShoulder,THREE);
   const cutReport=[];
   for(const {mesh} of neck) {
     const stats=clipNeckToPlane(mesh,cutY,THREE);
     cutReport.push({mesh:mesh.name,...stats});
   }
+  body.push({mesh:recoveredStump.mesh,assoc:{meshes:1,primitives:-1},faceCount:recoveredStump.mesh.geometry.index.count/3});
   // Preserve source positions, UVs, photographic materials, rig and source skeleton.
   if(scanned.some((r,i)=>r.mesh.geometry.getAttribute('position').count!==originalScanVerts[i])) {
     throw Error('Original Dad scan changed unexpectedly.');
@@ -77,6 +83,7 @@ export function prepareTwoPieceFit(gltf, THREE) {
     scanTriangles,bodyPrimitiveCount:body.length,actualShoulderY:topShoulder,
     cutoffY:cutY,cutHeightMM:(cutY-topShoulder)*1000,
     cutReport,
+    restoredNeck:recoveredStump,
     originalDadScanUnchanged:true,
     bothPartsSeparate:true,
     noBridgeOrWeld:true,
