@@ -1,0 +1,76 @@
+name: QA one-tap Custom Mesh V4 on phone-sized browser
+on:
+  push:
+    branches:
+      - feature/custom-mesh-v4-rebuild-20261116
+    paths:
+      - .github/workflows/qa-custom-mesh-v4-mobile.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phone-webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Check actual live HTML and 13 external model parts
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116'
+          curl --retry 4 --retry-all-errors --retry-delay 3 -fsSL "$root/the-wild-custom-mesh-v4-viewer.html" -o /tmp/v4.html
+          grep -q 'Array.from({length:13}' /tmp/v4.html
+          for n in $(seq -w 1 13); do
+            curl --retry 3 --retry-delay 3 --retry-all-errors -fsSL "$root/the-wild-assets/character-v4-part-$n.txt" -o "/tmp/v4-$n.txt"
+            test "$(wc -c <"/tmp/v4-$n.txt")" -gt 100000
+          done
+          echo 'ALL_V4_13_PARTS_HTTPS_200'
+      - name: Install phone-sized browser automation
+        run: python3 -m pip install selenium
+      - name: Actual WebGL rendering and touch-control smoke test
+        shell: bash
+        run: |
+          cat > /tmp/phone_v4.py <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.chrome.options import Options
+          import time
+          url='https://raw.githack.com/copperisbetter-lang/Wvlrp/feature/custom-mesh-v4-rebuild-20261116/the-wild-custom-mesh-v4-viewer.html'
+          opts=Options()
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          opts.add_argument('--enable-webgl')
+          opts.add_argument('--use-angle=swiftshader')
+          opts.add_argument('--enable-unsafe-swiftshader')
+          opts.add_argument('--window-size=420,900')
+          opts.add_experimental_option('mobileEmulation',{'deviceMetrics':{'width':360,'height':800,'pixelRatio':2},'userAgent':'Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131 Mobile Safari/537.36'})
+          driver=webdriver.Chrome(options=opts)
+          try:
+            driver.set_page_load_timeout(120)
+            driver.get(url)
+            status=WebDriverWait(driver,110,poll_frequency=2).until(
+              lambda d:d.find_element(By.ID,'status').text
+                if 'V4 mesh ready' in d.find_element(By.ID,'status').text else False)
+            print('V4_MOBILE_WEBGL_REAL_RENDER_READY:',status,flush=True)
+            assert '169,838' in driver.find_element(By.ID,'top').text
+            assert driver.execute_script("return !!document.querySelector('#gl').getContext('webgl2') || !!document.querySelector('#gl').getContext('webgl')") is True
+            for control in ('under','outer','inner','spin'):
+              driver.find_element(By.ID,control).click()
+              time.sleep(.4)
+              print('V4_PHONE_CONTROL_OK',control,flush=True)
+            assert driver.find_element(By.ID,'outer').text=='Outer close'
+            assert driver.find_element(By.ID,'inner').text=='Inner close'
+            print('V4_WEBGL_AND_INDEPENDENT_CONTROLS_PASS',flush=True)
+            driver.save_screenshot('/tmp/v4-mobile-browser.png')
+          finally:
+            driver.quit()
+          PY
+          python3 /tmp/phone_v4.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: custom-mesh-v4-phone-webgl-qa
+          path: /tmp/v4-mobile-browser.png
+          if-no-files-found: ignore
