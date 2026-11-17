@@ -15,6 +15,13 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+            dad-stage24-viewer/stage31-full-native-g9-one-inch-neck-viewer.html
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Run original-neck clip regression WITHOUT private model or private runner
         run: node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
       - name: Check Stage31 HTML and ES module source
