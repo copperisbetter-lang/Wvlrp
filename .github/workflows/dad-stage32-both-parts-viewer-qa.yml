@@ -1,0 +1,71 @@
+name: Dad Stage32 original head visible and full G9 body viewer QA
+on:
+  push:
+    branches:
+      - feature/dad-stage32-head-visible-touch-20261116
+    paths:
+      - 'dad-stage24-viewer/stage32-head-plus-full-g9-touch-viewer.html'
+      - '.github/workflows/dad-stage32-both-parts-viewer-qa.yml'
+  workflow_dispatch:
+jobs:
+  public-only-head-body-control-qa:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage32-head-plus-full-g9-touch-viewer.html
+            dad-stage24-viewer/stage26-two-piece-fit.js
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Check viewer syntax and verify owner touch controls and default visibility
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          page=Path('dad-stage24-viewer/stage32-head-plus-full-g9-touch-viewer.html').read_text()
+          for x in [
+            'fit=prepareTwoPieceFit(gltf,THREE,raw);',
+            'fit.headPivot.position.x+=.62;',
+            'fit.defaults.head.position=fit.headPivot.position.toArray();',
+            'setHeadVisible(true); // Owner requested',
+            'setHeadVisible(true);cameraPreset(\'full\')',
+            'setHeadVisible(true);updateReadout();say(\'Saved head/body coordinates',
+            'function setHeadVisible(on){if(!fit)return;fit.headPivot.visible=on;',
+            'id="head-toggle" class="active"',
+            'data-mode="move-head"','data-mode="rotate-head"',
+            'data-mode="move-body"','data-mode="rotate-body"',
+            'data-mode="orbit"',
+            'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
+            'id="head-back"','id="head-front"','id="body-back"','id="body-front"',
+            'id="fine"','id="front"','id="right"','id="back"','id="left"','id="full"',
+            'id="head-coords"','id="body-coords"',
+            'id="copy-fit"','id="save-fit"','id="load-fit"','id="reset-parts"',
+            'window.__DAD_STAGE32_READY=true;',
+          ]:
+            assert x in page, f'Missing required UI/behavior: {x}'
+          assert 'headInitiallyOffset' not in page
+          match=re.search(r'<script type="module">([\s\S]*?)</script>',page)
+          assert match,'Missing live viewer JS module'
+          Path('/tmp/stage32-viewer.mjs').write_text(match.group(1))
+          print('PASS: Dad head visible by default; complete independent user controls, reset and restore retained.')
+          PY
+          node --check /tmp/stage32-viewer.mjs
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+      - name: Verify exact external Stage32 page and JS modules served
+        run: |
+          URL="https://raw.githack.com/copperisbetter-lang/Wvlrp/${GITHUB_SHA}/dad-stage24-viewer"
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/stage32-head-plus-full-g9-touch-viewer.html" -o /tmp/stage32-hosted.html
+          grep -q 'Stage32' /tmp/stage32-hosted.html
+          grep -q 'setHeadVisible(true)' /tmp/stage32-hosted.html
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/stage26-two-piece-fit.js" -o /tmp/stage32-fit.js
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/stage28-recover-original-g9-neck.js" -o /tmp/stage32-native-neck.js
+          grep -q 'prepareTwoPieceFit' /tmp/stage32-fit.js
+          grep -q 'originalFaceCount\*2' /tmp/stage32-native-neck.js
+          echo "PASS: Stage32 hosted page and original G9 fitter/cutter accessible over HTTPS."
