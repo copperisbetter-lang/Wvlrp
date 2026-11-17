@@ -41,17 +41,17 @@ jobs:
              'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
              'id="head-coords"','id="body-coords"',
              'id="copy-fit"','id="save-fit"','id="load-fit"','id="reset-parts"',
-             'window.__DAD_STAGE38_READY=true',
+             'window.__DAD_STAGE39_READY=true',
           ]: assert marker in page, 'Missing UI/control: '+marker
           for marker in [
              'realOriginalScanEdge','clipNativeG9ToActualDadScanEdge',
              'measureNativeSurfaceContact','buildRealDonorContactTriangles',
              'featherRealScanBorderIntoG9','untouchedTorsoAnchors',
-             'rimBlend','rimG9Color','realScanAdjacency',
+             'rimBlend','rimG9Color','rimNeighbors',
              'originalScannedHeadSourcePreserved:true','originalG9TorsoUntouched:true',
              'watertightWeldCertified:false','donor.geometry=trial.geometry',
              'faceBeardAndUpperNeckUnchanged:true','addedBridgeTriangles:0',
-             'donor.geometry=originalG9Geometry',
+             'donor.geometry=originalDonor',
           ]: assert marker in src, 'Stage39 original donor preservation absent: '+marker
           assert 'clipScanGeometry' not in src
           assert 'fit.headPivot.position.x+=' not in src and 'fit.headPivot.position.z+=' not in src
