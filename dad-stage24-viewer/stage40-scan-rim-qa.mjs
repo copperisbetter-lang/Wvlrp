@@ -63,7 +63,7 @@ assert(patch.geometry.getAttribute('position').count/3===res.stats.seam.patchTri
 const upperPos=originalHead.attributes.position;
 const top=nativeNeck.geometry.getAttribute('position');
 assert(top.count>0);
-for(let i=0;i<N;i++)assert.equal(upperPos.getY((12-1)*N+i),1.72,'Source upper original head must stay unchanged');
+for(let i=0;i<N;i++)assert(Math.abs(upperPos.getY((12-1)*N+i)-1.72)<1e-6,'Source upper original head must stay unchanged');
 res.restore();
 assert.equal(head.geometry,originalHead,'Undo did not restore original scanned head');
 assert.equal(head.material,originalMaterial,'Undo did not restore original scan material');
