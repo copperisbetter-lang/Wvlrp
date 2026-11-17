@@ -64,7 +64,7 @@ function locateOriginalNeckIndices(raw,sourceGeometry) {
   if(possibles.length!==1)throw Error('Expected exactly one preserved native G9 972-triangle neck index buffer; found '+possibles.length+'. No artificial replacement will be generated.');
   return possibles[0];
 }
-function clipToShortNeck(originalGeom,originalIndices,yMax,THREE) {
+export function clipToShortNeck(originalGeom,originalIndices,yMax,THREE) {
   const attrs=originalGeom.attributes,keys=Object.keys(attrs);
   const pos=attrs.position;
   const data=Object.fromEntries(keys.map(k=>[k,[]]));
@@ -120,7 +120,14 @@ function clipToShortNeck(originalGeom,originalIndices,yMax,THREE) {
     }
     for(let i=1;i+1<polygon.length;i++){emit(polygon[0]);emit(polygon[i]);emit(polygon[i+1]);faces++;}
   }
-  if(faces<25||faces>=972)throw Error('Original G9 neck could not be cut to a short stump safely: '+faces+' faces remain.');
+  // A plane slicing a triangle can create TWO output triangles, so the number
+  // of output faces can EXCEED the 972 original faces without inventing neck
+  // geometry. Stage30 falsely rejected 1,028 output faces on the owner's phone.
+  // Validate that the genuine source was actually clipped and that the count
+  // is geometrically possible (max two output faces per original triangle).
+  const originalFaceCount=originalIndices.length/3;
+  if(!Number.isFinite(yMax)||faces<25||faces>originalFaceCount*2||(whollyRemoved+clipped)===0)
+    throw Error('Original G9 neck could not be cut to a short stump safely: '+faces+' output faces, '+clipped+' crossing triangles, '+whollyRemoved+' removed.');
   const result=new THREE.BufferGeometry();
   for(const name of keys){
     const itemSize=attrs[name].itemSize,arr=data[name];
@@ -129,7 +136,7 @@ function clipToShortNeck(originalGeom,originalIndices,yMax,THREE) {
   }
   // Keep original native G9 vertex normals; flat recomputation would introduce new artificial shading seams.
   result.computeBoundingBox();result.computeBoundingSphere();
-  return {geometry:result,stats:{originalNativeNeckFaces:972,remainingNativeFaces:faces,cutNativeFaces:whollyRemoved,partiallyClippedNativeFaces:clipped,originalFacesStillIntact:kept,topBoundaryWidthMM:Number.isFinite(cutMinX)?(cutMaxX-cutMinX)*1000:null}};
+  return {geometry:result,stats:{originalNativeNeckFaces:972,remainingNativeFaces:faces,sourceFacesCrossingCut:clipped,sourceFacesAboveCut:whollyRemoved,cutNativeFaces:whollyRemoved,partiallyClippedNativeFaces:clipped,originalFacesStillIntact:kept,topBoundaryWidthMM:Number.isFinite(cutMinX)?(cutMaxX-cutMinX)*1000:null}};
 }
 export function recoverActualOriginalG9ShortNeck(raw,oldNeckMesh,measuredShoulderY,THREE) {
   if(!(raw instanceof ArrayBuffer))throw Error('Provide the decrypted original GLB buffer privately in the browser.');
