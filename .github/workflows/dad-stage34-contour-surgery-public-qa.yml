@@ -17,6 +17,7 @@ jobs:
         with:
           sparse-checkout: |
             dad-stage24-viewer/stage34-measured-mesh-surgery.js
+            dad-stage24-viewer/stage34-contour-fixture.mjs
             dad-stage24-viewer/stage34-measured-surgical-seam-viewer.html
             dad-stage24-viewer/stage26-two-piece-fit.js
             dad-stage24-viewer/stage28-recover-original-g9-neck.js
@@ -26,6 +27,7 @@ jobs:
       - name: Syntax and conservative contour fitting checks
         run: |
           node --check dad-stage24-viewer/stage34-measured-mesh-surgery.js
+          node dad-stage24-viewer/stage34-contour-fixture.mjs
           node --check dad-stage24-viewer/stage26-two-piece-fit.js
           node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
           node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
