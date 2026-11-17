@@ -156,7 +156,7 @@ function interpolateRing(ring,angle){
  let i=ring.findIndex(p=>p.angle>target);
  if(i<0)i=ring.length;
  const a=ring[(i-1+ring.length)%ring.length],b=ring[i%ring.length];
- const lo=a.angle,hi=(i===ring.length?ring[0].angle+TWOPI:b.angle);
+ const lo=a.angle,hi=(i===0||i===ring.length?ring[0].angle+TWOPI:b.angle);
  const at=target<lo?target+TWOPI:target;
  const t=clamp((at-lo)/Math.max(hi-lo,1e-7),0,1);
  const p=a.pos.clone().lerp(b.pos,t);
