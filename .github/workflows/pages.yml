@@ -44,8 +44,8 @@ jobs:
       - name: Prepare Lounge wallpaper
         run: |
           mkdir -p assets/lounge
-          if compgen -G "assets/lounge/lounge-placeholder-tiny.webp.b64.part*" > /dev/null; then
-            cat assets/lounge/lounge-placeholder-tiny.webp.b64.part* | base64 --decode > assets/lounge/lounge-placeholder.webp
+          if compgen -G "assets/lounge/lounge-placeholder-tiny.webp.b64.part[0-9][0-9]" > /dev/null; then
+            cat assets/lounge/lounge-placeholder-tiny.webp.b64.part[0-9][0-9] | base64 --decode > assets/lounge/lounge-placeholder.webp
           fi
       - name: Retire legacy supporter lounge
         run: |
