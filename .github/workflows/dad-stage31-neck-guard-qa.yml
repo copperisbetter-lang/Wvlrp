@@ -1,0 +1,32 @@
+name: Dad Stage31 one-inch native neck guard regression
+on:
+  push:
+    branches:
+      - fix/dad-stage31-neck-face-validation-20261116
+    paths:
+      - 'dad-stage24-viewer/stage28-recover-original-g9-neck.js'
+      - 'dad-stage24-viewer/stage31-*'
+      - '.github/workflows/dad-stage31-neck-guard-qa.yml'
+  workflow_dispatch:
+jobs:
+  synthetic-cut-and-public-viewer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run original-neck clip regression WITHOUT private model or private runner
+        run: node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+      - name: Check Stage31 HTML and ES module source
+        run: |
+          node --check dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          grep -q 'import.*stage26-two-piece-fit.js' dad-stage24-viewer/stage31-full-native-g9-one-inch-neck-viewer.html
+          grep -q 'Full Body ONLY' dad-stage24-viewer/stage31-full-native-g9-one-inch-neck-viewer.html
+          grep -q 'Show Dad Head' dad-stage24-viewer/stage31-full-native-g9-one-inch-neck-viewer.html
+      - name: Confirm hosted Stage31 HTML and fixed cutter accessible
+        run: |
+          curl -fsSL --retry 3 "https://raw.githack.com/copperisbetter-lang/Wvlrp/${GITHUB_SHA}/dad-stage24-viewer/stage31-full-native-g9-one-inch-neck-viewer.html" -o /tmp/dad-stage31.html
+          grep -q 'Stage31' /tmp/dad-stage31.html
+          curl -fsSL --retry 3 "https://raw.githack.com/copperisbetter-lang/Wvlrp/${GITHUB_SHA}/dad-stage24-viewer/stage28-recover-original-g9-neck.js" -o /tmp/dad-stage31-cutter.js
+          grep -q 'originalFaceCount\*2' /tmp/dad-stage31-cutter.js
