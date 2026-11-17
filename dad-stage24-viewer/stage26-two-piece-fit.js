@@ -52,7 +52,7 @@ export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
   const topShoulder=shoulderYs[Math.floor(.96*(shoulderYs.length-1))];
   // Stage24 destroyed the original G9 neck INDEX reference, not its original
   // index buffer. Recover the authentic 972 native neck faces from the encrypted
-  // model itself; clip the real mesh only 15 mm above actual shoulder height.
+  // model itself; clip the real mesh only 4 mm above actual shoulder height.
   const recoveredStump=recoverActualOriginalG9ShortNeck(protectedModelRaw,neck[0].mesh,topShoulder,THREE);
   const cutY=recoveredStump.cutoffY;
   const cutReport=[];
@@ -87,7 +87,7 @@ export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
   // Stage27 started Dad's head in mid-air. Move its entire unmodified scan
   // downward so the lowest real scanned neck/shoulder point just overlaps
   // the 15mm G9 stump. This is an editable starting fit, NOT welding.
-  const defaultHeadOffsetY=Math.max(-.20,Math.min(.02,(cutY-.010)-scanBox.min.y));
+  const defaultHeadOffsetY=0; // preserve original scanned Dad head transform; owner can drag manually
   headPivot.position.y+=defaultHeadOffsetY;
   headPivot.updateMatrixWorld(true);
   const defaults={
