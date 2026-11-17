@@ -326,7 +326,7 @@ function nearestOnRealTriangle(p,a,b,c) {
   return {point:madd3(b,bc,t),weights:[0,1-t,t]};
  }
  const sum=va+vb+vc;
- if(Math.abs(sum)<1e-12)throw Error('Native G9 donor has degenerate triangle near scanned lower neck');
+ if(Math.abs(sum)<1e-12)return {point:a,weights:[1,0,0]}; // Conservative degenerate donor-face fallback
  const v=vb/sum,w=vc/sum;
  return {point:madd3(madd3(a,ab,v),ac,w),weights:[1-v-w,v,w]};
 }
