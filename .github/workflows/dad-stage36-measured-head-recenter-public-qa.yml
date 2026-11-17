@@ -1,0 +1,83 @@
+name: Dad Stage36 actual contour surgical trial viewer QA
+on:
+  push:
+    branches:
+      - feature/dad-stage36-original-neck-recenter-20261116
+    paths:
+      - 'dad-stage24-viewer/stage36-*'
+      - '.github/workflows/dad-stage36-measured-head-recenter-public-qa.yml'
+  workflow_dispatch:
+jobs:
+  public-only-source-and-host:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage36-recentered-head-neck-fit.js
+            dad-stage24-viewer/stage36-recentered-contour-qa.mjs
+            dad-stage24-viewer/stage36-real-neck-recenter-fit-viewer.html
+            dad-stage24-viewer/stage26-two-piece-fit.js
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Syntax and conservative contour fitting checks
+        run: |
+          node --check dad-stage24-viewer/stage36-recentered-head-neck-fit.js
+          node dad-stage24-viewer/stage36-recentered-contour-qa.mjs
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('dad-stage24-viewer/stage36-real-neck-recenter-fit-viewer.html').read_text()
+          mesh=Path('dad-stage24-viewer/stage36-recentered-head-neck-fit.js').read_text()
+          for item in [
+             'import {attemptMeasuredSurgery}', 'rebuild();',
+             'attemptMeasuredSurgery(fit,gltf,THREE)', 'surgery.restore()',
+             'id="apply-surgery"','id="undo-surgery"','id="surgery-state"',
+             'data-mode="move-head"','data-mode="rotate-head"',
+             'data-mode="move-body"','data-mode="rotate-body"',
+             'data-mode="size-head"','data-mode="size-body"',
+             'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
+             'id="head-coords"','id="body-coords"','id="copy-fit"','id="save-fit"',
+             'id="load-fit"','id="reset-parts"','window.__DAD_STAGE35_READY=true', 'window.__DAD_STAGE35_ANALYSIS',
+          ]:
+             assert item in html, f'Missing owner controls: {item}'
+          for item in [
+             'clipScanGeometry','topNativeNeckSegments','getLoops','makeRealEdgeStrip',
+             'surveyScanAtPlane','evaluateContourMismatch','scanBestNeckCrossSection',
+             'shiftedContourLoop','fit.headPivot.position.z+=deltaZ','headWasRigidlyRecentered:true',
+             'neckTransitionSlopeMMperMM','oldHeadPosition',
+             'for(let mm=6;mm<=78;mm+=6)','best.p95MM>50||best.maxMM>75',
+             'scanLoops.length!==1||g9Loops.length!==1',
+             'p95>.055||max>.085','preservedG9Torso:true',
+             'watertightIndexWeldCertified:false','faceBeardAndUpperNeckUnscaled:true',
+          ]:
+             assert item in mesh, f'Missing geometry safeguard: {item}'
+          assert 'fit.headPivot.position.x+=.62' not in html
+          script=re.search(r'<script type="module">([\s\S]*?)</script>',html)
+          assert script
+          Path('/tmp/stage36-viewer.mjs').write_text(script.group(1))
+          print('PASS: source scan/G9 contour trial and all owner controls.')
+          PY
+          node --check /tmp/stage36-viewer.mjs
+      - name: Verify public HTTPS viewer and encrypted manifest
+        run: |
+          URL="https://raw.githack.com/copperisbetter-lang/Wvlrp/$GITHUB_SHA/dad-stage24-viewer"
+          curl -fsSL --retry 3 "$URL/stage36-real-neck-recenter-fit-viewer.html" -o /tmp/stage36.html
+          grep -q 'Stage36' /tmp/stage36.html
+          curl -fsSL --retry 3 "$URL/stage36-recentered-head-neck-fit.js" -o /tmp/stage36-mesh.js
+          grep -q 'attemptMeasuredSurgery' /tmp/stage36-mesh.js
+          curl -fsSL --retry 3 "$URL/manifest.json" -o /tmp/stage36-manifest.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/stage36-manifest.json'))
+          assert x.get('model_protected_with_AES_256_GCM') is True
+          assert x.get('count')==23
+          print('PASS: Stage36 viewer and original AES-protected carrier externally accessible.')
+          PY
