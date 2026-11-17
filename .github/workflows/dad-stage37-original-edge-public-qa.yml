@@ -1,0 +1,87 @@
+name: Dad Stage37 true original scan edge G9-only cut and seam QA
+on:
+  push:
+    branches:
+      - feature/dad-stage37-original-edge-g9-only-cut-20261116
+    paths:
+      - 'dad-stage24-viewer/stage37-*'
+      - '.github/workflows/dad-stage37-original-edge-public-qa.yml'
+  workflow_dispatch:
+jobs:
+  free-public-original-head-preserved:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage37-true-original-scan-edge-g9-cut.js
+            dad-stage24-viewer/stage37-original-scan-g9-true-seam-viewer.html
+            dad-stage24-viewer/stage37-real-original-edge-qa.mjs
+            dad-stage24-viewer/stage26-two-piece-fit.js
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Check script syntax, protected source policy and user controls
+        run: |
+          node --check dad-stage24-viewer/stage37-true-original-scan-edge-g9-cut.js
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('dad-stage24-viewer/stage37-original-scan-g9-true-seam-viewer.html').read_text()
+          source=Path('dad-stage24-viewer/stage37-true-original-scan-edge-g9-cut.js').read_text()
+          for x in [
+              'import {attemptTrueScanEdgeDonorOnlyFit}',
+              'attemptTrueScanEdgeDonorOnlyFit(fit,gltf,THREE)',
+              'id="apply-surgery"','id="undo-surgery"','id="surgery-state"',
+              'data-mode="move-head"','data-mode="rotate-head"',
+              'data-mode="move-body"','data-mode="rotate-body"',
+              'data-mode="size-head"','data-mode="size-body"',
+              'id="head-smaller"','id="head-larger"',
+              'id="body-smaller"','id="body-larger"',
+              'id="head-coords"','id="body-coords"',
+              'id="copy-fit"','id="save-fit"','id="load-fit"',
+              'id="reset-parts"','window.__DAD_STAGE37_READY=true',
+          ]:
+              assert x in html, f'Missing Stage37 owner control: {x}'
+          for x in [
+              'realOriginalScanEdge','clipNativeG9ToActualDadScanEdge',
+              'measureActual3DEdgeGap','G9originalTorsoPrimitivesEdited:false',
+              'originalPhotoScanEdited:false','originalScannedHeadUntouched:true',
+              'watertightWeldCertified:false','donor.geometry=trial.geometry',
+              'restore(){donor.geometry=originalNativeGeometry',
+              'DAD_STAGE37_ORIGINAL_SCAN_EDGE_G9_ONLY_SEAM_TRIAL',
+          ]:
+              assert x in source, f'Missing genuine donor cut safeguard: {x}'
+          assert 'clipScanGeometry' not in source, 'Original photographed Dad scan MUST NEVER be cut'
+          assert 'fit.headPivot.position.x+=' not in source and 'fit.headPivot.position.z+=' not in source
+          mod=re.search(r'<script type="module">([\s\S]*?)</script>',html)
+          assert mod
+          Path('/tmp/stage37.mjs').write_text(mod.group(1))
+          print('PASS: Original Dad scan fully immutable, ONLY genuine G9 donor may be cut, controls preserved.')
+          PY
+          node --check /tmp/stage37.mjs
+      - name: Test real 3D clipping algorithm on irregular synthetic scan and G9 donor
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund three@0.164.1
+          node dad-stage24-viewer/stage37-real-original-edge-qa.mjs
+      - name: Verify HTTPS one-tap encrypted model viewer and module
+        run: |
+          URL="https://raw.githack.com/copperisbetter-lang/Wvlrp/$GITHUB_SHA/dad-stage24-viewer"
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/stage37-original-scan-g9-true-seam-viewer.html" -o /tmp/stage37.html
+          grep -q 'Stage37' /tmp/stage37.html
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/stage37-true-original-scan-edge-g9-cut.js" -o /tmp/stage37.js
+          grep -q 'clipNativeG9ToActualDadScanEdge' /tmp/stage37.js
+          curl --retry 3 --retry-delay 2 -fsSL "$URL/manifest.json" -o /tmp/stage37-manifest.json
+          python3 - <<'PY'
+          import json
+          m=json.load(open('/tmp/stage37-manifest.json'))
+          assert m['model_protected_with_AES_256_GCM'] is True
+          assert m['count']==23
+          print('PASS: Stage37 real G9-only fit viewer served with unchanged encrypted 23-part private model.')
+          PY
