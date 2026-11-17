@@ -136,7 +136,8 @@ export function recoverActualOriginalG9ShortNeck(raw,oldNeckMesh,measuredShoulde
   const pos=oldNeckMesh.geometry.getAttribute('position');
   if(!pos || !oldNeckMesh.isSkinnedMesh)throw Error('Native skinned neck geometry is unavailable.');
   const {index:oldAccessor,indices}=locateOriginalNeckIndices(raw,oldNeckMesh.geometry);
-  const cutY=Math.min(1.54,Math.max(1.455,measuredShoulderY+.015));
+  const cutY=measuredShoulderY+0.004; // retain only 4 mm of genuine G9 neck above measured shoulder; no added geometry
+  if(cutY<1.455||cutY>1.54) throw Error('Shoulder height outside native G9 anatomical range; refusing a destructive cut: '+cutY.toFixed(4));
   const {geometry,stats}=clipToShortNeck(oldNeckMesh.geometry,indices,cutY,THREE);
   const restored=new THREE.SkinnedMesh(geometry,oldNeckMesh.material);
   restored.name='GENESIS9_ORIGINAL_972_FACE_NECK_SHORT_STUMP';
