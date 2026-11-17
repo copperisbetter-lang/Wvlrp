@@ -1,0 +1,80 @@
+name: Dad Stage38 original scan to real G9 neck and torso surface fit QA
+on:
+  push:
+    branches:
+      - feature/dad-stage38-actual-scan-contact-native-g9-20261116
+    paths:
+      - 'dad-stage24-viewer/stage38-*'
+      - '.github/workflows/dad-stage38-real-native-surfaces-public-qa.yml'
+  workflow_dispatch:
+jobs:
+  synthetic-original-dad-preserved:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage38-real-neck-and-shoulder-surface-contacts.js
+            dad-stage24-viewer/stage38-real-neck-shoulder-join-viewer.html
+            dad-stage24-viewer/stage38-original-scan-neck-torso-contact-qa.mjs
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Check original scan and native G9 preservation
+        run: |
+          node --check dad-stage24-viewer/stage38-real-neck-and-shoulder-surface-contacts.js
+          node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          page=Path('dad-stage24-viewer/stage38-real-neck-shoulder-join-viewer.html').read_text()
+          src=Path('dad-stage24-viewer/stage38-real-neck-and-shoulder-surface-contacts.js').read_text()
+          for marker in [
+             'import {attemptTrueScanEdgeDonorOnlyFit}',
+             'id="apply-surgery"','id="undo-surgery"','id="surgery-state"',
+             'data-mode="move-head"','data-mode="rotate-head"',
+             'data-mode="move-body"','data-mode="rotate-body"',
+             'data-mode="size-head"','data-mode="size-body"',
+             'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
+             'id="head-coords"','id="body-coords"',
+             'id="copy-fit"','id="save-fit"','id="load-fit"','id="reset-parts"',
+             'window.__DAD_STAGE38_READY=true',
+          ]: assert marker in page, 'Missing UI/control: '+marker
+          for marker in [
+             'realOriginalScanEdge','clipNativeG9ToActualDadScanEdge',
+             'measureNativeSurfaceContact','buildRealDonorContactTriangles',
+             'buildTrueSourceContactBridge','untouchedTorsoAnchors',
+             'originalScannedHeadUntouched:true','originalG9TorsoUntouched:true',
+             'watertightWeldCertified:false','donor.geometry=trial.geometry',
+             'donor.geometry=originalG9Geometry',
+          ]: assert marker in src, 'Stage38 original donor preservation absent: '+marker
+          assert 'clipScanGeometry' not in src
+          assert 'fit.headPivot.position.x+=' not in src and 'fit.headPivot.position.z+=' not in src
+          mod=re.search(r'<script type="module">([\s\S]*?)</script>',page)
+          assert mod
+          Path('/tmp/stage38-ui.mjs').write_text(mod.group(1))
+          print('PASS: All owner controls and true original G9 source references remain.')
+          PY
+          node --check /tmp/stage38-ui.mjs
+      - name: ThreeJS actual-surface synthetic curved cut, torso contact and full undo
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund three@0.164.1
+          node dad-stage24-viewer/stage38-original-scan-neck-torso-contact-qa.mjs
+      - name: Externally verify hosted encrypted one-tap viewer and JS
+        run: |
+          BASE="https://raw.githack.com/copperisbetter-lang/Wvlrp/$GITHUB_SHA/dad-stage24-viewer"
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/stage38-real-neck-shoulder-join-viewer.html" -o /tmp/dad38.html
+          grep -q 'Stage38' /tmp/dad38.html
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/stage38-real-neck-and-shoulder-surface-contacts.js" -o /tmp/dad38.js
+          grep -q 'buildTrueSourceContactBridge' /tmp/dad38.js
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/manifest.json" -o /tmp/dad38manifest.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/dad38manifest.json'))
+          assert j['model_protected_with_AES_256_GCM'] is True
+          assert j['count']==23
+          print('PASS: Original 23-part protected source model accessible. No private GitHub Actions minutes used.')
+          PY
