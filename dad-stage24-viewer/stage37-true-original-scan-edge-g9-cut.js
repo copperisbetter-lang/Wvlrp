@@ -173,7 +173,7 @@ function makeRealEdgeStrip(scanRing,bodyRing,donorMesh,THREE){
  g.computeVertexNormals();g.computeBoundingSphere();
  const mat=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.96,metalness:0});
  const strip=new THREE.SkinnedMesh(g,mat);
- strip.name='DAD_STAGE34_REAL_SCAN_TO_G9_BOUNDARY_TRIAL';
+ strip.name='DAD_STAGE37_ORIGINAL_SCAN_EDGE_G9_ONLY_SEAM_TRIAL';
  strip.position.copy(donorMesh.position);
  strip.quaternion.copy(donorMesh.quaternion);
  strip.scale.copy(donorMesh.scale);
