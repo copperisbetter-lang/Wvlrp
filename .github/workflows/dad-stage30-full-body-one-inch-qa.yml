@@ -1,0 +1,67 @@
+name: Dad Stage30 full G9 torso, genuine one-inch neck viewer QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/dad-stage30-full-g9-one-inch-neck-20261116]
+    paths:
+      - dad-stage24-viewer/stage26-two-piece-fit.js
+      - dad-stage24-viewer/stage28-recover-original-g9-neck.js
+      - dad-stage24-viewer/stage30-full-native-g9-one-inch-neck-viewer.html
+      - .github/workflows/dad-stage30-full-body-one-inch-qa.yml
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify geometry-source, body-only UI, original G9 indices and encryption
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          cp dad-stage24-viewer/stage28-recover-original-g9-neck.js /tmp/g9restore.mjs
+          node dad-stage24-viewer/stage28-native-neck-fixture.mjs
+          node dad-stage24-viewer/stage28-runtime-count-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+          p=Path('dad-stage24-viewer')
+          h=(p/'stage30-full-native-g9-one-inch-neck-viewer.html').read_text()
+          f=(p/'stage26-two-piece-fit.js').read_text()
+          n=(p/'stage28-recover-original-g9-neck.js').read_text()
+          scripts=re.findall(r'<script type="module">([\s\S]*?)</script>',h)
+          assert len(scripts)==1
+          Path('/tmp/dad30-inline.mjs').write_text(scripts[0])
+          assert 'measuredShoulderY+0.0254' in n and 'computeVertexNormals()' not in n
+          assert 'recoverActualOriginalG9ShortNeck' in f
+          assert 'const torso=body.filter(r=>r.assoc.primitives===5)' in f
+          assert "mesh.visible=false;" in f
+          assert 'setHeadVisible(false); // ESSENTIAL' in h
+          assert "cameraPreset('full');updateReadout();" in h
+          assert 'FULL Genesis 9 body' in h
+          assert '1-inch neck' in h
+          for key in ('move-head','rotate-head','move-body','rotate-body','head-toggle','body-only','head-smaller','head-larger','body-smaller','body-larger','copy-fit','save-fit','load-fit','head-coords','body-coords'):
+            assert key in h, key
+          assert not re.search(r'#[0-9a-f]{64}',h), 'Do not expose private decryption key in public viewer'
+          assert not list(p.glob('*.glb')), 'Do not publish plaintext Dad scan GLB'
+          manifest=json.loads((p/'manifest.json').read_text())
+          assert manifest['model_protected_with_AES_256_GCM'] and manifest['count']==23
+          assert len(list(p.glob('chunk-*.txt')))==23
+          print('PASS Stage30 full torso preservation by source, original-neck indices, body-only view, protected assets')
+          PY
+          node --check /tmp/dad30-inline.mjs
+      - name: Check HTTPS external viewer and original G9 neck module
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://raw.githack.com/copperisbetter-lang/Wvlrp/2cae07ad825c1d45f49aca596f9f33b7afe56537/dad-stage24-viewer"
+          curl -fL --retry 3 --retry-delay 2 --max-time 60 -sS "$BASE/stage30-full-native-g9-one-inch-neck-viewer.html" -o /tmp/dad30-live.html
+          curl -fL --retry 3 --retry-delay 2 --max-time 60 -sS "$BASE/stage28-recover-original-g9-neck.js" -o /tmp/dad30-neck.js
+          curl -fL --retry 3 --retry-delay 2 --max-time 60 -sS "$BASE/stage26-two-piece-fit.js" -o /tmp/dad30-fit.js
+          grep -q 'FULL Genesis 9 body' /tmp/dad30-live.html
+          grep -q 'measuredShoulderY+0.0254' /tmp/dad30-neck.js
+          grep -q 'recoverActualOriginalG9ShortNeck' /tmp/dad30-fit.js
+          echo "PASS: staged HTML, neck and fitter served over HTTPS"
