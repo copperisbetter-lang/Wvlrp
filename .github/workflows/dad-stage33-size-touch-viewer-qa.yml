@@ -2,7 +2,7 @@ name: Dad Stage33 original head visible and full G9 body viewer QA
 on:
   push:
     branches:
-      - feature/dad-stage33-head-visible-touch-20261116
+      - feature/dad-stage33-separate-head-body-size-touch-20261116
     paths:
       - 'dad-stage24-viewer/stage33-head-body-size-touch-viewer.html'
       - '.github/workflows/dad-stage33-size-touch-viewer-qa.yml'
