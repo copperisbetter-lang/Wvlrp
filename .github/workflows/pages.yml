@@ -108,7 +108,7 @@ jobs:
           PY
       - name: Prepare approved Beverly game asset
         run: |
-          cat world-creator/base-camp/beverly-asset/Beverly.glb.b64.part* | base64 --decode > world-creator/base-camp/Beverly-approved-dressed.glb
+          cat world-creator/base-camp/beverly-asset/Beverly.glb.b64.part[0-9][0-9] | base64 --decode > world-creator/base-camp/Beverly-approved-dressed.glb
           echo 'fc55a17bb9c228ecc1a2a3f24ccd5e3a4ec26a987cb2ffe123ce00d12530a7fc  world-creator/base-camp/Beverly-approved-dressed.glb' | sha256sum --check
       - name: Confirm Stacey FPS diagnostic is included in the published files
         run: |
