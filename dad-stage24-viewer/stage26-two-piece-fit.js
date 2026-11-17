@@ -52,7 +52,7 @@ export function prepareTwoPieceFit(gltf, THREE, protectedModelRaw) {
   const topShoulder=shoulderYs[Math.floor(.96*(shoulderYs.length-1))];
   // Stage24 destroyed the original G9 neck INDEX reference, not its original
   // index buffer. Recover the authentic 972 native neck faces from the encrypted
-  // model itself; clip the real mesh only 4 mm above actual shoulder height.
+  // model itself; clip the real mesh exactly 25.4 mm (1 inch) above actual shoulder height.
   const recoveredStump=recoverActualOriginalG9ShortNeck(protectedModelRaw,neck[0].mesh,topShoulder,THREE);
   const cutY=recoveredStump.cutoffY;
   const cutReport=[];
