@@ -45,7 +45,7 @@ jobs:
              'data-mode="size-head"','data-mode="size-body"',
              'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
              'id="head-coords"','id="body-coords"','id="copy-fit"','id="save-fit"',
-             'id="load-fit"','id="reset-parts"','window.__DAD_STAGE35_READY=true', 'window.__DAD_STAGE35_ANALYSIS',
+             'id="load-fit"','id="reset-parts"','window.__DAD_STAGE36_READY=true', 'window.__DAD_STAGE36_ANALYSIS',
           ]:
              assert item in html, f'Missing owner controls: {item}'
           for item in [
