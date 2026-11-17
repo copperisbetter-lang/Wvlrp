@@ -1,0 +1,61 @@
+name: Dad Stage29 minimal authentic G9 neck public QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/dad-stage29-minimal-real-g9-stump-20261116]
+    paths:
+      - dad-stage24-viewer/stage26-two-piece-fit.js
+      - dad-stage24-viewer/stage28-recover-original-g9-neck.js
+      - dad-stage24-viewer/stage29-short-original-g9-neck-viewer.html
+      - .github/workflows/dad-stage29-original-neck-qa.yml
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax, genuine indexed-neck and no-overcut preservation checks
+        run: |
+          set -euo pipefail
+          node --check dad-stage24-viewer/stage26-two-piece-fit.js
+          node --check dad-stage24-viewer/stage28-recover-original-g9-neck.js
+          node dad-stage24-viewer/stage28-native-neck-fixture.mjs
+          node dad-stage24-viewer/stage28-runtime-count-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          r=Path('dad-stage24-viewer')
+          html=(r/'stage29-short-original-g9-neck-viewer.html').read_text()
+          body=(r/'stage26-two-piece-fit.js').read_text()
+          neck=(r/'stage28-recover-original-g9-neck.js').read_text()
+          m=re.findall(r'<script type="module">([\s\S]+?)</script>',html)
+          assert len(m)==1
+          Path('/tmp/dad29-inline.mjs').write_text(m[0])
+          assert 'const cutY=measuredShoulderY+0.004' in neck
+          assert 'const defaultHeadOffsetY=0' in body
+          assert 'recoverActualOriginalG9ShortNeck' in body
+          assert 'originalIndices' in neck
+          assert 'Stage 29' in html
+          for label in ('move-head','rotate-head','move-body','rotate-body','head-smaller','head-larger','body-smaller','body-larger','copy-fit','save-fit','load-fit','head-coords','body-coords'):
+            assert label in html,label
+          assert not list(r.glob('*.glb')), 'Never publish unencrypted model'
+          d=json.loads((r/'manifest.json').read_text())
+          assert d['model_protected_with_AES_256_GCM'] and len(list(r.glob('chunk-*.txt')))==d['count']==23
+          print('Static geometry-source, UI control, protected asset and no-auto-head-shift checks PASS')
+          PY
+          node --check /tmp/dad29-inline.mjs
+      - name: HTTPS host serves new viewer and current neck module
+        run: |
+          set -euo pipefail
+          BASE=https://raw.githack.com/copperisbetter-lang/Wvlrp/ad4b1a3f5c5059f89c468f65bd17a4835768d6e1/dad-stage24-viewer
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 90 "$BASE/stage29-short-original-g9-neck-viewer.html" -o /tmp/dad29-viewer.html
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 90 "$BASE/stage28-recover-original-g9-neck.js" -o /tmp/dad29-neck.js
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 90 "$BASE/stage26-two-piece-fit.js" -o /tmp/dad29-fit.js
+          grep -q 'Stage29' /tmp/dad29-viewer.html
+          grep -q 'measuredShoulderY+0.004' /tmp/dad29-neck.js
+          grep -q 'defaultHeadOffsetY=0' /tmp/dad29-fit.js
+          node --check /tmp/dad29-neck.js
+          node --check /tmp/dad29-fit.js
+          echo 'Public new viewer HTML and modules served with expected current code'
