@@ -261,7 +261,16 @@ export function attemptMeasuredSurgery(fit,gltf,THREE){
   const plane=mesh.worldToLocal(donorPoint.clone()).y;
   const bounds=mesh.geometry.boundingBox||(mesh.geometry.computeBoundingBox(),mesh.geometry.boundingBox);
   if(plane<bounds.min.y+.004||plane>bounds.max.y-.08)continue;
-  const res=clipScanGeometry(mesh,plane,THREE);
+  // Multiple photographic primitives can include hair, eyes and eyelashes.
+  // Only lower-neck components that actually intersect this plane are cut.
+  // Do not fail the entire surgery merely because a protected face material
+  // has no faces anywhere near the lower attachment plane.
+  let res;
+  try{res=clipScanGeometry(mesh,plane,THREE);}
+  catch(e){
+    if(String(e.message||e).includes('No safe original Dad lower-neck intersection'))continue;
+    throw e;
+  }
   candidates.push({mesh,res,plane});
  }
  if(!candidates.length)throw Error('Dad scan has no safe lower-neck cut plane');
