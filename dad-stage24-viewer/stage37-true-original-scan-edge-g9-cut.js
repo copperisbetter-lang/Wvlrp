@@ -282,7 +282,6 @@ export function clipNativeG9ToActualDadScanEdge(nativeNeck,scanLoop,THREE){
    G9outputFaces:outputTriangles,nativeG9CutEdges:edges.length,
    G9originalTorsoPrimitivesEdited:false,originalPhotoScanEdited:false}};
 }
-function emit(data,v){for(const key of Object.keys(data)){const a=v.attrs[key];if(!a)throw Error('Native attribute disappeared: '+key);data[key].push(...a);}}
 export function measureActual3DEdgeGap(scanLoop,bodyLoop,samples=192){
  const center={x:(scanLoop.cx+bodyLoop.cx)/2,z:(scanLoop.cz+bodyLoop.cz)/2};
  const sa=angular(scanLoop,center),ba=angular(bodyLoop,center);
