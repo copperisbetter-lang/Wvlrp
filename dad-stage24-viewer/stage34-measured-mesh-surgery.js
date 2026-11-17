@@ -106,7 +106,7 @@ function topNativeNeckSegments(mesh,plane){
  if(res.length<12)throw Error('Original G9 stump has no measurable top edge');
  return res;
 }
-function getLoops(segments,referenceCenter){
+export function getLoops(segments,referenceCenter){
  const nodes=new Map(),edges=new Map();
  for(const [a,b] of segments){
   const ka=key(a),kb=key(b);if(ka===kb)continue;
@@ -151,7 +151,7 @@ function angular(loop,origin){
  if(filtered.length<12)throw Error('Measured contour cannot be sorted into a valid ring');
  return filtered;
 }
-function interpolateRing(ring,angle){
+export function interpolateRing(ring,angle){
  const target=(angle+TWOPI)%TWOPI;
  let i=ring.findIndex(p=>p.angle>target);
  if(i<0)i=ring.length;
