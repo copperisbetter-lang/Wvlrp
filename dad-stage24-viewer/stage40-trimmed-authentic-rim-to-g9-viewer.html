@@ -30,7 +30,12 @@ button:focus-visible{outline:2px solid #fff}button:disabled{opacity:.4}
 </head><body>
 <header><div><h1>Dad — original head + resected shoulder seam</h1><small>Actual scanned shoulder edge trimmed · original Dad face/beard/upper neck preserved</small></div><small id="header-state">Stage 40 · scan edge resection</small></header>
 <main>
-<div id="view"><div id="status" role="status">Loading Dad’s original head and full G9 body…</div><div id="hint">Stage40 · photographed ragged lower shell removed locally, matched to genuine G9</div></div>
+<div id="view"><div id="status" role="status">Loading Dad’s original head and full G9 body…</div><div id="hint">Stage40 · photographed ragged lower shell removed locally, matched to genuine G9</div><div id="key-import" hidden style="position:absolute;z-index:6;top:65px;left:12px;right:12px;max-width:600px;background:#182c42;border:1px solid #8499b1;border-radius:8px;padding:12px;box-shadow:0 5px 16px #0009">
+<strong>Open your private Stage 40 model</strong>
+<p style="font-size:12px;line-height:1.4">Your earlier Dad viewer already has the private model access code in its full link. Copy that working link from the phone browser, paste it below, and tap Open Stage 40. The access code stays in this browser and is not posted to GitHub.</p>
+<input id="previous-link" aria-label="Previous private Dad viewer link" type="text" spellcheck="false" autocomplete="off" placeholder="Paste your existing complete Dad viewer link here" style="font:12px system-ui;width:100%;padding:10px;border:1px solid #7894b3;border-radius:5px;background:#071522;color:#fff">
+<div class="buttons" style="margin-top:8px"><button id="key-open">Open Stage 40</button><button id="key-paste">Paste clipboard and open</button></div>
+<div id="key-error" class="small" role="status"></div></div></div>
 <aside>
 <section><h2>Stage 40 · trim original scan rim + contact G9</h2>
 <div class="buttons"><button id="apply-surgery">Rebuild trimmed seam</button><button id="undo-surgery">Undo ALL changes</button></div>
@@ -130,7 +135,22 @@ function endPointer(e){pointerMap.delete(e.pointerId);if(pointerMap.size<2){oldP
 async function start(){
  try{
   const fragment=location.hash.slice(1).trim();
-  if(!/^[a-fA-F0-9]{64}$/.test(fragment))throw Error('Private access key missing. Open the complete viewer link.');
+  if(!/^[a-fA-F0-9]{64}$/.test(fragment)){
+    const panel=document.querySelector('#key-import'),entry=document.querySelector('#previous-link');
+    panel.hidden=false;setStatus('Private Dad model key is needed. Use your previously working Dad viewer link below.');
+    const useOldUrl=(value)=>{
+      const text=String(value||'').trim();
+      const match=text.match(/(?:^|#)([a-fA-F0-9]{64})$/);
+      if(!match){document.querySelector('#key-error').textContent='That link does not contain the private 64-character model access fragment. Copy the FULL working viewer address.';return;}
+      location.hash=match[1];location.reload();
+    };
+    document.querySelector('#key-open').onclick=()=>useOldUrl(entry.value);
+    document.querySelector('#key-paste').onclick=async()=>{
+      try{entry.value=await navigator.clipboard.readText();useOldUrl(entry.value);}
+      catch(e){document.querySelector('#key-error').textContent='Clipboard permission unavailable. Paste your old working link into the field instead.';}
+    };
+    return;
+  }
   const key=Uint8Array.from(fragment.match(/../g),h=>parseInt(h,16));
   const response=await fetch('./manifest.json',{cache:'no-store'});
   if(!response.ok)throw Error('Encrypted manifest HTTP '+response.status);
