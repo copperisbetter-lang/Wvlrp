@@ -5,7 +5,7 @@ on:
       - feature/dad-stage35-adaptive-real-neck-contour-20261116
     paths:
       - 'dad-stage24-viewer/stage35-*'
-      - '.github/workflows/dad-stage35-contour-surgery-public-qa.yml'
+      - '.github/workflows/dad-stage35-adaptive-real-neck-public-qa.yml'
   workflow_dispatch:
 jobs:
   public-only-source-and-host:
@@ -45,7 +45,7 @@ jobs:
              'data-mode="size-head"','data-mode="size-body"',
              'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
              'id="head-coords"','id="body-coords"','id="copy-fit"','id="save-fit"',
-             'id="load-fit"','id="reset-parts"','window.__DAD_STAGE34_READY=true',
+             'id="load-fit"','id="reset-parts"','window.__DAD_STAGE35_READY=true', 'window.__DAD_STAGE35_ANALYSIS',
           ]:
              assert item in html, f'Missing owner controls: {item}'
           for item in [
