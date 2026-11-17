@@ -55,5 +55,5 @@ assert(result.stats.bridgeTriangles>0,'Open seam not bridged');
 result.restore();
 assert.equal(originalDad.geometry,scanOriginal,'Original approved head was changed on restore');
 assert.equal(nativeG9.geometry,neckOriginal,'Undo did not restore original G9 neck geometry');
-assert.equal(scene.getObjectByName('DAD_STAGE34_REAL_SCAN_TO_G9_BOUNDARY_TRIAL'),undefined,'Stitched trial not removed');
+assert.equal(scene.getObjectByName('DAD_STAGE37_ORIGINAL_SCAN_EDGE_G9_ONLY_SEAM_TRIAL'),undefined,'Stitched trial not removed');
 console.log('PASS Stage37: original 72-point scan ring untouched, genuine G9 neck clipped along varying Y(angle), small measured 3D gap bridged, full Undo restores native donor.');
