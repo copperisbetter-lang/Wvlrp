@@ -1,0 +1,78 @@
+name: Dad Stage40 resected genuine scan lower rim public QA
+on:
+  push:
+    branches:
+      - feature/dad-stage40-scan-rim-resection-20261117
+    paths:
+      - 'dad-stage24-viewer/stage40-*'
+      - '.github/workflows/dad-stage40-scan-resection-public-qa.yml'
+  workflow_dispatch:
+jobs:
+  synthetic-scan-resection-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            dad-stage24-viewer/stage40-measured-scan-rim-resection.js
+            dad-stage24-viewer/stage40-trimmed-authentic-rim-to-g9-viewer.html
+            dad-stage24-viewer/stage40-scan-rim-qa.mjs
+            dad-stage24-viewer/stage28-recover-original-g9-neck.js
+            dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Syntax and original controls preserved
+        run: |
+          node --check dad-stage24-viewer/stage40-measured-scan-rim-resection.js
+          node --check dad-stage24-viewer/stage40-scan-rim-qa.mjs
+          node dad-stage24-viewer/stage31-neck-guard-fixture.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          page=Path('dad-stage24-viewer/stage40-trimmed-authentic-rim-to-g9-viewer.html').read_text()
+          src=Path('dad-stage24-viewer/stage40-measured-scan-rim-resection.js').read_text()
+          for marker in [
+             'import {attemptStage40ScanRimResection}',
+             'id="apply-surgery"','id="undo-surgery"','id="surgery-state"',
+             'data-mode="move-head"','data-mode="rotate-head"',
+             'data-mode="move-body"','data-mode="rotate-body"',
+             'data-mode="size-head"','data-mode="size-body"',
+             'id="head-smaller"','id="head-larger"','id="body-smaller"','id="body-larger"',
+             'id="head-coords"','id="body-coords"',
+             'id="copy-fit"','id="save-fit"','id="load-fit"','id="reset-parts"',
+             'window.__DAD_STAGE40_READY=true',
+          ]: assert marker in page, 'Stage40 missing control: '+marker
+          for marker in [
+             'stage40CutLowerShell','stage40BuildMatchedSeam','attemptStage40ScanRimResection',
+             'realOriginalScanEdge','clipNativeG9ToActualDadScanEdge',
+             'measureNativeSurfaceContact','originalGen9TorsoGeometryUnchanged:true',
+             'originalSourceGLBUnchanged:true','watertightWeldCertified:false',
+             'originalNeck','originalScan','originalTorso',
+          ]: assert marker in src, 'Stage40 missing geometry safety gate: '+marker
+          mod=re.search(r'<script type="module">([\s\S]*?)</script>',page)
+          assert mod
+          Path('/tmp/stage40-ui.mjs').write_text(mod.group(1))
+          print('PASS Stage40: owner touch controls and immutable original/Undo gates present.')
+          PY
+          node --check /tmp/stage40-ui.mjs
+      - name: Real ThreeJS synthetic cut / G9 donor geometry and full Undo
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund three@0.164.1
+          node dad-stage24-viewer/stage40-scan-rim-qa.mjs
+      - name: Verify public HTTPS viewer and encrypted source manifest (not model plaintext)
+        run: |
+          BASE="https://raw.githack.com/copperisbetter-lang/Wvlrp/$GITHUB_SHA/dad-stage24-viewer"
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/stage40-trimmed-authentic-rim-to-g9-viewer.html" -o /tmp/dad40.html
+          grep -q 'Stage40' /tmp/dad40.html
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/stage40-measured-scan-rim-resection.js" -o /tmp/dad40.js
+          grep -q 'stage40CutLowerShell' /tmp/dad40.js
+          curl -fsSL --retry 3 --retry-delay 2 "$BASE/manifest.json" -o /tmp/dad40manifest.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/dad40manifest.json'))
+          assert j['model_protected_with_AES_256_GCM'] is True
+          assert j['count']==23
+          print('PASS Stage40: original 23-part protected encrypted model manifest present; NO plaintext scan hosted.')
+          PY
