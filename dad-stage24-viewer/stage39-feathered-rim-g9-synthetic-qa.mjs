@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
-const src=readFileSync(new URL('./stage39-real-neck-and-shoulder-surface-contacts.js',import.meta.url),'utf8');
+const src=readFileSync(new URL('./stage39-true-scan-edge-feathered-fit.js',import.meta.url),'utf8');
 const {realOriginalScanEdge,clipNativeG9ToActualDadScanEdge,measureNativeSurfaceContact,attemptTrueScanEdgeDonorOnlyFit}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
 const N=72,skin=new THREE.Skeleton([new THREE.Bone()]),scene=new THREE.Scene();
 function cylinder(r,baseY,topY,skinName){
@@ -33,7 +33,7 @@ function cylinder(r,baseY,topY,skinName){
 const originalDad=cylinder(.104,t=>1.5+.015*Math.sin(t+.4),()=>1.72,'Synthetic_Dad_Scan');
 const nativeG9=cylinder(.095,()=>1.44,()=>1.54,'Synthetic_Native_G9_Neck');
 const nativeTorso=cylinder(.11,()=>1.38,()=>1.52,'Synthetic_Unmodified_G9_Torso_Sides');
-const scanOriginal=originalDad.geometry,neckOriginal=nativeG9.geometry,torsoOriginal=nativeTorso.geometry;
+const scanOriginal=originalDad.geometry,scanMaterialOriginal=originalDad.material,neckOriginal=nativeG9.geometry,torsoOriginal=nativeTorso.geometry;
 const outline=realOriginalScanEdge([originalDad],THREE,{x:0,z:-.034});
 assert.equal(outline.stats.scannedLowerEdgeVertices,N);
 assert.equal(originalDad.geometry,scanOriginal);
@@ -63,7 +63,7 @@ const mock={vertexShader:'#include <common>\n#include <begin_vertex>',fragmentSh
 originalDad.material.onBeforeCompile(mock,{});
 assert(mock.vertexShader.includes('attribute float rimBlend'));
 assert(mock.fragmentShader.includes('mix(diffuseColor.rgb,vRimG9Color'));
-assert.notEqual(originalDad.material,scanOriginal.material,'Scan material should be locally blended');
+assert.notEqual(originalDad.material,scanMaterialOriginal,'Scan original material should be cloned for local color blending');
 assert.notEqual(nativeG9.geometry,neckOriginal,'Real native donor cut did not apply');
 assert(result.stats.donorSurfaceContactMM.p95MM<25,'Authentic-source edge and trimmed G9 should be near');
 assert(result.stats.donorSurfaceContactMM.maxMM<38);
