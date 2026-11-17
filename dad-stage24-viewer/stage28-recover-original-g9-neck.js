@@ -127,7 +127,7 @@ function clipToShortNeck(originalGeom,originalIndices,yMax,THREE) {
     const componentType=name==='skinIndex'?THREE.Uint16BufferAttribute:THREE.Float32BufferAttribute;
     result.setAttribute(name,new componentType(arr,itemSize));
   }
-  result.computeVertexNormals();
+  // Keep original native G9 vertex normals; flat recomputation would introduce new artificial shading seams.
   result.computeBoundingBox();result.computeBoundingSphere();
   return {geometry:result,stats:{originalNativeNeckFaces:972,remainingNativeFaces:faces,cutNativeFaces:whollyRemoved,partiallyClippedNativeFaces:clipped,originalFacesStillIntact:kept,topBoundaryWidthMM:Number.isFinite(cutMinX)?(cutMaxX-cutMinX)*1000:null}};
 }
@@ -136,8 +136,8 @@ export function recoverActualOriginalG9ShortNeck(raw,oldNeckMesh,measuredShoulde
   const pos=oldNeckMesh.geometry.getAttribute('position');
   if(!pos || !oldNeckMesh.isSkinnedMesh)throw Error('Native skinned neck geometry is unavailable.');
   const {index:oldAccessor,indices}=locateOriginalNeckIndices(raw,oldNeckMesh.geometry);
-  const cutY=measuredShoulderY+0.004; // retain only 4 mm of genuine G9 neck above measured shoulder; no added geometry
-  if(cutY<1.455||cutY>1.54) throw Error('Shoulder height outside native G9 anatomical range; refusing a destructive cut: '+cutY.toFixed(4));
+  const cutY=measuredShoulderY+0.0254; // EXACT 1 inch (25.4 mm) of genuine Genesis9 neck above measured shoulders
+  if(cutY<1.40||cutY>1.70) throw Error('Measured neck plane outside native Genesis9 model dimensions: '+cutY.toFixed(4));
   const {geometry,stats}=clipToShortNeck(oldNeckMesh.geometry,indices,cutY,THREE);
   const restored=new THREE.SkinnedMesh(geometry,oldNeckMesh.material);
   restored.name='GENESIS9_ORIGINAL_972_FACE_NECK_SHORT_STUMP';
