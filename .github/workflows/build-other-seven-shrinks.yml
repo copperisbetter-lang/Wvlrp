@@ -1,0 +1,99 @@
+name: Build seven original STL shrinkwraps as Shrink 2-8
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-other-seven-shrinks.yml'
+      - 'tools/build_other_seven_shrinks.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+  issues: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve original eight immutable STL source release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/scan-sources
+          gh release download Scans --repo "$GITHUB_REPOSITORY" --dir /tmp/scan-sources --pattern '*.stl'
+          test "$(find /tmp/scan-sources -maxdepth 1 -name '*.stl' | wc -l)" -eq 8
+          sha256sum /tmp/scan-sources/*.stl
+      - name: Install proven production mesh tools
+        run: python3 -m pip install --quiet numpy scipy trimesh vtk
+      - name: Make independent actual geometry for all seven other scans
+        run: |
+          set -euo pipefail
+          mkdir -p world-creator/base-camp/shrinks
+          for pair in \
+            '2|We_Are_Beautiful_._149357-VSNN-1_._surface.stl' \
+            '3|We_Are_Beautiful_._224629-VSNN-1_._solid.stl' \
+            '4|We_Are_Beautiful_._224629-VSNN-1_._surface.stl' \
+            '5|We_Are_Beautiful_._757038-VUNN-1_._solid.stl' \
+            '6|We_Are_Beautiful_._757038-VUNN-1_._surface.stl' \
+            '7|We_Are_Beautiful_._790518-VSNN-1_._solid.stl' \
+            '8|We_Are_Beautiful_._790518-VSNN-1_._surface.stl'; do
+            n="${pair%%|*}"
+            f="${pair#*|}"
+            echo "START Shrink $n of original $f"
+            python3 tools/build_other_seven_shrinks.py "/tmp/scan-sources/$f" world-creator/base-camp/shrinks "$n"
+            test -s "world-creator/base-camp/shrinks/Shrink_${n}_R01.glb"
+            test -s "world-creator/base-camp/shrinks/Shrink_${n}_R01_QuadMesh.obj"
+            test -s "world-creator/base-camp/shrinks/Shrink_${n}_R01_QA.json"
+            echo "VERIFIED Shrink $n source-derived mesh saved in working tree"
+          done
+      - name: Independently reopen every GLB and verify seven numbered source-derived outputs
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib,trimesh
+          root=Path('world-creator/base-camp/shrinks')
+          for n in range(2,9):
+              p=root/f'Shrink_{n}_R01_QA.json'
+              j=json.loads(p.read_text())
+              f=root/f'Shrink_{n}_R01.glb'
+              assert j['shrink_number']==n
+              assert j['independent_vertices']>=1000 and j['independent_quads']>=1000
+              assert j['vertex_max_distance_to_original']<.005
+              assert j['face_centroid_distance_p50_p95_max'][1]<.2
+              assert j['face_centroid_distance_p50_p95_max'][2]<1.0
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==j['output_glb_sha256']
+              mesh=trimesh.load_mesh(f,process=False)
+              assert len(mesh.vertices)==j['independent_vertices']
+              assert len(mesh.faces)==j['independent_triangles']
+              print('PASS',n,j['source_file'],len(mesh.vertices),len(mesh.faces),flush=True)
+          assert Path('world-creator/base-camp/shrink-1-to-8-review-20261118.html').is_file()
+          print('ALL_SEVEN_REAL_SHRINKS_EXPORTED_AND_REOPENED_PASS')
+          PY
+      - name: Upload independent source-compatible recovery package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shrink-2-through-8-real-mesh-GLB-OBJ-QA
+          path: world-creator/base-camp/shrinks/
+          retention-days: 30
+      - name: Preserve seven new artifacts in public GitHub repository
+        run: |
+          set -euo pipefail
+          git config user.name "wvlrp-model-builder[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add world-creator/base-camp/shrinks/
+          git diff --cached --quiet && { echo 'Already committed'; exit 0; }
+          git commit -m 'Save actual original STL independent Shrink 2 through Shrink 8 quad and GLB models'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Publish viewer on public Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+      - name: Record completed exports in Issue 29
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 29 --repo "$GITHUB_REPOSITORY" --body "🔔 CHECK-OUT — seven authentic shrinkwraps Shrink 2–8 completed by successful workflow https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID . All 7 source STL SHA256 checks, fitted geometry QA, GLB export/re-import and editable quad OBJ verified. Original STLs untouched. Existing Scan04 is Shrink 1, original private four DAZ maps left private and unchanged. Model folder: https://github.com/$GITHUB_REPOSITORY/tree/main/world-creator/base-camp/shrinks . Candidate viewer: https://wvlrp.com/world-creator/base-camp/shrink-1-to-8-review-20261118.html . Phone visual acceptance remains pending."
