@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>WVLRP — Eight Scans • Natural Skin Texture</title>
+<style>
+:root{font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;color:#f5f7fc;background:#101827;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;display:flex;flex-direction:column;min-height:100dvh}
+header{padding:13px 15px 7px;text-align:center}h1{font-size:20px;margin:2px 0 4px}
+p{margin:4px 0;color:#c2cada;font-size:13px}
+#panel{padding:8px 12px 10px;display:flex;flex-direction:column;gap:8px}
+#scanCount{text-align:center;font-weight:800;letter-spacing:.07em;font-size:17px}
+#scanName{font-size:12px;color:#aab9d3;text-align:center;overflow-wrap:anywhere;min-height:2.6em}
+nav{display:flex;gap:10px}button{font:inherit;border:1px solid #57688a;border-radius:12px;background:#243856;color:white;min-height:46px;padding:9px 12px;touch-action:manipulation}
+button.primary{background:#3169b1;font-size:17px;font-weight:700;flex:1}
+button:disabled{opacity:.5}.btnline{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.btnline button{font-size:13px;padding:8px 10px;min-height:40px}
+#viewport{position:relative;flex:1;min-height:290px;background:radial-gradient(circle at center,#263345 0%,#111a28 80%);overflow:hidden}
+#viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:absolute;left:9px;top:9px;right:9px;border-radius:8px;background:#1c2838e6;color:#fff;text-align:center;padding:8px 12px;font-size:13px;pointer-events:none}
+#status[hidden]{display:none}#help{text-align:center;font-size:12px;color:#b5bfd2;padding:8px}
+#download{color:#b9d6ff;font-size:12px;text-align:center}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head><body>
+<header><h1>WVLRP • 3D Skin-Textured Scans</h1><p>One scan at a time • Original geometry preserved • 8 files</p></header>
+<main id="viewport"><div id="status" role="status" aria-live="polite">Starting viewer…</div></main>
+<section id="panel">
+ <div id="scanCount">SCAN 01 / 08</div>
+ <div id="scanName">Preparing first original scan…</div>
+ <nav><button id="prev" class="primary" type="button">◀ Previous</button><button id="next" class="primary" type="button">Next ▶</button></nav>
+ <div class="btnline">
+   <button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button>
+   <button type="button" data-view="left">Left</button><button type="button" data-view="right">Right</button>
+   <button type="button" data-view="top">Top</button><button type="button" data-view="bottom">Bottom</button>
+   <button id="reset" type="button">Find model</button><button id="detail" type="button" aria-pressed="true">Skin detail: High</button>
+ </div>
+ <div id="download">Original file: <a id="original" target="_blank" rel="noopener noreferrer">open the matching STL</a></div>
+</section>
+<footer id="help">Drag to rotate • Pinch to zoom • Skin detail changes appearance only. Procedural skin shading; source STL files lack photographic textures. Originals preserved.</footer>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+const files = ["We_Are_Beautiful_._149357-VSNN-1_._surface.stl","We_Are_Beautiful_._224629-VSNN-1_._solid.stl","We_Are_Beautiful_._224629-VSNN-1_._surface.stl","We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl","We_Are_Beautiful_._757038-VUNN-1_._solid.stl","We_Are_Beautiful_._757038-VUNN-1_._surface.stl","We_Are_Beautiful_._790518-VSNN-1_._solid.stl","We_Are_Beautiful_._790518-VSNN-1_._surface.stl"];
+const base = './we-are-beautiful-scans/';
+let index = 0, mesh = null, radius = 1, loading = false, epoch = 0;
+const panel = document.getElementById('viewport'), status = document.getElementById('status');
+const count = document.getElementById('scanCount'), name = document.getElementById('scanName');
+const prev = document.getElementById('prev'), next = document.getElementById('next');
+const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'default'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setClearColor(0x000000,0);
+panel.appendChild(renderer.domElement);
+const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(50,1,.01,20000);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=false;controls.enablePan=false;controls.rotateSpeed=0.42;controls.zoomSpeed=0.65;
+controls.addEventListener('change',render);
+scene.add(new THREE.HemisphereLight(0xfff1e9,0x504b53,1.35));
+const lamp1=new THREE.DirectionalLight(0xfff3ec,2.1);lamp1.position.set(5,6,9);scene.add(lamp1);
+const lamp2=new THREE.DirectionalLight(0xffe4db,0.8);lamp2.position.set(-7,-3,-6);scene.add(lamp2);
+
+/* UV-free 3D procedural skin pigment and texture; STL geometry is unchanged. */
+function makeSkinNoiseVolume(){
+ const size=48, data=new Uint8Array(size*size*size);
+ let seed=0x6b8b4567;
+ for(let i=0;i<data.length;i++){
+   seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;
+   data[i]=Math.floor((seed>>>0)/4294967296*256);
+ }
+ const tex=new THREE.Data3DTexture(data,size,size,size);
+ tex.format=THREE.RedFormat;tex.type=THREE.UnsignedByteType;
+ tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;
+ tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;tex.wrapR=THREE.RepeatWrapping;
+ tex.unpackAlignment=1;tex.needsUpdate=true;
+ return tex;
+}
+const skinVolume=makeSkinNoiseVolume();
+const skinDetail={value:1.0};
+const detailButton=document.getElementById('detail');
+detailButton.addEventListener('click',()=>{
+ const high=skinDetail.value<.9;
+ skinDetail.value=high?1.0:.38;
+ detailButton.textContent='Skin detail: '+(high?'High':'Soft');
+ detailButton.setAttribute('aria-pressed',String(high));
+ render();
+});
+function makeSkinMaterial(scanRadius){
+ const mat=new THREE.MeshPhysicalMaterial({
+   color:0xc99b89,metalness:0,roughness:.77,clearcoat:0.045,
+   clearcoatRoughness:.9,side:THREE.DoubleSide
+ });
+ mat.onBeforeCompile=shader=>{
+   shader.uniforms.uScanSkinNoise={value:skinVolume};
+   shader.uniforms.uScanInvRadius={value:1/scanRadius};
+   shader.uniforms.uScanDetail=skinDetail;
+   shader.vertexShader=shader.vertexShader
+    .replace('#include <common>', '#include <common>\nuniform float uScanInvRadius;\nvarying vec3 vScanSkinPos;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvScanSkinPos = position * uScanInvRadius;');
+   shader.fragmentShader=shader.fragmentShader
+    .replace('#include <common>', '#include <common>\nuniform sampler3D uScanSkinNoise;\nuniform float uScanDetail;\nvarying vec3 vScanSkinPos;')
+    .replace('#include <color_fragment>', '#include <color_fragment>\n      float slowTone=texture(uScanSkinNoise,vScanSkinPos*1.12+vec3(.218,.417,.701)).r;\n      float midTone=texture(uScanSkinNoise,vScanSkinPos*7.8+vec3(.713,.119,.353)).r;\n      float pores=texture(uScanSkinNoise,vScanSkinPos*77.0+vec3(.463,.813,.227)).r;\n      float flushed=smoothstep(.22,.78,slowTone);\n      vec3 warmTint=mix(vec3(1.025,1.005,.985),vec3(1.085,.915,.915),flushed);\n      float mottling=1.0+uScanDetail*(.20*(midTone-.5)+.065*(pores-.5));\n      diffuseColor.rgb*=mix(vec3(1.0),warmTint,uScanDetail)*mottling;')
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n      roughnessFactor=clamp(roughnessFactor+.12*uScanDetail*(midTone-.5),.65,.9);');
+ };
+ mat.customProgramCacheKey=()=> 'wvlrp-natural-skin-volume-v1';
+ return mat;
+}
+
+function render(){renderer.render(scene,camera)}
+function resize(){
+ const w=panel.clientWidth||320,h=panel.clientHeight||300;
+ camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);render();
+}
+new ResizeObserver(resize).observe(panel);
+window.addEventListener('orientationchange',resize);
+function displayStatus(msg){status.hidden=!msg;status.textContent=msg||''}
+function view(which){
+ const d=Math.max(radius*2.9,.01);
+ const dirs={front:[0,0,1],back:[0,0,-1],left:[-1,0,0],right:[1,0,0],top:[0,1,0],bottom:[0,-1,0]};
+ const v=dirs[which]||dirs.front;
+ camera.position.set(v[0]*d,v[1]*d,v[2]*d);
+ camera.up.set(0,0,which==='top'?-1:1);
+ if(which==='bottom')camera.up.set(0,0,1);
+ if(which!=='top'&&which!=='bottom')camera.up.set(0,1,0);
+ camera.near=Math.max(radius/1000,.001);camera.far=Math.max(radius*1000,100);
+ camera.updateProjectionMatrix();controls.target.set(0,0,0);
+ controls.minDistance=radius*.65;controls.maxDistance=radius*9;
+ camera.lookAt(0,0,0);controls.update();render();
+}
+function swapIndex(newIndex){
+ if(loading)return;index=(newIndex+files.length)%files.length;load();
+}
+async function load(){
+ loading=true;const ticket=++epoch;
+ prev.disabled=next.disabled=true;
+ const file=files[index],num=String(index+1).padStart(2,'0');
+ count.textContent='SCAN '+num+' / 08';
+ name.textContent=file;
+ const original='https://github.com/copperisbetter-lang/Wvlrp/releases/download/Scans/'+encodeURIComponent(file);
+ const link=document.getElementById('original');link.href=original;link.textContent='Download scan '+num;
+ displayStatus('Loading scan '+num+'… this may take a moment for the larger files.');
+ try{
+   const response=await fetch(base+encodeURIComponent(file));
+   if(!response.ok)throw new Error('HTTP '+response.status+' — scan file unavailable on this site');
+   const data=await response.arrayBuffer();
+   if(data.byteLength<84)throw new Error('STL file was empty or incomplete');
+   const geometry=new STLLoader().parse(data);
+   if(!geometry.attributes.position || geometry.attributes.position.count<3)throw new Error('STL contains no triangles');
+   geometry.computeBoundingBox();
+   const bounds=geometry.boundingBox;
+   const center=bounds.getCenter(new THREE.Vector3());geometry.translate(-center.x,-center.y,-center.z);
+   geometry.computeBoundingSphere();
+   const newRadius=geometry.boundingSphere.radius;
+   if(!Number.isFinite(newRadius)||newRadius<=0)throw new Error('Invalid STL bounds');
+   const material=makeSkinMaterial(newRadius);
+   const replacement=new THREE.Mesh(geometry,material);
+   if(ticket!==epoch){geometry.dispose();material.dispose();return;}
+   if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();}
+   mesh=replacement;scene.add(mesh);radius=newRadius;
+   view('front');displayStatus('');
+ }catch(error){displayStatus('Could not load scan '+num+': '+(error&&error.message||error));}
+ finally{loading=false;prev.disabled=next.disabled=false;render();}
+}
+prev.addEventListener('click',()=>swapIndex(index-1));
+next.addEventListener('click',()=>swapIndex(index+1));
+document.getElementById('reset').addEventListener('click',()=>view('front'));
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>view(btn.dataset.view)));
+resize();load();
+</script></body></html>
