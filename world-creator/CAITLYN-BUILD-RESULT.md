@@ -1,6 +1,6 @@
 # Caitlyn latest automated builder result
 
-Source GitHub SHA: `1e428daa6ce6c64212740abcdae1424d26955aa7`
+Source GitHub SHA: `10629e8c9261496b60477e9add7429aaf9169d40`
 
 Workflow status before QA report: **cancelled**
 
