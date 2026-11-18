@@ -1,0 +1,44 @@
+{
+  "shrink_number": 2,
+  "source_file": "We_Are_Beautiful_._149357-VSNN-1_._surface.stl",
+  "original_sha256": "aea3711124899f9f87aa69872fab07cfec8128d9cf510db700723073652098fa",
+  "source_triangles": 143597,
+  "independent_vertices": 16597,
+  "independent_quads": 16257,
+  "independent_triangles": 32514,
+  "grid_spacing_source_units": 1.0,
+  "projected_vertices": 16618,
+  "vertex_max_distance_to_original": 1.139086659085919e-13,
+  "face_centroid_distance_p50_p95_max": [
+    0.00716365434633674,
+    0.053975194475144386,
+    0.160471715467014
+  ],
+  "new_mesh_open_surface": true,
+  "geometry_method": "independent quad grid ray-shrinkwrapped to actual source triangles",
+  "limitation": "visible-side surface, undercuts and hidden reverse geometry not fabricated",
+  "face_direction": [
+    -0.6277372501596479,
+    -0.015078890523139337,
+    0.7782792376920992
+  ],
+  "up": [
+    0.05181389834294015,
+    -0.9984044344355696,
+    0.022447833701674046
+  ],
+  "right": [
+    -0.7766989537140573,
+    -0.05441702270412941,
+    -0.6275169503204733
+  ],
+  "center": [
+    -20.89190745672923,
+    -3.827726924164876,
+    93.22778040765147
+  ],
+  "output_glb": "Shrink_2_R01.glb",
+  "output_glb_sha256": "cfb11341f9d5dffc291692011e805cc6a8ac5e290bbe4738131f0f6135cdee79",
+  "output_quad_obj": "Shrink_2_R01_QuadMesh.obj",
+  "duration_seconds": 0.49
+}
