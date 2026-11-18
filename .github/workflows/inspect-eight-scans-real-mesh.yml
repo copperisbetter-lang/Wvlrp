@@ -1,0 +1,140 @@
+name: Inspect eight public STL scans (read-only)
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-eight-scans-real-mesh.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+  issues: write
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve original eight files from public Scans release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/scan-check/originals /tmp/scan-check/results
+          gh release download Scans --repo "$GITHUB_REPOSITORY" --dir /tmp/scan-check/originals --pattern '*.stl'
+          test "$(find /tmp/scan-check/originals -type f -name '*.stl' | wc -l)" -eq 8
+      - name: Install scan diagnostics
+        run: python3 -m pip install --quiet numpy matplotlib pillow
+      - name: Inspect original binary triangles, normals, PCA and render both sides
+        run: |
+          python3 - <<'PY'
+          import json, os, struct, hashlib
+          from pathlib import Path
+          import numpy as np
+          import matplotlib
+          matplotlib.use('Agg')
+          import matplotlib.pyplot as plt
+          from matplotlib.collections import PolyCollection
+          from PIL import Image, ImageOps, ImageDraw
+          root=Path('/tmp/scan-check')
+          src=root/'originals'
+          out=root/'results'
+          files=sorted(src.glob('*.stl'))
+          report=[]
+          thumbs=[]
+          dtype=np.dtype([('normal','<f4',(3,)),('vertices','<f4',(3,3)),('attr','<u2')])
+          for idx,p in enumerate(files):
+              raw=p.read_bytes()
+              count=struct.unpack_from('<I',raw,80)[0]
+              assert len(raw)==84+count*50,(p.name,len(raw),count)
+              tris=np.frombuffer(raw,dtype=dtype,count=count,offset=84)
+              pts=tris['vertices']
+              vertices=pts.reshape(-1,3)
+              stride=max(1,len(vertices)//100000)
+              sampled=vertices[::stride].astype(np.float64)
+              center=sampled.mean(axis=0)
+              cv=np.cov((sampled-center).T)
+              eig,axes=np.linalg.eigh(cv)
+              # projected orientation is data-derived, no assumed world axes
+              u,v,n=axes[:,2],axes[:,1],axes[:,0]
+              ext=vertices.max(axis=0)-vertices.min(axis=0)
+              spread=np.sqrt(np.maximum(eig,0))
+              cross=np.cross(pts[:,1]-pts[:,0],pts[:,2]-pts[:,0])
+              norms=np.linalg.norm(cross,axis=1)
+              valid=norms>1e-12
+              normal_unit=np.divide(cross,norms[:,None],out=np.zeros_like(cross),where=valid[:,None])
+              align=normal_unit@n
+              front=int((align>.45).sum())
+              back=int((align<-.45).sum())
+              thin=(spread[0]/max(spread[2],1e-12))
+              item={
+                'number':idx+1,'filename':p.name,'bytes':len(raw),
+                'sha256':hashlib.sha256(raw).hexdigest(),
+                'triangles':int(count),'bounds_min':vertices.min(axis=0).tolist(),
+                'bounds_max':vertices.max(axis=0).tolist(),'bounds_extent_xyz':ext.tolist(),
+                'principal_stddev':spread.tolist(),'thinness_ratio':float(thin),
+                'plane_normal_pca':n.tolist(),'principal_right':u.tolist(),'principal_up':v.tolist(),
+                'triangle_normals_pointing_plus_plane':front,
+                'triangle_normals_pointing_minus_plane':back,
+                'degenerate_triangles':int((~valid).sum())
+              }
+              report.append(item)
+              print('SCAN',idx+1,p.name,'triangles',count,'extents',ext.tolist(),
+                    'thinness',round(float(thin),5),'normal +',front,'-',back,flush=True)
+              rs=np.random.default_rng(1977+idx)
+              choose=rs.choice(count,size=min(count,11000),replace=False)
+              sample=pts[choose].astype(np.float64)-center
+              sample_norm=normal_unit[choose]
+              x=sample@u; y=sample@v; z=sample@n
+              xlim=(float(np.min(x)),float(np.max(x)));ylim=(float(np.min(y)),float(np.max(y)))
+              fig,axs=plt.subplots(1,2,figsize=(9,4.4),dpi=100)
+              for side,ax in ((1,axs[0]),(-1,axs[1])):
+                  depth=z.mean(axis=1)*side
+                  order=np.argsort(depth)
+                  # Shaded according to measured triangle face normals (two-sided illumination)
+                  facing=sample_norm@n*side
+                  light=.36+.52*np.abs(facing)
+                  shade=np.clip(light,.19,.95)
+                  # gray neutral relief: no artificial painted skin
+                  rgb=np.stack([shade,shade*.94,shade*.91],axis=1)
+                  xy=np.stack([x,y],axis=2)[order]
+                  coll=PolyCollection(xy,facecolors=rgb[order],edgecolors='none',linewidths=0)
+                  ax.add_collection(coll)
+                  ax.set_xlim(xlim[0]-.05*(xlim[1]-xlim[0]),xlim[1]+.05*(xlim[1]-xlim[0]))
+                  ax.set_ylim(ylim[0]-.05*(ylim[1]-ylim[0]),ylim[1]+.05*(ylim[1]-ylim[0]))
+                  ax.set_aspect('equal',adjustable='box')
+                  ax.set_facecolor('#1d2530');ax.axis('off')
+                  ax.set_title('normal side' if side==1 else 'reverse side',fontsize=13)
+              fig.suptitle('%02d %s'%(idx+1,p.name.replace('We_Are_Beautiful_._','')),fontsize=11)
+              fig.tight_layout()
+              dest=out/('scan_%02d_both_sides.png'%(idx+1))
+              fig.savefig(dest,dpi=100,facecolor='#eef0f3')
+              plt.close(fig)
+              small=Image.open(dest).convert('RGB')
+              small.thumbnail((880,440))
+              thumbs.append(small.copy())
+          (out/'scan_geometry_diagnostics.json').write_text(json.dumps(report,indent=2))
+          sheet=Image.new('RGB',(900,460*len(thumbs)),(235,236,238))
+          for idx,im in enumerate(thumbs):
+              sheet.paste(im,(10,460*idx+10))
+          sheet.save(out/'eight_scans_both_sides.png',optimize=True)
+          print('Diagnostics complete: 8 authentic STL files, two real-mesh preview directions each.')
+          PY
+      - name: Upload small diagnostic outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-real-scan-diagnostics
+          path: /tmp/scan-check/results/
+          retention-days: 7
+          compression-level: 4
+      - name: Upload original eight files as separate recoverable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-original-stl-only
+          path: /tmp/scan-check/originals/*.stl
+          retention-days: 7
+          compression-level: 0
+      - name: Record artifact locations in coordination issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 29 --repo "$GITHUB_REPOSITORY" --body "🔔 SCAN BINARY ACCESS — GitHub Actions run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID has extracted and parsed all eight original STL binaries from public Scans release, generated a real-geometry JSON report and both-side previews, and uploaded two small isolated artifacts named eight-real-scan-diagnostics and eight-original-stl-only. All original release assets unchanged. Viewer change pending actual inspection of generated diagnostics."
