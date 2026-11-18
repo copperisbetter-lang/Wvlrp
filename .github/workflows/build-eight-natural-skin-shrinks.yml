@@ -1,0 +1,69 @@
+name: Export eight natural skin-tone shrinkwrap GLB copies
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-eight-natural-skin-shrinks.yml'
+      - 'tools/make-eight-natural-skin-copies.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+  issues: write
+jobs:
+  bake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            tools/make-eight-natural-skin-copies.py
+            .github/workflows/build-eight-natural-skin-shrinks.yml
+            world-creator/base-camp/scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01.glb
+            world-creator/base-camp/shrinks/
+            world-creator/base-camp/shrink-1-to-8-natural-skin-20261118.html
+          sparse-checkout-cone-mode: false
+      - name: Install material export dependencies
+        run: python3 -m pip install --quiet numpy trimesh pygltflib
+      - name: Export original-geometry-preserving eight natural-skin model copies
+        run: |
+          set -euo pipefail
+          python3 tools/make-eight-natural-skin-copies.py world-creator/base-camp
+          test "$(find world-creator/base-camp/natural-skin -maxdepth 1 -name 'Shrink_*_NaturalSkin_R01.glb' | wc -l)" -eq 8
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('world-creator/base-camp/natural-skin/All_8_NaturalSkin_QA.json')
+          j=json.loads(p.read_text())
+          assert len(j['outputs'])==8
+          for i,x in enumerate(j['outputs'],1):
+              assert x['shrink']==i and x['geometry_unchanged'] and x['rgba_srgb']==[214,166,148,255]
+          print('ALL_EIGHT_NATURAL_SKIN_MESHES_SHA_AND_REIMPORT_PASS',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-eight-natural-skin-tone-GLBs-QA
+          path: world-creator/base-camp/natural-skin/
+          retention-days: 30
+      - name: Save generated GLB copies to public GitHub without altering masters
+        run: |
+          set -euo pipefail
+          git config user.name "wvlrp-model-builder[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add world-creator/base-camp/natural-skin/
+          if git diff --cached --quiet; then echo 'Already saved'; else
+            git commit -m 'Save all eight natural-skin GLB copies and real-geometry QA'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Publish new 8-model natural skin review viewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+      - name: Issue 29 handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 29 --repo "$GITHUB_REPOSITORY" --body "🔔 CHECK-OUT — SUCCESS all eight original-geometry shrinkwrap GLB copies with uniform warm natural sRGB skin [214,166,148] and original quad geometry preserved. Workflow https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID passed source vs output mesh coordinates and face equality, GLB reopen and color QA. Source scan originals, existing eight GLBs, original Shrink1 private four real DAZ maps/viewer and approved master untouched. New source models in world-creator/base-camp/natural-skin/ and QA JSON. New comparison viewer candidate: https://wvlrp.com/world-creator/base-camp/shrink-1-to-8-natural-skin-20261118.html . These are natural base colors, NOT photographic DAZ skins. Phone visual QA pending."
