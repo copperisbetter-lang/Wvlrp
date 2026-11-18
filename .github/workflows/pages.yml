@@ -126,6 +126,38 @@ jobs:
           grep -qi '<html' index.html
           echo "Production homepage exists; avatar files are not deployment prerequisites."
 
+      - name: Stage eight original STL scans for same-origin public viewer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          dest="world-creator/base-camp/we-are-beautiful-scans"
+          mkdir -p "$dest"
+          gh release download Scans --repo "$GITHUB_REPOSITORY" --dir "$dest" --pattern '*.stl' --clobber
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          p = Path("world-creator/base-camp/we-are-beautiful-scans")
+          names = [
+            "We_Are_Beautiful_._149357-VSNN-1_._surface.stl",
+            "We_Are_Beautiful_._224629-VSNN-1_._solid.stl",
+            "We_Are_Beautiful_._224629-VSNN-1_._surface.stl",
+            "We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl",
+            "We_Are_Beautiful_._757038-VUNN-1_._solid.stl",
+            "We_Are_Beautiful_._757038-VUNN-1_._surface.stl",
+            "We_Are_Beautiful_._790518-VSNN-1_._solid.stl",
+            "We_Are_Beautiful_._790518-VSNN-1_._surface.stl",
+          ]
+          assert sorted(x.name for x in p.glob('*.stl')) == sorted(names), "Scan file listing differs from the eight originals"
+          for name in names:
+            file=p/name
+            with file.open('rb') as f:
+              f.seek(80)
+              faces=struct.unpack('<I', f.read(4))[0]
+            assert file.stat().st_size == 84+faces*50, (name,'incomplete binary STL')
+            print('Verified', name, 'triangles:', faces, 'bytes:', file.stat().st_size)
+          PY
+          test -s world-creator/base-camp/we-are-beautiful-8-scan-viewer-20261117.html
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
