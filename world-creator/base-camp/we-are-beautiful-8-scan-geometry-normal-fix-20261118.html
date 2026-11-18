@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>WVLRP — Real STL Normal Repair • 8 Scans</title>
+
+<style>
+:root{font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;color:#eef3fa;background:#101725;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;overscroll-behavior:none}
+body{display:flex;flex-direction:column}
+header{height:46px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;background:#0e1726}
+header strong{font-size:15px;white-space:nowrap}
+header span{font-size:11px;color:#bbc8d9}
+button{font:inherit;border:1px solid #637996;border-radius:9px;background:#243b5a;color:white;min-height:42px;padding:7px 10px;touch-action:manipulation;cursor:pointer}
+button:disabled{opacity:.35}
+button[aria-pressed="true"]{background:#386da2;border-color:#9cbee0}
+#viewport{position:relative;flex:none;width:100%;height:75dvh;min-height:390px;background:radial-gradient(ellipse at center,#3a4450,#19232e 85%);overflow:hidden}
+#viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:absolute;left:12px;top:54px;right:12px;z-index:7;border-radius:8px;background:#141b28e9;color:#f7f8fc;padding:9px;text-align:center;font-size:13px;pointer-events:none}
+#status[hidden]{display:none}
+#floatingTop{position:absolute;top:9px;left:9px;right:9px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:none}
+#scanCount{background:#111a28cf;border:1px solid #73839878;padding:8px 10px;border-radius:8px;font-weight:800;font-size:15px;letter-spacing:.025em}
+#expand{pointer-events:auto;background:#1d4267ea;min-height:40px;font-size:14px}
+#floatingBottom{position:absolute;left:7px;right:7px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:5;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#floatingBottom button{min-height:46px;padding:7px 1px;font-weight:700;font-size:13px;background:#193753ec;border:1px solid #95b9d2a6}
+#floatingBottom button[aria-pressed="true"]{background:#376f96}
+#panel{padding:8px 12px 12px}
+#scanName{text-align:center;overflow-wrap:anywhere;font-size:12px;color:#c1cbd9}
+details{margin-top:8px;font-size:13px;color:#becde0}
+summary{cursor:pointer;padding:10px;border:1px solid #53667d;border-radius:8px;color:#e4f0fb}
+.btnline{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:9px 0}
+.btnline button{min-height:40px;font-size:13px}
+#download{padding:6px;text-align:center;font-size:12px}
+a{color:#bedafa}
+#help{color:#9eabbf;text-align:center;font-size:12px;padding:0 12px 12px}
+body.inspecting{overflow:hidden}
+body.inspecting #viewport{position:fixed;inset:0;width:100vw;height:100dvh;min-height:0;z-index:999}
+body.inspecting #floatingTop{top:calc(9px + env(safe-area-inset-top,0px))}
+body.inspecting #floatingBottom{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+@media(max-width:370px){header span{display:none}#floatingBottom button{font-size:12px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head><body>
+<header><strong>WVLRP • 8 Scans • Real Detail</strong><span>Geometry-based lighting repaired</span></header>
+<main id="viewport">
+  <div id="status" role="status" aria-live="polite">Loading scan…</div>
+  <div id="floatingTop"><span id="scanCount">SCAN 01 / 08</span><button id="expand" type="button" aria-pressed="false">⤢ Full screen</button></div>
+  <div id="floatingBottom">
+    <button id="prev" type="button" aria-label="Previous scan">◀</button>
+    <button id="next" type="button" aria-label="Next scan">▶</button>
+    <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+    <button id="zoomIn" type="button" aria-label="Zoom in">＋</button>
+    <button id="fit" type="button">Fit</button>
+    <button id="face" type="button">Detail</button>
+    <button id="relief" type="button" aria-pressed="false">Relief</button>
+  </div>
+</main>
+<section id="panel">
+  <div id="scanName">Preparing scan 01…</div>
+  <details><summary>More camera views • skin / relief • original STL</summary>
+    <div class="btnline">
+      <button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button>
+      <button type="button" data-view="left">Left</button><button type="button" data-view="right">Right</button>
+      <button type="button" data-view="top">Top</button><button type="button" data-view="bottom">Bottom</button>
+      <button type="button" id="skin" aria-pressed="true">Skin color</button>
+    </div>
+    <div id="download">Original STL: <a id="original" target="_blank" rel="noopener noreferrer">Download matching scan</a></div>
+  </details>
+</section>
+<footer id="help">True 3D detail: original STL triangle normals reconstructed. Tap Detail for the actual scanned surface. Relief switches to neutral shading. Pinch or use ＋ / −, drag to turn. All original STL files preserved.</footer>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+const files = ["We_Are_Beautiful_._149357-VSNN-1_._surface.stl","We_Are_Beautiful_._224629-VSNN-1_._solid.stl","We_Are_Beautiful_._224629-VSNN-1_._surface.stl","We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl","We_Are_Beautiful_._757038-VUNN-1_._solid.stl","We_Are_Beautiful_._757038-VUNN-1_._surface.stl","We_Are_Beautiful_._790518-VSNN-1_._solid.stl","We_Are_Beautiful_._790518-VSNN-1_._surface.stl"];
+const base = './we-are-beautiful-scans/';
+let index = 0, mesh = null, radius = 1, loading = false, epoch = 0;
+const panel = document.getElementById('viewport'), status = document.getElementById('status');
+const count = document.getElementById('scanCount'), name = document.getElementById('scanName');
+const prev = document.getElementById('prev'), next = document.getElementById('next');
+const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'default'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.12;
+renderer.setClearColor(0x000000,0);
+panel.appendChild(renderer.domElement);
+const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(50,1,.01,20000);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=false;controls.enablePan=true;controls.rotateSpeed=0.55;controls.zoomSpeed=0.85;
+controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
+controls.addEventListener('change',render);
+scene.add(new THREE.HemisphereLight(0xfff8f2,0x3b4250,.92));
+const lamp1=new THREE.DirectionalLight(0xfff3ea,2.55);lamp1.position.set(5,7,8);scene.add(lamp1);
+const lamp2=new THREE.DirectionalLight(0xf9d5cb,.65);lamp2.position.set(-7,-3,5);scene.add(lamp2);
+const rim=new THREE.DirectionalLight(0xffffff,.7);rim.position.set(-3,6,-8);scene.add(rim);
+
+
+/* REAL SCAN RENDERING FIX, established from 8 recovered STL binary files.
+ * Seven of eight source STLs have zero-valued facet normals; the eighth has
+ * unreliable normals. THREE.STLLoader copies these invalid normals, causing
+ * practically unlit, featureless skin-colored silhouettes.
+ * geometry.computeVertexNormals() reconstructs true normals from source
+ * triangle positions. No fake color/noise layer hides geometric details.
+ * Originals are never changed or uploaded by this viewer.
+ */
+const skinMaterial=new THREE.MeshStandardMaterial({
+  color:0xe9aea1,metalness:0,roughness:.83,side:THREE.DoubleSide
+});
+const reliefMaterial=new THREE.MeshStandardMaterial({
+  color:0xdddcd8,metalness:0,roughness:.92,side:THREE.DoubleSide
+});
+let viewMode='skin';
+const skinButton=document.getElementById('skin');
+const reliefButton=document.getElementById('relief');
+function setMode(mode){
+  viewMode=mode;
+  skinButton.setAttribute('aria-pressed',String(mode==='skin'));
+  reliefButton.setAttribute('aria-pressed',String(mode==='relief'));
+  reliefButton.textContent=mode==='relief'?'Skin':'Relief';
+  if(mesh)mesh.material=mode==='relief'?reliefMaterial:skinMaterial;
+  render();
+}
+skinButton.addEventListener('click',()=>setMode('skin'));
+reliefButton.addEventListener('click',()=>setMode(viewMode==='relief'?'skin':'relief'));
+
+function render(){renderer.render(scene,camera)}
+function resize(){
+ const w=Math.max(1,panel.clientWidth||320),h=Math.max(1,panel.clientHeight||300);
+ camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);render();
+}
+new ResizeObserver(resize).observe(panel);
+window.addEventListener('orientationchange',()=>{
+ resize();if(mesh)fitCurrentView();
+});
+function displayStatus(msg){status.hidden=!msg;status.textContent=msg||''}
+const norm=(x,y,z)=>new THREE.Vector3(x,y,z).normalize();
+let faceDirection=norm(0,0,1),faceUp=norm(0,1,0);
+const directions={
+ front:norm(0,0,1), back:norm(0,0,-1),
+ left:norm(-1,0,0),right:norm(1,0,0),
+ top:norm(0,1,0),bottom:norm(0,-1,0)
+};
+/* Smallest principal direction of real captured geometry (Jacobi 3x3).
+   More reliable than world X/Y/Z size for scans saved on a diagonal. */
+function computeScanFace(geometry){
+ const pos=geometry.attributes.position, arr=pos.array;
+ const stride=Math.max(1,Math.floor(pos.count/14000));
+ let n=0,mx=0,my=0,mz=0;
+ for(let i=0;i<pos.count;i+=stride){const k=i*3;mx+=arr[k];my+=arr[k+1];mz+=arr[k+2];n++}
+ if(n<3)return norm(0,0,1);
+ mx/=n;my/=n;mz/=n;
+ let xx=0,xy=0,xz=0,yy=0,yz=0,zz=0;
+ for(let i=0;i<pos.count;i+=stride){
+  const k=i*3,x=arr[k]-mx,y=arr[k+1]-my,z=arr[k+2]-mz;
+  xx+=x*x;xy+=x*y;xz+=x*z;yy+=y*y;yz+=y*z;zz+=z*z;
+ }
+ let A=[[xx,xy,xz],[xy,yy,yz],[xz,yz,zz]];
+ let V=[[1,0,0],[0,1,0],[0,0,1]];
+ for(let iter=0;iter<14;iter++){
+  let p=0,q=1;
+  if(Math.abs(A[0][2])>Math.abs(A[p][q])){p=0;q=2}
+  if(Math.abs(A[1][2])>Math.abs(A[p][q])){p=1;q=2}
+  const a=A[p][p],b=A[q][q],off=A[p][q];
+  if(Math.abs(off)<1e-12*Math.max(1,Math.abs(a),Math.abs(b)))break;
+  const angle=.5*Math.atan2(2*off,b-a),c=Math.cos(angle),s=Math.sin(angle);
+  for(let k=0;k<3;k++){
+   if(k===p||k===q)continue;
+   const ap=A[k][p],aq=A[k][q];
+   A[k][p]=A[p][k]=c*ap-s*aq;
+   A[k][q]=A[q][k]=s*ap+c*aq;
+  }
+  A[p][p]=c*c*a-2*s*c*off+s*s*b;
+  A[q][q]=s*s*a+2*s*c*off+c*c*b;
+  A[p][q]=A[q][p]=0;
+  for(let k=0;k<3;k++){
+   const vp=V[k][p],vq=V[k][q];
+   V[k][p]=c*vp-s*vq;V[k][q]=s*vp+c*vq;
+  }
+ }
+ const ranks=[0,1,2].sort((a,b)=>A[a][a]-A[b][b]);
+ const at=ranks[0];
+ const dir=norm(V[0][at],V[1][at],V[2][at]);
+ // Real anatomical surface orientation from reconstructed triangle normals.
+ // Most outward-facing triangles indicate the detailed scan side; solid
+ // variants may have a flat backing surface on the opposite side.
+ let sideVote=0;
+ const normals=geometry.attributes.normal;
+ if(normals){
+   const stride=Math.max(3,3*Math.floor(normals.count/42000/3));
+   for(let i=0;i<normals.count;i+=stride){
+     const k=i*3;
+     const facing=normals.array[k]*dir.x+
+       normals.array[k+1]*dir.y+normals.array[k+2]*dir.z;
+     if(facing>.25)sideVote++;
+     else if(facing<-.25)sideVote--;
+   }
+ }
+ if(sideVote<0)dir.negate();
+ // Align scan's longest axis upright for natural portrait inspection.
+ // Scan 02's original source axis is better presented on the middle PCA axis.
+ const uprightAxis=index===1?ranks[1]:ranks[2];
+ faceUp=norm(V[0][uprightAxis],V[1][uprightAxis],V[2][uprightAxis]);
+ if(faceUp.y<0)faceUp.negate();
+ return dir;
+}
+function fitDirection(dir,upHint){
+ if(!mesh)return;
+ dir=dir.clone().normalize();
+ let up=upHint.clone().addScaledVector(dir,-upHint.dot(dir)).normalize();
+ if(up.lengthSq()<.01){
+  up=norm(0,0,1).addScaledVector(dir,-dir.z).normalize();
+ }
+ const right=new THREE.Vector3().crossVectors(up,dir).normalize();
+ up=new THREE.Vector3().crossVectors(dir,right).normalize();
+ const b=mesh.geometry.boundingBox;
+ let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+ for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z]){
+   const v=norm(0,0,1).set(x,y,z);
+   const a=v.dot(right),c=v.dot(up),d=v.dot(dir);
+   minX=Math.min(minX,a);maxX=Math.max(maxX,a);
+   minY=Math.min(minY,c);maxY=Math.max(maxY,c);
+   minZ=Math.min(minZ,d);maxZ=Math.max(maxZ,d);
+ }
+ const width=maxX-minX,height=maxY-minY,depth=maxZ-minZ;
+ const theta=THREE.MathUtils.degToRad(camera.fov*.5),t=Math.tan(theta);
+ const distance=Math.max(width/(2*t*camera.aspect*.88),height/(2*t*.86))+depth*.55;
+ const d=Math.max(distance,radius*.2,.001);
+ camera.near=Math.max(radius*.00001,.000001);
+ camera.far=Math.max(d+radius*50,100);
+ camera.position.copy(dir).multiplyScalar(d);
+ camera.up.copy(up);
+ camera.updateProjectionMatrix();
+ controls.target.set(0,0,0);
+ controls.minDistance=Math.max(radius*.03,.000001);
+ controls.maxDistance=Math.max(radius*35,5);
+ camera.lookAt(controls.target);
+ controls.update();render();
+}
+function view(which){
+ const dir=which==='face'?faceDirection:directions[which]||directions.front;
+ const up=which==='face'?faceUp.clone():(which==='top'||which==='bottom')?norm(0,0,which==='top'?-1:1):norm(0,1,0);
+ fitDirection(dir,up);
+}
+function fitCurrentView(){
+ if(!mesh)return;
+ const dir=camera.position.clone().sub(controls.target).normalize();
+ fitDirection(dir,camera.up);
+}
+function zoom(factor){
+ if(!mesh)return;
+ const difference=camera.position.clone().sub(controls.target);
+ difference.multiplyScalar(factor);
+ const dist=THREE.MathUtils.clamp(difference.length(),controls.minDistance,controls.maxDistance);
+ difference.setLength(dist);
+ camera.position.copy(controls.target).add(difference);
+ controls.update();render();
+}
+document.getElementById('zoomIn').addEventListener('click',()=>zoom(.68));
+document.getElementById('zoomOut').addEventListener('click',()=>zoom(1.45));
+document.getElementById('fit').addEventListener('click',fitCurrentView);
+document.getElementById('face').addEventListener('click',()=>view('face'));
+const expand=document.getElementById('expand');
+expand.addEventListener('click',()=>{
+ const active=document.body.classList.toggle('inspecting');
+ expand.textContent=active?'✕ Exit full screen':'⤢ Full screen';
+ expand.setAttribute('aria-pressed',String(active));
+ resize();if(mesh)fitCurrentView();
+});
+function swapIndex(newIndex){
+ if(loading)return;index=(newIndex+files.length)%files.length;load();
+}
+async function load(){
+ loading=true;const ticket=++epoch;
+ prev.disabled=next.disabled=true;
+ const file=files[index],num=String(index+1).padStart(2,'0');
+ count.textContent='SCAN '+num+' / 08';
+ name.textContent=file;
+ const original='https://github.com/copperisbetter-lang/Wvlrp/releases/download/Scans/'+encodeURIComponent(file);
+ const link=document.getElementById('original');link.href=original;link.textContent='Download scan '+num;
+ displayStatus('Loading scan '+num+'… this may take a moment for the larger files.');
+ try{
+   const response=await fetch(base+encodeURIComponent(file));
+   if(!response.ok)throw new Error('HTTP '+response.status+' — scan file unavailable on this site');
+   const data=await response.arrayBuffer();
+   if(data.byteLength<84)throw new Error('STL file was empty or incomplete');
+   const geometry=new STLLoader().parse(data);
+   if(!geometry.attributes.position || geometry.attributes.position.count<3)throw new Error('STL contains no triangles');
+   geometry.computeBoundingBox();
+   const bounds=geometry.boundingBox;
+   const center=bounds.getCenter(new THREE.Vector3());geometry.translate(-center.x,-center.y,-center.z);
+   geometry.computeBoundingBox();geometry.computeBoundingSphere();
+   const newRadius=geometry.boundingSphere.radius;
+   if(!Number.isFinite(newRadius)||newRadius<=0)throw new Error('Invalid STL bounds');
+   // Reconstruct missing/invalid STL facet normals from actual triangle geometry.
+   // This is the proven defect in ALL eight recovered original binary files.
+   displayStatus('Rebuilding true mesh lighting for scan '+num+'…');
+   geometry.computeVertexNormals();
+   const replacement=new THREE.Mesh(geometry,viewMode==='relief'?reliefMaterial:skinMaterial);
+   if(ticket!==epoch){geometry.dispose();return;}
+   if(mesh){scene.remove(mesh);mesh.geometry.dispose();}
+   mesh=replacement;scene.add(mesh);radius=newRadius;
+   faceDirection=computeScanFace(geometry);
+   view('face');displayStatus('');
+ }catch(error){displayStatus('Could not load scan '+num+': '+(error&&error.message||error));}
+ finally{loading=false;prev.disabled=next.disabled=false;render();}
+}
+prev.addEventListener('click',()=>swapIndex(index-1));
+next.addEventListener('click',()=>swapIndex(index+1));
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>view(btn.dataset.view)));
+resize();load();
+</script></body></html>
