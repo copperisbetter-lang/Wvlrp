@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           git config user.name "wvlrp-model-builder[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add world-creator/base-camp/natural-skin/
+          git add --sparse -f world-creator/base-camp/natural-skin/
           if git diff --cached --quiet; then echo 'Already saved'; else
             git commit -m 'Save all eight natural-skin GLB copies and real-geometry QA'
             git pull --rebase origin main
