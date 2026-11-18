@@ -1,0 +1,80 @@
+name: Build Scan04 independent shrinkwrap
+on:
+  push:
+    paths:
+      - '.github/workflows/build-scan04-independent-shrinkwrap.yml'
+      - 'tools/scan04_shrinkwrap_r01.py'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+  issues: write
+jobs:
+  make-mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download immutable original Scan04 STL
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          mkdir -p /tmp/scan04-source
+          gh release download Scans --repo "$GITHUB_REPOSITORY" --dir /tmp/scan04-source --pattern 'We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl'
+          echo "Real original STL:"
+          sha256sum /tmp/scan04-source/*.stl
+      - name: Install 3D tooling
+        run: |
+          python3 -m pip install --quiet numpy scipy trimesh vtk
+      - name: Build independent genuine shrinkwrapped geometry
+        run: |
+          python3 tools/scan04_shrinkwrap_r01.py \
+            '/tmp/scan04-source/We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl' \
+            'world-creator/base-camp/scan04-shrinkwrap'
+      - name: Validate output and linked viewer
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('world-creator/base-camp/scan04-shrinkwrap')
+          j=json.loads((p/'Scan04_Shrinkwrap_R01_QA.json').read_text())
+          assert j['original_sha256']=='e24963547d58dcb48495aa77e19ec26f494d4a10099fe2f4ebd629aacf7930e1'
+          assert j['independent_quads']>10000 and j['independent_vertices']>10000
+          assert j['vertex_max_distance_to_original']<.005
+          assert j['face_centroid_distance_p50_p95_max'][1]<.2
+          assert j['face_centroid_distance_p50_p95_max'][2]<1.0
+          assert (p/j['output_glb']).stat().st_size>100000
+          assert (p/j['output_quad_obj']).stat().st_size>100000
+          assert Path('world-creator/base-camp/scan04-shrinkwrap-review-20261118.html').stat().st_size>1000
+          print('REAL SHRINKWRAP QA PASS: ',j['independent_vertices'],'vertices',j['independent_quads'],'quads')
+          PY
+      - name: Archive independent new geometry
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan04-independent-shrinkwrap-R01
+          path: |
+            world-creator/base-camp/scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01.glb
+            world-creator/base-camp/scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01_QuadMesh.obj
+            world-creator/base-camp/scan04-shrinkwrap/Scan04_Shrinkwrap_R01_QA.json
+          retention-days: 30
+      - name: Commit generated binary model to public WVLRP (new files only)
+        run: |
+          git config user.name "wvlrp-model-builder[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add world-creator/base-camp/scan04-shrinkwrap/
+          if git diff --cached --quiet; then echo 'Output already committed'; else
+            git commit -m 'Save real Scan04 independent shrinkwrap GLB and editable quad OBJ'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Trigger Pages publication (bot pushes do not trigger push workflows)
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+      - name: Durable Issue29 handoff
+        if: success()
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          gh issue comment 29 --repo "$GITHUB_REPOSITORY" --body "🔔 CHECK-OUT — Scan04 real shrinkwrap production job SUCCESS: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID . Independent fitted mesh R01 (separate GLB, editable quad OBJ, numeric QA) produced from real public STL Scan04 and committed on main; original 8 STLs and viewer masters untouched. Viewer: https://wvlrp.com/world-creator/base-camp/scan04-shrinkwrap-review-20261118.html . GitHub model folder: https://github.com/$GITHUB_REPOSITORY/tree/main/world-creator/base-camp/scan04-shrinkwrap . Pages publication explicitly requested; independent phone visual acceptance still pending."
