@@ -124,26 +124,15 @@ full.addEventListener('click',()=>{
 });
 const skinMat=new THREE.MeshStandardMaterial({color:0xcda99a,roughness:.87,metalness:0,side:THREE.DoubleSide});
 const wireMat=new THREE.MeshBasicMaterial({color:0x182b39,wireframe:true,transparent:true,opacity:.7,side:THREE.DoubleSide});
+const originalMat=new THREE.MeshStandardMaterial({color:0xc1bec0,roughness:1,side:THREE.DoubleSide});
 const refMat=new THREE.MeshStandardMaterial({color:0xa4b4c6,roughness:1,transparent:true,opacity:.30,side:THREE.DoubleSide,depthWrite:false});
 function visitMeshes(obj,func){obj.traverse(o=>{if(o.isMesh)func(o)})}
-let wireOverlay=null;
 function update(){
  if(!wrap)return;
  wrap.visible=mode!=='original';if(ref)ref.visible=mode!=='wrap';
- if(ref)visitMeshes(ref,o=>{o.material=mode==='original'?new THREE.MeshStandardMaterial({color:0xc1bec0,roughness:1,side:THREE.DoubleSide}):refMat});
- visitMeshes(wrap,o=>{o.material=skinMat});
- if(wireOverlay){scene.remove(wireOverlay);visitMeshes(wireOverlay,o=>{o.geometry.dispose();o.material.dispose()});wireOverlay=null}
- if(wire&&mode!=='original'){
-   wireOverlay=new THREE.Group();
-   visitMeshes(wrap,o=>{
-     const clone=new THREE.Mesh(o.geometry,wireMat);
-     clone.position.copy(o.position);
-     clone.rotation.copy(o.rotation);
-     clone.scale.copy(o.scale);
-     wireOverlay.add(clone);
-   });
-   scene.add(wireOverlay);
- }
+ if(ref)visitMeshes(ref,o=>{o.material=mode==='original'?originalMat:refMat});
+ visitMeshes(wrap,o=>{o.material=wire?wireMat:skinMat});
+
  ['onlyWrap','onlyOriginal','overlay'].forEach((id,i)=>document.getElementById(id).setAttribute('aria-pressed',String(mode===['wrap','original','both'][i])));
  document.getElementById('wire').setAttribute('aria-pressed',String(wire));
  render();
