@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download immutable original Scan04 STL
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/scan04-source
           gh release download Scans --repo "$GITHUB_REPOSITORY" --dir /tmp/scan04-source --pattern 'We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl'
@@ -69,12 +69,12 @@ jobs:
           fi
       - name: Trigger Pages publication (bot pushes do not trigger push workflows)
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
       - name: Durable Issue29 handoff
         if: success()
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh issue comment 29 --repo "$GITHUB_REPOSITORY" --body "🔔 CHECK-OUT — Scan04 real shrinkwrap production job SUCCESS: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID . Independent fitted mesh R01 (separate GLB, editable quad OBJ, numeric QA) produced from real public STL Scan04 and committed on main; original 8 STLs and viewer masters untouched. Viewer: https://wvlrp.com/world-creator/base-camp/scan04-shrinkwrap-review-20261118.html . GitHub model folder: https://github.com/$GITHUB_REPOSITORY/tree/main/world-creator/base-camp/scan04-shrinkwrap . Pages publication explicitly requested; independent phone visual acceptance still pending."
