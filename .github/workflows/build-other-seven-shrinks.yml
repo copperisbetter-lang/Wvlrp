@@ -16,6 +16,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            tools/build_other_seven_shrinks.py
+            .github/workflows/build-other-seven-shrinks.yml
+            world-creator/base-camp/shrink-1-to-8-review-20261118.html
+            world-creator/base-camp/shrinks/
+          sparse-checkout-cone-mode: false
       - name: Retrieve original eight immutable STL source release assets
         env:
           GH_TOKEN: ${{ github.token }}
