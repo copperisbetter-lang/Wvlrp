@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101b29">
+<title>WVLRP • Scan 04 Independent Shrinkwrap Mesh</title>
+<style>
+:root{font-family:system-ui,-apple-system,Roboto,sans-serif;background:#101b29;color:#f6f7fb;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;overscroll-behavior:none}
+body{display:flex;flex-direction:column}
+header{height:52px;display:flex;align-items:center;justify-content:space-between;padding:7px 12px;gap:10px;background:#0e1826}
+header strong{font-size:15px}
+header span{font-size:12px;color:#c4d3e5}
+#viewport{height:77dvh;min-height:370px;position:relative;background:radial-gradient(ellipse at center,#32465b,#162534 88%);touch-action:none}
+#viewport canvas{width:100%;height:100%;display:block;touch-action:none}
+button{font:inherit;cursor:pointer;background:#233d5a;color:#f8fafc;border:1px solid #617d96;border-radius:10px;min-height:44px;padding:8px 12px;touch-action:manipulation}
+button[aria-pressed="true"]{background:#3976a5;border-color:#b1d1e6}
+#top{position:absolute;top:10px;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;z-index:4;pointer-events:none}
+#top span{font-size:14px;font-weight:bold;padding:9px;background:#132033ce;border:1px solid #566779;border-radius:8px}
+#top button{pointer-events:auto}
+#bottom{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:7px;right:7px;z-index:4;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+#bottom button{padding:8px 0;font-size:13px;font-weight:bold;background:#203b55e8;min-height:49px}
+#bottom button[aria-pressed="true"]{background:#3976a5}
+#notice{position:absolute;top:65px;left:12px;right:12px;padding:9px;background:#152739e8;text-align:center;border-radius:8px;font-size:13px;z-index:5}
+#notice[hidden]{display:none}
+#panel{padding:12px}
+#mode{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+#mode button{font-size:13px}
+#info{font-size:12px;line-height:1.6;color:#bccadc;margin-top:8px;text-align:center}
+#info a{color:#b9dfff}
+footer{font-size:12px;text-align:center;color:#a5b5c8;padding:2px 12px 14px}
+body.full{overflow:hidden}
+body.full #viewport{position:fixed;inset:0;width:100vw;height:100dvh;min-height:0;z-index:100}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header><strong>SCAN 04 — Independent Shrinkwrap</strong><span>Quad mesh R01</span></header>
+<main id="viewport">
+ <div id="notice" role="status">Opening the actual shrinkwrap model…</div>
+ <div id="top"><span>NEW MESH • Scan 04</span><button id="full" aria-pressed="false">⤢ Full screen</button></div>
+ <div id="bottom">
+  <button id="zoomOut" aria-label="Zoom out">−</button>
+  <button id="zoomIn" aria-label="Zoom in">＋</button>
+  <button id="fit">Fit</button>
+  <button id="front">Face</button>
+  <button id="flip">Flip</button>
+  <button id="wire" aria-pressed="false">Wire</button>
+ </div>
+</main>
+<section id="panel">
+ <div id="mode">
+  <button id="onlyWrap" aria-pressed="true">New mesh</button>
+  <button id="onlyOriginal" aria-pressed="false">Original scan</button>
+  <button id="overlay" aria-pressed="false">Overlay both</button>
+ </div>
+ <div id="info">Original: Scan 04 · 51,893 triangles · preserved unchanged.
+ New independent shrinkwrap: 15,003 vertices · 14,717 quads / 29,434 display triangles.
+ <div><a id="glbLink" href="./scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01.glb">GLB model</a> · <a href="./scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01_QuadMesh.obj">Editable quad OBJ</a> · <a href="./scan04-shrinkwrap/Scan04_Shrinkwrap_R01_QA.json">Fit report</a></div>
+ </div>
+</section>
+<footer>Drag to rotate · pinch to zoom · two fingers to pan. Wire reveals the new grid. Overlay shows its fit against the unchanged original. First wrap covers the visible surface; hidden undercuts are not invented.</footer>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+const box=document.getElementById('viewport'),notice=document.getElementById('notice');
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'default'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.12;
+box.appendChild(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(45,1,.0005,15000);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enablePan=true;controls.enableDamping=false;controls.rotateSpeed=.6;controls.zoomSpeed=.7;
+controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
+controls.addEventListener('change',render);
+scene.add(new THREE.HemisphereLight(0xffe9df,0x53616b,1.12));
+const key=new THREE.DirectionalLight(0xfff2e8,2.45);key.position.set(3,5,9);scene.add(key);
+const fill=new THREE.DirectionalLight(0xcbdaf0,1.0);fill.position.set(-8,1,-5);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffffff,.5);rim.position.set(2,-9,4);scene.add(rim);
+const basis={
+ center:new THREE.Vector3(-1.9825546197358654,-.663631327912393,89.22149119282798),
+ normal:new THREE.Vector3(-.4657486503711286,.022224452273001405,.8846379306804774).normalize(),
+ up:new THREE.Vector3(.07332934540039202,-.9952770832675812,.06361080588646906).normalize()
+};
+let wrap=null,ref=null,mode='wrap',wire=false,size=140;
+function render(){renderer.render(scene,camera)}
+function resize(){let w=Math.max(1,box.clientWidth),h=Math.max(1,box.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);render()}
+new ResizeObserver(resize).observe(box);
+window.addEventListener('orientationchange',resize);
+function message(s){notice.hidden=!s;notice.textContent=s||''}
+function zoom(ratio){
+ let vec=camera.position.clone().sub(controls.target),dist=THREE.MathUtils.clamp(vec.length()*ratio,5,1800);
+ camera.position.copy(controls.target).add(vec.setLength(dist));controls.update();
+}
+document.getElementById('zoomIn').addEventListener('click',()=>zoom(.7));
+document.getElementById('zoomOut').addEventListener('click',()=>zoom(1.42));
+function aim(direction){
+ let d=direction.clone().normalize();
+ const newUp=basis.up.clone().addScaledVector(d,-basis.up.dot(d));
+ if(newUp.lengthSq()<.04)newUp.set(0,1,0);
+ newUp.normalize();
+ camera.position.copy(basis.center).addScaledVector(d,265);
+ camera.up.copy(newUp);controls.target.copy(basis.center);
+ camera.near=.01;camera.far=2000;camera.updateProjectionMatrix();
+ camera.lookAt(controls.target);controls.minDistance=9;controls.maxDistance=1000;controls.update();
+}
+document.getElementById('front').addEventListener('click',()=>aim(basis.normal));
+document.getElementById('flip').addEventListener('click',()=>aim(camera.position.clone().sub(controls.target).negate()));
+document.getElementById('fit').addEventListener('click',()=>aim(camera.position.clone().sub(controls.target)));
+const full=document.getElementById('full');
+full.addEventListener('click',()=>{
+ let on=document.body.classList.toggle('full');
+ full.textContent=on?'✕ Exit full screen':'⤢ Full screen';
+ full.setAttribute('aria-pressed',String(on));
+ resize();
+});
+const skinMat=new THREE.MeshStandardMaterial({color:0xcda99a,roughness:.87,metalness:0,side:THREE.DoubleSide});
+const wireMat=new THREE.MeshBasicMaterial({color:0x182b39,wireframe:true,transparent:true,opacity:.7,side:THREE.DoubleSide});
+const refMat=new THREE.MeshStandardMaterial({color:0xa4b4c6,roughness:1,transparent:true,opacity:.30,side:THREE.DoubleSide,depthWrite:false});
+function visitMeshes(obj,func){obj.traverse(o=>{if(o.isMesh)func(o)})}
+let wireOverlay=null;
+function update(){
+ if(!wrap)return;
+ wrap.visible=mode!=='original';if(ref)ref.visible=mode!=='wrap';
+ if(ref)visitMeshes(ref,o=>{o.material=mode==='original'?new THREE.MeshStandardMaterial({color:0xc1bec0,roughness:1,side:THREE.DoubleSide}):refMat});
+ visitMeshes(wrap,o=>{o.material=skinMat});
+ if(wireOverlay){scene.remove(wireOverlay);visitMeshes(wireOverlay,o=>{o.geometry.dispose();o.material.dispose()});wireOverlay=null}
+ if(wire&&mode!=='original'){
+   wireOverlay=new THREE.Group();
+   visitMeshes(wrap,o=>{
+     const clone=new THREE.Mesh(o.geometry,wireMat);
+     clone.position.copy(o.position);
+     clone.rotation.copy(o.rotation);
+     clone.scale.copy(o.scale);
+     wireOverlay.add(clone);
+   });
+   scene.add(wireOverlay);
+ }
+ ['onlyWrap','onlyOriginal','overlay'].forEach((id,i)=>document.getElementById(id).setAttribute('aria-pressed',String(mode===['wrap','original','both'][i])));
+ document.getElementById('wire').setAttribute('aria-pressed',String(wire));
+ render();
+}
+for(const [id,value] of [['onlyWrap','wrap'],['onlyOriginal','original'],['overlay','both']]){
+ document.getElementById(id).addEventListener('click',()=>{mode=value;update()});
+}
+document.getElementById('wire').addEventListener('click',()=>{wire=!wire;update()});
+function load(){
+ const glb='./scan04-shrinkwrap/Scan04_Independent_Shrinkwrap_R01.glb';
+ new GLTFLoader().load(glb,g=>{
+   wrap=g.scene;scene.add(wrap);
+   visitMeshes(wrap,o=>{o.material=skinMat});
+   aim(basis.normal);update();message('');
+   const url='./we-are-beautiful-scans/We_Are_Beautiful_._489561-VSNN-1_._surface.1.stl';
+   new STLLoader().load(url,geometry=>{
+     geometry.deleteAttribute('normal');geometry.computeVertexNormals();
+     ref=new THREE.Mesh(geometry,refMat);scene.add(ref);update();
+   },undefined,e=>{message('Original reference unavailable: '+(e.message||e))});
+ },undefined,e=>{message('Could not load shrinkwrap GLB: '+(e.message||e))});
+}
+resize();load();
+</script></body></html>
