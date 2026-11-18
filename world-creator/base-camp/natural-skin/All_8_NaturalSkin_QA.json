@@ -1,0 +1,135 @@
+{
+  "outputs": [
+    {
+      "shrink": 1,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "f27826076146435ee21b50375f6e0df5662b4488abf1b3872134f26577679edb",
+      "output": "Shrink_1_NaturalSkin_R01.glb",
+      "sha256": "638630335e471fffbb4a4a953850634e82ab74404a8c361d74a08a1b85d69384",
+      "vertices": 15003,
+      "triangles": 29434,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 2,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "cfb11341f9d5dffc291692011e805cc6a8ac5e290bbe4738131f0f6135cdee79",
+      "output": "Shrink_2_NaturalSkin_R01.glb",
+      "sha256": "ede1ec92017ea3b0f9e18b89c295d9a2947ae9e04fedb170419c36007f72b22a",
+      "vertices": 16597,
+      "triangles": 32514,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 3,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "9131c92d502539089047bbde09d8238fe648f69d6a5ac7e6c0c9ed1a3a3dae95",
+      "output": "Shrink_3_NaturalSkin_R01.glb",
+      "sha256": "ac05f32f8c2fa8890ee29b32e18301d48df360143008ffdff6dd12ac4adf390e",
+      "vertices": 15682,
+      "triangles": 30738,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 4,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "98718684e36f79be32ecd8e878d81a8e408b4d31964f25f0485668d172ba0bf4",
+      "output": "Shrink_4_NaturalSkin_R01.glb",
+      "sha256": "3a2ea67f6124ca666ec637330c85231bcef6d1e23314aa1705d6bca20babd056",
+      "vertices": 14572,
+      "triangles": 28534,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 5,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "c2797dcfa906b6a8c73bf780b1e1301e7c3e4a2d584ba1b5746397f3282898bc",
+      "output": "Shrink_5_NaturalSkin_R01.glb",
+      "sha256": "296284e79657bcd67084d66d4cf026ea1f699fd97fc27392e8642864603a8a1c",
+      "vertices": 10541,
+      "triangles": 20612,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 6,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "7a29866e043d7fba3763253cd45eab5ddc07774d2a926866c5207495ae4471b9",
+      "output": "Shrink_6_NaturalSkin_R01.glb",
+      "sha256": "c1437369ccfb0c1d434169730099b61b00fb7c872b30b433b68fb446421cdb7e",
+      "vertices": 10870,
+      "triangles": 21258,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 7,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "997dbd3cc04be1e8c2e9eef4c66b1f28126b0aab613b02f701144fda8deac2f3",
+      "output": "Shrink_7_NaturalSkin_R01.glb",
+      "sha256": "7a7ca3c6e06dcabd1a9d9ac2f60b240ff9b4c429866db69e4ac048ac84afdf55",
+      "vertices": 20317,
+      "triangles": 39690,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    },
+    {
+      "shrink": 8,
+      "source": "single uniform natural skin-tone material, not photographic source image",
+      "original_glb_sha256": "bad6be809c473056a01772f664389d8595964a3eb55bc79d80b10bf71379db96",
+      "output": "Shrink_8_NaturalSkin_R01.glb",
+      "sha256": "88e6661e82e3d09ad3415b167e6bce07f368ad1a490ad62144a98aebdb57ceb7",
+      "vertices": 15839,
+      "triangles": 30922,
+      "rgba_srgb": [
+        214,
+        166,
+        148,
+        255
+      ],
+      "geometry_unchanged": true
+    }
+  ],
+  "source_files_preserved": true,
+  "not_photo_textures": true,
+  "method": "independent GLB copy, original topology & vertex coordinates preserved, matte natural skin tone"
+}
