@@ -1,0 +1,34 @@
+{
+  "source_name": "CECIL1_DAD_WHITE_UNDERCLOTHES_FIT_V5.glb",
+  "source_sha256": "07b1919550ac0afa97d331b8e49d985aad117f518390349da245a27d4e05eccd",
+  "animated_glb_name": "CECIL1_DAD_STARTER_ANIMATIONS_V1.glb",
+  "animated_glb_sha256": "870fbcd15d46bb98cc5ab7f689b8ed676d2a98e38d5205d6441b806c825edcb6",
+  "animated_glb_bytes": 37060432,
+  "viewer_name": "CECIL1_DAD_STARTER_ANIMATIONS_V1_VIEWER.html",
+  "viewer_sha256": "e0f1c420d2e3c6310815bfacddd34f4e44414138f2f830ad161a1ba75d68a30d",
+  "viewer_bytes": 52549595,
+  "animation_names": [
+    "Idle \u00b7 Breathing",
+    "Walk \u00b7 In Place",
+    "Wave \u00b7 Left Hand",
+    "Fishing \u00b7 Waiting (Draft)"
+  ],
+  "animation_channels": [
+    7,
+    14,
+    7,
+    10
+  ],
+  "keyframe_counts": [
+    41,
+    45,
+    67,
+    47
+  ],
+  "rig_joints": 138,
+  "original_geometry_texture_rig_bytes_unchanged": true,
+  "original_nodes_unchanged": true,
+  "mobile_viewer_embedded_glb_sha_match": true,
+  "public_safe": "script and qa ONLY; do not expose private Dad model or proprietary garment mesh",
+  "review_status": "V1 starter draft; procedural motion, Android and animation cloth clipping test required; no deployment"
+}
