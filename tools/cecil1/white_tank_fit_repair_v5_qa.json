@@ -1,0 +1,20 @@
+{
+  "source": "CECIL1_DAD_REAL_FREE_WHITE_TANK_BOXERS.glb",
+  "source_glb_sha256": "5a0f3436aa95f54d6feb733e4426eac652587d5673e99465fd9855a950ddb35a",
+  "glb": "CECIL1_DAD_WHITE_UNDERCLOTHES_FIT_V5.glb",
+  "glb_sha256": "07b1919550ac0afa97d331b8e49d985aad117f518390349da245a27d4e05eccd",
+  "glb_bytes": 37020076,
+  "viewer": "CECIL1_DAD_WHITE_UNDERCLOTHES_FIT_V5_VIEWER.html",
+  "viewer_sha256": "c0978e03f43ab69ce381733b4719af73e031f6437b70d0958db0bc86d8855283",
+  "viewer_bytes": 52367239,
+  "changed_mesh": "Free_white_ribbed_G8_tank_top POSITION and NORMAL only",
+  "affected_vertices": 3449,
+  "max_vertex_offset_m": 0.020545657724142075,
+  "shoulder_gap_median_before_m": 0.023609503343153447,
+  "shoulder_gap_median_after_m": 0.010915965581497546,
+  "side_breakout_face_centroids_below_surface": 0,
+  "side_breakout_min_sdf_m": 0.004008175952781624,
+  "hat_dad_body_boxers_source_bin_unchanged": true,
+  "skeleton_joints": 138,
+  "status": "candidate; awaiting owner Android screenshot + animated cloth/collision checks"
+}
