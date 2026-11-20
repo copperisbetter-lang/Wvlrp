@@ -1,0 +1,47 @@
+{
+  "source_glb": "CECIL1_DAD_STARTER_ANIMATIONS_V1.glb",
+  "source_sha256": "870fbcd15d46bb98cc5ab7f689b8ed676d2a98e38d5205d6441b806c825edcb6",
+  "new_glb": "CECIL1_DAD_ANIMATIONS_V2_WALK_WAVE_SEATED_FISH.glb",
+  "glb_sha256": "bb7026e88d3b05eb19c6a6081ee790ea8561550929c65e5002f6122de7916378",
+  "glb_bytes": 37100152,
+  "viewer": "CECIL1_DAD_ANIMATIONS_V2_WALK_WAVE_SEATED_FISH_VIEWER.html",
+  "viewer_sha256": "2ebfe32c6700216a1b6a7f398aebafcbdd934c56e93e8568fe4dab4275d96c94",
+  "viewer_bytes": 52651942,
+  "rig_joints": 138,
+  "clips": [
+    {
+      "name": "Idle \u00b7 Breathing",
+      "duration_seconds": 4.0,
+      "channels": 7,
+      "repeat": "loop"
+    },
+    {
+      "name": "Walk \u00b7 In Place",
+      "duration_seconds": 2.200000047683716,
+      "channels": 14,
+      "repeat": "loop"
+    },
+    {
+      "name": "Wave \u00b7 Palm Forward (V2)",
+      "duration_seconds": 3.3,
+      "channels": 9,
+      "repeat": "once"
+    },
+    {
+      "name": "Fishing \u00b7 Sit Down & Wait (Draft V2)",
+      "duration_seconds": 8.0,
+      "channels": 19,
+      "repeat": "once"
+    }
+  ],
+  "garment": "Genuine original white G9 boxer geometry expanded for walk; white tank unchanged",
+  "boxer_eased_vertices_more_than_1mm": 10997,
+  "boxer_max_offset_m": 0.04299869388341904,
+  "wave": "90deg forearm-axis rotation on hand, proportional 30/60deg twist1/twist2",
+  "fishing": "Seated legs/hips and hands forward together. NO chair or rod geometry, still draft, pose blending/cloth collisions pending",
+  "approved_dad_head_body_hat_tank_nodes_original_skin_weights_unchanged": true,
+  "base_GLTF_binary_unchanged_outside_boxer_position_and_normal": true,
+  "android_viewer_contains_byte_exact_new_glb": true,
+  "public_repo_policy": "Builder and QA allowed; DO NOT publish original scanned model or third-party meshes",
+  "status": "V2 owner review needed; no production deployment; animation cloth clipping at seated hips unresolved"
+}
