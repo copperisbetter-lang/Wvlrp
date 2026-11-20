@@ -1,0 +1,125 @@
+{
+  "source_glb": "/mnt/data/CECIL1_DAD_ANIMATIONS_V4_FORWARD_LEAN_FISH.glb",
+  "source_sha256": "8e345dd2d849e75cec88abdbd2c71e45ac66b89ea091e5a79afe70989f376d89",
+  "model_glb": "/mnt/data/CECIL1_DAD_ANIMATIONS_V5C_SEATED_CLOTH_CORRECTION.glb",
+  "model_sha256": "07bd4425123f80ac092c1e6b8a3d9d6aa4dd448635e9f3268676b0223f47851c",
+  "viewer": "/mnt/data/CECIL1_DAD_ANIMATIONS_V5C_SEATED_CLOTH_CORRECTION_VIEWER.html",
+  "viewer_sha256": "171aadcad204d1984fa8de5a8a0e85609b2ea68aa634e62c47cb1aa7445c6c14",
+  "g9_joint_count": 138,
+  "clips": [
+    "Idle \u00b7 Breathing",
+    "Walk \u00b7 In Place",
+    "Wave \u00b7 Front Palm (V3)",
+    "Fishing \u00b7 Wider Knees / Forward Lean / Left Hand Cups Right Fist (Draft V4)"
+  ],
+  "morph_targets_added": 2,
+  "body_and_head_geometry_unchanged": true,
+  "garments": [
+    {
+      "mesh_id": 3,
+      "vertices": 7073,
+      "max_correction_cm": 2.9437415599823,
+      "mean_correction_mm": 1.7838728427886963,
+      "penetrations_before_gt4mm": 249,
+      "penetrations_after_gt4mm": 153,
+      "geometry_iterations": [
+        {
+          "iteration": 1,
+          "penetrations_gt4mm": 249,
+          "max_mm": 32.12626647949219
+        },
+        {
+          "iteration": 2,
+          "penetrations_gt4mm": 57,
+          "max_mm": 39.01961135864258
+        },
+        {
+          "iteration": 3,
+          "penetrations_gt4mm": 38,
+          "max_mm": 45.3259391784668
+        },
+        {
+          "iteration": 4,
+          "penetrations_gt4mm": 24,
+          "max_mm": 48.31357955932617
+        }
+      ]
+    },
+    {
+      "mesh_id": 4,
+      "vertices": 14852,
+      "max_correction_cm": 5.109513282775879,
+      "mean_correction_mm": 6.739346504211426,
+      "penetrations_before_gt4mm": 1434,
+      "penetrations_after_gt4mm": 396,
+      "geometry_iterations": [
+        {
+          "iteration": 1,
+          "penetrations_gt4mm": 1434,
+          "max_mm": 33.40995788574219
+        },
+        {
+          "iteration": 2,
+          "penetrations_gt4mm": 227,
+          "max_mm": 43.55180358886719
+        },
+        {
+          "iteration": 3,
+          "penetrations_gt4mm": 141,
+          "max_mm": 50.235591888427734
+        },
+        {
+          "iteration": 4,
+          "penetrations_gt4mm": 100,
+          "max_mm": 55.04734802246094
+        },
+        {
+          "iteration": 5,
+          "penetrations_gt4mm": 97,
+          "max_mm": 57.838836669921875
+        }
+      ]
+    }
+  ],
+  "review_grid": "/mnt/data/CECIL1_DAD_ANIMATIONS_V5C_SEATED_CLOTH_COMPARISON.jpg",
+  "notes": "Seated-pose corrective morph is 0 in Idle/Walk/Wave; animated 0-to-1 in sit/fish. Exact mobile browser test pending; static CPU-skinned VTK previews and collision diagnostics performed.",
+  "version": "V5C",
+  "status": "Review candidate \u2014 static cloth improvement; not final, residual visible side seam",
+  "morph_patch_file": "/mnt/data/CECIL1_DAD_ANIMATIONS_V5C_CLOTH_MORPHS.npz",
+  "morph_patch_sha256": "eea463e119653695a19b925c9d231c8782f4c168cf3f5deb5e93c3a24053bcb8",
+  "static_per_pose_collision_counts": {
+    "v4_seated_7.2s": {
+      "tank": 249,
+      "boxers": 1434
+    },
+    "v5c_seated_7.2s": {
+      "tank": 153,
+      "boxers": 396
+    },
+    "v5c_walk_0.55s": {
+      "tank": 3,
+      "boxers": 17
+    },
+    "v5c_walk_1.65s": {
+      "tank": 3,
+      "boxers": 9
+    },
+    "v5c_sit_transition_1s": {
+      "tank": 3,
+      "boxers": 1646
+    },
+    "v5c_sit_transition_1.5s": {
+      "tank": 133,
+      "boxers": 884
+    }
+  },
+  "limit": "This is a nearest-vertex normal collision proxy, NOT full continuous cloth collision. Remaining holes and jagged hem in static render; phone/WebGL live playback not verified. No game deployment.",
+  "unchanged_from_v4": [
+    "face mesh",
+    "body mesh",
+    "hat V9",
+    "138-joint G9 skeleton",
+    "all 4 native animation poses except added garment morph weight tracks",
+    "original garment POSITION buffers (pose targets append-only)"
+  ]
+}
