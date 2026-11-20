@@ -1,0 +1,79 @@
+{
+  "source_base_sha256": "3bdc5bd960f3e3beac4a299ea2638655e5814cf4777d7bd21f6d0db19d14b702",
+  "source_zip_sha256": {
+    "dforce tank g8 male.zip": "b67194930afd7d316077b0bd5dcda21975f5d07f815b182e4520f6bacc18f147",
+    "boxer short for genesis 9.zip": "16329db24ed4d23a8cb4c57285ff876a4fd8f95887b8d9db639ef363cb1b3f8c"
+  },
+  "assets": {
+    "Free white ribbed G8 tank top": {
+      "source_geometry": "dforce Tank G8 male/data/SD/dforce Tank G8 male/dforce Tank G8 male/dforce Tank G8 male.dsf",
+      "original_vertices": 7073,
+      "original_triangles": 13859,
+      "output_vertices": 7073,
+      "output_triangles": 13859,
+      "mapped_bones": 14,
+      "unmapped_weight_joints": [],
+      "new_node": 142,
+      "new_mesh": 3,
+      "fit": {
+        "source_min_signed_m": -0.012375937774777412,
+        "source_p05_signed_m": -0.0032764673233032227,
+        "near_surface_count": 5208,
+        "corrected_count": 1212,
+        "max_correction_m": 0.009999999776482582,
+        "after_fit_bounds": [
+          [
+            -0.18912401795387268,
+            0.8921511769294739,
+            -0.1550806164741516
+          ],
+          [
+            0.19149674475193024,
+            1.531569004058838,
+            0.13780014216899872
+          ]
+        ]
+      }
+    },
+    "Free white G9 boxer shorts": {
+      "source_geometry": "My Library/data/KuraiKya/Boxershort/Space Boxershort/Space Boxershort_64582.dsf",
+      "original_vertices": 64582,
+      "original_triangles": 129168,
+      "output_vertices": 14852,
+      "output_triangles": 29708,
+      "mapped_bones": 7,
+      "unmapped_weight_joints": [],
+      "new_node": 143,
+      "new_mesh": 4,
+      "fit": {
+        "source_min_signed_m": -0.016911402344703674,
+        "source_p05_signed_m": -0.007394734770059586,
+        "near_surface_count": 14852,
+        "corrected_count": 6582,
+        "max_correction_m": 0.013000000268220901,
+        "after_fit_bounds": [
+          [
+            -0.1937485635280609,
+            0.6645005941390991,
+            -0.14180615544319153
+          ],
+          [
+            0.19256649911403656,
+            0.9801774621009827,
+            0.11282768845558167
+          ]
+        ]
+      }
+    }
+  },
+  "non_garment_bin_preserved": true,
+  "output_glb_sha256": "5a0f3436aa95f54d6feb733e4426eac652587d5673e99465fd9855a950ddb35a",
+  "output_glb_size": 37020076,
+  "base_binary_sha256": "53fefa17cb3058075d0ec2b3a648ef4fb9855203275d6992fc8f1b0948216a43",
+  "source_filename": "cecil_hat_v9.glb",
+  "output_viewer_sha256": "debd06cd33405e669812ac32223c0695d4b1b79985e9baea518166edac142523",
+  "output_viewer_size": 52367238,
+  "viewer_embedded_glb_exact_sha_match": true,
+  "public_github_policy": "Publish source script + SHA/QA metadata only. Do not publish face scanned model or commercial-license-restricted garment geometry.",
+  "status": "real garment fit candidate. Original body/rig validated; real animation clipping not tested; owner Android approval pending."
+}
