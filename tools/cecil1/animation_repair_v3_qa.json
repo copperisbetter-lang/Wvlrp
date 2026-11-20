@@ -1,0 +1,65 @@
+{
+  "v3_source": "CECIL1_DAD_ANIMATIONS_V2_WALK_WAVE_SEATED_FISH.glb",
+  "source_sha256": "bb7026e88d3b05eb19c6a6081ee790ea8561550929c65e5002f6122de7916378",
+  "v3_glb": "CECIL1_DAD_ANIMATIONS_V3_WAVE_CLASP_FIT.glb",
+  "glb_bytes": 37184804,
+  "glb_sha256": "e97004b0bd6381e87beae74b0ed6fc67809aa48c70d1bdd5acf74a443a1ef1eb",
+  "v3_viewer": "CECIL1_DAD_ANIMATIONS_V3_WAVE_CLASP_FIT_VIEWER.html",
+  "viewer_bytes": 52770814,
+  "viewer_sha256": "26f07dfc1774338e4eb96511aa1f0ebb801788338a7d208a0001f8529a5eb255",
+  "identity_untouched": [
+    "head",
+    "body",
+    "hat V9",
+    "tank",
+    "all 138 Genesis 9 bones and inverse bind matrices",
+    "skin weights",
+    "original source scenes"
+  ],
+  "original_GLTF_binary_change_region": "ONLY boxer POSITION and NORMAL existing buffer region; animation tracks appended",
+  "byte_positions_changed_count": 193621,
+  "boxer_vertices_moved_over_1mm": 10730,
+  "boxer_max_relative_v2_position_shift_m": 0.02580050751566887,
+  "boxer_fit": "Outer thigh spread reduced to 35% of V2 addition; local smooth 16mm front gusset, skin clearance visually checked at 0.55s and 1.65s walk frames only",
+  "wave": "Left palm turned toward front using -75 degree wrist-axis from V1, original V2 was +90 backward; front close-up rendered",
+  "fishing": "Sit-down holding right curled hand with left loosely curled hand, right wrist / left wrist 46mm apart, static preview from front & side. No camping chair, rod, contact solver or cloth simulation yet",
+  "seated_wrist_gap_m": 0.046022643805453366,
+  "new_tracks": [
+    {
+      "name": "Idle \u00b7 Breathing",
+      "channels": 7,
+      "duration_s": 4.0
+    },
+    {
+      "name": "Walk \u00b7 In Place",
+      "channels": 14,
+      "duration_s": 2.200000047683716
+    },
+    {
+      "name": "Wave \u00b7 Front Palm (V3)",
+      "channels": 9,
+      "duration_s": 3.299999952316284
+    },
+    {
+      "name": "Fishing \u00b7 Right Fist Held in Left Hand (Draft V3)",
+      "channels": 49,
+      "duration_s": 8.0
+    }
+  ],
+  "viewer_embedded_model_exact_match": true,
+  "viewer_motion_tables_match_glb": true,
+  "render_evidence": [
+    "v3_walk_early_0.png",
+    "v3_walk_late_0.png",
+    "v3_wave_0.png",
+    "v3_clasp_0.png",
+    "v3_clasp_90.png"
+  ],
+  "QA_limitations": [
+    "No Android animation playback validated yet",
+    "No collision simulation for full walk including every frame, nor seated movements",
+    "Fishing chair, foot planting, elbow-to-knee contact and grasp fidelity still require review",
+    "No approved game deployment"
+  ],
+  "public_safety": "Public GitHub holds scripts, hashes and non-identifying QA; actual private Dad scan + real third-party garments NOT committed"
+}
