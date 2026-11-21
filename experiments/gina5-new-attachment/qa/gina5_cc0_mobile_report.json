@@ -1,0 +1,21 @@
+{
+  "status": "Mobile GLB produced from genuine fitted saved Blender working file; not welded or approved",
+  "source_blend": "experiments/gina5-new-attachment/qa/Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.blend",
+  "full_blender_preserved": true,
+  "original_attachment_faces": 178561,
+  "original_attachment_vertices": 90085,
+  "mobile_attachment_faces": 32140,
+  "mobile_attachment_vertices": 16513,
+  "skinning_retained": true,
+  "skin_count": 1,
+  "mobile_morphs_included": false,
+  "full_editable_blender_morphs_preserved": true,
+  "real_source_scan_used": true,
+  "old_rejected_donor_used": false,
+  "candidate_glb_file": "experiments/gina5-new-attachment/qa/Gina5_CC0_Real_Scan_Attachment_MOBILE.glb",
+  "candidate_glb_bytes": 12483012,
+  "source_public_repo": "copperisbetter-lang/Wvlrp",
+  "owner_approved": false,
+  "production_ready": false,
+  "timestamp_utc": "2026-11-21T23:27:48.160119+00:00"
+}
