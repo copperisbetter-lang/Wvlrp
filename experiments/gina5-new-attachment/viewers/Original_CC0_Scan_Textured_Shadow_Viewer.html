@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Original 3D Scan — Texture & Shadow Inspection</title>
+<style>
+  :root{color-scheme:dark;--bg:#111b27;--card:#1d2c3b;--line:#40556b;--txt:#eff4f8;--muted:#c0cedb;--accent:#37b6b8}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font:15px system-ui,-apple-system,'Segoe UI',sans-serif}
+  .head{padding:12px 14px;background:#1b2939;border-bottom:1px solid var(--line)}
+  .head strong{display:block;font-size:16px}.head small{display:block;margin-top:3px;color:var(--muted);line-height:1.4}
+  #view{height:min(73vh,680px);min-height:390px;position:relative;background:radial-gradient(ellipse at 48% 36%,#4d5360,#1a2432 76%);overflow:hidden;touch-action:none}
+  #view canvas{display:block;touch-action:none}
+  .notice{position:absolute;left:10px;right:10px;top:10px;z-index:2;padding:10px 12px;background:#101c2edc;border:1px solid #778da4;border-radius:10px;font-size:13px;line-height:1.4;pointer-events:none}
+  .notice strong{display:block;margin-bottom:3px}
+  #loadbar{height:4px;margin-top:8px;border-radius:6px;background:#344759;overflow:hidden}#progress{height:100%;width:0;background:var(--accent);transition:width .15s}
+  .panel{padding:13px 12px 22px;max-width:750px;margin:auto;display:grid;gap:11px}
+  .buttons{display:flex;flex-wrap:wrap;gap:7px}
+  button{border-radius:9px;border:1px solid #778ba0;background:#30465c;color:#f7fbff;padding:11px 13px;font-size:14px;min-height:43px;touch-action:manipulation}
+  button.active{background:#0f7a85;border-color:#48d1cd}
+  label{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+  label input[type=range]{flex:1;accent-color:var(--accent);height:26px;min-width:0}
+  .rowbox{padding:10px 12px;border:1px solid #485b71;background:#1e2e40;border-radius:9px}
+  .muted{color:var(--muted);line-height:1.5;font-size:12px}
+  .warn{background:#302c28;border-left:3px solid #d5aa70;padding:9px 12px;font-size:12px;line-height:1.5}
+  #error{white-space:normal;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header class="head"><strong>Original 3D anatomical scan · Surface inspection</strong><small>Unfitted source only — no Gina, no inserted or stretched geometry</small></header>
+<div id="view">
+  <div class="notice" id="notice"><strong id="status">Loading the original scanned mesh…</strong><span id="statusDetail">Real source geometry from public GitHub; roughly 16 MB</span><div id="loadbar"><div id="progress"></div></div></div>
+</div>
+<div class="panel">
+  <div class="buttons" id="angles">
+    <button class="active" data-view="front">Front</button><button data-view="back">Opposite side</button><button data-view="left">Side</button><button data-view="tilt">Tilted</button><button data-view="close">Detail</button><button id="reset">Reset</button>
+  </div>
+  <div class="buttons" id="looks">
+    <button class="active" data-look="skin">Skin-toned texture</button><button data-look="clay">Neutral clay</button><button data-look="flat">Untextured gray</button>
+  </div>
+  <div class="rowbox">
+    <label>Raking-light direction <input id="lightDirection" type="range" min="-90" max="90" value="-53" step="1" /><span id="lightDirectionValue">−53°</span></label>
+    <label>Shadow contrast <input id="shadowContrast" type="range" min="0" max="100" value="68" step="1" /><span id="shadowContrastValue">68%</span></label>
+    <label>Color texture strength <input id="textureStrength" type="range" min="0" max="100" value="45" step="1" /><span id="textureStrengthValue">45%</span></label>
+  </div>
+  <div class="buttons"><button id="toggleShadows" class="active">Shadows on</button><button id="toggleSpin">Auto-rotate</button><button id="fit">Fit to screen</button></div>
+  <div class="muted">Drag to rotate · Pinch to zoom · Use **Opposite side** if the first face of the scan is the back. The material and lights affect only how the original mesh is shown, not its geometry.</div>
+  <div class="warn">This scan contains <b>no photographic color texture</b>. “Skin-toned texture” is a subtle, computer-generated inspection finish. Lighting can reveal surface detail, but neither the finish nor shadows are evidence of the scan's original skin color or new anatomical structure.</div>
+  <div class="muted" id="modelInfo">Source: We Are Beautiful — 482357-VSNN-1 — surface.stl · CC0. Unmodified scan mesh. <a href="https://commons.wikimedia.org/wiki/File:We_Are_Beautiful_%E2%80%93_482357-VSNN-1_%E2%80%93_surface.stl" style="color:#a1e7e4">Source and license</a></div>
+  <div class="muted" id="error" aria-live="polite"></div>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const url='https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/experiment/gina5-new-attachment-public-20261121/experiments/gina5-new-attachment/qa/CC0_Anatomical_Scan_UNFITTED.glb';
+const $=id=>document.getElementById(id);
+const view=$('view'),status=$('status'),detail=$('statusDetail'),bar=$('progress'),error=$('error');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x1d2935);
+const camera=new THREE.PerspectiveCamera(37,1,1,2000);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.17;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+view.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.minDistance=22;controls.maxDistance=1200;controls.enablePan=true;controls.target.set(0,0,0);
+const hemi=new THREE.HemisphereLight(0xdde7f3,0x65544e,1.15);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xffe5cd,3.0);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-220;key.shadow.camera.right=220;key.shadow.camera.top=220;key.shadow.camera.bottom=-220;key.shadow.camera.near=1;key.shadow.camera.far=700;key.shadow.bias=-.00008;key.shadow.normalBias=.1;key.shadow.radius=3;scene.add(key);scene.add(key.target);
+const fill=new THREE.DirectionalLight(0xd9e9ff,.78);fill.position.set(140,-55,140);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffefdd,1.2);rim.position.set(30,120,-170);scene.add(rim);
+const backdropMat=new THREE.MeshStandardMaterial({color:0x313b47,roughness:1,metalness:0});
+const backdrop=new THREE.Mesh(new THREE.PlaneGeometry(550,480),backdropMat);
+backdrop.receiveShadow=true;backdrop.position.z=-98;scene.add(backdrop);
+const pivot=new THREE.Group();scene.add(pivot);
+let source=null,models=[],stored=[],look='skin',spin=false,hasShadows=true,loaded=false,dimensions=new THREE.Vector3(110,200,125);
+const sampleBase=new THREE.Color('#c99580'),grayBase=new THREE.Color('#b0b0ab');
+function noise3(x,y,z){return .48*Math.sin(x*.21+y*.14+z*.09)+.27*Math.sin(x*.57-y*.43+z*.38)+.17*Math.cos(x*.90+y*.68-z*.81)+.08*Math.sin(x*1.78-y*2.07+z*1.1)}
+function makeColors(mesh){
+ const geo=mesh.geometry, pos=geo.attributes.position;
+ const arr=new Float32Array(pos.count*3),nStrength=Number($('textureStrength').value)/100;
+ const p=new THREE.Vector3(),base=new THREE.Color();
+ for(let i=0;i<pos.count;i++){
+  p.fromBufferAttribute(pos,i);let t=noise3(p.x,p.y,p.z),tone=1+t*.17*nStrength;
+  base.copy(look==='clay'?grayBase:sampleBase).multiplyScalar(tone);
+  arr[3*i]=base.r;arr[3*i+1]=base.g;arr[3*i+2]=base.b;
+ }
+ geo.setAttribute('color',new THREE.BufferAttribute(arr,3));
+}
+function applyLook(){
+ if(!loaded)return;
+ for(const mesh of models){
+  if(look==='flat'){
+   mesh.material=new THREE.MeshStandardMaterial({color:0xc9c8c4,roughness:.95,metalness:0,side:THREE.DoubleSide});
+  }else{
+   makeColors(mesh);
+   mesh.material=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:look==='skin'?.86:.95,metalness:0,side:THREE.DoubleSide});
+  }
+  mesh.material.needsUpdate=true;
+ }
+ document.querySelectorAll('[data-look]').forEach(b=>b.classList.toggle('active',b.dataset.look===look));
+}
+function setLight(){
+ const angle=Number($('lightDirection').value)*Math.PI/180;
+ key.position.set(Math.sin(angle)*225,125,Math.cos(angle)*225);
+ key.target.position.set(0,0,0);key.target.updateMatrixWorld();
+ const power=Number($('shadowContrast').value)/100;
+ hemi.intensity=1.95-power*1.45;
+ fill.intensity=1.2-power*.83;
+ key.intensity=1.6+power*2.3;
+ $('lightDirectionValue').textContent=$('lightDirection').value+'°';
+ $('shadowContrastValue').textContent=$('shadowContrast').value+'%';
+ $('textureStrengthValue').textContent=$('textureStrength').value+'%';
+}
+for(const id of ['lightDirection','shadowContrast'])$(id).addEventListener('input',setLight);
+$('textureStrength').addEventListener('input',()=>{setLight();applyLook()});
+function setView(name){
+ const d=410;
+ let vec=new THREE.Vector3(0,0,1),target=new THREE.Vector3(0,0,0),dist=d;
+ if(name==='back')vec.set(0,0,-1);
+ if(name==='left')vec.set(1,0,.15);
+ if(name==='tilt')vec.set(.33,.37,1);
+ if(name==='close'){target.set(0,-7,0);dist=195}
+ if(name==='detail'){target.set(0,-7,0);dist=160}
+ camera.position.copy(target).addScaledVector(vec.normalize(),dist);
+ camera.up.set(0,1,0);controls.target.copy(target);controls.update();
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+$('reset').onclick=()=>setView('front');$('fit').onclick=()=>setView('front');
+$('toggleSpin').onclick=()=>{spin=!spin;$('toggleSpin').classList.toggle('active',spin);controls.autoRotate=spin;controls.autoRotateSpeed=.65};
+$('toggleShadows').onclick=()=>{hasShadows=!hasShadows;renderer.shadowMap.enabled=hasShadows;renderer.shadowMap.needsUpdate=true;$('toggleShadows').classList.toggle('active',hasShadows);$('toggleShadows').textContent=hasShadows?'Shadows on':'Shadows off'};
+document.querySelectorAll('[data-look]').forEach(b=>b.addEventListener('click',()=>{look=b.dataset.look;applyLook()}));
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(view);resize();setView('front');setLight();
+function fromRaw(a){return new THREE.Vector3(a[0],a[2],-a[1]).normalize()}
+async function init(){
+ const loader=new GLTFLoader();
+ loader.load(url,gltf=>{
+  source=gltf.scene;pivot.add(source);source.updateWorldMatrix(true,true);
+  const box=new THREE.Box3().setFromObject(source),center=box.getCenter(new THREE.Vector3());
+  source.position.sub(center);source.updateMatrixWorld(true);
+  // Rotation calculated from SOURCE scan PCA (not fitted geometry).
+  // X = scan PC3, Y = -scan PC1 (top points up), Z = -scan PC2.
+  const pc1=[-.6883368448498918,-.16845077926886234,-.7055612822326698];
+  const pc2=[-.013727312427939021,-.9694640370036773,.24484901847881413];
+  const pc3=[-.7252612969927471,.17822406100256508,.6650054399507966];
+  const x=fromRaw(pc3),y=fromRaw(pc1).negate(),z=fromRaw(pc2).negate();
+  const mat=new THREE.Matrix4().makeBasis(x,y,z);
+  const quat=new THREE.Quaternion().setFromRotationMatrix(mat);
+  pivot.quaternion.copy(quat).invert();
+  source.traverse(o=>{
+   if(o.isMesh){models.push(o);o.castShadow=true;o.receiveShadow=true;
+    // Preserve actual source vertex positions and normals; inspect colors only.
+    if(!o.geometry.attributes.normal)o.geometry.computeVertexNormals();
+   }
+  });
+  if(!models.length)throw new Error('File contained no 3D surface mesh');
+  loaded=true;applyLook();
+  status.textContent='ORIGINAL SCAN LOADED ✓';
+  detail.textContent=models.length+' mesh part(s) · real captured surface · artificial inspection finish and adjustable shadows';
+  bar.style.width='100%';
+  $('modelInfo').insertAdjacentText('afterbegin','Original unfitted public-domain 3D scan. ');
+ },xhr=>{
+  if(xhr.lengthComputable) {const pct=Math.min(99,Math.round(100*xhr.loaded/xhr.total));bar.style.width=pct+'%';status.textContent='Loading original scan… '+pct+'%'}
+  else if(xhr.loaded){detail.textContent='Downloading scanned mesh: '+(xhr.loaded/1e6).toFixed(1)+' MB'}
+ },err=>{status.textContent='Scan could not load';detail.textContent='Check internet connection or reopen in Chrome';error.textContent=String(err?.message||err);});
+}
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
+animate();init();
+</script>
+</body>
+</html>
