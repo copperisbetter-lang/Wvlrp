@@ -1,0 +1,86 @@
+{
+  "source_page": "https://commons.wikimedia.org/wiki/File:We_Are_Beautiful_%E2%80%93_482357-VSNN-1_%E2%80%93_surface.stl",
+  "source_author": "We Are Beautiful",
+  "source_license": "CC0 1.0 Universal",
+  "source_description": "Vulva of standing woman; real surface scan; Wikimedia Commons source",
+  "license_verified": true,
+  "stl_original_sha1": "3c079f7e979bf5be1315610f9d93ddd220eb47cc",
+  "source_bytes": 9610034,
+  "raw_triangles": 192199,
+  "deduplicated_vertices": 97115,
+  "mesh_triangles": 192199,
+  "local_source_min": [
+    -60.45372772216797,
+    -59.80584716796875,
+    -0.07741140574216843
+  ],
+  "local_source_max": [
+    59.657630920410156,
+    60.22442626953125,
+    147.9058074951172
+  ],
+  "local_source_span": [
+    120.11135864257812,
+    120.0302734375,
+    147.98321533203125
+  ],
+  "local_source_mean": [
+    4.7853851318359375,
+    -7.221728801727295,
+    97.41856384277344
+  ],
+  "pca_variance": [
+    1754.3969128984518,
+    789.3648309292107,
+    207.21742710365433
+  ],
+  "pca_axes_columns": [
+    [
+      -0.6883368448498918,
+      -0.013727312427939021,
+      -0.7252612969927471
+    ],
+    [
+      -0.16845077926886234,
+      -0.9694640370036773,
+      0.17822406100256508
+    ],
+    [
+      -0.7055612822326698,
+      0.24484901847881413,
+      0.6650054399507966
+    ]
+  ],
+  "pca_projected_spans": [
+    197.16226158099025,
+    121.17730565169492,
+    111.84329795940673
+  ],
+  "triangle_area_sum_raw_units_squared": 28905.634765625,
+  "triangle_area_median_raw_units_squared": 0.09397221356630325,
+  "degenerate_triangles": 0,
+  "boundary_edges": 2033,
+  "nonmanifold_edges": 2033,
+  "isolated_vertices": 0,
+  "connected_components": 1,
+  "largest_component_vertices": 97115,
+  "component_vertex_counts_desc": [
+    97115
+  ],
+  "source_untextured": true,
+  "source_rigged": false,
+  "blender_file": "experiments/gina5-new-attachment/qa/CC0_Anatomical_Scan_UNFITTED.blend",
+  "preview_glb": "experiments/gina5-new-attachment/qa/CC0_Anatomical_Scan_UNFITTED.glb",
+  "original_gina_unmodified": true,
+  "fitted_to_gina": false,
+  "qa_approved": false,
+  "created_utc": "2026-11-21T23:16:00.058754+00:00",
+  "blender_version": "5.0.1",
+  "next_steps": [
+    "Verify axis and real scale",
+    "Isolate usable anatomical scan region without stretching",
+    "Register to unmodified Gina body geometry",
+    "Transfer skin weights to Gina real skeleton",
+    "Visually inspect front/side/under before welding"
+  ]
+}
