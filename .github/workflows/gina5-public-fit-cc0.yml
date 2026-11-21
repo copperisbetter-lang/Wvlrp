@@ -1,0 +1,81 @@
+name: Gina5 - fit real CC0 anatomical scan (PUBLIC Blender)
+on:
+  push:
+    branches:
+      - experiment/gina5-new-attachment-public-20261121
+    paths:
+      - .github/workflows/gina5-public-fit-cc0.yml
+      - experiments/gina5-new-attachment/fit_cc0_scan_to_gina.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fit-real-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/gina5-new-attachment-public-20261121
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            experiments/gina5-new-attachment
+          sparse-checkout-cone-mode: true
+      - name: Install Blender on PUBLIC standard Linux runner
+        run: |
+          set -euo pipefail
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 update
+          timeout 900s sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 install -y blender python3-numpy libegl1 libgl1 libgles2 libopengl0 libx11-6 libxext6 libxrender1 libxi6 libxkbcommon0 libsm6 libice6
+          blender --version
+      - name: Obtain SHA-verified original public Gina 5 and preflighted CC0 STL
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gina5-source
+          curl --fail --show-error --location --retry 3 --retry-delay 3 --connect-timeout 20 --max-time 300 \
+            "https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/feature/gina5-natural-blonde-v3-20261102/prototypes/gina5-20261102/Gina_5_NATURAL_BLONDE_V3.glb" \
+            -o /tmp/gina5-source/Gina_5_NATURAL_BLONDE_V3.glb
+          printf '%s  %s\n' '1f30b81b2e59484251ba71ecef6c0987ca4ea9172534340c6c156dddead976a4' \
+            '/tmp/gina5-source/Gina_5_NATURAL_BLONDE_V3.glb' | sha256sum -c -
+          printf '%s  %s\n' '3c079f7e979bf5be1315610f9d93ddd220eb47cc' \
+            'experiments/gina5-new-attachment/source/We_Are_Beautiful_482357_VSNN_surface.stl' | sha1sum -c -
+      - name: Fit real anatomical mesh, transfer real skin UVs and 69-bone skinning
+        run: |
+          set -euo pipefail
+          mkdir -p experiments/gina5-new-attachment/qa
+          blender -b -t 2 --python-exit-code 1 \
+            --python experiments/gina5-new-attachment/fit_cc0_scan_to_gina.py -- \
+            /tmp/gina5-source/Gina_5_NATURAL_BLONDE_V3.glb \
+            experiments/gina5-new-attachment/source/We_Are_Beautiful_482357_VSNN_surface.stl \
+            experiments/gina5-new-attachment/qa
+          python3 - <<'PY'
+          import json,pathlib,math
+          root=pathlib.Path('experiments/gina5-new-attachment/qa')
+          r=json.loads((root/'gina5_cc0_fit_report.json').read_text())
+          assert r['old_rejected_round01_used'] is False and r['old_rejected_V1_used'] is False
+          assert r['real_attachment_vertices']>4000 and r['real_attachment_faces']>7000
+          assert r['gina_armature_bones']==69 and r['gina_body_shape_keys']==35
+          assert r['gina_body_vertices_before_after']==[67121,67121]
+          assert r['gina_body_faces_before_after'][0]==r['gina_body_faces_before_after'][1]
+          assert r['max_boundary_offset_m']<.0015 and r['sampled_skin_ray_misses_repaired']<r['real_attachment_vertices']*.015
+          assert r['uv_from_actual_Gina_skin_surface_raycast'] and r['bone_weights_from_actual_Gina_skin_surface_raycast']
+          assert r['pose_tests'][-1]['max_sample_motion_m']>.003
+          assert not r['owner_approved'] and not r['verified_true_seam_weld'] and not r['production_ready']
+          for fn in ('Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.blend','Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.glb'):
+            assert (root/fn).is_file() and (root/fn).stat().st_size>1000000
+          print('PASS authentic CC0 scan in ORIGINAL Gina5 full-color skin and skeleton',r['real_attachment_vertices'],r['preview_glb_size_bytes'])
+          PY
+      - name: Preserve actual Blender candidate and visible GLB without Actions artifacts
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experiments/gina5-new-attachment/qa/gina5_cc0_fit_report.json
+          for file in experiments/gina5-new-attachment/qa/Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.*; do
+            [ -e "$file" ] || continue
+            size="$(stat -c%s "$file")"
+            if [ "$size" -lt 90000000 ]; then git add "$file"; else echo "::warning::Skipping >90 MB candidate $file"; fi
+          done
+          git commit -m "Save real CC0 scan fitted and skinned to Gina5 on public QA branch [skip ci]" || exit 0
+          git push origin HEAD:experiment/gina5-new-attachment-public-20261121
