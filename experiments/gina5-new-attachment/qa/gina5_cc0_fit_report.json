@@ -1,0 +1,115 @@
+{
+  "status": "ACTUAL verified Wikimedia CC0 scan fitted to ORIGINAL Gina skin, separate skinned working copy; NOT WELDED / NOT OWNER-APPROVED",
+  "source_sha1": "3c079f7e979bf5be1315610f9d93ddd220eb47cc",
+  "source_glb_sha256": "1f30b81b2e59484251ba71ecef6c0987ca4ea9172534340c6c156dddead976a4",
+  "source_license": "CC0 1.0 Universal (We Are Beautiful)",
+  "source_page": "https://commons.wikimedia.org/wiki/File:We_Are_Beautiful_%E2%80%93_482357-VSNN-1_%E2%80%93_surface.stl",
+  "blender_version": "5.0.1",
+  "preserved_original_gina": true,
+  "old_rejected_round01_used": false,
+  "old_rejected_V1_used": false,
+  "gina_body_vertices_before_after": [
+    67121,
+    67121
+  ],
+  "gina_body_faces_before_after": [
+    124176,
+    124176
+  ],
+  "gina_body_shape_keys": 35,
+  "gina_armature_bones": 69,
+  "gina_actions": 77,
+  "real_attachment_vertices": 90085,
+  "real_attachment_faces": 178561,
+  "real_attachment_border_edges": 1613,
+  "source_scan_points_extrapolated_to_real_skin_gap": 77371,
+  "direct_skin_ray_coverage_ratio": 0.141133374035633,
+  "virtual_host_surface_used_for_missing_skin": true,
+  "max_2d_distance_to_known_skin_sample_m": 0.03327496349811554,
+  "host_uv_built_from_continuous_real_skin_island": true,
+  "host_z_derived_from_real_skin_fit": true,
+  "source_pca_axes": [
+    [
+      -0.6883368448459212,
+      -0.013727312201802653,
+      -0.7252612970007953
+    ],
+    [
+      -0.16845077955965054,
+      -0.9694640369586742,
+      0.17822406097251825
+    ],
+    [
+      -0.705561282167118,
+      0.24484901866967781,
+      0.6650054399500712
+    ]
+  ],
+  "source_vertical_normalized_quantiles": [
+    -70.7643203703333,
+    97.17947513209745
+  ],
+  "source_horizontal_normalized_quantiles": [
+    -29.598563315683876,
+    43.13550814631047
+  ],
+  "target_x_range_m": [
+    -0.03821764167190648,
+    0.038219168757472236
+  ],
+  "target_vertical_y_range_m": [
+    0.5850421752546431,
+    0.6869556593981065
+  ],
+  "target_front_z_range_m": [
+    -0.07329639856289258,
+    0.09777355334921252
+  ],
+  "max_relief_m": 0.0059170637529884825,
+  "min_relief_m": -0.007452420462022884,
+  "max_boundary_offset_m": 0.00036,
+  "boundary_gap_check_note": "This is offset from reconstructed support, NOT real body weld clearance",
+  "mean_boundary_offset_m": 0.0003600000000000001,
+  "source_normal_detail_mad_raw": 15.330942556067267,
+  "source_actual_boundary_edge_count": 1613,
+  "distance_to_boundary_max_m": 0.027518631890416145,
+  "attached_to_real_armature": true,
+  "attachment_shape_keys": [
+    "Basis",
+    "CC0_Subtle_Parting",
+    "CC0_Subtle_Fullness"
+  ],
+  "skin_material": "Skin",
+  "uv_from_actual_Gina_skin_surface_raycast": true,
+  "bone_weights_from_actual_Gina_skin_surface_raycast": true,
+  "pose_tests": [
+    {
+      "test": "left_thigh_20",
+      "max_sample_motion_m": 0.043834511370878834,
+      "finite": true
+    },
+    {
+      "test": "right_thigh_20",
+      "max_sample_motion_m": 0.06344890656836562,
+      "finite": true
+    },
+    {
+      "test": "both_thighs_40",
+      "max_sample_motion_m": 0.12143554448074827,
+      "finite": true
+    }
+  ],
+  "verified_true_seam_weld": false,
+  "owner_approved": false,
+  "production_ready": false,
+  "needs": [
+    "Front/side/underside actual owner viewer acceptance",
+    "Texture seam and body clearance test",
+    "Full animation pose tests and corrective morphs",
+    "Welding or controlled surface join only after acceptance"
+  ],
+  "timestamp_utc": "2026-11-21T23:25:09.129857+00:00",
+  "blender_checkpoint": "experiments/gina5-new-attachment/qa/Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.blend",
+  "preview_glb": "experiments/gina5-new-attachment/qa/Gina5_CC0_Real_Scan_Attachment_UNAPPROVED.glb",
+  "preview_glb_size_bytes": 73793160
+}
