@@ -189,9 +189,28 @@ samples=[(float(zsurface[i]),tuple(float(q) for q in uvsmooth[i]),
          for i in range(len(samples))]
 z0=np.array([s[0] for s in samples])
 # Feather only scan relief near ORIGINAL scan boundary to avoid squared rims.
-perimeter=np.maximum(np.abs(uv),np.abs(vv))
-t=np.clip((.98-perimeter)/.16,0,1)
+# Scan is an OPEN 2-manifold with both outer and INTERNAL boundaries.
+# Query the actual triangle-edge border and feather the real captured relief
+# near every border; never assume there is a single rectangular perimeter.
+all_edges=np.vstack([keep_faces[:,[0,1]],keep_faces[:,[1,2]],keep_faces[:,[2,0]]])
+all_edges.sort(axis=1)
+edge_values,edge_counts=np.unique(all_edges,axis=0,return_counts=True)
+border_edges=edge_values[edge_counts==1]
+source_border_ids=np.unique(border_edges)
+assert len(source_border_ids)>50, 'Scan unexpectedly has no open borders'
+from mathutils.kdtree import KDTree
+border_kd=KDTree(len(source_border_ids))
+for j,i in enumerate(source_border_ids):
+ border_kd.insert(Vector((float(target_x[i]),float(target_y[i]),0)),j)
+border_kd.balance()
+dist_to_border=np.array([
+ border_kd.find(Vector((float(x),float(y),0)))[2]
+ for x,y in zip(target_x,target_y)],dtype=float)
+t=np.clip(dist_to_border/.006,0,1)
 fade=t*t*(3-2*t)
+perimeter=np.maximum(np.abs(uv),np.abs(vv))
+edge_t=np.clip((.98-perimeter)/.16,0,1)
+fade*=edge_t*edge_t*(3-2*edge_t)
 relief=.00036+fade*np.clip(normal_detail*.008,-.008,.008)
 world_pts=[from_y(float(x),float(y),float(z+d)) for x,y,z,d in zip(target_x,target_y,z0,relief)]
 local_pts=[tuple(local_inv@p) for p in world_pts]
@@ -309,6 +328,8 @@ report={
  'boundary_gap_check_note':'This is offset from reconstructed support, NOT real body weld clearance',
  'mean_boundary_offset_m':float(np.mean(rim_gaps)),
  'source_normal_detail_mad_raw':float(mad),
+ 'source_actual_boundary_edge_count':int(len(border_edges)),
+ 'distance_to_boundary_max_m':float(np.max(dist_to_border)),
  'attached_to_real_armature':True,
  'attachment_shape_keys':list(mesh.shape_keys.key_blocks.keys()),
  'skin_material':skin_material.name,
