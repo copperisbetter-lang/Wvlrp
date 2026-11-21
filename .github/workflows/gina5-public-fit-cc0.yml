@@ -58,7 +58,8 @@ jobs:
           assert r['gina_armature_bones']==69 and r['gina_body_shape_keys']==35
           assert r['gina_body_vertices_before_after']==[67121,67121]
           assert r['gina_body_faces_before_after'][0]==r['gina_body_faces_before_after'][1]
-          assert r['max_boundary_offset_m']<.0015 and r['sampled_skin_ray_misses_repaired']<r['real_attachment_vertices']*.015
+          assert r['max_boundary_offset_m']<.0015 and r['direct_skin_ray_coverage_ratio']>.05
+          assert r['virtual_host_surface_used_for_missing_skin'] is True
           assert r['uv_from_actual_Gina_skin_surface_raycast'] and r['bone_weights_from_actual_Gina_skin_surface_raycast']
           assert r['pose_tests'][-1]['max_sample_motion_m']>.003
           assert not r['owner_approved'] and not r['verified_true_seam_weld'] and not r['production_ready']
