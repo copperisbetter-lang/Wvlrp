@@ -128,19 +128,65 @@ def sample(x,y):
  key=(int(round(x*100000)),int(round(y*100000)))
  if key not in sample_cache:sample_cache[key]=evaluate_host(x,y)
  return sample_cache[key]
+# The ORIGINAL Gina has no uninterrupted skin directly below the mons:
+# a ray cannot hit skin inside the physical gap between both thighs.
+# Construct a smooth *virtual placement surface* from actual neighboring skin
+# hits and retain every actual source-scan vertex/triangle above that support.
+# This is not a welded seam and must not be misrepresented as one.
 samples=[sample(float(x),float(y)) for x,y in zip(target_x,target_y)]
 bad=[i for i,s in enumerate(samples) if s is None]
-if len(bad)>.015*len(samples):
- raise RuntimeError(f'Actual Gina skin ray coverage insufficient: {len(bad)}/{len(samples)}. No fake mapping permitted.')
-# Repair sparse body scan misses using nearest known projected point (under 4 mm).
-if bad:
- valid=np.array([i for i,s in enumerate(samples) if s is not None])
- xy=np.stack((target_x,target_y),axis=1)
- for i in bad:
-  d2=np.sum((xy[valid]-xy[i])**2,axis=1)
-  j=valid[np.argmin(d2)]
-  if d2.min()>.004**2:raise RuntimeError('Missing actual body sample beyond 4 mm')
-  samples[i]=samples[j]
+valid=np.array([i for i,s in enumerate(samples) if s is not None],dtype=int)
+coverage=len(valid)/len(samples)
+if coverage<.05:
+ raise RuntimeError(f'Not enough observed Gina real skin surfaces to derive support: {coverage:.2%}')
+xy=np.stack((target_x,target_y),axis=1)
+xs=target_x/.04;ys=(target_y-.636)/.052
+features=np.column_stack([np.ones(len(xs)),xs,ys,xs*xs,xs*ys,ys*ys,
+                          xs**3,(xs*xs)*ys,xs*(ys*ys),ys**3])
+# Polynomial is ONLY the body placement substrate, not the actual anatomy.
+host_z_observed=np.array([samples[i][0] for i in valid])
+host_uv_observed=np.array([samples[i][1] for i in valid])
+zcoeff=np.linalg.lstsq(features[valid],host_z_observed,rcond=None)[0]
+zsurface=features@zcoeff
+if not np.isfinite(zsurface).all() or min(zsurface)<-.2 or max(zsurface)>.28:
+ raise RuntimeError('Real Gina surface extrapolation unstable; abort without saving model.')
+# Skin UV from one continuous native body atlas island, not nearest-vertex UV
+# jumps which made V1 look like a wrinkled leaf.
+uv_med=np.median(host_uv_observed,axis=0)
+consistent=np.linalg.norm(host_uv_observed-uv_med,axis=1)<.23
+if consistent.sum()<400:
+ raise RuntimeError('Could not identify continuous real Gina skin UV island')
+uvcoeff=np.linalg.lstsq(features[valid[consistent]],host_uv_observed[consistent],rcond=None)[0]
+uvsmooth=features@uvcoeff
+if not np.isfinite(uvsmooth).all():
+ raise RuntimeError('Invalid projected real-skin UV field')
+# Bone weights are smooth near the gap: inverse-distance weighted averaging of
+# real body skinning samples; no new bones or guessed group names.
+from mathutils.kdtree import KDTree
+kd=KDTree(len(valid))
+for j,i in enumerate(valid):kd.insert(Vector((float(xy[i,0]),float(xy[i,1]),0)),j)
+kd.balance()
+all_weights=[]
+max_near_dist=0.
+for i in range(len(samples)):
+ if samples[i] is not None:
+  all_weights.append(samples[i][2])
+  continue
+ neighbors=kd.find_n(Vector((float(xy[i,0]),float(xy[i,1]),0)),8)
+ agg=defaultdict(float)
+ for p,j,d in neighbors:
+  w=1.0/(d*d+.000025)
+  for name,value in samples[valid[j]][2]:agg[name]+=w*value
+ keep=sorted(agg.items(),key=lambda v:v[1],reverse=True)[:4]
+ norm=sum(v for name,v in keep)
+ assert norm>0
+ all_weights.append([(name,w/norm) for name,w in keep])
+ max_near_dist=max(max_near_dist,neighbors[0][2])
+# Smooth support replaces only the host placement field; source scan relief
+# is still taken from the real, independently verified CC0 donor.
+samples=[(float(zsurface[i]),tuple(float(q) for q in uvsmooth[i]),
+          all_weights[i],samples[i][3] if samples[i] is not None else -1)
+         for i in range(len(samples))]
 z0=np.array([s[0] for s in samples])
 # Feather only scan relief near ORIGINAL scan boundary to avoid squared rims.
 perimeter=np.maximum(np.abs(uv),np.abs(vv))
@@ -152,6 +198,13 @@ local_pts=[tuple(local_inv@p) for p in world_pts]
 mesh=bpy.data.meshes.new('WeAreBeautiful_CC0_RealScan_Fitted_Mesh')
 # Scan normal parity may require reverse face winding to front-face Gina.
 faces_view=[tuple(int(v) for v in f) for f in keep_faces]
+# Match visible outward direction after converting donor PCA into Gina coordinates.
+tri_sample=np.array(faces_view[::max(1,len(faces_view)//2000)],dtype=int)
+pt=np.array([[float(x),float(y),float(z+d)] for x,y,z,d in zip(target_x,target_y,z0,relief)])
+v1=pt[tri_sample[:,1]]-pt[tri_sample[:,0]]
+v2=pt[tri_sample[:,2]]-pt[tri_sample[:,0]]
+mean_forward=float(np.mean(np.cross(v1,v2)[:,2]))
+if mean_forward<0:faces_view=[(a,c,b) for a,b,c in faces_view]
 mesh.from_pydata(local_pts,[],faces_view);mesh.update()
 patch=bpy.data.objects.new('Gina5_REAL_CC0_Anatomical_Attachment_V2_UNAPPROVED',mesh)
 body.users_collection[0].objects.link(patch)
@@ -238,7 +291,12 @@ report={
  'real_attachment_vertices':len(mesh.vertices),
  'real_attachment_faces':len(mesh.polygons),
  'real_attachment_border_edges':len(boundary),
- 'sampled_skin_ray_misses_repaired':len(bad),
+ 'source_scan_points_extrapolated_to_real_skin_gap':len(bad),
+ 'direct_skin_ray_coverage_ratio':coverage,
+ 'virtual_host_surface_used_for_missing_skin':True,
+ 'max_2d_distance_to_known_skin_sample_m':max_near_dist,
+ 'host_uv_built_from_continuous_real_skin_island':True,
+ 'host_z_derived_from_real_skin_fit':True,
  'source_pca_axes':axes.tolist(),
  'source_vertical_normalized_quantiles':vrange,
  'source_horizontal_normalized_quantiles':hrange,
@@ -248,6 +306,7 @@ report={
  'max_relief_m':float(np.max(relief)),
  'min_relief_m':float(np.min(relief)),
  'max_boundary_offset_m':float(np.max(rim_gaps)),
+ 'boundary_gap_check_note':'This is offset from reconstructed support, NOT real body weld clearance',
  'mean_boundary_offset_m':float(np.mean(rim_gaps)),
  'source_normal_detail_mad_raw':float(mad),
  'attached_to_real_armature':True,
