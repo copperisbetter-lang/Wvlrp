@@ -1,0 +1,76 @@
+name: One-time prune of four obsolete WVLRP Pages artifacts
+
+'on':
+  push:
+    branches:
+      - maintenance/prune-obsolete-pages-artifacts-20261121
+    paths:
+      - .github/workflows/prune-obsolete-pages-artifacts-20261121.yml
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  prune:
+    if: github.repository == 'copperisbetter-lang/Wvlrp' && github.ref == 'refs/heads/maintenance/prune-obsolete-pages-artifacts-20261121'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate and delete only four superseded deployment artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +x
+          set -euo pipefail
+          api="https://api.github.com/repos/copperisbetter-lang/Wvlrp"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          # Format: artifact_id:successful_publish_run_id:exact_size_bytes.
+          # Preserve latest successful deployment artifact 14652169495.
+          targets=(
+            "14650299202:44778144439:1047498262"
+            "14651480104:44778131900:1047483516"
+            "14649830976:44774490551:1047483412"
+            "14648946903:44774477373:1047478547"
+          )
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          validated=()
+
+          # Validate all remaining artifacts BEFORE deleting any of them.
+          for row in "${targets[@]}"; do
+            IFS=: read -r id run bytes <<< "$row"
+            if [[ "$id" == 14652169495 ]]; then
+              echo "Protected latest deployment; refusing deletion" >&2
+              exit 1
+            fi
+            status="$(curl -sS -L "${headers[@]}" -o "$tmp/artifact-$id" -w '%{http_code}' "$api/actions/artifacts/$id")"
+            if [[ "$status" == 404 ]]; then
+              echo "Artifact $id already expired or absent; skipping."
+              continue
+            fi
+            [[ "$status" == 200 ]] || { echo "Failed artifact lookup $id HTTP $status" >&2; exit 1; }
+            jq -e --argjson id "$id" --argjson run "$run" --argjson bytes "$bytes" '
+              .id == $id and .name == "github-pages" and
+              .size_in_bytes == $bytes and .workflow_run.id == $run and
+              .expired == false
+            ' "$tmp/artifact-$id" >/dev/null || { echo "Artifact metadata mismatch: $id" >&2; exit 1; }
+
+            status="$(curl -sS -L "${headers[@]}" -o "$tmp/run-$run" -w '%{http_code}' "$api/actions/runs/$run")"
+            [[ "$status" == 200 ]] || { echo "Failed workflow run lookup $run HTTP $status" >&2; exit 1; }
+            jq -e '.name == "Publish WVLRP" and .status == "completed" and .conclusion == "success"' "$tmp/run-$run" >/dev/null ||
+              { echo "Workflow was not a completed successful Pages publish: $run" >&2; exit 1; }
+            validated+=("$id")
+            echo "Validated obsolete Pages artifact $id ($bytes bytes) from run $run."
+          done
+
+          for id in "${validated[@]}"; do
+            status="$(curl -sS -L "${headers[@]}" -X DELETE -o "$tmp/delete-$id" -w '%{http_code}' "$api/actions/artifacts/$id")"
+            case "$status" in
+              204) echo "Deleted obsolete artifact $id." ;;
+              404) echo "Artifact $id expired before deletion; no action needed." ;;
+              *) echo "Deletion failed for artifact $id: HTTP $status" >&2; exit 1 ;;
+            esac
+          done
+          echo "Pruning completed; latest deployment artifact and all source files preserved."
