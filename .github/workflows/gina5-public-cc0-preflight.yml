@@ -1,0 +1,76 @@
+name: Gina5 - verify new CC0 anatomy source (PUBLIC runner)
+on:
+  push:
+    branches:
+      - experiment/gina5-new-attachment-public-20261121
+    paths:
+      - .github/workflows/gina5-public-cc0-preflight.yml
+      - experiments/gina5-new-attachment/preflight_cc0_anatomy.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect-real-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/gina5-new-attachment-public-20261121
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            experiments/gina5-new-attachment
+          sparse-checkout-cone-mode: true
+      - name: Install Blender in PUBLIC GitHub Actions runner
+        run: |
+          set -euo pipefail
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt 2>/dev/null || true
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 update
+          timeout 900s sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=45 install -y blender python3-numpy libegl1 libgl1 libgles2 libopengl0 libx11-6 libxext6 libxrender1 libxi6 libxkbcommon0 libsm6 libice6
+          blender --version
+      - name: Download genuine public CC0 anatomical surface and verify Wikimedia SHA1
+        run: |
+          set -euo pipefail
+          mkdir -p experiments/gina5-new-attachment/source
+          curl --fail --show-error --location --retry 3 --retry-delay 3 --connect-timeout 20 --max-time 270 \
+            --user-agent "Gina5Educational3D/1.0 (Wikimedia CC0 source QA)" \
+            "https://upload.wikimedia.org/wikipedia/commons/2/29/We_Are_Beautiful_%E2%80%93_482357-VSNN-1_%E2%80%93_surface.stl" \
+            -o experiments/gina5-new-attachment/source/We_Are_Beautiful_482357_VSNN_surface.stl
+          printf '%s  %s\n' '3c079f7e979bf5be1315610f9d93ddd220eb47cc' \
+            'experiments/gina5-new-attachment/source/We_Are_Beautiful_482357_VSNN_surface.stl' | sha1sum -c -
+      - name: Inspect actual 3D scan mesh topology, coordinates, and create working source GLB
+        run: |
+          set -euo pipefail
+          mkdir -p experiments/gina5-new-attachment/qa
+          blender -b -t 2 --python-exit-code 1 \
+            --python experiments/gina5-new-attachment/preflight_cc0_anatomy.py -- \
+            experiments/gina5-new-attachment/source/We_Are_Beautiful_482357_VSNN_surface.stl \
+            experiments/gina5-new-attachment/qa
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('experiments/gina5-new-attachment')
+          d=json.loads((root/'qa/cc0_scan_preflight.json').read_text())
+          assert d['license_verified'] and d['source_license']=='CC0 1.0 Universal'
+          assert d['source_bytes']==9610034
+          assert d['mesh_triangles']==d['raw_triangles']
+          assert d['deduplicated_vertices']>3000
+          assert d['fitted_to_gina'] is False and d['qa_approved'] is False
+          for fn in ('CC0_Anatomical_Scan_UNFITTED.blend','CC0_Anatomical_Scan_UNFITTED.glb'):
+            assert (root/'qa'/fn).stat().st_size>10000
+          print('PASS genuine CC0 source and topology',d['deduplicated_vertices'],d['boundary_edges'])
+          PY
+      - name: Save source, editable model, preview, and QA on PUBLIC experiment branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experiments/gina5-new-attachment/source/*.stl
+          git add experiments/gina5-new-attachment/qa/cc0_scan_preflight.json
+          for file in experiments/gina5-new-attachment/qa/CC0_Anatomical_Scan_UNFITTED.*; do
+            [ -e "$file" ] || continue
+            size="$(stat -c%s "$file")"
+            if [ "$size" -lt 90000000 ]; then git add "$file"; else echo "::warning::Output too large for direct commit: $file"; fi
+          done
+          git commit -m "Checkpoint verified CC0 anatomical source and actual Blender scan [skip ci]" || exit 0
+          git push origin HEAD:experiment/gina5-new-attachment-public-20261121
