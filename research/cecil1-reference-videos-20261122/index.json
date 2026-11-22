@@ -1,0 +1,56 @@
+[
+  {
+    "video": "AQNlyqfJFr6ksZE_Jbr_RknArSqaFGYLjR3wDb_GIfo-UBx3zZINp2tXypFTWDlf3bRrJdub4YeN3w5CaGYoPs0.mp4",
+    "duration_seconds": 483.973,
+    "samples": 20,
+    "timestamps_seconds": [
+      8.47,
+      32.668,
+      56.867,
+      81.065,
+      105.264,
+      129.463,
+      153.661,
+      177.86,
+      202.059,
+      226.257,
+      250.456,
+      274.655,
+      298.853,
+      323.052,
+      347.251,
+      371.449,
+      395.648,
+      419.847,
+      444.045,
+      468.244
+    ]
+  },
+  {
+    "video": "AQPjj2UNaR8zZpwimrxFpmIOW8zNz7SoahxZZc6Bnu6V8nX8aZXx3xMmrWXO0OyYNCRwLAZOpPrACNlbE2h6SxA.mp4",
+    "duration_seconds": 518.688,
+    "samples": 20,
+    "timestamps_seconds": [
+      9.077,
+      35.011,
+      60.946,
+      86.88,
+      112.815,
+      138.749,
+      164.683,
+      190.618,
+      216.552,
+      242.487,
+      268.421,
+      294.355,
+      320.29,
+      346.224,
+      372.159,
+      398.093,
+      424.027,
+      449.962,
+      475.896,
+      501.831
+    ]
+  }
+]
