@@ -1,11 +1,11 @@
 Riley Vulva 1 integration trial
-source_commit: 10629e8c9261496b60477e9add7429aaf9169d40
+source_commit: 93212e75dbf4ada55faedb00a69040cdea432dfc
 status: success
-checked_utc: 2026-11-18T00:39:21Z
-00:39:14 | INFO: Blender create Mesh node Riley neck skin bridge geometry
-00:39:14 | INFO: Blender create Mesh node base
-00:39:14 | INFO: Blender create Mesh node teeth_base
-00:39:14 | INFO: glTF import finished in 0.34s
+checked_utc: 2026-11-22T23:12:26Z
+23:12:17 | INFO: Blender create Mesh node Riley neck skin bridge geometry
+23:12:17 | INFO: Blender create Mesh node base
+23:12:17 | INFO: Blender create Mesh node teeth_base
+23:12:17 | INFO: glTF import finished in 0.37s
 RILEY_REPLACEMENT_LABIAL_SCULPT_READY vertices 1549 polygons 1512 outer_region 324 inner_region 190
 RILEY_IMPORTED_ACTIONS ['Riley HandsAndKnees', 'Riley Idle', 'Riley Kneel', 'Riley Walk']
 RILEY_IMPORTED_NLA [('Riley Walk', ['Riley Walk']), ('Riley Kneel', ['Riley Kneel']), ('Riley Idle', ['Riley Idle']), ('Riley HandsAndKnees', ['Riley HandsAndKnees'])]
@@ -13,33 +13,33 @@ RILEY_HANDS_SOURCE knees [0.464, 0.464] elbows [0.676, 0.676] floor 0.03
 RILEY_ELBOWS_KNEES_QA knee_elbow_z [0.048, 0.048, 0.076, 0.076] wrist_z [0.068, 0.068] ground 0.048 max_contact_error 0.028 spine_delta 30
 RILEY_ELBOWS_ACTION_READY Riley ElbowsAndKnees
 ERROR Draco mesh compression is not available because library could not be found at /usr/lib/blender/scripts/addons_core/io_scene_gltf2/libextern_draco.so
-00:39:17 | INFO: Starting glTF 2.0 export
-00:39:17 | INFO: Extracting primitive: eyebrow006
-00:39:17 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-00:39:17 | INFO: Primitives created: 1
-00:39:17 | INFO: Extracting primitive: eyelashes01
-00:39:17 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
-00:39:17 | INFO: Primitives created: 1
-00:39:17 | INFO: Extracting primitive: low-poly
-00:39:17 | INFO: Primitives created: 1
-00:39:17 | INFO: Extracting primitive: bob01
-00:39:17 | INFO: Primitives created: 1
-00:39:17 | INFO: Extracting primitive: Riley layered hair surface
-00:39:17 | INFO: Primitives created: 4
-00:39:17 | INFO: Extracting primitive: base.002
-00:39:18 | INFO: Primitives created: 1
-00:39:18 | INFO: Extracting primitive: Riley neck skin bridge geometry
-00:39:18 | INFO: Primitives created: 1
-00:39:18 | INFO: Extracting primitive: Original Vulva 1 licensed MakeHuman topology
-00:39:18 | INFO: Primitives created: 1
-00:39:18 | INFO: Extracting primitive: base
-00:39:18 | INFO: Primitives created: 1
-00:39:18 | INFO: Extracting primitive: teeth_base
-00:39:18 | INFO: Primitives created: 1
-00:39:19 | INFO: Finished glTF 2.0 export in 1.5165257453918457 s
+23:12:20 | INFO: Starting glTF 2.0 export
+23:12:20 | INFO: Extracting primitive: eyebrow006
+23:12:20 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+23:12:20 | INFO: Primitives created: 1
+23:12:20 | INFO: Extracting primitive: eyelashes01
+23:12:20 | WARNING: More than one shader node tex image used for a texture. The resulting glTF sampler will behave like the first shader node tex image.
+23:12:20 | INFO: Primitives created: 1
+23:12:20 | INFO: Extracting primitive: low-poly
+23:12:20 | INFO: Primitives created: 1
+23:12:20 | INFO: Extracting primitive: bob01
+23:12:20 | INFO: Primitives created: 1
+23:12:20 | INFO: Extracting primitive: Riley layered hair surface
+23:12:20 | INFO: Primitives created: 4
+23:12:20 | INFO: Extracting primitive: base.002
+23:12:20 | INFO: Primitives created: 1
+23:12:21 | INFO: Extracting primitive: Riley neck skin bridge geometry
+23:12:21 | INFO: Primitives created: 1
+23:12:21 | INFO: Extracting primitive: Original Vulva 1 licensed MakeHuman topology
+23:12:21 | INFO: Primitives created: 1
+23:12:21 | INFO: Extracting primitive: base
+23:12:21 | INFO: Primitives created: 1
+23:12:21 | INFO: Extracting primitive: teeth_base
+23:12:21 | INFO: Primitives created: 1
+23:12:22 | INFO: Finished glTF 2.0 export in 1.4683992862701416 s
 
-RILEY_VULVA1_TRIAL_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-top-shelf-vulva1-trial.glb 10983008 vertices 1549 faces 1512 skin Riley complexion matched continuous mannequin skin pelvis_hits 181 boundary_vertices 24 original_animations_retained 5
+RILEY_VULVA1_TRIAL_SUCCESS /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/riley-top-shelf-vulva1-trial.glb 10982020 vertices 1549 faces 1512 skin Riley complexion matched continuous mannequin skin pelvis_hits 181 boundary_vertices 24 original_animations_retained 5
 Blender 5.0.1
 
 Blender quit
-trial_glb_bytes: 10983008
+trial_glb_bytes: 10982020
