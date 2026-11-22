@@ -1,0 +1,520 @@
+[
+  {
+    "start": 3.02,
+    "end": 8.94,
+    "text": "Well, thought I'd just try and make a little clip here. I don't know what to call this. It's a",
+    "avg_logprob": -0.343,
+    "no_speech_prob": 0.337
+  },
+  {
+    "start": 9.52,
+    "end": 15.34,
+    "text": "little bit weird, but I mean, you know, I guess all this stuff is really",
+    "avg_logprob": -0.343,
+    "no_speech_prob": 0.337
+  },
+  {
+    "start": 15.34,
+    "end": 20.28,
+    "text": "Anyway, it's one of where I was about 13 years old and",
+    "avg_logprob": -0.343,
+    "no_speech_prob": 0.337
+  },
+  {
+    "start": 21.42,
+    "end": 24.54,
+    "text": "I used to spend a whole lot of time in the woods",
+    "avg_logprob": -0.343,
+    "no_speech_prob": 0.337
+  },
+  {
+    "start": 26.74,
+    "end": 28.14,
+    "text": "Well this day",
+    "avg_logprob": -0.343,
+    "no_speech_prob": 0.337
+  },
+  {
+    "start": 28.14,
+    "end": 35.86,
+    "text": "It was like a lot of other days, I mean in the summertime of home when I was young, it's",
+    "avg_logprob": -0.392,
+    "no_speech_prob": 0.422
+  },
+  {
+    "start": 35.86,
+    "end": 45.38,
+    "text": "back I guess 95 to 105, real hot that day, no clouds in the sky whatsoever.",
+    "avg_logprob": -0.392,
+    "no_speech_prob": 0.422
+  },
+  {
+    "start": 46.22,
+    "end": 58.12,
+    "text": "And outside I was going to walk into the woods down Long Creek all around because it was",
+    "avg_logprob": -0.392,
+    "no_speech_prob": 0.422
+  },
+  {
+    "start": 58.12,
+    "end": 67.02,
+    "text": "So, I took off, took a little journey down through the woods there, and it started getting",
+    "avg_logprob": -0.335,
+    "no_speech_prob": 0.104
+  },
+  {
+    "start": 67.02,
+    "end": 72.28,
+    "text": "a bit late, and I was getting a little bit hungry, so I decided to go on back home.",
+    "avg_logprob": -0.335,
+    "no_speech_prob": 0.104
+  },
+  {
+    "start": 73.44,
+    "end": 82.2,
+    "text": "Now, you have to almost live in the country to understand what I'm going to say, but I",
+    "avg_logprob": -0.335,
+    "no_speech_prob": 0.104
+  },
+  {
+    "start": 82.2,
+    "end": 92.32,
+    "text": "I mean, we had a little farm there, and when killing out the woods, walking through there,",
+    "avg_logprob": -0.396,
+    "no_speech_prob": 0.412
+  },
+  {
+    "start": 92.42,
+    "end": 97.14,
+    "text": "even as hard as it was, you'd still sway it a little bit.",
+    "avg_logprob": -0.396,
+    "no_speech_prob": 0.412
+  },
+  {
+    "start": 97.62,
+    "end": 103.22,
+    "text": "So, I decided I was going, well, I got to the dance line there, the pasture.",
+    "avg_logprob": -0.396,
+    "no_speech_prob": 0.412
+  },
+  {
+    "start": 104.8,
+    "end": 109.2,
+    "text": "The woods was right up to the fence.",
+    "avg_logprob": -0.396,
+    "no_speech_prob": 0.412
+  },
+  {
+    "start": 110.54,
+    "end": 127.2,
+    "text": "And all the rest of it was all clear that they wouldn't know how weeds even really, and no trees, maybe one or two trees all the way across it, and I guess it must have been three, four hundred acres, something like that.",
+    "avg_logprob": -0.304,
+    "no_speech_prob": 0.514
+  },
+  {
+    "start": 128.54,
+    "end": 135.58,
+    "text": "It was double pasture and I decided I was just going to sit down there in the shade and cool",
+    "avg_logprob": -0.497,
+    "no_speech_prob": 0.592
+  },
+  {
+    "start": 135.58,
+    "end": 139.4,
+    "text": "off and rest before I took that walk across that pasture.",
+    "avg_logprob": -0.497,
+    "no_speech_prob": 0.592
+  },
+  {
+    "start": 141.43,
+    "end": 148.63,
+    "text": "Well, I sat down there under a tree and as I said, you're so glad to be in the country.",
+    "avg_logprob": -0.497,
+    "no_speech_prob": 0.592
+  },
+  {
+    "start": 148.63,
+    "end": 159.01,
+    "text": "I mean, you know, it was a hot, sticky day, really, I guess humid and like dog day, summer",
+    "avg_logprob": -0.366,
+    "no_speech_prob": 0.351
+  },
+  {
+    "start": 159.01,
+    "end": 159.37,
+    "text": "day.",
+    "avg_logprob": -0.366,
+    "no_speech_prob": 0.351
+  },
+  {
+    "start": 160.19,
+    "end": 166.89,
+    "text": "And I mean, I could hear crows hollering off into the distance, and I could hear birds",
+    "avg_logprob": -0.366,
+    "no_speech_prob": 0.351
+  },
+  {
+    "start": 166.89,
+    "end": 171.89,
+    "text": "back in the woods there hollering and singing and everything.",
+    "avg_logprob": -0.366,
+    "no_speech_prob": 0.351
+  },
+  {
+    "start": 172.59,
+    "end": 182.29,
+    "text": "I'd hear chipmunks, I'd hear squirrels, different things, all that, off into the distance there.",
+    "avg_logprob": -0.315,
+    "no_speech_prob": 0.542
+  },
+  {
+    "start": 183.51,
+    "end": 187.45,
+    "text": "I'd heard a rooster crow back through there.",
+    "avg_logprob": -0.315,
+    "no_speech_prob": 0.542
+  },
+  {
+    "start": 188.29,
+    "end": 193.53,
+    "text": "I mean, you just have to be in the country to know what kind of sounds I'm talking about listening to there.",
+    "avg_logprob": -0.315,
+    "no_speech_prob": 0.542
+  },
+  {
+    "start": 193.53,
+    "end": 201.65,
+    "text": "I decided to just sit there and rest before I went, so I took a family of good trees that",
+    "avg_logprob": -0.465,
+    "no_speech_prob": 0.577
+  },
+  {
+    "start": 201.65,
+    "end": 203.67,
+    "text": "were sitting down against and laying back.",
+    "avg_logprob": -0.465,
+    "no_speech_prob": 0.577
+  },
+  {
+    "start": 204.63,
+    "end": 210.55,
+    "text": "I sat in there a couple of minutes for you, and all at once just everything in the whole",
+    "avg_logprob": -0.465,
+    "no_speech_prob": 0.577
+  },
+  {
+    "start": 210.55,
+    "end": 212.85,
+    "text": "world just absolutely went quiet.",
+    "avg_logprob": -0.465,
+    "no_speech_prob": 0.577
+  },
+  {
+    "start": 213.27,
+    "end": 217.93,
+    "text": "There wasn't a sound, it was the quiet that I rode in your ears.",
+    "avg_logprob": -0.465,
+    "no_speech_prob": 0.577
+  },
+  {
+    "start": 217.93,
+    "end": 229.1,
+    "text": "years. I said, yeah, that's just what it's very, is what's going on here. And I mean,",
+    "avg_logprob": -0.346,
+    "no_speech_prob": 0.553
+  },
+  {
+    "start": 229.36,
+    "end": 235.02,
+    "text": "once I just got this feeling that it's something that was absolutely just sparing at me. It's",
+    "avg_logprob": -0.346,
+    "no_speech_prob": 0.553
+  },
+  {
+    "start": 235.02,
+    "end": 240.06,
+    "text": "the bad I couldn't stand it. Well, I was looking around trying to see what was looking at",
+    "avg_logprob": -0.346,
+    "no_speech_prob": 0.553
+  },
+  {
+    "start": 240.06,
+    "end": 247.8,
+    "text": "me, watching me. And I couldn't see nothing. Only thing I finally saw was one little old",
+    "avg_logprob": -0.346,
+    "no_speech_prob": 0.553
+  },
+  {
+    "start": 247.8,
+    "end": 255.76,
+    "text": "chipmunk, and he was sitting up against the tree there on one of the little roots that",
+    "avg_logprob": -0.388,
+    "no_speech_prob": 0.395
+  },
+  {
+    "start": 255.76,
+    "end": 263.32,
+    "text": "grow out of the tree and was sticking up out of the ground, but I sat there and I looked",
+    "avg_logprob": -0.388,
+    "no_speech_prob": 0.395
+  },
+  {
+    "start": 263.32,
+    "end": 268.82,
+    "text": "at it and it was just sitting there on its hind legs like a squirrel with a little ball",
+    "avg_logprob": -0.388,
+    "no_speech_prob": 0.395
+  },
+  {
+    "start": 268.82,
+    "end": 279.3,
+    "text": "in front of it and up in front of it, I was just staring at it and it was just staring",
+    "avg_logprob": -0.363,
+    "no_speech_prob": 0.482
+  },
+  {
+    "start": 279.3,
+    "end": 286.56,
+    "text": "right straight back at me, just a dead, solid, straight, straight of the stare. And I said",
+    "avg_logprob": -0.363,
+    "no_speech_prob": 0.482
+  },
+  {
+    "start": 286.56,
+    "end": 293.2,
+    "text": "there, I looked at it for a minute and I thought, man, that little thing here is making me feel",
+    "avg_logprob": -0.363,
+    "no_speech_prob": 0.482
+  },
+  {
+    "start": 293.2,
+    "end": 299.82,
+    "text": "like this and I sat there for a couple more minutes and finally it just got",
+    "avg_logprob": -0.246,
+    "no_speech_prob": 0.374
+  },
+  {
+    "start": 299.82,
+    "end": 304.5,
+    "text": "down jumped off the little root was that and started off down down the tree",
+    "avg_logprob": -0.246,
+    "no_speech_prob": 0.374
+  },
+  {
+    "start": 304.5,
+    "end": 312.64,
+    "text": "there down all the toward the hill going down the hill toward the creek and I could",
+    "avg_logprob": -0.246,
+    "no_speech_prob": 0.374
+  },
+  {
+    "start": 312.64,
+    "end": 317.84,
+    "text": "hear it whenever it hit the leaves it started jumping and you know running you",
+    "avg_logprob": -0.246,
+    "no_speech_prob": 0.374
+  },
+  {
+    "start": 318.34,
+    "end": 322.16,
+    "text": "know in other words you know how they jump when they run they don't just",
+    "avg_logprob": -0.246,
+    "no_speech_prob": 0.374
+  },
+  {
+    "start": 322.16,
+    "end": 330.66,
+    "text": "just walk through the jump, that the strange thing about it was the further away it got",
+    "avg_logprob": -0.459,
+    "no_speech_prob": 0.501
+  },
+  {
+    "start": 330.66,
+    "end": 340.1,
+    "text": "it, the louder it got. And it kept doing that. And finally it was just the sound like a giant",
+    "avg_logprob": -0.459,
+    "no_speech_prob": 0.501
+  },
+  {
+    "start": 340.1,
+    "end": 347.64,
+    "text": "running down over the hill there, breaking the branches and everything else. I sat",
+    "avg_logprob": -0.459,
+    "no_speech_prob": 0.501
+  },
+  {
+    "start": 347.64,
+    "end": 352.34,
+    "text": "and everything on my mouth gassed open looking, listening, trying to see something I couldn't",
+    "avg_logprob": -0.462,
+    "no_speech_prob": 0.217
+  },
+  {
+    "start": 352.34,
+    "end": 360.94,
+    "text": "see nothing. And it went on down over the hill, and it stopped making noise down there.",
+    "avg_logprob": -0.462,
+    "no_speech_prob": 0.217
+  },
+  {
+    "start": 362.12,
+    "end": 369.44,
+    "text": "And I sat there and didn't know what to make of it, but I mean I just sat there and flabbergasted.",
+    "avg_logprob": -0.462,
+    "no_speech_prob": 0.217
+  },
+  {
+    "start": 369.44,
+    "end": 378.08,
+    "text": "But anyway, just a few seconds later, all the sounds came back like nothing had ever",
+    "avg_logprob": -0.317,
+    "no_speech_prob": 0.439
+  },
+  {
+    "start": 378.08,
+    "end": 378.42,
+    "text": "happened.",
+    "avg_logprob": -0.317,
+    "no_speech_prob": 0.439
+  },
+  {
+    "start": 378.62,
+    "end": 385.3,
+    "text": "I mean, you know, all the sounds was there, everything, birds, crows, I hear the chickens",
+    "avg_logprob": -0.317,
+    "no_speech_prob": 0.439
+  },
+  {
+    "start": 385.76,
+    "end": 394.44,
+    "text": "over across the pasture there in the chicken p.m., there must have been 500 chickens in",
+    "avg_logprob": -0.317,
+    "no_speech_prob": 0.439
+  },
+  {
+    "start": 394.44,
+    "end": 402.24,
+    "text": "there. If you can figure out how to have sounds. I mean all the sounds was bad, birds",
+    "avg_logprob": -0.455,
+    "no_speech_prob": 0.504
+  },
+  {
+    "start": 402.24,
+    "end": 412.08,
+    "text": "singing, everything. And I sat down, I thought about it for a minute. Anyway, I decided I",
+    "avg_logprob": -0.455,
+    "no_speech_prob": 0.504
+  },
+  {
+    "start": 412.08,
+    "end": 420.92,
+    "text": "just hit on all the way. I got up and I walked across the field there and got home. And",
+    "avg_logprob": -0.455,
+    "no_speech_prob": 0.504
+  },
+  {
+    "start": 421.4,
+    "end": 427.08,
+    "text": "my mother and grandmother was there and I went in and I got in there. I think the bottle",
+    "avg_logprob": -0.456,
+    "no_speech_prob": 0.481
+  },
+  {
+    "start": 427.08,
+    "end": 432.88,
+    "text": "of power didn't have cans in. It had good bottles. The last bottles are used to that.",
+    "avg_logprob": -0.456,
+    "no_speech_prob": 0.481
+  },
+  {
+    "start": 433.62,
+    "end": 438.08,
+    "text": "And I got one of them and I sat in there and I thought, man, I tell you, if anything happened",
+    "avg_logprob": -0.456,
+    "no_speech_prob": 0.481
+  },
+  {
+    "start": 438.08,
+    "end": 443.76,
+    "text": "out there. I said, I sat in there in wood and just everything got real quiet. There wasn't",
+    "avg_logprob": -0.456,
+    "no_speech_prob": 0.481
+  },
+  {
+    "start": 443.76,
+    "end": 448.78,
+    "text": "a sound or nothing. They'd lock up for a few minutes. I didn't mention anything else",
+    "avg_logprob": -0.456,
+    "no_speech_prob": 0.481
+  },
+  {
+    "start": 448.78,
+    "end": 455.04,
+    "text": "about that sound because what the heck, you know, there was nothing to talk about, just",
+    "avg_logprob": -0.387,
+    "no_speech_prob": 0.363
+  },
+  {
+    "start": 455.56,
+    "end": 461.2,
+    "text": "something run over the hill. But my grandmother, she used to sort of shuffle, that's the way",
+    "avg_logprob": -0.387,
+    "no_speech_prob": 0.363
+  },
+  {
+    "start": 461.2,
+    "end": 471.96,
+    "text": "she'd done, just said, yeah, I've heard people talk about that, they call it just when the",
+    "avg_logprob": -0.387,
+    "no_speech_prob": 0.363
+  },
+  {
+    "start": 471.96,
+    "end": 478.42,
+    "text": "world stops to take a breath. But that's all I ever considered, it was just that and I've",
+    "avg_logprob": -0.387,
+    "no_speech_prob": 0.363
+  },
+  {
+    "start": 478.42,
+    "end": 485.06,
+    "text": "I've heard a couple of breakdowns since then, but I just want to put this on here.",
+    "avg_logprob": -0.293,
+    "no_speech_prob": 0.565
+  },
+  {
+    "start": 485.2,
+    "end": 489.86,
+    "text": "I mean, it doesn't sound too interesting, but maybe some of you people out there",
+    "avg_logprob": -0.293,
+    "no_speech_prob": 0.565
+  },
+  {
+    "start": 490.38,
+    "end": 495.2,
+    "text": "hear it, maybe you'll be able to relate to it.",
+    "avg_logprob": -0.293,
+    "no_speech_prob": 0.565
+  },
+  {
+    "start": 498.53,
+    "end": 504.43,
+    "text": "It was a weird type thing, but not a scary thing.",
+    "avg_logprob": -0.293,
+    "no_speech_prob": 0.565
+  },
+  {
+    "start": 505.93,
+    "end": 510.69,
+    "text": "Anyway, that's about all it was to it. I thought it was interesting, I still do.",
+    "avg_logprob": -0.305,
+    "no_speech_prob": 0.181
+  },
+  {
+    "start": 512.97,
+    "end": 517.51,
+    "text": "But anyway, y'all have a good day and I'll get back with this again.",
+    "avg_logprob": -0.305,
+    "no_speech_prob": 0.181
+  }
+]

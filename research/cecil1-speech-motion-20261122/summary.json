@@ -1,0 +1,254 @@
+[
+  {
+    "video_index": 1,
+    "file": "AQNlyqfJFr6ksZE_Jbr_RknArSqaFGYLjR3wDb_GIfo-UBx3zZINp2tXypFTWDlf3bRrJdub4YeN3w5CaGYoPs0.mp4",
+    "duration_sec": 483.836,
+    "transcribed_segments": 68,
+    "word_count": 1106,
+    "facial_samples": 1451,
+    "face_detected_frames": 1436,
+    "face_coverage_fraction": 0.9897,
+    "motion_error": null,
+    "measured_motion_quantiles": {
+      "mouth_inner_open": {
+        "p10": 0.0209,
+        "p50": 0.0434,
+        "p90": 0.0702
+      },
+      "mouth_outer_open": {
+        "p10": 0.3361,
+        "p50": 0.384,
+        "p90": 0.4399
+      },
+      "mouth_width": {
+        "p10": 0.5093,
+        "p50": 0.5331,
+        "p90": 0.5597
+      },
+      "lip_round_proxy": {
+        "p10": 0.5093,
+        "p50": 0.5331,
+        "p90": 0.5597
+      },
+      "jaw_to_nose": {
+        "p10": 0.7622,
+        "p50": 0.8271,
+        "p90": 0.8812
+      },
+      "eye_open_left": {
+        "p10": 0.227,
+        "p50": 0.2718,
+        "p90": 0.3273
+      },
+      "eye_open_right": {
+        "p10": 0.2132,
+        "p50": 0.2569,
+        "p90": 0.3086
+      },
+      "brow_eye_left": {
+        "p10": 0.2297,
+        "p50": 0.2486,
+        "p90": 0.2707
+      },
+      "brow_eye_right": {
+        "p10": 0.2346,
+        "p50": 0.2598,
+        "p90": 0.2861
+      },
+      "brow_inner_gap": {
+        "p10": 0.2726,
+        "p50": 0.2832,
+        "p90": 0.2956
+      },
+      "corner_asym_y": {
+        "p10": 0.0009,
+        "p50": 0.0214,
+        "p90": 0.0485
+      }
+    },
+    "first_8_segments": [
+      {
+        "start": 0.94,
+        "end": 9.8,
+        "text": "I was going to tell a little story here about a time I went hunting and this little unexplained",
+        "avg_logprob": -0.353,
+        "no_speech_prob": 0.23
+      },
+      {
+        "start": 9.8,
+        "end": 17.54,
+        "text": "thing happened. It wasn't even something that scared you or anything. It was just something",
+        "avg_logprob": -0.353,
+        "no_speech_prob": 0.23
+      },
+      {
+        "start": 17.54,
+        "end": 24.84,
+        "text": "you know you just see and you just wonder about it. But I'm going to make this short close to",
+        "avg_logprob": -0.353,
+        "no_speech_prob": 0.23
+      },
+      {
+        "start": 24.84,
+        "end": 31.7,
+        "text": "just by the way I was hunting and in a little beach grow about five trees in the",
+        "avg_logprob": -0.438,
+        "no_speech_prob": 0.356
+      },
+      {
+        "start": 31.7,
+        "end": 37.46,
+        "text": "guest beaches and a little open field maybe a half three-quarters",
+        "avg_logprob": -0.438,
+        "no_speech_prob": 0.356
+      },
+      {
+        "start": 37.46,
+        "end": 47.62,
+        "text": "acre across and along but I was sitting in there sort of getting a little under",
+        "avg_logprob": -0.438,
+        "no_speech_prob": 0.356
+      },
+      {
+        "start": 47.62,
+        "end": 53.92,
+        "text": "growth brush there where I could sit and watch for squirrels I've sat there for",
+        "avg_logprob": -0.438,
+        "no_speech_prob": 0.356
+      },
+      {
+        "start": 53.92,
+        "end": 61.14,
+        "text": "maybe an hour. I hadn't seen anything or heard anything. But uh, all at once I, you know,",
+        "avg_logprob": -0.423,
+        "no_speech_prob": 0.513
+      }
+    ]
+  },
+  {
+    "video_index": 2,
+    "file": "AQPjj2UNaR8zZpwimrxFpmIOW8zNz7SoahxZZc6Bnu6V8nX8aZXx3xMmrWXO0OyYNCRwLAZOpPrACNlbE2h6SxA.mp4",
+    "duration_sec": 518.526,
+    "transcribed_segments": 74,
+    "word_count": 1159,
+    "facial_samples": 1556,
+    "face_detected_frames": 1515,
+    "face_coverage_fraction": 0.9737,
+    "motion_error": null,
+    "measured_motion_quantiles": {
+      "mouth_inner_open": {
+        "p10": 0.0083,
+        "p50": 0.034,
+        "p90": 0.0725
+      },
+      "mouth_outer_open": {
+        "p10": 0.3201,
+        "p50": 0.3816,
+        "p90": 0.4545
+      },
+      "mouth_width": {
+        "p10": 0.5311,
+        "p50": 0.5554,
+        "p90": 0.581
+      },
+      "lip_round_proxy": {
+        "p10": 0.5311,
+        "p50": 0.5554,
+        "p90": 0.581
+      },
+      "jaw_to_nose": {
+        "p10": 0.8274,
+        "p50": 0.8855,
+        "p90": 0.9453
+      },
+      "eye_open_left": {
+        "p10": 0.2147,
+        "p50": 0.2627,
+        "p90": 0.3112
+      },
+      "eye_open_right": {
+        "p10": 0.1988,
+        "p50": 0.2406,
+        "p90": 0.2795
+      },
+      "brow_eye_left": {
+        "p10": 0.2456,
+        "p50": 0.2655,
+        "p90": 0.2886
+      },
+      "brow_eye_right": {
+        "p10": 0.252,
+        "p50": 0.2751,
+        "p90": 0.2982
+      },
+      "brow_inner_gap": {
+        "p10": 0.2718,
+        "p50": 0.2797,
+        "p90": 0.2869
+      },
+      "corner_asym_y": {
+        "p10": -0.0802,
+        "p50": -0.0508,
+        "p90": -0.0203
+      }
+    },
+    "first_8_segments": [
+      {
+        "start": 3.02,
+        "end": 8.94,
+        "text": "Well, thought I'd just try and make a little clip here. I don't know what to call this. It's a",
+        "avg_logprob": -0.343,
+        "no_speech_prob": 0.337
+      },
+      {
+        "start": 9.52,
+        "end": 15.34,
+        "text": "little bit weird, but I mean, you know, I guess all this stuff is really",
+        "avg_logprob": -0.343,
+        "no_speech_prob": 0.337
+      },
+      {
+        "start": 15.34,
+        "end": 20.28,
+        "text": "Anyway, it's one of where I was about 13 years old and",
+        "avg_logprob": -0.343,
+        "no_speech_prob": 0.337
+      },
+      {
+        "start": 21.42,
+        "end": 24.54,
+        "text": "I used to spend a whole lot of time in the woods",
+        "avg_logprob": -0.343,
+        "no_speech_prob": 0.337
+      },
+      {
+        "start": 26.74,
+        "end": 28.14,
+        "text": "Well this day",
+        "avg_logprob": -0.343,
+        "no_speech_prob": 0.337
+      },
+      {
+        "start": 28.14,
+        "end": 35.86,
+        "text": "It was like a lot of other days, I mean in the summertime of home when I was young, it's",
+        "avg_logprob": -0.392,
+        "no_speech_prob": 0.422
+      },
+      {
+        "start": 35.86,
+        "end": 45.38,
+        "text": "back I guess 95 to 105, real hot that day, no clouds in the sky whatsoever.",
+        "avg_logprob": -0.392,
+        "no_speech_prob": 0.422
+      },
+      {
+        "start": 46.22,
+        "end": 58.12,
+        "text": "And outside I was going to walk into the woods down Long Creek all around because it was",
+        "avg_logprob": -0.392,
+        "no_speech_prob": 0.422
+      }
+    ]
+  }
+]
