@@ -1,0 +1,62 @@
+name: Cecil 1 facial reference frame study
+on:
+  push:
+    branches: [analysis/cecil1-video-faces-20261122]
+    paths: [.github/workflows/cecil-video-facial-reference.yml]
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download original video references from private Dad release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/cecil-video-input
+          gh release download Dadsfiles --repo "$GITHUB_REPOSITORY" --pattern '*.mp4' --dir /tmp/cecil-video-input
+          ls -lh /tmp/cecil-video-input
+      - name: Generate non-destructive frame references
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image,ImageOps,ImageDraw
+          import json, subprocess, math, re
+          inp=Path('/tmp/cecil-video-input')
+          out=Path('research/cecil1-reference-videos-20261122')
+          out.mkdir(parents=True, exist_ok=True)
+          data=[]
+          for index,video in enumerate(sorted(inp.glob('*.mp4')),1):
+              duration=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(video)]).decode().strip())
+              count=20
+              target=out / f'video_{index}'
+              target.mkdir(exist_ok=True)
+              frames=[]
+              for i in range(count):
+                  t=max(0.0,(i+.35)*duration/count)
+                  f=target/f'frame_{i:02d}.jpg'
+                  subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-ss',f'{t:.3f}','-i',str(video),'-frames:v','1','-vf','scale=960:-2','-q:v','5',str(f)],check=True)
+                  frames.append((f,t))
+              canvas=Image.new('RGB',(4*350,5*230),(25,25,25))
+              draw=ImageDraw.Draw(canvas)
+              for i,(f,t) in enumerate(frames):
+                  im=Image.open(f).convert('RGB')
+                  im.thumbnail((342,198))
+                  x=(i%4)*350+(350-im.width)//2
+                  y=(i//4)*230+2
+                  canvas.paste(im,(x,y))
+                  draw.text(((i%4)*350+8,(i//4)*230+205),f'Frame {i:02d} / {t:.2f}s',fill='white')
+              canvas.save(out/f'video_{index}_overview.jpg',quality=82,optimize=True)
+              data.append({'video':video.name,'duration_seconds':round(duration,3),'samples':count,'timestamps_seconds':[round(t,3) for _,t in frames]})
+          (out/'index.json').write_text(json.dumps(data,indent=2))
+          print(json.dumps(data,indent=2))
+          PY
+      - name: Save frames only to isolated analysis branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/cecil1-reference-videos-20261122
+          git commit -m "Generate Cecil 1 private reference video frame study (source videos untouched)"
+          git push
