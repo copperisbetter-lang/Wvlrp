@@ -55,6 +55,35 @@ jobs:
           (out/'index.json').write_text(json.dumps(data,indent=2))
           print(json.dumps(data,indent=2))
           PY
+
+      - name: Create short high-frequency mouth and expression motion strips
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image,ImageDraw
+          import subprocess,tempfile
+          inp=Path('/tmp/cecil-video-input')
+          out=Path('research/cecil1-reference-videos-20261122')
+          windows={1:[54.0,126.0,368.0],2:[110.0,370.0,497.0]}
+          for idx,vid in enumerate(sorted(inp.glob('*.mp4')),1):
+              for j,start in enumerate(windows[idx],1):
+                  with tempfile.TemporaryDirectory() as td:
+                      target=Path(td)
+                      pattern=str(target/'f_%03d.jpg')
+                      subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-ss',str(start),'-i',str(vid),'-t','3.0','-vf','fps=8,scale=800:-2','-q:v','6',pattern],check=True)
+                      frames=list(sorted(target.glob('*.jpg')))[:24]
+                      sheet=Image.new('RGB',(4*340,6*290),(24,24,24))
+                      draw=ImageDraw.Draw(sheet)
+                      for k,frame in enumerate(frames):
+                          im=Image.open(frame).convert('RGB')
+                          im.thumbnail((332,258))
+                          x=(k%4)*340+(340-im.width)//2
+                          y=(k//4)*290
+                          sheet.paste(im,(x,y))
+                          draw.text(((k%4)*340+7,(k//4)*290+260),f'{start+k/8:.3f}s',fill='white')
+                      sheet.save(out/f'video_{idx}_motion_{j}.jpg',quality=82,optimize=True)
+                      print(f'video {idx} strip {j} sampled frames:',len(frames))
+          PY
       - name: Save frames only to isolated analysis branch
         run: |
           git config user.name "github-actions[bot]"
