@@ -1,0 +1,24 @@
+name: Cecil 1 candidate speech facial curves
+on:
+  push:
+    branches:
+      - analysis/cecil1-video-faces-20261122
+    paths:
+      - .github/workflows/cecil1-motion-curves.yml
+permissions:
+  contents: write
+jobs:
+  curves:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Convert saved facial measurements to editable candidate tracks
+        run: |
+          python3 tools/cecil1_make_motion_curves.py
+      - name: Commit candidate animation reference only to isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/cecil1-speech-motion-20261122/candidate_curves/
+          git commit -m "Save Cecil 1 candidate 12fps facial performance curves"
+          git push
