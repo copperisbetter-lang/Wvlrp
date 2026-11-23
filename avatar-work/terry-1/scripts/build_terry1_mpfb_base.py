@@ -7,7 +7,7 @@ Requires the existing MPFB 2.0.18/Blender 4.2 setup and official CC0 assets.
 import bpy, runpy, json, hashlib, traceback, os, sys
 from pathlib import Path
 
-REPO=Path(__file__).resolve().parents[2]
+REPO=Path(__file__).resolve().parents[3]
 ROOT=REPO/'avatar-work/terry-1'
 OUT=ROOT/'base';OUT.mkdir(parents=True,exist_ok=True)
 BASE=OUT/'Terry1_MakeHuman_Editable_Base.blend'
