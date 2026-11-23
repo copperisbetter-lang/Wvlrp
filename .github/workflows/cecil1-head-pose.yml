@@ -1,0 +1,40 @@
+name: Cecil 1 source video head pose study
+on:
+  push:
+    branches:
+      - analysis/cecil1-video-faces-20261122
+    paths:
+      - .github/workflows/cecil1-head-pose.yml
+permissions:
+  contents: write
+jobs:
+  headpose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install face pose tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install --quiet "numpy<2" "mediapipe==0.10.21" "pillow"
+      - name: Recover actual original videos from Dad release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/cecil-video-input
+          gh release download Dadsfiles --repo "$GITHUB_REPOSITORY" --pattern '*.mp4' --dir /tmp/cecil-video-input
+          test "$(find /tmp/cecil-video-input -name '*.mp4' | wc -l)" -eq 2
+      - name: Extract measured head-pose tracks from originals
+        run: |
+          python tools/cecil1_extract_video_head_pose.py
+      - name: Save sampled pose data to isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/cecil1-speech-motion-20261122/head_pose
+          git commit -m "Save Dad video head-pose measurements"
+          git push
