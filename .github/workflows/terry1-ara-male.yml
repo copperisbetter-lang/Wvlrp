@@ -1,0 +1,101 @@
+name: Build Terry 1 from Gina Ara generator (male version)
+on:
+  push:
+    branches: [feature/terry1-ara-male-20261122]
+    paths:
+      - '.github/workflows/terry1-ara-male.yml'
+      - 'avatar-work/terry-1/ara/Terry1_Ara_Male_Base.params.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: terry1-ara-male-20261122
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated Terry 1 branch
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            avatar-work/terry-1/ara
+          persist-credentials: true
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone same free Ara generator used for Gina 5
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+      - name: Install Ara dependencies and official CC0 MakeHuman system assets
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Validate Terry is a male version of Gina's build
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('avatar-work/terry-1/ara/Terry1_Ara_Male_Base.params.json','utf8'));
+          const c=JSON.parse(fs.readFileSync('/tmp/ara3dgen/public/assets/catalog.json','utf8'));
+          const sliders=new Set(c.sliders.flatMap(g=>g.sliders.map(s=>s.id)));
+          const invalid=Object.keys(p.modifiers).filter(k=>!sliders.has(k));
+          if(invalid.length)throw Error('Unknown Ara sliders: '+invalid.join(','));
+          if(p.gender!==1 || p.breastSize!==0)throw Error('Terry is not a male macro target');
+          if(p.detail!=='high'||p.rig!=='game'||!p.faceBones||!p.faceShapes||!p.speechShapes||!p.animations)
+            throw Error('Rig, facial and animation parity with Gina not selected');
+          if(p.hair!=='short01'||p.facialHair!=='none')
+            throw Error('Keep hair separate, without any flattened photo beard/face');
+          console.log('TERRY_MALE_GINA_PIPELINE_VERIFIED',p.name,p.gender,p.rig);
+          NODE
+      - name: Generate real high-detail rigged Terry adult-male base
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm run export -- --params "$GITHUB_WORKSPACE/avatar-work/terry-1/ara/Terry1_Ara_Male_Base.params.json" --detail high --formats glb --out "$GITHUB_WORKSPACE/avatar-work/terry-1/ara/out"
+      - name: Collect exported GLB, verify rig, speech morphs and animations
+        run: |
+          set -euo pipefail
+          BASE=avatar-work/terry-1/ara
+          MODEL=$(find "$BASE/out" -name '*.glb' -type f | head -n 1)
+          test -n "$MODEL"
+          cp "$MODEL" "$BASE/Terry1_Ara_Male_Base.glb"
+          python3 - <<'PY'
+          import struct,json,hashlib,pathlib
+          p=pathlib.Path('avatar-work/terry-1/ara/Terry1_Ara_Male_Base.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n,t=struct.unpack_from('<II',b,12);assert t==0x4e4f534a
+          j=json.loads(b[20:20+n])
+          skins=j.get('skins',[]);meshes=j.get('meshes',[])
+          animations=j.get('animations',[])
+          morph=sum(len(pr.get('targets',[]))>0 for m in meshes for pr in m.get('primitives',[]))
+          assert skins and len(skins[0]['joints'])>=25, 'Missing real game rig'
+          assert len(animations)>=50, 'Missing animation clips'
+          assert morph>=1, 'Missing facial expression and speech morphs'
+          assert p.stat().st_size>500000, 'Empty model'
+          info={
+            'subject':'Park Ranger Terry 1',
+            'status':'UNFITTED male Ara base; Terry face and uniform pending',
+            'base_lineage':'Same olatunde85/3d-gen Ara exporter as Gina 5; male gender macro',
+            'female_Gina_preserved':True,
+            'male_gender_macro':1,
+            'rig':True,'joints':len(skins[0]['joints']),
+            'animations':len(animations),'morph_primitives':morph,
+            'meshes':len(meshes),
+            'nodes':len(j.get('nodes',[])),
+            'file_bytes':p.stat().st_size,
+            'sha256':hashlib.sha256(b).hexdigest(),
+            'notes':'Generated male rigged baseline; exact Terry facial resemblance NOT yet generated; separate hair mesh must be reviewed in viewer'
+          }
+          (p.parent/'Terry1_Ara_Male_Base_QA.json').write_text(json.dumps(info,indent=2)+'\n')
+          print('TERRY1_GINA_PIPELINE_MALE_GLB_VERIFIED',json.dumps(info))
+          PY
+      - name: Commit ONLY the Terry base on isolated branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/terry-1/ara/Terry1_Ara_Male_Base.glb avatar-work/terry-1/ara/Terry1_Ara_Male_Base_QA.json
+          git commit -m "Save male Terry 1 Ara rigged construction body (not face fitted)"
+          git push origin HEAD:feature/terry1-ara-male-20261122
