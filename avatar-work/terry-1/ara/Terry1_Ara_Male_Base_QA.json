@@ -1,0 +1,16 @@
+{
+  "subject": "Park Ranger Terry 1",
+  "status": "UNFITTED male Ara base; Terry face and uniform pending",
+  "base_lineage": "Same olatunde85/3d-gen Ara exporter as Gina 5; male gender macro",
+  "female_Gina_preserved": true,
+  "male_gender_macro": 1,
+  "rig": true,
+  "joints": 69,
+  "animations": 248,
+  "morph_primitives": 9,
+  "meshes": 1,
+  "nodes": 71,
+  "file_bytes": 36210608,
+  "sha256": "26d3ad4707a0a38da19ac1ec0b4adc9bca834fb36abe14a5e9257747292f9200",
+  "notes": "Generated male rigged baseline; exact Terry facial resemblance NOT yet generated; separate hair mesh must be reviewed in viewer"
+}
