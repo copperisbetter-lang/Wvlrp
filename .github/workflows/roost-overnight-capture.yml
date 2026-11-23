@@ -1,0 +1,65 @@
+name: G1 Roost overnight 20-minute evidence capture
+
+on:
+  push:
+    branches:
+      - g1/roost-motion-recorder-20261026
+    paths:
+      - .github/workflows/roost-overnight-capture.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roost-overnight-evidence-capture
+  cancel-in-progress: false
+
+jobs:
+  start-sidecar-capture:
+    runs-on: self-hosted
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect relay without restarting it
+        shell: bash
+        run: |
+          set -euo pipefail
+          hostname
+          sudo docker info >/dev/null
+          test "$(sudo docker inspect --format '{{.State.Running}}' wvlrp-relay)" = "true"
+          sudo docker exec wvlrp-relay sh -c 'command -v ffmpeg >/dev/null && command -v python3 >/dev/null'
+          sudo mkdir -p /var/lib/wvlrp/roost-captures/bin
+          sudo cp relay/roost_capture.py /var/lib/wvlrp/roost-captures/bin/roost_capture.py
+          sudo chmod 0644 /var/lib/wvlrp/roost-captures/bin/roost_capture.py
+          df -h /var/lib/wvlrp/roost-captures
+          FREE_KB="$(df -Pk /var/lib/wvlrp/roost-captures | tail -1 | awk '{print $4}')"
+          test "$FREE_KB" -ge 2097152
+          echo "Existing relay online; independent recorder allowed"
+      - name: Start separate recorder sharing relay network (never restart relay)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if sudo docker inspect wvlrp-roost-capture >/dev/null 2>&1; then
+            if [ "$(sudo docker inspect --format '{{.State.Running}}' wvlrp-roost-capture)" = "true" ]; then
+              echo "Existing Roost recorder container is already running; do not interrupt"
+              exit 0
+            fi
+            sudo docker rm wvlrp-roost-capture
+          fi
+          RELAY_IMAGE="$(sudo docker inspect --format '{{.Image}}' wvlrp-relay)"
+          sudo docker run -d             --name wvlrp-roost-capture             --network container:wvlrp-relay             --restart no             --cap-drop ALL             --security-opt no-new-privileges             --mount type=bind,src=/var/lib/wvlrp/roost-captures,dst=/recordings             --mount type=bind,src=/var/lib/wvlrp/roost-captures/bin/roost_capture.py,dst=/opt/roost_capture.py,readonly             --entrypoint python3             "$RELAY_IMAGE" /opt/roost_capture.py
+          echo "Roost recording sidecar started (12 hours max)."
+      - name: Validate actual footage written to host
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 60
+          sudo docker ps --filter name=wvlrp-roost-capture
+          sudo docker logs --tail 100 wvlrp-roost-capture
+          sudo find /var/lib/wvlrp/roost-captures -maxdepth 1 -type f -name 'roost_UTC_*.mkv' -printf '%f %s bytes\n'
+          test -n "$(sudo find /var/lib/wvlrp/roost-captures -maxdepth 1 -type f -name 'roost_UTC_*.mkv' -size +50k -print -quit)" || {
+            echo "::error::No substantial video segment found. Do not report recording confirmed."
+            exit 1
+          }
+          echo "CONFIRMED: Roost footage is being written to durable host storage."
