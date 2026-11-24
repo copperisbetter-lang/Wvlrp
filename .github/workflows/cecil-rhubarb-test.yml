@@ -1,0 +1,30 @@
+name: Cecil Rhubarb timing test
+on:
+  push:
+    branches: [experiment/cecil1-rhubarb-20261123]
+    paths: ['.github/workflows/cecil-rhubarb-test.yml']
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Analyze two existing public release audio excerpts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$(mktemp -d)"
+          curl -fsSL --retry 2 https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip -o rhubarb.zip
+          unzip -q rhubarb.zip
+          bin="$(find "$PWD" -type f -name rhubarb -print -quit)"
+          chmod +x "$bin"
+          "$bin" --version
+          curl -fsSL --retry 2 https://github.com/copperisbetter-lang/Wvlrp/releases/download/Dadsfiles/AQNlyqfJFr6ksZE_Jbr_RknArSqaFGYLjR3wDb_GIfo-UBx3zZINp2tXypFTWDlf3bRrJdub4YeN3w5CaGYoPs0.mp4 -o a.mp4
+          curl -fsSL --retry 2 https://github.com/copperisbetter-lang/Wvlrp/releases/download/Dadsfiles/AQPjj2UNaR8zZpwimrxFpmIOW8zNz7SoahxZZc6Bnu6V8nX8aZXx3xMmrWXO0OyYNCRwLAZOpPrACNlbE2h6SxA.mp4 -o b.mp4
+          ffmpeg -v error -i a.mp4 -t 10.4 -vn -ac 1 -ar 16000 -c:a pcm_s16le a.wav
+          ffmpeg -v error -ss 3 -i b.mp4 -t 9.666667 -vn -ac 1 -ar 16000 -c:a pcm_s16le b.wav
+          for c in a b; do
+            "$bin" -r pocketSphinx -f json -o "$c.json" "$c.wav"
+            echo "CUES-$c:$(python -c 'import json,sys;print(json.dumps(json.load(open(sys.argv[1]))["mouthCues"],separators=(",",":")))' "$c.json")"
+          done
