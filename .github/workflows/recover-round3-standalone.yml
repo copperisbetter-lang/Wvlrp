@@ -1,0 +1,45 @@
+name: Recover Round 03 standalone GLB
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public-character-transfer/round3-silicone/index.html'
+      - '.github/workflows/recover-round3-standalone.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover exact Round 03 working copy
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,base64,hashlib,struct
+          root=pathlib.Path('public-character-transfer/round-touch-test')
+          parts=sorted(root.glob('data-*.txt'))
+          assert len(parts)==15
+          data=json.loads(''.join(p.read_text() for p in parts))
+          blob=base64.b64decode(data['3'],validate=True)
+          assert len(blob)==3916448
+          assert hashlib.sha256(blob).hexdigest()=='4029757ba6d94bc1cbbe9f5a547a381158a9fccd083f66b3aa4fee3356c0b9a7'
+          assert struct.unpack('<4sII',blob[:12])==(b'glTF',2,len(blob))
+          pathlib.Path('public-character-transfer/round3-silicone/round3.glb').write_bytes(blob)
+          print('Exact Round 03 GLB verified and extracted.')
+          PY
+      - name: Commit standalone model only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-character-transfer/round3-silicone/round3.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "Recover original Round 03 working copy as standalone GLB"
+            git push origin HEAD:main
+          fi
+      - name: Request normal website deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run pages.yml --ref main

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Round 03 — Private Touch Sculpt Viewer</title>
+<style>
+:root{color-scheme:dark;--bg:#12181c;--panel:#1f2a30;--line:#45535b;--fg:#ebf2f4;--accent:#8fd0b7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--fg)}
+header{padding:12px 16px;background:#202b30;border-bottom:1px solid #3a464c;display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center}h1{font-size:17px;line-height:1.3;margin:0}header small{color:#aabcc3}
+.main{display:grid;grid-template-columns:1fr 300px;height:calc(100dvh - 61px)}#viewport{position:relative;min-height:45dvh;touch-action:none}canvas{display:block}#status{position:absolute;top:10px;left:10px;border:1px solid #2e5353;background:#152426d9;padding:7px 10px;border-radius:7px;font-size:12px;max-width:80%}.help{position:absolute;bottom:10px;left:10px;color:#bfd6d7;background:#122026cc;padding:6px;border-radius:4px;font-size:12px}
+.controls{overflow-y:auto;background:var(--panel);padding:12px;border-left:1px solid var(--line)}label{font-size:12px;color:#d5e3e6}select,button{background:#30424b;color:white;border:1px solid #70818a;border-radius:7px;padding:8px;font:inherit}select{width:100%;margin:7px 0 10px}button{cursor:pointer}.split{display:flex;gap:6px}.split button{flex:1}.group{font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;color:var(--accent);border-top:1px solid #45555a;padding-top:10px;margin:14px 0 8px}.control{display:grid;grid-template-columns:1fr 48px;column-gap:10px;margin:10px 0 14px}.control input{grid-column:span 2;width:100%;accent-color:#82c1a9}.control output{text-align:right;color:#a8cfc1}.small{font-size:12px;color:#b3c5c9;line-height:1.45}a{color:#a0d8d5}
+@media(max-width:760px){header{padding:9px 10px}.main{height:auto;display:block}#viewport{height:49dvh;min-height:310px}.controls{border-left:0;border-top:1px solid var(--line);height:auto;padding:10px 14px}.control{margin:8px 0 9px}.group{margin:10px 0 6px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head><body><header><div><h1>Round 03 — adjustable rig viewer</h1><small>PRIVATE WORKING COPIES · Touch sculpt · Original masters protected</small></div><div class="split"><button id="reset" type="button">Reset shape</button><button id="wire" type="button">Wireframe: off</button><button id="view-lock" type="button" aria-pressed="false">View Lock: off</button></div></header>
+<div class="main"><section id="viewport"><div id="status">Loading real rigged meshes…</div><div class="help" id="gesture-help">Drag to orbit · Pinch to zoom · Two-finger pan</div></section>
+<aside class="controls"><p class="small">Round 03 working copy</p>
+<div id="dimensions" class="small">Loading model dimensions…</div>
+<div class="group">Soft Silicone — touch sculpt</div>
+<button id="sculpt-toggle" type="button" aria-pressed="false" style="width:100%">Soft Silicone: off</button>
+<div class="control"><label for="brush-radius">Brush radius (mm)</label><output id="brush-radius-out">18</output><input type="range" id="brush-radius" min="3" max="60" value="18" step="1"></div>
+<div class="control"><label for="brush-softness">Softness (%)</label><output id="brush-softness-out">65</output><input type="range" id="brush-softness" min="10" max="100" value="65" step="1"></div>
+<div class="split"><button id="sculpt-undo" type="button">Undo pull</button><button id="sculpt-reset" type="button">Reset sculpt</button></div>
+<p class="small">Turn on to pull the surface with one finger; View Lock engages automatically. Unlock to rotate, pan or zoom; unlocking disables sculpt mode. Pulls hold until reset. Changes are temporary in this session. Original textures and materials are retained.</p><div class="group">Size and proportion · morph targets</div>
+<div id="morph-controls"></div><div class="group">Independent skeleton movement</div><div id="bone-controls"></div>
+<p class="small">Shape values are temporary in this viewer; opening Blender’s matching <b>.blend</b> gives editable shape keys and bones you can save. The original rig and morph targets are retained. Round 03 starts in the refined, mostly closed standing pose; move open/closed slider left to open. Do not apply any model to Bev or another character before fitting checks.</p>
+<p class="small">The separate GLB loads automatically over HTTPS.</p></aside></div>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const status=document.querySelector('#status');const viewport=document.querySelector('#viewport');
+const scene=new THREE.Scene();scene.background=new THREE.Color('#17232a');
+const camera=new THREE.PerspectiveCamera(35,1,.001,100);camera.position.set(.12,.14,.7);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+viewport.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xebffff,0x7a6b6b,2));
+for(const [pos,intensity] of [[[2,5,4],2.0],[[-3,-2,2],.7]]){let l=new THREE.DirectionalLight(0xffffff,intensity);l.position.set(...pos);scene.add(l)}
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.dampingFactor=.09;
+const models={};let active=null;let current='3';let wireframe=false;let sculptEnabled=false;let viewLocked=false;let drag=null;
+const morphSpec=[
+['Overall width','Width_Narrow','Width_Wide', '±23%'],
+['Overall length','Length_Short','Length_Long','±20%'],
+['Depth / projection','Depth_Shallow','Depth_Deep','±28%'],
+['Fullness','Fullness_Less','Fullness_More','localized'],
+['Center width','Center_Narrow','Center_Wide','localized'],
+['Left edge inset',null,'Left_Edge_In','inward'],
+['Right edge inset',null,'Right_Edge_In','inward'],
+['Upper extension',null,'Upper_Extend','length'],
+['Lower extension',null,'Lower_Extend','length'],
+['Round 03: outer labia hang',null,'Outer_Labia_Lower','refine'],
+['Round 03: outer labia plump',null,'Outer_Labia_Plump','refine'],
+['Round 03: outer labia open (-) / closed (+)','Outer_Labia_Open','Outer_Labia_Close','standing'],
+];
+const boneSpec=[
+['Left-side movement','LEFT_SIDE',0,0.018],
+['Right-side movement','RIGHT_SIDE',0,0.018],
+['Upper movement','UPPER',1,0.018],
+['Lower movement','LOWER',1,0.018],
+['Center depth movement','CENTER',2,0.014],
+['Round 03: left outer labia bone','LEFT_OUTER_LABIA',0,0.007],
+['Round 03: right outer labia bone','RIGHT_OUTER_LABIA',0,0.007],
+];
+const allInputs=[];
+function slider(where,label,key,suffix){
+ const div=document.createElement('div');div.className='control';
+ const l=document.createElement('label');l.textContent=label;l.htmlFor='range-'+key;
+ const out=document.createElement('output');out.textContent='0';
+ const input=document.createElement('input');input.id='range-'+key;input.type='range';input.min='-100';input.max='100';input.step='1';input.value='0';input.dataset.key=key;
+ input.addEventListener('input',()=>{out.textContent=input.value;applyControls()});div.append(l,out,input);where.append(div);allInputs.push(input);
+}
+for(let i=0;i<morphSpec.length;i++)slider(document.querySelector('#morph-controls'),morphSpec[i][0],'m'+i);
+for(let i=0;i<boneSpec.length;i++)slider(document.querySelector('#bone-controls'),boneSpec[i][0],'b'+i);
+// Three additional anatomical controls and two new bones belong ONLY to Round 03.
+function toggleRound03Controls(id){
+ for(let i=9;i<morphSpec.length;i++)document.querySelector('#range-m'+i).closest('.control').style.display=id==='3'?'grid':'none';
+ for(let i=5;i<boneSpec.length;i++)document.querySelector('#range-b'+i).closest('.control').style.display=id==='3'?'grid':'none';
+}
+function setRound03RestDefaults(id){
+ if(id==='3'){
+  for(const [id,value] of [['m9',75],['m10',65],['m11',80]]){
+   const el=document.querySelector('#range-'+id);el.value=value;el.closest('.control').querySelector('output').textContent=String(value);
+  }
+ }
+}
+function applyControls(){
+ if(!active)return;
+ const mesh=active.mesh;
+ if(mesh&&mesh.morphTargetDictionary){
+  mesh.morphTargetInfluences.fill(0);
+  for(let i=0;i<morphSpec.length;i++){
+   const [,negative,positive]=morphSpec[i];const v=Number(document.querySelector('#range-m'+i).value)/100;
+   const target=v<0?negative:positive;if(!target)continue;
+   const index=mesh.morphTargetDictionary[target];if(index!==undefined)mesh.morphTargetInfluences[index]=Math.abs(v);
+  }
+ }
+ for(let i=0;i<boneSpec.length;i++){
+  const [,name,axis,maxMovement]=boneSpec[i];const b=active.bones[name];if(!b)continue;
+  b.position.copy(active.rest[name]);b.position.setComponent(axis,active.rest[name].getComponent(axis)+maxMovement*Number(document.querySelector('#range-b'+i).value)/100);
+ }
+}
+function fitCamera(item){
+ const box=new THREE.Box3().setFromObject(item.scene);const center=box.getCenter(new THREE.Vector3());const dims=box.getSize(new THREE.Vector3());
+ const radius=Math.max(dims.x,dims.y,dims.z);
+ camera.near=radius/100;camera.far=radius*90;camera.updateProjectionMatrix();
+ // Original meshes are Y-long, X-wide and Z-deep. Point toward original scan front.
+ camera.position.set(center.x+radius*.32,center.y+radius*.12,center.z+radius*2.7);
+ orbit.target.copy(center);orbit.minDistance=radius*.25;orbit.maxDistance=radius*9;orbit.update();
+ document.querySelector('#dimensions').textContent=`Original scan footprint ≈ ${(dims.x*100).toFixed(1)} cm wide × ${(dims.y*100).toFixed(1)} cm long. Bone and morph adjustments are independent.`;
+}
+function activate(id, reset=false){
+ if(!models[id])return;
+ finishDrag();
+ if(active){active.controls=allInputs.map(x=>x.value);scene.remove(active.scene)}
+ const sameModel=active===models[id];
+ active=models[id];current=id;scene.add(active.scene);
+ allInputs.forEach(x=>{x.value='0';x.closest('.control').querySelector('output').textContent='0'});
+ toggleRound03Controls(id);setRound03RestDefaults(id);
+ if(reset){restoreSculpt(active);active.controls=null;}
+ else if(active.controls){allInputs.forEach((x,i)=>{x.value=active.controls[i];x.closest('.control').querySelector('output').textContent=x.value})}
+ active.mesh?.traverse?.(()=>{});
+ applyControls();active.scene.updateMatrixWorld(true);if(!viewLocked||!sameModel)fitCamera(active);updateWire();updateSculptButtons();
+ status.textContent=`Round 0${id}: actual skinned geometry · ${id==='3'?'8 bones · 18 morphs':'6 bones · 14 morphs'}`;
+}
+function updateWire(){if(active?.mesh){for(const mat of Array.isArray(active.mesh.material)?active.mesh.material:[active.mesh.material])mat.wireframe=wireframe}}
+function renderSize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(renderSize).observe(viewport);renderSize();
+renderer.setAnimationLoop(()=>{if(!viewLocked)orbit.update();renderer.render(scene,camera)});
+
+document.querySelector('#reset').addEventListener('click',()=>activate(current,true));
+document.querySelector('#wire').addEventListener('click',e=>{wireframe=!wireframe;e.target.textContent=`Wireframe: ${wireframe?'on':'off'}`;updateWire()});
+
+// Non-destructive, persistent local surface sculpting. No texture, UV, material,
+// skin weights, bone, or embedded model changes. This is a brush deformation,
+// not a physical silicone constitutive model.
+const canvas=renderer.domElement;
+const sculptToggle=document.querySelector('#sculpt-toggle');
+const lockButton=document.querySelector('#view-lock');
+const undoButton=document.querySelector('#sculpt-undo');
+const resetSculptButton=document.querySelector('#sculpt-reset');
+const radiusInput=document.querySelector('#brush-radius');
+const softnessInput=document.querySelector('#brush-softness');
+for(const el of [radiusInput,softnessInput])el.addEventListener('input',()=>document.querySelector('#'+el.id+'-out').textContent=el.value);
+const raycaster=new THREE.Raycaster();const pointer=new THREE.Vector2();
+const hitPlane=new THREE.Plane();const rayPoint=new THREE.Vector3();
+const tmpVertex=new THREE.Vector3(), tmpWorld=new THREE.Vector3();
+const skinMatrix=new THREE.Matrix4(), boneMatrix=new THREE.Matrix4(), jointMatrix=new THREE.Matrix4();
+const inverseLinear=new THREE.Matrix3();
+function setRay(e){const r=canvas.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);raycaster.setFromCamera(pointer,camera);}
+function refreshGeometry(item, original=false){
+ const g=item.mesh.geometry;g.attributes.position.needsUpdate=true;
+ if(original&&item.originalNormals&&g.attributes.normal){g.attributes.normal.array.set(item.originalNormals);g.attributes.normal.needsUpdate=true;}
+ else{g.computeVertexNormals();}
+ g.computeBoundingBox();g.computeBoundingSphere();
+ item.mesh.boundingBox=null;item.mesh.boundingSphere=null;
+}
+function restoreSculpt(item){item.mesh.geometry.attributes.position.array.set(item.originalPositions);item.history=[];refreshGeometry(item,true);}
+function updateSculptButtons(){undoButton.disabled=!active||!active.history.length;resetSculptButton.disabled=!active;}
+function finishDrag(){
+ if(!drag)return;const d=drag;drag=null;
+ if(d.changed){d.item.history.push(d.before);if(d.item.history.length>24)d.item.history.shift();}
+ if(canvas.hasPointerCapture(d.pointerId))canvas.releasePointerCapture(d.pointerId);
+ updateSculptButtons();
+}
+function syncInteraction(){
+ orbit.enabled=!viewLocked&&!sculptEnabled;
+ lockButton.textContent='View Lock: '+(viewLocked?'on':'off');lockButton.setAttribute('aria-pressed',String(viewLocked));
+ sculptToggle.textContent='Soft Silicone: '+(sculptEnabled?'on':'off');sculptToggle.setAttribute('aria-pressed',String(sculptEnabled));
+ canvas.style.cursor=sculptEnabled?'crosshair':viewLocked?'default':'grab';
+ document.querySelector('#gesture-help').textContent=sculptEnabled?'View locked · Drag surface · Release to hold':viewLocked?'View locked · Unlock to rotate or zoom':'Drag to orbit · Pinch to zoom · Two-finger pan';
+}
+function setSculpt(on){finishDrag();sculptEnabled=on;if(on)viewLocked=true;syncInteraction();}
+lockButton.addEventListener('click',()=>{finishDrag();viewLocked=!viewLocked;if(!viewLocked)sculptEnabled=false;syncInteraction();});
+syncInteraction();
+sculptToggle.addEventListener('click',()=>setSculpt(!sculptEnabled));
+undoButton.addEventListener('click',()=>{finishDrag();if(!active||!active.history.length)return;active.mesh.geometry.attributes.position.array.set(active.history.pop());refreshGeometry(active);updateSculptButtons();});
+resetSculptButton.addEventListener('click',()=>{finishDrag();if(active){restoreSculpt(active);updateSculptButtons();}});
+function inverseDeformation(mesh,i){
+ // The skinned vertex is an affine combination of joint transforms. Invert
+ // the linear part so a drag in screen/world coordinates remains accurate
+ // even with the existing skeleton and morph controls applied.
+ const si=mesh.geometry.attributes.skinIndex, sw=mesh.geometry.attributes.skinWeight;
+ skinMatrix.elements.fill(0);
+ for(let k=0;k<4;k++){
+  const w=[sw.getX(i),sw.getY(i),sw.getZ(i),sw.getW(i)][k];if(!w)continue;
+  const j=[si.getX(i),si.getY(i),si.getZ(i),si.getW(i)][k];boneMatrix.multiplyMatrices(mesh.skeleton.bones[j].matrixWorld,mesh.skeleton.boneInverses[j]);
+  for(let t=0;t<16;t++)skinMatrix.elements[t]+=w*boneMatrix.elements[t];
+ }
+ jointMatrix.copy(mesh.matrixWorld).multiply(mesh.bindMatrixInverse).multiply(skinMatrix).multiply(mesh.bindMatrix);
+ inverseLinear.setFromMatrix4(jointMatrix);
+ if(Math.abs(inverseLinear.determinant())<1e-10)return null;
+ return inverseLinear.invert().clone();
+}
+canvas.addEventListener('pointerdown',e=>{
+ if(!sculptEnabled||!active||drag||e.button!==0)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ const item=active,mesh=item.mesh,g=mesh.geometry,p=g.attributes.position;
+ item.scene.updateMatrixWorld(true);mesh.skeleton.update();camera.updateMatrixWorld(true);
+ mesh.boundingSphere=null;mesh.boundingBox=null;
+ setRay(e);const hit=raycaster.intersectObject(mesh,false)[0];if(!hit)return;
+ const cameraDir=camera.getWorldDirection(new THREE.Vector3());hitPlane.setFromNormalAndCoplanarPoint(cameraDir,hit.point);
+ const radius=Number(radiusInput.value)/1000, softness=Number(softnessInput.value)/100;
+ const points=[];const before=new Float32Array(p.array);
+ for(let i=0;i<p.count;i++){
+  mesh.getVertexPosition(i,tmpVertex);tmpWorld.copy(tmpVertex).applyMatrix4(mesh.matrixWorld);
+  const d=tmpWorld.distanceTo(hit.point);if(d>=radius)continue;
+  const t=d/radius, smooth=1-t*t*(3-2*t);const weight=Math.pow(smooth,1.7-1.2*softness);
+  const inv=inverseDeformation(mesh,i);if(inv)points.push({i,weight,inv});
+ }
+ if(!points.length)return;
+ drag={item,pointerId:e.pointerId,origin:hit.point.clone(),before,points,changed:false};canvas.setPointerCapture(e.pointerId);
+},true);
+const movement=new THREE.Vector3(),localDelta=new THREE.Vector3();
+canvas.addEventListener('pointermove',e=>{
+ if(!drag||e.pointerId!==drag.pointerId)return;
+ e.preventDefault();e.stopImmediatePropagation();setRay(e);
+ if(!raycaster.ray.intersectPlane(hitPlane,rayPoint))return;
+ movement.subVectors(rayPoint,drag.origin);if(movement.lengthSq()>1e-12)drag.changed=true;
+ const p=drag.item.mesh.geometry.attributes.position;
+ for(const v of drag.points){const i=v.i,j=i*3;localDelta.copy(movement).multiplyScalar(v.weight).applyMatrix3(v.inv);p.setXYZ(i,drag.before[j]+localDelta.x,drag.before[j+1]+localDelta.y,drag.before[j+2]+localDelta.z);}
+ refreshGeometry(drag.item);
+},true);
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>{if(drag&&e.pointerId===drag.pointerId){e.stopImmediatePropagation();finishDrag();}},true);
+updateSculptButtons();
+
+const loader=new GLTFLoader();
+(async()=>{try{
+ status.textContent='Loading Round 03 GLB…';
+ const gltf=await loader.loadAsync('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-character-transfer/round3-silicone/round3.glb');
+ const s=gltf.scene;const meshList=[];s.traverse(o=>{if(o.isSkinnedMesh)meshList.push(o)});
+ if(meshList.length!==1)throw new Error('Expected one SkinnedMesh, found '+meshList.length);
+ const mesh=meshList[0];const bones={},rest={};for(const b of mesh.skeleton.bones){bones[b.name]=b;rest[b.name]=b.position.clone()}
+ const g=mesh.geometry;
+ models['3']={scene:s,mesh,bones,rest,originalPositions:new Float32Array(g.attributes.position.array),originalNormals:g.attributes.normal?new Float32Array(g.attributes.normal.array):null,history:[],controls:null};
+ activate('3');
+ status.textContent='Round 03 loaded · Adjust sliders or enable Soft Silicone.';
+}catch(e){status.textContent='Viewer failed: '+e.message;console.error(e)}})();
+</script></body></html>
