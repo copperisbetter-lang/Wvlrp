@@ -1,10 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · New Lake — Terrain 03</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · New Lake — Terrain 04</title><style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#aabec5;color:#fff;font:13px system-ui}canvas{display:block;touch-action:none}#info{position:fixed;top:12px;left:12px;background:#172c2cdb;padding:12px;border-radius:8px;pointer-events:none;max-width:75vw}#info strong{font-size:17px}#controls{position:fixed;bottom:14px;left:14px;display:flex;gap:6px;flex-wrap:wrap;max-width:95vw}button{background:#203d34;color:#fff;border:1px solid #fff6;border-radius:8px;padding:12px;touch-action:manipulation}#err{position:fixed;top:45%;left:8%;right:8%;background:#38221e;padding:12px;display:none}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head><body><div id="info"><strong>THE WILD · NEW LAKE</strong><div>Terrain checkpoint 03 · cave test</div><div id="stats">Loading terrain</div><div>Orbit/pinch · WALK to test movement</div></div><div id="controls"><button id="air">Aerial</button><button id="shore">Shore</button><button id="cliff">Cliff edge</button><button id="walk">WALK</button><button id="caveTest">CAVE TEST</button><button id="forward">▲</button><button id="left">◀</button><button id="right">▶</button><button id="back">▼</button><button id="submerge">DIVE</button><button id="rise">SURFACE</button></div><div id="err"></div><script type="module">
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head><body><div id="info"><strong>THE WILD · NEW LAKE</strong><div>Terrain checkpoint 04 · 360 alignment test</div><div id="stats">Loading terrain</div><div>Orbit/pinch · WALK to test movement</div></div><div id="controls"><button id="air">Aerial</button><button id="shore">Shore</button><button id="cliff">Cliff edge</button><button id="photoToggle">360 ON/OFF</button><button id="walk">WALK</button><button id="caveTest">CAVE TEST</button><button id="forward">▲</button><button id="left">◀</button><button id="right">▶</button><button id="back">▼</button><button id="submerge">DIVE</button><button id="rise">SURFACE</button></div><div id="err"></div><script type="module">
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {layout as L} from './layout.js';
 import {makePhysics} from './physics.js';
+import {installPanorama} from './panorama.js';
 const P=makePhysics(L);
 const error=document.querySelector('#err');
 try {
@@ -33,6 +34,8 @@ terrain.material.onBeforeCompile=s=>{
  s.vertexShader='varying vec3 vCavePos;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvCavePos=position;');
  s.fragmentShader='varying vec3 vCavePos;\n'+s.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n'+P.cave.clipGLSL());
 };
+const panoramaStatus={};installPanorama(T,scene,terrain,L,panoramaStatus);let photoOn=true;
+document.getElementById('photoToggle').onclick=()=>{photoOn=!photoOn;panoramaStatus.setVisible(photoOn)};
 function dataGeometry(data){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(data.vertices,3));g.setIndex(data.indices);g.computeVertexNormals();return g}
 const caveShell=new T.Mesh(dataGeometry(P.cave.meshData()),new T.MeshStandardMaterial({color:0x514b3c,roughness:.97,side:T.DoubleSide}));scene.add(caveShell);
 const caveLamp=new T.PointLight(0xffe2b4,9,12,1.6);caveLamp.visible=false;scene.add(caveLamp);
@@ -62,7 +65,7 @@ document.querySelector('#shore').onclick=()=>pose(6,3,105,0,5,-60);
 document.querySelector('#cliff').onclick=()=>pose(5,22,-38,0,15,-84);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 let frames=0,last=performance.now();const start=last;
-function frame(now){waterMat.uniforms.time.value=(now-start)/1000;const dt=Math.min(.1,(now-previous)/1000);previous=now;if(walking)movement(dt);else orbit.update();renderer.render(scene,camera);frames++;if(now-last>=1000){document.querySelector('#stats').textContent=(L.area/4046.8564224).toFixed(2)+' acres · '+(100*L.cliffFraction).toFixed(1)+'% cliff arc · '+Math.round(frames*1000/(now-last))+' FPS on this device'+(walking?' · '+player.mode+(player.cave?' · cave':'')+(player.transitionReady?' · transition point reached':''):'');frames=0;last=now}requestAnimationFrame(frame)}requestAnimationFrame(frame);
-window.newLakeDiagnostics={layout:L,terrainTriangles:idx.length/3,waterTriangles:wi.length/3,physics:P,getPlayer:()=>player,stage:'cave and physics test; no browser or device QA'};
+function frame(now){waterMat.uniforms.time.value=(now-start)/1000;const dt=Math.min(.1,(now-previous)/1000);previous=now;if(walking)movement(dt);else orbit.update();renderer.render(scene,camera);frames++;if(now-last>=1000){document.querySelector('#stats').textContent=(L.area/4046.8564224).toFixed(2)+' acres · '+(100*L.cliffFraction).toFixed(1)+'% cliff arc · '+Math.round(frames*1000/(now-last))+' FPS · '+panoramaStatus.state+(walking?' · '+player.mode+(player.cave?' · cave':'')+(player.transitionReady?' · transition point reached':''):'');frames=0;last=now}requestAnimationFrame(frame)}requestAnimationFrame(frame);
+window.newLakeDiagnostics={layout:L,terrainTriangles:idx.length/3,waterTriangles:wi.length/3,physics:P,panorama:panoramaStatus,getPlayer:()=>player,stage:'360 alignment candidate; no browser or device QA'};
 } catch(e){error.style.display='block';error.textContent='Scene failed: '+e.message;throw e}
 </script></body></html>
