@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>The Wild · New Lake — Terrain 01</title><style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#aabec5;color:#fff;font:13px system-ui}canvas{display:block;touch-action:none}#info{position:fixed;top:12px;left:12px;background:#172c2cdb;padding:12px;border-radius:8px;pointer-events:none;max-width:75vw}#info strong{font-size:17px}#controls{position:fixed;bottom:14px;left:14px;display:flex;gap:8px}button{background:#203d34;color:#fff;border:1px solid #fff6;border-radius:8px;padding:12px;touch-action:manipulation}#err{position:fixed;top:45%;left:8%;right:8%;background:#38221e;padding:12px;display:none}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head><body><div id="info"><strong>THE WILD · NEW LAKE</strong><div>Terrain checkpoint 01 · not final graphics</div><div id="stats">Loading terrain</div><div>Drag to orbit · pinch to zoom</div></div><div id="controls"><button id="air">Aerial</button><button id="shore">Shore</button><button id="cliff">Cliff edge</button></div><div id="err"></div><script type="module">
+import * as T from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {layout as L} from './layout.js';
+const error=document.querySelector('#err');
+try {
+const scene=new T.Scene(); scene.background=new T.Color(0xaabec5); scene.fog=new T.FogExp2(0xaabec5,.0017);
+const renderer=new T.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;document.body.prepend(renderer.domElement);
+const camera=new T.PerspectiveCamera(55,innerWidth/innerHeight,.2,850);camera.position.set(120,112,170);
+const orbit=new OrbitControls(camera,renderer.domElement);orbit.target.set(0,0,0);orbit.maxDistance=380;orbit.minDistance=2;orbit.maxPolarAngle=Math.PI*.495;orbit.enableDamping=true;
+scene.add(new T.HemisphereLight(0xdde8ed,0x625c44,1.5));const sun=new T.DirectionalLight(0xffe8c4,2.3);sun.position.set(-100,160,95);scene.add(sun);
+const p=[],c=[],idx=[];const color=new T.Color();
+for(let i=0;i<L.N;i++){
+ const ring=L.rings[i]; const a=i/L.N*Math.PI*2;
+ for(let j=0;j<ring.length;j++){
+  p.push(...ring[j]);
+  const cliff=j>=6&&i>=L.cliffStart&&i<=L.cliffEnd&&ring[j][1]>2;
+  const base=j<5?0x535847:j===5||j===6?0x8b8767:cliff?0x777366:0x566b3d;
+  color.setHex(base);color.multiplyScalar(.88+.12*Math.sin(i*2.17+j*5.7)**2);c.push(color.r,color.g,color.b);
+ }
+}
+const M=L.rings[0].length;
+for(let i=0;i<L.N;i++){const n=(i+1)%L.N;for(let j=0;j<M-1;j++){const a=i*M+j,b=n*M+j,d=i*M+j+1,e=n*M+j+1;if(j===0)idx.push(a,e,d);else idx.push(a,b,e,a,e,d);}}
+const terrainGeo=new T.BufferGeometry();terrainGeo.setAttribute('position',new T.Float32BufferAttribute(p,3));terrainGeo.setAttribute('color',new T.Float32BufferAttribute(c,3));terrainGeo.setIndex(idx);terrainGeo.computeVertexNormals();
+const terrain=new T.Mesh(terrainGeo,new T.MeshStandardMaterial({vertexColors:true,roughness:.96,side:T.DoubleSide}));scene.add(terrain);
+const wp=[0,0,0],wi=[];for(const q of L.shore)wp.push(q[0],.012,q[1]);
+for(let i=0;i<L.N;i++)wi.push(0,1+(i+1)%L.N,1+i);
+const wg=new T.BufferGeometry();wg.setAttribute('position',new T.Float32BufferAttribute(wp,3));wg.setIndex(wi);wg.computeVertexNormals();
+// Initial inexpensive freshwater color and moving small ripples, no reflection render pass.
+const waterMat=new T.ShaderMaterial({uniforms:{time:{value:0},deep:{value:new T.Color(0x30483b)},shallow:{value:new T.Color(0x777d56)}},vertexShader:'varying vec3 w; void main(){w=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform float time;uniform vec3 deep;uniform vec3 shallow;varying vec3 w;void main(){float r=length(w.xz);float edge=smoothstep(62.,80.,r);float ripple=sin(w.x*2.5+w.z*1.5+time*1.8)*sin(w.z*3.1-w.x*.6-time*1.1);vec3 col=mix(deep,shallow,edge)+ripple*.018;gl_FragColor=vec4(col,.91);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',transparent:true,depthWrite:false,side:T.DoubleSide});
+const water=new T.Mesh(wg,waterMat);water.renderOrder=2;scene.add(water);
+// Source geometry is available for inspection; movement and fish are not implemented in this checkpoint.
+function pose(x,y,z,tx,ty,tz){camera.position.set(x,y,z);orbit.target.set(tx,ty,tz);orbit.update()}
+document.querySelector('#air').onclick=()=>pose(120,112,170,0,0,0);
+document.querySelector('#shore').onclick=()=>pose(6,3,105,0,5,-60);
+document.querySelector('#cliff').onclick=()=>pose(5,22,-38,0,15,-84);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+let frames=0,last=performance.now();const start=last;
+function frame(now){waterMat.uniforms.time.value=(now-start)/1000;orbit.update();renderer.render(scene,camera);frames++;if(now-last>=1000){document.querySelector('#stats').textContent=(L.area/4046.8564224).toFixed(2)+' acres · '+(100*L.cliffFraction).toFixed(1)+'% cliff arc · '+Math.round(frames*1000/(now-last))+' FPS on this device';frames=0;last=now}requestAnimationFrame(frame)}requestAnimationFrame(frame);
+window.newLakeDiagnostics={layout:L,terrainTriangles:idx.length/3,waterTriangles:wi.length/3,stage:'terrain-only; no device QA'};
+} catch(e){error.style.display='block';error.textContent='Scene failed: '+e.message;throw e}
+</script></body></html>
