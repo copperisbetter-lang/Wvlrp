@@ -1,4 +1,5 @@
 // Copyright © 2026 WVLRP / The Wild.
+import {createCave} from './cave.js';
 export function makePhysics(L){
  const TAU=2*Math.PI,M=L.rings[0].length,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const polar=(x,z)=>(Math.atan2(z,x)+TAU)%TAU/TAU*L.N;
@@ -15,8 +16,7 @@ export function makePhysics(L){
    const q=tri(x,z,A[j],B[j+1],A[j+1]);if(q!==null)return q;
   }return null;
  }
- const mid=192,a=mid/L.N*TAU,r=Math.hypot(...L.shore[mid]);
- const cave={entrance:[(r-5)*Math.cos(a),-3.5,(r-5)*Math.sin(a)],chamber:[(r+7)*Math.cos(a),1.4,(r+7)*Math.sin(a)],status:'reserved, not excavated'};
+ const cave=createCave(L);
  const rocks=[];
  for(let i=0;i<L.N;i+=5){
   if(i>=L.cliffStart-4&&i<=L.cliffEnd+4||i>54&&i<74)continue;
@@ -28,7 +28,10 @@ export function makePhysics(L){
   dt=clamp(dt,0,.1);
   const len=Math.hypot(dx,dz),max=(p.mode==='swim'||p.mode==='dive'?2:p.mode==='wade'?1.35:3.2)*dt;
   if(len>max&&len>0){dx*=max/len;dz*=max/len}
-  let x=p.x+dx,z=p.z+dz,g=ground(x,z),old=ground(p.x,p.z),i=polar(x,z);
+  let x=p.x+dx,z=p.z+dz;
+  const caveMove=cave.advance(p,x,z,dt,diving,rising);
+  if(caveMove)return caveMove.exit?{x:caveMove.x,z:caveMove.z,y:caveMove.y,mode:'dive',cave:false}:caveMove;
+  let g=ground(x,z),old=ground(p.x,p.z),i=polar(x,z);
   const cliff=i>=L.cliffStart+3&&i<=L.cliffEnd-3&&g!==null&&g>-.35;
   const steep=g!==null&&old!==null&&g>Math.max(0,old)+Math.max(.23,Math.hypot(dx,dz)*.72);
   if(g===null||cliff||steep||rocks.some(o=>Math.hypot(x-o.x,z-o.z)<o.r+.34)){x=p.x;z=p.z;g=old}
