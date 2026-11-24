@@ -7,13 +7,14 @@ permissions:
   contents: read
 jobs:
   analyze:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Analyze two existing public release audio excerpts
         shell: bash
         run: |
           set -euo pipefail
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
           cd "$(mktemp -d)"
           curl -fsSL --retry 2 https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.13.0/Rhubarb-Lip-Sync-1.13.0-Linux.zip -o rhubarb.zip
           unzip -q rhubarb.zip
