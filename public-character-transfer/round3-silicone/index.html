@@ -227,7 +227,7 @@ updateSculptButtons();
 const loader=new GLTFLoader();
 (async()=>{try{
  status.textContent='Loading Round 03 GLB…';
- const gltf=await loader.loadAsync('https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/main/public-character-transfer/round3-silicone/round3.glb');
+ const gltf=await loader.loadAsync('./round3.glb?v=cf1cf4bd');
  const s=gltf.scene;const meshList=[];s.traverse(o=>{if(o.isSkinnedMesh)meshList.push(o)});
  if(meshList.length!==1)throw new Error('Expected one SkinnedMesh, found '+meshList.length);
  const mesh=meshList[0];const bones={},rest={};for(const b of mesh.skeleton.bones){bones[b.name]=b;rest[b.name]=b.position.clone()}
