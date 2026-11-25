@@ -1,0 +1,86 @@
+name: Build dressed Ara Mason fishing character
+on:
+  push:
+    branches: [feature/mason-ara-fishing-20261125]
+    paths:
+      - '.github/workflows/mason-ara-fishing.yml'
+      - 'avatar-work/mason/ara/Mason_Ara_Fishing.params.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            avatar-work/mason/ara
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Get pinned Ara generator
+        run: |
+          git clone https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+          git -C /tmp/ara3dgen checkout f45975fee6e2f0bbd5b354d9ca338183cf2cd8d6
+      - name: Install dependencies and original CC0 asset catalog
+        working-directory: /tmp/ara3dgen
+        run: |
+          npm ci
+          npm run setup-assets
+      - name: Enable native woven plaid on native long sleeve shirt
+        working-directory: /tmp/ara3dgen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/core/garments/catalog.ts')
+          s=p.read_text()
+          old="id: 'fatigue_shirt', label: 'Fatigue shirt', slot: 'top', patterns: ['camo', 'solid', 'khaki']"
+          assert old in s
+          p.write_text(s.replace(old, "id: 'fatigue_shirt', label: 'Plaid fishing shirt', slot: 'top', patterns: ['shuka', 'camo', 'solid', 'khaki']", 1))
+          PY
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const c=JSON.parse(fs.readFileSync('public/assets/catalog.json','utf8'));
+          if (!c.hair.some(x=>x.id==='short01')) throw Error('Requested actual hair asset missing');
+          NODE
+      - name: Export complete high detail character with animations
+        working-directory: /tmp/ara3dgen
+        run: npm run export -- --params "$GITHUB_WORKSPACE/avatar-work/mason/ara/Mason_Ara_Fishing.params.json" --detail high --formats glb --out "$RUNNER_TEMP/mason-out"
+      - name: Verify model structure, clothing, hair and animation names
+        run: |
+          set -euo pipefail
+          BASE=avatar-work/mason/ara
+          MODEL=$(find "$RUNNER_TEMP/mason-out" -name '*.glb' -type f | head -n 1)
+          test -n "$MODEL"
+          cp "$MODEL" "$BASE/Mason_Ara_Fishing.glb"
+          python3 - <<'PY'
+          import struct,json,hashlib,pathlib,re
+          p=pathlib.Path('avatar-work/mason/ara/Mason_Ara_Fishing.glb')
+          b=p.read_bytes()
+          assert b[:4]==b'glTF' and len(b)==struct.unpack_from('<I',b,8)[0]
+          n,t=struct.unpack_from('<II',b,12);assert t==0x4e4f534a
+          j=json.loads(b[20:20+n])
+          skins=j.get('skins',[]); animations=j.get('animations',[])
+          names=[x.get('name','') for x in j.get('materials',[])]
+          clips=[x.get('name','') for x in animations]
+          morph=sum(bool(pr.get('targets')) for m in j.get('meshes',[]) for pr in m.get('primitives',[]))
+          assert skins and len(skins[0]['joints'])>=25
+          assert len(clips)>=50 and morph
+          assert any(re.search('hair',x,re.I) for x in names), names
+          assert any(re.search('shirt',x,re.I) for x in names), names
+          assert any(re.search('jean|denim',x,re.I) for x in names), names
+          assert any(re.search('cap',x,re.I) for x in names), names
+          assert any(re.search('boot|shoe',x,re.I) for x in names), names
+          qa={'status':'Structural export checks passed; visual fit and game integration pending','bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'joints':len(skins[0]['joints']),'animationCount':len(clips),'animationNames':clips,'materials':names,'morphPrimitives':morph,'fishingClips':[x for x in clips if re.search('fish|cast|reel',x,re.I)]}
+          (p.parent/'Mason_Ara_Fishing_QA.json').write_text(json.dumps(qa,indent=2)+'\n')
+          print(json.dumps(qa,indent=2))
+          PY
+      - name: Save verified model and QA to isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/mason/ara/Mason_Ara_Fishing.glb avatar-work/mason/ara/Mason_Ara_Fishing_QA.json
+          git commit -m "Save dressed native Ara Mason candidate and structural QA"
+          git push origin HEAD:feature/mason-ara-fishing-20261125
