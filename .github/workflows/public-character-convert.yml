@@ -1,0 +1,65 @@
+name: Convert uploaded Blender character
+on:
+  push:
+    branches: [infrastructure/public-blender-runtime-20261124]
+    paths: [.github/workflows/public-character-convert.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      SOURCE_NAME: 3dexport_blender_file_1732195031.zip
+    steps:
+      - uses: actions/checkout@v4
+      - name: Obtain source archive
+        env:
+          PRIVATE_READ: ${{ secrets.PRIVATE_ASSETS_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$PRIVATE_READ" ]; then
+            GH_TOKEN="$PRIVATE_READ" gh release download Blender-assets -R copperisbetter-lang/WVLRP-Skeleton-Key-Private -p "$SOURCE_NAME" -O "$RUNNER_TEMP/source.zip"
+          else
+            gh release download Blender-assets -R "$GITHUB_REPOSITORY" -p "$SOURCE_NAME" -O "$RUNNER_TEMP/source.zip"
+          fi
+          test -s "$RUNNER_TEMP/source.zip"
+      - name: Install tested Blender
+        run: |
+          set -euo pipefail
+          curl -fL --retry 2 --max-time 180 https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz -o "$RUNNER_TEMP/blender.tar.xz"
+          mkdir "$RUNNER_TEMP/blender"
+          tar -xJf "$RUNNER_TEMP/blender.tar.xz" --strip-components=1 -C "$RUNNER_TEMP/blender"
+      - name: Extract and convert actual source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/source"
+          python - "$RUNNER_TEMP/source.zip" "$RUNNER_TEMP/source" <<'PY'
+          import pathlib,sys,zipfile
+          root=pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              for i in z.infolist():
+                  p=(root/i.filename).resolve()
+                  if not p.is_relative_to(root): raise ValueError("Unsafe archive path")
+              z.extractall(root)
+          PY
+          mapfile -d '' models < <(find "$RUNNER_TEMP/source" -type f -iname '*.blend' -print0)
+          if [ "${#models[@]}" -ne 1 ]; then echo "Expected one actual blend file"; exit 1; fi
+          export OUT_GLB="$GITHUB_WORKSPACE/runtime-viewers/character/character.glb"
+          "$RUNNER_TEMP/blender/blender" -b --disable-autoexec "${models[0]}" --python-exit-code 1 --python-expr 'import bpy,os,pathlib,struct; assert any(o.type=="MESH" for o in bpy.context.scene.objects); p=pathlib.Path(os.environ["OUT_GLB"]); bpy.ops.export_scene.gltf(filepath=str(p),export_format="GLB"); assert p.stat().st_size>100 and p.read_bytes()[:4]==b"glTF"; print("GLB_EXPORT_PASS",p.stat().st_size)'
+          test -s "$OUT_GLB"
+          # Fail safely rather than silently changing the model if it exceeds GitHub's file limit.
+          test "$(stat -c%s "$OUT_GLB")" -lt 100000000
+      - name: Publish separate GLB to isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add runtime-viewers/character/character.glb
+          git commit -m "Export actual uploaded character for automatic Pass 4 viewer"
+          git push origin HEAD:infrastructure/public-blender-runtime-20261124
