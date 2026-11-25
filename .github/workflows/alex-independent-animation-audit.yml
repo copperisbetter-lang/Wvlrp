@@ -1,0 +1,44 @@
+name: Alex independent GLB animation count
+on:
+  push:
+    branches: [feature/mason-ara-fishing-20261125]
+    paths: ['.github/workflows/alex-independent-animation-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/mason-ara-fishing-20261125
+      - name: Read GLB binary directly and count animation channels
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, struct
+          p = pathlib.Path('avatar-work/mason/ara/Mason_Ara_Fishing.glb')
+          b = p.read_bytes()
+          magic, version, length = struct.unpack_from('<4sII', b)
+          assert (magic, version, length) == (b'glTF', 2, len(b))
+          n, kind = struct.unpack_from('<II', b, 12)
+          assert kind == 0x4e4f534a
+          j = json.loads(b[20:20+n])
+          clips = j.get('animations', [])
+          names = [a.get('name', '') for a in clips]
+          invalid = [a.get('name', '') for a in clips if not a.get('channels') or not a.get('samplers') or any(c['sampler'] >= len(a['samplers']) for c in a['channels'])]
+          old = json.loads((p.parent/'Mason_Ara_Fishing_QA.json').read_text())
+          from collections import Counter
+          missing = list((Counter(old['animationNames']) - Counter(names)).elements())
+          added = list((Counter(names) - Counter(old['animationNames'])).elements())
+          result = {'file': str(p), 'sha256': hashlib.sha256(b).hexdigest(), 'actual_count':len(clips), 'expected_count':273, 'native_baseline_count':len(old['animationNames']), 'missing_native':missing, 'additional_clips':added, 'invalid_clips':invalid, 'all_clip_names':names, 'channel_counts':[len(a.get('channels',[])) for a in clips], 'count_pass':len(clips)==273 and len(added)==14 and not missing and not invalid}
+          (p.parent/'Alex_Independent_Animation_Audit.json').write_text(json.dumps(result, indent=2)+'\n')
+          print(json.dumps(result, indent=2))
+          PY
+      - name: Save audit only, never edit character binary
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add avatar-work/mason/ara/Alex_Independent_Animation_Audit.json
+          if ! git diff --cached --quiet; then git commit -m "Save Alex independent binary animation audit"; git push origin HEAD:feature/mason-ara-fishing-20261125; fi
