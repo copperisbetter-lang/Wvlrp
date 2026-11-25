@@ -13,7 +13,7 @@ function photoMapping(N,start,end){
  const outline=[[0,.10],[.10,.09],[.19,.13],[.24,.22],[.28,.355],[.33,.365],[.38,.333],[.44,.305],[.50,.28],[.56,.278],[.62,.318],[.68,.35],[.74,.372],[.80,.38],[.86,.405],[.91,.35],[.96,.20],[1,.10]];
  function skyline(x){x=mod(x,1);for(let j=1;j<outline.length;j++)if(x<=outline[j][0]){const a=outline[j-1],b=outline[j];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}return .1}
  function weight(i){return i>=start&&i<=end?smooth(Math.min(i-start,end-i)/6):0}
- function lower(x){x=mod(x,1);return x>.28&&x<.90?.474:.385}
+ function lower(x){x=mod(x,1);return .385+.089*smooth((x-.26)/.045)*smooth((.92-x)/.045)}
  return {u,skyline,weight,lower,wrapU:x=>mod(x,1)};
 }
 export function installPanorama(T,scene,terrain,L,report){
@@ -50,14 +50,14 @@ export function installPanorama(T,scene,terrain,L,report){
  }
  for(let i=0;i<L.N;i++)for(let j=0;j<8;j++){const a=i*9+j,b=(i+1)*9+j;indices.push(a,b,a+1,b,b+1,a+1)}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(coords,2));g.setAttribute('edgeFade',new T.Float32BufferAttribute(edge,1));g.setIndex(indices);
- const mat=new T.ShaderMaterial({uniforms:{photo:uniform},vertexShader:'attribute float edgeFade; varying vec2 vUv; varying float vEdge; void main(){vUv=uv;vEdge=edgeFade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D photo; varying vec2 vUv; varying float vEdge; void main(){vec3 rgb=texture2D(photo,vUv).rgb;float alpha=smoothstep(0.,.10,vEdge)*(1.-smoothstep(.87,1.,vEdge));gl_FragColor=vec4(rgb,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',side:T.DoubleSide,transparent:true,depthWrite:false});
+ const mat=new T.ShaderMaterial({fog:true,uniforms:{...T.UniformsUtils.clone(T.UniformsLib.fog),photo:uniform},vertexShader:'attribute float edgeFade; varying vec2 vUv; varying float vEdge;\n#include <fog_pars_vertex>\nvoid main(){vUv=uv;vEdge=edgeFade;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;\n#include <fog_vertex>\n}',fragmentShader:'uniform sampler2D photo; varying vec2 vUv; varying float vEdge;\n#include <fog_pars_fragment>\nvoid main(){vec3 rgb=texture2D(photo,vUv).rgb;float alpha=smoothstep(0.,.10,vEdge)*(1.-smoothstep(.87,1.,vEdge));gl_FragColor=vec4(rgb,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}',side:T.DoubleSide,transparent:true,depthWrite:false});
  const ribbon=new T.Mesh(g,mat);ribbon.name='Original Stacey panorama — non-colliding boundary scenery';ribbon.visible=false;ribbon.renderOrder=1;scene.add(ribbon);
- report.state='loading original 360';
+ let requestedVisible=true,loaded=false,submerged=false;\n function syncVisibility(){const visible=loaded&&requestedVisible&&!submerged;ribbon.visible=visible;strength.value=visible?1:0;report.visible=visible}\n report.state='loading original 360';
  const tex=new T.TextureLoader().load(path,t=>{
   if(!t.image||t.image.width/t.image.height<1.8||t.image.width/t.image.height>2.2){report.state='360 aspect mismatch';return}
-  report.width=t.image.width;report.height=t.image.height;uniform.value=t;strength.value=1;ribbon.visible=true;report.state='360 texture loaded';
+  report.width=t.image.width;report.height=t.image.height;uniform.value=t;loaded=true;report.state='360 texture loaded';syncVisibility();
  },undefined,()=>{report.state='360 load failed'});
  tex.colorSpace=T.SRGBColorSpace;tex.wrapS=T.RepeatWrapping;tex.wrapT=T.ClampToEdgeWrapping;tex.anisotropy=2;uniform.value=tex;
- report.source=path;report.triangles=indices.length/3;report.setVisible=visible=>{if(report.state==='360 texture loaded'){ribbon.visible=visible;strength.value=visible?1:0}};
+ report.source=path;report.triangles=indices.length/3;report.setVisible=visible=>{requestedVisible=!!visible;syncVisibility()};report.setSubmerged=value=>{submerged=!!value;syncVisibility()};
  return report;
 }
