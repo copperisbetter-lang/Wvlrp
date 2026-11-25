@@ -8,28 +8,28 @@
   "independent_triangles": 29434,
   "grid_spacing_source_units": 1.0,
   "projected_vertices": 15005,
-  "vertex_max_distance_to_original": 9.664426065637204e-14,
+  "vertex_max_distance_to_original": 1.0828494122086007e-13,
   "face_centroid_distance_p50_p95_max": [
-    0.0065220842066127755,
-    0.044683884502885074,
-    0.22424536438521336
+    0.00652208420662804,
+    0.04468388450289975,
+    0.22424536438521045
   ],
   "new_mesh_open_surface": true,
   "geometry_method": "independent quad grid ray-shrinkwrapped to actual source triangles",
   "limitation": "visible-side surface, undercuts and hidden reverse geometry not fabricated",
   "face_direction": [
-    -0.4657486503711288,
-    0.022224452273001516,
-    0.8846379306804775
+    -0.4657486503711286,
+    0.022224452273001398,
+    0.8846379306804774
   ],
   "up": [
-    0.07332934540039193,
-    -0.9952770832675811,
-    0.06361080588646928
+    0.07332934540039202,
+    -0.9952770832675812,
+    0.06361080588646906
   ],
   "right": [
-    -0.8818735747150054,
-    -0.09449656736379941,
+    -0.8818735747150053,
+    -0.0944965673637995,
     -0.461919253740128
   ],
   "center": [
@@ -40,5 +40,5 @@
   "output_glb": "Scan04_Independent_Shrinkwrap_R01.glb",
   "output_glb_sha256": "f27826076146435ee21b50375f6e0df5662b4488abf1b3872134f26577679edb",
   "output_quad_obj": "Scan04_Independent_Shrinkwrap_R01_QuadMesh.obj",
-  "duration_seconds": 0.57
+  "duration_seconds": 0.53
 }
