@@ -1,0 +1,21 @@
+name: Prepare Mason retarget input
+on:
+  push:
+    branches: [feature/mason-ara-fishing-20261125]
+    paths: ['.github/workflows/mason-retarget-input.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exported Mason source
+        run: echo "dd116145085b62efb92cd2dbe1b6a0be4abb72b72d99c31b04e42534f5eeb7c6  avatar-work/mason/ara/Mason_Ara_Fishing.glb" | sha256sum -c -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mason-Ara-retarget-source
+          path: avatar-work/mason/ara/Mason_Ara_Fishing.glb
+          retention-days: 1
+          if-no-files-found: error
