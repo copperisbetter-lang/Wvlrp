@@ -52,7 +52,9 @@ export function installPanorama(T,scene,terrain,L,report){
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(coords,2));g.setAttribute('edgeFade',new T.Float32BufferAttribute(edge,1));g.setIndex(indices);
  const mat=new T.ShaderMaterial({fog:true,uniforms:{...T.UniformsUtils.clone(T.UniformsLib.fog),photo:uniform},vertexShader:'attribute float edgeFade; varying vec2 vUv; varying float vEdge;\n#include <fog_pars_vertex>\nvoid main(){vUv=uv;vEdge=edgeFade;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;\n#include <fog_vertex>\n}',fragmentShader:'uniform sampler2D photo; varying vec2 vUv; varying float vEdge;\n#include <fog_pars_fragment>\nvoid main(){vec3 rgb=texture2D(photo,vUv).rgb;float alpha=smoothstep(0.,.10,vEdge)*(1.-smoothstep(.87,1.,vEdge));gl_FragColor=vec4(rgb,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}',side:T.DoubleSide,transparent:true,depthWrite:false});
  const ribbon=new T.Mesh(g,mat);ribbon.name='Original Stacey panorama — non-colliding boundary scenery';ribbon.visible=false;ribbon.renderOrder=1;scene.add(ribbon);
- let requestedVisible=true,loaded=false,submerged=false;\n function syncVisibility(){const visible=loaded&&requestedVisible&&!submerged;ribbon.visible=visible;strength.value=visible?1:0;report.visible=visible}\n report.state='loading original 360';
+ let requestedVisible=true,loaded=false,submerged=false;
+ function syncVisibility(){const visible=loaded&&requestedVisible&&!submerged;ribbon.visible=visible;strength.value=visible?1:0;report.visible=visible}
+ report.state='loading original 360';
  const tex=new T.TextureLoader().load(path,t=>{
   if(!t.image||t.image.width/t.image.height<1.8||t.image.width/t.image.height>2.2){report.state='360 aspect mismatch';return}
   report.width=t.image.width;report.height=t.image.height;uniform.value=t;loaded=true;report.state='360 texture loaded';syncVisibility();
