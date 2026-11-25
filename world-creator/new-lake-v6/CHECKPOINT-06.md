@@ -1,0 +1,2 @@
+# Checkpoint 06 — photo water blend candidate
+Independent folder. Checkpoint 05 preserved. Approved panorama loaded once by device file picker and cached in IndexedDB if available. No photo binary in repository (transfer unavailable). Physical lake outline, cave and physics unchanged. Cliff arc texture, sky-masked canopy ribbon, animated photographic water on real lake geometry with 3–19 m feather. No waterfall. Syntax checked; browser and phone FPS/visual QA pending.
