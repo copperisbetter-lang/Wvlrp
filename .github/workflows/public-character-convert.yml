@@ -14,19 +14,12 @@ jobs:
       SOURCE_NAME: 3dexport_blender_file_1732195031.zip
     steps:
       - uses: actions/checkout@v4
-      - name: Obtain source archive
-        env:
-          PRIVATE_READ: ${{ secrets.PRIVATE_ASSETS_READ_TOKEN }}
-          GH_TOKEN: ${{ github.token }}
+      - name: Obtain exact public source archive
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "$PRIVATE_READ" ]; then
-            GH_TOKEN="$PRIVATE_READ" gh release download Blender-assets -R copperisbetter-lang/WVLRP-Skeleton-Key-Private -p "$SOURCE_NAME" -O "$RUNNER_TEMP/source.zip"
-          else
-            gh release download Blender-assets -R "$GITHUB_REPOSITORY" -p "$SOURCE_NAME" -O "$RUNNER_TEMP/source.zip"
-          fi
-          test -s "$RUNNER_TEMP/source.zip"
+          curl -fL --retry 3 --max-time 240 "https://github.com/copperisbetter-lang/Wvlrp/releases/download/Vlender-asseys/$SOURCE_NAME" -o "$RUNNER_TEMP/source.zip"
+          echo "40b8111b76c9107ad456a8dc9db908a2ee7ab4840fe111e52f432478c49b9518  $RUNNER_TEMP/source.zip" | sha256sum -c -
       - name: Install tested Blender
         run: |
           set -euo pipefail
