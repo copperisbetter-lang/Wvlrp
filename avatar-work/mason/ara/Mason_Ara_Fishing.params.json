@@ -1,0 +1,56 @@
+{
+  "name": "Mason_Ara_Fishing",
+  "seed": 251126,
+  "gender": 1,
+  "age": 0.45,
+  "muscle": 0.48,
+  "weight": 0.52,
+  "height": 0.55,
+  "proportions": 0.5,
+  "skin": "auto",
+  "eyes": "brown",
+  "eyebrows": "eyebrow010",
+  "eyelashes": "eyelashes02",
+  "hair": "short01",
+  "hairTint": "#4b382b",
+  "hairColor": "#4b382b",
+  "facialHair": "none",
+  "outfit": "none",
+  "top": "fatigue_shirt",
+  "jacket": "none",
+  "bottom": "baggy_jeans",
+  "underwear": true,
+  "shoes": "combat_boots",
+  "hat": "baseball_cap",
+  "accessories": [],
+  "garmentStyles": {
+    "fatigue_shirt": {
+      "pattern": "shuka",
+      "color": "#713d36",
+      "color2": "#28302f"
+    },
+    "baggy_jeans": {
+      "pattern": "denim",
+      "color": "#37557f",
+      "color2": "#8aa4c6"
+    },
+    "baseball_cap": {
+      "pattern": "jersey",
+      "color": "#3b4135",
+      "color2": "#292f27"
+    }
+  },
+  "detail": "high",
+  "rig": "game",
+  "faceBones": true,
+  "restPose": "A",
+  "animations": true,
+  "weapon": "none",
+  "carry": "none",
+  "vehicle": "none",
+  "expression": "neutral",
+  "faceShapes": true,
+  "speechShapes": true,
+  "teeth": "teeth_base",
+  "tongue": true
+}
