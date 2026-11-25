@@ -1,0 +1,2 @@
+# Checkpoint 10 — clean shoreline
+Owner rejected floating/streaked trees in 09. Removed detached photo-card forest generation entirely (zero cards); kept registered cliff-attached photo canopy, photo-water blend, rocks, and unchanged layout/physics/cave/shoreline. Non-cliff slopes intentionally open until proper forest assets are available. Cached approved panorama reused. Seven scripts parse and preservation checks pass. Visual/FPS QA pending. Checkpoint 09 retained; Stacey Lake and waterfalls untouched.
