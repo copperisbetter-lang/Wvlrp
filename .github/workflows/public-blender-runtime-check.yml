@@ -1,0 +1,28 @@
+name: Public Blender runtime check
+on:
+  push:
+    branches:
+      - infrastructure/public-blender-runtime-20261124
+    paths:
+      - .github/workflows/public-blender-runtime-check.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  blender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Retrieve public Linux x64 Blender 4.3.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 180 https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz -o "$RUNNER_TEMP/blender.tar.xz"
+          mkdir "$RUNNER_TEMP/blender"
+          tar -xJf "$RUNNER_TEMP/blender.tar.xz" --strip-components=1 -C "$RUNNER_TEMP/blender"
+      - name: Verify executable and real GLB export
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/blender/blender" --version
+          "$RUNNER_TEMP/blender/blender" --background --factory-startup --disable-autoexec --python-exit-code 1 --python-expr 'import bpy, pathlib, struct; p=pathlib.Path("/tmp/runtime_probe.glb"); bpy.ops.export_scene.gltf(filepath=str(p),export_format="GLB"); assert p.stat().st_size>100; assert p.read_bytes()[:4]==b"glTF"; print("BLENDER_GLTF_EXPORT_PASS", bpy.app.version_string, p.stat().st_size)'
