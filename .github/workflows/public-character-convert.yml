@@ -43,9 +43,37 @@ jobs:
           mapfile -d '' models < <(find "$RUNNER_TEMP/source" -type f -iname '*.blend' -print0)
           if [ "${#models[@]}" -ne 1 ]; then echo "Expected one actual blend file"; exit 1; fi
           export OUT_GLB="$GITHUB_WORKSPACE/runtime-viewers/character/character.glb"
-          "$RUNNER_TEMP/blender/blender" -b --disable-autoexec "${models[0]}" --python-exit-code 1 --python-expr 'import bpy,os,pathlib,struct; assert any(o.type=="MESH" for o in bpy.context.scene.objects); p=pathlib.Path(os.environ["OUT_GLB"]); bpy.ops.export_scene.gltf(filepath=str(p),export_format="GLB"); assert p.stat().st_size>100 and p.read_bytes()[:4]==b"glTF"; print("GLB_EXPORT_PASS",p.stat().st_size)'
+          cat > "$RUNNER_TEMP/export_character.py" <<'PY'
+          import bpy, os, pathlib, struct, json
+          p=pathlib.Path(os.environ["OUT_GLB"])
+          assert any(o.type=="MESH" and len(o.data.polygons)>0 for o in bpy.context.scene.objects)
+          def export():
+              bpy.ops.export_scene.gltf(filepath=str(p),export_format="GLB")
+              assert p.stat().st_size>100 and p.read_bytes()[:4]==b"glTF"
+              print("GLB_EXPORT_PASS",p.stat().st_size,flush=True)
+          for cap in (2048,1024,512):
+              for im in bpy.data.images:
+                  w,h=im.size
+                  if min(w,h)>0 and max(w,h)>cap:
+                      scale=cap/max(w,h)
+                      try:
+                          im.scale(max(1,round(w*scale)),max(1,round(h*scale)))
+                          im.pack()
+                          print("PREVIEW_TEXTURE",im.name,w,h,tuple(im.size),flush=True)
+                      except Exception as e:
+                          print("IMAGE_SCALE_WARNING",im.name,str(e),flush=True)
+              export()
+              if p.stat().st_size<95000000: break
+          assert p.stat().st_size<100000000, "Preview exceeds git file limit even after resizing textures"
+          with p.open("rb") as fp:
+              header=fp.read(12)
+              n,t=struct.unpack("<II",fp.read(8))
+              d=json.loads(fp.read(n))
+          assert d.get("meshes") and d.get("scenes")
+          print("PREVIEW_VALIDATED",p.stat().st_size,"meshes",len(d["meshes"]),"skins",len(d.get("skins",[])),"animations",len(d.get("animations",[])),flush=True)
+          PY
+          "$RUNNER_TEMP/blender/blender" -b --disable-autoexec "${models[0]}" --python-exit-code 1 --python "$RUNNER_TEMP/export_character.py"
           test -s "$OUT_GLB"
-          # Fail safely rather than silently changing the model if it exceeds GitHub's file limit.
           test "$(stat -c%s "$OUT_GLB")" -lt 100000000
       - name: Publish separate GLB to isolated branch
         shell: bash
