@@ -1,0 +1,31 @@
+name: Beach gameplay preview R2 source validation
+on:
+  push:
+    branches:
+      - test/beach-gameplay-viewer-r2
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate viewer source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('world-creator/beach-gameplay-preview-r2.html')
+          html = p.read_text()
+          assert 'Walking in place' in html
+          assert 'parent.position.x=origin;scene.render()' in html
+          assert 'Math.sin(t*.5)*.65' not in html
+          for control in ('near','far','reset'):
+              assert f'id="{control}"' in html
+          scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
+          assert scripts
+          Path('/tmp/beach-preview-r2.js').write_text('\n'.join(scripts))
+          print('Source and control checks passed; this is not a browser or asset validation.')
+          PY
+          node --check /tmp/beach-preview-r2.js
