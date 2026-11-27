@@ -69,10 +69,17 @@ assert discard,'Expected covered geometry to remove'
 bmesh.ops.delete(bm,geom=discard,context='VERTS')
 bm.to_mesh(body.data);bm.free();body.data.update()
 base.preserve_photo_skin(body,'Beach NPC')
+# Add a standard upright chair-sitting game animation alongside walk/idle.
+import inspect
+clip_source=inspect.getsource(base.make_clips)
+marker="    for b in all_bones:\n        if normalized(b.name) in arm_corrections:"
+assert clip_source.count(marker)==1
+seated="    clip('Beach NPC Sit on Bench',[(1,{}),(15,{'leftupleg':(-1.2,0,0),'rightupleg':(-1.2,0,0),'leftleg':(1.25,0,0),'rightleg':(1.25,0,0)}),(48,{'leftupleg':(-1.2,0,0),'rightupleg':(-1.2,0,0),'leftleg':(1.25,0,0),'rightleg':(1.25,0,0)})])\n"
+exec(compile(clip_source.replace(marker,seated+marker),'<ordinary gameplay clips>','exec'),base.__dict__)
 base.make_clips(rig)
-# Use ordinary upright game animations for the first clothed QA export.
 for t in list(rig.animation_data.nla_tracks):
-    if not any(s in t.name for s in ('Idle','Walk','Wave')): rig.animation_data.nla_tracks.remove(t)
+    if not any(s in t.name for s in ('Idle','Walk','Wave','Sit on Bench')): rig.animation_data.nla_tracks.remove(t)
+print('BEACH_GAMEPLAY_CLIPS', [t.name for t in rig.animation_data.nla_tracks])
 root.scale=tuple(a*1.08/height for a in root.scale)
 bpy.context.view_layer.update()
 bpy.ops.object.select_all(action='DESELECT')
@@ -80,4 +87,11 @@ for ob in [root]+list(ObjectService.get_list_of_children(root)): ob.select_set(T
 out=Path(__file__).resolve().parents[1]/'assets'/'beach-npc-clothed-v1.glb'
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=True,export_nla_strips=True)
 assert out.stat().st_size>100000
+import json,struct
+with out.open('rb') as f:
+    header=f.read(12); n,kind=struct.unpack('<II',f.read(8)); doc=json.loads(f.read(n))
+assert header[:4]==b'glTF'
+names=[a.get('name','') for a in doc.get('animations',[])]
+assert any('Walk' in n for n in names) and any('Sit on Bench' in n for n in names), names
+print('VERIFIED_GAMEPLAY_ANIMATIONS',names)
 print('CLOTHED_BEACH_NPC_EXPORTED',out.stat().st_size)
