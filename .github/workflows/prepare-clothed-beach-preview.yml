@@ -1,0 +1,43 @@
+name: Prepare clothed beach gameplay preview
+on:
+  push:
+    branches: [test/makehuman-beach-character-v1]
+    paths: ['.github/workflows/prepare-clothed-beach-preview.yml']
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and prepare gameplay-only GLB
+        run: |
+          python3 - <<'PY'
+          import json, struct, pathlib
+          p=pathlib.Path('world-creator/assets')
+          raw=(p/'beach-npc-clothed-v1.glb').read_bytes()
+          magic,version,total=struct.unpack_from('<4sII',raw)
+          assert magic==b'glTF' and version==2 and total==len(raw)
+          n,t=struct.unpack_from('<II',raw,12)
+          assert t==0x4E4F534A
+          doc=json.loads(raw[20:20+n])
+          assert any('dress' in node.get('name','').lower() for node in doc['nodes'])
+          assert any('opaque dress lining' in m.get('name','').lower() for m in doc['materials'])
+          allowed={'Young Explorer Idle','Young Explorer Walk','Young Explorer Wave','Beach NPC Sit on Bench'}
+          doc['animations']=[a for a in doc.get('animations',[]) if a.get('name') in allowed]
+          assert {a['name'] for a in doc['animations']}==allowed
+          j=json.dumps(doc,separators=(',',':')).encode()
+          j+=b' '*((-len(j))%4)
+          tail=raw[20+n:]
+          out=struct.pack('<4sII',b'glTF',2,20+len(j)+len(tail))+struct.pack('<II',len(j),0x4E4F534A)+j+tail
+          dst=p/'beach-npc-gameplay-preview.glb'
+          dst.write_bytes(out)
+          print('GAMEPLAY_PREVIEW_READY',len(out),[a['name'] for a in doc['animations']])
+          PY
+      - name: Save isolated preview asset
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add world-creator/assets/beach-npc-gameplay-preview.glb
+          git commit -m 'Save gameplay-only clothed NPC preview asset'
+          git push origin HEAD:test/makehuman-beach-character-v1
