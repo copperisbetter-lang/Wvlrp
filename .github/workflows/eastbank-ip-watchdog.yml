@@ -1,0 +1,136 @@
+name: East Bank stream and IP watchdog
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/eastbank-ip-watchdog.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eastbank-ip-watchdog
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      STREAM_URL: https://158-101-120-6.sslip.io/eastbank/index.m3u8
+      CAMERA_DDNS: ${{ secrets.EASTBANK_CAMERA_DDNS }}
+      LAST_CAMERA_IP: ${{ secrets.EASTBANK_CAMERA_IP }}
+    steps:
+      - name: Verify live HLS and diagnose address on outage
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import http.cookiejar
+          import ipaddress
+          import os
+          import socket
+          import time
+          import urllib.parse
+          import urllib.request
+
+          stream = os.environ["STREAM_URL"]
+          opener = urllib.request.build_opener(
+              urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+          )
+          def request(url, max_bytes=1024 * 1024):
+              req = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+              with opener.open(req, timeout=10) as response:
+                  return response.geturl(), response.read(max_bytes)
+
+          def media_playlist(url):
+              final, raw = request(url)
+              body = raw.decode()
+              if not body.startswith("#EXTM3U"):
+                  raise ValueError("invalid HLS manifest")
+              if "#EXT-X-STREAM-INF" in body:
+                  child = next(line for line in body.splitlines()
+                               if line.strip() and not line.startswith("#"))
+                  final, raw = request(urllib.parse.urljoin(final, child))
+                  body = raw.decode()
+              if "#EXTINF:" not in body or "#EXT-X-ENDLIST" in body:
+                  raise ValueError("no live media playlist")
+              segments = [line.strip() for line in body.splitlines()
+                          if line.strip() and not line.startswith("#")]
+              if not segments:
+                  raise ValueError("empty playlist")
+              return final, segments[-1]
+
+          def check_live():
+              final, first = media_playlist(stream)
+              _, data = request(urllib.parse.urljoin(final, first), 188)
+              if not data or data[0] != 0x47:
+                  raise ValueError("no MPEG-TS video segment")
+              time.sleep(12)
+              final, second = media_playlist(final)
+              if first == second:
+                  raise ValueError("playlist is not advancing")
+              _, data = request(urllib.parse.urljoin(final, second), 188)
+              if not data or data[0] != 0x47:
+                  raise ValueError("new video segment is invalid")
+
+          def public_ipv4(value):
+              address = ipaddress.IPv4Address(value)
+              if not address.is_global:
+                  raise ValueError("not a public IPv4 address")
+              return str(address)
+
+          def reachable(address):
+              try:
+                  with socket.create_connection((address, 50035), timeout=5):
+                      return True
+              except OSError:
+                  return False
+
+          for attempt in range(2):
+              try:
+                  check_live()
+                  print("East Bank ONLINE: public video segments are advancing.")
+                  raise SystemExit(0)
+              except Exception as error:
+                  print(f"Video check {attempt + 1} failed: {type(error).__name__}")
+                  if attempt == 0:
+                      time.sleep(10)
+
+          print("::error::East Bank video unavailable; starting IP diagnosis.")
+          ddns = os.getenv("CAMERA_DDNS", "").strip()
+          last = os.getenv("LAST_CAMERA_IP", "").strip()
+          if last:
+              try:
+                  last = public_ipv4(last)
+                  print("Previous configured camera IP port: " +
+                        ("reachable" if reachable(last) else "unreachable"))
+              except ValueError:
+                  print("::warning::Stored camera IP is invalid.")
+                  last = ""
+          else:
+              print("::warning::EASTBANK_CAMERA_IP secret is not set.")
+
+          if not ddns:
+              print("::warning::EASTBANK_CAMERA_DDNS is not set; current home IP cannot be discovered automatically.")
+          else:
+              try:
+                  addresses = sorted({public_ipv4(result[4][0])
+                                      for result in socket.getaddrinfo(ddns, 50035, socket.AF_INET, socket.SOCK_STREAM)})
+                  if not addresses:
+                      raise ValueError("no public IPv4 records")
+                  if last:
+                      print("Trusted camera DNS: " +
+                            ("matches previous IP" if last in addresses else "IP CHANGE DETECTED"))
+                  else:
+                      print("Trusted camera DNS resolved; no previous IP to compare.")
+                  for index, address in enumerate(addresses[:4], 1):
+                      print(f"Trusted DNS address {index}: camera TCP port " +
+                            ("reachable" if reachable(address) else "unreachable"))
+              except (OSError, ValueError) as error:
+                  print(f"::warning::Trusted camera DNS check failed: {type(error).__name__}")
+          print("No relay configuration was changed. An open port alone does not establish camera identity.")
+          raise SystemExit(1)
+          PY
