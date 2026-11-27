@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Wild — Beach gameplay QA R2</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#102632;color:#fff;font:15px system-ui}main{height:100dvh;display:flex;flex-direction:column}header{padding:9px 14px;font-weight:700}#stage{width:100%;flex:1;min-height:0;touch-action:none;display:block}footer{padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}button{font:inherit;background:#2f5061;color:white;border:1px solid #87a9b6;border-radius:8px;padding:10px 15px}button:disabled{opacity:.45}#status{font-size:13px;color:#cfdee5}#error{color:#ffc7b9}</style></head>
+<body><main><header>The Wild · Beach gameplay QA R2</header><canvas id="stage" aria-label="Clothed NPC in a beach scene"></canvas><footer><button disabled id="idle">Stand</button><button disabled id="walk">Walk</button><button disabled id="wave">Wave</button><button id="near">Closer</button><button id="far">Wider</button><button id="reset">Reset view</button><span id="status" role="status">Loading character…</span><span id="error" role="alert"></span></footer></main>
+<script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.0/babylon.js"></script><script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.27.0/babylonjs.loaders.min.js"></script>
+<script>
+(async()=>{const B=BABYLON,canvas=document.getElementById('stage'),status=document.getElementById('status');try{
+const engine=new B.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true});engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio/1.5));const scene=new B.Scene(engine);scene.clearColor=new B.Color4(.64,.80,.91,1);
+const camera=new B.FreeCamera('gameplay camera',new B.Vector3(2.3,1.55,-4.3),scene);camera.setTarget(new B.Vector3(0,.65,0));camera.fov=.68;camera.minZ=.1;camera.maxZ=100;const defaultFov=.68;function setView(f){camera.fov=Math.max(.56,Math.min(.95,f))}document.getElementById('near').onclick=()=>setView(camera.fov-.08);document.getElementById('far').onclick=()=>setView(camera.fov+.08);document.getElementById('reset').onclick=()=>setView(defaultFov);
+const sun=new B.DirectionalLight('sun',new B.Vector3(-.7,-1,.4),scene);sun.intensity=1.6;const sky=new B.HemisphericLight('sky',new B.Vector3(0,1,0),scene);sky.intensity=.9;
+function mat(name,r,g,b){const m=new B.StandardMaterial(name,scene);m.diffuseColor=new B.Color3(r,g,b);m.specularColor=new B.Color3(.06,.06,.06);return m}
+const ground=B.MeshBuilder.CreateGround('sand',{width:60,height:12},scene);ground.position.z=-1;ground.material=mat('sand',.79,.69,.51);
+const water=B.MeshBuilder.CreateGround('lake',{width:80,height:70},scene);water.position.set(0,-.035,38);water.material=mat('water',.12,.44,.53);
+const model=await B.SceneLoader.ImportMeshAsync(null,'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/refs/heads/test/makehuman-beach-character-v1/world-creator/assets/','beach-npc-gameplay-preview.glb',scene,undefined,'.glb');
+const all=model.meshes.filter(m=>m.getTotalVertices()>0);if(!all.length)throw Error('No character geometry');for(const m of all)m.computeWorldMatrix(true);
+let min=new B.Vector3(Infinity,Infinity,Infinity),max=new B.Vector3(-Infinity,-Infinity,-Infinity);for(const m of all){let b=m.getBoundingInfo().boundingBox;min=B.Vector3.Minimize(min,b.minimumWorld);max=B.Vector3.Maximize(max,b.maximumWorld)}
+const height=max.y-min.y;if(!isFinite(height)||height<.05)throw Error('Invalid model bounds');const parent=new B.TransformNode('NPC gameplay placement',scene);for(const m of model.meshes)if(!m.parent)m.parent=parent;const scale=1.08/height;parent.scaling.setAll(scale);parent.position.set(-(min.x+max.x)*scale/2,-min.y*scale,-(min.z+max.z)*scale/2);
+const names={idle:'Young Explorer Idle',walk:'Young Explorer Walk',wave:'Young Explorer Wave'};let mode='idle',started=performance.now(),origin=parent.position.x;
+function play(k){const group=model.animationGroups.find(g=>g.name===names[k]);if(!group)throw Error('Missing gameplay animation: '+k);for(const g of model.animationGroups)g.stop();group.start(true);mode=k;started=performance.now();parent.position.x=origin;parent.rotation.y=0;status.textContent=k==='walk'?'Walking in place':k==='wave'?'Waving':'Standing'}
+for(const k of Object.keys(names)){const btn=document.getElementById(k);btn.disabled=false;btn.onclick=()=>play(k)}
+play('idle');engine.runRenderLoop(()=>{parent.position.x=origin;scene.render()});window.addEventListener('resize',()=>engine.resize());
+}catch(e){status.textContent='Preview could not load';document.getElementById('error').textContent=e.message;console.error(e)}})();
+</script></body></html>
