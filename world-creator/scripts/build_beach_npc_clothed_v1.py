@@ -37,7 +37,9 @@ ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=Fa
 for mod in list(body.modifiers):
     if mod.type=='MASK': body.modifiers.remove(mod)
 bpy.context.view_layer.update()
-rig=next(o for o in ObjectService.get_list_of_children(root) if o.type=='ARMATURE')
+rig=next((o for o in [root]+list(ObjectService.get_list_of_children(root)) if o.type=='ARMATURE'),None)
+assert rig is not None, 'Export rig missing from root and descendants'
+print('BEACH_NPC_RIG',rig.name,len(rig.data.bones))
 pts=[body.matrix_world@v.co for v in body.data.vertices]
 z0=min(p.z for p in pts); height=max(p.z for p in pts)-z0
 assert height>.4
