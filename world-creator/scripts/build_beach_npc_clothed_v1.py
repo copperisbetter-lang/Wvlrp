@@ -29,26 +29,32 @@ for m in hair.data.materials:
     if m and m.use_nodes:
         for n in m.node_tree.nodes:
             if n.type=='BSDF_PRINCIPLED': n.inputs['Base Color'].default_value=(.52,.37,.20,1)
-tops=find('clothes',r'blouse|t.?shirt|shirt')
-skirts=find('clothes',r'skirt')
-tops=[p for p in tops if not re.search(r'under|crop|bra|bikini',p.stem,re.I)]
-skirts=[p for p in skirts if not re.search(r'mini|micro|short',p.stem,re.I)]
-assert tops and skirts, 'No suitable blouse/shirt and skirt found; stop rather than export incomplete clothing'
-# Apply actual mesh clothing and its supplied delete masks.
-for p in (tops[0],skirts[0]):
-    print('GARMENT',p.name)
-    assert HumanService.add_mhclo_asset(str(p),h,asset_type='Clothes',material_type='GAMEENGINE') is not None
+# The system pack has no matching separates; tailor an opaque dress to this NPC.
 root=ExportService.create_character_copy(h,name_suffix='_permanently_clothed')
 body=ObjectService.find_object_of_type_amongst_nearest_relatives(root,'Basemesh')
 assert body is not None
-assert any(m.type=='MASK' and m.vertex_group!='body' for m in body.modifiers), 'Garment masks absent'
-ExportService.bake_modifiers_remove_helpers(body,bake_masks=True,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+ExportService.bake_modifiers_remove_helpers(body,bake_masks=False,bake_subdiv=False,remove_helpers=True,also_proxy=True)
+for mod in list(body.modifiers):
+    if mod.type=='MASK': body.modifiers.remove(mod)
 bpy.context.view_layer.update()
-# Permanently discard any remaining underlying torso/pelvic geometry, even if the asset mask was incomplete.
+rig=next(o for o in ObjectService.get_list_of_children(root) if o.type=='ARMATURE')
 pts=[body.matrix_world@v.co for v in body.data.vertices]
 z0=min(p.z for p in pts); height=max(p.z for p in pts)-z0
 assert height>.4
 cx=(min(p.x for p in pts)+max(p.x for p in pts))/2
+dress=base.make_dress(body,rig,root)
+dress.name='Beach NPC knee-length opaque dress'
+# A permanent opaque lining closes the hem for normal gameplay.
+lining=base.material('Opaque dress lining',(.14,.23,.30),.9)
+dress.data.materials.append(lining)
+bm=bmesh.new();bm.from_mesh(dress.data)
+bm.verts.ensure_lookup_table()
+hem=[bm.verts[i] for i in range(64)]
+assert len(hem)==64
+cap=bm.faces.new(tuple(reversed(hem)))
+cap.material_index=len(dress.data.materials)-1
+bm.to_mesh(dress.data);bm.free();dress.data.update()
+# Remove covered body geometry rather than exporting a hidden unclothed model.
 bpy.context.view_layer.objects.active=body
 bpy.ops.object.select_all(action='DESELECT');body.select_set(True)
 if body.data.shape_keys: bpy.ops.object.shape_key_remove(all=True,apply_mix=True)
@@ -56,14 +62,13 @@ bm=bmesh.new();bm.from_mesh(body.data)
 discard=[]
 for v in bm.verts:
     p=body.matrix_world@v.co; z=(p.z-z0)/height; x=abs(p.x-cx)/height
-    if .44<z<.79 and x<.14: discard.append(v)
+    if .405<z<.715 and (z<.62 or x<.145): discard.append(v)
+assert discard,'Expected covered geometry to remove'
 bmesh.ops.delete(bm,geom=discard,context='VERTS')
 bm.to_mesh(body.data);bm.free();body.data.update()
-assert len(discard)>0 or len(body.data.vertices)<12000
-rig=next(o for o in ObjectService.get_list_of_children(root) if o.type=='ARMATURE')
 base.preserve_photo_skin(body,'Beach NPC')
 base.make_clips(rig)
-# Only ordinary standing/walking/waving animations in this preview.
+# Use ordinary upright game animations for the first clothed QA export.
 for t in list(rig.animation_data.nla_tracks):
     if not any(s in t.name for s in ('Idle','Walk','Wave')): rig.animation_data.nla_tracks.remove(t)
 root.scale=tuple(a*1.08/height for a in root.scale)
@@ -71,6 +76,6 @@ bpy.context.view_layer.update()
 bpy.ops.object.select_all(action='DESELECT')
 for ob in [root]+list(ObjectService.get_list_of_children(root)): ob.select_set(True)
 out=Path(__file__).resolve().parents[1]/'assets'/'beach-npc-clothed-v1.glb'
-bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=True)
+bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=True,export_nla_strips=True)
 assert out.stat().st_size>100000
 print('CLOTHED_BEACH_NPC_EXPORTED',out.stat().st_size)
