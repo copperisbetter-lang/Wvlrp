@@ -16,23 +16,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download Daz --repo copperisbetter-lang/Wvlrp --pattern 'IM00021630-01_Genesis3StarterEssentialsFemale.1.zip' --dir "$RUNNER_TEMP"
-      - name: Verify and inventory source without publishing geometry or textures
+          gh release download Daz --repo copperisbetter-lang/Wvlrp --pattern 'IM00021630-01_Genesis3StarterEssentialsFemale.1.zip' --pattern 'IM00037205-01_NalaforGenesis3Female.zip' --pattern 'IM00044227-01_AndreaforGenesis3Female.zip' --dir "$RUNNER_TEMP"
+      - name: Inspect installed character and morph metadata
         run: |
           python3 - <<'PY'
-          import os, pathlib, zipfile, re
-          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'IM00021630-01_Genesis3StarterEssentialsFemale.1.zip'
-          print('Downloaded bytes:', p.stat().st_size)
-          assert p.stat().st_size==525911440, 'unexpected archive size'
-          with zipfile.ZipFile(p) as z:
-              names=z.namelist()
-              print('ZIP entries:',len(names))
-              print('DSF files:',sum(n.lower().endswith('.dsf') for n in names))
-              print('DUF files:',sum(n.lower().endswith('.duf') for n in names))
-              print('Texture images:',sum(n.lower().endswith(('.png','.jpg','.jpeg','.tif')) for n in names))
-              print('Base geometry:',[n for n in names if re.search(r'/genesis3female\.dsf$',n,re.I)])
-              hits=[n for n in names if n.lower().endswith(('.dsf','.duf')) and re.search(r'child|youth|juvenile|growing.?up|age.?5|five.?year',n,re.I)]
-              print('Potential age morph/preset candidates:',len(hits))
-              for n in hits[:100]: print(n)
-              print('Inventory completed; no model exported.')
+          import os, pathlib, zipfile, re, json, gzip
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          def load(z,n):
+              raw=z.read(n)
+              if raw.startswith(b'\x1f\x8b'): raw=gzip.decompress(raw)
+              return json.loads(raw)
+          for p in sorted(root.glob('IM*.zip')):
+              print('PACKAGE:',p.name,p.stat().st_size)
+              with zipfile.ZipFile(p) as z:
+                  names=z.namelist()
+                  for n in names:
+                      if n.lower().endswith('.duf') and re.search(r'/characters/[^/]+\.duf$|/people/genesis 3 female/[^/]+\.duf$',n,re.I):
+                          print('CHARACTER PRESET:',n)
+                      if n.lower().endswith('.dsf') and '/morphs/' in n.lower() and re.search(r'/genesis 3/female/morphs/',n,re.I):
+                          try:
+                              d=load(z,n)
+                              for m in d.get('modifier_library',[]):
+                                  ch=m.get('channel',{})
+                                  label=ch.get('label') or m.get('name') or m.get('id')
+                                  if label: print('MORPH:',str(label), 'GROUP:',m.get('group',''))
+                          except Exception as e: print('PARSE ERROR:',n,str(e)[:100])
+              print('PACKAGE DONE')
           PY
