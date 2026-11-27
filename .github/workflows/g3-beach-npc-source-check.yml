@@ -1,0 +1,38 @@
+name: Genesis 3 beach NPC source inventory
+on:
+  push:
+    branches: [g3-beach-npc-source-check]
+    paths: ['.github/workflows/g3-beach-npc-source-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download owned source archive on runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download Daz --repo copperisbetter-lang/Wvlrp --pattern 'IM00021630-01_Genesis3StarterEssentialsFemale.1.zip' --dir "$RUNNER_TEMP"
+      - name: Verify and inventory source without publishing geometry or textures
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, zipfile, re
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'IM00021630-01_Genesis3StarterEssentialsFemale.1.zip'
+          print('Downloaded bytes:', p.stat().st_size)
+          assert p.stat().st_size==525911440, 'unexpected archive size'
+          with zipfile.ZipFile(p) as z:
+              names=z.namelist()
+              print('ZIP entries:',len(names))
+              print('DSF files:',sum(n.lower().endswith('.dsf') for n in names))
+              print('DUF files:',sum(n.lower().endswith('.duf') for n in names))
+              print('Texture images:',sum(n.lower().endswith(('.png','.jpg','.jpeg','.tif')) for n in names))
+              print('Base geometry:',[n for n in names if re.search(r'/genesis3female\.dsf$',n,re.I)])
+              hits=[n for n in names if n.lower().endswith(('.dsf','.duf')) and re.search(r'child|youth|juvenile|growing.?up|age.?5|five.?year',n,re.I)]
+              print('Potential age morph/preset candidates:',len(hits))
+              for n in hits[:100]: print(n)
+              print('Inventory completed; no model exported.')
+          PY
