@@ -30,7 +30,23 @@ jobs:
           python3 - <<'PY'
           import zipfile,re
           with zipfile.ZipFile('/tmp/gen9-part2.zip') as z:
-              names=[n for n in z.namelist() if re.search(r'(genesis9\.dsf|/UV Sets/.*\.dsf)
+              names=[n for n in z.namelist() if re.search(r'(genesis9\.dsf|/UV Sets/.*\.dsf)]
+              print('GEOMETRY_UV_COUNT',len(names))
+              for n in names[:100]: print('SOURCE_GEOMETRY_OR_UV',n)
+          PY
+          curl -fsSL --retry 2 'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/c854a29aa2264d5354eea72ba5cbc2badff17546/world-creator/assets/beach-npc-gameplay-preview.glb' -o /tmp/gameplay.glb
+          python3 - <<'PY'
+          import json,struct
+          with open('/tmp/gameplay.glb','rb') as f:
+              assert f.read(4)==b'glTF'
+              f.read(8)
+              n,t=struct.unpack('<II',f.read(8))
+              g=json.loads(f.read(n))
+          print('MATERIALS',[(i,m.get('name'),m.get('pbrMetallicRoughness',{}).get('baseColorTexture')) for i,m in enumerate(g.get('materials',[]))])
+          print('ANIMATIONS',[(a.get('name'),len(a.get('channels',[]))) for a in g.get('animations',[])])
+          print('MESHES',[(m.get('name'),[(x.get('material'),list(x.get('attributes',{}))) for x in m.get('primitives',[])]) for m in g.get('meshes',[])])
+          PY
+          rm /tmp/gen9-part2.zip /tmp/gameplay.glb
 ,n,re.I)]
               print('GEOMETRY_UV_COUNT',len(names))
               for n in names[:100]: print('SOURCE_GEOMETRY_OR_UV',n)
