@@ -11,32 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Verify uploaded original and inventory texture filenames
+      - name: Verify uploaded original and inspect UV inventory
         run: |
           set -euo pipefail
-          curl --fail --location --retry 2 --silent --show-error 'https://github.com/copperisbetter-lang/Wvlrp/releases/download/Gen9-a-fuckinggain/IM00086958-02_Genesis9StarterEssentials2Of3.zip' -o /tmp/gen9-part2.zip
-          test "$(stat -c %s /tmp/gen9-part2.zip)" = 729723847
+          curl -fsSL --retry 2 'https://github.com/copperisbetter-lang/Wvlrp/releases/download/Gen9-a-fuckinggain/IM00086958-02_Genesis9StarterEssentials2Of3.zip' -o /tmp/gen9-part2.zip
           echo '531fd84a65486b9cde09845df19174624c5c0b904f5ae626a649000f25e3e371  /tmp/gen9-part2.zip' | sha256sum -c -
-          python3 - <<'PY'
-          import zipfile,re
-          with zipfile.ZipFile('/tmp/gen9-part2.zip') as z:
-              maps=[x for x in z.infolist() if re.search(r'G9Feminine0[1-4].*\.(jpg|jpeg|png|tif)$',x.filename,re.I)]
-              print('Matching texture file count:',len(maps))
-              for x in maps:
-                  if re.search(r'[_-]D(?:[_-]\d+)?\.',x.filename,re.I):
-                      print(x.filename, x.file_size)
-              print('ZIP integrity:',z.testzip() or 'PASS')
-          PY
-          python3 - <<'PY'
-          import zipfile,re
-          with zipfile.ZipFile('/tmp/gen9-part2.zip') as z:
-              names=[n for n in z.namelist() if re.search(r'(genesis9\.dsf|/UV Sets/.*\.dsf)]
-              print('GEOMETRY_UV_COUNT',len(names))
-              for n in names[:100]: print('SOURCE_GEOMETRY_OR_UV',n)
-          PY
           curl -fsSL --retry 2 'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/c854a29aa2264d5354eea72ba5cbc2badff17546/world-creator/assets/beach-npc-gameplay-preview.glb' -o /tmp/gameplay.glb
           python3 - <<'PY'
-          import json,struct
+          import json,struct,zipfile
+          with zipfile.ZipFile('/tmp/gen9-part2.zip') as z:
+              names=[n for n in z.namelist() if n.lower().endswith('genesis9.dsf') or ('/uv sets/' in n.lower() and n.lower().endswith('.dsf'))]
+              print('SOURCE_GEOMETRY_UV_COUNT',len(names))
+              for n in names[:100]: print(n)
           with open('/tmp/gameplay.glb','rb') as f:
               assert f.read(4)==b'glTF'
               f.read(8)
@@ -46,21 +32,3 @@ jobs:
           print('ANIMATIONS',[(a.get('name'),len(a.get('channels',[]))) for a in g.get('animations',[])])
           print('MESHES',[(m.get('name'),[(x.get('material'),list(x.get('attributes',{}))) for x in m.get('primitives',[])]) for m in g.get('meshes',[])])
           PY
-          rm /tmp/gen9-part2.zip /tmp/gameplay.glb
-,n,re.I)]
-              print('GEOMETRY_UV_COUNT',len(names))
-              for n in names[:100]: print('SOURCE_GEOMETRY_OR_UV',n)
-          PY
-          curl -fsSL --retry 2 'https://raw.githubusercontent.com/copperisbetter-lang/Wvlrp/c854a29aa2264d5354eea72ba5cbc2badff17546/world-creator/assets/beach-npc-gameplay-preview.glb' -o /tmp/gameplay.glb
-          python3 - <<'PY'
-          import json,struct
-          with open('/tmp/gameplay.glb','rb') as f:
-              assert f.read(4)==b'glTF'
-              f.read(8)
-              n,t=struct.unpack('<II',f.read(8))
-              g=json.loads(f.read(n))
-          print('MATERIALS',[(i,m.get('name'),m.get('pbrMetallicRoughness',{}).get('baseColorTexture')) for i,m in enumerate(g.get('materials',[]))])
-          print('ANIMATIONS',[(a.get('name'),len(a.get('channels',[]))) for a in g.get('animations',[])])
-          print('MESHES',[(m.get('name'),[(x.get('material'),list(x.get('attributes',{}))) for x in m.get('primitives',[])]) for m in g.get('meshes',[])])
-          PY
-          rm /tmp/gen9-part2.zip /tmp/gameplay.glb
