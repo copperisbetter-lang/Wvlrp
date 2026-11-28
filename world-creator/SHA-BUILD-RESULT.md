@@ -1,6 +1,6 @@
 # Sha latest automated builder result
 
-Source GitHub SHA: `f7d47622ba59d3dc39634b1c9a0484754832a6ac`
+Source GitHub SHA: `a2684a1c3935d08d28f8a672d1cd14c4f34ef3a7`
 
 Workflow status before QA report: **failure**
 
