@@ -1,6 +1,6 @@
 # Caitlyn latest automated builder result
 
-Source GitHub SHA: `f7d47622ba59d3dc39634b1c9a0484754832a6ac`
+Source GitHub SHA: `a2684a1c3935d08d28f8a672d1cd14c4f34ef3a7`
 
 Workflow status before QA report: **success**
 
@@ -40,7 +40,7 @@ INFO Draco mesh compression is available, use library at /tmp/blender-4.2.0-linu
 WVLRP_REAL_FACE_GLB_VERIFIED Caitlyn textured_skin_materials 1 images 3
 WVLRP_CAITLYN_EXPORTED_MATERIALS ['Caitlyn cool blonde brows', 'Caitlyn natural brown lashes', 'Caitlyn - MPFB original body mesh.high-poly', 'Caitlyn platinum ash blonde flowing hair 0', 'Caitlyn platinum ash blonde flowing hair 1', 'Caitlyn platinum ash blonde flowing hair 2', 'Caitlyn platinum ash blonde flowing hair 3', 'Caitlyn - MPFB original body mesh.teeth_base', 'Caitlyn real CC0 face and body skin UV 0', 'Caitlyn dark realistic pupils', 'Caitlyn light blue iris', 'Caitlyn soft iris fibers', 'Caitlyn subtle limbal ring', 'Sundress blue cotton', 'Sundress pale blue cotton', 'Sundress ivory trim']
 WVLRP_RESULT_GLB /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/caitlyn-mpfb-trial.glb 16313636 skins 1 joint_count 52 animations 5 meshes 8
-WVLRP_PREVIEW_SAVED /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/caitlyn-mpfb-trial-preview.png 697518
+WVLRP_PREVIEW_SAVED /home/runner/work/Wvlrp/Wvlrp/world-creator/assets/caitlyn-mpfb-trial-preview.png 697909
 WVLRP_CAITLYN_MPFB_SUCCESS
 
 Blender quit
