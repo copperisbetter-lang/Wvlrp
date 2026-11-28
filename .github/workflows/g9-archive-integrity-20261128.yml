@@ -1,0 +1,30 @@
+name: G9 archive integrity and map inventory
+on:
+  push:
+    branches: [ops/g9-archive-integrity-20261128]
+    paths: ['.github/workflows/g9-archive-integrity-20261128.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Verify uploaded original and inventory texture filenames
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --silent --show-error 'https://github.com/copperisbetter-lang/Wvlrp/releases/download/Gen9-a-fuckinggain/IM00086958-02_Genesis9StarterEssentials2Of3.zip' -o /tmp/gen9-part2.zip
+          test "$(stat -c %s /tmp/gen9-part2.zip)" = 729723847
+          echo '531fd84a65486b9cde09845df19174624c5c0b904f5ae626a649000f25e3e371  /tmp/gen9-part2.zip' | sha256sum -c -
+          python3 - <<'PY'
+          import zipfile,re
+          with zipfile.ZipFile('/tmp/gen9-part2.zip') as z:
+              maps=[x for x in z.infolist() if re.search(r'G9Feminine0[1-4].*\.(jpg|jpeg|png|tif)$',x.filename,re.I)]
+              print('Matching texture file count:',len(maps))
+              for x in maps:
+                  if re.search(r'[_-]D(?:[_-]\d+)?\.',x.filename,re.I):
+                      print(x.filename, x.file_size)
+              print('ZIP integrity:',z.testzip() or 'PASS')
+          PY
+          rm /tmp/gen9-part2.zip
